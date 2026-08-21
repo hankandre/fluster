@@ -66,6 +66,8 @@ pub struct PlayerCapabilities {
     pub mode: &'static str,
     pub embedded: bool,
     pub renderer: String,
+    pub native_renderer: String,
+    pub libmpv_version: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]

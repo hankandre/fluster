@@ -1,5 +1,6 @@
 use crate::model::PlayerSurfaceFrame;
 use libmpv2::Mpv;
+use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex};
 use tauri::AppHandle;
 
@@ -25,14 +26,19 @@ pub fn initialize(app: &AppHandle) -> Result<String, String> {
     }
 }
 
-pub fn attach(app: &AppHandle, mpv: Arc<Mutex<Mpv>>, session_id: String) -> Result<(), String> {
+pub fn attach(
+    app: &AppHandle,
+    mpv: Arc<Mutex<Mpv>>,
+    session_id: String,
+    video_loaded: Arc<AtomicBool>,
+) -> Result<(), String> {
     #[cfg(any(target_os = "linux", target_os = "macos"))]
     {
-        platform::attach(app, mpv, session_id)
+        platform::attach(app, mpv, session_id, video_loaded)
     }
     #[cfg(not(any(target_os = "linux", target_os = "macos")))]
     {
-        let _ = (app, mpv, session_id);
+        let _ = (app, mpv, session_id, video_loaded);
         Err("Embedded playback is not available on this platform.".into())
     }
 }

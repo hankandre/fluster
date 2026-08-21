@@ -17,6 +17,22 @@ export interface LibraryItem {
   productionYear?: number;
   runTimeTicks?: number;
   overview?: string;
+  resumePositionTicks: number;
+  played: boolean;
+}
+
+export interface PlaybackStartChoice {
+  kind: "resume" | "start-over";
+  startPositionTicks: number;
+}
+
+export function startOverChoice(): PlaybackStartChoice {
+  return { kind: "start-over", startPositionTicks: 0 };
+}
+
+export function resumeChoice(item: LibraryItem): PlaybackStartChoice | undefined {
+  if (item.played || item.resumePositionTicks <= 0) return undefined;
+  return { kind: "resume", startPositionTicks: item.resumePositionTicks };
 }
 
 export interface MediaTrack {
@@ -52,6 +68,8 @@ export interface PlayerCapabilities {
   mode: "native" | "browser";
   embedded: boolean;
   renderer: string;
+  nativeRenderer: string;
+  libmpvVersion?: string;
 }
 
 export interface PlayerSurfaceFrame {

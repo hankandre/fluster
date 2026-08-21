@@ -24,6 +24,8 @@ pub enum MpvError {
     InvalidPlan,
     #[error("Could not initialize libmpv 0.41 or newer: {0}")]
     Initialize(String),
+    #[error("Fluster requires libmpv 0.41 or newer, but found {0}. Install a current libmpv development/runtime package or use the release AppImage.")]
+    UnsupportedVersion(String),
     #[error("Could not set the numeric locale required by libmpv.")]
     Locale,
     #[error("No playback session is active.")]
@@ -63,23 +65,29 @@ impl MpvController {
     }
 
     pub fn capabilities(&self) -> Result<PlayerCapabilities, MpvError> {
-        match self
+        let renderer = match self
             .inner
             .renderer
             .lock()
             .expect("renderer mutex poisoned")
             .clone()
         {
-            Ok(renderer) => Ok(PlayerCapabilities {
-                mode: "native",
-                embedded: true,
-                renderer,
-            }),
-            Err(error) if error.is_empty() => Err(MpvError::Renderer(
-                "the native renderer has not finished initializing".into(),
-            )),
-            Err(error) => Err(MpvError::Renderer(error)),
-        }
+            Ok(renderer) => renderer,
+            Err(error) if error.is_empty() => {
+                return Err(MpvError::Renderer(
+                    "the native renderer has not finished initializing".into(),
+                ))
+            }
+            Err(error) => return Err(MpvError::Renderer(error)),
+        };
+        let libmpv_version = query_libmpv_version()?;
+        Ok(PlayerCapabilities {
+            mode: "native",
+            embedded: true,
+            renderer: renderer.clone(),
+            native_renderer: renderer,
+            libmpv_version: Some(libmpv_version),
+        })
     }
 
     pub fn launch(&self, app: AppHandle, request: LaunchRequest) -> Result<(), MpvError> {
@@ -101,10 +109,7 @@ impl MpvController {
         // GTK initializes its locale after application startup and may replace
         // LC_NUMERIC with the desktop locale. libmpv requires this category to
         // use the C decimal separator at the instant mpv_create is called.
-        let locale = unsafe { libc::setlocale(libc::LC_NUMERIC, c"C".as_ptr()) };
-        if locale.is_null() {
-            return Err(MpvError::Locale);
-        }
+        ensure_numeric_locale()?;
 
         let force_software = request.test_force_software;
         let mpv = Mpv::with_initializer(|init| {
@@ -119,10 +124,6 @@ impl MpvController {
         })
         .map_err(|error| MpvError::Initialize(safe_error(error)))?;
         let mpv = Arc::new(Mutex::new(mpv));
-        let session_id = request.plan.play_session_id.clone();
-
-        surface::attach(&app, mpv.clone(), session_id.clone()).map_err(MpvError::Renderer)?;
-
         let mut event_client = {
             let mpv_guard = mpv.lock().expect("libmpv mutex poisoned");
             mpv_guard
@@ -131,6 +132,11 @@ impl MpvController {
         };
         observe_properties(&event_client)
             .map_err(|error| MpvError::Initialize(safe_error(error)))?;
+
+        let session_id = request.plan.play_session_id.clone();
+        let video_loaded = Arc::new(AtomicBool::new(false));
+        surface::attach(&app, mpv.clone(), session_id.clone(), video_loaded.clone())
+            .map_err(MpvError::Renderer)?;
 
         let finished = Arc::new(AtomicBool::new(false));
         {
@@ -158,6 +164,7 @@ impl MpvController {
                     &mut event_client,
                     &plan.tracks,
                     plan.start_position_ticks,
+                    video_loaded,
                     finished,
                 );
                 drop(event_client);
@@ -277,6 +284,47 @@ impl MpvController {
     }
 }
 
+fn query_libmpv_version() -> Result<String, MpvError> {
+    ensure_numeric_locale()?;
+    let mpv = Mpv::with_initializer(|init| {
+        init.set_option("config", false)?;
+        init.set_option("vo", "null")?;
+        init.set_option("ao", "null")?;
+        Ok(())
+    })
+    .map_err(|error| MpvError::Initialize(safe_error(error)))?;
+    let version = string_property(&mpv, "mpv-version")
+        .ok_or_else(|| MpvError::Initialize("the runtime did not expose mpv-version".into()))?;
+    if !is_supported_mpv_version(&version) {
+        return Err(MpvError::UnsupportedVersion(version));
+    }
+    Ok(version)
+}
+
+fn ensure_numeric_locale() -> Result<(), MpvError> {
+    let locale = unsafe { libc::setlocale(libc::LC_NUMERIC, c"C".as_ptr()) };
+    if locale.is_null() {
+        return Err(MpvError::Locale);
+    }
+    Ok(())
+}
+
+fn is_supported_mpv_version(version: &str) -> bool {
+    parse_mpv_version(version).is_some_and(|(major, minor, _)| major > 0 || minor >= 41)
+}
+
+fn parse_mpv_version(version: &str) -> Option<(u64, u64, u64)> {
+    let start = version.find(|character: char| character.is_ascii_digit())?;
+    let numeric = version[start..]
+        .split(|character: char| !character.is_ascii_digit() && character != '.')
+        .next()?;
+    let mut parts = numeric.split('.');
+    let major = parts.next()?.parse().ok()?;
+    let minor = parts.next()?.parse().ok()?;
+    let patch = parts.next().unwrap_or("0").parse().ok()?;
+    Some((major, minor, patch))
+}
+
 fn observe_properties(mpv: &Mpv) -> libmpv2::Result<()> {
     let properties = [
         ("time-pos", Format::Double),
@@ -328,6 +376,7 @@ fn run_event_loop(
     mpv: &mut Mpv,
     jellyfin_tracks: &[MediaTrack],
     start_position_ticks: u64,
+    video_loaded: Arc<AtomicBool>,
     finished: Arc<AtomicBool>,
 ) {
     let mut state = RuntimeState::new();
@@ -343,6 +392,7 @@ fn run_event_loop(
                 load_external_subtitles(mpv, jellyfin_tracks);
                 state.snapshot.tracks = read_tracks(mpv, jellyfin_tracks);
                 refresh_selected_streams(&mut state.snapshot);
+                video_loaded.store(true, Ordering::Release);
                 let _ = app.emit(
                     "fluster://player-event",
                     PlayerEvent::Loaded {
@@ -665,5 +715,15 @@ mod tests {
         update_selected_track(&mut snapshot, "Audio", Some(2));
         assert_eq!(snapshot.audio_track, Some(7));
         assert!(snapshot.tracks[0].selected);
+    }
+
+    #[test]
+    fn parses_and_gates_runtime_mpv_versions() {
+        assert_eq!(parse_mpv_version("0.41.0"), Some((0, 41, 0)));
+        assert_eq!(parse_mpv_version("mpv 0.42.1-12-gabcdef"), Some((0, 42, 1)));
+        assert!(is_supported_mpv_version("0.41.0"));
+        assert!(is_supported_mpv_version("mpv 1.0.0"));
+        assert!(!is_supported_mpv_version("0.40.0"));
+        assert!(!is_supported_mpv_version("unknown"));
     }
 }

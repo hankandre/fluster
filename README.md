@@ -1,6 +1,6 @@
 # Fluster
 
-Fluster is a Jellyfin 10.11 direct-play client for Linux Wayland and macOS. It asks Jellyfin for the untouched original file and decodes it locally with embedded libmpv. Video is drawn by a native OpenGL surface beneath a transparent Tauri WebView, while React renders the in-shell controls and overlays.
+Fluster is a Jellyfin 10.11 direct-play client. The current beta target is Linux x86_64 on Wayland. It asks Jellyfin for the untouched original file and decodes it locally with embedded libmpv. Video is drawn by a native OpenGL surface beneath a transparent Tauri WebView, while React renders the in-shell controls and overlays.
 
 Server transcoding and remuxing are fixed off. They are not preferences and there is no fallback negotiation.
 
@@ -8,16 +8,19 @@ Server transcoding and remuxing are fixed off. They are not preferences and ther
 
 - Manual server URL and username/password login; the access token exists in memory only.
 - A risk-first library view containing the ten latest movies and episodes.
+- Jellyfin watched/resume state, with an explicit Resume or Start Over choice before negotiation.
 - Static `/Videos/{itemId}/stream` playback with direct play enabled and direct stream/transcoding disabled.
 - Embedded libmpv Render API output: GTK `GLArea` on Wayland and `NSOpenGLView` on macOS.
 - A dedicated React player view with play/pause, seek, volume, mute, tracks, fullscreen, status, and diagnostics.
 - Runtime hardware-decoder diagnostics, automatic local CPU fallback, and Jellyfin start/progress/stop reporting.
+- In-player failure recovery. Retry requests fresh PlaybackInfo and a new play session; Back to Library stays available.
+- A self-contained x86_64 AppImage with pinned libmpv 0.41 and media dependencies, licenses, and an extraction test.
 - Tailwind CSS 4 through the Vite plugin, plus a small component layer for the editorial artwork treatment.
 - An embedded browser `<video>` engine for frontend development and CI. It never claims verified hardware acceleration and is not a desktop fallback.
 
 GPU selection is automatic. There is no executable or GPU selector, and the desktop client never opens a separate player window.
 
-X11, Windows, ARM64 Linux, Flatpak, full catalog browsing, search, downloads, persistent login, live TV, disc/ISO media, and music remain out of scope. The macOS renderer is implemented for Apple Silicon release validation; the current development gate is Linux Wayland.
+X11, Windows, ARM64 Linux, Flatpak, full catalog browsing, search, downloads, persistent login, live TV, disc/ISO media, and music remain out of scope. The macOS renderer remains experimental and is outside this beta's validation claim.
 
 ## Develop
 

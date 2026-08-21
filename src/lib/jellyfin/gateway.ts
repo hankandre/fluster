@@ -141,6 +141,7 @@ export class JellyfinGateway {
         SortOrder: "Descending",
         Limit: 10,
         Fields: "Overview,ProductionYear,RunTimeTicks",
+        EnableUserData: true,
       },
     });
     return (data.Items ?? []).flatMap((item) => {
@@ -155,6 +156,8 @@ export class JellyfinGateway {
         productionYear: item.ProductionYear,
         runTimeTicks: item.RunTimeTicks,
         overview: item.Overview,
+        resumePositionTicks: Math.max(0, item.UserData?.PlaybackPositionTicks ?? 0),
+        played: Boolean(item.UserData?.Played),
       } satisfies LibraryItem];
     }).slice(0, 10);
   }

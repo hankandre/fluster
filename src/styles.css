@@ -136,8 +136,17 @@ input:focus, select:focus { border-color: var(--acid); box-shadow: 0 0 0 1px var
 .player-error-panel > svg { color: var(--orange); }
 .player-error-panel h2 { margin: 15px 0 10px; font: 600 25px/1.1 "Manrope"; }
 .player-error-panel p { color: var(--muted); line-height: 1.55; overflow-wrap: anywhere; }
-.player-error-panel button { margin-top: 14px; border: 0; background: var(--acid); color: #090b08; padding: 12px 17px; font-weight: 700; }
+.player-error-actions { display: flex; justify-content: center; gap: 10px; margin-top: 14px; }
+.player-error-panel button { border: 0; background: var(--acid); color: #090b08; padding: 12px 17px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+.player-error-panel button:last-child { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.dialog-backdrop { position: fixed; z-index: 40; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(0,0,0,.72); backdrop-filter: blur(8px); }
+.resume-dialog { width: min(520px, 100%); padding: 34px; border: 1px solid #303642; background: #11151d; box-shadow: 0 30px 90px #000; }
+.resume-dialog h2 { margin: 10px 0 12px; font: 600 27px/1.15 "Manrope"; }
+.resume-dialog > p:not(.kicker) { color: var(--muted); line-height: 1.55; }
+.resume-actions { display: flex; justify-content: flex-end; align-items: center; gap: 18px; margin-top: 28px; }
+.resume-actions .primary-button { min-height: 46px; }
 .player-cpu-warning { position: absolute; z-index: 3; top: 104px; left: 50%; transform: translateX(-50%); background: rgba(41,26,20,.9); border: 1px solid #87472f; color: #ffb499; padding: 10px 14px; display: flex; gap: 8px; align-items: center; font-size: 11px; backdrop-filter: blur(10px); }
+.player-reporting-warning { position: absolute; z-index: 3; top: 150px; left: 50%; transform: translateX(-50%); max-width: min(680px, calc(100vw - 36px)); background: rgba(41,26,20,.9); border: 1px solid #87472f; color: #ffb499; padding: 10px 14px; display: flex; gap: 8px; align-items: center; font-size: 11px; backdrop-filter: blur(10px); }
 .player-controls { position: absolute; z-index: 5; inset: auto 0 0; padding: 20px 3vw 26px; opacity: 0; transform: translateY(10px); pointer-events: none; transition: .2s ease; }
 .player-controls.is-visible { opacity: 1; transform: none; pointer-events: auto; }
 .seek-row { display: grid; grid-template-columns: 48px 1fr 48px; gap: 12px; align-items: center; margin-bottom: 17px; color: #d3d6da; font: 500 10px/1 "Manrope"; }
@@ -173,4 +182,6 @@ input:focus, select:focus { border-color: var(--acid); box-shadow: 0 0 0 1px var
   .track-control { width: 42px; }
   .track-control select { width: 1px; opacity: 0; position: absolute; }
   .volume-slider { display: none; }
+  .resume-actions { align-items: stretch; flex-direction: column-reverse; gap: 6px; }
+  .resume-actions .text-button { text-align: left; }
 }

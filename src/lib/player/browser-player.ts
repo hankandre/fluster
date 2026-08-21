@@ -21,7 +21,12 @@ export class BrowserPlayerEngine implements PlayerEngine {
   private listeners = new Set<(event: PlayerEvent) => void>();
 
   async initialize(): Promise<PlayerCapabilities> {
-    return { mode: "browser", embedded: true, renderer: "html-video" };
+    return {
+      mode: "browser",
+      embedded: true,
+      renderer: "html-video",
+      nativeRenderer: "browser-html-video",
+    };
   }
 
   async subscribe(listener: (event: PlayerEvent) => void): Promise<() => void> {

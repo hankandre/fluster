@@ -19,6 +19,10 @@ export interface BaseItemDto {
   ProductionYear?: number;
   RunTimeTicks?: number;
   Overview?: string;
+  UserData?: {
+    PlaybackPositionTicks?: number;
+    Played?: boolean;
+  };
 }
 
 export interface MediaStreamDto {

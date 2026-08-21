@@ -13,7 +13,8 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
-import type { LibraryItem, PlayerEngine, PlayerEvent } from "../domain/playback";
+import type { LibraryItem, PlayerEngine } from "../domain/playback";
+import type { PlaybackSessionState } from "../lib/player/session-state";
 import { NativeVideoSurface } from "./NativeVideoSurface";
 
 function time(value: number | undefined): string {
@@ -27,12 +28,14 @@ function time(value: number | undefined): string {
     : `${minutes}:${String(remainder).padStart(2, "0")}`;
 }
 
-export function PlayerView({ item, player, event, firstFrameReady, launchError, onBack }: {
+export function PlayerView({ item, player, session, launchError, reportingWarning, retrying, onRetry, onBack }: {
   item: LibraryItem;
   player: PlayerEngine;
-  event?: PlayerEvent;
-  firstFrameReady: boolean;
+  session: PlaybackSessionState;
   launchError?: string;
+  reportingWarning?: string;
+  retrying?: boolean;
+  onRetry(): Promise<void> | void;
   onBack(): Promise<void> | void;
 }) {
   const [commandError, setCommandError] = useState<string>();
@@ -40,8 +43,8 @@ export function PlayerView({ item, player, event, firstFrameReady, launchError, 
   const [controlsVisible, setControlsVisible] = useState(true);
   const [seekValue, setSeekValue] = useState<number>();
   const hideTimer = useRef<number | undefined>(undefined);
-  const snapshot = event && "snapshot" in event ? event.snapshot : undefined;
-  const error = launchError ?? commandError ?? (event?.kind === "error" ? event.message : undefined);
+  const snapshot = session.snapshot;
+  const error = launchError ?? commandError ?? session.error;
 
   useEffect(() => {
     document.documentElement.classList.add("native-playing");
@@ -111,7 +114,7 @@ export function PlayerView({ item, player, event, firstFrameReady, launchError, 
   return (
     <section className="player-page" onMouseMove={showControls} onMouseLeave={() => !snapshot?.paused && setControlsVisible(false)}>
       <NativeVideoSurface player={player} onError={setCommandError} />
-      {!firstFrameReady && <div className="video-loading-cover" />}
+      {!session.firstFrameReady && <div className="video-loading-cover" />}
       <div className="player-shade" />
 
       <header className={`player-header ${controlsVisible ? "is-visible" : ""}`}>
@@ -142,12 +145,21 @@ export function PlayerView({ item, player, event, firstFrameReady, launchError, 
           <AlertTriangle size={26} />
           <h2>Playback could not start</h2>
           <p>{error}</p>
-          <button onClick={() => void onBack()}>Back to library</button>
+          <div className="player-error-actions">
+            <button onClick={() => void onRetry()} disabled={retrying}>
+              {retrying ? <LoaderCircle className="spin" size={17} /> : null}
+              Retry
+            </button>
+            <button onClick={() => void onBack()}>Back to library</button>
+          </div>
         </div>
       )}
 
       {diagnostics?.decodeMode === "software" && !error && (
         <div className="player-cpu-warning"><AlertTriangle size={15} /> Software decoding on this CPU. Jellyfin transcoding remains disabled.</div>
+      )}
+      {reportingWarning && !error && (
+        <div className="player-reporting-warning"><AlertTriangle size={15} /> Jellyfin progress reporting failed: {reportingWarning}</div>
       )}
 
       <footer className={`player-controls ${controlsVisible || snapshot?.paused ? "is-visible" : ""}`}>

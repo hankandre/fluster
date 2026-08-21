@@ -8,6 +8,12 @@ Build the pinned runtime and AppImage together:
 ./release/build-appimage.sh
 ```
 
+The build first links the release binary against the staged runtime, writes a
+bundle-relative loader path, creates the AppImage, and runs
+`test-appimage.sh`. That gate extracts the artifact with no `LD_LIBRARY_PATH`,
+checks that `libmpv.so` resolves inside the extracted image, rejects missing
+dependencies, and verifies that component locks, notices, and licenses exist.
+
 The recipe compiles libmpv in Ubuntu 22.04, stages `libmpv.so` and its user-space dependencies under `src-tauri/resources/lib`, links the Tauri binary against that pinned runtime, and includes exact locks and license files. The AppImage must run with no system mpv or libmpv. Development requires the system libmpv 0.41+ development package; there is no executable or GPU override.
 
 Apple Silicon macOS uses:

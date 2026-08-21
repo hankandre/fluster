@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ArrowRight,
@@ -13,13 +13,14 @@ import {
   Server,
   Settings2,
 } from "lucide-react";
-import type { LibraryItem, PlayerCapabilities, PlayerEvent } from "./domain/playback";
-import { ticksToSeconds } from "./domain/playback";
+import type { LibraryItem, PlaybackStartChoice, PlayerCapabilities } from "./domain/playback";
+import { resumeChoice, startOverChoice, ticksToSeconds } from "./domain/playback";
 import { PlayerView } from "./components/PlayerView";
 import { JellyfinGateway } from "./lib/jellyfin/gateway";
 import { BrowserPlayerEngine } from "./lib/player/browser-player";
 import { PlaybackCoordinator } from "./lib/player/coordinator";
 import { isTauriRuntime, NativePlayerEngine } from "./lib/player/native-player";
+import { initialPlaybackSessionState, playbackSessionReducer } from "./lib/player/session-state";
 
 type Connection = { gateway: JellyfinGateway; name: string; version: string };
 
@@ -42,6 +43,7 @@ function itemEyebrow(item: LibraryItem): string {
 }
 
 export function App() {
+  const queryClient = useQueryClient();
   const native = isTauriRuntime();
   const player = useMemo(() => native ? new NativePlayerEngine() : new BrowserPlayerEngine(), [native]);
   const coordinator = useRef<PlaybackCoordinator | undefined>(undefined);
@@ -50,19 +52,38 @@ export function App() {
   const [connection, setConnection] = useState<Connection>();
   const [signedInAs, setSignedInAs] = useState<string>();
   const [activeItem, setActiveItem] = useState<LibraryItem>();
-  const [playbackEvent, setPlaybackEvent] = useState<PlayerEvent>();
-  const [firstFrameReady, setFirstFrameReady] = useState(false);
-  const [reportingWarning, setReportingWarning] = useState<string>();
-  const [playbackFailure, setPlaybackFailure] = useState<string>();
+  const [pendingResumeItem, setPendingResumeItem] = useState<LibraryItem>();
+  const [session, dispatchSession] = useReducer(playbackSessionReducer, initialPlaybackSessionState);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [capabilities, setCapabilities] = useState<PlayerCapabilities>();
   const [playerInitializationError, setPlayerInitializationError] = useState<string>();
+  const closingWindow = useRef(false);
 
   useEffect(() => {
     void player.initialize().then(setCapabilities).catch((error: unknown) => {
       setPlayerInitializationError(message(error));
     });
   }, [player]);
+
+  useEffect(() => {
+    if (!native) return;
+    let removeListener: (() => void) | undefined;
+    void import("@tauri-apps/api/window").then(async ({ getCurrentWindow }) => {
+      const appWindow = getCurrentWindow();
+      removeListener = await appWindow.onCloseRequested(async (event) => {
+        event.preventDefault();
+        if (closingWindow.current) return;
+        closingWindow.current = true;
+        try {
+          await coordinator.current?.stop();
+          await coordinator.current?.flush();
+        } finally {
+          await appWindow.destroy();
+        }
+      });
+    });
+    return () => removeListener?.();
+  }, [native]);
 
   const connect = useMutation({
     mutationFn: async () => {
@@ -92,34 +113,35 @@ export function App() {
   });
 
   const play = useMutation({
-    mutationFn: async (item: LibraryItem) => {
+    mutationFn: async ({ item, choice, retry = false }: {
+      item: LibraryItem;
+      choice: PlaybackStartChoice;
+      retry?: boolean;
+    }) => {
       if (!connection) throw new Error("Connect to Jellyfin first.");
-      setReportingWarning(undefined);
-      setPlaybackFailure(undefined);
-      setPlaybackEvent(undefined);
-      setFirstFrameReady(false);
+      dispatchSession({ type: "reset" });
       if (!coordinator.current) {
         coordinator.current = new PlaybackCoordinator(connection.gateway, player, {
           onEvent: (event) => {
-            setPlaybackEvent(event);
-            if (event.kind === "first-frame") setFirstFrameReady(true);
-            if (event.kind === "error") setPlaybackFailure(event.message);
+            dispatchSession({ type: "event", event });
             if (event.kind === "ended" && event.reason !== "error") {
               startedItem.current = undefined;
               setActiveItem(undefined);
             }
           },
-          onReportingError: setReportingWarning,
+          onReportingError: (warning) => dispatchSession({ type: "reporting-warning", message: warning }),
+          onSessionEnded: () => void queryClient.invalidateQueries({ queryKey: ["latest"] }),
         });
       }
-      return coordinator.current.start(item);
+      return retry ? coordinator.current.retry() : coordinator.current.start(item, choice);
     },
+    onError: (error) => dispatchSession({ type: "failure", message: message(error) }),
   });
 
   useEffect(() => {
     if (!activeItem || startedItem.current === activeItem.id) return;
     startedItem.current = activeItem.id;
-    play.mutate(activeItem);
+    play.mutate({ item: activeItem, choice: startOverChoice() });
     // The mutation is intentionally keyed only to navigation into a new item.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeItem]);
@@ -132,15 +154,34 @@ export function App() {
     } finally {
       startedItem.current = undefined;
       setActiveItem(undefined);
-      setPlaybackEvent(undefined);
-      setFirstFrameReady(false);
-      setPlaybackFailure(undefined);
+      dispatchSession({ type: "reset" });
       play.reset();
     }
   };
 
+  const requestPlayback = (item: LibraryItem) => {
+    const resume = resumeChoice(item);
+    if (resume) {
+      setPendingResumeItem(item);
+      return;
+    }
+    setActiveItem(item);
+  };
+
+  const beginPlayback = (item: LibraryItem, choice: PlaybackStartChoice) => {
+    setPendingResumeItem(undefined);
+    startedItem.current = item.id;
+    setActiveItem(item);
+    play.mutate({ item, choice });
+  };
+
+  const retryPlayback = () => {
+    if (!activeItem) return;
+    play.mutate({ item: activeItem, choice: startOverChoice(), retry: true });
+  };
+
   const phase = !connection ? "connect" : !signedInAs ? "login" : "library";
-  const launchError = play.error ? message(play.error) : playbackFailure ?? reportingWarning;
+  const launchError = session.error ?? (play.error ? message(play.error) : undefined);
 
   return (
     <main className={`app-shell ${activeItem ? "has-player" : ""}`}>
@@ -172,9 +213,11 @@ export function App() {
         <PlayerView
           item={activeItem}
           player={player}
-          event={playbackEvent}
-          firstFrameReady={firstFrameReady}
+          session={session}
           launchError={launchError}
+          reportingWarning={session.reportingWarning}
+          retrying={play.isPending}
+          onRetry={retryPlayback}
           onBack={closePlayer}
         />
       ) : (
@@ -244,7 +287,7 @@ export function App() {
                       <button
                         className="play-button"
                         aria-label={`Play ${item.name}`}
-                        onClick={() => setActiveItem(item)}
+                        onClick={() => requestPlayback(item)}
                         disabled={Boolean(playerInitializationError && native)}
                       ><Play size={20} fill="currentColor" /></button>
                     </div>
@@ -262,6 +305,15 @@ export function App() {
         </section>
       )}
 
+      {pendingResumeItem && (
+        <ResumeDialog
+          item={pendingResumeItem}
+          onResume={() => beginPlayback(pendingResumeItem, resumeChoice(pendingResumeItem)!)}
+          onStartOver={() => beginPlayback(pendingResumeItem, startOverChoice())}
+          onCancel={() => setPendingResumeItem(undefined)}
+        />
+      )}
+
       {!activeItem && (
         <footer className="app-footer">
           <span>FLUSTER / LINUX + macOS</span>
@@ -270,6 +322,40 @@ export function App() {
       )}
     </main>
   );
+}
+
+function ResumeDialog({ item, onResume, onStartOver, onCancel }: {
+  item: LibraryItem;
+  onResume(): void;
+  onStartOver(): void;
+  onCancel(): void;
+}) {
+  return (
+    <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => {
+      if (event.target === event.currentTarget) onCancel();
+    }}>
+      <section className="resume-dialog" role="dialog" aria-modal="true" aria-labelledby="resume-title">
+        <p className="kicker">CONTINUE WATCHING</p>
+        <h2 id="resume-title">Resume {item.name}?</h2>
+        <p>Your Jellyfin progress is saved at {formatResumeTime(item.resumePositionTicks)}.</p>
+        <div className="resume-actions">
+          <button className="text-button" onClick={onCancel}>Cancel</button>
+          <button className="text-button" onClick={onStartOver}>Start Over</button>
+          <button className="primary-button" autoFocus onClick={onResume}><Play size={17} fill="currentColor" /> Resume at {formatResumeTime(item.resumePositionTicks)}</button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function formatResumeTime(ticks: number): string {
+  const totalSeconds = Math.floor(ticksToSeconds(ticks));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return hours > 0
+    ? `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+    : `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
 function LoginCard({ serverName, pending, error, onSubmit, onBack }: {
@@ -319,7 +405,10 @@ function PlayerInformation({ capabilities, error, onClose }: {
           <Cpu size={18} />
           <div>
             <strong>{capabilities?.renderer ?? "Initializing libmpv"}</strong>
-            <span>Hardware decoding is automatic. Unsupported formats continue through local CPU decoding.</span>
+            <span>
+              {capabilities?.libmpvVersion ? `libmpv ${capabilities.libmpvVersion} · ` : ""}
+              {capabilities?.nativeRenderer ?? "native renderer pending"}. Hardware decoding is automatic.
+            </span>
           </div>
         </div>
       )}

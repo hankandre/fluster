@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
 import type { PlaybackSnapshot, PlayerEngine } from "../domain/playback";
 import { PlayerView } from "./PlayerView";
+import type { PlaybackSessionState } from "../lib/player/session-state";
 
 const snapshot: PlaybackSnapshot = {
   positionSeconds: 42,
@@ -34,7 +35,12 @@ const snapshot: PlaybackSnapshot = {
 function fakePlayer(): PlayerEngine {
   return {
     mode: "native",
-    initialize: vi.fn(async () => ({ mode: "native" as const, embedded: true, renderer: "test" })),
+    initialize: vi.fn(async () => ({
+      mode: "native" as const,
+      embedded: true,
+      renderer: "test",
+      nativeRenderer: "test",
+    })),
     subscribe: vi.fn(async () => () => undefined),
     setSurface: vi.fn(async () => undefined),
     launch: vi.fn(async () => undefined),
@@ -52,10 +58,16 @@ it("renders React controls over the native surface and drives typed player opera
   const player = fakePlayer();
   render(
     <PlayerView
-      item={{ id: "movie", name: "Original Movie", type: "Movie" }}
+      item={{ id: "movie", name: "Original Movie", type: "Movie", resumePositionTicks: 0, played: false }}
       player={player}
-      event={{ kind: "loaded", snapshot }}
-      firstFrameReady
+      session={{
+        phase: "playing",
+        snapshot,
+        firstFrameReady: true,
+        buffering: false,
+        diagnostics: snapshot.diagnostics,
+      } satisfies PlaybackSessionState}
+      onRetry={vi.fn()}
       onBack={vi.fn()}
     />,
   );

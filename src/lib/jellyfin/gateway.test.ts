@@ -26,7 +26,13 @@ class FakeTransport implements HttpTransport {
   }
 }
 
-const item: LibraryItem = { id: "item/one", name: "Arrival", type: "Movie" };
+const item: LibraryItem = {
+  id: "item/one",
+  name: "Arrival",
+  type: "Movie",
+  resumePositionTicks: 0,
+  played: false,
+};
 
 function authenticatedGateway() {
   const transport = new FakeTransport();
@@ -39,6 +45,24 @@ function authenticatedGateway() {
 }
 
 describe("JellyfinGateway direct-play contract", () => {
+  it("maps Jellyfin resume position and played state", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("GET /Users/user-1/Items", {
+      Items: [{
+        Id: "movie-1",
+        Name: "Arrival",
+        Type: "Movie",
+        UserData: { PlaybackPositionTicks: 987_000_000, Played: false },
+      }],
+    });
+
+    await expect(gateway.latest()).resolves.toEqual([expect.objectContaining({
+      id: "movie-1",
+      resumePositionTicks: 987_000_000,
+      played: false,
+    })]);
+    expect(transport.requests.at(-1)?.params?.EnableUserData).toBe(true);
+  });
   it("configures an isolated SDK transport with the Jellyfin base URL and device authorization", async () => {
     const get = vi.fn().mockResolvedValue({ data: { ServerName: "Home", Version: "10.11.11" } });
     const isolatedAxios = {

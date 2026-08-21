@@ -8,6 +8,7 @@ test("shows the manual Jellyfin connection screen", async ({ page }) => {
 });
 
 test("connects, signs in, and opens the in-shell browser player", async ({ page }) => {
+  const playbackRequests: Array<Record<string, unknown>> = [];
   await page.addInitScript(() => {
     Object.defineProperty(HTMLMediaElement.prototype, "duration", {
       configurable: true,
@@ -39,11 +40,18 @@ test("connects, signs in, and opens the in-shell browser player", async ({ page 
       return json({ AccessToken: "test-token", User: { Id: "user-1", Name: "Tester" } });
     }
     if (path === "/Users/user-1/Items") {
-      return json({ Items: [{ Id: "movie-1", Name: "Embedded Movie", Type: "Movie", RunTimeTicks: 1_200_000_000 }] });
+      return json({ Items: [{
+        Id: "movie-1",
+        Name: "Embedded Movie",
+        Type: "Movie",
+        RunTimeTicks: 1_200_000_000,
+        UserData: { PlaybackPositionTicks: 420_000_000, Played: false },
+      }] });
     }
     if (path === "/Items/movie-1/PlaybackInfo") {
+      playbackRequests.push(route.request().postDataJSON());
       return json({
-        PlaySessionId: "play-1",
+        PlaySessionId: `play-${playbackRequests.length}`,
         MediaSources: [{
           Id: "source-1",
           Path: "/media/movie.mp4",
@@ -67,8 +75,21 @@ test("connects, signs in, and opens the in-shell browser player", async ({ page 
   await page.getByLabel("PASSWORD").fill("password");
   await page.getByRole("button", { name: "Sign in" }).click();
   await page.getByRole("button", { name: "Play Embedded Movie" }).click();
+  await expect(page.getByRole("heading", { name: "Resume Embedded Movie?" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start Over" })).toBeVisible();
+  await page.getByRole("button", { name: "Resume at 0:42" }).click();
 
   await expect(page.getByRole("heading", { name: "Embedded Movie" })).toBeVisible();
   await expect(page.getByText("Browser — unverified")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Back to library" })).toBeVisible();
+  expect(playbackRequests[0]).toMatchObject({
+    StartTimeTicks: 420_000_000,
+    EnableDirectPlay: true,
+    EnableDirectStream: false,
+    EnableTranscoding: false,
+  });
+
+  await expect(page.getByRole("button", { name: "Retry" })).toBeVisible();
+  await page.getByRole("button", { name: "Retry" }).click();
+  await expect.poll(() => playbackRequests.length).toBe(2);
+  await expect(page.getByLabel("Back to library")).toBeVisible();
 });

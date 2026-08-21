@@ -8,6 +8,7 @@ use libmpv2::{
 use raw_window_handle::{HasDisplayHandle, RawDisplayHandle};
 use std::cell::RefCell;
 use std::ffi::{c_char, c_void, CString};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{mpsc, Arc, Mutex, OnceLock};
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager};
@@ -23,6 +24,7 @@ struct RenderState {
     context: RenderContext,
     app: AppHandle,
     first_frame_sent: bool,
+    video_loaded: Arc<AtomicBool>,
 }
 
 thread_local! {
@@ -94,7 +96,7 @@ pub fn initialize(app: &AppHandle) -> Result<String, String> {
                         match state.context.render::<()>(framebuffer, width, height, true) {
                             Ok(()) => {
                                 state.context.report_swap();
-                                if !state.first_frame_sent {
+                                if !state.first_frame_sent && state.video_loaded.load(Ordering::Acquire) {
                                     state.first_frame_sent = true;
                                     let _ = state.app.emit("fluster://player-event", PlayerEvent::FirstFrame);
                                 }
@@ -152,7 +154,12 @@ pub fn initialize(app: &AppHandle) -> Result<String, String> {
     status.map(|()| "wayland-gtk-gl".to_string())
 }
 
-pub fn attach(app: &AppHandle, mpv: Arc<Mutex<Mpv>>, session_id: String) -> Result<(), String> {
+pub fn attach(
+    app: &AppHandle,
+    mpv: Arc<Mutex<Mpv>>,
+    session_id: String,
+    video_loaded: Arc<AtomicBool>,
+) -> Result<(), String> {
     let app_for_render = app.clone();
     run_on_main(app, move || {
         UI.with(|slot| {
@@ -207,6 +214,7 @@ pub fn attach(app: &AppHandle, mpv: Arc<Mutex<Mpv>>, session_id: String) -> Resu
                     context,
                     app: app_for_render,
                     first_frame_sent: false,
+                    video_loaded,
                 });
             });
             ui.gl_area.queue_render();

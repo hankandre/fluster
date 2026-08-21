@@ -21,8 +21,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
       - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm check
+      - run: pnpm test:e2e
+      - run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
       - run: ./release/build-appimage.sh
+      - name: Verify AppImage without host libmpv search paths
+        run: |
+          appimage="$(find src-tauri/target/release/bundle/appimage -name '*.AppImage' -print -quit)"
+          env -u LD_LIBRARY_PATH ./release/test-appimage.sh "$appimage"
       - uses: actions/upload-artifact@v4
         with:
           name: fluster-x86_64-appimage
