@@ -1,0 +1,18 @@
+{
+  "MediaSources": [
+    {
+      "Id": "sample-source",
+      "Path": "/media/sample-hevc-main10.mkv",
+      "Protocol": "File",
+      "Container": "mkv",
+      "SupportsDirectPlay": true,
+      "SupportsDirectStream": false,
+      "MediaStreams": [
+        { "Index": 0, "Type": "Video", "Codec": "hevc", "BitDepth": 10 },
+        { "Index": 1, "Type": "Audio", "Codec": "aac", "Language": "eng" },
+        { "Index": 2, "Type": "Subtitle", "Codec": "ass", "Language": "eng" }
+      ]
+    }
+  ],
+  "PlaySessionId": "fixture-play-session"
+}

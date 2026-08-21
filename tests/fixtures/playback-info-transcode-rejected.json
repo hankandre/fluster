@@ -1,0 +1,13 @@
+{
+  "MediaSources": [
+    {
+      "Id": "sample-source",
+      "Path": "/media/sample.mkv",
+      "Protocol": "File",
+      "SupportsDirectPlay": false,
+      "SupportsDirectStream": true,
+      "TranscodingUrl": "/Videos/item/master.m3u8?PlaySessionId=fixture-play-session"
+    }
+  ],
+  "PlaySessionId": "fixture-play-session"
+}

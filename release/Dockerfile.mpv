@@ -1,0 +1,73 @@
+FROM ubuntu:22.04
+
+SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PREFIX=/opt/fluster-media
+ENV PKG_CONFIG_PATH=/opt/fluster-media/lib/pkgconfig:/opt/fluster-media/lib/x86_64-linux-gnu/pkgconfig
+ENV LD_LIBRARY_PATH=/opt/fluster-media/lib:/opt/fluster-media/lib/x86_64-linux-gnu
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential ca-certificates git meson ninja-build nasm yasm pkg-config python3 \
+    patchelf pax-utils libarchive-dev libasound2-dev libdrm-dev libegl1-mesa-dev \
+    libfontconfig1-dev libfreetype6-dev libfribidi-dev libgl1-mesa-dev libharfbuzz-dev \
+    libjpeg-dev liblua5.2-dev libpipewire-0.3-dev libpulse-dev libuchardet-dev \
+    libvulkan-dev libwayland-dev libxkbcommon-dev wayland-protocols && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY components.lock /tmp/components.lock
+
+RUN source /tmp/components.lock && \
+    git clone --filter=blob:none https://github.com/FFmpeg/nv-codec-headers.git /src/nv-codec-headers && \
+    git -C /src/nv-codec-headers checkout "${NV_CODEC_HEADERS_REF}" && \
+    test "$(git -C /src/nv-codec-headers rev-parse --short=7 HEAD)" = "${NV_CODEC_HEADERS_COMMIT}" && \
+    make -C /src/nv-codec-headers PREFIX="${PREFIX}" install
+
+RUN source /tmp/components.lock && \
+    git clone --filter=blob:none https://github.com/haasn/libplacebo.git /src/libplacebo && \
+    git -C /src/libplacebo checkout "${LIBPLACEBO_REF}" && \
+    test "$(git -C /src/libplacebo rev-parse --short=7 HEAD)" = "${LIBPLACEBO_COMMIT}" && \
+    meson setup /src/libplacebo/build /src/libplacebo --prefix="${PREFIX}" \
+      --buildtype=release -Ddefault_library=shared -Ddemos=false -Dtests=false -Dbench=false && \
+    meson compile -C /src/libplacebo/build && meson install -C /src/libplacebo/build
+
+RUN source /tmp/components.lock && \
+    git clone --filter=blob:none https://github.com/libass/libass.git /src/libass && \
+    git -C /src/libass checkout "${LIBASS_REF}" && \
+    test "$(git -C /src/libass rev-parse --short=7 HEAD)" = "${LIBASS_COMMIT}" && \
+    meson setup /src/libass/build /src/libass --prefix="${PREFIX}" --buildtype=release -Ddefault_library=shared && \
+    meson compile -C /src/libass/build && meson install -C /src/libass/build
+
+RUN source /tmp/components.lock && \
+    git clone --filter=blob:none https://github.com/FFmpeg/FFmpeg.git /src/ffmpeg && \
+    git -C /src/ffmpeg checkout "${FFMPEG_REF}" && \
+    test "$(git -C /src/ffmpeg rev-parse --short=7 HEAD)" = "${FFMPEG_COMMIT}" && \
+    cd /src/ffmpeg && \
+    ./configure --prefix="${PREFIX}" --enable-shared --disable-static --disable-programs \
+      --disable-doc --disable-debug --enable-gpl --enable-libass \
+      --enable-cuvid --enable-nvdec --enable-vaapi --enable-vulkan && \
+    make -j"$(nproc)" && make install
+
+RUN source /tmp/components.lock && \
+    git clone --filter=blob:none https://github.com/mpv-player/mpv.git /src/mpv && \
+    git -C /src/mpv checkout "${MPV_REF}" && \
+    test "$(git -C /src/mpv rev-parse --short=7 HEAD)" = "${MPV_COMMIT}" && \
+    meson setup /src/mpv/build /src/mpv --prefix="${PREFIX}" --buildtype=release \
+      -Dbuild-date=false -Dlibmpv=true -Dtests=false && \
+    meson compile -C /src/mpv/build && meson install -C /src/mpv/build
+
+RUN mkdir -p /bundle/lib /bundle/licenses && \
+    while read -r dependency; do \
+      case "${dependency}" in \
+        */ld-linux*|*/libc.so.*|*/libm.so.*|*/libpthread.so.*|*/libdl.so.*|*/librt.so.*) ;; \
+        *) test -f "${dependency}" && cp -L "${dependency}" "/bundle/lib/$(basename "${dependency}")" || true ;; \
+      esac; \
+    done < <(LD_LIBRARY_PATH="${LD_LIBRARY_PATH}" lddtree -l "${PREFIX}/lib/libmpv.so" | sort -u) && \
+    { cp -L "${PREFIX}"/lib/*.so* /bundle/lib/ 2>/dev/null || true; } && \
+    find /bundle/lib -type f -exec patchelf --set-rpath '\$ORIGIN' {} \; && \
+    cp /src/mpv/LICENSE.GPL /src/mpv/LICENSE.LGPL /bundle/licenses/ && \
+    cp /src/ffmpeg/LICENSE.md /bundle/licenses/FFmpeg-LICENSE.md && \
+    cp /src/libass/COPYING /bundle/licenses/libass-COPYING && \
+    cp /src/libplacebo/LICENSE /bundle/licenses/libplacebo-LICENSE && \
+    cp /src/nv-codec-headers/README /bundle/licenses/nv-codec-headers-README && \
+    cp /tmp/components.lock /bundle/components.lock && \
+    LD_LIBRARY_PATH=/bundle/lib "${PREFIX}/bin/mpv" --version > /bundle/mpv-version.txt

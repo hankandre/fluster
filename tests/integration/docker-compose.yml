@@ -1,0 +1,20 @@
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:10.11.7
+    ports:
+      - "18096:8096"
+    volumes:
+      - jellyfin-config:/config
+      - jellyfin-cache:/cache
+      - ../samples:/media:ro
+    environment:
+      JELLYFIN_PublishedServerUrl: http://127.0.0.1:18096
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8096/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  jellyfin-config:
+  jellyfin-cache:

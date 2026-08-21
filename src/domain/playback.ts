@@ -1,0 +1,125 @@
+export const TICKS_PER_SECOND = 10_000_000;
+
+export const PLAYBACK_POLICY = Object.freeze({
+  allowServerTranscoding: false,
+  allowServerRemux: false,
+  preferHardwareDecode: true,
+  allowSoftwareDecode: true,
+});
+
+export interface LibraryItem {
+  id: string;
+  name: string;
+  type: "Movie" | "Episode";
+  seriesName?: string;
+  season?: number;
+  episode?: number;
+  productionYear?: number;
+  runTimeTicks?: number;
+  overview?: string;
+}
+
+export interface MediaTrack {
+  index: number;
+  type: "Audio" | "Subtitle" | "Video";
+  displayTitle: string;
+  language?: string;
+  external: boolean;
+  deliveryUrl?: string;
+}
+
+export interface PlayerTrack {
+  playerId: number;
+  jellyfinIndex?: number;
+  type: "Audio" | "Subtitle" | "Video";
+  title: string;
+  language?: string;
+  external: boolean;
+  selected: boolean;
+}
+
+export interface PlaybackPlan {
+  itemId: string;
+  title: string;
+  streamUrl: string;
+  mediaSourceId: string;
+  playSessionId: string;
+  startPositionTicks: number;
+  tracks: MediaTrack[];
+}
+
+export interface PlayerCapabilities {
+  mode: "native" | "browser";
+  embedded: boolean;
+  renderer: string;
+}
+
+export interface PlayerSurfaceFrame {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  scaleFactor: number;
+  visible: boolean;
+}
+
+export interface PlaybackDiagnostics {
+  decodeMode: "unknown" | "hardware" | "software";
+  decodeLabel: string;
+  hwdecCurrent?: string;
+  hwdecInterop?: string;
+  hwPixelFormat?: string;
+  videoOutput?: string;
+  gpuContext?: string;
+  videoCodec?: string;
+  bitDepth?: number;
+  width?: number;
+  height?: number;
+  droppedFrames: number;
+  warning?: string;
+}
+
+export interface PlaybackSnapshot {
+  positionSeconds: number;
+  durationSeconds?: number;
+  paused: boolean;
+  buffering: boolean;
+  volume: number;
+  muted: boolean;
+  audioTrack?: number;
+  subtitleTrack?: number;
+  tracks: PlayerTrack[];
+  diagnostics: PlaybackDiagnostics;
+}
+
+export type PlayerEvent =
+  | { kind: "ready"; capabilities: PlayerCapabilities }
+  | { kind: "loaded"; snapshot: PlaybackSnapshot }
+  | { kind: "first-frame" }
+  | { kind: "state"; snapshot: PlaybackSnapshot; cause?: "pause" | "seek" | "property" }
+  | { kind: "tracks-changed"; snapshot: PlaybackSnapshot }
+  | { kind: "ended"; snapshot?: PlaybackSnapshot; reason: string }
+  | { kind: "error"; message: string };
+
+export interface PlayerEngine {
+  readonly mode: "native" | "browser";
+  initialize(): Promise<PlayerCapabilities>;
+  subscribe(listener: (event: PlayerEvent) => void): Promise<() => void>;
+  setSurface(frame: PlayerSurfaceFrame): Promise<void>;
+  launch(plan: PlaybackPlan): Promise<void>;
+  setPaused(paused: boolean): Promise<void>;
+  seek(positionSeconds: number): Promise<void>;
+  setVolume(volume: number): Promise<void>;
+  setMuted(muted: boolean): Promise<void>;
+  selectTrack(type: "audio" | "subtitle", id?: number): Promise<void>;
+  setFullscreen(fullscreen: boolean): Promise<void>;
+  stop(): Promise<void>;
+}
+
+export function ticksToSeconds(ticks: number | null | undefined): number {
+  return Math.max(0, (ticks ?? 0) / TICKS_PER_SECOND);
+}
+
+export function secondsToTicks(seconds: number): number {
+  return Math.max(0, Math.round(seconds * TICKS_PER_SECOND));
+}

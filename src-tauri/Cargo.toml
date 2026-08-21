@@ -1,0 +1,38 @@
+[package]
+name = "fluster"
+version = "0.1.0"
+description = "Direct-play Jellyfin client for Linux and macOS"
+authors = ["Hank Andre"]
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+name = "fluster_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+libmpv2 = { version = "5", features = ["render"] }
+libc = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "=2.11.5", features = ["macos-private-api"] }
+thiserror = "2"
+url = "2"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+gl = "0.14"
+gtk = "0.18"
+libloading = "0.8"
+raw-window-handle = "0.6"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+cocoa = "0.26"
+dispatch = "0.2"
+objc = "0.2"
+raw-window-handle = "0.6"
+
+[dev-dependencies]
+pretty_assertions = "1"
