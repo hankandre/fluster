@@ -94,12 +94,83 @@ describe("SignInView with Quick Connect", () => {
     expect(gateway.pollQuickConnect).not.toHaveBeenCalled();
   });
 
-  it("shows a polling failure and keeps the password fallback", async () => {
-    const gateway = fakeGateway({ pollQuickConnect: vi.fn().mockRejectedValue(new Error("Request failed with status code 404")) });
+  it("does not sign in when Cancel arrives during authenticate, even if the request ignores abort", async () => {
+    let finish: () => void = () => undefined;
+    const gateway = fakeGateway({
+      pollQuickConnect: vi.fn().mockResolvedValue({ authenticated: true }),
+      authenticateWithQuickConnect: vi.fn().mockImplementation(() => new Promise((resolve) => {
+        finish = () => resolve({ userId: "u1", username: "Louise" });
+      })),
+    });
     renderView(gateway);
     await connect();
     await act(() => vi.advanceTimersByTimeAsync(QUICK_CONNECT_POLL_MS));
-    expect(screen.getByRole("alert")).toHaveTextContent("status code 404");
+    expect(gateway.authenticateWithQuickConnect).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await act(async () => finish());
+    expect(window.location.hash).toBe("#/next/sign-in");
+    expect(gateway.logout).toHaveBeenCalledTimes(1);
+  });
+
+  it("tolerates transient poll errors", async () => {
+    const gateway = fakeGateway({
+      pollQuickConnect: vi.fn()
+        .mockRejectedValueOnce(new Error("network"))
+        .mockRejectedValueOnce(new Error("network"))
+        .mockResolvedValueOnce({ authenticated: true }),
+    });
+    renderView(gateway);
+    await connect();
+    await act(() => vi.advanceTimersByTimeAsync(QUICK_CONNECT_POLL_MS * 3));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(window.location.hash).toBe("#/next/home");
+  });
+
+  it("stops after three consecutive poll failures", async () => {
+    const gateway = fakeGateway({ pollQuickConnect: vi.fn().mockRejectedValue(new Error("network down")) });
+    renderView(gateway);
+    await connect();
+    await act(() => vi.advanceTimersByTimeAsync(QUICK_CONNECT_POLL_MS * 6));
+    expect(gateway.pollQuickConnect).toHaveBeenCalledTimes(3);
+    expect(screen.getByRole("alert")).toHaveTextContent("network down");
+  });
+
+  it("offers a restart when the code has expired (404)", async () => {
+    const expired = Object.assign(new Error("Request failed with status code 404"), { response: { status: 404 } });
+    const gateway = fakeGateway({
+      pollQuickConnect: vi.fn().mockRejectedValueOnce(expired).mockResolvedValue({ authenticated: false }),
+      initiateQuickConnect: vi.fn()
+        .mockResolvedValueOnce({ secret: "a", code: "111111" })
+        .mockResolvedValueOnce({ secret: "b", code: "222222" }),
+    });
+    renderView(gateway);
+    await connect();
+    await act(() => vi.advanceTimersByTimeAsync(QUICK_CONNECT_POLL_MS));
+    expect(screen.getByRole("alert")).toHaveTextContent("This code expired. Start again.");
+    expect(screen.getByRole("alert")).not.toHaveTextContent("404");
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Start again" }));
+    });
+    expect(screen.getByLabelText("Quick Connect code")).toHaveTextContent("222222");
+    expect(screen.getByText("Waiting for approval…")).toBeInTheDocument();
+  });
+
+  it("treats an axios CanceledError as an abort, not a failure", async () => {
+    const canceled = Object.assign(new Error("canceled"), { name: "CanceledError" });
+    const gateway = fakeGateway({ pollQuickConnect: vi.fn().mockRejectedValue(canceled) });
+    renderView(gateway);
+    await connect();
+    await act(() => vi.advanceTimersByTimeAsync(QUICK_CONNECT_POLL_MS));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("shows a polling failure and keeps the password fallback", async () => {
+    const gateway = fakeGateway({ pollQuickConnect: vi.fn().mockRejectedValue(new Error("Request failed with status code 500")) });
+    // Three consecutive failures are needed before the error is shown.
+    renderView(gateway);
+    await connect();
+    await act(() => vi.advanceTimersByTimeAsync(QUICK_CONNECT_POLL_MS * 3));
+    expect(screen.getByRole("alert")).toHaveTextContent("status code 500");
     expect(screen.getByRole("button", { name: "Use password instead" })).toBeInTheDocument();
   });
 });

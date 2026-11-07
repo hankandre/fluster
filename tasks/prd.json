@@ -712,7 +712,7 @@
           "status": "done",
           "owner": "implementer",
           "passes": true,
-          "evidence": "Gateway: quickConnectEnabled, initiateQuickConnect (POST), pollQuickConnect, authenticateWithQuickConnect verified against Jellyfin OpenAPI 12.4.0 and SDK 1.0.2 (10.11), header auth only.\nsrc/features/sign-in: server URL, Quick Connect code with 2 s polling and Cancel, password fallback; session context in src/app/session.tsx.\nTests: gateway contract and redaction canary, 8 component tests with fake timers, e2e/sign-in.spec.ts (approve and Cancel journeys).\npnpm check, pnpm test:e2e (8 passed), pnpm lint:boundaries pass."
+          "evidence": "Gateway: quickConnectEnabled, initiateQuickConnect (POST), pollQuickConnect, authenticateWithQuickConnect verified against Jellyfin OpenAPI 12.4.0 and SDK 1.0.2 (10.11), header auth only.\nsrc/features/sign-in: server URL, Quick Connect code with 2 s polling and Cancel, password fallback; session context in src/app/session.tsx.\nTests: gateway contract and redaction canary, 8 component tests with fake timers, e2e/sign-in.spec.ts (approve and Cancel journeys).\nReview fixes: collision-proof Quick Connect device id, logout of replaced sessions, in-flight abort checks, poll retry and code-expiry restart; Sign out is now reachable (Home, feature index), closing the P1-06 logout gap.\npnpm check, pnpm test:e2e (8 passed), pnpm lint:boundaries pass."
         },
         {
           "id": "P3-05",
