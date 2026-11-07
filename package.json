@@ -14,7 +14,8 @@
     "fixture:setup": "bash tests/integration/setup-servers.sh",
     "fixture:down": "docker compose -f tests/integration/docker-compose.yml down -v",
     "tauri": "tauri",
-    "check": "pnpm test && pnpm build && cargo test --manifest-path src-tauri/Cargo.toml"
+    "lint:boundaries": "depcruise src --config .dependency-cruiser.cjs --output-type err-long",
+    "check": "pnpm lint:boundaries && pnpm test && pnpm build && cargo test --manifest-path src-tauri/Cargo.toml"
   },
   "dependencies": {
     "@jellyfin/sdk": "0.13.x",
@@ -36,6 +37,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.0",
+    "dependency-cruiser": "18.7.2",
     "jsdom": "^25.0.0",
     "tailwindcss": "^4.1.0",
     "typescript": "~5.7.0",
