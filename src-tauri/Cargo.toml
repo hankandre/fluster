@@ -15,7 +15,7 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 futures-util = { version = "=0.3.34", default-features = false, features = ["sink", "std"] }
-libmpv2 = { version = "5", features = ["render"] }
+libmpv2 = { version = "7", features = ["render"] }
 libc = "0.2"
 rustls = { version = "=0.23.46", default-features = false, features = ["ring", "std", "tls12"] }
 serde = { version = "1", features = ["derive"] }
