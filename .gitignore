@@ -17,3 +17,7 @@ src-tauri/resources/THIRD_PARTY_NOTICES.md
 *.log
 *.tsbuildinfo
 tests/integration/.credentials
+tests/samples/**/*
+!tests/samples/README.md
+!tests/samples/**/
+!tests/samples/**/.gitkeep
