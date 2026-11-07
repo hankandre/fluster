@@ -54,7 +54,7 @@ jobs:
         run: |
           sudo bash release/configure-ubuntu-snapshot.sh
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev libmpv-dev
+          sudo apt-get install -y --allow-downgrades libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev libmpv-dev
       - run: pnpm install --frozen-lockfile
       - run: pnpm audit --audit-level moderate
       - run: pnpm exec playwright install --with-deps chromium
