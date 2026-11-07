@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { PocApp } from "../poc/PocApp";
 import { FeatureIndex } from "../features";
 import { NotFoundView } from "../features/not-found";
 import { SignInView } from "../features/sign-in";
-import { HomeView } from "../features/home";
+import { HomeView, refreshHomeRows } from "../features/home";
 import { BrowseView, CollectionView, SeriesView } from "../features/browse";
 import { DetailView } from "../features/detail";
 import { PlayerFeatureView } from "../features/player";
@@ -13,6 +14,8 @@ import { SessionProvider } from "./session";
 
 export function App() {
   const services = useMemo(() => createServices(), []);
+  const queryClient = useQueryClient();
+  const refreshRows = useCallback(() => void refreshHomeRows(queryClient), [queryClient]);
   const [hash, setHash] = useState(window.location.hash);
 
   useEffect(() => {
@@ -22,7 +25,11 @@ export function App() {
   }, []);
 
   return (
-    <SessionProvider createGateway={services.createGateway}>
+    <SessionProvider
+      createGateway={services.createGateway}
+      realtime={services.realtime}
+      onServerDataChanged={refreshRows}
+    >
       {renderRoute(hash, services)}
     </SessionProvider>
   );

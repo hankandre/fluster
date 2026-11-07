@@ -272,6 +272,14 @@ export class JellyfinGateway {
     return { userId: data.User.Id, username: data.User.Name ?? fallbackName };
   }
 
+  // The signed-in Authorization header, handed only to the Rust-side server
+  // socket (realtime_connect), which cannot read it from a URL. Never log it.
+  authorizationHeader(): string {
+    const { accessToken } = this.requireSession();
+    if (!this.deviceId) throw new Error("Sign in before using the library.");
+    return buildAuthorizationHeader(this.serverUrl, this.deviceId, accessToken);
+  }
+
   async logout(): Promise<void> {
     const { accessToken, deviceId } = this;
     // Clear local state first so the UI can never keep a revoked token.

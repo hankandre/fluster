@@ -7,6 +7,7 @@ import { QUICK_CONNECT_POLL_MS } from "./sign-in-view";
 
 function fakeGateway(overrides: Partial<SessionGateway> = {}): SessionGateway {
   return {
+    serverUrl: "https://media.test",
     connect: vi.fn().mockResolvedValue({ name: "Testfin", version: "10.11.7" }),
     login: vi.fn().mockResolvedValue({ userId: "u1", username: "Louise" }),
     quickConnectEnabled: vi.fn().mockResolvedValue(true),
@@ -22,6 +23,7 @@ function fakeGateway(overrides: Partial<SessionGateway> = {}): SessionGateway {
     seasons: vi.fn(),
     episodes: vi.fn(),
     imageUrl: vi.fn(),
+    authorizationHeader: vi.fn().mockReturnValue('MediaBrowser Token="test-token"'),
     ...overrides,
   };
 }

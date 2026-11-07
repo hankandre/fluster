@@ -74,7 +74,7 @@ Keep the domain, Jellyfin gateway, playback policy, and coordinator **framework-
 
 - **Desktop composition.** The native video surface sits beneath a transparent WebView. React measures the player rectangle and Rust positions the surface. See `docs/architecture.md`.
 - **The engine is a port.** `PlayerEngine` is the seam between the core and any player: native mpv, the dev-only browser engine, or a future mobile/TV engine.
-- **Rust exposes a fixed command list:** initialize, load, surface geometry, pause, seek, volume, mute, track selection, fullscreen, stop. Adding a command is an architectural change (see the invariants).
+- **Rust exposes a fixed command list:** initialize, load, surface geometry, pause, seek, volume, mute, track selection, fullscreen, stop, and the server socket's connect and disconnect. Adding a command is an architectural change (see the invariants).
 - **In-process libmpv** trades fault isolation for integrated presentation. A driver crash takes the app down. Keep the native layer isolated so it can move out of process later.
 
 ---
@@ -196,6 +196,7 @@ If no source qualifies, return a typed **refusal reason** for the UI. Possible r
 ### Realtime and remote control (M5)
 
 - **Socket.** Open `wss://host/socket` with header auth. Answer `ForceKeepAlive` with `KeepAlive` at half the interval.
+- **Decision (P3-15): the socket lives in Rust.** The WebView's WebSocket API cannot set an `Authorization` header, and a token in the socket URL would break I4. Jellyfin authenticates the upgrade through the same `AuthorizationContext` as REST (`WebSocketManager.WebSocketRequestHandler` → `AuthService.Authenticate`, 10.11.11 and 12.4), so header auth works. Rust (`src-tauri/src/realtime.rs`) owns one connection behind the typed `realtime_connect`/`realtime_disconnect` commands, answers keepalives itself, and emits only `user-data-changed` and `connection` events on `fluster://server-event`. Browser dev mode has no socket. Remote control (`Play`, `Playstate`, `GeneralCommand`) is P8-01.
 - **Messages.** Handle `UserDataChanged` (refresh watched badges), `LibraryChanged`, `Playstate`, `GeneralCommand`, `Play`, and `ServerRestarting`.
 - **Cast target.** `POST /Sessions/Capabilities/Full` with `PlayableMediaTypes: ["Video"]`, `SupportsMediaControl: true`, a `SupportedCommands` list, and the DeviceProfile.
 - **Remote `Play`.** Always route it through the same negotiation path. Never play a server-supplied URL directly.

@@ -3,7 +3,8 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionProvider, useSession, type SessionGateway } from "../../app/session";
 import type { MediaCard } from "../../domain/catalog";
-import { HomeView } from "./index";
+import { FakeRealtime } from "../../test/fake-realtime";
+import { HomeView, refreshHomeRows } from "./index";
 
 vi.mock("./blurhash", () => ({
   blurhashToDataUrl: (hash: string) => `data:image/png;base64,${hash}`,
@@ -15,6 +16,7 @@ function card(id: string, title: string, overrides: Partial<MediaCard> = {}): Me
 
 function fakeGateway(overrides: Partial<SessionGateway> = {}): SessionGateway {
   return {
+    serverUrl: "https://media.test",
     connect: vi.fn(),
     login: vi.fn(),
     quickConnectEnabled: vi.fn(),
@@ -30,6 +32,7 @@ function fakeGateway(overrides: Partial<SessionGateway> = {}): SessionGateway {
     seasons: vi.fn(),
     episodes: vi.fn(),
     imageUrl: vi.fn((itemId: string, type: string, tag: string) => `https://media.test/${itemId}/${type}/${tag}.webp`),
+    authorizationHeader: vi.fn().mockReturnValue('MediaBrowser Token="test-token"'),
     ...overrides,
   };
 }
@@ -165,5 +168,42 @@ describe("HomeView", () => {
     expect(item).not.toHaveAttribute("tabindex");
     expect(within(item).queryByRole("button")).not.toBeInTheDocument();
     expect(item.closest("li")).not.toBeNull();
+  });
+
+  it("refetches watched state when another client changes it", async () => {
+    const gateway = fakeGateway({
+      resumeItems: vi.fn()
+        .mockResolvedValueOnce([card("r1", "Resume me", { progress: 0.4 })])
+        .mockResolvedValue([]),
+    });
+    const realtime = new FakeRealtime();
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <SessionProvider
+          createGateway={() => gateway}
+          realtime={realtime}
+          onServerDataChanged={() => void refreshHomeRows(queryClient)}
+        >
+          <SignIn gateway={gateway} />
+          <HomeView />
+        </SessionProvider>
+      </QueryClientProvider>,
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "test sign in" }));
+    });
+    await screen.findByRole("article", { name: "Resume me, 40% watched" });
+    expect(realtime.connect).toHaveBeenCalledWith("https://media.test", 'MediaBrowser Token="test-token"');
+
+    await act(async () => {
+      realtime.emit({ kind: "user-data-changed", itemIds: ["r1"] });
+    });
+
+    await waitFor(() => expect(screen.queryByRole("article", { name: "Resume me, 40% watched" })).not.toBeInTheDocument());
+    expect(gateway.resumeItems).toHaveBeenCalledTimes(2);
+    expect(gateway.nextUp).toHaveBeenCalledTimes(2);
+    expect(gateway.latestInLibrary).toHaveBeenCalledTimes(2);
+    expect(gateway.userViews).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,10 +1,12 @@
 import type { BrowsePage, BrowseQuery, CardImageType, EpisodeCard, LibraryView, MediaCard, Season } from "../domain/catalog";
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import type { RealtimeConnection, ServerEvent } from "../domain/realtime";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 // The narrow gateway surface that feature views may use. Views import this
 // type, not the gateway module, so the composition root stays the only place
 // that constructs gateways.
 export interface SessionGateway {
+  readonly serverUrl: string;
   connect(signal?: AbortSignal): Promise<{ name: string; version: string }>;
   login(username: string, password: string, signal?: AbortSignal): Promise<{ userId: string; username: string }>;
   quickConnectEnabled(signal?: AbortSignal): Promise<boolean>;
@@ -20,6 +22,8 @@ export interface SessionGateway {
   seasons(seriesId: string, signal?: AbortSignal): Promise<Season[]>;
   episodes(seriesId: string, seasonId: string, signal?: AbortSignal): Promise<EpisodeCard[]>;
   imageUrl(itemId: string, type: CardImageType, tag: string, maxWidth: number): string;
+  // Only for opening the server socket. Never log or store it.
+  authorizationHeader(): string;
 }
 
 export interface Session {
@@ -34,12 +38,21 @@ const SessionContext = createContext<Session | undefined>(undefined);
 
 export function SessionProvider({
   createGateway,
+  realtime,
+  onServerDataChanged,
   children,
 }: {
   createGateway: (serverUrl: string) => SessionGateway;
+  // The live server connection; omitted where no live refresh is wanted.
+  realtime?: RealtimeConnection;
+  // Called when another client changed watched state, or after the socket
+  // reconnects and changes may have been missed.
+  onServerDataChanged?: () => void;
   children: ReactNode;
 }) {
   const [gateway, setGateway] = useState<SessionGateway | undefined>();
+  useServerSocket(realtime, gateway);
+  useServerEvents(realtime, onServerDataChanged);
 
   const signOut = useCallback(async () => {
     const current = gateway;
@@ -59,6 +72,72 @@ export function SessionProvider({
   );
 
   return <SessionContext.Provider value={session}>{children}</SessionContext.Provider>;
+}
+
+// Opens the server socket for the signed-in gateway and closes it on sign-out
+// or when another gateway replaces it.
+function useServerSocket(realtime: RealtimeConnection | undefined, gateway: SessionGateway | undefined) {
+  useEffect(() => {
+    if (!realtime || !gateway) return;
+    let authorization: string;
+    try {
+      authorization = gateway.authorizationHeader();
+    } catch {
+      return;
+    }
+    realtime.connect(gateway.serverUrl, authorization).catch(warnLiveRefreshUnavailable);
+    return () => {
+      realtime.disconnect().catch(() => undefined);
+    };
+  }, [realtime, gateway]);
+}
+
+function useServerEvents(realtime: RealtimeConnection | undefined, onServerDataChanged: (() => void) | undefined) {
+  const onChanged = useRef(onServerDataChanged);
+  useEffect(() => {
+    onChanged.current = onServerDataChanged;
+  }, [onServerDataChanged]);
+
+  useEffect(() => {
+    if (!realtime) return;
+    let lostConnection = false;
+    let stopped = false;
+    let unsubscribe: (() => void) | undefined;
+
+    const handle = (event: ServerEvent) => {
+      switch (event.kind) {
+        case "user-data-changed":
+          onChanged.current?.();
+          break;
+        case "connection":
+          if (event.state === "disconnected") {
+            lostConnection = true;
+          } else if (lostConnection) {
+            lostConnection = false;
+            onChanged.current?.();
+          }
+          break;
+      }
+    };
+
+    realtime.subscribe(handle).then(
+      (stop) => {
+        if (stopped) stop();
+        else unsubscribe = stop;
+      },
+      warnLiveRefreshUnavailable,
+    );
+    return () => {
+      stopped = true;
+      unsubscribe?.();
+    };
+  }, [realtime]);
+}
+
+// The error text is never logged: it is not needed and must not risk carrying
+// server details.
+function warnLiveRefreshUnavailable() {
+  console.warn("Live refresh from the server is unavailable.");
 }
 
 export function useSession(): Session {
