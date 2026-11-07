@@ -46,6 +46,8 @@ module.exports = {
   ],
   options: {
     tsConfig: { fileName: "tsconfig.app.json" },
+    // Check type-only imports too; domain types must not depend on the SDK.
+    tsPreCompilationDeps: true,
     doNotFollow: { path: "node_modules" },
     exclude: { path: tests },
   },
