@@ -76,6 +76,10 @@ function classifyDomain(host: string): HostClass {
   const name = host.endsWith(".") ? host.slice(0, -1) : host;
   const labels = name.split(".");
   if (labels.some((label) => label === "")) return "public";
+  // Internationalized names are not admitted for plain HTTP. The URL parser
+  // here accepts some invalid punycode that the Rust url crate refuses, so an
+  // `xn--` name could pass sign-in and then fail every stream and socket.
+  if (labels.some((label) => label.startsWith("xn--"))) return "public";
   const count = labels.length;
   if (count >= 2 && labels[count - 1] === "local") return "private-lan";
   if (count >= 3 && labels[count - 2] === "home" && labels[count - 1] === "arpa") return "private-lan";

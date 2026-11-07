@@ -3,7 +3,7 @@
 // gateway request follows a redirect (docs/decisions/0001, edge case 8).
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { JellyfinGateway, REDIRECT_REFUSED_MESSAGE } from "./gateway";
 
 type Handler = (request: IncomingMessage, response: ServerResponse) => void;
@@ -18,6 +18,7 @@ async function listen(handler: Handler): Promise<string> {
 }
 
 afterEach(async () => {
+  vi.unstubAllGlobals();
   await Promise.all(servers.splice(0).map((server) => new Promise((resolve) => server.close(resolve))));
 });
 
@@ -85,5 +86,38 @@ describe("JellyfinGateway redirects", () => {
 
     await expect(gateway.connect()).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
     expect(target.received).toEqual([]);
+  });
+});
+
+// What WebKitGTK's fetch returns for `redirect: "manual"`: an opaque redirect
+// with status 0, which Axios resolves rather than rejects.
+function opaqueRedirect(): Response {
+  const response = new Response(null, { status: 200 });
+  Object.defineProperty(response, "status", { value: 0 });
+  Object.defineProperty(response, "type", { value: "opaqueredirect" });
+  return response;
+}
+
+describe("JellyfinGateway opaque redirects through the real Axios client", () => {
+  it("refuses the probe and authenticated calls", async () => {
+    const server = await listen((request, response) => {
+      if (request.url === "/System/Info/Public") return json(response, PUBLIC_INFO);
+      return json(response, AUTHENTICATION);
+    });
+    const gateway = new JellyfinGateway(server, undefined, "install-1");
+    await gateway.connect();
+    await gateway.login("Louise", "hunter2");
+
+    const realFetch = globalThis.fetch;
+    const fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input : new Request(input, init);
+      expect(request.redirect).toBe("manual");
+      return opaqueRedirect();
+    });
+    vi.stubGlobal("fetch", fetch);
+    await expect(gateway.userViews()).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
+    await expect(new JellyfinGateway(server, undefined, "install-1").connect()).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    vi.stubGlobal("fetch", realFetch);
   });
 });

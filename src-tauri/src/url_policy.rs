@@ -77,6 +77,12 @@ fn classify_domain(domain: &str) -> HostClass {
     if labels.iter().any(|label| label.is_empty()) {
         return HostClass::Public;
     }
+    // Internationalized names are not admitted for plain HTTP, matching the
+    // TypeScript classifier, whose URL parser accepts some punycode this
+    // crate refuses.
+    if labels.iter().any(|label| label.starts_with("xn--")) {
+        return HostClass::Public;
+    }
     let is_local = labels.len() >= 2 && labels.ends_with(&["local"]);
     let is_home_arpa = labels.len() >= 3 && labels.ends_with(&["home", "arpa"]);
     if is_local || is_home_arpa {
@@ -121,7 +127,16 @@ mod tests {
     #[test]
     fn classifies_every_shared_vector() {
         for vector in shared_vectors() {
-            let url = Url::parse(&vector.url).expect(&vector.url);
+            // A URL this crate cannot parse is refused, so it must be public.
+            let Ok(url) = Url::parse(&vector.url) else {
+                assert_eq!(
+                    expected_class(&vector.class),
+                    HostClass::Public,
+                    "{}",
+                    vector.url
+                );
+                continue;
+            };
             let host = url.host().expect(&vector.url);
             assert_eq!(
                 classify_host(&host),
@@ -149,6 +164,9 @@ mod tests {
     fn https_is_allowed_for_every_host_class() {
         for vector in shared_vectors() {
             let https = vector.url.replacen("http://", "https://", 1);
+            if Url::parse(&https).is_err() {
+                continue;
+            }
             assert!(parse_allowed_url(&https).is_some(), "{https}");
         }
     }

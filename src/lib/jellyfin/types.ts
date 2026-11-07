@@ -86,7 +86,13 @@ export interface HttpRequestConfig {
   timeout?: number;
 }
 
+// `status` is optional so test fakes may omit it; Axios always sets it.
+export interface HttpResponse<T> {
+  data: T;
+  status?: number;
+}
+
 export interface HttpTransport {
-  get<T>(url: string, config?: HttpRequestConfig): Promise<{ data: T }>;
-  post<T>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<{ data: T }>;
+  get<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>>;
+  post<T>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<HttpResponse<T>>;
 }
