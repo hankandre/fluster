@@ -101,7 +101,11 @@ The human reviews **intent and design**, not every line:
 - Does it touch the direct-play policy, the native command surface, token handling, or redaction? If so, read those lines.
 - Which hardware/compositor/Jellyfin gates are untested? (List them explicitly in the PR, per `AGENTS.md`.)
 
-### 8. Retrospective
+### 8. Ship
+
+The agent opens the PR, waits for CI, and merges with the `ship` skill. Merges rebase onto `main` and delete the branch. The agent merges on its own when CI is green and review left nothing open. It asks the human first when the diff changes an invariant, `docs/security.md`, release signing, or CI itself.
+
+### 9. Retrospective
 
 If the change needed correction, ask: what capability or rule was missing? Promote the answer into a test, lint, hook, or doc line in the same PR or a follow-up.
 
