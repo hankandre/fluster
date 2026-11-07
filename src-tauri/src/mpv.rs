@@ -442,6 +442,11 @@ fn query_libmpv_version() -> Result<String, MpvError> {
 fn ensure_numeric_locale() -> Result<(), MpvError> {
     // SAFETY: `c"C"` is a valid NUL-terminated string that outlives the call;
     // setlocale copies it. The returned pointer is only checked for null.
+    // Known gap: setlocale is not thread-safe, and this runs after GTK, WebKit,
+    // and runtime threads exist. `run()` already set LC_NUMERIC to "C" before
+    // any thread started, so this call normally changes nothing; it guards
+    // against a library resetting the locale. A concurrent locale-dependent
+    // libc call during the write is a theoretical data race we accept.
     let locale = unsafe { libc::setlocale(libc::LC_NUMERIC, c"C".as_ptr()) };
     if locale.is_null() {
         return Err(MpvError::Locale);
