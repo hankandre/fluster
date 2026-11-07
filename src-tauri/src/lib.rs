@@ -2,12 +2,15 @@
 mod command_allowlist;
 mod model;
 mod mpv;
+mod realtime;
 mod redaction;
 mod surface;
+mod url_policy;
 
 use model::{LaunchRequest, PlayerCapabilities, PlayerSurfaceFrame};
 use mpv::MpvController;
-use tauri::State;
+use realtime::RealtimeManager;
+use tauri::{Emitter, State};
 
 #[tauri::command]
 fn initialize_player(controller: State<'_, MpvController>) -> Result<PlayerCapabilities, String> {
@@ -98,6 +101,26 @@ async fn stop_playback(controller: State<'_, MpvController>) -> Result<(), Strin
         .map_err(|error| error.to_string())
 }
 
+#[tauri::command]
+fn realtime_connect(
+    app: tauri::AppHandle,
+    realtime: State<'_, RealtimeManager>,
+    server_url: String,
+    authorization: String,
+) -> Result<(), String> {
+    let target =
+        realtime::socket_target(&server_url, &authorization).map_err(|error| error.to_string())?;
+    realtime.connect(target, move |event| {
+        let _ = app.emit(realtime::SERVER_EVENT, event);
+    });
+    Ok(())
+}
+
+#[tauri::command]
+fn realtime_disconnect(realtime: State<'_, RealtimeManager>) {
+    realtime.disconnect();
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // libmpv parses all numeric options with the C decimal separator and
@@ -111,6 +134,7 @@ pub fn run() {
     let renderer_controller = controller.clone();
     tauri::Builder::default()
         .manage(controller)
+        .manage(RealtimeManager::default())
         .setup(move |app| {
             renderer_controller.set_renderer_result(surface::initialize(app.handle()));
             Ok(())
@@ -126,6 +150,8 @@ pub fn run() {
             select_track,
             set_fullscreen,
             stop_playback,
+            realtime_connect,
+            realtime_disconnect,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Fluster");
