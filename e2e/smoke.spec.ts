@@ -151,7 +151,8 @@ async function signInAndChooseResume(page: Page): Promise<void> {
   await page.getByRole("button", { name: "Resume at 0:42" }).click();
 }
 
-test("shows the Home feature placeholder at /#/next/home", async ({ page }) => {
+test("redirects signed-out visitors from Home to sign-in", async ({ page }) => {
   await page.goto("/#/next/home");
-  await expect(page.getByRole("heading", { name: "Home" })).toBeVisible();
+  await expect(page.getByLabel("Server URL")).toBeVisible();
+  expect(page.url()).toContain("#/next/sign-in");
 });

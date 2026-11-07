@@ -1,3 +1,4 @@
+import type { CardImageType, LibraryView, MediaCard } from "../domain/catalog";
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 
 // The narrow gateway surface that feature views may use. Views import this
@@ -11,6 +12,11 @@ export interface SessionGateway {
   pollQuickConnect(secret: string, signal?: AbortSignal): Promise<{ authenticated: boolean }>;
   authenticateWithQuickConnect(secret: string, signal?: AbortSignal): Promise<{ userId: string; username: string }>;
   logout(): Promise<void>;
+  userViews(signal?: AbortSignal): Promise<LibraryView[]>;
+  resumeItems(signal?: AbortSignal): Promise<MediaCard[]>;
+  nextUp(signal?: AbortSignal): Promise<MediaCard[]>;
+  latestInLibrary(parentId: string, signal?: AbortSignal): Promise<MediaCard[]>;
+  imageUrl(itemId: string, type: CardImageType, tag: string, maxWidth: number): string;
 }
 
 export interface Session {
