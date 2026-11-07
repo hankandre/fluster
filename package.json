@@ -16,6 +16,7 @@
     "fixture:down": "docker compose -f tests/integration/docker-compose.yml down -v",
     "tauri": "tauri",
     "lint:boundaries": "depcruise src --config .dependency-cruiser.cjs --output-type err-long",
+    "samples:generate": "bash scripts/generate-samples.sh",
     "dogfood": "bash scripts/dogfood.sh",
     "check": "pnpm lint:boundaries && pnpm test:dogfood-redaction && pnpm test && pnpm build && cargo test --manifest-path src-tauri/Cargo.toml"
   },

@@ -109,10 +109,10 @@
             "Generated media is gitignored"
           ],
           "verify": "pnpm samples:generate && ls tests/samples/movies tests/samples/shows",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": "Decision 2026-11-07 (user): generate synthetic samples; PGS dropped because ffmpeg cannot encode it."
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "Decision 2026-11-07 (user): generate synthetic samples; PGS dropped because ffmpeg cannot encode it. scripts/generate-samples.sh (pnpm samples:generate) builds 11 gitignored files with ffmpeg lavfi sources; second run skips all. ffprobe-verified: H.264 High, HEVC Main 10 smpte2084 with mastering display, AV1 10-bit, embedded ASS, .en.srt sidecar, eng AAC + spa AC-3 tracks, BDMV/STREAM m2ts. Jellyfin 10.11.7 and 12.4.0 scans: BDMV folder detected as VideoType BluRay, srt external, ass embedded, Season 00 as Specials; pnpm check passes."
         },
         {
           "id": "P0-04",
