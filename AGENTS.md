@@ -81,6 +81,14 @@ Fluster is a direct-play-only Jellyfin client: Tauri 2 + React/TypeScript + Rust
 - Never stub a function to make a build pass.
 - Use fixtures; never commit credentials or copyrighted media.
 
+## Reasoning
+
+- Prefer retrieval-led reasoning over training-led reasoning.
+- Read the code, docs, and plans before relying on memory.
+- Check APIs, versions, and library behavior against current sources.
+- Cite the file, command output, or URL behind each claim.
+- Say "unverified" when no source backs a claim.
+
 ## Navigating code
 
 - Start unfamiliar work with codebase-memory `get_architecture`.
