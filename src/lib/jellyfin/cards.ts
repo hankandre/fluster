@@ -1,5 +1,5 @@
-import type { BrowseCard, CardImageType, EpisodeCard, ImageRef, LibraryView, MediaCard, Season } from "../../domain/catalog";
-import type { BaseItemDto } from "./types";
+import type { BrowseCard, CardImageType, EpisodeCard, ImageRef, LibraryView, MediaCard, SearchCard, SearchHint, SearchKind, Season } from "../../domain/catalog";
+import type { BaseItemDto, SearchHintDto } from "./types";
 
 const POSTER_ASPECT_RATIO = 2 / 3;
 const BACKDROP_ASPECT_RATIO = 16 / 9;
@@ -113,5 +113,38 @@ export function toEpisodeCards(items: BaseItemDto[] | undefined): EpisodeCard[] 
       ...(item.IndexNumber != null ? { subtitle: `Episode ${item.IndexNumber}` } : {}),
       ...(item.Overview ? { overview: item.Overview } : {}),
     }];
+  });
+}
+
+function searchKind(type: string | undefined): SearchKind | undefined {
+  switch (type) {
+    case "Movie":
+    case "Series":
+    case "Episode":
+      return type;
+    default:
+      return undefined;
+  }
+}
+
+export function toSearchHints(hints: SearchHintDto[] | undefined): SearchHint[] {
+  return (hints ?? []).flatMap((hint) => {
+    const kind = searchKind(hint.Type);
+    if (!hint.Id || !hint.Name || !kind) return [];
+    return [{
+      id: hint.Id,
+      name: hint.Name,
+      kind,
+      ...(hint.ProductionYear != null ? { year: hint.ProductionYear } : {}),
+      ...(hint.Series ? { seriesName: hint.Series } : {}),
+    }];
+  });
+}
+
+export function toSearchCards(items: BaseItemDto[] | undefined): SearchCard[] {
+  return (items ?? []).flatMap((item) => {
+    const card = toMediaCard(item);
+    const kind = searchKind(item.Type);
+    return card && kind ? [{ ...card, kind }] : [];
   });
 }

@@ -18,6 +18,7 @@ export function HomeView() {
     <main className="home">
       <h1>Home</h1>
       {gateway ? <HomeRows gateway={gateway} /> : null}
+      <a href="#/next/search">Search</a>
       <a href="#/next">Back to features</a>
       <SignOutButton />
     </main>

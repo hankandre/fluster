@@ -1,12 +1,12 @@
 import { Jellyfin, type Api } from "@jellyfin/sdk";
 import axios from "axios";
-import type { BrowseCard, BrowsePage, BrowseQuery, CardImageType, EpisodeCard, LibraryItem, LibraryView, MediaCard, Season } from "../../domain/catalog";
+import type { BrowseCard, BrowsePage, BrowseQuery, CardImageType, EpisodeCard, LibraryItem, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season } from "../../domain/catalog";
 import type { PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
 import { secondsToTicks } from "../../domain/playback";
 import { isSupportedServerVersion, parseServerVersion } from "../../domain/server-version";
 import { getInstallId } from "../install-id";
 import { redactError, redactText } from "../redact";
-import { toBrowseCards, toEpisodeCards, toHomeLibraries, toMediaCards, toSeasons } from "./cards";
+import { toBrowseCards, toEpisodeCards, toHomeLibraries, toMediaCards, toSearchCards, toSearchHints, toSeasons } from "./cards";
 import { deriveDeviceId } from "./device-id";
 import type {
   AuthenticationResult,
@@ -17,6 +17,7 @@ import type {
   MediaSourceDto,
   PlaybackInfoResponse,
   QuickConnectResult,
+  SearchHintResult,
   ServerInfo,
 } from "./types";
 
@@ -32,6 +33,9 @@ const CARD_IMAGE_PARAMS = {
   imageTypeLimit: 1,
   enableImageTypes: "Primary,Backdrop",
 };
+
+const SEARCH_HINT_LIMIT = 8;
+const SEARCH_TYPES = "Movie,Series,Episode";
 
 const DEVICE_NAME = "Fluster Linux";
 // Jellyfin binds the Quick Connect token to the DeviceId sent with Initiate
@@ -416,6 +420,40 @@ export class JellyfinGateway {
     const rawItems = data.Items ?? [];
     const cards: BrowseCard[] = toBrowseCards(rawItems.slice(0, query.limit));
     return { cards, hasMore: rawItems.length > query.limit };
+  }
+
+  // Type-ahead suggestions. The hints DTO is lighter than a full item list.
+  async searchHints(term: string, signal?: AbortSignal): Promise<SearchHint[]> {
+    const { userId } = this.requireSession();
+    const { data } = await this.get<SearchHintResult>("/Search/Hints", {
+      params: { userId, searchTerm: term, limit: SEARCH_HINT_LIMIT, includeItemTypes: SEARCH_TYPES },
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    return toSearchHints(data.SearchHints);
+  }
+
+  // Result pages use /Items?searchTerm. Like libraryItems, it fetches one
+  // extra item to learn whether another page exists.
+  async searchItems(term: string, query: SearchQuery, signal?: AbortSignal): Promise<SearchPage> {
+    const { userId } = this.requireSession();
+    const { data } = await this.get<ItemsResult>("/Items", {
+      params: {
+        userId,
+        searchTerm: term,
+        recursive: true,
+        includeItemTypes: SEARCH_TYPES,
+        startIndex: query.startIndex,
+        limit: query.limit + 1,
+        enableUserData: true,
+        enableTotalRecordCount: false,
+        ...CARD_IMAGE_PARAMS,
+      },
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    const rawItems = data.Items ?? [];
+    return { cards: toSearchCards(rawItems.slice(0, query.limit)), hasMore: rawItems.length > query.limit };
   }
 
   async seasons(seriesId: string, signal?: AbortSignal): Promise<Season[]> {

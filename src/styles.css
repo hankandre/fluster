@@ -217,3 +217,9 @@ input:focus, select:focus { border-color: var(--acid); box-shadow: 0 0 0 1px var
 .episode-list li { display: flex; gap: 16px; align-items: flex-start; }
 .episode-overview { margin: 0; max-width: 60ch; color: var(--muted); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.search-box { position: relative; display: grid; gap: 0.25rem; max-width: 32rem; }
+.search-hints { position: absolute; top: 100%; left: 0; right: 0; z-index: 1; margin: 0; padding: 0; list-style: none; background: #1c1c22; border: 1px solid #444; }
+.search-hints[hidden] { display: none; }
+.search-hints li { padding: 0.5rem 0.75rem; cursor: pointer; }
+.search-hints li[aria-selected="true"], .search-hints li:hover { background: #33333d; }

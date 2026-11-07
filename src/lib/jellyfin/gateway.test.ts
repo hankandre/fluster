@@ -661,6 +661,54 @@ describe("JellyfinGateway home calls", () => {
     expect(page.hasMore).toBe(true);
   });
 
+  it("fetches type-ahead hints from /Search/Hints", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("GET /Search/Hints", {
+      SearchHints: [
+        { Id: "s1", Name: "Show", Type: "Series", ProductionYear: 2020 },
+        { Id: "e1", Name: "Pilot", Type: "Episode", Series: "Show" },
+        { Id: "p1", Name: "Person", Type: "Person" },
+        { Name: "No id", Type: "Movie" },
+      ],
+    });
+    await expect(gateway.searchHints("sho")).resolves.toEqual([
+      { id: "s1", name: "Show", kind: "Series", year: 2020 },
+      { id: "e1", name: "Pilot", kind: "Episode", seriesName: "Show" },
+    ]);
+    const request = transport.requests.at(-1);
+    expect(request?.url).toBe("/Search/Hints");
+    expect(request?.params).toEqual({ userId: "user-1", searchTerm: "sho", limit: 8, includeItemTypes: "Movie,Series,Episode" });
+    expect(JSON.stringify(request?.params)).not.toMatch(/top-secret|api_key|token/i);
+  });
+
+  it("pages search results from /Items?searchTerm", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("GET /Items", {
+      Items: [
+        { Id: "s1", Name: "Show", Type: "Series" },
+        { Id: "m1", Name: "Movie", Type: "Movie" },
+        { Id: "e1", Name: "Pilot", Type: "Episode" },
+      ],
+    });
+    const page = await gateway.searchItems("sho", { startIndex: 40, limit: 2 });
+    expect(page.hasMore).toBe(true);
+    expect(page.cards.map((card) => [card.id, card.kind])).toEqual([["s1", "Series"], ["m1", "Movie"]]);
+    const request = transport.requests.at(-1);
+    expect(request?.url).toBe("/Items");
+    expect(request?.params).toEqual({
+      userId: "user-1",
+      searchTerm: "sho",
+      recursive: true,
+      includeItemTypes: "Movie,Series,Episode",
+      startIndex: 40,
+      limit: 3,
+      enableUserData: true,
+      enableTotalRecordCount: false,
+      ...cardParams,
+    });
+    expect(JSON.stringify(request?.params)).not.toMatch(/top-secret|api_key|token/i);
+  });
+
   it("lists seasons with minimal fields", async () => {
     const { gateway, transport } = await authenticatedGateway();
     transport.responses.set("GET /Shows/series-1/Seasons", { Items: [{ Id: "sp", Name: "Specials", IndexNumber: 0 }, { Id: "se1", Name: "Season 1", IndexNumber: 1 }, { Name: "No id" }] });

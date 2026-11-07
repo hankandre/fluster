@@ -774,10 +774,10 @@
             "Built under src/features/ with a Playwright journey; no proof-of-concept screen is extended"
           ],
           "verify": "pnpm check && pnpm test:e2e",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "Search under src/features/search at #/next/search and #/next/search/<term>: debounced (250 ms, 2+ chars) combobox with arrow keys, stale requests aborted, Enter opens results, Series hints open the series view.\nGateway adds searchHints (/Search/Hints, limit 8) and searchItems (/Items?searchTerm, limit+1 probe, enableTotalRecordCount=false), checked against @jellyfin/sdk 1.0.2 search-api and the Jellyfin 12.4.0 OpenAPI spec.\nResults are grouped by type with Load more, empty state, and error with retry; Series cards link, Movie and Episode cards wait for P3-08.\npnpm check, pnpm test:e2e (11 passed, incl. e2e/search.spec.ts), and pnpm lint:boundaries pass."
         },
         {
           "id": "P3-08",

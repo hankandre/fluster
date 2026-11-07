@@ -1,6 +1,6 @@
 import { SignOutButton } from "./sign-out-button";
 
-const features = ["sign-in", "home", "browse", "detail", "player"];
+const features = ["sign-in", "home", "browse", "search", "detail", "player"];
 
 export function FeatureIndex() {
   return (

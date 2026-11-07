@@ -19,6 +19,8 @@ function fakeGateway(overrides: Partial<SessionGateway> = {}): SessionGateway {
     nextUp: vi.fn(),
     latestInLibrary: vi.fn(),
     libraryItems: vi.fn(),
+    searchHints: vi.fn(),
+    searchItems: vi.fn(),
     seasons: vi.fn(),
     episodes: vi.fn(),
     imageUrl: vi.fn(),

@@ -5,6 +5,7 @@ import { NotFoundView } from "../features/not-found";
 import { SignInView } from "../features/sign-in";
 import { HomeView } from "../features/home";
 import { BrowseView, CollectionView, SeriesView } from "../features/browse";
+import { SearchView } from "../features/search";
 import { DetailView } from "../features/detail";
 import { PlayerFeatureView } from "../features/player";
 import type { PocServices } from "../poc/services";
@@ -38,6 +39,8 @@ function renderRoute(hash: string, services: PocServices) {
       return <HomeView />;
     case "#/next/browse":
       return <BrowseView />;
+    case "#/next/search":
+      return <SearchView />;
     case "#/next/detail":
       return <DetailView />;
     case "#/next/player":
@@ -49,7 +52,8 @@ function renderRoute(hash: string, services: PocServices) {
   }
 }
 
-// Browse routes carry an id: #/next/browse/<libraryId>, #/next/series/<id>, #/next/collection/<id>.
+// Routes with an id: #/next/browse/<libraryId>, #/next/series/<id>, #/next/collection/<id>,
+// and #/next/search/<term>.
 // Anything else, including malformed ids, is not found.
 function renderBrowseRoute(hash: string) {
   const [, , section, id, ...extra] = hash.split("/");
@@ -65,6 +69,8 @@ function renderBrowseRoute(hash: string) {
       return <BrowseView libraryId={itemId} />;
     case "series":
       return <SeriesView seriesId={itemId} />;
+    case "search":
+      return <SearchView term={itemId} />;
     case "collection":
       return <CollectionView collectionId={itemId} />;
     default:

@@ -42,6 +42,18 @@ export interface ItemsResult {
   Items?: BaseItemDto[];
 }
 
+export interface SearchHintDto {
+  Id?: string;
+  Name?: string;
+  Type?: string;
+  ProductionYear?: number | null;
+  Series?: string | null;
+}
+
+export interface SearchHintResult {
+  SearchHints?: SearchHintDto[];
+}
+
 export interface MediaStreamDto {
   Index?: number;
   Type?: string;

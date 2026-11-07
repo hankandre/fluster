@@ -79,3 +79,30 @@ export interface Season {
 export interface EpisodeCard extends MediaCard {
   overview?: string;
 }
+
+export type SearchKind = "Movie" | "Series" | "Episode";
+
+// One type-ahead suggestion from /Search/Hints.
+export interface SearchHint {
+  id: string;
+  name: string;
+  kind: SearchKind;
+  year?: number;
+  // The show an episode belongs to.
+  seriesName?: string;
+}
+
+export interface SearchQuery {
+  startIndex: number;
+  limit: number;
+}
+
+// A search result card. Episodes carry their own kind so the page can group by type.
+export interface SearchCard extends MediaCard {
+  kind: SearchKind;
+}
+
+export interface SearchPage {
+  cards: SearchCard[];
+  hasMore: boolean;
+}
