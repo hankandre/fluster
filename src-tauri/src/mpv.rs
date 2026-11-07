@@ -394,7 +394,12 @@ fn harden_network_options(init: &MpvInitializer) -> libmpv2::Result<()> {
     init.set_option("stream-lavf-o", NO_HTTP_REDIRECTS)?;
     // The builtin ytdl_hook script retries a failed load by running yt-dlp
     // with the full stream URL as a process argument.
-    init.set_option("ytdl", false)
+    init.set_option("ytdl", false)?;
+    // The Authorization header goes to every network open on this handle.
+    // Without this, a playlist, EDL, or HLS body served as the "movie" (or as
+    // a subtitle) makes mpv or FFmpeg open the URLs inside it, which never
+    // passed validate_playback_urls, and send them the header.
+    init.set_option("access-references", false)
 }
 
 /// Sends the signed-in header with every HTTP request this handle makes: the
@@ -1226,6 +1231,10 @@ mod tests {
         assert_eq!(lavf_options, NO_HTTP_REDIRECTS);
         let ytdl: bool = mpv.get_property("ytdl").expect("ytdl");
         assert!(!ytdl);
+        let access_references: bool = mpv
+            .get_property("access-references")
+            .expect("access-references");
+        assert!(!access_references);
         let headers: String = mpv
             .get_property("http-header-fields")
             .expect("http-header-fields");
@@ -1384,17 +1393,14 @@ mod media_auth_wire {
     }
 
     /// The production session network options on a headless handle.
-    fn headless_player(authorization: Option<&MediaBrowserAuthorization>) -> Option<Mpv> {
+    fn headless_player(authorization: &MediaBrowserAuthorization) -> Option<Mpv> {
         ensure_numeric_locale().expect("numeric locale");
         let created = Mpv::with_initializer(|init| {
             init.set_option("config", false)?;
             init.set_option("vo", "null")?;
             init.set_option("ao", "null")?;
             harden_network_options(&init)?;
-            match authorization {
-                Some(authorization) => set_media_authorization(&init, authorization),
-                None => Ok(()),
-            }
+            set_media_authorization(&init, authorization)
         });
         match created {
             Err(libmpv2::Error::VersionMismatch { linked, loaded }) => {
@@ -1449,7 +1455,7 @@ mod media_auth_wire {
 
     #[test]
     fn stream_and_external_subtitles_send_exactly_the_typed_header() {
-        let Some(mut mpv) = headless_player(Some(&test_authorization())) else {
+        let Some(mut mpv) = headless_player(&test_authorization()) else {
             return;
         };
         let (server, origin) = listener();
@@ -1492,7 +1498,7 @@ mod media_auth_wire {
 
     #[test]
     fn redirects_are_refused_while_the_header_is_set() {
-        let Some(mut mpv) = headless_player(Some(&test_authorization())) else {
+        let Some(mut mpv) = headless_player(&test_authorization()) else {
             return;
         };
         let (target, target_origin) = listener();
@@ -1517,6 +1523,120 @@ mod media_auth_wire {
         );
     }
 
+    /// Serves `body` with `content_type` for every path.
+    fn serve_body(listener: TcpListener, body: String, content_type: &'static str) -> Requests {
+        let requests: Requests = Arc::default();
+        let recorded = requests.clone();
+        thread::spawn(move || {
+            for stream in listener.incoming() {
+                let Ok(mut stream) = stream else { continue };
+                let head = read_request_head(&mut stream);
+                recorded.lock().expect("requests mutex").push(head);
+                let response = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+                let _ = stream.write_all(response.as_bytes());
+            }
+        });
+        requests
+    }
+
+    /// Gives libmpv time to load, fail, and open whatever it would open next
+    /// (a playlist ends its own file before loading its entries).
+    fn settle(mpv: &mut Mpv) {
+        let deadline = Instant::now() + Duration::from_millis(2500);
+        while Instant::now() < deadline {
+            let _ = mpv.wait_event(0.1);
+        }
+    }
+
+    // Bodies that name another origin. `OTHER` is replaced by its URL.
+    const NESTED_REFERENCES: [(&str, &str, &str); 6] = [
+        ("m3u served as video", "#EXTM3U\nOTHER/x.wav\n", "video/x-matroska"),
+        ("URL list with an m3u MIME type", "OTHER/x.wav\n", "audio/x-mpegurl"),
+        ("PLS served as video", "[playlist]\nFile1=OTHER/x.wav\nNumberOfEntries=1\n", "video/x-matroska"),
+        ("mpv EDL", "# mpv EDL v0\nOTHER/x.wav\n", "video/x-matroska"),
+        (
+            "HLS served as video",
+            "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:1\n#EXTINF:0.5,\nOTHER/seg.wav\n#EXT-X-ENDLIST\n",
+            "video/x-matroska",
+        ),
+        (
+            "HLS with its MIME type",
+            "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:1\n#EXTINF:0.5,\nOTHER/seg.wav\n#EXT-X-ENDLIST\n",
+            "application/vnd.apple.mpegurl",
+        ),
+    ];
+
+    #[test]
+    fn references_inside_the_stream_body_are_never_opened() {
+        for (label, body, content_type) in NESTED_REFERENCES {
+            let Some(mut mpv) = headless_player(&test_authorization()) else {
+                return;
+            };
+            let (other, other_origin) = listener();
+            let other_requests = serve(other, String::new());
+            let (server, origin) = listener();
+            let requests = serve_body(server, body.replace("OTHER", &other_origin), content_type);
+
+            mpv.command("loadfile", &[&format!("{origin}/stream"), "replace"])
+                .expect("loadfile");
+            settle(&mut mpv);
+
+            assert!(
+                !requests.lock().expect("requests mutex").is_empty(),
+                "{label}: the stream was never requested"
+            );
+            assert!(
+                other_requests.lock().expect("requests mutex").is_empty(),
+                "{label}: a reference inside the stream body was opened with the header"
+            );
+        }
+    }
+
+    #[test]
+    fn references_inside_a_subtitle_body_are_never_opened() {
+        for (label, body, content_type) in NESTED_REFERENCES {
+            let Some(mut mpv) = headless_player(&test_authorization()) else {
+                return;
+            };
+            let (other, other_origin) = listener();
+            let other_requests = serve(other, String::new());
+            let (stream_server, stream_origin) = listener();
+            let _stream_requests = serve(stream_server, String::new());
+            let (subtitle_server, subtitle_origin) = listener();
+            let subtitle_requests = serve_body(
+                subtitle_server,
+                body.replace("OTHER", &other_origin),
+                content_type,
+            );
+
+            mpv.command("loadfile", &[&format!("{stream_origin}/stream"), "replace"])
+                .expect("loadfile");
+            assert!(matches!(wait_for_load(&mut mpv), LoadOutcome::Loaded));
+            let subtitle = MediaTrack {
+                index: 1,
+                kind: "Subtitle".into(),
+                display_title: "English".into(),
+                language: Some("eng".into()),
+                external: true,
+                delivery_url: Some(format!("{subtitle_origin}/sub.srt")),
+            };
+            load_external_subtitles(&mpv, &[subtitle]);
+            settle(&mut mpv);
+
+            assert!(
+                !subtitle_requests.lock().expect("requests mutex").is_empty(),
+                "{label}: the subtitle was never requested"
+            );
+            assert!(
+                other_requests.lock().expect("requests mutex").is_empty(),
+                "{label}: a reference inside the subtitle body was opened with the header"
+            );
+        }
+    }
+
     /// Run against a fixture server with legacy authorization off (Jellyfin
     /// 12.x default). `FLUSTER_MEDIA_STREAM_URL` and `FLUSTER_MEDIA_AUTH` come
     /// from a real gateway playback plan; `FLUSTER_MEDIA_SUBTITLE_URL` is
@@ -1531,13 +1651,15 @@ mod media_auth_wire {
         ) else {
             panic!("set FLUSTER_MEDIA_STREAM_URL and FLUSTER_MEDIA_AUTH");
         };
-        let subtitle_url = std::env::var("FLUSTER_MEDIA_SUBTITLE_URL").ok();
+        let subtitle_url = std::env::var("FLUSTER_MEDIA_SUBTITLE_URL")
+            .ok()
+            .filter(|url| !url.is_empty());
         let mut request = super::tests::launch_request(&stream_url, subtitle_url.as_deref());
         request.authorization =
             MediaBrowserAuthorization::parse(&authorization).expect("a valid header");
         validate_playback_urls(&request).expect("the plan URLs pass the Rust policy");
 
-        let Some(mut mpv) = headless_player(Some(&request.authorization)) else {
+        let Some(mut mpv) = headless_player(&request.authorization) else {
             return;
         };
         mpv.command("loadfile", &[&stream_url, "replace"])

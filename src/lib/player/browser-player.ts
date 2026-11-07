@@ -17,7 +17,7 @@ const browserDiagnostics: PlaybackDiagnostics = {
 };
 
 const BROWSER_PLAYBACK_ERROR =
-  "The browser could not play the direct file. Browser development mode cannot authenticate media requests; play it in the desktop app.";
+  "The browser could not play the direct file. Browser development mode sends no authorization with media requests, so a server that requires it will refuse; try the desktop app.";
 
 export class BrowserPlayerEngine implements PlayerEngine {
   readonly mode = "browser" as const;
@@ -49,8 +49,9 @@ export class BrowserPlayerEngine implements PlayerEngine {
     video.autoplay = true;
     video.playsInline = true;
     // A <video> element cannot send an Authorization header, and tokens never
-    // go in URLs (invariant I4). Development mode therefore requests the
-    // token-free URL, which a real Jellyfin server refuses; use the desktop app.
+    // go in URLs (invariant I4), so this requests the token-free URL. Jellyfin
+    // 10.11.7 and 12.4 serve the static stream route anonymously, so it plays;
+    // a server or proxy that requires auth on it will refuse.
     video.src = plan.streamUrl;
     host.append(video);
     this.video = video;

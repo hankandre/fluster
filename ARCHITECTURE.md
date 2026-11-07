@@ -85,7 +85,8 @@ Keep the domain, Jellyfin gateway, playback policy, and coordinator **framework-
 
 - **Jellyfin 10.11.x and 12.x.** Jellyfin 12.0 shipped 2026-09-08; 12.4 is current.
 - Gate on parsed semver (`>= 10.11.0`) plus **feature detection** (`HasSegments`, presence of `Trickplay`), not exact-version regexes.
-- 12.x turns off legacy authorization by default. The `api_key` query parameter, the `X-Emby-*` headers, and the `Emby` scheme are ignored unless an admin re-enables them.
+- 12.x turns off legacy authorization by default. The `api_key` query parameter, the `X-Emby-*` headers, and the `Emby` scheme are ignored unless an admin re-enables them. Checked on the 12.4.0 fixture (P1-04): `GET /Users/Me?api_key=` returns 401, but `?ApiKey=` (capital K) and the `Authorization` header both return 200.
+- The static stream and subtitle routes are anonymous on 10.11.7 and 12.4.0: `VideosController.GetVideoStream` and `SubtitleController.GetSubtitle` carry no `[Authorize]` (v12.4 at 83d0d0e, lines 314 and 208), and both fixtures answered 206/200 with no header or a bogus token. Header auth for media is therefore about keeping tokens out of URLs (I4) and working with servers or proxies that do require auth, not about 12.x compatibility.
 
 ### Authentication and identity
 
