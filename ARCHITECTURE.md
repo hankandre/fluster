@@ -246,7 +246,7 @@ Each invariant has an enforcement mechanism. Where the mechanism is "planned", i
 | I1 | Fluster never causes server transcoding or remuxing | Frozen `PLAYBACK_POLICY`. False flags in body *and* query. DeviceProfile without transcoding profiles. Source acceptance rules. Server tripwire `pnpm test:tripwire` (`tests/integration/tripwire.ts`; CI job `tripwire`, not yet required). |
 | I2 | Only `Static=true` original-file URLs reach the player | Gateway URL builder, Rust URL validation, tests |
 | I3 | No generic mpv command bridge; Rust exposes a fixed command list | Code review; `command_allowlist` Rust test (`src-tauri/src/command_allowlist.rs`) |
-| I4 | Tokens never appear in logs, errors, diagnostics, or (after the header-auth change) URLs | Redaction in TS and Rust; canary tests (TS `redact-canary.test.ts`, Rust `redaction_canary`) |
+| I4 | Tokens never appear in logs, errors, diagnostics, or URLs | Redaction in TS and Rust; canary tests (TS `redact-canary.test.ts`, Rust `redaction_canary`); Rust refuses stream and subtitle URLs with a credential query parameter (`validate_playback_urls`) |
 | I5 | Servers require HTTPS, except plain HTTP to loopback and, after a one-time per-server confirmation, to private-LAN hosts classified by the literal host ([decision 0001](docs/decisions/0001-private-lan-http.md)); tokens never go over plain HTTP to public hosts or across cross-origin redirects; credentials in URLs are rejected | Enforced: one host classifier in TS (`src/domain/host-class.ts`) and Rust (`src-tauri/src/url_policy.rs`), both tested against `tests/fixtures/host-classes.json`; gateway URL normalization refuses public HTTP before any request and the gateway refuses sign-in calls until the private-LAN confirmation; the gateway client and libmpv (`max_redirects=0`) follow no redirects; gateway, sign-in, and Rust tests |
 | I6 | Subtitle URLs must be same-origin and validated before authentication | TS + Rust checks, tests |
 | I7 | The browser engine is never a silent fallback for native | App wiring, review |
@@ -261,7 +261,6 @@ Tracked in `docs/plans/active/001-jellyfin-api-correctness.md`.
 
 | Severity | Gap |
 |---|---|
-| Critical | Stream/subtitle URLs use `api_key`, which fails by default on Jellyfin 12.x |
 | High | Track mapping ignores the external-first index numbering |
 | Medium | Refusal reasons: typed reasons exist (`RefusalReason` in `src/domain/playback.ts`); UI copy is P3-09 |
 

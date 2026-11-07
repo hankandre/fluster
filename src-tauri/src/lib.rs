@@ -1,3 +1,4 @@
+mod auth_header;
 #[cfg(test)]
 mod command_allowlist;
 #[cfg(test)]

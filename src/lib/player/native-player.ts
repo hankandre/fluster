@@ -27,8 +27,11 @@ export class NativePlayerEngine implements PlayerEngine {
     return invoke("set_player_surface", { frame });
   }
 
+  // The header travels as its own typed LaunchRequest field, so Rust can
+  // validate it and give it to libmpv as a fixed HTTP header.
   async launch(plan: PlaybackPlan): Promise<void> {
-    await invoke("launch_playback", { request: { plan, testForceSoftware: false } });
+    const { authorization, ...launchPlan } = plan;
+    await invoke("launch_playback", { request: { plan: launchPlan, authorization, testForceSoftware: false } });
   }
 
   setPaused(paused: boolean): Promise<void> {

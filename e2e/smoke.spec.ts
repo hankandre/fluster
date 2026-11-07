@@ -26,6 +26,17 @@ test("resumes playback and returns to the library", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Play Embedded Movie" })).toBeVisible();
 });
 
+test("never puts a token in a request URL, including the stream", async ({ page }) => {
+  const urls: string[] = [];
+  page.on("request", (request) => urls.push(request.url()));
+  await prepareJellyfin(page, false);
+  await signInAndChooseResume(page);
+  await expect(page.getByRole("heading", { name: "Embedded Movie" })).toBeVisible();
+  await expect.poll(() => urls.some((url) => new URL(url).pathname === "/Videos/movie-1/stream")).toBe(true);
+  const serverUrls = urls.filter((url) => url.startsWith(serverUrl));
+  expect(serverUrls.filter((url) => /api_?key|access_token|token|test-token/i.test(url))).toEqual([]);
+});
+
 test("Back does not wait for a slow Jellyfin progress report", async ({ page }) => {
   await prepareJellyfin(page, false, 0, 2_000);
   const reportStarted = page.waitForRequest((request) => (

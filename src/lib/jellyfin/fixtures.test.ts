@@ -110,12 +110,15 @@ describe.each(versions)("PlaybackInfo fixtures from Jellyfin %s", (version) => {
     expect((await run()).mediaSourceId).toBe("item-h264");
   });
 
-  it("current gap, fixed by P1-04: the stream URL carries the token as api_key", async () => {
+  it("builds a token-free stream URL and carries the token only in the authorization header", async () => {
     const { run } = await plan(version, "h264-profile", "item-h264");
-    const url = new URL((await run()).streamUrl);
+    const result = await run();
+    const url = new URL(result.streamUrl);
     expect(url.pathname).toBe("/Videos/item-h264/stream");
     expect(url.searchParams.get("Static")).toBe("true");
-    expect(url.searchParams.get("api_key")).toBe("test-token");
+    expect(result.streamUrl).not.toMatch(/api_?key|token/i);
+    expect(result.authorization).toMatch(/^MediaBrowser /);
+    expect(result.authorization).toContain('Token="test-token"');
   });
 
   it("maps the external subtitle and its DeliveryUrl", async () => {
@@ -136,11 +139,14 @@ describe.each(versions)("PlaybackInfo fixtures from Jellyfin %s", (version) => {
     expect(url.href).not.toContain("REDACTED");
   });
 
-  it("current gap, fixed by P1-04: the subtitle URL carries Fluster's token as api_key", async () => {
+  it("keeps every token out of the stream and subtitle URLs", async () => {
     const { run } = await plan(version, "external-subtitle", "item-sidecar");
-    const subtitle = (await run()).tracks.find((track) => track.external);
-    const url = new URL(subtitle!.deliveryUrl!);
-    expect(url.searchParams.getAll("api_key")).toEqual(["test-token"]);
+    const result = await run();
+    const urls = [result.streamUrl, ...result.tracks.flatMap((track) => track.deliveryUrl ?? [])];
+    expect(urls).toHaveLength(2);
+    for (const url of urls) {
+      expect(url).not.toMatch(/api_?key|token|test-token/i);
+    }
   });
 
   it("plays the first version of a multi-version item by default", async () => {

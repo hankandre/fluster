@@ -143,13 +143,11 @@ export function buildStaticStreamUrl(
   itemId: string,
   mediaSourceId: string,
   playSessionId: string,
-  accessToken: string,
 ): string {
   const url = new URL(`${serverUrl}/Videos/${encodeURIComponent(itemId)}/stream`);
   url.searchParams.set("Static", "true");
   url.searchParams.set("MediaSourceId", mediaSourceId);
   url.searchParams.set("PlaySessionId", playSessionId);
-  url.searchParams.set("api_key", accessToken);
   return url.toString();
 }
 
@@ -157,7 +155,8 @@ export function buildStaticStreamUrl(
 const CREDENTIAL_QUERY_NAMES = new Set(["apikey", "api_key", "access_token", "token", "x-emby-token"]);
 
 // Jellyfin puts the session token into subtitle DeliveryUrl values as ApiKey.
-// Drop every credential parameter so only Fluster decides how to authenticate.
+// Drop every credential parameter: media requests authenticate with the
+// Authorization header that Rust hands to libmpv (invariant I4).
 function stripCredentialQuery(url: URL): void {
   const names = [...new Set(url.searchParams.keys())];
   for (const name of names) {
@@ -165,7 +164,7 @@ function stripCredentialQuery(url: URL): void {
   }
 }
 
-function buildAuthenticatedResourceUrl(serverUrl: string, path: string | null | undefined, accessToken: string): string | undefined {
+function buildSubtitleUrl(serverUrl: string, path: string | null | undefined): string | undefined {
   if (!path) return undefined;
   let url: URL;
   try {
@@ -181,7 +180,6 @@ function buildAuthenticatedResourceUrl(serverUrl: string, path: string | null | 
     throw new Error("Jellyfin returned an unsafe external subtitle URL. Subtitle URLs must use the same server origin and must not contain credentials.");
   }
   url.hash = "";
-  url.searchParams.set("api_key", accessToken);
   return url.toString();
 }
 
@@ -353,8 +351,8 @@ export class JellyfinGateway {
     return { userId: data.User.Id, username: data.User.Name ?? fallbackName };
   }
 
-  // The signed-in Authorization header, handed only to the Rust-side server
-  // socket (realtime_connect), which cannot read it from a URL. Never log it.
+  // The signed-in Authorization header, handed only to Rust: the server socket
+  // (realtime_connect) and the playback plan's media requests. Never log it.
   authorizationHeader(): string {
     const { accessToken } = this.requireSession();
     if (!this.deviceId) throw new Error("Sign in before using the library.");
@@ -621,7 +619,7 @@ export class JellyfinGateway {
     signal?: AbortSignal,
     mediaSourceId?: string,
   ): Promise<PlaybackPlan> {
-    const { accessToken, userId } = this.requireSession();
+    const { userId } = this.requireSession();
     const request = {
       ...DIRECT_PLAY_REQUEST,
       UserId: userId,
@@ -647,7 +645,8 @@ export class JellyfinGateway {
       mediaSourceId: source.Id,
       playSessionId: data.PlaySessionId,
       startPositionTicks,
-      streamUrl: buildStaticStreamUrl(this.serverUrl, item.id, source.Id, data.PlaySessionId, accessToken),
+      streamUrl: buildStaticStreamUrl(this.serverUrl, item.id, source.Id, data.PlaySessionId),
+      authorization: this.authorizationHeader(),
       tracks: (source.MediaStreams ?? []).flatMap((track) => {
         if (track.Index == null || !["Audio", "Subtitle", "Video"].includes(track.Type ?? "")) return [];
         return [{
@@ -656,7 +655,7 @@ export class JellyfinGateway {
           displayTitle: track.DisplayTitle ?? `${track.Type} ${track.Index}`,
           language: track.Language,
           external: Boolean(track.IsExternal),
-          deliveryUrl: buildAuthenticatedResourceUrl(this.serverUrl, track.DeliveryUrl, accessToken),
+          deliveryUrl: buildSubtitleUrl(this.serverUrl, track.DeliveryUrl),
         }];
       }),
     };

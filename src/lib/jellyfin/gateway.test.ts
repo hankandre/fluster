@@ -308,15 +308,15 @@ describe("JellyfinGateway direct-play contract", () => {
   });
 
   it("builds only the static original-file endpoint", () => {
-    const url = new URL(buildStaticStreamUrl("https://media.test", "a/b", "source", "play", "secret"));
+    const url = new URL(buildStaticStreamUrl("https://media.test", "a/b", "source", "play"));
     expect(url.pathname).toBe("/Videos/a%2Fb/stream");
     expect(url.searchParams.get("Static")).toBe("true");
     expect(url.searchParams.get("MediaSourceId")).toBe("source");
     expect(url.searchParams.get("PlaySessionId")).toBe("play");
-    expect(url.searchParams.get("api_key")).toBe("secret");
+    expect([...url.searchParams.keys()]).toEqual(["Static", "MediaSourceId", "PlaySessionId"]);
   });
 
-  it("authenticates same-origin external subtitle URLs", async () => {
+  it("keeps same-origin external subtitle URLs token-free and authenticates with the plan header", async () => {
     const { gateway, transport } = await authenticatedGateway();
     transport.responses.set("POST /Items/item/one/PlaybackInfo", {
       PlaySessionId: "play-1",
@@ -338,11 +338,14 @@ describe("JellyfinGateway direct-play contract", () => {
     const subtitleUrl = new URL(plan.tracks[0].deliveryUrl!);
     expect(subtitleUrl.origin).toBe("https://media.test");
     expect(subtitleUrl.searchParams.get("format")).toBe("srt");
-    expect(subtitleUrl.searchParams.get("api_key")).toBe("top-secret");
+    expect(subtitleUrl.href).not.toContain("top-secret");
     expect(subtitleUrl.hash).toBe("");
+    expect(plan.streamUrl).not.toContain("top-secret");
+    expect(plan.authorization).toBe(gateway.authorizationHeader());
+    expect(plan.authorization).toContain('Token="top-secret"');
   });
 
-  it("strips every server credential parameter from subtitle URLs before adding Fluster's own", async () => {
+  it("strips every server credential parameter from subtitle URLs", async () => {
     const { gateway, transport } = await authenticatedGateway();
     transport.responses.set("POST /Items/item/one/PlaybackInfo", {
       PlaySessionId: "play-1",
@@ -362,7 +365,7 @@ describe("JellyfinGateway direct-play contract", () => {
 
     const plan = await gateway.createPlaybackPlan(item);
     const url = new URL(plan.tracks[0].deliveryUrl!);
-    expect([...url.searchParams.entries()]).toEqual([["format", "srt"], ["api_key", "top-secret"]]);
+    expect([...url.searchParams.entries()]).toEqual([["format", "srt"]]);
   });
 
   it.each([
@@ -401,7 +404,8 @@ describe("JellyfinGateway direct-play contract", () => {
     const plan = {
       itemId: "item-1",
       title: "Movie",
-      streamUrl: "https://media.test/video?api_key=secret",
+      streamUrl: "https://media.test/video",
+      authorization: 'MediaBrowser Token="secret"',
       mediaSourceId: "source-1",
       playSessionId: "play-1",
       startPositionTicks: 0,
@@ -518,7 +522,7 @@ describe("JellyfinGateway device identity and logout", () => {
 
   it("sends Failed on stopped reports only when requested", async () => {
     const { gateway, transport } = await authenticatedGateway();
-    const plan = { itemId: "i", mediaSourceId: "m", playSessionId: "p", startPositionTicks: 0, streamUrl: "", title: "t", tracks: [] };
+    const plan = { itemId: "i", mediaSourceId: "m", playSessionId: "p", startPositionTicks: 0, streamUrl: "", authorization: "", title: "t", tracks: [] };
     const snapshot = { positionSeconds: 1, paused: false, buffering: false, volume: 50, muted: false, tracks: [], diagnostics: { decodeMode: "hardware", decodeLabel: "x", droppedFrames: 0 } } as PlaybackSnapshot;
     await gateway.reportStopped(plan, snapshot, undefined, true);
     expect(transport.requests.at(-1)!.data).toMatchObject({ Failed: true });
@@ -1014,7 +1018,7 @@ describe("JellyfinGateway plain-HTTP policy (docs/decisions/0001)", () => {
 // In WebKitGTK the fetch adapter's `redirect: "manual"` yields an opaque
 // redirect with status 0, and Axios resolves it instead of rejecting.
 describe("JellyfinGateway resolved redirect responses", () => {
-  const plan = { itemId: "i", mediaSourceId: "m", playSessionId: "p", startPositionTicks: 0, streamUrl: "", title: "t", tracks: [] };
+  const plan = { itemId: "i", mediaSourceId: "m", playSessionId: "p", startPositionTicks: 0, streamUrl: "", authorization: "", title: "t", tracks: [] };
   const snapshot = { positionSeconds: 1, paused: false, buffering: false, volume: 50, muted: false, tracks: [], diagnostics: { decodeMode: "hardware", decodeLabel: "x", droppedFrames: 0 } } as PlaybackSnapshot;
 
   it.each([0, 302, 307])("refuses a probe that resolves with status %i", async (status) => {
