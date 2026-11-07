@@ -96,22 +96,23 @@
         },
         {
           "id": "P0-03",
-          "title": "Assemble the licensed sample media set",
+          "title": "Generate the synthetic sample media set",
           "domain": "Distribution",
           "model": "sonnet",
           "skill": null,
-          "human": true,
+          "human": false,
           "depends_on": [],
           "acceptance": [
-            "tests/samples/README.md lists each sample, its license, and its source",
-            "Samples cover H.264, HEVC Main10 HDR10, AV1, ASS, PGS, multiple audio tracks, an external .srt sidecar, and a BluRay folder layout",
-            "Samples are gitignored or fetched by a script; no media is committed"
+            "A committed script generates short synthetic samples with ffmpeg; no third-party media is used or committed",
+            "Samples cover H.264, HEVC Main10 HDR10, AV1, ASS, an external .srt sidecar, multiple audio tracks, and a BluRay folder layout",
+            "tests/samples/README.md lists each sample and how to regenerate it",
+            "Generated media is gitignored"
           ],
-          "verify": "ls tests/samples && git check-ignore tests/samples/*.mkv",
-          "status": "blocked",
+          "verify": "pnpm samples:generate && ls tests/samples/movies tests/samples/shows",
+          "status": "todo",
           "owner": null,
           "passes": false,
-          "evidence": "Needs a person: choose licensed sample files (or approve generating synthetic samples with ffmpeg, which cannot produce PGS) and place them per tests/samples/README.md."
+          "evidence": "Decision 2026-11-07 (user): generate synthetic samples; PGS dropped because ffmpeg cannot encode it."
         },
         {
           "id": "P0-04",
@@ -256,7 +257,7 @@
           "domain": "Server Connection & Identity",
           "model": "opus",
           "skill": "exec-plan",
-          "human": true,
+          "human": false,
           "depends_on": [],
           "acceptance": [
             "A decision record defines when plain HTTP is allowed (for example RFC 1918 and link-local hosts after explicit confirmation)",
@@ -264,10 +265,32 @@
             "docs/security.md and ARCHITECTURE.md reflect the decision"
           ],
           "verify": "ls docs/decisions/",
-          "status": "blocked",
+          "status": "todo",
           "owner": null,
           "passes": false,
-          "evidence": "Needs a person: decide whether plain HTTP is allowed for private-LAN servers such as Hankflix; an agent can draft the decision record for approval."
+          "evidence": "Decision 2026-11-07 (user): allow plain HTTP only for private-LAN hosts (RFC 1918, link-local, .local) after a one-time per-server confirmation that warns the token travels unencrypted; public HTTP stays refused. Agent writes the decision record and docs."
+        },
+        {
+          "id": "P0-12",
+          "title": "Allow private-LAN HTTP servers after confirmation",
+          "domain": "Server Connection & Identity",
+          "model": "opus",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P0-11"
+          ],
+          "acceptance": [
+            "The gateway and the Rust URL policy accept http:// only for private-LAN hosts (RFC 1918, link-local, .local) and loopback",
+            "Connecting to a private-LAN HTTP server requires a one-time per-server confirmation that warns the token travels unencrypted",
+            "Public http:// hosts are still refused before any request carries a token",
+            "Tests cover each address class, the confirmation, and refusal"
+          ],
+          "verify": "pnpm check && cargo test --manifest-path src-tauri/Cargo.toml url_policy",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
         }
       ]
     },
@@ -398,7 +421,7 @@
           "human": false,
           "depends_on": [],
           "acceptance": [
-            "DeviceId is derived from a persisted install id, server id, and user id",
+            "DeviceId is derived from a persisted install id, server id, and username",
             "Logout calls POST /Sessions/Logout",
             "Stopped reports after errors send Failed: true"
           ],
@@ -406,7 +429,7 @@
           "status": "done",
           "owner": "implementer",
           "passes": true,
-          "evidence": "pnpm check, pnpm test:e2e, cargo clippy pass (100 vitest tests).\nDeviceId = SHA-256(installId:serverId:username.toLowerCase()), install id persisted at localStorage fluster.installId; username stands in for user id because login needs the DeviceId before the user id exists.\nlogout() POSTs /Sessions/Logout with header auth and clears local state even on failure; reportStopped sends Failed: true after error events, error endings, and error-then-retry. Review notes: DeviceId uses the username, not the user id, because AuthenticateByName needs it before a user id exists (acceptance wording pending human confirmation). Gateway logout POSTs /Sessions/Logout and is tested, but the proof-of-concept UI has no sign-out after login, so it is not reachable until the new sign-in feature (P3-02). Failed is true only for error endings and retries."
+          "evidence": "pnpm check, pnpm test:e2e, cargo clippy pass (100 vitest tests).\nDeviceId = SHA-256(installId:serverId:username.toLowerCase()), install id persisted at localStorage fluster.installId; username stands in for user id because login needs the DeviceId before the user id exists.\nlogout() POSTs /Sessions/Logout with header auth and clears local state even on failure; reportStopped sends Failed: true after error events, error endings, and error-then-retry. Review notes: DeviceId uses the username, not the user id, because AuthenticateByName needs it before a user id exists (acceptance wording updated 2026-11-07 with user approval). Gateway logout POSTs /Sessions/Logout and is tested, but the proof-of-concept UI has no sign-out after login, so it is not reachable until the new sign-in feature (P3-02). Failed is true only for error endings and retries."
         },
         {
           "id": "P1-07",
@@ -467,7 +490,8 @@
             "P1-02",
             "P1-03",
             "P1-04",
-            "P1-05"
+            "P1-05",
+            "P0-12"
           ],
           "acceptance": [
             "Fluster signs in to the LAN server from FLUSTER_DOGFOOD_SERVER",
