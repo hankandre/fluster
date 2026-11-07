@@ -1,12 +1,12 @@
 import { Jellyfin, type Api } from "@jellyfin/sdk";
 import axios from "axios";
-import type { CardImageType, LibraryItem, LibraryView, MediaCard } from "../../domain/catalog";
+import type { BrowseCard, BrowsePage, BrowseQuery, CardImageType, EpisodeCard, LibraryItem, LibraryView, MediaCard, Season } from "../../domain/catalog";
 import type { PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
 import { secondsToTicks } from "../../domain/playback";
 import { isSupportedServerVersion, parseServerVersion } from "../../domain/server-version";
 import { getInstallId } from "../install-id";
 import { redactError, redactText } from "../redact";
-import { toHomeLibraries, toMediaCards } from "./cards";
+import { toBrowseCards, toEpisodeCards, toHomeLibraries, toMediaCards, toSeasons } from "./cards";
 import { deriveDeviceId } from "./device-id";
 import type {
   AuthenticationResult,
@@ -386,6 +386,53 @@ export class JellyfinGateway {
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
     return toMediaCards(data);
+  }
+
+  // Lists a library or collection page. Instead of asking the server for a
+  // total count, it fetches one extra item to learn whether more pages exist.
+  async libraryItems(parentId: string, query: BrowseQuery, signal?: AbortSignal): Promise<BrowsePage> {
+    const { userId } = this.requireSession();
+    const params: Record<string, unknown> = {
+      userId,
+      parentId,
+      recursive: true,
+      includeItemTypes: query.itemTypes.join(","),
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder,
+      startIndex: query.startIndex,
+      limit: query.limit + 1,
+      enableUserData: true,
+      enableTotalRecordCount: false,
+      ...CARD_IMAGE_PARAMS,
+    };
+    if (query.filters.length > 0) params.filters = query.filters.join(",");
+    const { data } = await this.get<ItemsResult>("/Items", {
+      params,
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    const cards: BrowseCard[] = toBrowseCards(data.Items);
+    return { cards: cards.slice(0, query.limit), hasMore: cards.length > query.limit };
+  }
+
+  async seasons(seriesId: string, signal?: AbortSignal): Promise<Season[]> {
+    const { userId } = this.requireSession();
+    const { data } = await this.get<ItemsResult>(`/Shows/${encodeURIComponent(seriesId)}/Seasons`, {
+      params: { userId, fields: CARD_FIELDS },
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    return toSeasons(data.Items);
+  }
+
+  async episodes(seriesId: string, seasonId: string, signal?: AbortSignal): Promise<EpisodeCard[]> {
+    const { userId } = this.requireSession();
+    const { data } = await this.get<ItemsResult>(`/Shows/${encodeURIComponent(seriesId)}/Episodes`, {
+      params: { userId, seasonId, fields: "Overview,PrimaryImageAspectRatio", enableUserData: true },
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    return toEpisodeCards(data.Items);
   }
 
   // Tagged image URLs are immutable and need no token, so they carry no

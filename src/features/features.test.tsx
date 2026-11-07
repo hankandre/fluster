@@ -23,6 +23,9 @@ function stubGateway(): SessionGateway {
     resumeItems: vi.fn().mockResolvedValue([]),
     nextUp: vi.fn().mockResolvedValue([]),
     latestInLibrary: vi.fn().mockResolvedValue([]),
+    libraryItems: vi.fn(),
+    seasons: vi.fn(),
+    episodes: vi.fn(),
     imageUrl: vi.fn().mockReturnValue(""),
   };
 }

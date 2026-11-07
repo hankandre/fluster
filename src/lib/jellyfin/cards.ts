@@ -1,4 +1,4 @@
-import type { CardImageType, ImageRef, LibraryView, MediaCard } from "../../domain/catalog";
+import type { BrowseCard, CardImageType, EpisodeCard, ImageRef, LibraryView, MediaCard, Season } from "../../domain/catalog";
 import type { BaseItemDto } from "./types";
 
 const POSTER_ASPECT_RATIO = 2 / 3;
@@ -76,6 +76,42 @@ const HOME_COLLECTION_TYPES = new Set(["movies", "tvshows", "boxsets"]);
 export function toHomeLibraries(items: BaseItemDto[] | undefined): LibraryView[] {
   return (items ?? []).flatMap((item) => {
     if (!item.Id || !item.Name || !item.CollectionType) return [];
-    return HOME_COLLECTION_TYPES.has(item.CollectionType) ? [{ id: item.Id, name: item.Name }] : [];
+    return HOME_COLLECTION_TYPES.has(item.CollectionType) ? [{ id: item.Id, name: item.Name, collectionType: item.CollectionType }] : [];
+  });
+}
+
+function browseKind(type: string | undefined): BrowseCard["kind"] {
+  switch (type) {
+    case "Movie":
+    case "Series":
+    case "BoxSet":
+      return type;
+    default:
+      return "Other";
+  }
+}
+
+export function toBrowseCards(items: BaseItemDto[] | undefined): BrowseCard[] {
+  return (items ?? []).flatMap((item) => {
+    const card = toMediaCard(item);
+    return card ? [{ ...card, kind: browseKind(item.Type) }] : [];
+  });
+}
+
+export function toSeasons(items: BaseItemDto[] | undefined): Season[] {
+  return (items ?? []).flatMap((item) => (item.Id && item.Name ? [{ id: item.Id, name: item.Name, collectionType: item.CollectionType }] : []));
+}
+
+export function toEpisodeCards(items: BaseItemDto[] | undefined): EpisodeCard[] {
+  return (items ?? []).flatMap((item) => {
+    const card = toMediaCard(item);
+    if (!card || !item.Name) return [];
+    const { subtitle: _unused, ...rest } = card;
+    return [{
+      ...rest,
+      title: item.Name,
+      ...(item.IndexNumber != null ? { subtitle: `Episode ${item.IndexNumber}` } : {}),
+      ...(item.Overview ? { overview: item.Overview } : {}),
+    }];
   });
 }

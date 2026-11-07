@@ -57,16 +57,17 @@ export function SkeletonStrip() {
   );
 }
 
-// Cards are not interactive until the detail view exists (P3-08).
-function Card({ card, gateway }: { card: MediaCard; gateway: SessionGateway }) {
+// Cards are not interactive until the detail view exists (P3-08). A card with
+// an href is a real link, so keyboard and screen-reader users can follow it.
+export function Card({ card, gateway, href }: { card: MediaCard; gateway: SessionGateway; href?: string }) {
   const { image } = card;
   const src = image ? gateway.imageUrl(image.itemId, image.type, image.tag, CARD_IMAGE_WIDTH) : undefined;
   const parts = [card.title, card.subtitle];
   if (card.progress !== undefined) parts.push(`${Math.round(card.progress * 100)}% watched`);
   const label = parts.filter(Boolean).join(", ");
 
-  return (
-    <article className="media-card-button" aria-label={label}>
+  const body = (
+    <>
       <div className="card-art" style={{ aspectRatio: card.aspectRatio }}>
         <CardImage image={image} src={src} />
         {card.progress !== undefined ? (
@@ -77,6 +78,11 @@ function Card({ card, gateway }: { card: MediaCard; gateway: SessionGateway }) {
       </div>
       <span className="card-title" aria-hidden="true">{card.title}</span>
       {card.subtitle ? <span className="card-subtitle" aria-hidden="true">{card.subtitle}</span> : null}
-    </article>
+    </>
   );
+
+  if (href) {
+    return <a className="media-card-button media-card-link" href={href} aria-label={label}>{body}</a>;
+  }
+  return <article className="media-card-button" aria-label={label}>{body}</article>;
 }

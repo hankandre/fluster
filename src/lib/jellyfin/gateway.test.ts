@@ -495,9 +495,9 @@ describe("JellyfinGateway home calls", () => {
     const controller = new AbortController();
 
     await expect(gateway.userViews(controller.signal)).resolves.toEqual([
-      { id: "v1", name: "Movies" },
-      { id: "v2", name: "Shows" },
-      { id: "v4", name: "Sets" },
+      { id: "v1", name: "Movies", collectionType: "movies" },
+      { id: "v2", name: "Shows", collectionType: "tvshows" },
+      { id: "v4", name: "Sets", collectionType: "boxsets" },
     ]);
     const request = transport.requests.at(-1);
     expect(request?.url).toBe("/UserViews");
@@ -594,6 +594,82 @@ describe("JellyfinGateway home calls", () => {
     await gateway.latestInLibrary("lib-1");
     const fields = String(transport.requests.at(-1)?.params?.fields);
     expect(fields).not.toMatch(/ProductionYear|RunTimeTicks/);
+  });
+
+  it("pages library items without a total count and detects more pages with one extra item", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("GET /Items", {
+      Items: [
+        { Id: "s1", Name: "Show", Type: "Series" },
+        { Id: "m1", Name: "Movie", Type: "Movie" },
+        { Id: "m2", Name: "Extra", Type: "Movie" },
+      ],
+    });
+
+    const page = await gateway.libraryItems("lib-1", {
+      itemTypes: ["Movie", "Series"],
+      startIndex: 60,
+      limit: 2,
+      sortBy: "DateCreated",
+      sortOrder: "Descending",
+      filters: ["IsUnplayed", "IsFavorite"],
+    });
+
+    expect(page.hasMore).toBe(true);
+    expect(page.cards.map((card) => [card.id, card.kind])).toEqual([["s1", "Series"], ["m1", "Movie"]]);
+    const request = transport.requests.at(-1);
+    expect(request?.url).toBe("/Items");
+    expect(request?.params).toEqual({
+      userId: "user-1",
+      parentId: "lib-1",
+      recursive: true,
+      includeItemTypes: "Movie,Series",
+      sortBy: "DateCreated",
+      sortOrder: "Descending",
+      filters: "IsUnplayed,IsFavorite",
+      startIndex: 60,
+      limit: 3,
+      enableUserData: true,
+      enableTotalRecordCount: false,
+      ...cardParams,
+    });
+    expect(JSON.stringify(request?.params)).not.toMatch(/top-secret|api_key|token/i);
+  });
+
+  it("omits filters when none are selected and reports the last page", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("GET /Items", { Items: [{ Id: "b1", Name: "Set", Type: "BoxSet" }] });
+    const page = await gateway.libraryItems("lib-2", {
+      itemTypes: ["BoxSet"], startIndex: 0, limit: 60, sortBy: "SortName", sortOrder: "Ascending", filters: [],
+    });
+    expect(page.hasMore).toBe(false);
+    expect(page.cards[0]?.kind).toBe("BoxSet");
+    expect(transport.requests.at(-1)?.params).not.toHaveProperty("filters");
+    expect(transport.requests.at(-1)?.params?.includeItemTypes).toBe("BoxSet");
+  });
+
+  it("lists seasons with minimal fields", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("GET /Shows/series-1/Seasons", { Items: [{ Id: "se1", Name: "Season 1" }, { Name: "No id" }] });
+    await expect(gateway.seasons("series-1")).resolves.toEqual([{ id: "se1", name: "Season 1" }]);
+    const request = transport.requests.at(-1);
+    expect(request?.params).toEqual({ userId: "user-1", fields: "PrimaryImageAspectRatio" });
+  });
+
+  it("lists the episodes of one season", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("GET /Shows/series-1/Episodes", {
+      Items: [{ Id: "e1", Name: "Pilot", Type: "Episode", IndexNumber: 1, Overview: "It begins.", SeriesName: "Show" }],
+    });
+    await expect(gateway.episodes("series-1", "se1")).resolves.toEqual([
+      { id: "e1", title: "Pilot", subtitle: "Episode 1", overview: "It begins.", aspectRatio: 2 / 3 },
+    ]);
+    expect(transport.requests.at(-1)?.params).toEqual({
+      userId: "user-1",
+      seasonId: "se1",
+      fields: "Overview,PrimaryImageAspectRatio",
+      enableUserData: true,
+    });
   });
 
   it("builds tagged image URLs with no credentials", async () => {
