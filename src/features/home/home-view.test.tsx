@@ -27,6 +27,8 @@ function fakeGateway(overrides: Partial<SessionGateway> = {}): SessionGateway {
     nextUp: vi.fn().mockResolvedValue([card("n1", "Up next")]),
     latestInLibrary: vi.fn().mockResolvedValue([card("l1", "Fresh movie")]),
     libraryItems: vi.fn(),
+    searchHints: vi.fn(),
+    searchItems: vi.fn(),
     seasons: vi.fn(),
     episodes: vi.fn(),
     imageUrl: vi.fn((itemId: string, type: string, tag: string) => `https://media.test/${itemId}/${type}/${tag}.webp`),

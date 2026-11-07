@@ -30,6 +30,8 @@ function fakeGateway(overrides: Partial<SessionGateway> = {}): SessionGateway {
     nextUp: vi.fn(),
     latestInLibrary: vi.fn(),
     libraryItems: vi.fn().mockResolvedValue({ cards: [card("m1", "Arrival")], hasMore: false } satisfies BrowsePage),
+    searchHints: vi.fn(),
+    searchItems: vi.fn(),
     seasons: vi.fn().mockResolvedValue([{ id: "se1", name: "Season 1" }, { id: "se2", name: "Season 2" }]),
     episodes: vi.fn().mockImplementation((_series: string, seasonId: string) =>
       Promise.resolve([{ id: `${seasonId}-e1`, title: `Opener of ${seasonId}`, subtitle: "Episode 1", aspectRatio: 1.78, overview: "Plot." }])),

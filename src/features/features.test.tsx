@@ -24,6 +24,8 @@ function stubGateway(): SessionGateway {
     nextUp: vi.fn().mockResolvedValue([]),
     latestInLibrary: vi.fn().mockResolvedValue([]),
     libraryItems: vi.fn(),
+    searchHints: vi.fn(),
+    searchItems: vi.fn(),
     seasons: vi.fn(),
     episodes: vi.fn(),
     imageUrl: vi.fn().mockReturnValue(""),
@@ -82,5 +84,5 @@ it.each([
 
 it("lists every feature", () => {
   render(<SessionProvider createGateway={() => stubGateway()}><FeatureIndex /></SessionProvider>);
-  expect(screen.getAllByRole("link")).toHaveLength(5);
+  expect(screen.getAllByRole("link")).toHaveLength(6);
 });
