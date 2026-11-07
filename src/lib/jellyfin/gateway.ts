@@ -30,7 +30,7 @@ const CARD_FIELDS = "PrimaryImageAspectRatio";
 const CARD_IMAGE_PARAMS = {
   fields: CARD_FIELDS,
   imageTypeLimit: 1,
-  enableImageTypes: "Primary,Backdrop,Thumb",
+  enableImageTypes: "Primary,Backdrop",
 };
 
 const DEVICE_NAME = "Fluster Linux";

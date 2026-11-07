@@ -478,7 +478,7 @@ describe("JellyfinGateway home calls", () => {
   const cardParams = {
     fields: "PrimaryImageAspectRatio",
     imageTypeLimit: 1,
-    enableImageTypes: "Primary,Backdrop,Thumb",
+    enableImageTypes: "Primary,Backdrop",
   };
 
   it("lists only movie, show, and collection libraries from /UserViews", async () => {

@@ -15,7 +15,12 @@ function itemImage(item: BaseItemDto, itemId: string): { image: ImageRef; aspect
   // An episode without its own picture shows the series poster.
   if (item.SeriesId && item.SeriesPrimaryImageTag) {
     return {
-      image: imageRef(item.SeriesId, "Primary", item.SeriesPrimaryImageTag),
+      image: imageRef(
+        item.SeriesId,
+        "Primary",
+        item.SeriesPrimaryImageTag,
+        item.ImageBlurHashes?.Primary?.[item.SeriesPrimaryImageTag],
+      ),
       aspectRatio: POSTER_ASPECT_RATIO,
     };
   }

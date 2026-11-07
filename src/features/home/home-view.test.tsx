@@ -82,8 +82,7 @@ describe("HomeView", () => {
     expect(await screen.findByRole("heading", { name: "Next Up" })).toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "Latest in Movies" })).toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "Latest in Shows" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Resume me" })).toBeInTheDocument();
-    expect(screen.getByRole("progressbar", { name: "Watched" })).toHaveAttribute("aria-valuenow", "40");
+    expect(screen.getByRole("article", { name: "Resume me, 40% watched" })).toBeInTheDocument();
   });
 
   it("starts every row query before any of them resolves", async () => {
@@ -124,12 +123,12 @@ describe("HomeView", () => {
 
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("Could not load Next Up.");
-    expect(await screen.findByRole("button", { name: "Resume me" })).toBeInTheDocument();
+    expect(await screen.findByRole("article", { name: "Resume me, 40% watched" })).toBeInTheDocument();
 
     await act(async () => {
       fireEvent.click(within(alert).getByRole("button", { name: "Retry" }));
     });
-    expect(await screen.findByRole("button", { name: "Up next" })).toBeInTheDocument();
+    expect(await screen.findByRole("article", { name: "Up next" })).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(gateway.resumeItems).toHaveBeenCalledTimes(1);
   });
@@ -143,7 +142,7 @@ describe("HomeView", () => {
       ]),
       userViews: vi.fn().mockResolvedValue([]),
     }));
-    const hashed = (await screen.findByRole("button", { name: "With hash" })).querySelector("[data-testid=card-image]")!;
+    const hashed = (await screen.findByRole("article", { name: "With hash" })).querySelector("[data-testid=card-image]")!;
     expect(hashed).toHaveAttribute("data-state", "loading");
     expect(hashed).toHaveAttribute("data-placeholder", "blurhash");
     expect(hashed).toHaveStyle({ backgroundImage: "url(data:image/png;base64,HASH)" });
@@ -153,14 +152,15 @@ describe("HomeView", () => {
     fireEvent.load(img);
     expect(hashed).toHaveAttribute("data-state", "loaded");
 
-    const plain = screen.getByRole("button", { name: "No hash" }).querySelector("[data-testid=card-image]")!;
+    const plain = screen.getByRole("article", { name: "No hash" }).querySelector("[data-testid=card-image]")!;
     expect(plain).toHaveAttribute("data-placeholder", "neutral");
   });
 
-  it("makes cards keyboard-focusable buttons", async () => {
+  it("renders cards as non-interactive list items", async () => {
     await renderHome(fakeGateway());
-    const button = await screen.findByRole("button", { name: "Resume me" });
-    button.focus();
-    expect(button).toHaveFocus();
+    const item = await screen.findByRole("article", { name: "Resume me, 40% watched" });
+    expect(item).not.toHaveAttribute("tabindex");
+    expect(within(item).queryByRole("button")).not.toBeInTheDocument();
+    expect(item.closest("li")).not.toBeNull();
   });
 });
