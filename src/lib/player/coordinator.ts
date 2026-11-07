@@ -9,19 +9,14 @@ import type {
 } from "../../domain/playback";
 import { startOverChoice } from "../../domain/playback";
 import { redactError, redactText } from "../redact";
+import { PlaystateReporter, type PlaystateGateway } from "./playstate-reporter";
 
-const PROGRESS_INTERVAL_MS = 10_000;
-const REPORT_FLUSH_TIMEOUT_MS = 5_000;
-
-export interface PlaybackGateway {
+export interface PlaybackGateway extends PlaystateGateway {
   createPlaybackPlan(
     item: LibraryItem,
     startPositionTicks: number,
     signal?: AbortSignal,
   ): Promise<PlaybackPlan>;
-  reportStart(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal): Promise<void>;
-  reportProgress(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal): Promise<void>;
-  reportStopped(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal, failed?: boolean): Promise<void>;
 }
 
 export interface CoordinatorCallbacks {
@@ -43,8 +38,6 @@ export class PlaybackCoordinator {
   private plan?: PlaybackPlan;
   private snapshot?: PlaybackSnapshot;
   private unsubscribe?: () => void;
-  private progressTimer?: number;
-  private didReportStart = false;
   private attempt = 0;
   private operation = 0;
   private previousPlaySessionId?: string;
@@ -53,15 +46,15 @@ export class PlaybackCoordinator {
   private finishTask?: Promise<void>;
   private requestedStopReason?: "retry" | "stopped";
   private eventQueue: Promise<void> = Promise.resolve();
-  private reportQueue: Promise<void> = Promise.resolve();
-  private reportFlush: Promise<void> = Promise.resolve();
-  private reportController = new AbortController();
+  private readonly reporter: PlaystateReporter;
 
   constructor(
     private readonly gateway: PlaybackGateway,
     private readonly player: PlayerEngine,
     private readonly callbacks: CoordinatorCallbacks,
-  ) {}
+  ) {
+    this.reporter = new PlaystateReporter(gateway, (message) => callbacks.onReportingError(message));
+  }
 
   start(
     item: LibraryItem,
@@ -101,8 +94,8 @@ export class PlaybackCoordinator {
 
   async flush(): Promise<void> {
     await this.eventQueue;
-    await this.reportFlush;
-    if (this.plan || this.unsubscribe) await this.reportQueue;
+    await this.reporter.waitForDrains();
+    if (this.plan || this.unsubscribe) await this.reporter.waitForQueue();
   }
 
   private runAttempt(
@@ -127,7 +120,7 @@ export class PlaybackCoordinator {
     const controller = new AbortController();
     this.attemptController = controller;
     this.resetAttempt();
-    await this.reportFlush;
+    await this.reporter.waitForDrains();
     this.assertCurrentAttempt(attempt, controller);
 
     let plan: PlaybackPlan;
@@ -184,7 +177,7 @@ export class PlaybackCoordinator {
   }
 
   private async stopAttempt(reason: "retry" | "stopped"): Promise<void> {
-    this.clearProgressTimer();
+    this.reporter.stopProgress();
     this.requestedStopReason = reason;
     try {
       await this.player.stop();
@@ -204,26 +197,14 @@ export class PlaybackCoordinator {
 
     switch (event.kind) {
       case "loaded":
-        if (!this.didReportStart) {
-          this.didReportStart = true;
-          this.queueReport((signal) => this.gateway.reportStart(plan, event.snapshot, signal));
-          this.progressTimer = window.setInterval(() => {
-            const snapshot = this.snapshot;
-            const currentPlan = this.plan;
-            if (snapshot && currentPlan && this.didReportStart) {
-              this.queueReport((signal) => this.gateway.reportProgress(currentPlan, snapshot, signal));
-            }
-          }, PROGRESS_INTERVAL_MS);
-        }
+        this.reporter.start(plan, event.snapshot, () => this.snapshot);
         break;
       case "tracks-changed":
-        if (this.didReportStart) {
-          this.queueReport((signal) => this.gateway.reportProgress(plan, event.snapshot, signal));
-        }
+        this.reporter.progress(plan, event.snapshot);
         break;
       case "state":
-        if (this.didReportStart && (event.cause === "pause" || event.cause === "seek")) {
-          this.queueReport((signal) => this.gateway.reportProgress(plan, event.snapshot, signal));
+        if (event.cause === "pause" || event.cause === "seek") {
+          this.reporter.progress(plan, event.snapshot);
         }
         break;
       case "ended":
@@ -250,16 +231,6 @@ export class PlaybackCoordinator {
     }
   }
 
-  private queueReport(operation: (signal: AbortSignal) => Promise<void>): void {
-    const signal = this.reportController.signal;
-    this.reportQueue = this.reportQueue.then(() => operation(signal)).catch((error: unknown) => {
-      if (signal.aborted) return;
-      this.callbacks.onReportingError(
-        error instanceof Error ? redactText(error.message) : "Playback reporting failed.",
-      );
-    });
-  }
-
   private finish(
     reason: PlaybackEndReason | "retry",
     snapshot?: PlaybackSnapshot,
@@ -279,22 +250,15 @@ export class PlaybackCoordinator {
     reason: PlaybackEndReason | "retry",
     snapshot?: PlaybackSnapshot,
   ): Promise<void> {
-    this.clearProgressTimer();
     const plan = this.plan;
     // Only an error ending is a failed session. Retry is offered only after a
     // playback error, so it ends a failed session too. A non-fatal error event
     // (for example one dropped render) followed by a normal ending is not.
     const failed = reason === "error" || reason === "retry";
-    if (plan && snapshot && this.didReportStart) {
-      this.queueReport((signal) => this.gateway.reportStopped(plan, snapshot, signal, failed));
-    }
-    const reportQueue = this.reportQueue;
-    const reportController = this.reportController;
-    this.startReportDrain(reportQueue, reportController);
+    this.reporter.finish(plan, snapshot, failed);
     this.disposeAttempt();
     this.plan = undefined;
     this.snapshot = undefined;
-    this.didReportStart = false;
     if (reason !== "retry") this.callbacks.onSessionEnded?.(reason);
     if (reason !== "error" && reason !== "retry") {
       this.item = undefined;
@@ -303,48 +267,13 @@ export class PlaybackCoordinator {
     }
   }
 
-  private startReportDrain(
-    reportQueue: Promise<void>,
-    reportController: AbortController,
-  ): void {
-    const drain = this.drainReports(reportQueue, reportController);
-    this.reportFlush = Promise.all([this.reportFlush, drain]).then(() => undefined);
-  }
-
-  private async drainReports(
-    reportQueue: Promise<void>,
-    reportController: AbortController,
-  ): Promise<void> {
-    let timedOut = false;
-    let timer: number | undefined;
-    const deadline = new Promise<void>((resolve) => {
-      timer = window.setTimeout(() => {
-        timedOut = true;
-        resolve();
-      }, REPORT_FLUSH_TIMEOUT_MS);
-    });
-    await Promise.race([reportQueue, deadline]);
-    if (timer !== undefined) window.clearTimeout(timer);
-    if (!timedOut) return;
-
-    this.callbacks.onReportingError("Playback reports did not finish before the shutdown deadline.");
-    reportController.abort();
-  }
-
   private resetAttempt(): void {
     this.snapshot = undefined;
-    this.didReportStart = false;
-    this.reportQueue = Promise.resolve();
-    this.reportController = new AbortController();
-  }
-
-  private clearProgressTimer(): void {
-    if (this.progressTimer !== undefined) window.clearInterval(this.progressTimer);
-    this.progressTimer = undefined;
+    this.reporter.reset();
   }
 
   private disposeAttempt(): void {
-    this.clearProgressTimer();
+    this.reporter.stopProgress();
     this.unsubscribe?.();
     this.unsubscribe = undefined;
   }
