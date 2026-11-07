@@ -105,6 +105,7 @@ Fluster is a direct-play-only Jellyfin client: Tauri 2 + React/TypeScript + Rust
 - Work in your own git worktree.
 - Commit only files you own.
 - Never run `git stash`, `git reset --hard`, or force-push.
+- Resolve PR conflicts on a new branch and PR, as the `ship` skill describes.
 - Never edit another agent's claimed milestone.
 - Keep native surface and mpv work serial.
 
