@@ -15,6 +15,7 @@ function card(id: string, title: string, kind: BrowseCard["kind"] = "Movie"): Br
 
 function fakeGateway(overrides: Partial<SessionGateway> = {}): SessionGateway {
   return {
+    serverUrl: "https://jellyfin.test",
     connect: vi.fn(),
     login: vi.fn(),
     quickConnectEnabled: vi.fn(),
@@ -36,6 +37,7 @@ function fakeGateway(overrides: Partial<SessionGateway> = {}): SessionGateway {
     episodes: vi.fn().mockImplementation((_series: string, seasonId: string) =>
       Promise.resolve([{ id: `${seasonId}-e1`, title: `Opener of ${seasonId}`, subtitle: "Episode 1", aspectRatio: 1.78, overview: "Plot." }])),
     imageUrl: vi.fn(() => "https://media.test/img.webp"),
+    authorizationHeader: vi.fn(() => 'MediaBrowser Token="test"'),
     ...overrides,
   };
 }
