@@ -151,14 +151,12 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 
 **Language.** Report, Progress interval, Drain, PositionTicks.
 
-**Code today.** The report queue inside `PlaybackCoordinator`; `JellyfinGateway.report*`.
+**Code today.** `PlaystateReporter` in `src/lib/player/playstate-reporter.ts` (ordered queue, progress timer, bounded drain), driven by `PlaybackCoordinator`; `JellyfinGateway.report*`.
 
 **Rules.**
 - Reporting failures become warnings, never playback errors.
 - Order is preserved.
 - Reports are sent only after the first frame.
-
-*Currently embedded in the coordinator. Extract it when it gains a second consumer (e.g. offline downloads syncing played state later).*
 
 ---
 

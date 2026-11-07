@@ -592,10 +592,10 @@
             "Order, bounded drain, and failure-as-warning tests pass unchanged"
           ],
           "verify": "pnpm test -- coordinator",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "Moved the report queue, abort controller, bounded 5 s drain, 10 s progress timer, and start/progress/stopped calls into PlaystateReporter (src/lib/player/playstate-reporter.ts, 116 lines); coordinator.ts went from 363 to 292 lines. git diff origin/main -- src/lib/player/coordinator.test.ts is empty: order, bounded-drain, and failure-as-warning tests pass unchanged, plus 5 new reporter unit tests. pnpm check green (boundaries, 14 redaction canaries, 105 Vitest tests, build, cargo test); pnpm test:e2e 5/5 passed."
         }
       ]
     },
