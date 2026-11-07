@@ -1,5 +1,5 @@
 // Import-boundary rules from DOMAINS.md "Dependency rules".
-// Composition roots (src/main.tsx, src/App.tsx, src/app/) may import adapters.
+// Composition roots (src/main.tsx, src/app/) and the frozen proof of concept (src/poc/) may import adapters.
 // Test files are exempt from every rule.
 const tests = "\\.test\\.tsx?$|^src/test/";
 
@@ -13,14 +13,14 @@ module.exports = {
       from: { path: "^src/domain/", pathNot: tests },
       to: {
         path:
-          "^src/(lib|components|features|app)/|^src/App\\.tsx$|node_modules/(react|react-dom|@jellyfin/sdk|@tauri-apps|axios)/",
+          "^src/(lib|components|features|app|poc)/|node_modules/(react|react-dom|@jellyfin/sdk|@tauri-apps|axios)/",
       },
     },
     {
       name: "views-use-composition-root",
       severity: "error",
       comment:
-        "DOMAINS.md > Dependency rules 3: only the composition root constructs gateways and engines. Receive them via props or context from src/app/compose.ts (or src/App.tsx until P2-01).",
+        "DOMAINS.md > Dependency rules 3: only the composition root constructs gateways and engines. Receive them via props or context from src/app/compose.ts.",
       from: { path: "^src/(components|features)/", pathNot: tests },
       to: {
         path: "^src/lib/(jellyfin/gateway|player/native-player|player/browser-player)",
@@ -33,7 +33,7 @@ module.exports = {
         "DOMAINS.md > Dependency rules 2: adapters never import UI or application code. Pass what the adapter needs in as arguments instead.",
       from: { path: "^src/lib/", pathNot: tests },
       to: {
-        path: "^src/(components|features|app)/|^src/App\\.tsx$|node_modules/react/",
+        path: "^src/(components|features|app|poc)/|node_modules/react/",
       },
     },
     {

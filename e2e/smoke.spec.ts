@@ -150,3 +150,8 @@ async function signInAndChooseResume(page: Page): Promise<void> {
   await expect(page.getByRole("heading", { name: "Resume Embedded Movie?" })).toBeVisible();
   await page.getByRole("button", { name: "Resume at 0:42" }).click();
 }
+
+test("shows the Home feature placeholder at /#/next/home", async ({ page }) => {
+  await page.goto("/#/next/home");
+  await expect(page.getByRole("heading", { name: "Home" })).toBeVisible();
+});

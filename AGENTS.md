@@ -70,7 +70,7 @@ Fluster is a direct-play-only Jellyfin client: Tauri 2 + React/TypeScript + Rust
 - Never put side effects inside `debug_assert!`.
 - Split files that grow past about 400 lines along domain lines.
 - Build new UI only under `src/features/`.
-- Never extend the proof-of-concept screens in `src/App.tsx`.
+- Never extend the proof-of-concept screens in `src/poc/PocApp.tsx`.
 
 ## Tests
 
