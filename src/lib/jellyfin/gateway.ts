@@ -2,7 +2,7 @@ import { Jellyfin, type Api } from "@jellyfin/sdk";
 import axios from "axios";
 import type { BrowseCard, BrowsePage, BrowseQuery, CardImageType, EpisodeCard, LibraryItem, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season } from "../../domain/catalog";
 import type { PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
-import { secondsToTicks } from "../../domain/playback";
+import { PlaybackRefusedError, secondsToTicks } from "../../domain/playback";
 import { classifyHost, type HostClass } from "../../domain/host-class";
 import type { ServerConnection } from "../../domain/server-connection";
 import { isSupportedServerVersion, parseServerVersion } from "../../domain/server-version";
@@ -11,6 +11,8 @@ import { lanHttpConfirmations, type LanHttpConfirmationStore } from "../lan-http
 import { redactError, redactText } from "../redact";
 import { toBrowseCards, toEpisodeCards, toHomeLibraries, toMediaCards, toSearchCards, toSearchHints, toSeasons } from "./cards";
 import { deriveDeviceId } from "./device-id";
+import { FLUSTER_PROFILE, MAX_BITRATE } from "./device-profile";
+import { selectSource } from "./source-acceptance";
 import type {
   AuthenticationResult,
   BaseItemDto,
@@ -18,7 +20,6 @@ import type {
   HttpResponse,
   HttpTransport,
   ItemsResult,
-  MediaSourceDto,
   PlaybackInfoResponse,
   QuickConnectResult,
   SearchHintResult,
@@ -133,20 +134,6 @@ function isRedirectError(error: unknown): boolean {
 function refuseRedirect<T>(response: HttpResponse<T>): HttpResponse<T> {
   if (isRedirectStatus(response.status)) throw new Error(REDIRECT_REFUSED_MESSAGE);
   return response;
-}
-
-export function selectDirectFileSource(sources: MediaSourceDto[] | undefined): MediaSourceDto {
-  const source = sources?.find(
-    (candidate) =>
-      Boolean(candidate.Id && candidate.Path) &&
-      candidate.SupportsDirectPlay === true &&
-      !candidate.TranscodingUrl &&
-      candidate.Protocol !== "Http",
-  );
-  if (!source) {
-    throw new Error("No static, file-backed direct-play source is available. Server conversion is disabled.");
-  }
-  return source;
 }
 
 export function buildStaticStreamUrl(
@@ -578,33 +565,39 @@ export class JellyfinGateway {
     return url.toString();
   }
 
-  async createPlaybackPlan(item: LibraryItem, startPositionTicks = 0, signal?: AbortSignal): Promise<PlaybackPlan> {
+  async createPlaybackPlan(
+    item: LibraryItem,
+    startPositionTicks = 0,
+    signal?: AbortSignal,
+    mediaSourceId?: string,
+  ): Promise<PlaybackPlan> {
     const { accessToken, userId } = this.requireSession();
-    const request = { ...DIRECT_PLAY_REQUEST, UserId: userId, StartTimeTicks: startPositionTicks };
+    const request = {
+      ...DIRECT_PLAY_REQUEST,
+      UserId: userId,
+      StartTimeTicks: startPositionTicks,
+      MaxStreamingBitrate: MAX_BITRATE,
+      ...(mediaSourceId ? { MediaSourceId: mediaSourceId } : {}),
+      DeviceProfile: FLUSTER_PROFILE,
+    };
     const { data } = await this.post<PlaybackInfoResponse>(`/Items/${item.id}/PlaybackInfo`, request, {
-      params: {
-        UserId: userId,
-        StartTimeTicks: startPositionTicks,
-        EnableDirectPlay: true,
-        EnableDirectStream: false,
-        EnableTranscoding: false,
-        AllowVideoStreamCopy: false,
-        AllowAudioStreamCopy: false,
-        AutoOpenLiveStream: false,
-      },
+      params: { ...DIRECT_PLAY_REQUEST, UserId: userId, StartTimeTicks: startPositionTicks },
       signal,
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
+    const decision = selectSource(data.MediaSources, mediaSourceId);
+    if (decision.kind === "refused") {
+      throw new PlaybackRefusedError({ reason: decision.reason, detail: decision.detail });
+    }
     if (!data.PlaySessionId) throw new Error("Jellyfin did not provide a play-session ID.");
-    const source = selectDirectFileSource(data.MediaSources);
-    const mediaSourceId = source.Id!;
+    const source = decision.source;
     return {
       itemId: item.id,
       title: item.seriesName ? `${item.seriesName} — ${item.name}` : item.name,
-      mediaSourceId,
+      mediaSourceId: source.Id,
       playSessionId: data.PlaySessionId,
       startPositionTicks,
-      streamUrl: buildStaticStreamUrl(this.serverUrl, item.id, mediaSourceId, data.PlaySessionId, accessToken),
+      streamUrl: buildStaticStreamUrl(this.serverUrl, item.id, source.Id, data.PlaySessionId, accessToken),
       tracks: (source.MediaStreams ?? []).flatMap((track) => {
         if (track.Index == null || !["Audio", "Subtitle", "Video"].includes(track.Type ?? "")) return [];
         return [{

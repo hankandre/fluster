@@ -9,6 +9,44 @@ export const PLAYBACK_POLICY = Object.freeze({
   allowSoftwareDecode: true,
 });
 
+// Why Fluster refused every media source a PlaybackInfo response offered.
+// Each value maps to one source-acceptance rule in ARCHITECTURE.md §3.
+export type RefusalReason =
+  | "no-sources"
+  | "no-direct-play"
+  | "not-a-file"
+  | "server-requires-transcoding"
+  | "disc-source"
+  | "iso-source"
+  | "missing-source-data";
+
+export interface PlaybackRefusal {
+  reason: RefusalReason;
+  detail?: string;
+}
+
+const REFUSAL_MESSAGES: Record<RefusalReason, string> = {
+  "no-sources": "Jellyfin returned no media source for this item.",
+  "no-direct-play": "Jellyfin cannot direct-play this item for Fluster.",
+  "not-a-file": "This item is not a file on the server, so Fluster cannot play it directly.",
+  "server-requires-transcoding": "Jellyfin would need to convert this item. Server conversion is disabled.",
+  "disc-source": "This item is a Blu-ray or DVD folder, which Fluster cannot play directly.",
+  "iso-source": "This item is a disc image (ISO), which Fluster does not play yet.",
+  "missing-source-data": "Jellyfin returned an incomplete media source for this item.",
+};
+
+export class PlaybackRefusedError extends Error {
+  readonly reason: RefusalReason;
+  readonly detail?: string;
+
+  constructor(refusal: PlaybackRefusal) {
+    super(REFUSAL_MESSAGES[refusal.reason]);
+    this.name = "PlaybackRefusedError";
+    this.reason = refusal.reason;
+    this.detail = refusal.detail;
+  }
+}
+
 export interface PlaybackStartChoice {
   kind: "resume" | "start-over";
   startPositionTicks: number;

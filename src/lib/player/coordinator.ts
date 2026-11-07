@@ -16,6 +16,7 @@ export interface PlaybackGateway extends PlaystateGateway {
     item: LibraryItem,
     startPositionTicks: number,
     signal?: AbortSignal,
+    mediaSourceId?: string,
   ): Promise<PlaybackPlan>;
 }
 
