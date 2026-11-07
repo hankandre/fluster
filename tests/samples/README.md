@@ -1,6 +1,11 @@
 # Playback samples
 
-Integration and machine-validation runs place redistributable short samples here:
+The Jellyfin fixture servers (`pnpm fixture:up`) mount this directory read-only at `/media` and register two libraries:
+
+- `movies/` becomes the Movies library (`/media/movies`, collection type movies).
+- `shows/` becomes the Shows library (`/media/shows`, collection type tvshows).
+
+Integration and machine-validation runs place redistributable short samples in those folders:
 
 - `h264.mkv`
 - `hevc-main10.mkv`

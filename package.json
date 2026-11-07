@@ -10,6 +10,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "fixture:up": "docker compose -f tests/integration/docker-compose.yml up -d --wait",
+    "fixture:setup": "bash tests/integration/setup-servers.sh",
+    "fixture:down": "docker compose -f tests/integration/docker-compose.yml down -v",
     "tauri": "tauri",
     "check": "pnpm test && pnpm build && cargo test --manifest-path src-tauri/Cargo.toml"
   },

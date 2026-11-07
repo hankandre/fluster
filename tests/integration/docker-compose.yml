@@ -1,11 +1,11 @@
 services:
-  jellyfin:
+  jellyfin-10-11:
     image: jellyfin/jellyfin:10.11.7
     ports:
       - "18096:8096"
     volumes:
-      - jellyfin-config:/config
-      - jellyfin-cache:/cache
+      - jellyfin-10-11-config:/config
+      - jellyfin-10-11-cache:/cache
       - ../samples:/media:ro
     environment:
       JELLYFIN_PublishedServerUrl: http://127.0.0.1:18096
@@ -15,6 +15,24 @@ services:
       timeout: 3s
       retries: 30
 
+  jellyfin-12:
+    image: jellyfin/jellyfin:12.4.20261026-211555
+    ports:
+      - "18097:8096"
+    volumes:
+      - jellyfin-12-config:/config
+      - jellyfin-12-cache:/cache
+      - ../samples:/media:ro
+    environment:
+      JELLYFIN_PublishedServerUrl: http://127.0.0.1:18097
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8096/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
 volumes:
-  jellyfin-config:
-  jellyfin-cache:
+  jellyfin-10-11-config:
+  jellyfin-10-11-cache:
+  jellyfin-12-config:
+  jellyfin-12-cache:

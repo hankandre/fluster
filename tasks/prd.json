@@ -86,11 +86,11 @@
             "A script creates a test user without committing credentials",
             "GET /System/Info/Public succeeds on both"
           ],
-          "verify": "docker compose -f tests/integration/docker-compose.yml up -d && curl -fsS localhost:8096/System/Info/Public && curl -fsS localhost:8097/System/Info/Public",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "verify": "docker compose -f tests/integration/docker-compose.yml up -d && curl -fsS localhost:18096/System/Info/Public && curl -fsS localhost:18097/System/Info/Public",
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "pnpm fixture:up started jellyfin 10.11.7 (:18096) and 12.4 (:18097) healthy; pnpm fixture:setup run twice (first creates fluster-test user and Movies/Shows libraries at /media/movies and /media/shows, second is a no-op). Verify command with 18096/18097 returned 200 on both; 12.x reports Version 12.4.0, no EnableLegacyAuthorization set. pnpm fixture:down removed containers and volumes; pnpm check green."
         },
         {
           "id": "P0-03",

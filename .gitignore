@@ -16,3 +16,4 @@ src-tauri/resources/THIRD_PARTY_NOTICES.md
 .env
 *.log
 *.tsbuildinfo
+tests/integration/.credentials
