@@ -205,3 +205,14 @@ input:focus, select:focus { border-color: var(--acid); box-shadow: 0 0 0 1px var
 .row-error { display: flex; align-items: center; gap: 16px; color: #ff9b7c; font-size: 14px; }
 @keyframes card-pulse { 50% { opacity: .5; } }
 @media (prefers-reduced-motion: reduce) { .card-skeleton { animation: none; } }
+
+.browse-controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: end; margin-bottom: 24px; }
+.browse-controls label { display: flex; flex-direction: column; gap: 4px; color: var(--muted); }
+.browse-controls fieldset { display: flex; gap: 12px; border: 0; padding: 0; margin: 0; }
+.browse-controls fieldset label { flex-direction: row; align-items: center; gap: 6px; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px 16px; list-style: none; margin: 0 0 24px; padding: 0; }
+.media-card-link { text-decoration: none; }
+.library-list, .season-list { display: flex; flex-wrap: wrap; gap: 12px; list-style: none; margin: 0 0 24px; padding: 0; }
+.episode-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 20px; }
+.episode-list li { display: flex; gap: 16px; align-items: flex-start; }
+.episode-overview { margin: 0; max-width: 60ch; color: var(--muted); }

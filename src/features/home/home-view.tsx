@@ -1,25 +1,11 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSession, type SessionGateway } from "../../app/session";
+import { scopeFor } from "../query-scope";
 import { SignOutButton } from "../sign-out-button";
 import { MediaRow, RowError, SkeletonStrip } from "./media-row";
 
 const SIGN_IN_ROUTE = "#/next/sign-in";
-
-// Each signed-in gateway gets its own cache scope, and rows are dropped from
-// the cache once Home unmounts (gcTime 0), so one user's rows are never shown
-// to the next.
-let nextScope = 0;
-const scopes = new WeakMap<SessionGateway, number>();
-
-function scopeFor(gateway: SessionGateway): number {
-  let scope = scopes.get(gateway);
-  if (scope === undefined) {
-    scope = ++nextScope;
-    scopes.set(gateway, scope);
-  }
-  return scope;
-}
 
 export function HomeView() {
   const { gateway } = useSession();

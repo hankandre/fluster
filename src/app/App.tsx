@@ -3,7 +3,7 @@ import { PocApp } from "../poc/PocApp";
 import { FeatureIndex } from "../features";
 import { SignInView } from "../features/sign-in";
 import { HomeView } from "../features/home";
-import { BrowseView } from "../features/browse";
+import { BrowseView, CollectionView, SeriesView } from "../features/browse";
 import { DetailView } from "../features/detail";
 import { PlayerFeatureView } from "../features/player";
 import type { PocServices } from "../poc/services";
@@ -42,6 +42,23 @@ function renderRoute(hash: string, services: PocServices) {
     case "#/next/player":
       return <PlayerFeatureView />;
     default:
-      return <PocApp services={services} />;
+      return renderBrowseRoute(hash) ?? <PocApp services={services} />;
+  }
+}
+
+// Browse routes carry an id: #/next/browse/<libraryId>, #/next/series/<id>, #/next/collection/<id>.
+function renderBrowseRoute(hash: string) {
+  const [root, next, section, id, ...extra] = hash.split("/");
+  if (root !== "#" || next !== "next" || !id || extra.length > 0) return undefined;
+  const itemId = decodeURIComponent(id);
+  switch (section) {
+    case "browse":
+      return <BrowseView libraryId={itemId} />;
+    case "series":
+      return <SeriesView seriesId={itemId} />;
+    case "collection":
+      return <CollectionView collectionId={itemId} />;
+    default:
+      return undefined;
   }
 }

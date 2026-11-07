@@ -1,4 +1,4 @@
-import type { CardImageType, LibraryView, MediaCard } from "../domain/catalog";
+import type { BrowsePage, BrowseQuery, CardImageType, EpisodeCard, LibraryView, MediaCard, Season } from "../domain/catalog";
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 
 // The narrow gateway surface that feature views may use. Views import this
@@ -16,6 +16,9 @@ export interface SessionGateway {
   resumeItems(signal?: AbortSignal): Promise<MediaCard[]>;
   nextUp(signal?: AbortSignal): Promise<MediaCard[]>;
   latestInLibrary(parentId: string, signal?: AbortSignal): Promise<MediaCard[]>;
+  libraryItems(parentId: string, query: BrowseQuery, signal?: AbortSignal): Promise<BrowsePage>;
+  seasons(seriesId: string, signal?: AbortSignal): Promise<Season[]>;
+  episodes(seriesId: string, seasonId: string, signal?: AbortSignal): Promise<EpisodeCard[]>;
   imageUrl(itemId: string, type: CardImageType, tag: string, maxWidth: number): string;
 }
 
