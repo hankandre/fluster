@@ -8,6 +8,7 @@ import type {
   PlayerEvent,
 } from "../../domain/playback";
 import { startOverChoice } from "../../domain/playback";
+import { redactError, redactText } from "../redact";
 
 const PROGRESS_INTERVAL_MS = 10_000;
 const REPORT_FLUSH_TIMEOUT_MS = 5_000;
@@ -138,7 +139,7 @@ export class PlaybackCoordinator {
       );
     } catch (error) {
       if (!this.isCurrentAttempt(attempt, controller)) throw new PlaybackCancelledError();
-      throw error;
+      throw redactError(error);
     }
     this.assertCurrentAttempt(attempt, controller);
     if (isRetry && plan.playSessionId === this.previousPlaySessionId) {
@@ -165,7 +166,7 @@ export class PlaybackCoordinator {
         this.disposeAttempt();
         this.plan = undefined;
       }
-      throw error;
+      throw redactError(error);
     }
   }
 
@@ -236,7 +237,7 @@ export class PlaybackCoordinator {
         } catch (error) {
           this.callbacks.onEvent({
             kind: "error",
-            message: error instanceof Error ? error.message : "The player did not finish shutting down.",
+            message: error instanceof Error ? redactText(error.message) : "The player did not finish shutting down.",
           });
           await this.finish("error", event.snapshot ?? this.snapshot);
           break;
@@ -254,7 +255,7 @@ export class PlaybackCoordinator {
     this.reportQueue = this.reportQueue.then(() => operation(signal)).catch((error: unknown) => {
       if (signal.aborted) return;
       this.callbacks.onReportingError(
-        error instanceof Error ? error.message : "Playback reporting failed.",
+        error instanceof Error ? redactText(error.message) : "Playback reporting failed.",
       );
     });
   }

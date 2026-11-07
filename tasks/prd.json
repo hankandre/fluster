@@ -166,10 +166,10 @@
             "Tests fail if the canary appears in any log, error string, or diagnostic snapshot"
           ],
           "verify": "pnpm test -- redact && cargo test --manifest-path src-tauri/Cargo.toml redaction",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "native-engineer",
+          "passes": true,
+          "evidence": "TS: src/lib/redact-canary.test.ts drives JellyfinGateway and PlaybackCoordinator with canary URLs/headers and spies on console.*.\nRust: mpv.rs redaction_canary module covers MpvError variants, validate_playback_urls, redact_url, and serde_json snapshots/events.\nLeaks fixed: schemeless/relative/quoted credentials in redactText and safe_error; gateway and coordinator now redact errors at source.\npnpm check, cargo fmt --check, cargo clippy -D warnings pass."
         },
         {
           "id": "P0-07",
