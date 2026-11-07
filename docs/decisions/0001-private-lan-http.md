@@ -20,16 +20,16 @@ Fluster sorts every server URL into one of three host classes. It does this befo
 | Class | Hosts | `http://` / `ws://` |
 |---|---|---|
 | Loopback | `localhost`, `127.0.0.0/8` ([RFC 1122 §3.2.1.3](https://www.rfc-editor.org/rfc/rfc1122#section-3.2.1.3)), `::1` ([RFC 4291 §2.5.3](https://www.rfc-editor.org/rfc/rfc4291#section-2.5.3)) | Allowed without confirmation. The traffic never leaves the device. |
-| Private LAN | `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16` ([RFC 1918](https://www.rfc-editor.org/rfc/rfc1918)); `169.254.0.0/16` ([RFC 3927](https://www.rfc-editor.org/rfc/rfc3927)); `fc00::/7` ([RFC 4193](https://www.rfc-editor.org/rfc/rfc4193)); `fe80::/10` ([RFC 4291 §2.5.6](https://www.rfc-editor.org/rfc/rfc4291#section-2.5.6)); names ending in `.local` ([RFC 6762](https://www.rfc-editor.org/rfc/rfc6762)) | Allowed after a one-time confirmation for each server |
+| Private LAN | `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16` ([RFC 1918](https://www.rfc-editor.org/rfc/rfc1918)); `169.254.0.0/16` ([RFC 3927](https://www.rfc-editor.org/rfc/rfc3927)); `fc00::/7` ([RFC 4193](https://www.rfc-editor.org/rfc/rfc4193)); `fe80::/10` ([RFC 4291 §2.5.6](https://www.rfc-editor.org/rfc/rfc4291#section-2.5.6)); names ending in `.local` ([RFC 6762](https://www.rfc-editor.org/rfc/rfc6762)) or `.home.arpa` ([RFC 8375](https://www.rfc-editor.org/rfc/rfc8375)) | Allowed after a one-time confirmation for each server |
 | Public | Everything else | Refused before any request is sent |
 
-HTTPS is allowed for every class, as it is today. Credentials in URLs stay refused (I5). Before this decision the loopback class held only `localhost` and `127.0.0.1`. It now includes all of `127.0.0.0/8` and `::1`.
+HTTPS is allowed for every class, as it is today. Credentials in URLs stay refused (I5). Before this decision the loopback class held only `localhost` and `127.0.0.1`. It now includes all of `127.0.0.0/8` and `::1`, still with no confirmation (confirmed by the user, 2026-11-07).
 
 ### Edge cases P0-12 must handle
 
-1. **Classify the literal host, never a DNS answer.** A DNS name is public unless it is `localhost` or ends in `.local`. That holds even if the name resolves to a private address today. DNS answers can change between the check and the request, and a rebinding attack can make that happen on purpose. So `http://nas.home.arpa`, `http://jellyfin.lan`, and a bare `http://nas` are refused. The user can type the IP address or a `.local` name instead.
-2. **Classify the parsed host, not the typed string.** WHATWG URL parsing (TypeScript `URL`, the Rust `url` crate) normalizes the host first. For example, `http://3232235777/` becomes `192.168.1.1`, and hex or octal IPv4 forms are normalized too. Hostnames are compared case-insensitively. A `.local` name may end in one trailing dot (`nas.local.`), but `local` on its own is not a valid host.
-3. **IPv4-mapped IPv6** (`::ffff:0:0/96`, RFC 4291 §2.5.5.2) is classified by the IPv4 address inside it. `[::ffff:192.168.1.5]` is private LAN, and `[::ffff:8.8.8.8]` is public. Every other IPv6 transition form is public, including NAT64 `64:ff9b::/96`, 6to4, and IPv4-compatible addresses. So are the unspecified addresses `0.0.0.0` and `::`. CGNAT `100.64.0.0/10` (used by Tailscale) is public; see open questions.
+1. **Classify the literal host, never a DNS answer.** A DNS name is public unless it is `localhost` or ends in `.local` or `.home.arpa`. That holds even if the name resolves to a private address today. DNS answers can change between the check and the request, and a rebinding attack can make that happen on purpose. `.home.arpa` is admitted by its suffix because RFC 8375 reserves it for home networks, even though it resolves through ordinary DNS; it needs the same confirmation as `.local`. So `http://jellyfin.lan` and a bare `http://nas` are refused. The user can type the IP address, a `.local` name, or a `.home.arpa` name instead.
+2. **Classify the parsed host, not the typed string.** WHATWG URL parsing (TypeScript `URL`, the Rust `url` crate) normalizes the host first. For example, `http://3232235777/` becomes `192.168.1.1`, and hex or octal IPv4 forms are normalized too. Hostnames are compared case-insensitively. A `.local` or `.home.arpa` name may end in one trailing dot (`nas.local.`), but `local` or `home.arpa` on its own is not a valid host.
+3. **IPv4-mapped IPv6** (`::ffff:0:0/96`, RFC 4291 §2.5.5.2) is classified by the IPv4 address inside it. `[::ffff:192.168.1.5]` is private LAN, and `[::ffff:8.8.8.8]` is public. Every other IPv6 transition form is public, including NAT64 `64:ff9b::/96`, 6to4, and IPv4-compatible addresses. So are the unspecified addresses `0.0.0.0` and `::`. CGNAT `100.64.0.0/10` ([RFC 6598](https://www.rfc-editor.org/rfc/rfc6598), used by Tailscale and similar overlay networks) is public. Those users should connect over HTTPS, for example with Tailscale's HTTPS certificates (user decision, 2026-11-07).
 4. **Ports don't affect the class.** Any port is allowed. The confirmation is stored per origin, and the origin includes the port, so `http://192.168.1.5:8096` and `http://192.168.1.5:8920` each need their own confirmation.
 5. **IPv6 zone identifiers.** WHATWG URLs can't express `fe80::1%eth0`. Fluster won't try to support them, so link-local IPv6 works only where the OS can route it without a zone. Fluster doesn't add a parser of its own.
 6. **Order of checks.** First the URL is normalized and classified. A public `http://` host is refused at this step, with no request sent. A private-LAN host is then probed with an unauthenticated `GET /System/Info/Public` to read the server `Id`. If no stored confirmation matches, the user is asked to confirm. Only then do `AuthenticateByName` or any request carrying a token run.
@@ -55,7 +55,7 @@ Cancel has focus by default. Pressing Escape cancels.
 - Home servers found by discovery or typed as LAN addresses work without a reverse proxy.
 - Tokens and passwords cross the LAN in clear text once the user confirms. A device on the same network can capture them. The warning states this, and Fluster doesn't hide it.
 - Tokens are never sent over plain HTTP to public addresses (P0-11 acceptance 2). The check runs on the literal host before any request is made.
-- Users whose LAN names aren't `.local` (`.lan`, `.home.arpa`, split-horizon DNS) must use an IP address or HTTPS.
+- Users whose LAN names aren't `.local` or `.home.arpa` (`.lan`, split-horizon DNS) must use an IP address or HTTPS. Users on CGNAT overlay networks such as Tailscale must use HTTPS.
 - I5 changes from "remote servers require HTTPS" to the three-class rule above. Until P0-12 lands, the code still enforces the older, stricter rule. That rule is safe, but it blocks LAN HTTP.
 
 ## Alternatives considered
@@ -64,9 +64,7 @@ Cancel has focus by default. Pressing Escape cancels.
 - **Any `http://` host after a warning.** This is the simplest rule and covers every setup. But it lets a single click send a token in clear text across the internet, where the user can't judge the path. Rejected, because tokens must never be sent over plain HTTP to public addresses.
 - **Classify by resolved IP address.** This would accept private-resolving names such as `nas.lan`. But the answer can change between the check and the request (DNS rebinding), and the check would need its own resolver in both TypeScript and Rust. Rejected in favor of literal-host classification.
 
-## Open questions for the human
+## Follow-ups for P0-12
 
-- Should CGNAT `100.64.0.0/10` (Tailscale and similar overlay networks) count as private LAN? This decision treats it as public.
-- Should `.home.arpa` ([RFC 8375](https://www.rfc-editor.org/rfc/rfc8375)) join `.local`? It is reserved for home networks, but it still resolves through ordinary DNS.
-- Where can the user review and revoke confirmations beyond removing the server? This waits on the saved-servers UI (P3).
-- **Unverified:** whether libmpv/FFmpeg resends `http-header-fields` to a redirect's `Location` on another origin. P0-12 must check this. If it does and it can't be turned off, record the remaining risk in `docs/security.md`.
+- **Verify:** whether libmpv/FFmpeg resends `http-header-fields` to a redirect's `Location` on another origin. This is still unverified. If it does and it can't be turned off, record the remaining risk in `docs/security.md`.
+- **Revocation:** for now, the only way to revoke a confirmation is to remove the saved server. A separate UI to review and revoke confirmations is left as a P0-12 follow-up note for the saved-servers UI (P3).
