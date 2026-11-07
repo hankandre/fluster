@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GAP_RESOLVED, checkMediaRequest, classifyProcess, decideStatus, findTranscodeLogFiles, findTranscodeLogLines, findTranscodingSessions } from "./tripwire-rules";
+import { checkMediaRequest, classifyProcess, decideStatus, findTranscodeLogFiles, findTranscodeLogLines, findTranscodingSessions } from "./tripwire-rules";
 
 const base = "http://127.0.0.1:18096";
 
@@ -21,7 +21,15 @@ describe("checkMediaRequest", () => {
 
   it("checks the Static parameter case-sensitively", () => {
     expect(checkMediaRequest(`${base}/Videos/abc/stream?static=true`).ok).toBe(false);
+    expect(checkMediaRequest(`${base}/Videos/abc/stream?STATIC=true`).ok).toBe(false);
     expect(checkMediaRequest(`${base}/Videos/abc/stream?Static=True`).ok).toBe(false);
+  });
+
+  it("requires exactly one static key", () => {
+    expect(checkMediaRequest(`${base}/Videos/abc/stream?static=false&Static=true`).ok).toBe(false);
+    expect(checkMediaRequest(`${base}/Videos/abc/stream?Static=true&static=false`).ok).toBe(false);
+    expect(checkMediaRequest(`${base}/Videos/abc/stream?Static=true&Static=true`).ok).toBe(false);
+    expect(checkMediaRequest(`${base}/Videos/abc/stream?Static=true&Static=false`).ok).toBe(false);
   });
 
   it("rejects HLS and transcoding URLs even with Static=true", () => {
@@ -94,23 +102,36 @@ describe("findTranscodingSessions", () => {
 });
 
 describe("decideStatus", () => {
-  it("passes or records a refusal when nothing failed", () => {
-    expect(decideStatus([], false)).toEqual({ status: "PASS" });
-    expect(decideStatus([], true)).toEqual({ status: "REFUSED" });
+  const played = { failures: [], streamRequests: 2 };
+
+  it("passes a clean playback", () => {
+    expect(decideStatus(played)).toEqual({ status: "PASS" });
   });
 
-  it("fails on any I1 or I2 failure, even for a known gap", () => {
-    expect(decideStatus(["I1: ffmpeg process"], false).status).toBe("FAIL");
-    expect(decideStatus(["I2: stream request lacks Static=true"], false, "P1-03").status).toBe("FAIL");
+  it("fails on any recorded failure", () => {
+    expect(decideStatus({ ...played, failures: ["I1: ffmpeg process"] }).status).toBe("FAIL");
+    expect(decideStatus({ ...played, failures: ["oracle: docker exec failed"] }).status).toBe("FAIL");
   });
 
-  it("fails on playback failures unless the sample is a known gap", () => {
-    expect(decideStatus(["playback: returned 500"], false).status).toBe("FAIL");
-    expect(decideStatus(["playback: returned 500"], false, "P1-03").status).toBe("KNOWN-GAP");
+  it("fails an unexpected refusal", () => {
+    const result = decideStatus({ failures: [], streamRequests: 0, refusal: "no-direct-play" });
+    expect(result.status).toBe("FAIL");
+    expect(result.extraFailure).toContain("no-direct-play");
   });
 
-  it("fails a known gap that no longer reproduces", () => {
-    expect(decideStatus([], false, "P1-03")).toEqual({ status: "FAIL", extraFailure: GAP_RESOLVED });
-    expect(decideStatus([], true, "P1-03")).toEqual({ status: "FAIL", extraFailure: GAP_RESOLVED });
+  it("accepts only the declared refusal reason with no stream request", () => {
+    expect(decideStatus({ failures: [], streamRequests: 0, refusal: "disc-source", expectRefused: "disc-source" })).toEqual({ status: "EXPECTED-REFUSED" });
+    expect(decideStatus({ failures: [], streamRequests: 0, refusal: "iso-source", expectRefused: "disc-source" }).status).toBe("FAIL");
+    expect(decideStatus({ failures: [], streamRequests: 1, refusal: "disc-source", expectRefused: "disc-source" }).status).toBe("FAIL");
+  });
+
+  it("fails when an expected refusal does not happen", () => {
+    const result = decideStatus({ ...played, expectRefused: "disc-source" });
+    expect(result.status).toBe("FAIL");
+    expect(result.extraFailure).toContain("disc-source");
+  });
+
+  it("still fails an expected refusal that had other failures", () => {
+    expect(decideStatus({ failures: ["I1: ffmpeg"], streamRequests: 0, refusal: "disc-source", expectRefused: "disc-source" }).status).toBe("FAIL");
   });
 });

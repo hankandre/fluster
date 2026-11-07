@@ -26,8 +26,16 @@ export function checkMediaRequest(rawUrl: string): MediaRequestCheck {
   if (!STATIC_STREAM_PATH.test(url.pathname)) {
     return { ok: false, kind: "other", reason: `not a /Videos/{id}/stream or subtitle path: ${url.pathname}` };
   }
-  if (url.searchParams.get("Static") !== "true") {
-    return { ok: false, kind: "stream", reason: "stream request lacks Static=true" };
+  // Exactly one static key, spelled "Static", with the value "true". Jellyfin
+  // binds query names case-insensitively, so static=false next to Static=true
+  // would be ambiguous.
+  const staticParams = [...url.searchParams].filter(([key]) => /^static$/i.test(key));
+  if (staticParams.length !== 1) {
+    return { ok: false, kind: "stream", reason: `stream request has ${staticParams.length} static parameters; exactly one Static=true is required` };
+  }
+  const [[key, value]] = staticParams;
+  if (key !== "Static" || value !== "true") {
+    return { ok: false, kind: "stream", reason: `stream request has ${key}=${value}; only Static=true is allowed` };
   }
   return { ok: true, kind: "stream" };
 }
@@ -83,27 +91,33 @@ export function findTranscodingSessions(sessions: SessionLike[]): TranscodingSes
   });
 }
 
-// Failure messages start with the invariant they break. I1: server encoding.
-// I2: a media request that is not a static original-file request. playback:
-// anything else that stops the sample from playing.
-export type FailureKind = "I1" | "I2" | "playback";
-export type SampleStatus = "PASS" | "FAIL" | "REFUSED" | "KNOWN-GAP";
+// Failure messages start with what they break. I1: server encoding. I2: a
+// media request that is not a static original-file request. playback: the
+// sample did not play. oracle: a signal could not be read, so the run is blind.
+export type FailureKind = "I1" | "I2" | "playback" | "oracle";
+export type SampleStatus = "PASS" | "FAIL" | "EXPECTED-REFUSED";
 
-export const GAP_RESOLVED = "playback: known gap no longer reproduces; remove its knownGap entry in tests/integration/tripwire.ts";
+export interface SampleOutcome {
+  failures: string[];
+  streamRequests: number;
+  refusal?: string;
+  expectRefused?: string;
+}
 
-// I1 and I2 failures always fail. A sample with a known gap may fail playback
-// only; once it stops failing, it fails until the knownGap entry is removed.
-export function decideStatus(
-  failures: string[],
-  refused: boolean,
-  knownGap?: string,
-): { status: SampleStatus; extraFailure?: string } {
-  const violations = failures.filter((failure) => !failure.startsWith("playback:"));
-  if (violations.length > 0) return { status: "FAIL" };
-  if (knownGap) {
-    if (failures.length > 0) return { status: "KNOWN-GAP" };
-    return { status: "FAIL", extraFailure: GAP_RESOLVED };
+// Any recorded failure fails the sample. A refusal passes only when the sample
+// declares that exact reason and no stream request was made.
+export function decideStatus(outcome: SampleOutcome): { status: SampleStatus; extraFailure?: string } {
+  const { failures, streamRequests, refusal, expectRefused } = outcome;
+  if (expectRefused) {
+    if (refusal !== expectRefused) {
+      const got = refusal ? `refusal ${refusal}` : "a playback plan";
+      return { status: "FAIL", extraFailure: `playback: expected refusal ${expectRefused}, got ${got}` };
+    }
+    if (streamRequests > 0) {
+      return { status: "FAIL", extraFailure: `I2: refused sample still made ${streamRequests} stream request(s)` };
+    }
+    return { status: failures.length > 0 ? "FAIL" : "EXPECTED-REFUSED" };
   }
-  if (failures.length > 0) return { status: "FAIL" };
-  return { status: refused ? "REFUSED" : "PASS" };
+  if (refusal) return { status: "FAIL", extraFailure: `playback: unexpected refusal ${refusal}` };
+  return { status: failures.length > 0 ? "FAIL" : "PASS" };
 }

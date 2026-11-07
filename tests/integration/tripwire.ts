@@ -17,7 +17,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { LibraryItem } from "../../src/domain/catalog";
-import type { PlaybackPlan, PlaybackSnapshot } from "../../src/domain/playback";
+import { PlaybackRefusedError, type PlaybackPlan, type PlaybackSnapshot, type RefusalReason } from "../../src/domain/playback";
 import { JellyfinGateway } from "../../src/lib/jellyfin/gateway";
 import { redactText } from "../../src/lib/redact";
 import {
@@ -42,33 +42,37 @@ const SERVERS = [
 ];
 
 // Items are found by path, because metadata matching renames some titles.
-// A knownGap sample may fail playback (an unexpected HTTP status) without
-// failing the run, but an encoding signal or a non-static request still fails
-// it. Once the gap is fixed the sample fails until its knownGap is removed.
-const SAMPLES: { name: string; path: string; knownGap?: string }[] = [
+// expectRefused: the gateway must refuse the item with exactly this reason and
+// make no stream request. Any other refusal fails the sample.
+// expectExternalSubtitle: the plan must carry an external subtitle URL, and
+// fetching it must pass the I2 rule.
+interface Sample {
+  name: string;
+  path: string;
+  expectRefused?: RefusalReason;
+  expectExternalSubtitle?: boolean;
+}
+
+const SAMPLES: Sample[] = [
   { name: "h264", path: "/media/movies/Synthetic H264 (2024)/Synthetic H264 (2024).mkv" },
   { name: "hevc-hdr10", path: "/media/movies/Synthetic HEVC HDR10 (2024)/Synthetic HEVC HDR10 (2024).mkv" },
   { name: "av1", path: "/media/movies/Synthetic AV1 (2024)/Synthetic AV1 (2024).mkv" },
   { name: "ass", path: "/media/movies/Synthetic ASS (2024)/Synthetic ASS (2024).mkv" },
-  { name: "sidecar-srt", path: "/media/movies/Synthetic Sidecar (2024)/Synthetic Sidecar (2024).mkv" },
+  { name: "sidecar-srt", path: "/media/movies/Synthetic Sidecar (2024)/Synthetic Sidecar (2024).mkv", expectExternalSubtitle: true },
   { name: "multitrack", path: "/media/movies/Synthetic Multitrack (2024)/Synthetic Multitrack (2024).mkv" },
   { name: "versions", path: "/media/movies/Synthetic Versions (2024)/Synthetic Versions (2024) - 1080p.mkv" },
-  {
-    name: "bluray-folder",
-    path: "/media/movies/Synthetic BluRay (2024)",
-    knownGap: "P1-03: without a DeviceProfile the server offers SupportsDirectPlay for BluRay folders, the gateway accepts it, and Static=true is not honored for BluRay/DVD (VideosController.GetVideoStream falls through to ffmpeg; the placeholder BDMV fails earlier with HTTP 500)",
-  },
+  // Jellyfin ignores Static=true for BluRay/DVD and starts ffmpeg instead
+  // (VideosController.GetVideoStream), so the gateway must refuse disc folders.
+  { name: "bluray-folder", path: "/media/movies/Synthetic BluRay (2024)", expectRefused: "disc-source" },
   { name: "show-s01e01", path: "/media/shows/Synthetic Show/Season 01/Synthetic Show S01E01.mkv" },
   { name: "show-s01e02", path: "/media/shows/Synthetic Show/Season 01/Synthetic Show S01E02.mkv" },
   { name: "show-s00e01", path: "/media/shows/Synthetic Show/Season 00/Synthetic Show S00E01.mkv" },
 ];
 
-// The gateway's own refusal when no static, file-backed source exists.
-const REFUSAL_MESSAGE = "No static, file-backed direct-play source is available";
-
 const MIB = 1024 * 1024;
 const PLAYBACK_HOLD_MS = 1500;
 const AFTER_STOP_GRACE_MS = 1500;
+const LOG_FLUSH_MS = 2000;
 
 type Status = SampleStatus;
 
@@ -86,13 +90,15 @@ interface SampleResult {
   sample: string;
   path: string;
   status: Status;
-  knownGap?: string;
+  expectRefused?: string;
+  refusal?: string;
   failures: string[];
   notes: string[];
   videoType?: string;
   plan?: { mediaSourceId: string; streamUrl: string; tracks: number; externalSubtitles: number };
   mediaRequests: MediaRequestLog[];
-  sessions: { polls: number; ourPlayMethods: string[]; transcoding: unknown[] };
+  sessions: { polls: number; sawOurSession: number; ourPlayMethods: string[]; transcoding: unknown[] };
+  processPolls: number;
   ffmpegProcesses: string[];
   ffprobeProcesses: string[];
   transcodeLogLines: string[];
@@ -106,6 +112,8 @@ interface ServerResult {
   version?: string;
   preparation: Record<string, unknown>;
   samples: SampleResult[];
+  // Failures that belong to the whole server run, such as a blind log.
+  failures: string[];
   error?: string;
 }
 
@@ -127,7 +135,7 @@ function scrub(text: string): string {
 function safeUrl(raw: string): string {
   const url = new URL(raw);
   for (const key of [...url.searchParams.keys()]) {
-    if (key !== "Static" && key !== "MediaSourceId") url.searchParams.set(key, "[redacted]");
+    if (!/^static$/i.test(key) && key !== "MediaSourceId") url.searchParams.set(key, "[redacted]");
   }
   return url.pathname + url.search.replace(/%5B/g, "[").replace(/%5D/g, "]");
 }
@@ -182,9 +190,17 @@ async function mediaFetch(result: SampleResult, rawUrl: string, range?: string):
     fail(result, "I2", `media request ${entry.url}: ${check.reason}`);
     return undefined;
   }
-  const response = await fetch(rawUrl, { headers: range ? { Range: range } : {} });
+  // A player follows redirects, so a redirect could lead to a transcode URL.
+  // Media requests must be answered directly.
+  const response = await fetch(rawUrl, { headers: range ? { Range: range } : {}, redirect: "manual" });
   const body = new Uint8Array(await response.arrayBuffer());
   entry.status = response.status;
+  if (response.status >= 300 && response.status < 400) {
+    const location = response.headers.get("location");
+    const target = location ? safeUrl(new URL(location, rawUrl).toString()) : "no Location header";
+    fail(result, "I2", `media request ${entry.url} was redirected (${response.status}) to ${target}`);
+    return undefined;
+  }
   entry.contentType = response.headers.get("content-type") ?? undefined;
   entry.contentRange = response.headers.get("content-range") ?? undefined;
   entry.bytes = body.byteLength;
@@ -203,7 +219,7 @@ async function playSample(
   sessionWatcher: SessionWatcher,
   processes: ProcessMonitor,
   logs: LogWatcher,
-  sample: (typeof SAMPLES)[number],
+  sample: Sample,
   item: ItemDto,
 ): Promise<SampleResult> {
   const startedAt = Date.now();
@@ -215,25 +231,25 @@ async function playSample(
     notes: [],
     videoType: item.VideoType,
     mediaRequests: [],
-    sessions: { polls: 0, ourPlayMethods: [], transcoding: [] },
+    sessions: { polls: 0, sawOurSession: 0, ourPlayMethods: [], transcoding: [] },
+    processPolls: 0,
     ffmpegProcesses: [],
     ffprobeProcesses: [],
     transcodeLogLines: [],
     transcodeLogFiles: [],
     durationMs: 0,
+    expectRefused: sample.expectRefused,
   };
   processes.start();
   sessionWatcher.start(item.Id);
-  let refused = false;
+  let plan: PlaybackPlan | undefined;
   try {
-    let plan: PlaybackPlan | undefined;
     try {
       plan = await gateway.createPlaybackPlan(toLibraryItem(item));
     } catch (error) {
-      const message = errorText(error);
-      if (!message.includes(REFUSAL_MESSAGE)) throw error;
-      refused = true;
-      result.notes.push(`gateway refused: ${message}`);
+      if (!(error instanceof PlaybackRefusedError)) throw error;
+      result.refusal = error.reason;
+      result.notes.push(`gateway refused (${error.reason}): ${errorText(error)}`);
     }
     if (plan) {
       const streamParams = new URL(plan.streamUrl).searchParams;
@@ -251,6 +267,11 @@ async function playSample(
       }
       await mediaFetch(result, plan.streamUrl, "bytes=-65536");
       for (const track of externalSubtitles) await mediaFetch(result, track.deliveryUrl!);
+      if (sample.expectExternalSubtitle) {
+        const fetched = result.mediaRequests.some((request) => request.check === "ok (subtitle)" && request.status === 200);
+        if (externalSubtitles.length === 0) fail(result, "playback", "expected an external subtitle DeliveryUrl in the plan, found none");
+        else if (!fetched) fail(result, "playback", "the external subtitle request did not pass the I2 rule with HTTP 200");
+      }
       await gateway.reportProgress(plan, snapshot(5));
       await sleep(PLAYBACK_HOLD_MS);
       await gateway.reportProgress(plan, snapshot(6, true));
@@ -263,7 +284,16 @@ async function playSample(
   await sleep(AFTER_STOP_GRACE_MS);
   await processes.stop();
   await sessionWatcher.stop(item.Id);
-  result.sessions = { polls: sessionWatcher.polls, ourPlayMethods: [...sessionWatcher.playMethods], transcoding: [...sessionWatcher.transcoding] };
+  result.sessions = {
+    polls: sessionWatcher.polls,
+    sawOurSession: sessionWatcher.sawOurSession,
+    ourPlayMethods: [...sessionWatcher.playMethods],
+    transcoding: [...sessionWatcher.transcoding],
+  };
+  result.processPolls = processes.polls;
+  for (const error of [...processes.errors, ...sessionWatcher.errors]) fail(result, "oracle", scrub(error));
+  if (processes.polls === 0) fail(result, "oracle", "no process listing succeeded during playback");
+  if (plan && sessionWatcher.sawOurSession === 0) fail(result, "oracle", "the session watcher never saw this playback on /Sessions");
   for (const session of sessionWatcher.transcoding) {
     const what = session.transcodingInfo !== undefined ? "TranscodingInfo" : `PlayMethod ${session.playMethod}`;
     fail(result, "I1", `/Sessions: session ${session.id} had ${what}`);
@@ -275,17 +305,23 @@ async function playSample(
   result.ffprobeProcesses = [...processes.ffprobe.values()].map(scrub);
   for (const command of result.ffmpegProcesses) fail(result, "I1", `ffmpeg process in container: ${command.slice(0, 160)}`);
 
-  const { text, newFiles } = await logs.newContent();
-  result.transcodeLogLines = findTranscodeLogLines(text).map(scrub);
-  result.transcodeLogFiles = findTranscodeLogFiles(newFiles);
+  try {
+    const { text, newFiles } = await logs.newContent();
+    result.transcodeLogLines = findTranscodeLogLines(text).map(scrub);
+    result.transcodeLogFiles = findTranscodeLogFiles(newFiles);
+  } catch (error) {
+    fail(result, "oracle", `reading the Jellyfin log failed: ${errorText(error)}`);
+  }
   for (const line of result.transcodeLogLines) fail(result, "I1", `Jellyfin log transcode line: ${line.slice(0, 200)}`);
   for (const name of result.transcodeLogFiles) fail(result, "I1", `Jellyfin transcode log file: ${name}`);
 
-  processes.ffmpeg.clear();
-  processes.ffprobe.clear();
-  const decision = decideStatus(result.failures, refused, sample.knownGap);
+  const decision = decideStatus({
+    failures: result.failures,
+    streamRequests: result.mediaRequests.length,
+    refusal: result.refusal,
+    expectRefused: sample.expectRefused,
+  });
   if (decision.extraFailure) result.failures.push(decision.extraFailure);
-  if (sample.knownGap) result.knownGap = sample.knownGap;
   result.status = decision.status;
   result.durationMs = Date.now() - startedAt;
   return result;
@@ -295,12 +331,48 @@ function fail(result: SampleResult, kind: FailureKind, message: string): void {
   result.failures.push(`${kind}: ${message}`);
 }
 
+function emptyResult(sample: Sample, failure: string): SampleResult {
+  return {
+    sample: sample.name,
+    path: sample.path,
+    status: "FAIL",
+    failures: [failure],
+    notes: [],
+    mediaRequests: [],
+    sessions: { polls: 0, sawOurSession: 0, ourPlayMethods: [], transcoding: [] },
+    processPolls: 0,
+    ffmpegProcesses: [],
+    ffprobeProcesses: [],
+    transcodeLogLines: [],
+    transcodeLogFiles: [],
+    durationMs: 0,
+  };
+}
+
+// After the last sample: one more log read after a flush delay, the log
+// liveness check, and a check that something was actually played.
+async function finishServer(result: ServerResult, logs: LogWatcher): Promise<void> {
+  await sleep(LOG_FLUSH_MS);
+  try {
+    const { text, newFiles } = await logs.newContent();
+    for (const line of findTranscodeLogLines(text)) result.failures.push(`I1: Jellyfin log transcode line after the last sample: ${scrub(line).slice(0, 200)}`);
+    for (const name of findTranscodeLogFiles(newFiles)) result.failures.push(`I1: Jellyfin transcode log file after the last sample: ${name}`);
+  } catch (error) {
+    result.failures.push(`oracle: final Jellyfin log read failed: ${errorText(error)}`);
+  }
+  if (logs.mainLogFiles.length === 0) result.failures.push("oracle: oracle blind, no log_*.log in /config/log");
+  else if (logs.mainLogGrowth === 0) result.failures.push("oracle: oracle blind, the Jellyfin log did not grow during the run");
+  result.preparation.mainLogGrowthChars = logs.mainLogGrowth;
+  const played = result.samples.filter((sample) => sample.status === "PASS").length;
+  if (played === 0) result.failures.push("playback: no sample was played on this server");
+}
+
 async function runServer(server: (typeof SERVERS)[number], credentials: Record<string, string>): Promise<ServerResult> {
   const url = credentials[`${server.name}_url`];
   const username = credentials[`${server.name}_username`];
   const password = credentials[`${server.name}_password`];
   addSecret(password);
-  const result: ServerResult = { server: server.name, url, preparation: {}, samples: [] };
+  const result: ServerResult = { server: server.name, url, preparation: {}, samples: [], failures: [] };
   const monitor = new MonitorClient(url, addSecret);
   const gateway = new JellyfinGateway(url, undefined, randomUUID());
   try {
@@ -317,14 +389,12 @@ async function runServer(server: (typeof SERVERS)[number], credentials: Record<s
     for (const sample of SAMPLES) {
       const item = prepared.items.find((candidate) => candidate.Path === sample.path);
       if (!item) {
-        result.samples.push({
-          sample: sample.name, path: sample.path, status: "FAIL", failures: ["playback: sample not indexed by path"], notes: [],
-          mediaRequests: [], sessions: { polls: 0, ourPlayMethods: [], transcoding: [] }, ffmpegProcesses: [], ffprobeProcesses: [], transcodeLogLines: [], transcodeLogFiles: [], durationMs: 0,
-        });
+        result.samples.push(emptyResult(sample, "playback: sample not indexed by path"));
         continue;
       }
       result.samples.push(await playSample(gateway, sessionWatcher, processes, logs, sample, item));
     }
+    await finishServer(result, logs);
   } catch (error) {
     result.error = errorText(error);
   } finally {
@@ -338,10 +408,8 @@ function sampleDetail(sample: SampleResult): string {
   switch (sample.status) {
     case "FAIL":
       return sample.failures[0] ?? "failed";
-    case "KNOWN-GAP":
-      return `no encode observed; ${sample.failures[0]}`;
-    case "REFUSED":
-      return `gateway refused (VideoType ${sample.videoType ?? "?"}); no encode observed`;
+    case "EXPECTED-REFUSED":
+      return `gateway refused (${sample.refusal}, VideoType ${sample.videoType ?? "?"}); no stream request, no encode`;
     case "PASS":
       return `PlayMethod ${sample.sessions.ourPlayMethods.join("/") || "?"}, no ffmpeg, no TranscodingInfo, no transcode log`;
   }
@@ -355,6 +423,7 @@ function printSummary(results: ServerResult[], logPath: string): boolean {
       failed = true;
       rows.push([server.server, "-", "FAIL", "-", `setup: ${server.error}`]);
     }
+    if (server.failures.length > 0) failed = true;
     for (const sample of server.samples) {
       if (sample.status === "FAIL") failed = true;
       const staticRequests = sample.mediaRequests.filter((request) => request.check.startsWith("ok")).length;
@@ -365,10 +434,9 @@ function printSummary(results: ServerResult[], logPath: string): boolean {
   for (const row of rows) console.log(row.map((cell, column) => (column === 4 ? cell : cell.padEnd(widths[column]))).join("  "));
   for (const server of results) {
     if (server.error) console.log(`ERROR ${server.server}: ${server.error}`);
+    for (const failure of server.failures) console.log(`ERROR ${server.server}: ${failure}`);
     for (const sample of server.samples) {
-      const label = sample.status === "FAIL" ? "ERROR" : "KNOWN-GAP";
-      if (sample.status === "KNOWN-GAP") console.log(`KNOWN-GAP ${server.server} ${sample.sample}: ${sample.knownGap}`);
-      for (const failure of sample.failures) console.log(`${label} ${server.server} ${sample.sample}: ${failure}`);
+      for (const failure of sample.failures) console.log(`ERROR ${server.server} ${sample.sample}: ${failure}`);
     }
   }
   console.log(`\nFull log: ${logPath}`);

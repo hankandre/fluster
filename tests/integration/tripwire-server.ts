@@ -110,7 +110,10 @@ export async function prepareServer(monitor: MonitorClient, service: string, sam
 export class SessionWatcher {
   readonly transcoding: TranscodingSession[] = [];
   readonly playMethods = new Set<string>();
+  readonly errors: string[] = [];
   polls = 0;
+  // Polls in which our own session showed the sample as now playing.
+  sawOurSession = 0;
   private running = false;
   private loop?: Promise<void>;
 
@@ -119,7 +122,9 @@ export class SessionWatcher {
   start(itemId: string): void {
     this.transcoding.length = 0;
     this.playMethods.clear();
+    this.errors.length = 0;
     this.polls = 0;
+    this.sawOurSession = 0;
     this.running = true;
     this.loop = (async () => {
       while (this.running) {
@@ -130,12 +135,17 @@ export class SessionWatcher {
   }
 
   async pollOnce(itemId: string): Promise<void> {
-    const sessions = await this.monitor.sessions();
-    this.polls += 1;
-    const ours = sessions.find((session) => session.NowPlayingItem?.Id === itemId);
-    if (ours?.PlayState?.PlayMethod) this.playMethods.add(ours.PlayState.PlayMethod);
-    for (const session of findTranscodingSessions(sessions)) {
-      if (!this.transcoding.some((seen) => seen.id === session.id)) this.transcoding.push(session);
+    try {
+      const sessions = await this.monitor.sessions();
+      this.polls += 1;
+      const ours = sessions.find((session) => session.NowPlayingItem?.Id === itemId);
+      if (ours) this.sawOurSession += 1;
+      if (ours?.PlayState?.PlayMethod) this.playMethods.add(ours.PlayState.PlayMethod);
+      for (const session of findTranscodingSessions(sessions)) {
+        if (!this.transcoding.some((seen) => seen.id === session.id)) this.transcoding.push(session);
+      }
+    } catch (error) {
+      this.errors.push(`/Sessions poll failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
