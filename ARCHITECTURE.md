@@ -164,14 +164,14 @@ Empty `Container`/`VideoCodec`/`AudioCodec` fields mean "match anything": `Conta
 
 **Media source acceptance.** A source is playable only if **all** of these hold:
 
-1. `SupportsDirectPlay === true`
-2. `Protocol === "File"`
-3. `TranscodingUrl` is empty
-4. `VideoType` is not `BluRay` or `Dvd`. A `Static=true` request for a disc-folder source silently starts ffmpeg on the server.
-5. `VideoType` is not `Iso`. Rejected for now; **[unverified]** whether mpv handles ISO over HTTP.
+1. `VideoType` is not `BluRay` or `Dvd`. A `Static=true` request for a disc-folder source silently starts ffmpeg on the server.
+2. `VideoType` is not `Iso`. Rejected for now; **[unverified]** whether mpv handles ISO over HTTP.
+3. `SupportsDirectPlay === true`
+4. `Protocol === "File"`
+5. `TranscodingUrl` is empty
 6. `Id` and `Path` are present.
 
-The rules run in this order and the first failing rule names the reason. If no source qualifies, the gateway throws `PlaybackRefusedError` with a typed `RefusalReason` (`src/domain/playback.ts`): `no-sources`, `no-direct-play`, `not-a-file`, `server-requires-transcoding`, `disc-source`, `iso-source`, or `missing-source-data`. The server reports remote bitrate limits and remote-source policy as `SupportsDirectPlay: false`, so they surface as `no-direct-play`. The profile lives in `src/lib/jellyfin/device-profile.ts` and the rules in `src/lib/jellyfin/source-acceptance.ts`. Multiple versions are listed by `MediaSources[].Name` and chosen by `MediaSourceId`; without a choice the first acceptable source plays.
+The rules run in this order and the first failing rule names the reason; the disc checks come first so a disc folder always reports `disc-source` or `iso-source`. If no source qualifies, the gateway throws `PlaybackRefusedError` with a typed `RefusalReason` (`src/domain/playback.ts`): `no-sources`, `no-direct-play`, `not-a-file`, `server-requires-transcoding`, `disc-source`, `iso-source`, or `missing-source-data`. The server reports remote bitrate limits and remote-source policy as `SupportsDirectPlay: false`, so they surface as `no-direct-play`. The profile lives in `src/lib/jellyfin/device-profile.ts` and the rules in `src/lib/jellyfin/source-acceptance.ts`. Multiple versions are listed by `MediaSources[].Name` and chosen by `MediaSourceId`; without a choice the first acceptable source plays.
 
 **Subtitles and track mapping.**
 

@@ -147,8 +147,10 @@ describe.each(versions)("PlaybackInfo fixtures from Jellyfin %s", (version) => {
 
   it("refuses the recorded BluRay folder with a typed reason", async () => {
     const { run } = await plan(version, "bluray-folder", "item-bluray");
-    // The server already reports SupportsDirectPlay false for the disc folder.
-    expect((await refusalOf(run())).reason).toBe("no-direct-play");
+    // The server reports SupportsDirectPlay false here, but the disc check runs first.
+    const refusal = await refusalOf(run());
+    expect(refusal.reason).toBe("disc-source");
+    expect(refusal.detail).toBe("BluRay");
   });
 
   it("refuses a BluRay source by VideoType even when the server reports direct play", async () => {
