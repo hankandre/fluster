@@ -15,15 +15,21 @@ pub fn redact_url(value: &str) -> String {
     url.to_string()
 }
 
-const SENSITIVE_MARKERS: [&str; 8] = [
+const SENSITIVE_MARKERS: [&str; 14] = [
     "http://",
     "https://",
     "api_key=",
+    "api-key=",
     "apikey=",
     "token=",
+    "token:",
     "x-emby-token",
+    "x-mediabrowser-token",
     "authorization",
     "bearer ",
+    "password",
+    "playsessionid",
+    "accesstoken",
 ];
 
 pub fn safe_error(value: impl std::fmt::Display) -> String {
