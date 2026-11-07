@@ -12,7 +12,7 @@
     "Set status to blocked and explain in evidence when a dependency or human action is missing.",
     "Use the model and skill named on the task.",
     "Tasks with human set to true need a person at this computer.",
-    "Build new UI only under src/features/; never extend the proof-of-concept screens in src/App.tsx.",
+    "Build new UI only under src/features/; never extend the proof-of-concept screens in src/poc/PocApp.tsx.",
     "Mark the task done in tasks/prd.json inside the same pull request that completes it."
   ],
   "status_values": [
@@ -510,10 +510,10 @@
             "The proof-of-concept flow and existing e2e journeys still pass"
           ],
           "verify": "pnpm check && pnpm test:e2e",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "POC moved to src/poc/PocApp.tsx; only change is DI via PocServices (src/poc/services.ts) built in src/app/compose.ts, the sole constructor of gateway and engines.\nsrc/app/App.tsx routes #/next[/name] to src/features/{sign-in,home,browse,detail,player} placeholders, else PocApp; boundary lint updated for src/app and src/poc.\npnpm check, pnpm lint:boundaries green; pnpm test:e2e 6 passed (5 existing unchanged + /#/next/home)."
         },
         {
           "id": "P2-02",

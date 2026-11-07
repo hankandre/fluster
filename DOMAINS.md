@@ -55,7 +55,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 
 **Language.** Server, ServerId, User, Session, DeviceId, Access token, Quick Connect code, Server capabilities.
 
-**Code today.** `JellyfinGateway.connect/login`, `normalizeServerUrl`, `createSdkApi` in `src/lib/jellyfin/gateway.ts`; the login UI inside `src/App.tsx`.
+**Code today.** `JellyfinGateway.connect/login`, `normalizeServerUrl`, `createSdkApi` in `src/lib/jellyfin/gateway.ts`; the login UI inside `src/poc/PocApp.tsx`.
 
 **Rules.**
 - The token is held only by the gateway (and later by the Rust-owned vault). It is never in React state, Query caches, or WebView storage.
@@ -78,7 +78,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 
 **Language.** Library (UserView), Item, Movie, Series, Season, Episode, Collection, Card, Row, Resume position, Played, Favorite, Image tag.
 
-**Code today.** `JellyfinGateway.latest`, the `LibraryItem` type in `src/domain/playback.ts` (to move to a catalog module), and the library grid in `src/App.tsx`.
+**Code today.** `JellyfinGateway.latest`, the `LibraryItem` type in `src/domain/playback.ts` (to move to a catalog module), and the library grid in `src/poc/PocApp.tsx`.
 
 **Rules.**
 - Catalog code never builds stream URLs or decides playability. It hands an `itemId` (and optionally a `mediaSourceId`) to Playback Negotiation.
@@ -129,7 +129,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 
 **Language.** Attempt, Operation, First frame, End reason (eof / stopped / quit / error), Retry, Up next, Segment (intro / outro / recap).
 
-**Code today.** `PlaybackCoordinator` (`src/lib/player/coordinator.ts`), `playbackSessionReducer` (`src/lib/player/session-state.ts`), the player routing inside `src/App.tsx`.
+**Code today.** `PlaybackCoordinator` (`src/lib/player/coordinator.ts`), `playbackSessionReducer` (`src/lib/player/session-state.ts`), the player routing inside `src/poc/PocApp.tsx`.
 
 **Rules.**
 - Talks to the player only through the `PlayerEngine` port.
@@ -240,10 +240,10 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 - keyboard, remote, and focus navigation
 - media keys (MPRIS, Now Playing, SMTC; these are wired natively but are presentation concerns)
 
-**Code today.** `src/App.tsx` (448 lines: routing, login, library, resume dialog, player wiring), `src/components/PlayerView.tsx`, `src/styles.css`.
+**Code today.** `src/poc/PocApp.tsx` (448 lines: routing, login, library, resume dialog, player wiring), `src/components/PlayerView.tsx`, `src/styles.css`.
 
 **Rules.**
-- Views call application use cases. They do not instantiate gateways or engines (today `App.tsx` does; this is the first split).
+- Views call application use cases. They do not instantiate gateways or engines (today `src/poc/PocApp.tsx` receives them from `src/app/compose.ts`; this is the first split).
 
 ---
 
@@ -267,7 +267,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 | Concern | Owns | Code |
 |---|---|---|
 | **Security & Redaction** | URL redaction (TS + Rust), credential-in-URL rejection, canary tests, CSP | `src/lib/redact.ts`, `src-tauri/src/redaction.rs`, `docs/security.md` |
-| **Diagnostics** | Player information panel, decoder labels, exportable diagnostics (must pass redaction) | `PlayerInformation` in `App.tsx`, diagnostics in `mpv.rs` |
+| **Diagnostics** | Player information panel, decoder labels, exportable diagnostics (must pass redaction) | `PlayerInformation` in `PocApp.tsx`, diagnostics in `mpv.rs` |
 
 ---
 
@@ -297,7 +297,7 @@ These rules become an import-boundary lint (`WORKFLOW.md` → Mechanical enforce
 
 ## Target layout
 
-The core (domain, gateway, coordinator, native player, surfaces, redaction) moves here incrementally, one domain per PR, keeping its tests. The proof-of-concept UI in `src/App.tsx` is frozen, not refactored: new views are built fresh under `src/features/`, and the old screens stay runnable as the reference until their replacements pass, then are deleted (`tasks/prd.json` P3-16).
+The core (domain, gateway, coordinator, native player, surfaces, redaction) moves here incrementally, one domain per PR, keeping its tests. The proof-of-concept UI in `src/poc/PocApp.tsx` is frozen, not refactored: new views are built fresh under `src/features/`, and the old screens stay runnable as the reference until their replacements pass, then are deleted (`tasks/prd.json` P3-16).
 
 ```text
 src/

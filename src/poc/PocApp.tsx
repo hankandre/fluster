@@ -13,15 +13,14 @@ import {
   Server,
   Settings2,
 } from "lucide-react";
-import type { LibraryItem, PlaybackStartChoice, PlayerCapabilities } from "./domain/playback";
-import { resumeChoice, startOverChoice, ticksToSeconds } from "./domain/playback";
-import { PlayerView } from "./components/PlayerView";
-import { JellyfinGateway } from "./lib/jellyfin/gateway";
-import { redactText } from "./lib/redact";
-import { BrowserPlayerEngine } from "./lib/player/browser-player";
-import { PlaybackCancelledError, PlaybackCoordinator } from "./lib/player/coordinator";
-import { isTauriRuntime, NativePlayerEngine } from "./lib/player/native-player";
-import { initialPlaybackSessionState, playbackSessionReducer } from "./lib/player/session-state";
+import type { LibraryItem, PlaybackStartChoice, PlayerCapabilities } from "../domain/playback";
+import { resumeChoice, startOverChoice, ticksToSeconds } from "../domain/playback";
+import { PlayerView } from "../components/PlayerView";
+import { redactText } from "../lib/redact";
+import type { PocServices } from "./services";
+import type { JellyfinGateway } from "../lib/jellyfin/gateway";
+import { PlaybackCancelledError, PlaybackCoordinator } from "../lib/player/coordinator";
+import { initialPlaybackSessionState, playbackSessionReducer } from "../lib/player/session-state";
 
 type Connection = { gateway: JellyfinGateway; name: string; version: string };
 type SignedInUser = { id: string; name: string };
@@ -47,10 +46,10 @@ function itemEyebrow(item: LibraryItem): string {
   return [episode, item.productionYear].filter(Boolean).join(" · ");
 }
 
-export function App() {
+export function PocApp({ services }: { services: PocServices }) {
   const queryClient = useQueryClient();
-  const native = isTauriRuntime();
-  const player = useMemo(() => native ? new NativePlayerEngine() : new BrowserPlayerEngine(), [native]);
+  const { native } = services;
+  const player = useMemo(() => services.createPlayerEngine(), [services]);
   const coordinator = useRef<PlaybackCoordinator | undefined>(undefined);
   const [serverUrl, setServerUrl] = useState("");
   const [connection, setConnection] = useState<Connection>();
@@ -100,7 +99,7 @@ export function App() {
 
   const connect = useMutation({
     mutationFn: async () => {
-      const gateway = new JellyfinGateway(serverUrl);
+      const gateway = services.createGateway(serverUrl);
       const info = await gateway.connect();
       return { gateway, ...info };
     },
