@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSession, type SessionGateway } from "../../app/session";
 import { SignOutButton } from "../sign-out-button";
@@ -10,6 +10,16 @@ const SIGN_IN_ROUTE = "#/next/sign-in";
 // the cache once Home unmounts (gcTime 0), so one user's rows are never shown
 // to the next.
 let nextScope = 0;
+const scopes = new WeakMap<SessionGateway, number>();
+
+function scopeFor(gateway: SessionGateway): number {
+  let scope = scopes.get(gateway);
+  if (scope === undefined) {
+    scope = ++nextScope;
+    scopes.set(gateway, scope);
+  }
+  return scope;
+}
 
 export function HomeView() {
   const { gateway } = useSession();
@@ -29,7 +39,7 @@ export function HomeView() {
 }
 
 function HomeRows({ gateway }: { gateway: SessionGateway }) {
-  const scope = useMemo(() => ++nextScope, [gateway]);
+  const scope = scopeFor(gateway);
 
   return (
     <>

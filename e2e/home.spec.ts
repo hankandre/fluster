@@ -3,6 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 const serverUrl = "http://127.0.0.1:8096";
 
 // A 1x1 transparent GIF, served for every image request.
+const imageDelayMs = 1_500;
 const PIXEL = Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "base64");
 
 const card = (id: string, name: string, extra: Record<string, unknown> = {}) => ({
@@ -11,6 +12,7 @@ const card = (id: string, name: string, extra: Record<string, unknown> = {}) => 
   Type: "Movie",
   ProductionYear: 2016,
   ImageTags: { Primary: `${id}-tag` },
+  ImageBlurHashes: { Primary: { [`${id}-tag`]: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" } },
   PrimaryImageAspectRatio: 0.667,
   ...extra,
 });
@@ -24,7 +26,9 @@ async function mockHomeServer(page: Page) {
     const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*" };
     const json = (body: unknown) => route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify(body) });
     if (url.pathname.startsWith("/Items/") && url.pathname.includes("/Images/")) {
-      return route.fulfill({ status: 200, headers: cors, contentType: "image/gif", body: PIXEL });
+      // Delay images so the blurhash placeholder is observable first.
+      return new Promise<void>((resolve) => setTimeout(resolve, imageDelayMs)).then(() =>
+        route.fulfill({ status: 200, headers: cors, contentType: "image/gif", body: PIXEL }));
     }
     switch (url.pathname) {
       case "/System/Info/Public":
@@ -61,21 +65,22 @@ test("signing in shows Continue Watching, Next Up, and Latest rows with cards", 
   await expect(page.getByRole("heading", { name: "Home" })).toBeVisible({ timeout: 8_000 });
 
   await expect(page.getByRole("heading", { name: "Continue Watching" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Half Watched, 2016" })).toBeVisible();
-  await expect(page.getByRole("progressbar", { name: "Watched" })).toHaveAttribute("aria-valuenow", "50");
+  await expect(page.getByRole("article", { name: "Half Watched, 2016, 50% watched" })).toBeVisible();
 
   await expect(page.getByRole("heading", { name: "Next Up" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Great Show, S1E2 · Pilot" })).toBeVisible();
+  await expect(page.getByRole("article", { name: "Great Show, S1E2 · Pilot" })).toBeVisible();
 
   await expect(page.getByRole("heading", { name: "Latest in Movies" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Brand New, 2016" })).toBeVisible();
+  await expect(page.getByRole("article", { name: "Brand New, 2016" })).toBeVisible();
   await expect(page.getByRole("heading", { name: /Latest in Music/ })).toHaveCount(0);
 
-  await expect(page.getByTestId("card-image").first()).toHaveAttribute("data-state", "loaded");
+  const firstImage = page.getByTestId("card-image").first();
+  await expect(firstImage).toHaveAttribute("data-placeholder", "blurhash");
+  await expect(firstImage).toHaveAttribute("data-state", "loading");
+  await expect(firstImage).toHaveAttribute("data-state", "loaded", { timeout: 8_000 });
   expect(requests.some((path) => path.includes("/Images/Primary?tag=movie-2-tag"))).toBe(true);
   expect(requests.filter((path) => path.includes("/Images/")).every((path) => !/api_key|token/i.test(path))).toBe(true);
 
-  await page.keyboard.press("Tab");
-  await page.getByRole("button", { name: "Half Watched, 2016" }).focus();
-  await expect(page.getByRole("button", { name: "Half Watched, 2016" })).toBeFocused();
+  // Cards are not interactive until the detail view exists.
+  await expect(page.getByRole("button", { name: /Half Watched/ })).toHaveCount(0);
 });

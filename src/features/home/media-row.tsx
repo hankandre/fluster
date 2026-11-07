@@ -57,30 +57,26 @@ export function SkeletonStrip() {
   );
 }
 
+// Cards are not interactive until the detail view exists (P3-08).
 function Card({ card, gateway }: { card: MediaCard; gateway: SessionGateway }) {
   const { image } = card;
   const src = image ? gateway.imageUrl(image.itemId, image.type, image.tag, CARD_IMAGE_WIDTH) : undefined;
-  const label = card.subtitle ? `${card.title}, ${card.subtitle}` : card.title;
+  const parts = [card.title, card.subtitle];
+  if (card.progress !== undefined) parts.push(`${Math.round(card.progress * 100)}% watched`);
+  const label = parts.filter(Boolean).join(", ");
 
   return (
-    <button type="button" className="media-card-button" aria-label={label}>
+    <article className="media-card-button" aria-label={label}>
       <div className="card-art" style={{ aspectRatio: card.aspectRatio }}>
         <CardImage image={image} src={src} />
         {card.progress !== undefined ? (
-          <div
-            className="card-progress"
-            role="progressbar"
-            aria-label="Watched"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={Math.round(card.progress * 100)}
-          >
+          <div className="card-progress" aria-hidden="true">
             <div style={{ width: `${card.progress * 100}%` }} />
           </div>
         ) : null}
       </div>
-      <span className="card-title">{card.title}</span>
-      {card.subtitle ? <span className="card-subtitle">{card.subtitle}</span> : null}
-    </button>
+      <span className="card-title" aria-hidden="true">{card.title}</span>
+      {card.subtitle ? <span className="card-subtitle" aria-hidden="true">{card.subtitle}</span> : null}
+    </article>
   );
 }
