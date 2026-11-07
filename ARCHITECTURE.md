@@ -164,18 +164,19 @@ Empty `Container`/`VideoCodec`/`AudioCodec` fields mean "match anything": `Conta
 
 **Media source acceptance.** A source is playable only if **all** of these hold:
 
-1. `VideoType` is not `BluRay` or `Dvd`. A `Static=true` request for a disc-folder source silently starts ffmpeg on the server.
-2. `VideoType` is not `Iso`. Rejected for now; **[unverified]** whether mpv handles ISO over HTTP.
-3. `SupportsDirectPlay === true`
-4. `Protocol === "File"`
-5. `TranscodingUrl` is empty
-6. `Id` and `Path` are present.
+1. `VideoType` is not `BluRay` or `Dvd` (any case), and `Path` has no `BDMV` or `VIDEO_TS` segment. A `Static=true` request for a disc-folder source silently starts ffmpeg on the server.
+2. `VideoType` is not `Iso` and `Path` does not end in `.iso` (any case). Rejected for now; **[unverified]** whether mpv handles ISO over HTTP.
+3. `RequiresOpening` is not `true` (a live source).
+4. `SupportsDirectPlay === true`
+5. `Protocol === "File"`
+6. `TranscodingUrl` is empty
+7. `Id` and `Path` are present.
 
-The rules run in this order and the first failing rule names the reason; the disc checks come first so a disc folder always reports `disc-source` or `iso-source`. If no source qualifies, the gateway throws `PlaybackRefusedError` with a typed `RefusalReason` (`src/domain/playback.ts`): `no-sources`, `no-direct-play`, `not-a-file`, `server-requires-transcoding`, `disc-source`, `iso-source`, or `missing-source-data`. The server reports remote bitrate limits and remote-source policy as `SupportsDirectPlay: false`, so they surface as `no-direct-play`. The profile lives in `src/lib/jellyfin/device-profile.ts` and the rules in `src/lib/jellyfin/source-acceptance.ts`. Multiple versions are listed by `MediaSources[].Name` and chosen by `MediaSourceId`; without a choice the first acceptable source plays.
+The rules run in this order and the first failing rule names the reason; the disc checks come first so a disc folder always reports `disc-source` or `iso-source`. If no source qualifies, the gateway throws `PlaybackRefusedError` with a typed `RefusalReason` (`src/domain/playback.ts`): `no-sources`, `no-direct-play`, `not-a-file`, `live-source`, `server-requires-transcoding`, `disc-source`, `iso-source`, or `missing-source-data`. The server reports remote bitrate limits and remote-source policy as `SupportsDirectPlay: false`, so they surface as `no-direct-play`. The profile lives in `src/lib/jellyfin/device-profile.ts` and the rules in `src/lib/jellyfin/source-acceptance.ts`. Multiple versions are listed by `MediaSources[].Name` and chosen by `MediaSourceId`; without a choice the first acceptable source plays.
 
 **Subtitles and track mapping.**
 
-- External subtitle `DeliveryUrl` arrives as `/Videos/{id}/{msId}/Subtitles/{idx}/0/Stream.{fmt}?ApiKey=…`. Strip the query credential, validate same-origin, and load it via `sub-add` with header auth.
+- External subtitle `DeliveryUrl` arrives as `/Videos/{id}/{msId}/Subtitles/{idx}/0/Stream.{fmt}?ApiKey=…`. Strip every query credential (`ApiKey`, `api_key`, `access_token`, `Token`, `X-Emby-Token`, any case), validate same-origin, and load it via `sub-add` with header auth.
 - Embedded subtitles are rendered by mpv directly.
 - **Jellyfin numbers external streams first.** Embedded streams have `Index = ffprobeIndex + externalCount`. Map mpv `ff-index` to Jellyfin index as `ff-index + count(IsExternal)`. Map external tracks by the order Fluster added them.
 - Apply `DefaultAudioStreamIndex` and `DefaultSubtitleStreamIndex` for the initial selection.

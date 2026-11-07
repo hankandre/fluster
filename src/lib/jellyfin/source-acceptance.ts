@@ -14,16 +14,28 @@ export type SourceDecision =
   | { kind: "refused"; reason: RefusalReason; detail?: string };
 
 // A Static=true request for a disc folder makes the server start ffmpeg.
-const DISC_VIDEO_TYPES = new Set(["BluRay", "Dvd"]);
+const DISC_VIDEO_TYPES = new Set(["bluray", "dvd"]);
+const DISC_FOLDER_PATH = /(^|\/)(BDMV|VIDEO_TS)(\/|$)/i;
+const ISO_PATH = /\.iso$/i;
 
 export function evaluateSource(source: MediaSourceDto): SourceDecision {
   // Disc checks come first so a disc folder always gets the clearest reason.
-  if (source.VideoType && DISC_VIDEO_TYPES.has(source.VideoType)) {
+  // The path checks back up VideoType in case a server mislabels a disc.
+  const videoType = source.VideoType?.toLowerCase();
+  const path = source.Path?.replace(/\\/g, "/") ?? "";
+  if (videoType && DISC_VIDEO_TYPES.has(videoType)) {
     return refused({ reason: "disc-source", detail: source.VideoType });
   }
+  if (DISC_FOLDER_PATH.test(path)) {
+    return refused({ reason: "disc-source", detail: "disc folder path" });
+  }
   // Rejected until mpv playback of an ISO over HTTP is verified.
-  if (source.VideoType === "Iso") {
+  if (videoType === "iso" || ISO_PATH.test(path)) {
     return refused({ reason: "iso-source" });
+  }
+  // A source that must be opened first is a live stream, not a static file.
+  if (source.RequiresOpening === true) {
+    return refused({ reason: "live-source" });
   }
   if (source.SupportsDirectPlay !== true) {
     return refused({ reason: "no-direct-play" });

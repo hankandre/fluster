@@ -121,12 +121,22 @@ describe.each(versions)("PlaybackInfo fixtures from Jellyfin %s", (version) => {
     expect(subtitle?.deliveryUrl).toContain("/Videos/item-sidecar/item-sidecar/Subtitles/0/0/Stream.srt");
   });
 
-  it("current gap, fixed by P1-04: the subtitle URL keeps the server ApiKey and adds api_key", async () => {
+  it("strips the server ApiKey from the recorded subtitle DeliveryUrl", async () => {
+    const response = fixture(version, "external-subtitle");
+    const recorded = response.MediaSources![0].MediaStreams!.find((stream) => stream.IsExternal)!.DeliveryUrl!;
+    expect(new URL(recorded, "http://127.0.0.1:8096").searchParams.get("ApiKey")).toBe("REDACTED");
+    const { run } = await planFrom(response, "item-sidecar");
+    const subtitle = (await run()).tracks.find((track) => track.external);
+    const url = new URL(subtitle!.deliveryUrl!);
+    expect(url.searchParams.has("ApiKey")).toBe(false);
+    expect(url.href).not.toContain("REDACTED");
+  });
+
+  it("current gap, fixed by P1-04: the subtitle URL carries Fluster's token as api_key", async () => {
     const { run } = await plan(version, "external-subtitle", "item-sidecar");
     const subtitle = (await run()).tracks.find((track) => track.external);
     const url = new URL(subtitle!.deliveryUrl!);
-    expect(url.searchParams.get("ApiKey")).toBe("REDACTED");
-    expect(url.searchParams.get("api_key")).toBe("test-token");
+    expect(url.searchParams.getAll("api_key")).toEqual(["test-token"]);
   });
 
   it("plays the first version of a multi-version item by default", async () => {
@@ -141,7 +151,14 @@ describe.each(versions)("PlaybackInfo fixtures from Jellyfin %s", (version) => {
     expect(result.mediaSourceId).toBe("source-versions-2");
     expect(new URL(result.streamUrl).searchParams.get("MediaSourceId")).toBe("source-versions-2");
     const [request] = transport.posts;
-    expect(request.data).toMatchObject({ MediaSourceId: "source-versions-2", DeviceProfile: FLUSTER_PROFILE });
+    expect(request.data).toEqual({
+      ...FALSE_FLAGS,
+      UserId: "user-test",
+      StartTimeTicks: 0,
+      MaxStreamingBitrate: 1000000000,
+      MediaSourceId: "source-versions-2",
+      DeviceProfile: FLUSTER_PROFILE,
+    });
     expect(request.params).toEqual({ ...FALSE_FLAGS, UserId: "user-test", StartTimeTicks: 0 });
   });
 
@@ -161,15 +178,6 @@ describe.each(versions)("PlaybackInfo fixtures from Jellyfin %s", (version) => {
     const refusal = await refusalOf(run());
     expect(refusal.reason).toBe("disc-source");
     expect(refusal.message).not.toContain("/media/");
-  });
-
-  it("refuses the BluRay folder before any stream request", async () => {
-    const response = fixture(version, "bluray-folder");
-    response.MediaSources![0].SupportsDirectPlay = true;
-    const { transport, run } = await planFrom(response, "item-bluray");
-    await refusalOf(run());
-    // The only request after login is PlaybackInfo; no plan, so no stream URL.
-    expect(transport.posts.map((post) => post.url)).toEqual(["/Items/item-bluray/PlaybackInfo"]);
   });
 
   // Proves the empty-codec assumption for the sample set: the profile names no

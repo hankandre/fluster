@@ -241,7 +241,19 @@ describe("JellyfinGateway direct-play contract", () => {
     });
     const plan = await gateway.createPlaybackPlan(item, 0, undefined, "source-2");
     const request = transport.requests.at(-1)!;
-    expect(request.data).toMatchObject({ MediaSourceId: "source-2", DeviceProfile: FLUSTER_PROFILE });
+    expect(request.data).toEqual({
+      EnableDirectPlay: true,
+      EnableDirectStream: false,
+      EnableTranscoding: false,
+      AllowVideoStreamCopy: false,
+      AllowAudioStreamCopy: false,
+      AutoOpenLiveStream: false,
+      UserId: "user-1",
+      StartTimeTicks: 0,
+      MaxStreamingBitrate: 1000000000,
+      MediaSourceId: "source-2",
+      DeviceProfile: FLUSTER_PROFILE,
+    });
     expect(request.params).not.toHaveProperty("MediaSourceId");
     expect(plan.mediaSourceId).toBe("source-2");
     expect(new URL(plan.streamUrl).searchParams.get("MediaSourceId")).toBe("source-2");
@@ -318,10 +330,33 @@ describe("JellyfinGateway direct-play contract", () => {
     expect(subtitleUrl.hash).toBe("");
   });
 
+  it("strips every server credential parameter from subtitle URLs before adding Fluster's own", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("POST /Items/item/one/PlaybackInfo", {
+      PlaySessionId: "play-1",
+      MediaSources: [{
+        Id: "source-1",
+        Path: "/media/movie.mkv",
+        Protocol: "File",
+        SupportsDirectPlay: true,
+        MediaStreams: [{
+          Index: 0,
+          Type: "Subtitle",
+          IsExternal: true,
+          DeliveryUrl: "/Videos/m/s/Subtitles/0/0/Stream.srt?ApiKey=a&apikey=b&API_KEY=c&access_token=d&Token=e&X-Emby-Token=f&format=srt",
+        }],
+      }],
+    });
+
+    const plan = await gateway.createPlaybackPlan(item);
+    const url = new URL(plan.tracks[0].deliveryUrl!);
+    expect([...url.searchParams.entries()]).toEqual([["format", "srt"], ["api_key", "top-secret"]]);
+  });
+
   it.each([
     "https://attacker.test/subtitle.srt",
     "https://name:password@media.test/subtitle.srt",
-    "/subtitle.srt?api_key=untrusted",
+    "https://attacker.test/subtitle.srt?ApiKey=untrusted",
     "file:///tmp/subtitle.srt",
   ])("rejects unsafe subtitle URLs without exposing them: %s", async (deliveryUrl) => {
     const { gateway, transport } = await authenticatedGateway();

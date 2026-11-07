@@ -15,6 +15,7 @@ export type RefusalReason =
   | "no-sources"
   | "no-direct-play"
   | "not-a-file"
+  | "live-source"
   | "server-requires-transcoding"
   | "disc-source"
   | "iso-source"
@@ -29,6 +30,7 @@ const REFUSAL_MESSAGES: Record<RefusalReason, string> = {
   "no-sources": "Jellyfin returned no media source for this item.",
   "no-direct-play": "Jellyfin cannot direct-play this item for Fluster.",
   "not-a-file": "This item is not a file on the server, so Fluster cannot play it directly.",
+  "live-source": "This item is a live stream, which Fluster cannot play directly.",
   "server-requires-transcoding": "Jellyfin would need to convert this item. Server conversion is disabled.",
   "disc-source": "This item is a Blu-ray or DVD folder, which Fluster cannot play directly.",
   "iso-source": "This item is a disc image (ISO), which Fluster does not play yet.",
