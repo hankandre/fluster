@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod command_allowlist;
+#[cfg(test)]
+mod logger_guard;
 mod model;
 mod mpv;
 mod realtime;
