@@ -94,3 +94,13 @@ export function subtitleLabel(subtitle: SubtitleInfo): string {
   ];
   return [languageName(subtitle.language), codecName(subtitle.codec), ...flags].filter(Boolean).join(" · ");
 }
+
+// A playback position as a clock: 12:34, or 1:02:03 past an hour.
+export function positionLabel(ticks: number): string {
+  const totalSeconds = Math.floor(ticks / 10_000_000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return hours > 0 ? `${hours}:${pad(minutes)}:${pad(seconds)}` : `${minutes}:${pad(seconds)}`;
+}

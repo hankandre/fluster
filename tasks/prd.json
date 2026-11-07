@@ -996,10 +996,10 @@
             "Built under src/features/ with a Playwright journey; no proof-of-concept screen is extended"
           ],
           "verify": "pnpm check && pnpm test:e2e",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "src/features/player plays item detail Play/Resume via #/next/play/<id>?source=&start=, one PlaybackCoordinator per session, PlayerView + the app's single PlayerEngine from the composition root (PlayerServicesProvider); no new Tauri command, src/poc untouched.\nBack, natural end, refusal Back, and post-error Back return to #/next/item/<id>; start/stopped (Failed on error) reports and Retry renegotiation covered by src/features/player/player-view.test.tsx (7 tests).\ne2e/player.spec.ts (4 journeys: Play+Back, Resume+eof, Retry after error, Blu-ray refusal) passes; pnpm check exit 0 (500 unit tests), pnpm test:e2e 18 passed, lint:boundaries clean.\nUntested: native libmpv/Wayland/macOS playback and window-close flush through the new UI."
         },
         {
           "id": "P3-16",

@@ -5,9 +5,12 @@ import { NativeRealtime } from "../lib/realtime/native-realtime";
 import { NoOpRealtime } from "../lib/realtime/no-op-realtime";
 import type { PocServices } from "../poc/services";
 import { isTauriRuntime, NativePlayerEngine } from "../lib/player/native-player";
+import { watchNativeWindowClose } from "./window-close";
 
 export type AppServices = PocServices & {
   realtime: RealtimeConnection;
+  // Lets playback stop and report before the desktop window closes.
+  watchWindowClose?: (beforeClose: () => Promise<void>) => () => void;
 };
 
 // Composition root: the only module that constructs the gateway, player
@@ -19,5 +22,6 @@ export function createServices(): AppServices {
     createGateway: (serverUrl) => new JellyfinGateway(serverUrl),
     createPlayerEngine: () => (native ? new NativePlayerEngine() : new BrowserPlayerEngine()),
     realtime: native ? new NativeRealtime() : new NoOpRealtime(),
+    watchWindowClose: native ? watchNativeWindowClose : undefined,
   };
 }

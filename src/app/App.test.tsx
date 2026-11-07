@@ -14,6 +14,8 @@ describe("App routing", () => {
     "#/next/unknown/thing",
     "#/next/browse/a/b",
     "#/next/",
+    "#/next/play/",
+    "#/next/play/m1?start=abc",
   ])("shows Not found for %s instead of the proof of concept", (hash) => {
     window.location.hash = hash;
     render(

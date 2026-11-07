@@ -288,3 +288,33 @@ describe("route behavior", () => {
     expect(window.location.hash).toBe("#/next/sign-in");
   });
 });
+
+describe("play actions", () => {
+  it("offers Play for the selected version when there is nothing to resume", async () => {
+    await renderDetail(fakeGateway());
+    const play = await screen.findByRole("link", { name: "Play" });
+    expect(play).toHaveAttribute("href", "#/next/play/m1?source=src-4k");
+    expect(screen.queryByRole("link", { name: /Resume/ })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("radio", { name: "1080p" }));
+    expect(screen.getByRole("link", { name: "Play" })).toHaveAttribute("href", "#/next/play/m1?source=src-hd");
+  });
+
+  it("offers Resume from the saved position and Start over", async () => {
+    const userData = { played: false, favorite: false, resumePositionTicks: 7_540_000_000 };
+    await renderDetail(fakeGateway({ itemDetail: vi.fn().mockResolvedValue(detail({ userData })) }));
+    expect(await screen.findByRole("link", { name: "Resume from 12:34" })).toHaveAttribute(
+      "href",
+      "#/next/play/m1?source=src-4k&start=7540000000",
+    );
+    expect(screen.getByRole("link", { name: "Start over" })).toHaveAttribute("href", "#/next/play/m1?source=src-4k");
+    expect(screen.queryByRole("link", { name: "Play" })).not.toBeInTheDocument();
+  });
+
+  it("does not offer Resume for a played item", async () => {
+    const userData = { played: true, favorite: false, resumePositionTicks: 7_540_000_000 };
+    await renderDetail(fakeGateway({ itemDetail: vi.fn().mockResolvedValue(detail({ userData })) }));
+    expect(await screen.findByRole("link", { name: "Play" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Resume/ })).not.toBeInTheDocument();
+  });
+});

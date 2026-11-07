@@ -8,6 +8,7 @@ import { RowError } from "../home/media-row";
 import { detailKey } from "./detail-key";
 import { runtimeLabel } from "./format";
 import { MediaInfo, VersionPicker } from "./media-info";
+import { PlayActions } from "./play-actions";
 import { WatchState } from "./watch-state";
 
 const POSTER_WIDTH = 400;
@@ -63,6 +64,7 @@ function DetailBody({ gateway, item }: { gateway: SessionGateway; item: ItemDeta
           {item.seriesName ? <p className="detail-series">{item.seriesName}</p> : null}
           {facts ? <p>{facts}</p> : null}
           {item.genres.length > 0 ? <p>{item.genres.join(", ")}</p> : null}
+          <PlayActions item={item} mediaSourceId={selected?.id} />
           <WatchState gateway={gateway} item={item} />
         </div>
       </div>
