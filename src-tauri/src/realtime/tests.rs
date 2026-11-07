@@ -121,6 +121,16 @@ fn socket_urls_follow_the_server_url_policy() {
         ),
         ("http://localhost:8096", "ws://localhost:8096/socket"),
         ("http://127.0.0.1:8096", "ws://127.0.0.1:8096/socket"),
+        ("http://[::1]:8096", "ws://[::1]:8096/socket"),
+        ("http://192.168.1.5:8096", "ws://192.168.1.5:8096/socket"),
+        ("http://10.0.0.7", "ws://10.0.0.7/socket"),
+        ("http://[fd00::5]:8096/", "ws://[fd00::5]:8096/socket"),
+        ("http://nas.local:8096", "ws://nas.local:8096/socket"),
+        (
+            "http://jellyfin.home.arpa/jellyfin",
+            "ws://jellyfin.home.arpa/jellyfin/socket",
+        ),
+        ("https://192.168.1.5:8920", "wss://192.168.1.5:8920/socket"),
     ] {
         let target = socket_target(server_url, HEADER).expect(server_url);
         assert_eq!(target.url.as_str(), socket_url);
@@ -128,12 +138,15 @@ fn socket_urls_follow_the_server_url_policy() {
 }
 
 #[test]
-fn socket_urls_reject_plaintext_remote_hosts_and_credentials() {
+fn socket_urls_reject_plaintext_public_hosts_and_credentials() {
     for server_url in [
         "http://media.example",
         "http://localhost.example",
-        "http://192.168.1.10:8096",
-        "http://[::1]:8096",
+        "http://100.64.0.1:8096",
+        "http://8.8.8.8:8096",
+        "http://[::ffff:8.8.8.8]:8096",
+        "http://jellyfin.lan:8096",
+        "http://user:password@192.168.1.5:8096",
         "https://user:password@media.example",
         "https://media.example/#fragment",
         "https://media.example/?ApiKey=secret",

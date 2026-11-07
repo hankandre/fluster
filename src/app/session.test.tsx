@@ -8,7 +8,9 @@ afterEach(cleanup);
 function stubGateway(serverUrl: string, token: string): SessionGateway {
   return {
     serverUrl,
+    origin: new URL(serverUrl).origin,
     connect: vi.fn(),
+    confirmUnencryptedConnection: vi.fn(),
     login: vi.fn(),
     quickConnectEnabled: vi.fn(),
     initiateQuickConnect: vi.fn(),

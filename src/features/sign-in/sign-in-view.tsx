@@ -6,6 +6,7 @@ const HOME_ROUTE = "#/next/home";
 
 type Stage =
   | { name: "server" }
+  | { name: "confirm-unencrypted"; gateway: SessionGateway; serverName: string }
   | { name: "quick-connect"; gateway: SessionGateway }
   | { name: "password"; gateway: SessionGateway };
 
@@ -26,6 +27,12 @@ function isNotFound(error: unknown): boolean {
 
 const MAX_POLL_FAILURES = 3;
 
+// A failed Quick Connect check only means the password form is used.
+async function chooseSignInStage(gateway: SessionGateway, signal: AbortSignal): Promise<Stage> {
+  const quickConnect = await gateway.quickConnectEnabled(signal).catch(() => false);
+  return { name: quickConnect ? "quick-connect" : "password", gateway };
+}
+
 export function SignInView() {
   const session = useSession();
   const [stage, setStage] = useState<Stage>({ name: "server" });
@@ -38,6 +45,15 @@ export function SignInView() {
   switch (stage.name) {
     case "server":
       return <ServerStep onConnected={setStage} />;
+    case "confirm-unencrypted":
+      return (
+        <ConfirmUnencryptedStep
+          gateway={stage.gateway}
+          serverName={stage.serverName}
+          onConfirmed={setStage}
+          onCancel={() => setStage({ name: "server" })}
+        />
+      );
     case "quick-connect":
       return (
         <QuickConnectStep
@@ -58,12 +74,12 @@ export function SignInView() {
   }
 }
 
-function Shell({ kicker, title, children }: { kicker: string; title: string; children: ReactNode }) {
+function Shell({ kicker, title, titleId, children }: { kicker: string; title: string; titleId?: string; children: ReactNode }) {
   return (
     <main className="content auth-content">
       <section className="auth-card">
         <p className="kicker">{kicker}</p>
-        <h1>{title}</h1>
+        <h1 id={titleId}>{title}</h1>
         {children}
       </section>
     </main>
@@ -86,11 +102,14 @@ function ServerStep({ onConnected }: { onConnected: (stage: Stage) => void }) {
     const abort = new AbortController();
     controller.current = abort;
     try {
+      // A public http:// address throws here, before any request is sent.
       const gateway = session.createGateway(serverUrl);
-      await gateway.connect(abort.signal);
-      // A failed Quick Connect check only means the password form is used.
-      const quickConnect = await gateway.quickConnectEnabled(abort.signal).catch(() => false);
-      onConnected({ name: quickConnect ? "quick-connect" : "password", gateway });
+      const server = await gateway.connect(abort.signal);
+      if (server.needsUnencryptedConfirmation) {
+        onConnected({ name: "confirm-unencrypted", gateway, serverName: server.name });
+        return;
+      }
+      onConnected(await chooseSignInStage(gateway, abort.signal));
     } catch (caught) {
       if (isAbort(caught)) return;
       setError(errorMessage(caught));
@@ -119,6 +138,79 @@ function ServerStep({ onConnected }: { onConnected: (stage: Stage) => void }) {
           </button>
         </div>
       </form>
+    </Shell>
+  );
+}
+
+// Shown once per server Id and origin before a password, Quick Connect
+// secret, or token goes to a private-LAN server over plain HTTP
+// (docs/decisions/0001). Cancel is the default.
+function ConfirmUnencryptedStep({
+  gateway,
+  serverName,
+  onConfirmed,
+  onCancel,
+}: {
+  gateway: SessionGateway;
+  serverName: string;
+  onConfirmed: (stage: Stage) => void;
+  onCancel: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const controller = useRef<AbortController | undefined>(undefined);
+  const cancelled = useRef(onCancel);
+  cancelled.current = onCancel;
+
+  useEffect(() => () => controller.current?.abort(), []);
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      controller.current?.abort();
+      cancelled.current();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  async function confirm() {
+    setError("");
+    setBusy(true);
+    const abort = new AbortController();
+    controller.current = abort;
+    try {
+      gateway.confirmUnencryptedConnection();
+      onConfirmed(await chooseSignInStage(gateway, abort.signal));
+    } catch (caught) {
+      if (isAbort(caught)) return;
+      setError(errorMessage(caught));
+      setBusy(false);
+    }
+  }
+
+  function cancel() {
+    controller.current?.abort();
+    onCancel();
+  }
+
+  return (
+    <Shell kicker="STEP 01 / CONNECTION" title="This server uses an unencrypted connection." titleId="unencrypted-title">
+      <div role="alertdialog" aria-labelledby="unencrypted-title" aria-describedby="unencrypted-description">
+        <p id="unencrypted-description" className="lede">
+          Your Jellyfin password and sign-in token will travel across your network without encryption.
+          Anyone else on this network could read them and use your account.
+          Continue only on a network you trust, such as your home network.
+          Fluster will remember this choice for “{serverName}” at <code>{gateway.origin}</code>.
+        </p>
+        {error && <p role="alert" className="form-error">{error}</p>}
+        <div className="form-actions">
+          <button type="button" className="text-button" disabled={busy} onClick={confirm}>
+            {busy ? "Connecting…" : "Connect without encryption"}
+          </button>
+          <button type="button" className="primary-button" autoFocus onClick={cancel}>Cancel</button>
+        </div>
+      </div>
     </Shell>
   );
 }

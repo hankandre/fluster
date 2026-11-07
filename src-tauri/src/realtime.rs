@@ -44,9 +44,7 @@ type Socket = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
 #[derive(Debug, Error, PartialEq)]
 pub enum RealtimeError {
-    #[error(
-        "The server URL is not allowed. Use HTTPS, or HTTP only for a loopback Jellyfin server."
-    )]
+    #[error("The server URL is not allowed. Use HTTPS, or HTTP only for this device or a private home-network server.")]
     UnsafeServerUrl,
     #[error("The server socket needs a signed-in Jellyfin authorization header.")]
     InvalidAuthorization,
@@ -68,7 +66,8 @@ impl std::fmt::Debug for SocketTarget {
     }
 }
 
-/// Builds `wss://host/base/socket` (or `ws://` for loopback HTTP) from the
+/// Builds `wss://host/base/socket` (or `ws://` where plain HTTP is allowed:
+/// loopback and private-LAN hosts) from the
 /// server URL, using the same policy as playback URLs.
 pub fn socket_target(server_url: &str, authorization: &str) -> Result<SocketTarget, RealtimeError> {
     let mut url = parse_allowed_url(server_url).ok_or(RealtimeError::UnsafeServerUrl)?;

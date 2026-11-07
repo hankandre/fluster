@@ -17,7 +17,9 @@ function card(id: string, title: string, overrides: Partial<MediaCard> = {}): Me
 function fakeGateway(overrides: Partial<SessionGateway> = {}): SessionGateway {
   return {
     serverUrl: "https://media.test",
+    origin: "https://media.test",
     connect: vi.fn(),
+    confirmUnencryptedConnection: vi.fn(),
     login: vi.fn(),
     quickConnectEnabled: vi.fn(),
     initiateQuickConnect: vi.fn(),

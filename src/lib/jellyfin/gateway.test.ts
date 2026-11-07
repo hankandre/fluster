@@ -7,9 +7,12 @@ import {
   CONTROL_REQUEST_TIMEOUT_MS,
   DIRECT_PLAY_REQUEST,
   JellyfinGateway,
+  PUBLIC_HTTP_REFUSED_MESSAGE,
   REPORT_REQUEST_TIMEOUT_MS,
   selectDirectFileSource,
+  UNENCRYPTED_NOT_CONFIRMED_MESSAGE,
 } from "./gateway";
+import type { LanHttpConfirmation, LanHttpConfirmationStore } from "../lan-http-confirmations";
 import type { HttpRequestConfig, HttpTransport } from "./types";
 
 interface RequestRecord {
@@ -71,21 +74,29 @@ function authenticatedGateway() {
 }
 
 describe("JellyfinGateway direct-play contract", () => {
-  it("accepts HTTPS and loopback HTTP server URLs", () => {
-    const transport = new FakeTransport();
-    expect(new JellyfinGateway("https://media.test/jellyfin/", transport).serverUrl)
-      .toBe("https://media.test/jellyfin");
-    expect(new JellyfinGateway("http://localhost:8096", transport).serverUrl)
-      .toBe("http://localhost:8096");
-    expect(new JellyfinGateway("http://127.0.0.1:8096", transport).serverUrl)
-      .toBe("http://127.0.0.1:8096");
+  it.each([
+    ["https://media.test/jellyfin/", "https://media.test/jellyfin", "public"],
+    ["http://localhost:8096", "http://localhost:8096", "loopback"],
+    ["http://127.0.0.1:8096", "http://127.0.0.1:8096", "loopback"],
+    ["http://127.42.7.9:8096", "http://127.42.7.9:8096", "loopback"],
+    ["http://[::1]:8096", "http://[::1]:8096", "loopback"],
+    ["http://192.168.1.5:8096/jellyfin/", "http://192.168.1.5:8096/jellyfin", "private-lan"],
+    ["http://3232235777:8096", "http://192.168.1.1:8096", "private-lan"],
+    ["http://NAS.local:8096", "http://nas.local:8096", "private-lan"],
+    ["https://192.168.1.5:8920", "https://192.168.1.5:8920", "private-lan"],
+  ])("accepts %s as %s (%s)", (input, serverUrl, hostClass) => {
+    const gateway = new JellyfinGateway(input, new FakeTransport());
+    expect(gateway.serverUrl).toBe(serverUrl);
+    expect(gateway.hostClass).toBe(hostClass);
+    expect(gateway.origin).toBe(new URL(serverUrl).origin);
   });
 
   it.each([
     "http://media.test",
     "http://localhost.example.com",
-    "http://127.42.7.9:8096",
-    "http://[::1]:8096",
+    "http://100.64.0.1:8096",
+    "http://[::ffff:8.8.8.8]:8096",
+    "http://jellyfin.lan:8096",
     "ftp://localhost/media",
     "https://name:swordfish@media.test",
     "not a URL",
@@ -137,6 +148,8 @@ describe("JellyfinGateway direct-play contract", () => {
       expect(create).toHaveBeenCalledWith({
         baseURL: "https://media.test/jellyfin",
         timeout: CONTROL_REQUEST_TIMEOUT_MS,
+        adapter: "fetch",
+        maxRedirects: 0,
       });
       expect(isolatedAxios.defaults.headers.common.Authorization).toContain('Client="Fluster"');
       expect(get).toHaveBeenCalledWith("/System/Info/Public", {
@@ -154,6 +167,8 @@ describe("JellyfinGateway direct-play contract", () => {
     await expect(new JellyfinGateway("https://media.test", transport).connect()).resolves.toEqual({
       name: "Home",
       version,
+      hostClass: "public",
+      needsUnencryptedConfirmation: false,
     });
   });
 
@@ -771,4 +786,128 @@ describe("JellyfinGateway home calls", () => {
     const gateway = new JellyfinGateway("https://media.test", new FakeTransport(), "install-1");
     await expect(gateway.resumeItems()).rejects.toThrow("Sign in");
   });
+});
+
+class MemoryConfirmations implements LanHttpConfirmationStore {
+  records: LanHttpConfirmation[] = [];
+  has(confirmation: LanHttpConfirmation): boolean {
+    return this.records.some((record) => record.serverId === confirmation.serverId && record.origin === confirmation.origin);
+  }
+  remember(confirmation: LanHttpConfirmation): void {
+    this.records.push({ ...confirmation });
+  }
+}
+
+describe("JellyfinGateway plain-HTTP policy (docs/decisions/0001)", () => {
+  const LAN_URL = "http://192.168.1.5:8096";
+
+  function lanTransport(serverId: string | null = "server-1") {
+    const transport = new FakeTransport();
+    transport.responses.set("GET /System/Info/Public", { ServerName: "Living Room", Version: "10.11.7", Id: serverId ?? undefined });
+    transport.responses.set("POST /Users/AuthenticateByName", {
+      AccessToken: "top-secret",
+      User: { Id: "user-1", Name: "Louise" },
+    });
+    transport.responses.set("POST /QuickConnect/Initiate", { Secret: "s3cret", Code: "123456" });
+    return transport;
+  }
+
+  it("refuses a public http:// server in the constructor, before any request", () => {
+    const transport = new FakeTransport();
+    expect(() => new JellyfinGateway("http://media.example:8096", transport)).toThrow(PUBLIC_HTTP_REFUSED_MESSAGE);
+    expect(transport.requests).toEqual([]);
+  });
+
+  it("refuses a public http:// server without creating an HTTP client", () => {
+    const create = vi.spyOn(axios, "create");
+    try {
+      expect(() => new JellyfinGateway("http://8.8.8.8:8096")).toThrow(PUBLIC_HTTP_REFUSED_MESSAGE);
+      expect(create).not.toHaveBeenCalled();
+    } finally {
+      create.mockRestore();
+    }
+  });
+
+  it("probes a private-LAN server and reports that confirmation is needed", async () => {
+    const transport = lanTransport();
+    const gateway = new JellyfinGateway(LAN_URL, transport, "install-1", new MemoryConfirmations());
+    await expect(gateway.connect()).resolves.toEqual({
+      name: "Living Room",
+      version: "10.11.7",
+      hostClass: "private-lan",
+      needsUnencryptedConfirmation: true,
+    });
+    expect(transport.requests.map((request) => request.url)).toEqual(["/System/Info/Public"]);
+    expect(transport.requests[0].headers?.Authorization ?? "").not.toContain("Token=");
+  });
+
+  it.each([
+    ["login", (gateway: JellyfinGateway) => gateway.login("Louise", "hunter2")],
+    ["initiateQuickConnect", (gateway: JellyfinGateway) => gateway.initiateQuickConnect()],
+    ["pollQuickConnect", (gateway: JellyfinGateway) => gateway.pollQuickConnect("s3cret")],
+    ["authenticateWithQuickConnect", (gateway: JellyfinGateway) => gateway.authenticateWithQuickConnect("s3cret")],
+  ])("refuses %s on an unconfirmed private-LAN HTTP server without a request", async (_name, call) => {
+    const transport = lanTransport();
+    const gateway = new JellyfinGateway(LAN_URL, transport, "install-1", new MemoryConfirmations());
+    await gateway.connect();
+    await expect(call(gateway)).rejects.toThrow(UNENCRYPTED_NOT_CONFIRMED_MESSAGE);
+    expect(transport.requests.map((request) => request.url)).toEqual(["/System/Info/Public"]);
+  });
+
+  it("refuses sign-in when connect() was skipped", async () => {
+    const transport = lanTransport();
+    const gateway = new JellyfinGateway(LAN_URL, transport, "install-1", new MemoryConfirmations());
+    expect(() => gateway.confirmUnencryptedConnection()).toThrow("Connect to the server");
+    await expect(gateway.login("Louise", "hunter2")).rejects.toThrow(UNENCRYPTED_NOT_CONFIRMED_MESSAGE);
+    expect(transport.requests).toEqual([]);
+  });
+
+  it("signs in after confirmation and remembers it per server Id and origin", async () => {
+    const confirmations = new MemoryConfirmations();
+    const first = new JellyfinGateway(LAN_URL, lanTransport(), "install-1", confirmations);
+    await first.connect();
+    first.confirmUnencryptedConnection();
+    await expect(first.login("Louise", "hunter2")).resolves.toEqual({ userId: "user-1", username: "Louise" });
+    expect(confirmations.records).toEqual([{ serverId: "server-1", origin: LAN_URL }]);
+    expect(JSON.stringify(confirmations.records)).not.toContain("top-secret");
+
+    const again = new JellyfinGateway(`${LAN_URL}/`, lanTransport(), "install-1", confirmations);
+    await expect(again.connect()).resolves.toMatchObject({ needsUnencryptedConfirmation: false });
+    await expect(again.login("Louise", "hunter2")).resolves.toMatchObject({ userId: "user-1" });
+  });
+
+  it("asks again for a different server Id at a confirmed origin", async () => {
+    const confirmations = new MemoryConfirmations();
+    confirmations.remember({ serverId: "server-1", origin: LAN_URL });
+    const gateway = new JellyfinGateway(LAN_URL, lanTransport("server-2"), "install-1", confirmations);
+    await expect(gateway.connect()).resolves.toMatchObject({ needsUnencryptedConfirmation: true });
+    await expect(gateway.login("Louise", "hunter2")).rejects.toThrow(UNENCRYPTED_NOT_CONFIRMED_MESSAGE);
+  });
+
+  it.each(["http://192.168.1.5:8920", "http://192.168.1.6:8096", "http://nas.local:8096"])(
+    "asks again for a known server Id at another origin: %s",
+    async (serverUrl) => {
+      const confirmations = new MemoryConfirmations();
+      confirmations.remember({ serverId: "server-1", origin: LAN_URL });
+      const gateway = new JellyfinGateway(serverUrl, lanTransport(), "install-1", confirmations);
+      await expect(gateway.connect()).resolves.toMatchObject({ needsUnencryptedConfirmation: true });
+    },
+  );
+
+  it("refuses a private-LAN HTTP server that does not report an Id", async () => {
+    const gateway = new JellyfinGateway(LAN_URL, lanTransport(null), "install-1", new MemoryConfirmations());
+    await expect(gateway.connect()).rejects.toThrow("did not report its Id");
+  });
+
+  it.each(["http://127.0.0.1:8096", "http://[::1]:8096", "https://192.168.1.5:8920", "https://media.test"])(
+    "needs no confirmation for %s",
+    async (serverUrl) => {
+      const confirmations = new MemoryConfirmations();
+      const gateway = new JellyfinGateway(serverUrl, lanTransport(), "install-1", confirmations);
+      await expect(gateway.connect()).resolves.toMatchObject({ needsUnencryptedConfirmation: false });
+      await expect(gateway.login("Louise", "hunter2")).resolves.toMatchObject({ userId: "user-1" });
+      gateway.confirmUnencryptedConnection();
+      expect(confirmations.records).toEqual([]);
+    },
+  );
 });

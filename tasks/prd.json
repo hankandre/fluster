@@ -287,10 +287,10 @@
             "Tests cover each address class, the confirmation, and refusal"
           ],
           "verify": "pnpm check && cargo test --manifest-path src-tauri/Cargo.toml url_policy",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "native-engineer",
+          "passes": true,
+          "evidence": "Three host classes per docs/decisions/0001: one classifier in TS (src/domain/host-class.ts) and Rust (src-tauri/src/url_policy.rs), both tested against 73 shared vectors in tests/fixtures/host-classes.json (127/8, ::1, localhost; 10/8, 172.16/12, 192.168/16, 169.254/16, fc00::/7, fe80::/10, .local, .home.arpa; IPv4-mapped by embedded v4; CGNAT, NAT64, 6to4, .lan and bare names public). Gateway refuses public http:// in its constructor before any client exists; for private-LAN http:// it sends only GET /System/Info/Public, then refuses login and every Quick Connect call until confirmUnencryptedConnection() stores {serverId, origin} (fluster.lanHttpConfirmations, no secrets). Sign-in shows the ADR warning with server name and exact origin, Cancel focused, Escape cancels. Gateway Axios uses the fetch adapter with maxRedirects 0; 3xx is an error (gateway-redirects.test.ts proves no request reaches the redirect target). Rust media and socket URLs use the same classes (ws:// only where http:// is allowed); libmpv starts with stream-lavf-o=max_redirects=0 and ytdl=no after FFmpeg http.c was shown to resend custom headers to a cross-origin redirect target (checked with mpv 0.41.0/FFmpeg 9.0.2). CSP adds plain http: and relies on gateway + Rust checks. pnpm check (324 Vitest tests, build, 46 Rust tests), cargo test --release, cargo clippy -D warnings, cargo fmt --check, pnpm test:e2e (13 passed, incl. private-LAN confirmation and public refusal) all pass. Untested: Tauri WebView fetch to a real LAN HTTP server, real Jellyfin 10.11/12 over LAN HTTP, playback over LAN HTTP, AppImage FFmpeg max_redirects support, macOS, Windows."
         }
       ]
     },

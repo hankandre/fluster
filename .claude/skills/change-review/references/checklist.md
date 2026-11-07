@@ -10,7 +10,7 @@
 - I3: Does the diff add a generic mpv command, property, or option path?
 - I3: Does a new Tauri command have a typed request, tests, and a `docs/security.md` update?
 - I4: Can a token, password, authenticated URL, or play-session ID reach a log, error, diagnostic, or URL?
-- I5: Is the HTTPS-or-loopback rule intact?
+- I5: Is the host-class rule intact (public `http://` refused before any request, private-LAN `http://` only after confirmation, no followed redirects)?
 - I6: Are subtitle URLs validated same-origin before authentication?
 - I7: Can the browser engine run as a native fallback?
 - I8: Does anything other than the gateway call Jellyfin?
