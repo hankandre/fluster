@@ -1,0 +1,1240 @@
+{
+  "product": "Fluster",
+  "updated": "2026-11-07",
+  "rules": [
+    "Pick the first task whose status is todo and whose depends_on tasks all pass.",
+    "Set status to in_progress and owner to your agent name before starting.",
+    "Change only status, owner, passes, and evidence fields.",
+    "Set passes to true only after every acceptance item is verified.",
+    "Put the verification command output summary in evidence.",
+    "Never edit, remove, or weaken acceptance items without human approval.",
+    "Set status to blocked and explain in evidence when a dependency or human action is missing.",
+    "Use the model and skill named on the task.",
+    "Tasks with human set to true need a person at this computer."
+  ],
+  "status_values": [
+    "todo",
+    "in_progress",
+    "blocked",
+    "done"
+  ],
+  "dogfood_host": {
+    "os": "Arch Linux, kernel 7.2",
+    "session": "Wayland",
+    "desktop": "umbriel",
+    "gpus": [
+      "NVIDIA GeForce RTX 4070 Ti (AD104)",
+      "AMD Radeon 610M (Raphael iGPU)"
+    ],
+    "mpv": "0.41.0 (libmpv client API 2.5)",
+    "containers": [
+      "docker (mise shim)",
+      "podman"
+    ],
+    "known_issues": [
+      "nvidia-smi reports a driver/library version mismatch on 2026-11-07; reboot pending"
+    ],
+    "primary_server": {
+      "name": "Hankflix",
+      "jellyfin": "12.4.0",
+      "access": "Plain HTTP on the LAN; Kubernetes deployment in the homelab repo",
+      "discovery": "UDP 7359 exposed on the LAN service",
+      "config": "Set FLUSTER_DOGFOOD_SERVER to the server URL; never commit the address or credentials"
+    }
+  },
+  "phases": [
+    {
+      "id": "P0",
+      "name": "Dogfood foundation",
+      "goal": "This computer can run Fluster against real Jellyfin 10.11 and 12.x servers, and the core invariants are checked by machines.",
+      "exit": [
+        "All P0 tasks pass",
+        "Tripwire, allowlist, canary, and boundary checks run in CI"
+      ],
+      "tasks": [
+        {
+          "id": "P0-01",
+          "title": "Resolve the NVIDIA driver/library mismatch",
+          "domain": "Distribution",
+          "model": "haiku",
+          "skill": null,
+          "human": true,
+          "depends_on": [],
+          "acceptance": [
+            "nvidia-smi prints the GPU name and driver version",
+            "mpv --hwdec=nvdec plays a local H.264 file with hwdec-current=nvdec"
+          ],
+          "verify": "nvidia-smi --query-gpu=name,driver_version --format=csv,noheader",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P0-02",
+          "title": "Run pinned Jellyfin 10.11 and 12.x dogfood servers",
+          "domain": "Server Connection & Identity",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [],
+          "acceptance": [
+            "tests/integration/docker-compose.yml starts jellyfin 10.11.7 and a pinned 12.x image on separate ports",
+            "The 12.x server keeps legacy authorization at its default (off)",
+            "Both servers mount tests/samples as a movies and a shows library",
+            "A script creates a test user without committing credentials",
+            "GET /System/Info/Public succeeds on both"
+          ],
+          "verify": "docker compose -f tests/integration/docker-compose.yml up -d && curl -fsS localhost:8096/System/Info/Public && curl -fsS localhost:8097/System/Info/Public",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P0-03",
+          "title": "Assemble the licensed sample media set",
+          "domain": "Distribution",
+          "model": "sonnet",
+          "skill": null,
+          "human": true,
+          "depends_on": [],
+          "acceptance": [
+            "tests/samples/README.md lists each sample, its license, and its source",
+            "Samples cover H.264, HEVC Main10 HDR10, AV1, ASS, PGS, multiple audio tracks, an external .srt sidecar, and a BluRay folder layout",
+            "Samples are gitignored or fetched by a script; no media is committed"
+          ],
+          "verify": "ls tests/samples && git check-ignore tests/samples/*.mkv",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P0-04",
+          "title": "Automate the server transcode tripwire",
+          "domain": "Playback Negotiation",
+          "model": "opus",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P0-02",
+            "P0-03"
+          ],
+          "acceptance": [
+            "A script plays each sample through the gateway against both servers",
+            "It fails if any active encoding job appears during playback",
+            "It fails if any media request lacks Static=true",
+            "It writes a short summary to stdout and full logs to a file",
+            "CI runs it against the docker fixture"
+          ],
+          "verify": "pnpm test:tripwire",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P0-05",
+          "title": "Add the Tauri command allowlist test",
+          "domain": "Player Engine",
+          "model": "sonnet",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [],
+          "acceptance": [
+            "A Rust test fails when the registered command list differs from an allowlist",
+            "The failure message tells the agent to update docs/security.md and record a decision"
+          ],
+          "verify": "cargo test --manifest-path src-tauri/Cargo.toml command_allowlist",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P0-06",
+          "title": "Add redaction canary tests",
+          "domain": "Security & Redaction",
+          "model": "sonnet",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [],
+          "acceptance": [
+            "TypeScript and Rust tests inject a canary token into URLs and errors",
+            "Tests fail if the canary appears in any log, error string, or diagnostic snapshot"
+          ],
+          "verify": "pnpm test -- redact && cargo test --manifest-path src-tauri/Cargo.toml redaction",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P0-07",
+          "title": "Enforce domain dependency rules with a lint",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": null,
+          "human": false,
+          "depends_on": [],
+          "acceptance": [
+            "A lint fails when src/domain imports React, the SDK, Tauri, or HTTP code",
+            "A lint fails when views import the gateway or player engines outside the composition root",
+            "Each lint message names the rule in DOMAINS.md and how to fix it",
+            "pnpm check runs the lint"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P0-08",
+          "title": "Tighten Rust lints and run release-mode tests",
+          "domain": "Player Engine",
+          "model": "sonnet",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [],
+          "acceptance": [
+            "Clippy denies debug_assert_with_mut_call, undocumented_unsafe_blocks, and unwrap_used outside tests",
+            "CI runs cargo test --release",
+            "All existing code passes"
+          ],
+          "verify": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings && cargo test --release --manifest-path src-tauri/Cargo.toml",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P0-09",
+          "title": "Validate tasks/prd.json in CI",
+          "domain": "Distribution",
+          "model": "haiku",
+          "skill": null,
+          "human": false,
+          "depends_on": [],
+          "acceptance": [
+            "A test fails on duplicate task ids, unknown depends_on ids, invalid status values, or passes=true without evidence",
+            "pnpm check runs it"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P0-10",
+          "title": "Add a dogfood launcher",
+          "domain": "App Shell & Presentation",
+          "model": "haiku",
+          "skill": null,
+          "human": false,
+          "depends_on": [
+            "P0-02"
+          ],
+          "acceptance": [
+            "pnpm dogfood starts pnpm tauri dev with native trace logging to a redacted file under release-evidence/",
+            "The log path is printed on start"
+          ],
+          "verify": "pnpm dogfood --help",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P0-11",
+          "title": "Decide the private-LAN HTTP policy",
+          "domain": "Server Connection & Identity",
+          "model": "opus",
+          "skill": "exec-plan",
+          "human": true,
+          "depends_on": [],
+          "acceptance": [
+            "A decision record defines when plain HTTP is allowed (for example RFC 1918 and link-local hosts after explicit confirmation)",
+            "Tokens are never sent over plain HTTP to public addresses",
+            "docs/security.md and ARCHITECTURE.md reflect the decision"
+          ],
+          "verify": "ls docs/decisions/",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "P1",
+      "name": "Jellyfin API correctness",
+      "goal": "Fluster plays correctly on Jellyfin 10.11 and 12.x defaults, and the server provably never transcodes. Plan: docs/plans/active/001-jellyfin-api-correctness.md.",
+      "exit": [
+        "All P1 tasks pass",
+        "Tripwire passes on both servers",
+        "A real title plays on Hankflix"
+      ],
+      "tasks": [
+        {
+          "id": "P1-01",
+          "title": "Record PlaybackInfo contract fixtures for 10.11 and 12.x",
+          "domain": "Playback Negotiation",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P0-02",
+            "P0-03"
+          ],
+          "acceptance": [
+            "Fixtures cover with and without DeviceProfile, external subtitle, multi-version, and BluRay folder cases",
+            "Fixtures are scrubbed per the jellyfin-api contract-fixtures reference"
+          ],
+          "verify": "ls tests/fixtures/jellyfin/*/ && ! grep -rE '[0-9a-f]{32}' tests/fixtures/jellyfin",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P1-02",
+          "title": "Accept Jellyfin 10.11 and 12.x by semver",
+          "domain": "Server Connection & Identity",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [],
+          "acceptance": [
+            "connect() accepts versions >= 10.11.0 including 12.x",
+            "Tests cover 10.10.7, 10.11.7, 12.4.0, and malformed versions"
+          ],
+          "verify": "pnpm test -- gateway",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P1-03",
+          "title": "Send the DeviceProfile and enforce source acceptance",
+          "domain": "Playback Negotiation",
+          "model": "opus",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P1-01"
+          ],
+          "acceptance": [
+            "Every PlaybackInfo request carries FLUSTER_PROFILE",
+            "BluRay, Dvd, and Iso VideoType sources are refused",
+            "No-source results return a typed refusal reason",
+            "The empty-codec-matches-anything assumption is proven by a fixture or the profile is adjusted",
+            "Tests assert body and query"
+          ],
+          "verify": "pnpm test -- gateway",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P1-04",
+          "title": "Authenticate media requests with headers",
+          "domain": "Player Engine",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "P0-05",
+            "P1-03"
+          ],
+          "acceptance": [
+            "LaunchRequest carries a typed auth header value",
+            "Rust sets http-header-fields for the stream and external subtitles",
+            "No request URL contains api_key, ApiKey, or Token",
+            "ApiKey is stripped from DeliveryUrl before use",
+            "Playback works on the 12.x server with legacy authorization off"
+          ],
+          "verify": "pnpm check && cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P1-05",
+          "title": "Fix Jellyfin to mpv track mapping",
+          "domain": "Player Engine",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "P1-01"
+          ],
+          "acceptance": [
+            "Embedded tracks map as ff-index + count(IsExternal)",
+            "External tracks map by add order",
+            "DefaultAudioStreamIndex and DefaultSubtitleStreamIndex set the initial tracks",
+            "Rust tests cover an item with one external subtitle and embedded tracks"
+          ],
+          "verify": "cargo test --manifest-path src-tauri/Cargo.toml tracks",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P1-06",
+          "title": "Stable DeviceId, server logout, and failed stop reports",
+          "domain": "Server Connection & Identity",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [],
+          "acceptance": [
+            "DeviceId is derived from a persisted install id, server id, and user id",
+            "Logout calls POST /Sessions/Logout",
+            "Stopped reports after errors send Failed: true"
+          ],
+          "verify": "pnpm test -- gateway coordinator",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P1-07",
+          "title": "Upgrade the SDK and replace obsolete paths",
+          "domain": "Catalog",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P1-02"
+          ],
+          "acceptance": [
+            "@jellyfin/sdk is 1.0.x",
+            "/Users/{userId}/Items is replaced with /Items",
+            "Invalid fields values are removed"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P1-08",
+          "title": "Dogfood the codec matrix on NVIDIA and AMD",
+          "domain": "Video Surface & Window",
+          "model": "opus",
+          "skill": "verify",
+          "human": true,
+          "depends_on": [
+            "P0-01",
+            "P0-04",
+            "P1-04",
+            "P1-05"
+          ],
+          "acceptance": [
+            "Every sample plays to first frame and EOF on the RTX 4070 Ti with hwdec-current recorded",
+            "Every sample plays on the Radeon 610M with VA-API hwdec-current recorded",
+            "Tripwire passes on both servers",
+            "Results are recorded in docs/validation.md evidence",
+            "Hankflix titles of each codec play on both GPUs"
+          ],
+          "verify": "pnpm test:tripwire",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P1-09",
+          "title": "First dogfood play on Hankflix",
+          "domain": "Playback Negotiation",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": true,
+          "depends_on": [
+            "P0-11",
+            "P1-02",
+            "P1-03",
+            "P1-04",
+            "P1-05"
+          ],
+          "acceptance": [
+            "Fluster signs in to the LAN server from FLUSTER_DOGFOOD_SERVER",
+            "A movie and an episode play to first frame with hardware decoding",
+            "Resume position appears in the Jellyfin web UI",
+            "The server dashboard shows Direct Play and no active transcodes"
+          ],
+          "verify": "pnpm tauri dev",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "P2",
+      "name": "Structure by domain",
+      "goal": "Code layout matches DOMAINS.md so agents can work on one domain at a time.",
+      "exit": [
+        "All P2 tasks pass",
+        "Boundary lint passes with no exceptions"
+      ],
+      "tasks": [
+        {
+          "id": "P2-01",
+          "title": "Add a composition root and split App.tsx into feature views",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "exec-plan",
+          "human": false,
+          "depends_on": [
+            "P0-07",
+            "P1-07"
+          ],
+          "acceptance": [
+            "App.tsx contains routing only",
+            "Gateway and engines are constructed only in the composition root",
+            "Sign-in, library, resume dialog, and player information live under src/features/",
+            "All existing tests and e2e journeys pass unchanged"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P2-02",
+          "title": "Separate catalog types from playback types",
+          "domain": "Catalog",
+          "model": "sonnet",
+          "skill": null,
+          "human": false,
+          "depends_on": [
+            "P2-01"
+          ],
+          "acceptance": [
+            "LibraryItem and catalog types live in src/domain/catalog.ts",
+            "src/domain/playback.ts holds only negotiation and engine types"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P2-03",
+          "title": "Extract source acceptance and DeviceProfile modules",
+          "domain": "Playback Negotiation",
+          "model": "opus",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P1-03"
+          ],
+          "acceptance": [
+            "Source acceptance and the profile live in their own adapter modules with their own tests"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P2-04",
+          "title": "Split mpv.rs into player modules and commands.rs",
+          "domain": "Player Engine",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "P1-05",
+            "P0-08"
+          ],
+          "acceptance": [
+            "Track mapping, diagnostics, and the controller live in separate files under src-tauri/src/player/",
+            "Command handlers live in commands.rs",
+            "No file exceeds about 400 lines",
+            "Behavior and tests are unchanged"
+          ],
+          "verify": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings && cargo test --release --manifest-path src-tauri/Cargo.toml",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P2-05",
+          "title": "Extract the playstate reporter from the coordinator",
+          "domain": "Playstate Reporting",
+          "model": "opus",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "P1-06"
+          ],
+          "acceptance": [
+            "Reporting lives in its own module",
+            "Order, bounded drain, and failure-as-warning tests pass unchanged"
+          ],
+          "verify": "pnpm test -- coordinator",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "P3",
+      "name": "Daily driver (M1)",
+      "goal": "The developer watches everything on this computer with Fluster instead of the Jellyfin web UI.",
+      "exit": [
+        "All P3 tasks pass",
+        "Every flow has a Playwright journey",
+        "P4 dogfood week can start"
+      ],
+      "tasks": [
+        {
+          "id": "P3-01",
+          "title": "Decide persistent sign-in storage",
+          "domain": "Server Connection & Identity",
+          "model": "opus",
+          "skill": "exec-plan",
+          "human": true,
+          "depends_on": [],
+          "acceptance": [
+            "A decision record covers opt-in keyring storage",
+            "docs/security.md reflects the decision"
+          ],
+          "verify": "ls docs/decisions/",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P3-02",
+          "title": "Store credentials in the OS keyring",
+          "domain": "Server Connection & Identity",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "P3-01",
+            "P1-06"
+          ],
+          "acceptance": [
+            "Rust owns a credential vault backed by Secret Service on Linux",
+            "Opt-in stay-signed-in restores the session after restart via GET /Users/Me",
+            "A 401 returns to sign-in and clears the stored credential",
+            "The token never enters WebView storage"
+          ],
+          "verify": "pnpm check && cargo test --manifest-path src-tauri/Cargo.toml vault",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P3-03",
+          "title": "Discover servers on the LAN",
+          "domain": "Server Connection & Identity",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P0-11"
+          ],
+          "acceptance": [
+            "UDP 7359 discovery lists servers by name and id",
+            "Choosing one probes /System/Info/Public",
+            "Hankflix is discovered on the LAN"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P3-04",
+          "title": "Sign in with Quick Connect",
+          "domain": "Server Connection & Identity",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P1-02"
+          ],
+          "acceptance": [
+            "The code is shown when Quick Connect is enabled",
+            "Polling completes sign-in after approval",
+            "Cancel stops polling"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P3-05",
+          "title": "Build the home screen",
+          "domain": "Catalog",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P2-01"
+          ],
+          "acceptance": [
+            "Continue Watching, Next Up, and Latest per library load in parallel",
+            "Rows use minimal fields",
+            "Images load by tag with blurhash placeholders"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P3-06",
+          "title": "Browse libraries, series, seasons, and episodes",
+          "domain": "Catalog",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P3-05"
+          ],
+          "acceptance": [
+            "Paged library grid with sort and filter",
+            "Series to seasons to episodes navigation",
+            "Collections are browsable"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P3-07",
+          "title": "Search movies, series, and episodes",
+          "domain": "Catalog",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P3-05"
+          ],
+          "acceptance": [
+            "Type-ahead uses /Search/Hints",
+            "Result pages use /Items?searchTerm"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P3-08",
+          "title": "Show item detail with media info and versions",
+          "domain": "Catalog",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P3-05",
+            "P1-03"
+          ],
+          "acceptance": [
+            "Detail shows codec, HDR, audio format, and subtitles",
+            "Multiple versions are selectable by name",
+            "Played and favorite toggles update the server"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P3-09",
+          "title": "Explain direct-play refusals",
+          "domain": "Playback Negotiation",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P1-03"
+          ],
+          "acceptance": [
+            "Each refusal reason has plain-language copy",
+            "Retry and Back are always available",
+            "No play-anyway option exists"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P3-10",
+          "title": "Auto-play the next episode",
+          "domain": "Playback Session",
+          "model": "opus",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "P2-05",
+            "P3-06"
+          ],
+          "acceptance": [
+            "A countdown appears near the end of an episode",
+            "The next episode negotiates a fresh play session",
+            "Cancel returns to the series"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P3-11",
+          "title": "Skip intros and credits from media segments",
+          "domain": "Playback Session",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P2-05"
+          ],
+          "acceptance": [
+            "Segments load only when HasSegments is true",
+            "A skip button appears during Intro and Outro segments",
+            "Empty segment data hides the feature"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P3-12",
+          "title": "Show trickplay previews and chapters while seeking",
+          "domain": "Playback Session",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P3-08"
+          ],
+          "acceptance": [
+            "Seek bar hover shows trickplay tiles when available",
+            "Chapter markers appear on the seek bar"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P3-13",
+          "title": "Apply the user's audio and subtitle preferences",
+          "domain": "Player Engine",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P1-05"
+          ],
+          "acceptance": [
+            "Initial tracks follow the Jellyfin user configuration and stream defaults"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P3-14",
+          "title": "Keyboard navigation, media keys, and MPRIS",
+          "domain": "App Shell & Presentation",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "P2-01"
+          ],
+          "acceptance": [
+            "Every screen is usable with the keyboard alone",
+            "MPRIS exposes play state and accepts play, pause, seek, and stop",
+            "The cursor hides when idle in the player"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P3-15",
+          "title": "Refresh watched state from other clients",
+          "domain": "Realtime & Remote Control",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P3-05"
+          ],
+          "acceptance": [
+            "The app opens /socket with header auth and answers keepalives",
+            "UserDataChanged refreshes affected rows"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "P4",
+      "name": "Dogfood week",
+      "goal": "Use Fluster as the only Jellyfin client on this computer for seven days.",
+      "exit": [
+        "No fallback to the web UI was needed",
+        "Zero transcode jobs observed",
+        "Every issue found is a task or fixed"
+      ],
+      "tasks": [
+        {
+          "id": "P4-01",
+          "title": "Keep a dogfood log for seven days",
+          "domain": "App Shell & Presentation",
+          "model": "haiku",
+          "skill": null,
+          "human": true,
+          "depends_on": [
+            "P3-02",
+            "P3-05",
+            "P3-06",
+            "P3-07",
+            "P3-08",
+            "P3-09",
+            "P3-10",
+            "P3-11",
+            "P3-14",
+            "P1-08",
+            "P1-09"
+          ],
+          "acceptance": [
+            "docs/dogfood/YYYY-MM-DD.md records each session, what was watched, and every problem",
+            "Hankflix shows no transcode or remux jobs for the week"
+          ],
+          "verify": "ls docs/dogfood/",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P4-02",
+          "title": "Triage dogfood findings into tasks",
+          "domain": "App Shell & Presentation",
+          "model": "haiku",
+          "skill": "exec-plan",
+          "human": false,
+          "depends_on": [
+            "P4-01"
+          ],
+          "acceptance": [
+            "Every problem in the log is fixed or added to this file as a task"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "P5",
+      "name": "Cinema quality (M2)",
+      "goal": "HDR output, audio passthrough, and display matching on this computer.",
+      "exit": [
+        "All P5 tasks pass on the RTX 4070 Ti"
+      ],
+      "tasks": [
+        {
+          "id": "P5-01",
+          "title": "Spike mpv gpu-next in a Wayland subsurface under the WebView",
+          "domain": "Video Surface & Window",
+          "model": "fable",
+          "skill": "native-player",
+          "human": true,
+          "depends_on": [
+            "P2-04"
+          ],
+          "acceptance": [
+            "A prototype renders vo=gpu-next with Vulkan in a subsurface below the transparent WebView",
+            "UI controls stay interactive above video",
+            "A decision record chooses subsurface, Render API, or CEF for HDR"
+          ],
+          "verify": "pnpm tauri dev",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P5-02",
+          "title": "Output HDR10 and HLG on supporting compositors",
+          "domain": "Video Surface & Window",
+          "model": "opus",
+          "skill": "native-player",
+          "human": true,
+          "depends_on": [
+            "P5-01"
+          ],
+          "acceptance": [
+            "HDR10 sample shows HDR metadata passthrough on a supporting display",
+            "Non-HDR displays tone-map correctly"
+          ],
+          "verify": "pnpm tauri dev",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P5-03",
+          "title": "Add audio passthrough as an explicit setting",
+          "domain": "Player Engine",
+          "model": "opus",
+          "skill": "native-player",
+          "human": true,
+          "depends_on": [
+            "P2-04"
+          ],
+          "acceptance": [
+            "AC3, E-AC3, TrueHD, and DTS-HD bitstream to a receiver when enabled",
+            "The setting is a typed command, not an mpv option bridge"
+          ],
+          "verify": "pnpm tauri dev",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P5-04",
+          "title": "Match display refresh rate where the platform allows",
+          "domain": "Video Surface & Window",
+          "model": "opus",
+          "skill": "native-player",
+          "human": true,
+          "depends_on": [
+            "P5-01"
+          ],
+          "acceptance": [
+            "23.976 fps content plays without judder on a capable display"
+          ],
+          "verify": "pnpm tauri dev",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "P6",
+      "name": "macOS beta (M3)",
+      "goal": "Signed macOS build validated on Apple Silicon.",
+      "exit": [
+        "docs/validation.md gate 8 passes"
+      ],
+      "tasks": [
+        {
+          "id": "P6-01",
+          "title": "Validate and ship the macOS build",
+          "domain": "Distribution",
+          "model": "opus",
+          "skill": "native-player",
+          "human": true,
+          "depends_on": [
+            "P4-02"
+          ],
+          "acceptance": [
+            "Signed, notarized DMG",
+            "VideoToolbox decode recorded",
+            "Now Playing and media keys work"
+          ],
+          "verify": "release/build-dmg.sh",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "P7",
+      "name": "Windows beta (M4)",
+      "goal": "Prove composition, then ship a Windows build.",
+      "exit": [
+        "Composition decision recorded",
+        "Windows build validated"
+      ],
+      "tasks": [
+        {
+          "id": "P7-01",
+          "title": "Spike transparent WebView2 over an mpv D3D11 surface",
+          "domain": "Video Surface & Window",
+          "model": "fable",
+          "skill": "native-player",
+          "human": true,
+          "depends_on": [
+            "P4-02"
+          ],
+          "acceptance": [
+            "A prototype shows interactive controls over D3D11 video",
+            "A decision record chooses the Windows composition path"
+          ],
+          "verify": "pnpm tauri dev",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "P8",
+      "name": "Connected (M5)",
+      "goal": "Fluster is a cast target, joins SyncPlay, and downloads originals for offline play.",
+      "exit": [
+        "All P8 tasks pass"
+      ],
+      "tasks": [
+        {
+          "id": "P8-01",
+          "title": "Act as a Jellyfin cast target",
+          "domain": "Realtime & Remote Control",
+          "model": "opus",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P3-15"
+          ],
+          "acceptance": [
+            "Capabilities are registered",
+            "Remote Play routes through negotiation",
+            "Remote Playstate commands control playback"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P8-02",
+          "title": "Join SyncPlay groups",
+          "domain": "Realtime & Remote Control",
+          "model": "opus",
+          "skill": "exec-plan",
+          "human": false,
+          "depends_on": [
+            "P8-01"
+          ],
+          "acceptance": [
+            "A plan exists before implementation",
+            "Two clients stay in sync within one second"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P8-03",
+          "title": "Download original files for offline play",
+          "domain": "Playback Negotiation",
+          "model": "opus",
+          "skill": "exec-plan",
+          "human": false,
+          "depends_on": [
+            "P4-02"
+          ],
+          "acceptance": [
+            "Downloads use the original static file",
+            "Offline progress syncs on reconnect"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "P9",
+      "name": "Living room and mobile (M6)",
+      "goal": "A TV and mobile shell that reuses the TypeScript core.",
+      "exit": [
+        "Shell decision recorded",
+        "Android TV prototype plays a sample"
+      ],
+      "tasks": [
+        {
+          "id": "P9-01",
+          "title": "Spike a React Native TV shell with a native mpv module",
+          "domain": "Player Engine",
+          "model": "fable",
+          "skill": "exec-plan",
+          "human": true,
+          "depends_on": [
+            "P2-02",
+            "P4-02"
+          ],
+          "acceptance": [
+            "The shell imports the unchanged domain, gateway, and coordinator",
+            "Android TV plays a sample with direct play",
+            "A decision record chooses the TV and mobile shell"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        }
+      ]
+    }
+  ]
+}

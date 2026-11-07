@@ -10,6 +10,7 @@ description: Create, resume, or close a Fluster execution plan. Use for work tha
 - Use Opus.
 - Number the plan after the highest existing number in `docs/plans/`.
 - Create `docs/plans/active/NNN-slug.md` from `references/template.md`.
+- List the `tasks/prd.json` task ids the plan covers.
 - Write "Done when" as observable, checkable outcomes.
 - Name the domains and invariants the work touches.
 - Give every milestone its own validation command.
@@ -50,4 +51,5 @@ description: Create, resume, or close a Fluster execution plan. Use for work tha
 - Confirm every "Done when" item with evidence.
 - Write the outcome and retrospective.
 - Note model used and rough cost per milestone.
+- Set the covered tasks in `tasks/prd.json` to `done` with `passes: true` and evidence.
 - Move the file to `docs/plans/completed/`.

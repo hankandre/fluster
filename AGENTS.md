@@ -10,6 +10,14 @@ Fluster is a direct-play-only Jellyfin client: Tauri 2 + React/TypeScript + Rust
 - Read `WORKFLOW.md` before planning multi-step work.
 - Read the matching skill in `.claude/skills/<name>/SKILL.md` before the task it covers.
 
+## Tasks
+
+- Pick work from `tasks/prd.json` and follow its `rules`.
+- Change only a task's `status`, `owner`, `passes`, and `evidence` fields.
+- Never edit acceptance items without human approval.
+- Link the task id in commits, plans, and PRs.
+- Read the dogfood server URL from `FLUSTER_DOGFOOD_SERVER`; never commit it.
+
 ## Skills
 
 - `exec-plan`: work spanning more than one session or domain.
