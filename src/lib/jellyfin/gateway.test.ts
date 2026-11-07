@@ -16,6 +16,7 @@ interface RequestRecord {
   url: string;
   data?: unknown;
   params?: Record<string, unknown>;
+  headers?: Record<string, string>;
   signal?: AbortSignal;
   timeout?: number;
 }
@@ -29,6 +30,7 @@ class FakeTransport implements HttpTransport {
       method: "GET",
       url,
       params: config?.params,
+      headers: config?.headers,
       signal: config?.signal,
       timeout: config?.timeout,
     });
@@ -41,6 +43,7 @@ class FakeTransport implements HttpTransport {
       url,
       data,
       params: config?.params,
+      headers: config?.headers,
       signal: config?.signal,
       timeout: config?.timeout,
     });
@@ -62,7 +65,7 @@ function authenticatedGateway() {
     AccessToken: "top-secret",
     User: { Id: "user-1", Name: "Louise" },
   });
-  const gateway = new JellyfinGateway("https://media.test/jellyfin/", transport);
+  const gateway = new JellyfinGateway("https://media.test/jellyfin/", transport, "install-1");
   return gateway.login("Louise", "password").then(() => ({ gateway, transport }));
 }
 
@@ -306,6 +309,7 @@ describe("JellyfinGateway direct-play contract", () => {
     await gateway.reportProgress(plan, snapshot);
     await gateway.reportStopped(plan, snapshot);
     const reports = transport.requests.slice(-3);
+    expect(reports.map((request) => (request.data as { Failed?: boolean }).Failed)).toEqual([undefined, undefined, false]);
     expect(reports.map((request) => request.url)).toEqual([
       "/Sessions/Playing",
       "/Sessions/Playing/Progress",
@@ -324,5 +328,71 @@ describe("JellyfinGateway direct-play contract", () => {
       });
       expect(report.timeout).toBe(REPORT_REQUEST_TIMEOUT_MS);
     }
+  });
+});
+
+async function loginWith(installId: string, serverId: string, username: string) {
+  const transport = new FakeTransport();
+  transport.responses.set("GET /System/Info/Public", { Version: "10.11.0", Id: serverId });
+  transport.responses.set("POST /Users/AuthenticateByName", {
+    AccessToken: "top-secret",
+    User: { Id: "user-1", Name: username },
+  });
+  const gateway = new JellyfinGateway("https://media.test", transport, installId);
+  await gateway.connect();
+  await gateway.login(username, "password");
+  const login = transport.requests.find((request) => request.url === "/Users/AuthenticateByName")!;
+  const header = login.headers?.Authorization ?? "";
+  return { gateway, transport, deviceId: /DeviceId="([^"]+)"/.exec(header)?.[1], header };
+}
+
+describe("JellyfinGateway device identity and logout", () => {
+  it("sends a stable derived DeviceId on login and no token", async () => {
+    const first = await loginWith("install-1", "server-1", "Louise");
+    const again = await loginWith("install-1", "server-1", "louise");
+    expect(first.deviceId).toMatch(/^[0-9a-f]{64}$/);
+    expect(again.deviceId).toBe(first.deviceId);
+    expect(first.header).toContain('Device="Fluster%20Linux"');
+    expect(first.header).toContain('Token=""');
+  });
+
+  it("derives different DeviceIds per install, server, and user", async () => {
+    const base = await loginWith("install-1", "server-1", "Louise");
+    const otherServer = await loginWith("install-1", "server-2", "Louise");
+    const otherUser = await loginWith("install-1", "server-1", "Marc");
+    const otherInstall = await loginWith("install-2", "server-1", "Louise");
+    const ids = new Set([base.deviceId, otherServer.deviceId, otherUser.deviceId, otherInstall.deviceId]);
+    expect(ids.size).toBe(4);
+  });
+
+  it("posts /Sessions/Logout with the token and clears local state", async () => {
+    const { gateway, transport, deviceId } = await loginWith("install-1", "server-1", "Louise");
+    await gateway.logout();
+    const logout = transport.requests.at(-1)!;
+    expect(logout.method).toBe("POST");
+    expect(logout.url).toBe("/Sessions/Logout");
+    expect(logout.timeout).toBe(REPORT_REQUEST_TIMEOUT_MS);
+    expect(logout.headers?.Authorization).toContain('Token="top-secret"');
+    expect(logout.headers?.Authorization).toContain(`DeviceId="${deviceId}"`);
+    await expect(gateway.latest()).rejects.toThrow("Sign in");
+  });
+
+  it("clears local state even when the logout request fails", async () => {
+    const { gateway, transport } = await loginWith("install-1", "server-1", "Louise");
+    vi.spyOn(transport, "post").mockRejectedValueOnce(new Error("network down"));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    await expect(gateway.logout()).resolves.toBeUndefined();
+    expect(warn).toHaveBeenCalled();
+    expect(JSON.stringify(warn.mock.calls)).not.toContain("top-secret");
+    await expect(gateway.latest()).rejects.toThrow("Sign in");
+    warn.mockRestore();
+  });
+
+  it("sends Failed on stopped reports only when requested", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    const plan = { itemId: "i", mediaSourceId: "m", playSessionId: "p", startPositionTicks: 0, streamUrl: "", title: "t", tracks: [] };
+    const snapshot = { positionSeconds: 1, paused: false, buffering: false, volume: 50, muted: false, tracks: [], diagnostics: { decodeMode: "hardware", decodeLabel: "x", droppedFrames: 0 } } as PlaybackSnapshot;
+    await gateway.reportStopped(plan, snapshot, undefined, true);
+    expect(transport.requests.at(-1)!.data).toMatchObject({ Failed: true });
   });
 });

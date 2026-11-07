@@ -93,7 +93,7 @@ Keep the domain, Jellyfin gateway, playback policy, and coordinator **framework-
 |---|---|
 | Header | `Authorization: MediaBrowser Client="Fluster", Device="…", DeviceId="…", Version="…", Token="…"`. Values are quoted and URL-encoded. The SDK builds this. |
 | Media requests | **Header auth, not query auth.** Rust passes the `Authorization` header to libmpv through a fixed, typed `http-header-fields` value set at load time. The token never appears in a URL. Use `ApiKey=` (capital K) only where a header is impossible. Never send both. |
-| DeviceId | The server keeps **one token per DeviceId**. Persist a random install ID and derive `DeviceId = hash(installId, serverId, userId)`. Never generate a new one per launch. |
+| DeviceId | The server keeps **one token per DeviceId**. Persist a random install ID (`fluster.installId` in localStorage; not secret) and derive `DeviceId = SHA-256(installId:serverId:username)`. The login request carries the DeviceId before the user id exists, so the lowercased username stands in for the user id. Never generate a new one per launch. |
 | Password login | `POST /Users/AuthenticateByName` `{Username, Pw}` returns `AccessToken`, `User`, `ServerId` |
 | Quick Connect | 1. `GET /QuickConnect/Enabled`. 2. `POST /QuickConnect/Initiate` (GET was removed in 12.0) returns `{Secret, Code}`. 3. Show the code and poll `GET /QuickConnect/Connect?secret=` until `Authenticated`. 4. `POST /Users/AuthenticateWithQuickConnect` `{Secret}` |
 | Validate a stored token | `GET /Users/Me`. On 401, return to sign-in. |
@@ -263,8 +263,7 @@ Tracked in `docs/plans/active/001-jellyfin-api-correctness.md`.
 | High | No DeviceProfile, so the server's direct-play checks are skipped and external subtitles never get a `DeliveryUrl` |
 | High | Track mapping ignores the external-first index numbering |
 | High | BluRay/DVD folder sources are not rejected; ffmpeg runs silently |
-| Medium | DeviceId regenerates every launch; logout never revokes the token on the server |
-| Medium | Error stops don't send `Failed: true`; refusal reasons aren't surfaced |
+| Medium | Refusal reasons aren't surfaced |
 
 ---
 

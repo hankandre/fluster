@@ -21,7 +21,7 @@ export interface PlaybackGateway {
   ): Promise<PlaybackPlan>;
   reportStart(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal): Promise<void>;
   reportProgress(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal): Promise<void>;
-  reportStopped(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal): Promise<void>;
+  reportStopped(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal, failed?: boolean): Promise<void>;
 }
 
 export interface CoordinatorCallbacks {
@@ -45,6 +45,7 @@ export class PlaybackCoordinator {
   private unsubscribe?: () => void;
   private progressTimer?: number;
   private didReportStart = false;
+  private sawError = false;
   private attempt = 0;
   private operation = 0;
   private previousPlaySessionId?: string;
@@ -244,8 +245,10 @@ export class PlaybackCoordinator {
         }
         await this.finish(event.reason, event.snapshot ?? this.snapshot);
         break;
-      case "first-frame":
       case "error":
+        this.sawError = true;
+        break;
+      case "first-frame":
         break;
     }
   }
@@ -281,8 +284,10 @@ export class PlaybackCoordinator {
   ): Promise<void> {
     this.clearProgressTimer();
     const plan = this.plan;
+    // A retry that follows an error event still ends a failed session.
+    const failed = reason === "error" || this.sawError;
     if (plan && snapshot && this.didReportStart) {
-      this.queueReport((signal) => this.gateway.reportStopped(plan, snapshot, signal));
+      this.queueReport((signal) => this.gateway.reportStopped(plan, snapshot, signal, failed));
     }
     const reportQueue = this.reportQueue;
     const reportController = this.reportController;
@@ -291,6 +296,7 @@ export class PlaybackCoordinator {
     this.plan = undefined;
     this.snapshot = undefined;
     this.didReportStart = false;
+    this.sawError = false;
     if (reason !== "retry") this.callbacks.onSessionEnded?.(reason);
     if (reason !== "error" && reason !== "retry") {
       this.item = undefined;
@@ -330,6 +336,7 @@ export class PlaybackCoordinator {
   private resetAttempt(): void {
     this.snapshot = undefined;
     this.didReportStart = false;
+    this.sawError = false;
     this.reportQueue = Promise.resolve();
     this.reportController = new AbortController();
   }

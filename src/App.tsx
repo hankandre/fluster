@@ -278,7 +278,7 @@ export function App() {
               error={loginError}
               onSubmit={login}
               onBack={() => {
-                connection.gateway.logout();
+                void connection.gateway.logout();
                 setConnection(undefined);
                 setSignedInUser(undefined);
                 setLoginError(undefined);
