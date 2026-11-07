@@ -14,6 +14,11 @@ function fakeGateway(overrides: Partial<SessionGateway> = {}): SessionGateway {
     pollQuickConnect: vi.fn().mockResolvedValue({ authenticated: false }),
     authenticateWithQuickConnect: vi.fn().mockResolvedValue({ userId: "u1", username: "Louise" }),
     logout: vi.fn().mockResolvedValue(undefined),
+    userViews: vi.fn(),
+    resumeItems: vi.fn(),
+    nextUp: vi.fn(),
+    latestInLibrary: vi.fn(),
+    imageUrl: vi.fn(),
     ...overrides,
   };
 }

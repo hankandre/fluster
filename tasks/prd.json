@@ -731,10 +731,10 @@
             "Built under src/features/ with a Playwright journey; no proof-of-concept screen is extended"
           ],
           "verify": "pnpm check && pnpm test:e2e",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "Home rows load in parallel via per-row react-query queries (src/features/home); gateway calls use UserViews, UserItems/Resume, Shows/NextUp, Items/Latest with fields=PrimaryImageAspectRatio, checked against OpenAPI 12.4 and @jellyfin/sdk 1.0.2.\nImages use tagged token-free URLs with blurhash placeholders; CSP img-src gained https: and loopback http.\npnpm check, pnpm test:e2e (9 passed, incl. e2e/home.spec.ts), clippy, and pnpm audit --audit-level moderate all pass."
         },
         {
           "id": "P3-06",

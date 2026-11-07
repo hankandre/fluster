@@ -25,10 +25,21 @@ export interface BaseItemDto {
   ProductionYear?: number;
   RunTimeTicks?: number;
   Overview?: string;
+  CollectionType?: string;
+  PrimaryImageAspectRatio?: number | null;
+  SeriesId?: string | null;
+  SeriesPrimaryImageTag?: string | null;
+  ImageTags?: Record<string, string | null> | null;
+  BackdropImageTags?: string[] | null;
+  ImageBlurHashes?: Record<string, Record<string, string | null> | undefined> | null;
   UserData?: {
     PlaybackPositionTicks?: number;
     Played?: boolean;
   };
+}
+
+export interface ItemsResult {
+  Items?: BaseItemDto[];
 }
 
 export interface MediaStreamDto {

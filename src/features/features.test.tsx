@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { SessionProvider, useSession, type SessionGateway } from "../app/session";
@@ -18,6 +19,11 @@ function stubGateway(): SessionGateway {
     pollQuickConnect: vi.fn(),
     authenticateWithQuickConnect: vi.fn(),
     logout: vi.fn().mockResolvedValue(undefined),
+    userViews: vi.fn().mockResolvedValue([]),
+    resumeItems: vi.fn().mockResolvedValue([]),
+    nextUp: vi.fn().mockResolvedValue([]),
+    latestInLibrary: vi.fn().mockResolvedValue([]),
+    imageUrl: vi.fn().mockReturnValue(""),
   };
 }
 
@@ -29,10 +35,12 @@ function SignedIn({ gateway, label = "test sign in" }: { gateway: SessionGateway
 it("signs out from Home: revokes the server session and returns to sign-in", async () => {
   const gateway = stubGateway();
   render(
-    <SessionProvider createGateway={() => gateway}>
-      <SignedIn gateway={gateway} />
-      <HomeView />
-    </SessionProvider>,
+    <QueryClientProvider client={new QueryClient()}>
+      <SessionProvider createGateway={() => gateway}>
+        <SignedIn gateway={gateway} />
+        <HomeView />
+      </SessionProvider>
+    </QueryClientProvider>,
   );
   expect(screen.queryByRole("button", { name: "Sign out" })).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "test sign in" }));
@@ -60,7 +68,6 @@ it("logs out the previous gateway once when another one signs in", () => {
 });
 
 it.each([
-  ["Home", HomeView],
   ["Browse", BrowseView],
   ["Detail", DetailView],
   ["Player", PlayerFeatureView],

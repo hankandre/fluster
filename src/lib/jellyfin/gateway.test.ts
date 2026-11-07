@@ -473,3 +473,145 @@ describe("JellyfinGateway device identity and logout", () => {
     });
   });
 });
+
+describe("JellyfinGateway home calls", () => {
+  const cardParams = {
+    fields: "PrimaryImageAspectRatio",
+    imageTypeLimit: 1,
+    enableImageTypes: "Primary,Backdrop,Thumb",
+  };
+
+  it("lists only movie, show, and collection libraries from /UserViews", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("GET /UserViews", {
+      Items: [
+        { Id: "v1", Name: "Movies", CollectionType: "movies" },
+        { Id: "v2", Name: "Shows", CollectionType: "tvshows" },
+        { Id: "v3", Name: "Music", CollectionType: "music" },
+        { Id: "v4", Name: "Sets", CollectionType: "boxsets" },
+        { Id: "v5", Name: "Mixed" },
+      ],
+    });
+    const controller = new AbortController();
+
+    await expect(gateway.userViews(controller.signal)).resolves.toEqual([
+      { id: "v1", name: "Movies" },
+      { id: "v2", name: "Shows" },
+      { id: "v4", name: "Sets" },
+    ]);
+    const request = transport.requests.at(-1);
+    expect(request?.url).toBe("/UserViews");
+    expect(request?.params).toEqual({ userId: "user-1" });
+    expect(request?.signal).toBe(controller.signal);
+  });
+
+  it("requests Continue Watching with minimal fields and maps progress and images", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("GET /UserItems/Resume", {
+      Items: [{
+        Id: "ep-1",
+        Name: "Pilot",
+        Type: "Episode",
+        SeriesName: "Show",
+        ParentIndexNumber: 1,
+        IndexNumber: 2,
+        RunTimeTicks: 1000,
+        PrimaryImageAspectRatio: 1.78,
+        ImageTags: { Primary: "tag-1" },
+        ImageBlurHashes: { Primary: { "tag-1": "LEHV6nWB2yk8pyo0adR*.7kCMdnj" } },
+        UserData: { PlaybackPositionTicks: 250 },
+      }, { Name: "No id" }],
+    });
+
+    await expect(gateway.resumeItems()).resolves.toEqual([{
+      id: "ep-1",
+      title: "Show",
+      subtitle: "S1E2 · Pilot",
+      image: { itemId: "ep-1", type: "Primary", tag: "tag-1", blurHash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" },
+      aspectRatio: 1.78,
+      progress: 0.25,
+    }]);
+    const request = transport.requests.at(-1);
+    expect(request?.url).toBe("/UserItems/Resume");
+    expect(request?.params).toEqual({
+      userId: "user-1",
+      mediaTypes: "Video",
+      limit: 16,
+      enableUserData: true,
+      enableTotalRecordCount: false,
+      ...cardParams,
+    });
+  });
+
+  it("requests Next Up without rewatching", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("GET /Shows/NextUp", {
+      Items: [{ Id: "ep-2", Name: "Second", Type: "Episode", SeriesName: "Show", SeriesId: "series-1", SeriesPrimaryImageTag: "s-tag" }],
+    });
+
+    await expect(gateway.nextUp()).resolves.toEqual([expect.objectContaining({
+      id: "ep-2",
+      image: { itemId: "series-1", type: "Primary", tag: "s-tag" },
+    })]);
+    const request = transport.requests.at(-1);
+    expect(request?.url).toBe("/Shows/NextUp");
+    expect(request?.params).toEqual({
+      userId: "user-1",
+      limit: 16,
+      enableRewatching: false,
+      enableTotalRecordCount: false,
+      ...cardParams,
+    });
+  });
+
+  it("reads the bare array from /Items/Latest for one library", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("GET /Items/Latest", [
+      { Id: "m1", Name: "Arrival", Type: "Movie", ProductionYear: 2016, BackdropImageTags: ["b1"] },
+    ]);
+
+    await expect(gateway.latestInLibrary("lib-1")).resolves.toEqual([{
+      id: "m1",
+      title: "Arrival",
+      subtitle: "2016",
+      image: { itemId: "m1", type: "Backdrop", tag: "b1" },
+      aspectRatio: 16 / 9,
+    }]);
+    const request = transport.requests.at(-1);
+    expect(request?.url).toBe("/Items/Latest");
+    expect(request?.params).toEqual({
+      userId: "user-1",
+      parentId: "lib-1",
+      limit: 16,
+      groupItems: true,
+      ...cardParams,
+    });
+  });
+
+  it("never asks for fields that are always returned", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("GET /Items/Latest", []);
+    await gateway.latestInLibrary("lib-1");
+    const fields = String(transport.requests.at(-1)?.params?.fields);
+    expect(fields).not.toMatch(/ProductionYear|RunTimeTicks/);
+  });
+
+  it("builds tagged image URLs with no credentials", async () => {
+    const { gateway } = await authenticatedGateway();
+    const url = new URL(gateway.imageUrl("item/one", "Primary", "tag-1", 320));
+    expect(url.origin + url.pathname).toBe("https://media.test/jellyfin/Items/item%2Fone/Images/Primary");
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      tag: "tag-1",
+      maxWidth: "320",
+      quality: "90",
+      format: "Webp",
+    });
+    expect(url.href).not.toContain("top-secret");
+    expect(url.href).not.toMatch(/api_key|token/i);
+  });
+
+  it("requires a signed-in session", async () => {
+    const gateway = new JellyfinGateway("https://media.test", new FakeTransport(), "install-1");
+    await expect(gateway.resumeItems()).rejects.toThrow("Sign in");
+  });
+});

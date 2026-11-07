@@ -185,3 +185,24 @@ input:focus, select:focus { border-color: var(--acid); box-shadow: 0 0 0 1px var
   .resume-actions .text-button { text-align: left; }
 }
 .quick-connect-code { font: 700 clamp(40px, 8vw, 72px)/1 var(--font-display); letter-spacing: .24em; margin: 8px 0 24px; color: var(--ink); user-select: all; }
+
+.home { padding: 40px 4vw 90px; }
+.home h1 { font-size: clamp(32px, 4vw, 48px); margin-bottom: 32px; }
+.home-row { margin-bottom: 40px; }
+.home-row h2 { font: 600 14px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 0 16px; }
+.card-strip { display: flex; gap: 16px; overflow-x: auto; list-style: none; margin: 0; padding: 4px 4px 12px; }
+.card-strip > li { flex: none; }
+.media-card-button { display: flex; flex-direction: column; gap: 6px; width: auto; max-width: 280px; padding: 0; border: 0; background: none; color: var(--ink); text-align: left; cursor: pointer; }
+.media-card-button:focus-visible { outline: 2px solid var(--acid); outline-offset: 4px; }
+.card-art { align-self: flex-start; height: 180px; position: relative; overflow: hidden; background: #171b24; }
+.card-image { position: absolute; inset: 0; background-size: cover; background-color: #171b24; }
+.card-image img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .2s; }
+.card-image[data-state="loaded"] img { opacity: 1; }
+.card-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(0,0,0,.6); }
+.card-progress > div { height: 100%; background: var(--acid); }
+.card-title { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 0; min-width: 100%; }
+.card-subtitle { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 0; min-width: 100%; }
+.card-skeleton { width: 120px; height: 180px; background: #171b24; animation: card-pulse 1.4s ease-in-out infinite; }
+.row-error { display: flex; align-items: center; gap: 16px; color: #ff9b7c; font-size: 14px; }
+@keyframes card-pulse { 50% { opacity: .5; } }
+@media (prefers-reduced-motion: reduce) { .card-skeleton { animation: none; } }

@@ -1,17 +1,19 @@
 import { Jellyfin, type Api } from "@jellyfin/sdk";
 import axios from "axios";
-import type { LibraryItem } from "../../domain/catalog";
+import type { CardImageType, LibraryItem, LibraryView, MediaCard } from "../../domain/catalog";
 import type { PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
 import { secondsToTicks } from "../../domain/playback";
 import { isSupportedServerVersion, parseServerVersion } from "../../domain/server-version";
 import { getInstallId } from "../install-id";
 import { redactError, redactText } from "../redact";
+import { toHomeLibraries, toMediaCards } from "./cards";
 import { deriveDeviceId } from "./device-id";
 import type {
   AuthenticationResult,
   BaseItemDto,
   HttpRequestConfig,
   HttpTransport,
+  ItemsResult,
   MediaSourceDto,
   PlaybackInfoResponse,
   QuickConnectResult,
@@ -20,6 +22,16 @@ import type {
 
 export const CONTROL_REQUEST_TIMEOUT_MS = 15_000;
 export const REPORT_REQUEST_TIMEOUT_MS = 3_000;
+
+export const HOME_ROW_LIMIT = 16;
+// The only ItemFields a card needs. ProductionYear and RunTimeTicks are
+// always returned and are not valid values here.
+const CARD_FIELDS = "PrimaryImageAspectRatio";
+const CARD_IMAGE_PARAMS = {
+  fields: CARD_FIELDS,
+  imageTypeLimit: 1,
+  enableImageTypes: "Primary,Backdrop,Thumb",
+};
 
 const DEVICE_NAME = "Fluster Linux";
 // Jellyfin binds the Quick Connect token to the DeviceId sent with Initiate
@@ -314,6 +326,77 @@ export class JellyfinGateway {
         played: Boolean(item.UserData?.Played),
       } satisfies LibraryItem];
     }).slice(0, 10);
+  }
+
+  async userViews(signal?: AbortSignal): Promise<LibraryView[]> {
+    const { userId } = this.requireSession();
+    const { data } = await this.get<ItemsResult>("/UserViews", {
+      params: { userId },
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    return toHomeLibraries(data.Items);
+  }
+
+  async resumeItems(signal?: AbortSignal): Promise<MediaCard[]> {
+    const { userId } = this.requireSession();
+    const { data } = await this.get<ItemsResult>("/UserItems/Resume", {
+      params: {
+        userId,
+        mediaTypes: "Video",
+        limit: HOME_ROW_LIMIT,
+        enableUserData: true,
+        enableTotalRecordCount: false,
+        ...CARD_IMAGE_PARAMS,
+      },
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    return toMediaCards(data.Items);
+  }
+
+  async nextUp(signal?: AbortSignal): Promise<MediaCard[]> {
+    const { userId } = this.requireSession();
+    const { data } = await this.get<ItemsResult>("/Shows/NextUp", {
+      params: {
+        userId,
+        limit: HOME_ROW_LIMIT,
+        enableRewatching: false,
+        enableTotalRecordCount: false,
+        ...CARD_IMAGE_PARAMS,
+      },
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    return toMediaCards(data.Items);
+  }
+
+  // Unlike the other home calls, /Items/Latest returns a bare array.
+  async latestInLibrary(parentId: string, signal?: AbortSignal): Promise<MediaCard[]> {
+    const { userId } = this.requireSession();
+    const { data } = await this.get<BaseItemDto[]>("/Items/Latest", {
+      params: {
+        userId,
+        parentId,
+        limit: HOME_ROW_LIMIT,
+        groupItems: true,
+        ...CARD_IMAGE_PARAMS,
+      },
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    return toMediaCards(data);
+  }
+
+  // Tagged image URLs are immutable and need no token, so they carry no
+  // credentials and can be cached by (item, type, tag, size).
+  imageUrl(itemId: string, type: CardImageType, tag: string, maxWidth: number): string {
+    const url = new URL(`${this.serverUrl}/Items/${encodeURIComponent(itemId)}/Images/${type}`);
+    url.searchParams.set("tag", tag);
+    url.searchParams.set("maxWidth", String(maxWidth));
+    url.searchParams.set("quality", "90");
+    url.searchParams.set("format", "Webp");
+    return url.toString();
   }
 
   async createPlaybackPlan(item: LibraryItem, startPositionTicks = 0, signal?: AbortSignal): Promise<PlaybackPlan> {
