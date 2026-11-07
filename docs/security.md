@@ -1,14 +1,14 @@
 # Security boundary
 
 - Jellyfin access tokens are session-only fields inside `JellyfinGateway`.
-- Remote servers must use HTTPS. Plain HTTP is accepted only for `localhost` or `127.0.0.1`, and URLs containing user information are rejected.
+- Servers must use HTTPS unless the host is loopback or private LAN ([decision 0001](decisions/0001-private-lan-http.md)). Loopback (`localhost`, `127.0.0.0/8`, `::1`) may use plain HTTP. Private-LAN hosts (RFC 1918, `169.254.0.0/16`, `fc00::/7`, `fe80::/10`, `.local` names) may use plain HTTP only after a one-time confirmation per server `Id` and origin that warns the password and token travel unencrypted. Hosts are classified by the literal URL host, never by DNS resolution, and public `http://` hosts are refused before any request is sent. Authenticated requests never follow cross-origin redirects. The same rule covers stream, subtitle, and image URLs, the Rust URL policy, and the realtime socket (`ws://` only where `http://` is allowed). URLs containing user information are rejected. Until P0-12 lands, the code still accepts plain HTTP only for `localhost` and `127.0.0.1`.
 - The authenticated stream URL is passed directly from the typed Tauri load request into in-process libmpv. It never appears in a child-process argument, environment variable, or IPC socket.
 - Rust exposes load, surface geometry, pause, seek, volume, mute, audio/subtitle selection, fullscreen, and stop. It does not accept arbitrary mpv commands.
 - libmpv starts with application-controlled configuration loading and default input bindings disabled, preventing user scripts or config from changing playback policy.
 - Rust errors redact URLs and query strings. The frontend does not log request objects, authenticated URLs, passwords, or tokens.
 - External subtitle URLs must use the stream's origin and HTTP(S), must not arrive with credentials, and are authenticated only after validation. TypeScript and Rust enforce the same policy before libmpv sees them.
 - The browser player is development-only and necessarily exposes its request to browser developer tools. It does not persist the URL and does not provide authoritative decode diagnostics.
-- Tauri is pinned to an exact version because the native composition accesses platform WebView handles. The WebView CSP allows remote HTTPS and loopback HTTP for user-selected Jellyfin servers but does not load remote fonts or scripts. macOS uses Tauri's private API support and therefore is not intended for Mac App Store distribution.
+- Tauri is pinned to an exact version because the native composition accesses platform WebView handles. The WebView CSP allows remote HTTPS and loopback HTTP for user-selected Jellyfin servers (P0-12 decides how private-LAN HTTP is admitted, since CSP cannot express address ranges) but does not load remote fonts or scripts. macOS uses Tauri's private API support and therefore is not intended for Mac App Store distribution.
 
 No player preferences are persisted in this slice. Authentication secrets must not be added to persisted Query caches, analytics, crash payloads, or diagnostic exports.
 

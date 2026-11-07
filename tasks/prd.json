@@ -265,10 +265,10 @@
             "docs/security.md and ARCHITECTURE.md reflect the decision"
           ],
           "verify": "ls docs/decisions/",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": "Decision 2026-11-07 (user): allow plain HTTP only for private-LAN hosts (RFC 1918, link-local, .local) after a one-time per-server confirmation that warns the token travels unencrypted; public HTTP stays refused. Agent writes the decision record and docs."
+          "status": "done",
+          "owner": "planner",
+          "passes": true,
+          "evidence": "Decision 2026-11-07 (user): allow plain HTTP only for private-LAN hosts (RFC 1918, link-local, .local) after a one-time per-server confirmation that warns the token travels unencrypted; public HTTP stays refused. Agent writes the decision record and docs.\nRecorded in docs/decisions/0001-private-lan-http.md: literal-host classification (no DNS), IPv4-mapped IPv6, per-(Id, origin) confirmation, no cross-origin redirects with auth, same rule for stream/subtitle/Rust/ws.\ndocs/security.md and ARCHITECTURE.md (I5, Discovery row, socket) updated; code enforcement pending P0-12."
         },
         {
           "id": "P0-12",
