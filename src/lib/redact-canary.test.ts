@@ -156,13 +156,13 @@ describe("redaction canary: JellyfinGateway", () => {
       return {
         data: {
           PlaySessionId: "session",
-          MediaSources: [{ Id: "s", Path: "/x", SupportsDirectPlay: true, TranscodingUrl: `/t?api_key=${CANARY}` }],
+          MediaSources: [{ Id: "s", Path: "/x", Protocol: "File", SupportsDirectPlay: true, TranscodingUrl: `/t?api_key=${CANARY}` }],
         } as T,
       };
     };
     const gateway = new JellyfinGateway(SERVER, transport);
     await gateway.login("Louise", "password");
-    expectClean("selectDirectFileSource error", await messageOf(() => gateway.createPlaybackPlan(item)));
+    expectClean("source refusal error", await messageOf(() => gateway.createPlaybackPlan(item)));
 
     transport.post = async <T>(url: string): Promise<{ data: T }> => {
       if (url === "/Users/AuthenticateByName") {
@@ -174,6 +174,7 @@ describe("redaction canary: JellyfinGateway", () => {
           MediaSources: [{
             Id: "s",
             Path: "/x",
+            Protocol: "File",
             SupportsDirectPlay: true,
             MediaStreams: [{ Index: 2, Type: "Subtitle", IsExternal: true, DeliveryUrl: `/sub?api_key=${CANARY}` }],
           }],

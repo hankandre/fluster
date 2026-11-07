@@ -1,7 +1,8 @@
 import axios from "axios";
 import { describe, expect, it, vi } from "vitest";
 import type { LibraryItem } from "../../domain/catalog";
-import type { PlaybackSnapshot } from "../../domain/playback";
+import { PlaybackRefusedError, type PlaybackSnapshot } from "../../domain/playback";
+import { FLUSTER_PROFILE } from "./device-profile";
 import {
   buildStaticStreamUrl,
   CONTROL_REQUEST_TIMEOUT_MS,
@@ -10,7 +11,6 @@ import {
   PUBLIC_HTTP_REFUSED_MESSAGE,
   REDIRECT_REFUSED_MESSAGE,
   REPORT_REQUEST_TIMEOUT_MS,
-  selectDirectFileSource,
   UNENCRYPTED_NOT_CONFIRMED_MESSAGE,
 } from "./gateway";
 import type { LanHttpConfirmation, LanHttpConfirmationStore } from "../lan-http-confirmations";
@@ -202,38 +202,85 @@ describe("JellyfinGateway direct-play contract", () => {
     });
   });
 
-  it("always disables direct stream, remux, and transcoding in query and body", async () => {
+  it("sends the Fluster profile in the body and the false flags in both body and query", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("POST /Items/item/one/PlaybackInfo", {
+      PlaySessionId: "play-1",
+      MediaSources: [{ Id: "source-1", Path: "/media/movie.mkv", Protocol: "File", SupportsDirectPlay: true }],
+    });
+    await gateway.createPlaybackPlan(item, 42);
+    const request = transport.requests.at(-1)!;
+    expect(request.url).toBe("/Items/item/one/PlaybackInfo");
+    expect(request.data).toEqual({
+      ...DIRECT_PLAY_REQUEST,
+      UserId: "user-1",
+      StartTimeTicks: 42,
+      MaxStreamingBitrate: 1000000000,
+      DeviceProfile: FLUSTER_PROFILE,
+    });
+    expect(request.params).toEqual({
+      EnableDirectPlay: true,
+      EnableDirectStream: false,
+      EnableTranscoding: false,
+      AllowVideoStreamCopy: false,
+      AllowAudioStreamCopy: false,
+      AutoOpenLiveStream: false,
+      UserId: "user-1",
+      StartTimeTicks: 42,
+    });
+  });
+
+  it("requests and plays the chosen version by MediaSourceId", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("POST /Items/item/one/PlaybackInfo", {
+      PlaySessionId: "play-1",
+      MediaSources: [
+        { Id: "source-1", Path: "/media/a.mkv", Protocol: "File", SupportsDirectPlay: true },
+        { Id: "source-2", Path: "/media/b.mkv", Protocol: "File", SupportsDirectPlay: true },
+      ],
+    });
+    const plan = await gateway.createPlaybackPlan(item, 0, undefined, "source-2");
+    const request = transport.requests.at(-1)!;
+    expect(request.data).toMatchObject({ MediaSourceId: "source-2", DeviceProfile: FLUSTER_PROFILE });
+    expect(request.params).not.toHaveProperty("MediaSourceId");
+    expect(plan.mediaSourceId).toBe("source-2");
+    expect(new URL(plan.streamUrl).searchParams.get("MediaSourceId")).toBe("source-2");
+  });
+
+  it("omits MediaSourceId when no version is chosen", async () => {
     const { gateway, transport } = await authenticatedGateway();
     transport.responses.set("POST /Items/item/one/PlaybackInfo", {
       PlaySessionId: "play-1",
       MediaSources: [{ Id: "source-1", Path: "/media/movie.mkv", Protocol: "File", SupportsDirectPlay: true }],
     });
     await gateway.createPlaybackPlan(item);
-    const request = transport.requests.at(-1)!;
-    expect(request.data).toMatchObject(DIRECT_PLAY_REQUEST);
-    expect(request.params).toMatchObject({
-      EnableDirectPlay: true,
-      EnableDirectStream: false,
-      EnableTranscoding: false,
-      AllowVideoStreamCopy: false,
-      AllowAudioStreamCopy: false,
-    });
+    expect(transport.requests.at(-1)!.data).not.toHaveProperty("MediaSourceId");
   });
 
-  it("rejects HLS, remote HTTP, and transcoding responses", () => {
-    expect(() => selectDirectFileSource([{
-      Id: "hls",
-      Path: "https://media.test/live.m3u8",
-      Protocol: "Http",
-      SupportsDirectPlay: true,
-    }])).toThrow("No static, file-backed direct-play source");
-    expect(() => selectDirectFileSource([{
+  it.each([
+    [{ Id: "hls", Path: "https://media.test/live.m3u8", Protocol: "Http", SupportsDirectPlay: true }, "not-a-file"],
+    [{
       Id: "transcode",
       Path: "/media/movie.mkv",
       Protocol: "File",
       SupportsDirectPlay: true,
       TranscodingUrl: "/Videos/ActiveEncodings/x/master.m3u8",
-    }])).toThrow("No static, file-backed direct-play source");
+    }, "server-requires-transcoding"],
+    [{ Id: "disc", Path: "/media/Disc", Protocol: "File", SupportsDirectPlay: true, VideoType: "BluRay" }, "disc-source"],
+  ])("refuses %o with a typed reason", async (source, reason) => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("POST /Items/item/one/PlaybackInfo", { PlaySessionId: "play-1", MediaSources: [source] });
+    const error = await gateway.createPlaybackPlan(item).catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(PlaybackRefusedError);
+    expect((error as PlaybackRefusedError).reason).toBe(reason);
+  });
+
+  it("refuses a response without sources as no-sources, even without a play session", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("POST /Items/item/one/PlaybackInfo", { MediaSources: [], ErrorCode: "NoCompatibleStream" });
+    const error = await gateway.createPlaybackPlan(item).catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(PlaybackRefusedError);
+    expect((error as PlaybackRefusedError).reason).toBe("no-sources");
   });
 
   it("builds only the static original-file endpoint", () => {

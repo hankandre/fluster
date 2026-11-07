@@ -1,5 +1,6 @@
 // Records scrubbed PlaybackInfo contract fixtures from the two fixture servers.
-// Usage: pnpm fixture:up && pnpm fixture:setup && node tests/integration/record-fixtures.mjs
+// Usage: pnpm fixture:up && pnpm fixture:setup && node tests/integration/record-fixtures.mjs [file ...]
+// Naming fixture files (for example playbackinfo-av1-profile) records only those.
 // Credentials come from tests/integration/.credentials and are never printed.
 // Scrubbing follows .claude/skills/jellyfin-api/references/contract-fixtures.md.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -21,7 +22,14 @@ const cases = [
   { file: "playbackinfo-external-subtitle", fakeId: "item-sidecar", path: "Synthetic Sidecar (2024).mkv", profile: true },
   { file: "playbackinfo-multi-version", fakeId: "item-versions", path: "Synthetic Versions (2024) - 1080p.mkv", profile: true },
   { file: "playbackinfo-bluray-folder", fakeId: "item-bluray", path: "Synthetic BluRay (2024)", profile: true },
+  // Codec coverage for the empty-codec DirectPlayProfile assumption (P1-03).
+  { file: "playbackinfo-hevc-hdr10-profile", fakeId: "item-hevc", path: "Synthetic HEVC HDR10 (2024).mkv", profile: true },
+  { file: "playbackinfo-av1-profile", fakeId: "item-av1", path: "Synthetic AV1 (2024).mkv", profile: true },
+  { file: "playbackinfo-ass-profile", fakeId: "item-ass", path: "Synthetic ASS (2024).mkv", profile: true },
+  { file: "playbackinfo-multitrack-profile", fakeId: "item-multitrack", path: "Synthetic Multitrack (2024).mkv", profile: true },
 ];
+const only = new Set(process.argv.slice(2));
+const wanted = (file) => only.size === 0 || only.has(file);
 
 const FLUSTER_PROFILE = {
   Name: "Fluster",
@@ -174,12 +182,13 @@ for (const server of servers) {
     console.log(`  wrote ${server.folder}/${file}.json`);
   };
 
-  for (const target of targets) {
+  for (const target of targets.filter((t) => wanted(t.file))) {
     const { body, query } = requestFor(userId, target.profile);
     const response = await call(base, token, "POST", `/Items/${target.item.Id}/PlaybackInfo`, { query, body });
     save(target.file, response);
   }
-  const versionsId = versionsItem.Id;
-  const detail = await call(base, token, "GET", `/Items/${versionsId}`, { query: { userId, fields: "MediaSources" } });
-  save("item-multi-version", detail);
+  if (wanted("item-multi-version")) {
+    const detail = await call(base, token, "GET", `/Items/${versionsItem.Id}`, { query: { userId, fields: "MediaSources" } });
+    save("item-multi-version", detail);
+  }
 }

@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { LibraryItem } from "../../domain/catalog";
+import { PlaybackRefusedError } from "../../domain/playback";
+import { FLUSTER_PROFILE } from "./device-profile";
 import { JellyfinGateway } from "./gateway";
 import type { HttpRequestConfig, HttpTransport, PlaybackInfoResponse } from "./types";
 
 // Replays PlaybackInfo responses recorded from real Jellyfin servers
 // (tests/integration/record-fixtures.mjs) through the current gateway.
-// Assertions describe today's behavior. Tests named "current gap" document
-// behavior that later tasks change; they should be rewritten then.
+// Tests named "current gap" document behavior that later tasks change; they
+// should be rewritten then.
 const fixtureFiles = import.meta.glob("../../../tests/fixtures/jellyfin/*/playbackinfo-*.json", {
   eager: true,
   import: "default",
@@ -42,45 +44,65 @@ class FixtureTransport implements HttpTransport {
   }
 }
 
-async function plan(version: string, name: string, itemId: string) {
-  const transport = new FixtureTransport(fixture(version, name));
+async function planFrom(response: PlaybackInfoResponse, itemId: string) {
+  const transport = new FixtureTransport(response);
   const gateway = new JellyfinGateway("http://127.0.0.1:8096", transport, "install-1");
   await gateway.login("tester", "password");
   const item: LibraryItem = { id: itemId, name: "Fixture", type: "Movie", resumePositionTicks: 0, played: false };
-  return { transport, run: () => gateway.createPlaybackPlan(item) };
+  return { transport, run: (mediaSourceId?: string) => gateway.createPlaybackPlan(item, 0, undefined, mediaSourceId) };
 }
+
+function plan(version: string, name: string, itemId: string) {
+  return planFrom(fixture(version, name), itemId);
+}
+
+async function refusalOf(promise: Promise<unknown>): Promise<PlaybackRefusedError> {
+  const error = await promise.catch((caught: unknown) => caught);
+  expect(error).toBeInstanceOf(PlaybackRefusedError);
+  return error as PlaybackRefusedError;
+}
+
+const FALSE_FLAGS = {
+  EnableDirectPlay: true,
+  EnableDirectStream: false,
+  EnableTranscoding: false,
+  AllowVideoStreamCopy: false,
+  AllowAudioStreamCopy: false,
+  AutoOpenLiveStream: false,
+};
 
 const versions = ["10.11.7", "12.4.0"];
 
 describe.each(versions)("PlaybackInfo fixtures from Jellyfin %s", (version) => {
   it("plays the H.264 movie recorded without a DeviceProfile", async () => {
-    const { transport, run } = await plan(version, "h264-no-profile", "item-h264");
+    const { run } = await plan(version, "h264-no-profile", "item-h264");
     const result = await run();
     expect(result.mediaSourceId).toBe("item-h264");
     expect(result.playSessionId).toBe("play-session-1");
     expect(result.tracks.every((track) => !track.external)).toBe(true);
-    const [request] = transport.posts;
-    expect(request.url).toBe("/Items/item-h264/PlaybackInfo");
-    expect(request.data).toMatchObject({
-      UserId: "user-test",
-      EnableDirectPlay: true,
-      EnableDirectStream: false,
-      EnableTranscoding: false,
-      AllowVideoStreamCopy: false,
-      AllowAudioStreamCopy: false,
-      AutoOpenLiveStream: false,
-    });
-    expect(request.params).toMatchObject({ EnableDirectPlay: true, EnableTranscoding: false });
   });
 
-  it("current gap, fixed by P1-03: the request carries no DeviceProfile", async () => {
+  it("sends the Fluster profile in the body and the false flags in body and query", async () => {
     const { transport, run } = await plan(version, "h264-profile", "item-h264");
     await run();
-    expect(transport.posts[0].data).not.toHaveProperty("DeviceProfile");
+    const [request] = transport.posts;
+    expect(request.url).toBe("/Items/item-h264/PlaybackInfo");
+    expect(request.data).toEqual({
+      ...FALSE_FLAGS,
+      UserId: "user-test",
+      StartTimeTicks: 0,
+      MaxStreamingBitrate: 1000000000,
+      DeviceProfile: FLUSTER_PROFILE,
+    });
+    expect(request.params).toEqual({ ...FALSE_FLAGS, UserId: "user-test", StartTimeTicks: 0 });
   });
 
+  // The empty-codec assumption: a profile whose DirectPlayProfiles name no
+  // container or codec still lets the server report direct play.
   it("plays the H.264 movie recorded with the Fluster profile", async () => {
-    const { run } = await plan(version, "h264-profile", "item-h264");
+    const response = fixture(version, "h264-profile");
+    expect(response.MediaSources?.[0].SupportsDirectPlay).toBe(true);
+    const { run } = await planFrom(response, "item-h264");
     expect((await run()).mediaSourceId).toBe("item-h264");
   });
 
@@ -107,27 +129,61 @@ describe.each(versions)("PlaybackInfo fixtures from Jellyfin %s", (version) => {
     expect(url.searchParams.get("api_key")).toBe("test-token");
   });
 
-  it("current gap, fixed by P1-03: multi-version items always play the first source", async () => {
-    const { run } = await plan(version, "multi-version", "item-versions");
+  it("plays the first version of a multi-version item by default", async () => {
+    const { transport, run } = await plan(version, "multi-version", "item-versions");
     expect((await run()).mediaSourceId).toBe("item-versions");
+    expect(transport.posts[0].data).not.toHaveProperty("MediaSourceId");
   });
 
-  it("refuses the BluRay folder today only because the server says SupportsDirectPlay is false", async () => {
+  it("plays the chosen version of a multi-version item by MediaSourceId", async () => {
+    const { transport, run } = await plan(version, "multi-version", "item-versions");
+    const result = await run("source-versions-2");
+    expect(result.mediaSourceId).toBe("source-versions-2");
+    expect(new URL(result.streamUrl).searchParams.get("MediaSourceId")).toBe("source-versions-2");
+    const [request] = transport.posts;
+    expect(request.data).toMatchObject({ MediaSourceId: "source-versions-2", DeviceProfile: FLUSTER_PROFILE });
+    expect(request.params).toEqual({ ...FALSE_FLAGS, UserId: "user-test", StartTimeTicks: 0 });
+  });
+
+  it("refuses the recorded BluRay folder with a typed reason", async () => {
     const { run } = await plan(version, "bluray-folder", "item-bluray");
-    await expect(run()).rejects.toThrow("No static, file-backed direct-play source");
+    // The server already reports SupportsDirectPlay false for the disc folder.
+    expect((await refusalOf(run())).reason).toBe("no-direct-play");
   });
 
-  // The server itself blocks the disc folder in the recorded response. If a
-  // server or policy ever reported SupportsDirectPlay true, the gateway would
-  // accept it because it never checks VideoType. P1-03 must make this pass.
-  it.fails("rejects a BluRay source by VideoType even when the server reports direct play", async () => {
+  it("refuses a BluRay source by VideoType even when the server reports direct play", async () => {
     const response = fixture(version, "bluray-folder");
-    expect((response.MediaSources?.[0] as { VideoType?: string }).VideoType).toBe("BluRay");
+    expect(response.MediaSources?.[0].VideoType).toBe("BluRay");
     response.MediaSources![0].SupportsDirectPlay = true;
-    const transport = new FixtureTransport(response);
-    const gateway = new JellyfinGateway("http://127.0.0.1:8096", transport, "install-1");
-    await gateway.login("tester", "password");
-    const item: LibraryItem = { id: "item-bluray", name: "Fixture", type: "Movie", resumePositionTicks: 0, played: false };
-    await expect(gateway.createPlaybackPlan(item)).rejects.toThrow();
+    const { run } = await planFrom(response, "item-bluray");
+    const refusal = await refusalOf(run());
+    expect(refusal.reason).toBe("disc-source");
+    expect(refusal.message).not.toContain("/media/");
+  });
+
+  it("refuses the BluRay folder before any stream request", async () => {
+    const response = fixture(version, "bluray-folder");
+    response.MediaSources![0].SupportsDirectPlay = true;
+    const { transport, run } = await planFrom(response, "item-bluray");
+    await refusalOf(run());
+    // The only request after login is PlaybackInfo; no plan, so no stream URL.
+    expect(transport.posts.map((post) => post.url)).toEqual(["/Items/item-bluray/PlaybackInfo"]);
+  });
+
+  // Proves the empty-codec assumption for the sample set: the profile names no
+  // container or codec, and the server still offers direct play for each one.
+  it.each([
+    ["hevc-hdr10-profile", "item-hevc", "hevc"],
+    ["av1-profile", "item-av1", "av1"],
+    ["ass-profile", "item-ass", "h264"],
+    ["multitrack-profile", "item-multitrack", "h264"],
+  ])("direct-plays the %s sample with the empty-codec profile", async (name, itemId, codec) => {
+    const response = fixture(version, name);
+    const [source] = response.MediaSources!;
+    expect(source).toMatchObject({ SupportsDirectPlay: true, Protocol: "File", VideoType: "VideoFile", Container: "mkv" });
+    expect(source.TranscodingUrl ?? null).toBeNull();
+    expect(source.MediaStreams?.find((stream) => stream.Type === "Video")?.Codec).toBe(codec);
+    const { run } = await planFrom(response, itemId);
+    expect((await run()).mediaSourceId).toBe(itemId);
   });
 });

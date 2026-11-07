@@ -160,7 +160,7 @@ The profile accepts everything for direct play and offers no way to transcode:
 }
 ```
 
-**[unverified]** that empty `Container`/`VideoCodec`/`AudioCodec` fields mean "match anything" in `StreamBuilder`. Prove it with a contract fixture before relying on it.
+Empty `Container`/`VideoCodec`/`AudioCodec` fields mean "match anything": `ContainerHelper.ContainsContainer` returns true for an empty profile list (`MediaBrowser.Model/Extensions/ContainerHelper.cs` lines 82-88 at v10.11.7 and v12.4), and `StreamBuilder` uses it for the container, video, and audio checks (v12.4 lines 1346, 1357, 1366). A source with an empty `Container` does not match, which is the BluRay folder case. Contract fixtures confirm `SupportsDirectPlay: true` with this profile on 10.11.7 and 12.4.0 for the H.264/AAC, HEVC Main10 HDR10, AV1, embedded-ASS, and multi-audio (AAC + AC-3) MKV samples.
 
 **Media source acceptance.** A source is playable only if **all** of these hold:
 
@@ -171,7 +171,7 @@ The profile accepts everything for direct play and offers no way to transcode:
 5. `VideoType` is not `Iso`. Rejected for now; **[unverified]** whether mpv handles ISO over HTTP.
 6. `Id` and `Path` are present.
 
-If no source qualifies, return a typed **refusal reason** for the UI. Possible reasons: disc/ISO source, remote bitrate limit, remote-source policy, non-file protocol, no direct-play support. Multiple versions are listed by `MediaSources[].Name` and chosen by `MediaSourceId`.
+The rules run in this order and the first failing rule names the reason. If no source qualifies, the gateway throws `PlaybackRefusedError` with a typed `RefusalReason` (`src/domain/playback.ts`): `no-sources`, `no-direct-play`, `not-a-file`, `server-requires-transcoding`, `disc-source`, `iso-source`, or `missing-source-data`. The server reports remote bitrate limits and remote-source policy as `SupportsDirectPlay: false`, so they surface as `no-direct-play`. The profile lives in `src/lib/jellyfin/device-profile.ts` and the rules in `src/lib/jellyfin/source-acceptance.ts`. Multiple versions are listed by `MediaSources[].Name` and chosen by `MediaSourceId`; without a choice the first acceptable source plays.
 
 **Subtitles and track mapping.**
 
@@ -261,10 +261,8 @@ Tracked in `docs/plans/active/001-jellyfin-api-correctness.md`.
 | Severity | Gap |
 |---|---|
 | Critical | Stream/subtitle URLs use `api_key`, which fails by default on Jellyfin 12.x |
-| High | No DeviceProfile, so the server's direct-play checks are skipped and external subtitles never get a `DeliveryUrl` |
 | High | Track mapping ignores the external-first index numbering |
-| High | BluRay/DVD folder sources are not rejected; ffmpeg runs silently |
-| Medium | Refusal reasons aren't surfaced |
+| Medium | Refusal reasons: typed reasons exist (`RefusalReason` in `src/domain/playback.ts`); UI copy is P3-09 |
 
 ---
 

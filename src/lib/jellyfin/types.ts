@@ -57,6 +57,7 @@ export interface SearchHintResult {
 export interface MediaStreamDto {
   Index?: number;
   Type?: string;
+  Codec?: string;
   DisplayTitle?: string;
   Language?: string;
   IsExternal?: boolean;
@@ -65,11 +66,13 @@ export interface MediaStreamDto {
 
 export interface MediaSourceDto {
   Id?: string;
+  Name?: string;
   Path?: string;
+  VideoType?: string;
   Protocol?: string;
   SupportsDirectPlay?: boolean;
   SupportsDirectStream?: boolean;
-  TranscodingUrl?: string;
+  TranscodingUrl?: string | null;
   Container?: string;
   MediaStreams?: MediaStreamDto[];
 }
