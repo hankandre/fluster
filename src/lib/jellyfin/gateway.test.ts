@@ -700,6 +700,8 @@ describe("JellyfinGateway home calls", () => {
       searchTerm: "sho",
       recursive: true,
       includeItemTypes: "Movie,Series,Episode",
+      sortBy: "SortName",
+      sortOrder: "Ascending",
       startIndex: 40,
       limit: 3,
       enableUserData: true,
