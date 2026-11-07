@@ -120,7 +120,9 @@ export class PlaybackCoordinator {
     const controller = new AbortController();
     this.attemptController = controller;
     this.resetAttempt();
-    await this.reporter.waitForDrains();
+    // Back or a newer attempt must not wait for a slow server to finish the
+    // previous session's reports; stop waiting as soon as this attempt aborts.
+    await untilSettledOrAborted(this.reporter.waitForDrains(), controller.signal);
     this.assertCurrentAttempt(attempt, controller);
 
     let plan: PlaybackPlan;
@@ -291,4 +293,16 @@ export class PlaybackCoordinator {
   private assertCurrentOperation(operation: number): void {
     if (operation !== this.operation) throw new PlaybackCancelledError();
   }
+}
+
+function untilSettledOrAborted(promise: Promise<void>, signal: AbortSignal): Promise<void> {
+  if (signal.aborted) return Promise.resolve();
+  return new Promise((resolve) => {
+    const onAbort = () => resolve();
+    signal.addEventListener("abort", onAbort, { once: true });
+    void promise.finally(() => {
+      signal.removeEventListener("abort", onAbort);
+      resolve();
+    }).catch(() => undefined);
+  });
 }
