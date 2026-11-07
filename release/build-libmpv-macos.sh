@@ -17,9 +17,11 @@ build_root="$(mktemp -d)"
 install_prefix="${build_root}/prefix"
 resource_lib="${repository_root}/src-tauri/resources/lib"
 
-git clone --filter=blob:none https://github.com/mpv-player/mpv.git "${build_root}/mpv"
-git -C "${build_root}/mpv" checkout "${MPV_REF}"
-test "$(git -C "${build_root}/mpv" rev-parse --short=7 HEAD)" = "${MPV_COMMIT}"
+git init "${build_root}/mpv"
+git -C "${build_root}/mpv" remote add origin https://github.com/mpv-player/mpv.git
+git -C "${build_root}/mpv" fetch --depth=1 origin "${MPV_COMMIT}"
+git -C "${build_root}/mpv" checkout --detach "${MPV_COMMIT}"
+test "$(git -C "${build_root}/mpv" rev-parse HEAD)" = "${MPV_COMMIT}"
 
 export PKG_CONFIG_PATH="$(brew --prefix ffmpeg@7)/lib/pkgconfig:$(brew --prefix libass)/lib/pkgconfig:$(brew --prefix libplacebo)/lib/pkgconfig"
 meson setup "${build_root}/mpv-build" "${build_root}/mpv" \

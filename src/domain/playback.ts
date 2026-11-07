@@ -110,13 +110,14 @@ export interface PlaybackSnapshot {
   diagnostics: PlaybackDiagnostics;
 }
 
+export type PlaybackEndReason = "eof" | "stopped" | "quit" | "error";
+
 export type PlayerEvent =
-  | { kind: "ready"; capabilities: PlayerCapabilities }
   | { kind: "loaded"; snapshot: PlaybackSnapshot }
   | { kind: "first-frame" }
   | { kind: "state"; snapshot: PlaybackSnapshot; cause?: "pause" | "seek" | "property" }
   | { kind: "tracks-changed"; snapshot: PlaybackSnapshot }
-  | { kind: "ended"; snapshot?: PlaybackSnapshot; reason: string }
+  | { kind: "ended"; snapshot?: PlaybackSnapshot; reason: PlaybackEndReason }
   | { kind: "error"; message: string };
 
 export interface PlayerEngine {

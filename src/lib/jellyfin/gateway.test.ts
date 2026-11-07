@@ -1,27 +1,49 @@
 import axios from "axios";
 import { describe, expect, it, vi } from "vitest";
 import type { LibraryItem, PlaybackSnapshot } from "../../domain/playback";
-import { buildStaticStreamUrl, DIRECT_PLAY_REQUEST, JellyfinGateway, selectDirectFileSource } from "./gateway";
-import type { HttpTransport } from "./types";
+import {
+  buildStaticStreamUrl,
+  CONTROL_REQUEST_TIMEOUT_MS,
+  DIRECT_PLAY_REQUEST,
+  JellyfinGateway,
+  REPORT_REQUEST_TIMEOUT_MS,
+  selectDirectFileSource,
+} from "./gateway";
+import type { HttpRequestConfig, HttpTransport } from "./types";
 
 interface RequestRecord {
   method: "GET" | "POST";
   url: string;
   data?: unknown;
   params?: Record<string, unknown>;
+  signal?: AbortSignal;
+  timeout?: number;
 }
 
 class FakeTransport implements HttpTransport {
   requests: RequestRecord[] = [];
   responses = new Map<string, unknown>();
 
-  async get<T>(url: string, config?: { params?: Record<string, unknown> }): Promise<{ data: T }> {
-    this.requests.push({ method: "GET", url, params: config?.params });
+  async get<T>(url: string, config?: HttpRequestConfig): Promise<{ data: T }> {
+    this.requests.push({
+      method: "GET",
+      url,
+      params: config?.params,
+      signal: config?.signal,
+      timeout: config?.timeout,
+    });
     return { data: this.responses.get(`GET ${url}`) as T };
   }
 
-  async post<T>(url: string, data?: unknown, config?: { params?: Record<string, unknown> }): Promise<{ data: T }> {
-    this.requests.push({ method: "POST", url, data, params: config?.params });
+  async post<T>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<{ data: T }> {
+    this.requests.push({
+      method: "POST",
+      url,
+      data,
+      params: config?.params,
+      signal: config?.signal,
+      timeout: config?.timeout,
+    });
     return { data: this.responses.get(`POST ${url}`) as T };
   }
 }
@@ -45,6 +67,36 @@ function authenticatedGateway() {
 }
 
 describe("JellyfinGateway direct-play contract", () => {
+  it("accepts HTTPS and loopback HTTP server URLs", () => {
+    const transport = new FakeTransport();
+    expect(new JellyfinGateway("https://media.test/jellyfin/", transport).serverUrl)
+      .toBe("https://media.test/jellyfin");
+    expect(new JellyfinGateway("http://localhost:8096", transport).serverUrl)
+      .toBe("http://localhost:8096");
+    expect(new JellyfinGateway("http://127.0.0.1:8096", transport).serverUrl)
+      .toBe("http://127.0.0.1:8096");
+  });
+
+  it.each([
+    "http://media.test",
+    "http://localhost.example.com",
+    "http://127.42.7.9:8096",
+    "http://[::1]:8096",
+    "ftp://localhost/media",
+    "https://name:swordfish@media.test",
+    "not a URL",
+  ])("rejects an unsafe server URL without echoing it: %s", (serverUrl) => {
+    let message = "";
+    try {
+      new JellyfinGateway(serverUrl, new FakeTransport());
+    } catch (error) {
+      message = error instanceof Error ? error.message : String(error);
+    }
+    expect(message).not.toBe("");
+    expect(message).not.toContain(serverUrl);
+    expect(message).not.toContain("swordfish");
+  });
+
   it("maps Jellyfin resume position and played state", async () => {
     const { gateway, transport } = await authenticatedGateway();
     transport.responses.set("GET /Users/user-1/Items", {
@@ -74,9 +126,15 @@ describe("JellyfinGateway direct-play contract", () => {
     try {
       const gateway = new JellyfinGateway("https://media.test/jellyfin/");
       await gateway.connect();
-      expect(create).toHaveBeenCalledWith({ baseURL: "https://media.test/jellyfin" });
+      expect(create).toHaveBeenCalledWith({
+        baseURL: "https://media.test/jellyfin",
+        timeout: CONTROL_REQUEST_TIMEOUT_MS,
+      });
       expect(isolatedAxios.defaults.headers.common.Authorization).toContain('Client="Fluster"');
-      expect(get).toHaveBeenCalledWith("/System/Info/Public");
+      expect(get).toHaveBeenCalledWith("/System/Info/Public", {
+        signal: undefined,
+        timeout: CONTROL_REQUEST_TIMEOUT_MS,
+      });
     } finally {
       create.mockRestore();
     }
@@ -91,6 +149,25 @@ describe("JellyfinGateway direct-play contract", () => {
     });
     transport.responses.set("GET /System/Info/Public", { Version: "10.10.7" });
     await expect(new JellyfinGateway("https://media.test", transport).connect()).rejects.toThrow("supports Jellyfin 10.11.x");
+  });
+
+  it("returns the stable user ID and applies control request cancellation", async () => {
+    const transport = new FakeTransport();
+    transport.responses.set("POST /Users/AuthenticateByName", {
+      AccessToken: "top-secret",
+      User: { Id: "user-1", Name: "Louise" },
+    });
+    const signal = new AbortController().signal;
+    const gateway = new JellyfinGateway("https://media.test", transport);
+
+    await expect(gateway.login("Louise", "password", signal)).resolves.toEqual({
+      userId: "user-1",
+      username: "Louise",
+    });
+    expect(transport.requests.at(-1)).toMatchObject({
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
   });
 
   it("always disables direct stream, remux, and transcoding in query and body", async () => {
@@ -136,6 +213,63 @@ describe("JellyfinGateway direct-play contract", () => {
     expect(url.searchParams.get("api_key")).toBe("secret");
   });
 
+  it("authenticates same-origin external subtitle URLs", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("POST /Items/item/one/PlaybackInfo", {
+      PlaySessionId: "play-1",
+      MediaSources: [{
+        Id: "source-1",
+        Path: "/media/movie.mkv",
+        Protocol: "File",
+        SupportsDirectPlay: true,
+        MediaStreams: [{
+          Index: 3,
+          Type: "Subtitle",
+          IsExternal: true,
+          DeliveryUrl: "/Videos/movie/Subtitles/3/Stream.srt?format=srt#ignored",
+        }],
+      }],
+    });
+
+    const plan = await gateway.createPlaybackPlan(item);
+    const subtitleUrl = new URL(plan.tracks[0].deliveryUrl!);
+    expect(subtitleUrl.origin).toBe("https://media.test");
+    expect(subtitleUrl.searchParams.get("format")).toBe("srt");
+    expect(subtitleUrl.searchParams.get("api_key")).toBe("top-secret");
+    expect(subtitleUrl.hash).toBe("");
+  });
+
+  it.each([
+    "https://attacker.test/subtitle.srt",
+    "https://name:password@media.test/subtitle.srt",
+    "/subtitle.srt?api_key=untrusted",
+    "file:///tmp/subtitle.srt",
+  ])("rejects unsafe subtitle URLs without exposing them: %s", async (deliveryUrl) => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("POST /Items/item/one/PlaybackInfo", {
+      PlaySessionId: "play-1",
+      MediaSources: [{
+        Id: "source-1",
+        Path: "/media/movie.mkv",
+        Protocol: "File",
+        SupportsDirectPlay: true,
+        MediaStreams: [{ Index: 3, Type: "Subtitle", IsExternal: true, DeliveryUrl: deliveryUrl }],
+      }],
+    });
+
+    let message = "";
+    try {
+      await gateway.createPlaybackPlan(item);
+    } catch (error) {
+      message = error instanceof Error ? error.message : String(error);
+    }
+    expect(message).toContain("unsafe external subtitle URL");
+    expect(message).not.toContain(deliveryUrl);
+    expect(message).not.toContain("top-secret");
+    expect(message).not.toContain("password");
+    expect(message).not.toContain("untrusted");
+  });
+
   it("reports position and DirectPlay for start, progress, and stop", async () => {
     const { gateway, transport } = await authenticatedGateway();
     const plan = {
@@ -178,6 +312,7 @@ describe("JellyfinGateway direct-play contract", () => {
         AudioStreamIndex: 2,
         SubtitleStreamIndex: 4,
       });
+      expect(report.timeout).toBe(REPORT_REQUEST_TIMEOUT_MS);
     }
   });
 });

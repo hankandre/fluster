@@ -11,11 +11,15 @@ use std::ffi::{c_char, c_void, CString};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{mpsc, Arc, Mutex, OnceLock};
 use std::time::Duration;
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{window::Color, AppHandle, Emitter, Manager};
+
+const LIBRARY_BACKGROUND: Color = Color(8, 10, 15, 255);
+const PLAYBACK_BACKGROUND: Color = Color(0, 0, 0, 0);
 
 struct LinuxUi {
     fixed: gtk::Fixed,
     gl_area: gtk::GLArea,
+    webview: gtk::Widget,
     wayland_display: usize,
 }
 
@@ -24,6 +28,7 @@ struct RenderState {
     context: RenderContext,
     app: AppHandle,
     first_frame_sent: bool,
+    render_error_sent: bool,
     video_loaded: Arc<AtomicBool>,
 }
 
@@ -63,6 +68,8 @@ pub fn initialize(app: &AppHandle) -> Result<String, String> {
                 let parent = parent
                     .downcast::<gtk::Container>()
                     .map_err(|_| "The WebView parent is not a GTK container.".to_string())?;
+                parent.set_hexpand(true);
+                parent.set_vexpand(true);
                 let native_window = parent
                     .parent()
                     .ok_or_else(|| "The WebView container has no GTK window.".to_string())?
@@ -101,7 +108,8 @@ pub fn initialize(app: &AppHandle) -> Result<String, String> {
                                     let _ = state.app.emit("fluster://player-event", PlayerEvent::FirstFrame);
                                 }
                             }
-                            Err(error) => {
+                            Err(error) if !state.render_error_sent => {
+                                state.render_error_sent = true;
                                 let _ = state.app.emit(
                                     "fluster://player-event",
                                     PlayerEvent::Error {
@@ -109,6 +117,7 @@ pub fn initialize(app: &AppHandle) -> Result<String, String> {
                                     },
                                 );
                             }
+                            Err(_) => {}
                         }
                     });
                     glib::Propagation::Proceed
@@ -126,18 +135,20 @@ pub fn initialize(app: &AppHandle) -> Result<String, String> {
                 overlay.add_overlay(&webview);
                 overlay.set_overlay_pass_through(&webview, false);
                 native_window.add(&overlay);
+                let sized_fixed = fixed.clone();
                 let sized_webview = webview.clone();
                 overlay.connect_size_allocate(move |_, allocation| {
+                    sized_fixed.set_size_request(allocation.width(), allocation.height());
                     sized_webview.set_size_request(allocation.width(), allocation.height());
                 });
                 overlay.show_all();
-                gl_area.hide();
                 webview.grab_focus();
 
                 UI.with(|slot| {
                     *slot.borrow_mut() = Some(LinuxUi {
                         fixed,
                         gl_area,
+                        webview: webview.upcast(),
                         wayland_display,
                     });
                 });
@@ -151,7 +162,9 @@ pub fn initialize(app: &AppHandle) -> Result<String, String> {
         .lock()
         .expect("renderer result mutex poisoned")
         .clone();
-    status.map(|()| "wayland-gtk-gl".to_string())
+    status?;
+    set_composition_background(app, LIBRARY_BACKGROUND)?;
+    Ok("wayland-gtk-gl".to_string())
 }
 
 pub fn attach(
@@ -161,13 +174,14 @@ pub fn attach(
     video_loaded: Arc<AtomicBool>,
 ) -> Result<(), String> {
     let app_for_render = app.clone();
-    run_on_main(app, move || {
+    let result = run_on_main(app, move || {
+        set_composition_background(&app_for_render, PLAYBACK_BACKGROUND)?;
         UI.with(|slot| {
             let slot = slot.borrow();
             let ui = slot
                 .as_ref()
                 .ok_or_else(|| "The Wayland video surface is not initialized.".to_string())?;
-            ui.gl_area.show();
+            ui.webview.show();
             ui.gl_area.make_current();
             if let Some(error) = ui.gl_area.error() {
                 return Err(format!("Could not create the GTK OpenGL context: {error}"));
@@ -214,13 +228,21 @@ pub fn attach(
                     context,
                     app: app_for_render,
                     first_frame_sent: false,
+                    render_error_sent: false,
                     video_loaded,
                 });
             });
             ui.gl_area.queue_render();
             Ok(())
         })
-    })
+    });
+    if result.is_err() {
+        let app_for_restore = app.clone();
+        let _ = run_on_main(app, move || {
+            set_composition_background(&app_for_restore, LIBRARY_BACKGROUND)
+        });
+    }
+    result
 }
 
 pub fn set_frame(app: &AppHandle, frame: PlayerSurfaceFrame) -> Result<(), String> {
@@ -230,12 +252,11 @@ pub fn set_frame(app: &AppHandle, frame: PlayerSurfaceFrame) -> Result<(), Strin
             let ui = slot
                 .as_ref()
                 .ok_or_else(|| "The Wayland video surface is not initialized.".to_string())?;
-            ui.fixed
-                .move_(&ui.gl_area, frame.x.round() as i32, frame.y.round() as i32);
-            ui.gl_area
-                .set_size_request(frame.width.round() as i32, frame.height.round() as i32);
-            ui.gl_area.set_visible(frame.visible);
             if frame.visible {
+                ui.fixed
+                    .move_(&ui.gl_area, frame.x.round() as i32, frame.y.round() as i32);
+                ui.gl_area
+                    .set_size_request(frame.width.round() as i32, frame.height.round() as i32);
                 ui.gl_area.queue_render();
             }
             Ok(())
@@ -244,8 +265,13 @@ pub fn set_frame(app: &AppHandle, frame: PlayerSurfaceFrame) -> Result<(), Strin
 }
 
 pub fn detach(app: &AppHandle, session_id: &str) {
+    #[cfg(debug_assertions)]
+    eprintln!("[fluster native] scheduling GTK detach for {session_id}");
     let session_id = session_id.to_string();
+    let app_for_detach = app.clone();
     let _ = run_on_main(app, move || {
+        #[cfg(debug_assertions)]
+        eprintln!("[fluster native] GTK detach started for {session_id}");
         let matches = RENDER_STATE.with(|state| {
             state
                 .borrow()
@@ -253,15 +279,36 @@ pub fn detach(app: &AppHandle, session_id: &str) {
                 .is_some_and(|state| state.session_id == session_id)
         });
         if matches {
+            #[cfg(debug_assertions)]
+            eprintln!("[fluster native] dropping render context for {session_id}");
             RENDER_STATE.with(|state| drop(state.borrow_mut().take()));
+            #[cfg(debug_assertions)]
+            eprintln!("[fluster native] render context dropped for {session_id}");
             UI.with(|slot| {
                 if let Some(ui) = slot.borrow().as_ref() {
-                    ui.gl_area.hide();
+                    // Keep the GLArea mapped for the lifetime of the window.
+                    // Unmapping it invalidates GTK/WebKit damage tracking under
+                    // Wayland and can leave only pointer-damaged regions updating.
+                    ui.fixed.queue_resize();
+                    ui.webview.show();
+                    ui.webview.queue_draw();
                 }
             });
         }
-        Ok(())
+        let result = set_composition_background(&app_for_detach, LIBRARY_BACKGROUND);
+        #[cfg(debug_assertions)]
+        eprintln!("[fluster native] GTK detach finished for {session_id}");
+        result
     });
+}
+
+fn set_composition_background(app: &AppHandle, color: Color) -> Result<(), String> {
+    let window = app
+        .get_webview_window("main")
+        .ok_or_else(|| "The main application window is unavailable.".to_string())?;
+    window
+        .set_background_color(Some(color))
+        .map_err(|error| format!("Could not update the application background: {error}"))
 }
 
 fn run_on_main<T, F>(app: &AppHandle, operation: F) -> Result<T, String>

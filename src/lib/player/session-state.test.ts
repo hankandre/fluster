@@ -13,7 +13,7 @@ const snapshot: PlaybackSnapshot = {
 };
 
 describe("playbackSessionReducer", () => {
-  it("retains snapshot, first-frame, buffering, diagnostics, and errors independently", () => {
+  it("retains snapshot, first-frame readiness, and errors independently", () => {
     let state = playbackSessionReducer(initialPlaybackSessionState, { type: "reset" });
     state = playbackSessionReducer(state, { type: "event", event: { kind: "first-frame" } });
     state = playbackSessionReducer(state, { type: "event", event: { kind: "state", snapshot } });
@@ -24,14 +24,12 @@ describe("playbackSessionReducer", () => {
     });
 
     expect(state).toMatchObject({
-      phase: "error",
       firstFrameReady: true,
-      buffering: false,
       error: "decode failed",
-      diagnostics: snapshot.diagnostics,
       snapshot: { positionSeconds: 31 },
-      endReason: "error",
     });
+    expect(state.snapshot?.buffering).toBe(false);
+    expect(state.snapshot?.diagnostics).toEqual(snapshot.diagnostics);
   });
 
   it("does not discard diagnostics when a first-frame event arrives after state", () => {
@@ -40,7 +38,7 @@ describe("playbackSessionReducer", () => {
       event: { kind: "loaded", snapshot },
     });
     state = playbackSessionReducer(state, { type: "event", event: { kind: "first-frame" } });
-    expect(state.diagnostics).toEqual(snapshot.diagnostics);
+    expect(state.snapshot?.diagnostics).toEqual(snapshot.diagnostics);
     expect(state.snapshot).toEqual(snapshot);
   });
 });

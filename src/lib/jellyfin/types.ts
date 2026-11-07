@@ -50,7 +50,13 @@ export interface PlaybackInfoResponse {
   PlaySessionId?: string;
 }
 
+export interface HttpRequestConfig {
+  params?: Record<string, unknown>;
+  signal?: AbortSignal;
+  timeout?: number;
+}
+
 export interface HttpTransport {
-  get<T>(url: string, config?: { params?: Record<string, unknown> }): Promise<{ data: T }>;
-  post<T>(url: string, data?: unknown, config?: { params?: Record<string, unknown> }): Promise<{ data: T }>;
+  get<T>(url: string, config?: HttpRequestConfig): Promise<{ data: T }>;
+  post<T>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<{ data: T }>;
 }

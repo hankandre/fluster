@@ -17,15 +17,20 @@ import type { LibraryItem, PlaybackStartChoice, PlayerCapabilities } from "./dom
 import { resumeChoice, startOverChoice, ticksToSeconds } from "./domain/playback";
 import { PlayerView } from "./components/PlayerView";
 import { JellyfinGateway } from "./lib/jellyfin/gateway";
+import { redactText } from "./lib/redact";
 import { BrowserPlayerEngine } from "./lib/player/browser-player";
-import { PlaybackCoordinator } from "./lib/player/coordinator";
+import { PlaybackCancelledError, PlaybackCoordinator } from "./lib/player/coordinator";
 import { isTauriRuntime, NativePlayerEngine } from "./lib/player/native-player";
 import { initialPlaybackSessionState, playbackSessionReducer } from "./lib/player/session-state";
 
 type Connection = { gateway: JellyfinGateway; name: string; version: string };
+type SignedInUser = { id: string; name: string };
+type PlaybackAction =
+  | { kind: "start"; item: LibraryItem; choice: PlaybackStartChoice }
+  | { kind: "retry" };
 
 function message(error: unknown): string {
-  return error instanceof Error ? error.message : "Something went wrong.";
+  return redactText(error instanceof Error ? error.message : "Something went wrong.");
 }
 
 function formatRuntime(ticks?: number): string {
@@ -47,10 +52,12 @@ export function App() {
   const native = isTauriRuntime();
   const player = useMemo(() => native ? new NativePlayerEngine() : new BrowserPlayerEngine(), [native]);
   const coordinator = useRef<PlaybackCoordinator | undefined>(undefined);
-  const startedItem = useRef<string | undefined>(undefined);
   const [serverUrl, setServerUrl] = useState("");
   const [connection, setConnection] = useState<Connection>();
-  const [signedInAs, setSignedInAs] = useState<string>();
+  const [signedInUser, setSignedInUser] = useState<SignedInUser>();
+  const [loginPending, setLoginPending] = useState(false);
+  const [loginError, setLoginError] = useState<string>();
+  const [playbackPending, setPlaybackPending] = useState(false);
   const [activeItem, setActiveItem] = useState<LibraryItem>();
   const [pendingResumeItem, setPendingResumeItem] = useState<LibraryItem>();
   const [session, dispatchSession] = useReducer(playbackSessionReducer, initialPlaybackSessionState);
@@ -67,10 +74,11 @@ export function App() {
 
   useEffect(() => {
     if (!native) return;
+    let cancelled = false;
     let removeListener: (() => void) | undefined;
     void import("@tauri-apps/api/window").then(async ({ getCurrentWindow }) => {
       const appWindow = getCurrentWindow();
-      removeListener = await appWindow.onCloseRequested(async (event) => {
+      const unlisten = await appWindow.onCloseRequested(async (event) => {
         event.preventDefault();
         if (closingWindow.current) return;
         closingWindow.current = true;
@@ -81,8 +89,13 @@ export function App() {
           await appWindow.destroy();
         }
       });
+      if (cancelled) unlisten();
+      else removeListener = unlisten;
     });
-    return () => removeListener?.();
+    return () => {
+      cancelled = true;
+      removeListener?.();
+    };
   }, [native]);
 
   const connect = useMutation({
@@ -93,69 +106,78 @@ export function App() {
     },
     onSuccess: (value) => {
       setConnection(value);
-      setSignedInAs(undefined);
+      setSignedInUser(undefined);
+      setLoginError(undefined);
       coordinator.current = undefined;
     },
   });
 
-  const login = useMutation({
-    mutationFn: async ({ username, password }: { username: string; password: string }) => {
-      if (!connection) throw new Error("Connect to a server first.");
-      return connection.gateway.login(username, password);
-    },
-    onSuccess: ({ username }) => setSignedInAs(username),
-  });
+  const login = async (username: string, password: string) => {
+    if (!connection) return;
+    setLoginPending(true);
+    setLoginError(undefined);
+    try {
+      const user = await connection.gateway.login(username, password);
+      setSignedInUser({ id: user.userId, name: user.username });
+    } catch (error) {
+      setLoginError(message(error));
+    } finally {
+      setLoginPending(false);
+    }
+  };
 
   const latest = useQuery({
-    queryKey: ["latest", connection?.name, signedInAs],
-    queryFn: () => connection!.gateway.latest(),
-    enabled: Boolean(connection && signedInAs),
+    queryKey: ["latest", connection?.gateway.serverUrl, signedInUser?.id],
+    queryFn: ({ signal }) => connection!.gateway.latest(signal),
+    enabled: Boolean(connection && signedInUser),
   });
 
-  const play = useMutation({
-    mutationFn: async ({ item, choice, retry = false }: {
-      item: LibraryItem;
-      choice: PlaybackStartChoice;
-      retry?: boolean;
-    }) => {
+  const runPlayback = async (action: PlaybackAction) => {
+    setPlaybackPending(true);
+    try {
       if (!connection) throw new Error("Connect to Jellyfin first.");
-      dispatchSession({ type: "reset" });
       if (!coordinator.current) {
         coordinator.current = new PlaybackCoordinator(connection.gateway, player, {
-          onEvent: (event) => {
-            dispatchSession({ type: "event", event });
-            if (event.kind === "ended" && event.reason !== "error") {
-              startedItem.current = undefined;
+          onEvent: (event) => dispatchSession({ type: "event", event }),
+          onReportingError: (warning) => dispatchSession({
+            type: "reporting-warning",
+            message: redactText(warning),
+          }),
+          onSessionEnded: (reason) => {
+            void queryClient.invalidateQueries({
+              queryKey: ["latest", connection.gateway.serverUrl, signedInUser?.id],
+            });
+            if (reason !== "error") {
               setActiveItem(undefined);
+              dispatchSession({ type: "reset" });
             }
           },
-          onReportingError: (warning) => dispatchSession({ type: "reporting-warning", message: warning }),
-          onSessionEnded: () => void queryClient.invalidateQueries({ queryKey: ["latest"] }),
         });
       }
-      return retry ? coordinator.current.retry() : coordinator.current.start(item, choice);
-    },
-    onError: (error) => dispatchSession({ type: "failure", message: message(error) }),
-  });
-
-  useEffect(() => {
-    if (!activeItem || startedItem.current === activeItem.id) return;
-    startedItem.current = activeItem.id;
-    play.mutate({ item: activeItem, choice: startOverChoice() });
-    // The mutation is intentionally keyed only to navigation into a new item.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeItem]);
+      switch (action.kind) {
+        case "start":
+          await coordinator.current.start(action.item, action.choice);
+          break;
+        case "retry":
+          await coordinator.current.retry();
+          break;
+      }
+    } catch (error) {
+      if (!(error instanceof PlaybackCancelledError)) {
+        dispatchSession({ type: "failure", message: message(error) });
+      }
+    } finally {
+      setPlaybackPending(false);
+    }
+  };
 
   const closePlayer = async () => {
     try {
       if (coordinator.current) await coordinator.current.stop();
-    } catch {
-      // Launch failures have no active native session; unmounting still hides the surface.
-    } finally {
-      startedItem.current = undefined;
       setActiveItem(undefined);
       dispatchSession({ type: "reset" });
-      play.reset();
+    } catch (error) {
+      dispatchSession({ type: "failure", message: message(error) });
     }
   };
 
@@ -165,23 +187,23 @@ export function App() {
       setPendingResumeItem(item);
       return;
     }
-    setActiveItem(item);
+    beginPlayback(item, startOverChoice());
   };
 
   const beginPlayback = (item: LibraryItem, choice: PlaybackStartChoice) => {
     setPendingResumeItem(undefined);
-    startedItem.current = item.id;
     setActiveItem(item);
-    play.mutate({ item, choice });
+    dispatchSession({ type: "reset" });
+    void runPlayback({ kind: "start", item, choice });
   };
 
   const retryPlayback = () => {
     if (!activeItem) return;
-    play.mutate({ item: activeItem, choice: startOverChoice(), retry: true });
+    dispatchSession({ type: "reset" });
+    void runPlayback({ kind: "retry" });
   };
 
-  const phase = !connection ? "connect" : !signedInAs ? "login" : "library";
-  const launchError = session.error ?? (play.error ? message(play.error) : undefined);
+  const phase = !connection ? "connect" : !signedInUser ? "login" : "library";
 
   return (
     <main className={`app-shell ${activeItem ? "has-player" : ""}`}>
@@ -214,9 +236,7 @@ export function App() {
           item={activeItem}
           player={player}
           session={session}
-          launchError={launchError}
-          reportingWarning={session.reportingWarning}
-          retrying={play.isPending}
+          retrying={playbackPending}
           onRetry={retryPlayback}
           onBack={closePlayer}
         />
@@ -254,10 +274,15 @@ export function App() {
           {phase === "login" && connection && (
             <LoginCard
               serverName={connection.name}
-              pending={login.isPending}
-              error={login.error}
-              onSubmit={(username, password) => login.mutate({ username, password })}
-              onBack={() => { connection.gateway.logout(); setConnection(undefined); }}
+              pending={loginPending}
+              error={loginError}
+              onSubmit={login}
+              onBack={() => {
+                connection.gateway.logout();
+                setConnection(undefined);
+                setSignedInUser(undefined);
+                setLoginError(undefined);
+              }}
             />
           )}
 
@@ -267,7 +292,7 @@ export function App() {
                 <div>
                   <p className="kicker">YOUR LIBRARY / LATEST</p>
                   <h1>Ready to <em>play.</em></h1>
-                  <p>Signed in as {signedInAs}. Ten newest file-backed movies and episodes.</p>
+                  <p>Signed in as {signedInUser?.name}. Ten newest file-backed movies and episodes.</p>
                 </div>
                 <div className="policy-badge"><Check size={16} /> DIRECT PLAY ONLY</div>
               </div>
@@ -361,8 +386,8 @@ function formatResumeTime(ticks: number): string {
 function LoginCard({ serverName, pending, error, onSubmit, onBack }: {
   serverName: string;
   pending: boolean;
-  error: unknown;
-  onSubmit(username: string, password: string): void;
+  error?: string;
+  onSubmit(username: string, password: string): Promise<void> | void;
   onBack(): void;
 }) {
   const [username, setUsername] = useState("");
@@ -373,12 +398,17 @@ function LoginCard({ serverName, pending, error, onSubmit, onBack }: {
       <p className="kicker">STEP 02 / SIGN IN</p>
       <h1>Welcome to<br /><em>{serverName}.</em></h1>
       <p className="lede">Use your Jellyfin username and password. The resulting token is never persisted.</p>
-      <form onSubmit={(event) => { event.preventDefault(); onSubmit(username, password); }} className="login-form">
+      <form onSubmit={(event) => {
+        event.preventDefault();
+        const submittedPassword = password;
+        setPassword("");
+        void onSubmit(username, submittedPassword);
+      }} className="login-form">
         <label htmlFor="username">USERNAME</label>
         <input id="username" value={username} onChange={(event) => setUsername(event.target.value)} required autoFocus />
         <label htmlFor="password">PASSWORD</label>
         <input id="password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} required />
-        {Boolean(error) && <p className="form-error"><AlertTriangle size={15} /> {message(error)}</p>}
+        {error && <p className="form-error"><AlertTriangle size={15} /> {error}</p>}
         <div className="form-actions">
           <button type="button" className="text-button" onClick={onBack}>Change server</button>
           <button type="submit" className="primary-button" disabled={pending}>

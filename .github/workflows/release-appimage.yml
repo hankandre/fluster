@@ -3,34 +3,83 @@ name: release-appimage
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   appimage:
     runs-on: ubuntu-22.04
+    permissions:
+      attestations: write
+      contents: read
+      id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
         with:
           version: 11.3.0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: pnpm
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable 2026-08-21
+        with:
+          toolchain: 1.95.0
+          components: clippy, rustfmt
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
       - name: Install Tauri build dependencies
         run: |
+          sudo bash release/configure-ubuntu-snapshot.sh
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
       - run: pnpm install --frozen-lockfile
+      - run: pnpm audit --audit-level moderate
       - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm check
+      - run: pnpm test
       - run: pnpm test:e2e
+      - run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+      - run: cargo test --manifest-path src-tauri/Cargo.toml
       - run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
-      - run: ./release/build-appimage.sh
-      - name: Verify AppImage without host libmpv search paths
+      - name: Build and verify AppImage
+        env:
+          FLUSTER_DOCKER_CACHE_FROM: type=gha
+          FLUSTER_DOCKER_CACHE_TO: type=gha,mode=max
+        run: ./release/build-appimage.sh
+      - name: Collect release evidence
         run: |
-          appimage="$(find src-tauri/target/release/bundle/appimage -name '*.AppImage' -print -quit)"
-          env -u LD_LIBRARY_PATH ./release/test-appimage.sh "$appimage"
-      - uses: actions/upload-artifact@v4
+          mkdir -p release-evidence sbom-input
+          mapfile -t appimages < <(find src-tauri/target/release/bundle/appimage -maxdepth 1 -name '*.AppImage' -print)
+          test "${#appimages[@]}" -eq 1
+          appimage="${appimages[0]}"
+          cp "${appimage}" release-evidence/
+          cp release/components.lock release/THIRD_PARTY_NOTICES.md release-evidence/
+          cp src-tauri/resources/media-libraries.txt src-tauri/resources/mpv-version.txt release-evidence/
+          tar -C src-tauri/resources -czf release-evidence/media-licenses.tar.gz licenses
+          appimage_name="$(basename "${appimage}")"
+          (cd release-evidence && sha256sum "${appimage_name}" > "${appimage_name}.sha256")
+          (cd sbom-input && "${GITHUB_WORKSPACE}/${appimage}" --appimage-extract >/dev/null)
+      - name: Generate SPDX SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          path: sbom-input/squashfs-root
+          format: spdx-json
+          output-file: release-evidence/fluster.spdx.json
+          upload-artifact: false
+      - name: Attest release provenance
+        id: provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            release-evidence/*.AppImage
+            release-evidence/fluster.spdx.json
+      - name: Save provenance bundle
+        env:
+          PROVENANCE_BUNDLE: ${{ steps.provenance.outputs.bundle-path }}
+        run: cp "${PROVENANCE_BUNDLE}" release-evidence/fluster-provenance.jsonl
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: fluster-x86_64-appimage
-          path: src-tauri/target/release/bundle/appimage/*.AppImage
+          path: release-evidence/
+          if-no-files-found: error

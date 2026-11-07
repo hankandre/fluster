@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
 import type { PlaybackSnapshot, PlayerEngine } from "../domain/playback";
 import { PlayerView } from "./PlayerView";
@@ -34,7 +34,7 @@ const snapshot: PlaybackSnapshot = {
 
 function fakePlayer(): PlayerEngine {
   return {
-    mode: "native",
+    mode: "browser",
     initialize: vi.fn(async () => ({
       mode: "native" as const,
       embedded: true,
@@ -54,18 +54,15 @@ function fakePlayer(): PlayerEngine {
   };
 }
 
-it("renders React controls over the native surface and drives typed player operations", () => {
+it("renders React controls over the native surface and drives typed player operations", async () => {
   const player = fakePlayer();
   render(
     <PlayerView
       item={{ id: "movie", name: "Original Movie", type: "Movie", resumePositionTicks: 0, played: false }}
       player={player}
       session={{
-        phase: "playing",
         snapshot,
         firstFrameReady: true,
-        buffering: false,
-        diagnostics: snapshot.diagnostics,
       } satisfies PlaybackSessionState}
       onRetry={vi.fn()}
       onBack={vi.fn()}
@@ -76,4 +73,29 @@ it("renders React controls over the native surface and drives typed player opera
   expect(screen.getByRole("option", { name: "English 5.1" })).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Play" }));
   expect(player.setPaused).toHaveBeenCalledWith(false);
+  const volume = screen.getByRole("slider", { name: "Volume" });
+  fireEvent.change(volume, { target: { value: "35" } });
+  expect(player.setVolume).not.toHaveBeenCalled();
+  fireEvent.pointerUp(volume);
+  expect(player.setVolume).toHaveBeenCalledWith(35);
+  fireEvent.click(screen.getByRole("button", { name: "Enter fullscreen" }));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Exit fullscreen" })).toBeVisible());
+});
+
+it("rolls fullscreen state back when the player rejects the change", async () => {
+  const player = fakePlayer();
+  vi.mocked(player.setFullscreen).mockRejectedValue(new Error("fullscreen unavailable"));
+  render(
+    <PlayerView
+      item={{ id: "movie", name: "Original Movie", type: "Movie", resumePositionTicks: 0, played: false }}
+      player={player}
+      session={{ snapshot, firstFrameReady: true }}
+      onRetry={vi.fn()}
+      onBack={vi.fn()}
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: "Enter fullscreen" }));
+  await waitFor(() => expect(screen.getByText("fullscreen unavailable")).toBeVisible());
+  expect(screen.getByRole("button", { name: "Enter fullscreen" })).toBeVisible();
 });

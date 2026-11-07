@@ -3,12 +3,15 @@ dist/
 coverage/
 playwright-report/
 test-results/
+release-evidence/
+sbom-input/
 src-tauri/target/
 src-tauri/resources/mpv
 src-tauri/resources/lib/
 src-tauri/resources/licenses/
 src-tauri/resources/components.lock
 src-tauri/resources/mpv-version.txt
+src-tauri/resources/media-libraries.txt
 src-tauri/resources/THIRD_PARTY_NOTICES.md
 .env
 *.log

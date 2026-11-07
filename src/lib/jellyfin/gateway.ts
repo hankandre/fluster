@@ -11,6 +11,9 @@ import type {
   ServerInfo,
 } from "./types";
 
+export const CONTROL_REQUEST_TIMEOUT_MS = 15_000;
+export const REPORT_REQUEST_TIMEOUT_MS = 3_000;
+
 const client = new Jellyfin({
   clientInfo: { name: "Fluster", version: "0.1.0" },
   deviceInfo: { name: "Fluster Linux", id: crypto.randomUUID() },
@@ -20,7 +23,10 @@ function createSdkApi(serverUrl: string, accessToken?: string): Api {
   // The SDK's generated APIs apply basePath and authorization through their
   // Configuration object. Fluster's narrow gateway uses the raw Axios client,
   // so it must provide those values on an isolated instance explicitly.
-  const axiosInstance = axios.create({ baseURL: serverUrl });
+  const axiosInstance = axios.create({
+    baseURL: serverUrl,
+    timeout: CONTROL_REQUEST_TIMEOUT_MS,
+  });
   const api = client.createApi(serverUrl, accessToken, axiosInstance);
   axiosInstance.defaults.headers.common.Authorization = api.authorizationHeader;
   return api;
@@ -35,11 +41,26 @@ export const DIRECT_PLAY_REQUEST = Object.freeze({
   AutoOpenLiveStream: false,
 });
 
+function isLoopbackHost(hostname: string): boolean {
+  return hostname === "localhost" || hostname === "127.0.0.1";
+}
+
 function normalizeServerUrl(input: string): string {
   const candidate = input.trim();
-  const url = new URL(candidate);
+  let url: URL;
+  try {
+    url = new URL(candidate);
+  } catch {
+    throw new Error("Enter a valid Jellyfin server URL.");
+  }
   if (url.protocol !== "http:" && url.protocol !== "https:") {
     throw new Error("The server URL must use http:// or https://.");
+  }
+  if (url.username || url.password) {
+    throw new Error("The server URL must not include a username or password.");
+  }
+  if (url.protocol === "http:" && !isLoopbackHost(url.hostname)) {
+    throw new Error("Remote Jellyfin servers must use HTTPS. HTTP is allowed only for this device's loopback address.");
   }
   url.hash = "";
   url.search = "";
@@ -75,9 +96,26 @@ export function buildStaticStreamUrl(
   return url.toString();
 }
 
+function hasCredentialQuery(url: URL): boolean {
+  const credentialNames = new Set(["access_token", "api_key", "token", "x-emby-token"]);
+  return [...url.searchParams.keys()].some((name) => credentialNames.has(name.toLowerCase()));
+}
+
 function buildAuthenticatedResourceUrl(serverUrl: string, path: string | null | undefined, accessToken: string): string | undefined {
   if (!path) return undefined;
-  const url = new URL(path, `${serverUrl}/`);
+  let url: URL;
+  try {
+    url = new URL(path, `${serverUrl}/`);
+  } catch {
+    throw new Error("Jellyfin returned an invalid external subtitle URL.");
+  }
+  const serverOrigin = new URL(serverUrl).origin;
+  const safeProtocol = url.protocol === "http:" || url.protocol === "https:";
+  const hasCredentials = Boolean(url.username || url.password) || hasCredentialQuery(url);
+  if (!safeProtocol || url.origin !== serverOrigin || hasCredentials) {
+    throw new Error("Jellyfin returned an unsafe external subtitle URL. Subtitle URLs must use the same server origin and must not contain credentials.");
+  }
+  url.hash = "";
   url.searchParams.set("api_key", accessToken);
   return url.toString();
 }
@@ -95,8 +133,11 @@ export class JellyfinGateway {
     this.transport = transport ?? (this.api!.axiosInstance as HttpTransport);
   }
 
-  async connect(): Promise<{ name: string; version: string }> {
-    const { data } = await this.transport.get<ServerInfo>("/System/Info/Public");
+  async connect(signal?: AbortSignal): Promise<{ name: string; version: string }> {
+    const { data } = await this.transport.get<ServerInfo>("/System/Info/Public", {
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
     if (!data || typeof data !== "object" || typeof data.Version !== "string") {
       throw new Error("The server returned an unexpected public-info response. Check the URL and reverse-proxy routing.");
     }
@@ -107,10 +148,13 @@ export class JellyfinGateway {
     return { name: data.ServerName ?? "Jellyfin", version };
   }
 
-  async login(username: string, password: string): Promise<{ username: string }> {
+  async login(username: string, password: string, signal?: AbortSignal): Promise<{ userId: string; username: string }> {
     const { data } = await this.transport.post<AuthenticationResult>("/Users/AuthenticateByName", {
       Username: username,
       Pw: password,
+    }, {
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
     if (!data.AccessToken || !data.User?.Id) throw new Error("Jellyfin did not return a valid user session.");
     this.accessToken = data.AccessToken;
@@ -119,7 +163,7 @@ export class JellyfinGateway {
       this.api = createSdkApi(this.serverUrl, data.AccessToken);
       this.transport = this.api.axiosInstance as HttpTransport;
     }
-    return { username: data.User.Name ?? username };
+    return { userId: data.User.Id, username: data.User.Name ?? username };
   }
 
   logout(): void {
@@ -131,7 +175,7 @@ export class JellyfinGateway {
     }
   }
 
-  async latest(): Promise<LibraryItem[]> {
+  async latest(signal?: AbortSignal): Promise<LibraryItem[]> {
     this.requireSession();
     const { data } = await this.transport.get<{ Items?: BaseItemDto[] }>(`/Users/${this.userId}/Items`, {
       params: {
@@ -143,6 +187,8 @@ export class JellyfinGateway {
         Fields: "Overview,ProductionYear,RunTimeTicks",
         EnableUserData: true,
       },
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
     return (data.Items ?? []).flatMap((item) => {
       if (!item.Id || !item.Name || (item.Type !== "Movie" && item.Type !== "Episode")) return [];
@@ -162,7 +208,7 @@ export class JellyfinGateway {
     }).slice(0, 10);
   }
 
-  async createPlaybackPlan(item: LibraryItem, startPositionTicks = 0): Promise<PlaybackPlan> {
+  async createPlaybackPlan(item: LibraryItem, startPositionTicks = 0, signal?: AbortSignal): Promise<PlaybackPlan> {
     const { accessToken, userId } = this.requireSession();
     const request = { ...DIRECT_PLAY_REQUEST, UserId: userId, StartTimeTicks: startPositionTicks };
     const { data } = await this.transport.post<PlaybackInfoResponse>(`/Items/${item.id}/PlaybackInfo`, request, {
@@ -176,6 +222,8 @@ export class JellyfinGateway {
         AllowAudioStreamCopy: false,
         AutoOpenLiveStream: false,
       },
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
     if (!data.PlaySessionId) throw new Error("Jellyfin did not provide a play-session ID.");
     const source = selectDirectFileSource(data.MediaSources);
@@ -201,19 +249,19 @@ export class JellyfinGateway {
     };
   }
 
-  reportStart(plan: PlaybackPlan, snapshot: PlaybackSnapshot): Promise<void> {
-    return this.report("/Sessions/Playing", plan, snapshot);
+  reportStart(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal): Promise<void> {
+    return this.report("/Sessions/Playing", plan, snapshot, signal);
   }
 
-  reportProgress(plan: PlaybackPlan, snapshot: PlaybackSnapshot): Promise<void> {
-    return this.report("/Sessions/Playing/Progress", plan, snapshot);
+  reportProgress(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal): Promise<void> {
+    return this.report("/Sessions/Playing/Progress", plan, snapshot, signal);
   }
 
-  reportStopped(plan: PlaybackPlan, snapshot: PlaybackSnapshot): Promise<void> {
-    return this.report("/Sessions/Playing/Stopped", plan, snapshot);
+  reportStopped(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal): Promise<void> {
+    return this.report("/Sessions/Playing/Stopped", plan, snapshot, signal);
   }
 
-  private async report(path: string, plan: PlaybackPlan, snapshot: PlaybackSnapshot): Promise<void> {
+  private async report(path: string, plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal): Promise<void> {
     this.requireSession();
     await this.transport.post(path, {
       ItemId: plan.itemId,
@@ -227,6 +275,9 @@ export class JellyfinGateway {
       SubtitleStreamIndex: snapshot.subtitleTrack,
       CanSeek: true,
       PlayMethod: "DirectPlay",
+    }, {
+      signal,
+      timeout: REPORT_REQUEST_TIMEOUT_MS,
     });
   }
 
