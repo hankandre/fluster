@@ -150,10 +150,10 @@
             "The failure message tells the agent to update docs/security.md and record a decision"
           ],
           "verify": "cargo test --manifest-path src-tauri/Cargo.toml command_allowlist",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "native-engineer",
+          "passes": true,
+          "evidence": "cargo test --manifest-path src-tauri/Cargo.toml command_allowlist: 2 passed. Deliberately removed set_volume from generate_handler!: both tests failed with 'Tauri command surface changed: added [], removed [set_volume]. ... update docs/security.md ... record the decision in the active plan'; restored. cargo fmt --check, clippy --all-targets -D warnings, cargo test all pass."
         },
         {
           "id": "P0-06",

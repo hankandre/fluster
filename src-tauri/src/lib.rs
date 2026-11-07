@@ -1,3 +1,5 @@
+#[cfg(test)]
+mod command_allowlist;
 mod model;
 mod mpv;
 mod redaction;
