@@ -6,7 +6,9 @@ import { HomeView } from "../features/home";
 import { BrowseView } from "../features/browse";
 import { DetailView } from "../features/detail";
 import { PlayerFeatureView } from "../features/player";
+import type { PocServices } from "../poc/services";
 import { createServices } from "./compose";
+import { SessionProvider } from "./session";
 
 export function App() {
   const services = useMemo(() => createServices(), []);
@@ -18,6 +20,14 @@ export function App() {
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
+  return (
+    <SessionProvider createGateway={services.createGateway}>
+      {renderRoute(hash, services)}
+    </SessionProvider>
+  );
+}
+
+function renderRoute(hash: string, services: PocServices) {
   switch (hash) {
     case "#/next":
       return <FeatureIndex />;

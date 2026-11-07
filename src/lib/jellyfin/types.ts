@@ -9,6 +9,12 @@ export interface AuthenticationResult {
   User?: { Id?: string; Name?: string };
 }
 
+export interface QuickConnectResult {
+  Authenticated?: boolean;
+  Secret?: string;
+  Code?: string;
+}
+
 export interface BaseItemDto {
   Id?: string;
   Name?: string;

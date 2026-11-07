@@ -14,6 +14,7 @@ import type {
   HttpTransport,
   MediaSourceDto,
   PlaybackInfoResponse,
+  QuickConnectResult,
   ServerInfo,
 } from "./types";
 
@@ -21,6 +22,7 @@ export const CONTROL_REQUEST_TIMEOUT_MS = 15_000;
 export const REPORT_REQUEST_TIMEOUT_MS = 3_000;
 
 const DEVICE_NAME = "Fluster Linux";
+const QUICK_CONNECT_DEVICE_USER = "quick-connect";
 
 function createClient(deviceId: string): Jellyfin {
   return new Jellyfin({
@@ -183,6 +185,66 @@ export class JellyfinGateway {
       signal,
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
+    return this.startSession(data, deviceId, username);
+  }
+
+  async quickConnectEnabled(signal?: AbortSignal): Promise<boolean> {
+    const { data } = await this.get<boolean>("/QuickConnect/Enabled", {
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    return data === true;
+  }
+
+  // POST, not GET: Jellyfin 12 removed the GET form of this endpoint.
+  async initiateQuickConnect(signal?: AbortSignal): Promise<{ secret: string; code: string }> {
+    const deviceId = await this.quickConnectDeviceId();
+    const { data } = await this.post<QuickConnectResult>("/QuickConnect/Initiate", undefined, {
+      headers: { Authorization: buildAuthorizationHeader(this.serverUrl, deviceId) },
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    if (!data?.Secret || !data.Code) throw new Error("Jellyfin did not return a Quick Connect code.");
+    return { secret: data.Secret, code: data.Code };
+  }
+
+  // The API requires the secret in the query string. It is not the access
+  // token, but errors still go through redaction, which covers `secret`.
+  async pollQuickConnect(secret: string, signal?: AbortSignal): Promise<{ authenticated: boolean }> {
+    const deviceId = await this.quickConnectDeviceId();
+    const { data } = await this.get<QuickConnectResult>("/QuickConnect/Connect", {
+      params: { secret },
+      headers: { Authorization: buildAuthorizationHeader(this.serverUrl, deviceId) },
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    return { authenticated: data?.Authenticated === true };
+  }
+
+  async authenticateWithQuickConnect(secret: string, signal?: AbortSignal): Promise<{ userId: string; username: string }> {
+    const deviceId = await this.quickConnectDeviceId();
+    const { data } = await this.post<AuthenticationResult>("/Users/AuthenticateWithQuickConnect", {
+      Secret: secret,
+    }, {
+      headers: { Authorization: buildAuthorizationHeader(this.serverUrl, deviceId) },
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    return this.startSession(data, deviceId, "Jellyfin user");
+  }
+
+  // Quick Connect has no username before approval, so its device id is derived
+  // with a fixed placeholder. The id stays stable per install and server, and
+  // it is the DeviceId the server binds the new token to.
+  private quickConnectDeviceId(): Promise<string> {
+    return deriveDeviceId(this.installId, this.serverId ?? this.serverUrl, QUICK_CONNECT_DEVICE_USER);
+  }
+
+  private startSession(
+    data: AuthenticationResult,
+    deviceId: string,
+    fallbackName: string,
+  ): { userId: string; username: string } {
     if (!data.AccessToken || !data.User?.Id) throw new Error("Jellyfin did not return a valid user session.");
     this.accessToken = data.AccessToken;
     this.userId = data.User.Id;
@@ -191,7 +253,7 @@ export class JellyfinGateway {
       this.api = createSdkApi(this.serverUrl, deviceId, data.AccessToken);
       this.transport = this.api.axiosInstance as HttpTransport;
     }
-    return { userId: data.User.Id, username: data.User.Name ?? username };
+    return { userId: data.User.Id, username: data.User.Name ?? fallbackName };
   }
 
   async logout(): Promise<void> {

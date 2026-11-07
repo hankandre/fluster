@@ -1,4 +1,4 @@
-const SENSITIVE_KEYS = /^(api[_-]?key|access[_-]?token|x-emby-token|token|password|pw)$/i;
+const SENSITIVE_KEYS = /^(api[_-]?key|access[_-]?token|x-emby-token|token|password|pw|secret)$/i;
 
 export function redactUrl(value: string): string {
   try {
@@ -22,7 +22,7 @@ function redactCredentialPairs(value: string): string {
   return value
     .replace(/(authorization"?\s*[:=]\s*)[^\n]*/gi, "$1[redacted]")
     .replace(
-      /(\b(?:[\w-]{0,40}?(?:api[_-]?key|access[_-]?token|token|password|playsessionid)|pw)"?\s*[:=]\s*)"?[^&\s",}]+"?/gi,
+      /(\b(?:[\w-]{0,40}?(?:api[_-]?key|access[_-]?token|token|password|secret|playsessionid)|pw)"?\s*[:=]\s*)"?[^&\s",}]+"?/gi,
       "$1[redacted]",
     );
 }
