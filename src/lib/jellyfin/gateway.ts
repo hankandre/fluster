@@ -443,6 +443,9 @@ export class JellyfinGateway {
         searchTerm: term,
         recursive: true,
         includeItemTypes: SEARCH_TYPES,
+        // ItemSortBy has no relevance option; a fixed order keeps limit+1 paging stable.
+        sortBy: "SortName",
+        sortOrder: "Ascending",
         startIndex: query.startIndex,
         limit: query.limit + 1,
         enableUserData: true,

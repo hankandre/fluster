@@ -24,9 +24,14 @@ export function SearchResults({ gateway, term }: { gateway: SessionGateway; term
 
   const cards: SearchCard[] = query.data?.pages.flatMap((page) => page.cards) ?? [];
 
+  let status = "";
+  if (query.isPending) status = "Searching";
+  else if (query.isSuccess) status = cards.length === 0 ? "No results" : `${cards.length} results${query.hasNextPage ? " so far" : ""}`;
+
   return (
     <section aria-label={`Results for ${term}`} aria-busy={query.isPending}>
-      {query.isPending ? <p>Searching…</p> : null}
+      <p role="status" className="visually-hidden">{status}</p>
+      {query.isPending ? <p aria-hidden="true">Searching…</p> : null}
       {query.isError && cards.length === 0 ? <RowError title="search results" onRetry={() => void query.refetch()} /> : null}
       {query.isSuccess && cards.length === 0 ? <p>No results for "{term}".</p> : null}
       {GROUPS.map((group) => {

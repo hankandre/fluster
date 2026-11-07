@@ -23,11 +23,14 @@ export function SearchBox({ gateway, initialTerm }: { gateway: SessionGateway; i
   const listId = useId();
   const [text, setText] = useState(initialTerm);
   const [debounced, setDebounced] = useState("");
+  // The term from the URL already has results; hints start once the user edits.
+  const [edited, setEdited] = useState(false);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
 
   useEffect(() => {
     setText(initialTerm);
+    setEdited(false);
   }, [initialTerm]);
 
   // Wait for a pause in typing before asking the server.
@@ -41,12 +44,12 @@ export function SearchBox({ gateway, initialTerm }: { gateway: SessionGateway; i
   const hintsQuery = useQuery({
     queryKey: ["search", scopeFor(gateway), "hints", debounced],
     queryFn: ({ signal }) => gateway.searchHints(debounced, signal),
-    enabled: searchable,
+    enabled: searchable && edited && debounced === text.trim(),
     gcTime: 0,
     retry: false,
   });
 
-  const hints = searchable && debounced === text.trim() ? hintsQuery.data ?? [] : [];
+  const hints = searchable && edited && debounced === text.trim() ? hintsQuery.data ?? [] : [];
   const expanded = open && hints.length > 0;
 
   function submit(term: string) {
@@ -110,7 +113,7 @@ export function SearchBox({ gateway, initialTerm }: { gateway: SessionGateway; i
         aria-controls={listId}
         aria-activedescendant={expanded && active >= 0 ? `${listId}-${active}` : undefined}
         value={text}
-        onChange={(event) => { setText(event.target.value); setOpen(true); setActive(-1); }}
+        onChange={(event) => { setText(event.target.value); setEdited(true); setOpen(true); setActive(-1); }}
         onKeyDown={onKeyDown}
         onBlur={() => setOpen(false)}
       />

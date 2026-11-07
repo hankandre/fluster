@@ -170,6 +170,33 @@ describe("type-ahead", () => {
   });
 });
 
+describe("route term", () => {
+  it("does not request hints for the initial term until the input is edited", async () => {
+    const gateway = fakeGateway();
+    await renderView(gateway, "arrival");
+    await advance(500);
+    expect(gateway.searchHints).not.toHaveBeenCalled();
+    await type("arrivals");
+    await advance(250);
+    expect(gateway.searchHints).toHaveBeenCalledTimes(1);
+  });
+
+  it("treats a whitespace-only term as the empty search page", async () => {
+    const gateway = fakeGateway();
+    await renderView(gateway, "   ");
+    await advance(0);
+    expect(gateway.searchItems).not.toHaveBeenCalled();
+    expect(input()).toHaveValue("");
+  });
+
+  it("trims the term it searches for", async () => {
+    const gateway = fakeGateway();
+    await renderView(gateway, " ar ");
+    await advance(0);
+    expect(gateway.searchItems).toHaveBeenCalledWith("ar", expect.anything(), expect.any(AbortSignal));
+  });
+});
+
 describe("results", () => {
   it("groups results by type and links only series", async () => {
     const gateway = fakeGateway({
@@ -186,6 +213,7 @@ describe("results", () => {
     expect(screen.getByRole("link", { name: "Arrow" })).toHaveAttribute("href", "#/next/series/s1");
     expect(screen.getByRole("article", { name: "Arrival" })).toBeInTheDocument();
     expect(screen.getByRole("article", { name: "Pilot" })).toBeInTheDocument();
+    expect(screen.getAllByRole("status").map((node) => node.textContent)).toContain("3 results");
     expect(gateway.searchItems).toHaveBeenCalledWith("ar", { startIndex: 0, limit: 40 }, expect.any(AbortSignal));
   });
 
@@ -210,6 +238,7 @@ describe("results", () => {
       await vi.advanceTimersByTimeAsync(0);
     });
     expect(screen.getByText('No results for "zzz".')).toBeInTheDocument();
+    expect(screen.getAllByRole("status").map((node) => node.textContent)).toContain("No results");
   });
 
   it("shows an error and retries", async () => {
