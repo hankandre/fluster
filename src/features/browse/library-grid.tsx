@@ -67,6 +67,15 @@ export function LibraryGrid({ gateway, parentId, itemTypes, label }: LibraryGrid
       value === filter ? on : filters.includes(value)));
   }
 
+  const [announcement, setAnnouncement] = useState("");
+
+  async function loadMore() {
+    const before = cards.length;
+    const result = await query.fetchNextPage();
+    const added = (result.data?.pages.flatMap((page) => page.cards).length ?? before) - before;
+    if (added > 0) setAnnouncement(`${added} more items loaded`);
+  }
+
   const cards = query.data?.pages.flatMap((page) => page.cards) ?? [];
 
   return (
@@ -113,10 +122,11 @@ export function LibraryGrid({ gateway, parentId, itemTypes, label }: LibraryGrid
       ) : null}
       {query.isError && cards.length > 0 ? <RowError title="more items" onRetry={() => void query.fetchNextPage()} /> : null}
       {query.hasNextPage ? (
-        <button type="button" disabled={query.isFetchingNextPage} onClick={() => void query.fetchNextPage()}>
+        <button type="button" disabled={query.isFetchingNextPage} onClick={() => void loadMore()}>
           {query.isFetchingNextPage ? "Loading…" : "Load more"}
         </button>
       ) : null}
+      <p role="status" className="visually-hidden">{announcement}</p>
     </section>
   );
 }

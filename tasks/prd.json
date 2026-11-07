@@ -756,7 +756,7 @@
           "status": "done",
           "owner": "implementer",
           "passes": true,
-          "evidence": "Browse routes under src/features/browse: library list, paged grid (Load more, limit+1 probe with enableTotalRecordCount=false), sort and filter that reset paging, series seasons and episodes, collections via parentId.\nGateway adds libraryItems (/Items), seasons (/Shows/{id}/Seasons), episodes (/Shows/{id}/Episodes), checked against @jellyfin/sdk 1.0.2 show-api and library-api, ItemSortBy, ItemFilter, ItemFields.\nSeries and BoxSet cards are real links; Movie cards stay non-interactive until P3-08.\npnpm check, pnpm test:e2e (10 passed, incl. e2e/browse.spec.ts), and pnpm lint:boundaries pass."
+          "evidence": "Browse routes under src/features/browse: library list, paged grid (Load more, limit+1 probe with enableTotalRecordCount=false), sort and filter that reset paging, series seasons and episodes, collections via parentId.\nGateway adds libraryItems (/Items), seasons (/Shows/{id}/Seasons), episodes (/Shows/{id}/Episodes), checked against @jellyfin/sdk 1.0.2 show-api and library-api, ItemSortBy, ItemFilter, ItemFields.\nSeries and BoxSet cards are real links; Movie cards stay non-interactive until P3-08.\nReview fixes: Specials is not the default season, malformed or unknown #/next routes show Not found, paging uses the raw item list, Load more announces new items, and page headings take focus on route change.\nNot done: episodes that belong to no season are not listed (would need an extra unfiltered /Shows/{id}/Episodes call).\npnpm check, pnpm test:e2e (10 passed, incl. e2e/browse.spec.ts), and pnpm lint:boundaries pass."
         },
         {
           "id": "P3-07",

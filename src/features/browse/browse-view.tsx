@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { LibraryView } from "../../domain/catalog";
 import { useSession, type SessionGateway } from "../../app/session";
@@ -10,8 +10,14 @@ import { LibraryGrid } from "./library-grid";
 const SIGN_IN_ROUTE = "#/next/sign-in";
 
 // Shared page frame for browse routes. Signed-out visitors go to sign-in.
-export function BrowseFrame({ title, back, children }: { title: string; back: ReactNode; children: (gateway: SessionGateway) => ReactNode }) {
+export function BrowseFrame({ title, routeKey, back, children }: { title: string; routeKey: string; back: ReactNode; children: (gateway: SessionGateway) => ReactNode }) {
   const { gateway } = useSession();
+  const heading = useRef<HTMLHeadingElement>(null);
+
+  // Move focus to the page heading when the route changes.
+  useEffect(() => {
+    heading.current?.focus();
+  }, [routeKey]);
 
   useEffect(() => {
     if (!gateway) window.location.hash = SIGN_IN_ROUTE;
@@ -19,7 +25,7 @@ export function BrowseFrame({ title, back, children }: { title: string; back: Re
 
   return (
     <main className="home">
-      <h1>{title}</h1>
+      <h1 ref={heading} tabIndex={-1}>{title}</h1>
       {gateway ? children(gateway) : null}
       {back}
       <SignOutButton />
@@ -31,6 +37,7 @@ export function BrowseView({ libraryId }: { libraryId?: string }) {
   return (
     <BrowseFrame
       title="Browse"
+      routeKey={`browse/${libraryId ?? ""}`}
       back={<a href={libraryId ? "#/next/browse" : "#/next"}>{libraryId ? "Back to libraries" : "Back to features"}</a>}
     >
       {(gateway) => <Libraries gateway={gateway} libraryId={libraryId} />}

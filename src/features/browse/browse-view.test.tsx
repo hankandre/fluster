@@ -153,6 +153,39 @@ describe("series", () => {
   });
 });
 
+describe("series defaults", () => {
+  it("opens the first regular season, not Specials", async () => {
+    const gateway = fakeGateway({
+      seasons: vi.fn().mockResolvedValue([
+        { id: "sp", name: "Specials", indexNumber: 0 },
+        { id: "se1", name: "Season 1", indexNumber: 1 },
+      ]),
+    });
+    await renderView(gateway, <SeriesView seriesId="series-1" />);
+    expect(await screen.findByRole("article", { name: "Opener of se1, Episode 1" })).toBeInTheDocument();
+    expect(gateway.episodes).not.toHaveBeenCalledWith("series-1", "sp", expect.anything());
+  });
+
+  it("falls back to Specials when it is the only season", async () => {
+    const gateway = fakeGateway({ seasons: vi.fn().mockResolvedValue([{ id: "sp", name: "Specials", indexNumber: 0 }]) });
+    await renderView(gateway, <SeriesView seriesId="series-1" />);
+    expect(await screen.findByRole("article", { name: "Opener of sp, Episode 1" })).toBeInTheDocument();
+  });
+});
+
+describe("focus and announcements", () => {
+  it("focuses the page heading and announces newly loaded items", async () => {
+    const libraryItems = vi.fn()
+      .mockResolvedValueOnce({ cards: [card("m1", "First")], hasMore: true })
+      .mockResolvedValueOnce({ cards: [card("m2", "Second"), card("m3", "Third")], hasMore: false });
+    await renderView(fakeGateway({ libraryItems }), <BrowseView libraryId="lib-1" />);
+    expect(screen.getByRole("heading", { level: 1, name: "Browse" })).toHaveFocus();
+    await screen.findByRole("article", { name: "First" });
+    fireEvent.click(screen.getByRole("button", { name: "Load more" }));
+    expect(await screen.findByText("2 more items loaded")).toBeInTheDocument();
+  });
+});
+
 describe("collection", () => {
   it("browses the collection's items with the collection as parent", async () => {
     const gateway = fakeGateway();

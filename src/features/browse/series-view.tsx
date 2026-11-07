@@ -7,7 +7,7 @@ import { BrowseFrame } from "./browse-view";
 
 export function SeriesView({ seriesId }: { seriesId: string }) {
   return (
-    <BrowseFrame title="Series" back={<a href="#/next/browse">Back to libraries</a>}>
+    <BrowseFrame title="Series" routeKey={`series/${seriesId}`} back={<a href="#/next/browse">Back to libraries</a>}>
       {(gateway) => <Seasons gateway={gateway} seriesId={seriesId} />}
     </BrowseFrame>
   );
@@ -26,7 +26,9 @@ function Seasons({ gateway, seriesId }: { gateway: SessionGateway; seriesId: str
   if (seasons.isError) return <RowError title="seasons" onRetry={() => void seasons.refetch()} />;
   if (seasons.data.length === 0) return <p>No seasons.</p>;
 
-  const selected = seasons.data.find((season) => season.id === chosenId) ?? seasons.data[0];
+  // Specials (season 0) sort first on the server but are a poor default.
+  const firstRegular = seasons.data.find((season) => season.indexNumber !== 0);
+  const selected = seasons.data.find((season) => season.id === chosenId) ?? firstRegular ?? seasons.data[0];
 
   return (
     <>
