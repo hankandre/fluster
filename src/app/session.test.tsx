@@ -23,6 +23,8 @@ function stubGateway(serverUrl: string, token: string): SessionGateway {
     libraryItems: vi.fn(),
     seasons: vi.fn(),
     episodes: vi.fn(),
+    searchHints: vi.fn(),
+    searchItems: vi.fn(),
     authorizationHeader: vi.fn().mockReturnValue(`MediaBrowser Token="${token}"`),
   };
 }
