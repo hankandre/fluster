@@ -10,6 +10,8 @@ React reduces typed player events with switch statements into a small `PlaybackS
 
 The desktop `NativePlayerEngine` calls a narrow Tauri command surface. Rust owns libmpv in-process and exposes only initialize, load, surface geometry, pause, seek, volume, mute, track selection, fullscreen, and stop. There is no generic mpv command bridge and no standalone player process.
 
+The Jellyfin server socket also lives in Rust (`src-tauri/src/realtime.rs`), behind two more commands: `realtime_connect { serverUrl, authorization }` and `realtime_disconnect`. The WebView's WebSocket API cannot send an `Authorization` header and a token must never travel in a URL, so Rust opens `wss://host/socket` (or `ws://` for a loopback server) with the `Authorization: MediaBrowser …` header, validates the server URL with the same HTTPS-or-loopback policy as playback URLs, answers `ForceKeepAlive` with `KeepAlive` at half the server's timeout, and reconnects with backoff capped at 30 seconds. It stops after a 401 or 403. Only `fluster://server-event` reaches the frontend, carrying `{ kind: "user-data-changed", itemIds }` or `{ kind: "connection", state }`; every other server message is dropped. The session connects after sign-in and disconnects on sign-out or replacement; a `user-data-changed` event, or a reconnect after a lost connection, refetches the Home rows. Browser development mode uses a no-op connection and has no live refresh.
+
 The native window is composed as follows:
 
 ```text

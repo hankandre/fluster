@@ -4,6 +4,7 @@ use crate::model::{
 };
 use crate::redaction::safe_error;
 use crate::surface;
+use crate::url_policy::parse_allowed_url;
 use libmpv2::events::{Event, PropertyData};
 use libmpv2::{mpv_end_file_reason, Format, Mpv, MpvStr};
 use std::panic::{catch_unwind, AssertUnwindSafe};
@@ -13,7 +14,6 @@ use std::thread;
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
 use thiserror::Error;
-use url::{Host, Url};
 
 const STOP_TIMEOUT: Duration = Duration::from_secs(5);
 const STATE_EVENT_INTERVAL: Duration = Duration::from_millis(200);
@@ -383,7 +383,7 @@ fn native_trace(_message: &str) {}
 
 fn validate_playback_urls(request: &LaunchRequest) -> Result<(), MpvError> {
     let stream_url =
-        parse_allowed_media_url(&request.plan.stream_url).ok_or(MpvError::UnsafeStreamUrl)?;
+        parse_allowed_url(&request.plan.stream_url).ok_or(MpvError::UnsafeStreamUrl)?;
     for track in request
         .plan
         .tracks
@@ -393,33 +393,12 @@ fn validate_playback_urls(request: &LaunchRequest) -> Result<(), MpvError> {
         let Some(delivery_url) = track.delivery_url.as_deref() else {
             continue;
         };
-        let subtitle_url =
-            parse_allowed_media_url(delivery_url).ok_or(MpvError::UnsafeSubtitleUrl)?;
+        let subtitle_url = parse_allowed_url(delivery_url).ok_or(MpvError::UnsafeSubtitleUrl)?;
         if subtitle_url.origin() != stream_url.origin() {
             return Err(MpvError::UnsafeSubtitleUrl);
         }
     }
     Ok(())
-}
-
-fn parse_allowed_media_url(value: &str) -> Option<Url> {
-    let url = Url::parse(value).ok()?;
-    if !url.username().is_empty() || url.password().is_some() || url.fragment().is_some() {
-        return None;
-    }
-    match url.scheme() {
-        "https" if url.host().is_some() => Some(url),
-        "http" if url.host().is_some_and(is_loopback_host) => Some(url),
-        _ => None,
-    }
-}
-
-fn is_loopback_host(host: Host<&str>) -> bool {
-    match host {
-        Host::Domain(domain) => domain.eq_ignore_ascii_case("localhost"),
-        Host::Ipv4(address) => address == std::net::Ipv4Addr::LOCALHOST,
-        Host::Ipv6(_) => false,
-    }
 }
 
 fn query_libmpv_version() -> Result<String, MpvError> {

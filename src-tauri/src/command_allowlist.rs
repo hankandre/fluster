@@ -8,7 +8,7 @@ use std::fs;
 use std::path::Path;
 
 /// The only commands the frontend may invoke. Keep in sync with docs/security.md.
-const ALLOWED_COMMANDS: [&str; 10] = [
+const ALLOWED_COMMANDS: [&str; 12] = [
     "initialize_player",
     "launch_playback",
     "set_player_surface",
@@ -19,6 +19,8 @@ const ALLOWED_COMMANDS: [&str; 10] = [
     "select_track",
     "set_fullscreen",
     "stop_playback",
+    "realtime_connect",
+    "realtime_disconnect",
 ];
 
 const UPDATE_INSTRUCTIONS: &str = "Commands are an architecture change: update ALLOWED_COMMANDS \

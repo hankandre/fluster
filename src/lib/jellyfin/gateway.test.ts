@@ -378,6 +378,21 @@ describe("JellyfinGateway device identity and logout", () => {
     await expect(gateway.latest()).rejects.toThrow("Sign in");
   });
 
+  it("exposes the signed-in authorization header for the server socket only while signed in", async () => {
+    const { gateway, deviceId } = await loginWith("install-1", "server-1", "Louise");
+    const header = gateway.authorizationHeader();
+    expect(header).toMatch(/^MediaBrowser /);
+    expect(header).toContain('Token="top-secret"');
+    expect(header).toContain(`DeviceId="${deviceId}"`);
+    await gateway.logout();
+    expect(() => gateway.authorizationHeader()).toThrow("Sign in");
+  });
+
+  it("refuses the authorization header before sign-in", () => {
+    const gateway = new JellyfinGateway("https://media.test", new FakeTransport(), "install-1");
+    expect(() => gateway.authorizationHeader()).toThrow("Sign in");
+  });
+
   it("clears local state even when the logout request fails", async () => {
     const { gateway, transport } = await loginWith("install-1", "server-1", "Louise");
     vi.spyOn(transport, "post").mockRejectedValueOnce(new Error("network down"));
