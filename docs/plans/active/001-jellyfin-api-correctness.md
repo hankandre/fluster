@@ -16,6 +16,8 @@ Done when:
 
 ## Context and domains touched
 
+Tasks: P1-01 through P1-09 in `tasks/prd.json`.
+
 `ARCHITECTURE.md` §3 and §5; domains: Server Connection & Identity, Playback Negotiation, Player Engine (track mapping), Playstate Reporting. Invariants I1, I2, I4.
 
 ## Milestones

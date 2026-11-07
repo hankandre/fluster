@@ -27,7 +27,8 @@ Agents read the short map first and load detail only when needed.
 | `DOMAINS.md` | Bounded contexts, ownership, dependency rules, ubiquitous language | stable |
 | `WORKFLOW.md` | This file | stable |
 | `docs/architecture.md`, `docs/security.md`, `docs/validation.md` | Deep detail for the playback core, security boundary, release gates | as needed |
-| `docs/plans/active/`, `docs/plans/completed/` | Execution plans (see below) | one per initiative |
+| `tasks/prd.json` | Phases and tasks with acceptance criteria and `passes` flags; agents may only flip status fields | living |
+| `docs/plans/active/`, `docs/plans/completed/` | Execution plans for tasks that need more than one session | one per initiative |
 | `docs/decisions/NNNN-slug.md` | Short architecture decision records for choices that would otherwise be re-litigated | ~1 page each |
 
 `AGENTS.md` should link to the five root documents and contain only what the code cannot say: exact commands, the hard rules, and gotchas that have been corrected at least twice.
