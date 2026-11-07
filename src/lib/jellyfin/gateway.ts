@@ -15,6 +15,7 @@ import type {
   AuthenticationResult,
   BaseItemDto,
   HttpRequestConfig,
+  HttpResponse,
   HttpTransport,
   ItemsResult,
   MediaSourceDto,
@@ -115,12 +116,23 @@ function normalizeServerUrl(input: string): URL {
   return url;
 }
 
-// The server answered 3xx (Node fetch) or an opaque redirect, which browser
-// fetch reports as status 0.
-function isRedirectResponse(error: unknown): boolean {
-  if (typeof error !== "object" || error === null) return false;
-  const status = (error as { response?: { status?: unknown } }).response?.status;
+// A redirect arrives as a 3xx status (Node fetch rejects it through
+// validateStatus) or, in a WebView, as an opaque redirect with status 0.
+// Axios resolves status 0 (core/settle.js treats a falsy status as success),
+// so every response must be checked as well as every error.
+function isRedirectStatus(status: unknown): boolean {
   return typeof status === "number" && (status === 0 || (status >= 300 && status < 400));
+}
+
+function isRedirectError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  return isRedirectStatus((error as { response?: { status?: unknown } }).response?.status);
+}
+
+// Fake transports may omit `status`; Axios always sets it.
+function refuseRedirect<T>(response: HttpResponse<T>): HttpResponse<T> {
+  if (isRedirectStatus(response.status)) throw new Error(REDIRECT_REFUSED_MESSAGE);
+  return response;
 }
 
 export function selectDirectFileSource(sources: MediaSourceDto[] | undefined): MediaSourceDto {
@@ -365,10 +377,10 @@ export class JellyfinGateway {
     }
     if (!accessToken || !deviceId) return;
     try {
-      await transport.post("/Sessions/Logout", undefined, {
+      refuseRedirect(await transport.post("/Sessions/Logout", undefined, {
         headers: { Authorization: buildAuthorizationHeader(this.serverUrl, deviceId, accessToken) },
         timeout: REPORT_REQUEST_TIMEOUT_MS,
-      });
+      }));
     } catch (error) {
       console.warn("Server logout failed; the local session was cleared.", error instanceof Error ? redactText(error.message) : "unknown error");
     }
@@ -640,22 +652,26 @@ export class JellyfinGateway {
     });
   }
 
-  private async get<T>(url: string, config?: HttpRequestConfig): Promise<{ data: T }> {
+  private async get<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
+    let response: HttpResponse<T>;
     try {
-      return await this.transport.get<T>(url, config);
+      response = await this.transport.get<T>(url, config);
     } catch (error) {
-      if (isRedirectResponse(error)) throw new Error(REDIRECT_REFUSED_MESSAGE);
+      if (isRedirectError(error)) throw new Error(REDIRECT_REFUSED_MESSAGE);
       throw redactError(error);
     }
+    return refuseRedirect(response);
   }
 
-  private async post<T>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<{ data: T }> {
+  private async post<T>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
+    let response: HttpResponse<T>;
     try {
-      return await this.transport.post<T>(url, data, config);
+      response = await this.transport.post<T>(url, data, config);
     } catch (error) {
-      if (isRedirectResponse(error)) throw new Error(REDIRECT_REFUSED_MESSAGE);
+      if (isRedirectError(error)) throw new Error(REDIRECT_REFUSED_MESSAGE);
       throw redactError(error);
     }
+    return refuseRedirect(response);
   }
 
   private requireSession(): { accessToken: string; userId: string } {

@@ -75,6 +75,10 @@
     { "url": "http://evil-local/", "class": "public" },
     { "url": "http://nas.local../", "class": "public" },
     { "url": "http://192.168.1.5.nip.io/", "class": "public" },
-    { "url": "http://10.0.0.1.example/", "class": "public" }
+    { "url": "http://10.0.0.1.example/", "class": "public" },
+    { "url": "http://xn--a.local/", "class": "public" },
+    { "url": "http://xn--bcher-kva.local/", "class": "public" },
+    { "url": "http://bücher.local/", "class": "public" },
+    { "url": "http://nas.xn--bcher-kva.home.arpa/", "class": "public" }
   ]
 }

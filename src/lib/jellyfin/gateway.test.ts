@@ -8,12 +8,13 @@ import {
   DIRECT_PLAY_REQUEST,
   JellyfinGateway,
   PUBLIC_HTTP_REFUSED_MESSAGE,
+  REDIRECT_REFUSED_MESSAGE,
   REPORT_REQUEST_TIMEOUT_MS,
   selectDirectFileSource,
   UNENCRYPTED_NOT_CONFIRMED_MESSAGE,
 } from "./gateway";
 import type { LanHttpConfirmation, LanHttpConfirmationStore } from "../lan-http-confirmations";
-import type { HttpRequestConfig, HttpTransport } from "./types";
+import type { HttpRequestConfig, HttpResponse, HttpTransport } from "./types";
 
 interface RequestRecord {
   method: "GET" | "POST";
@@ -28,8 +29,10 @@ interface RequestRecord {
 class FakeTransport implements HttpTransport {
   requests: RequestRecord[] = [];
   responses = new Map<string, unknown>();
+  // Status codes to resolve with, as Axios does for a WebView opaque redirect.
+  statuses = new Map<string, number>();
 
-  async get<T>(url: string, config?: HttpRequestConfig): Promise<{ data: T }> {
+  async get<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
     this.requests.push({
       method: "GET",
       url,
@@ -38,10 +41,10 @@ class FakeTransport implements HttpTransport {
       signal: config?.signal,
       timeout: config?.timeout,
     });
-    return { data: this.responses.get(`GET ${url}`) as T };
+    return { data: this.responses.get(`GET ${url}`) as T, status: this.statuses.get(`GET ${url}`) };
   }
 
-  async post<T>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<{ data: T }> {
+  async post<T>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
     this.requests.push({
       method: "POST",
       url,
@@ -51,7 +54,7 @@ class FakeTransport implements HttpTransport {
       signal: config?.signal,
       timeout: config?.timeout,
     });
-    return { data: this.responses.get(`POST ${url}`) as T };
+    return { data: this.responses.get(`POST ${url}`) as T, status: this.statuses.get(`POST ${url}`) };
   }
 }
 
@@ -910,4 +913,56 @@ describe("JellyfinGateway plain-HTTP policy (docs/decisions/0001)", () => {
       expect(confirmations.records).toEqual([]);
     },
   );
+});
+
+// In WebKitGTK the fetch adapter's `redirect: "manual"` yields an opaque
+// redirect with status 0, and Axios resolves it instead of rejecting.
+describe("JellyfinGateway resolved redirect responses", () => {
+  const plan = { itemId: "i", mediaSourceId: "m", playSessionId: "p", startPositionTicks: 0, streamUrl: "", title: "t", tracks: [] };
+  const snapshot = { positionSeconds: 1, paused: false, buffering: false, volume: 50, muted: false, tracks: [], diagnostics: { decodeMode: "hardware", decodeLabel: "x", droppedFrames: 0 } } as PlaybackSnapshot;
+
+  it.each([0, 302, 307])("refuses a probe that resolves with status %i", async (status) => {
+    const transport = new FakeTransport();
+    transport.responses.set("GET /System/Info/Public", { ServerName: "Home", Version: "10.11.7", Id: "server-1" });
+    transport.statuses.set("GET /System/Info/Public", status);
+    await expect(new JellyfinGateway("https://media.test", transport).connect()).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
+  });
+
+  it("refuses a sign-in that resolves with status 0", async () => {
+    const transport = new FakeTransport();
+    transport.statuses.set("POST /Users/AuthenticateByName", 0);
+    const gateway = new JellyfinGateway("https://media.test", transport, "install-1");
+    await expect(gateway.login("Louise", "hunter2")).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
+  });
+
+  it("refuses a list call that resolves with status 0 instead of returning no rows", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.statuses.set("GET /UserViews", 0);
+    await expect(gateway.userViews()).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
+  });
+
+  it("refuses a playstate report that resolves with status 0", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.statuses.set("POST /Sessions/Playing/Progress", 0);
+    await expect(gateway.reportProgress(plan, snapshot)).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
+  });
+
+  it("reports a logout that resolves with status 0 as failed", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const { gateway, transport } = await authenticatedGateway();
+      transport.statuses.set("POST /Sessions/Logout", 0);
+      await gateway.logout();
+      expect(warn).toHaveBeenCalledWith("Server logout failed; the local session was cleared.", REDIRECT_REFUSED_MESSAGE);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("accepts a resolved 200 response", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("GET /UserViews", { Items: [] });
+    transport.statuses.set("GET /UserViews", 200);
+    await expect(gateway.userViews()).resolves.toEqual([]);
+  });
 });
