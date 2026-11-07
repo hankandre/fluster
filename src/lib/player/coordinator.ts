@@ -156,8 +156,10 @@ export class PlaybackCoordinator {
       return plan;
     } catch (error) {
       if (this.isCurrentAttempt(attempt, controller)) {
-        this.disposeAttempt();
-        this.plan = undefined;
+        // Let a queued "loaded" event report the start first, then end the
+        // session as failed so a reported start always gets a stopped report.
+        await this.eventQueue;
+        await this.finish("error", this.snapshot);
       }
       throw redactError(error);
     }
