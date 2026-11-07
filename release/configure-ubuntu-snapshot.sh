@@ -16,3 +16,7 @@ printf 'deb [snapshot=%s] http://archive.ubuntu.com/ubuntu jammy-updates main un
   "${snapshot_id}" >> /etc/apt/sources.list
 printf 'deb [snapshot=%s] http://security.ubuntu.com/ubuntu jammy-security main universe restricted multiverse\n' \
   "${snapshot_id}" >> /etc/apt/sources.list
+# Hosted runners ship packages newer than the snapshot. Prefer the snapshot so
+# installs resolve to one consistent package set, downgrading when required.
+printf 'Package: *\nPin: release o=Ubuntu\nPin-Priority: 1001\n' \
+  > /etc/apt/preferences.d/ubuntu-snapshot
