@@ -38,9 +38,15 @@ export function SessionProvider({
     await current?.logout();
   }, [gateway]);
 
+  const signIn = useCallback((next: SessionGateway) => {
+    // Replacing a signed-in gateway must revoke its server session.
+    if (gateway && gateway !== next) void gateway.logout().catch(() => undefined);
+    setGateway(next);
+  }, [gateway]);
+
   const session = useMemo<Session>(
-    () => ({ gateway, createGateway, signIn: setGateway, signOut }),
-    [gateway, createGateway, signOut],
+    () => ({ gateway, createGateway, signIn, signOut }),
+    [gateway, createGateway, signIn, signOut],
   );
 
   return <SessionContext.Provider value={session}>{children}</SessionContext.Provider>;

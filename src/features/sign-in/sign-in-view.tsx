@@ -14,8 +14,17 @@ function errorMessage(error: unknown): string {
 }
 
 function isAbort(error: unknown): boolean {
-  return typeof error === "object" && error !== null && (error as { name?: unknown }).name === "AbortError";
+  if (typeof error !== "object" || error === null) return false;
+  const name = (error as { name?: unknown }).name;
+  return name === "AbortError" || name === "CanceledError";
 }
+
+function isNotFound(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  return (error as { response?: { status?: unknown } }).response?.status === 404;
+}
+
+const MAX_POLL_FAILURES = 3;
 
 export function SignInView() {
   const session = useSession();
@@ -142,6 +151,8 @@ function QuickConnectStep({
 }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
+  const [expired, setExpired] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const controller = useRef<AbortController | undefined>(undefined);
   // Keep the latest callback without restarting the polling effect.
   const signedIn = useRef(onSignedIn);
@@ -151,14 +162,32 @@ function QuickConnectStep({
     const abort = new AbortController();
     controller.current = abort;
     async function run() {
+      let failures = 0;
       try {
         const request = await gateway.initiateQuickConnect(abort.signal);
         setCode(request.code);
         for (;;) {
           await sleep(QUICK_CONNECT_POLL_MS, abort.signal);
-          const state = await gateway.pollQuickConnect(request.secret, abort.signal);
+          let state: { authenticated: boolean };
+          try {
+            state = await gateway.pollQuickConnect(request.secret, abort.signal);
+            failures = 0;
+          } catch (caught) {
+            if (isAbort(caught) || abort.signal.aborted) return;
+            if (isNotFound(caught)) {
+              setExpired(true);
+              return;
+            }
+            failures += 1;
+            if (failures >= MAX_POLL_FAILURES) throw caught;
+            continue;
+          }
           if (!state.authenticated) continue;
           await gateway.authenticateWithQuickConnect(request.secret, abort.signal);
+          if (abort.signal.aborted) {
+            void gateway.logout().catch(() => undefined);
+            return;
+          }
           signedIn.current();
           return;
         }
@@ -169,7 +198,14 @@ function QuickConnectStep({
     }
     void run();
     return () => abort.abort();
-  }, [gateway]);
+  }, [gateway, attempt]);
+
+  function restart() {
+    setCode("");
+    setError("");
+    setExpired(false);
+    setAttempt((value) => value + 1);
+  }
 
   function cancel() {
     controller.current?.abort();
@@ -184,7 +220,12 @@ function QuickConnectStep({
       <p className="quick-connect-code" aria-label="Quick Connect code" data-testid="quick-connect-code">
         {code || "…"}
       </p>
-      {error ? (
+      {expired ? (
+        <p role="alert" className="form-error">
+          This code expired. Start again.{" "}
+          <button type="button" className="text-button" onClick={restart}>Start again</button>
+        </p>
+      ) : error ? (
         <p role="alert" className="form-error">{error}</p>
       ) : (
         <p role="status">Waiting for approval…</p>
@@ -222,6 +263,10 @@ function PasswordStep({
     controller.current = abort;
     try {
       await gateway.login(username, password, abort.signal);
+      if (abort.signal.aborted) {
+        void gateway.logout().catch(() => undefined);
+        return;
+      }
       onSignedIn();
     } catch (caught) {
       if (isAbort(caught)) return;

@@ -22,7 +22,11 @@ export const CONTROL_REQUEST_TIMEOUT_MS = 15_000;
 export const REPORT_REQUEST_TIMEOUT_MS = 3_000;
 
 const DEVICE_NAME = "Fluster Linux";
-const QUICK_CONNECT_DEVICE_USER = "quick-connect";
+// Jellyfin binds the Quick Connect token to the DeviceId sent with Initiate
+// (QuickConnectManager.cs:72-93, 154-163), before any user is known, so a
+// per-user id is impossible. The placeholder contains "#", which Jellyfin
+// rejects in usernames (UserManager.cs:119), so no real user can collide.
+const QUICK_CONNECT_DEVICE_USER = "#quick-connect";
 
 function createClient(deviceId: string): Jellyfin {
   return new Jellyfin({
