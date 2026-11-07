@@ -1,0 +1,35 @@
+{
+  "MediaSources": [
+    {
+      "Protocol": "File",
+      "Id": "item-bluray",
+      "Path": "/media/movies/Synthetic BluRay (2024)",
+      "Type": "Default",
+      "Container": "",
+      "Name": "Synthetic BluRay (2024)/Bluray",
+      "IsRemote": false,
+      "ETag": "id-5",
+      "ReadAtNativeFramerate": false,
+      "IgnoreDts": false,
+      "IgnoreIndex": false,
+      "GenPtsInput": false,
+      "SupportsTranscoding": false,
+      "SupportsDirectStream": false,
+      "SupportsDirectPlay": false,
+      "IsInfiniteStream": false,
+      "UseMostCompatibleTranscodingProfile": false,
+      "RequiresOpening": false,
+      "RequiresClosing": false,
+      "RequiresLooping": false,
+      "SupportsProbing": true,
+      "VideoType": "BluRay",
+      "MediaStreams": [],
+      "MediaAttachments": [],
+      "Formats": [],
+      "RequiredHttpHeaders": {},
+      "TranscodingSubProtocol": "http",
+      "HasSegments": false
+    }
+  ],
+  "PlaySessionId": "play-session-1"
+}

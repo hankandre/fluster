@@ -28,6 +28,7 @@ Folder and file names follow the Jellyfin naming docs: [movies](https://jellyfin
 | `movies/Synthetic ASS (2024)/Synthetic ASS (2024).mkv` | Embedded styled ASS subtitle (eng) |
 | `movies/Synthetic Sidecar (2024)/Synthetic Sidecar (2024).mkv` and `.en.srt` | External SRT sidecar named `<video name>.<language>.srt` |
 | `movies/Synthetic Multitrack (2024)/Synthetic Multitrack (2024).mkv` | Two audio tracks: eng stereo AAC (default) and spa 5.1 AC-3 |
+| `movies/Synthetic Versions (2024)/Synthetic Versions (2024) - 1080p.mkv` and `- 720p.mkv` | Multi-version movie: two H.264 files in one folder, each starting with the folder name plus a ` - <label>` suffix ([movie naming docs, Multiple Versions](https://jellyfin.org/docs/general/server/media/movies/)) |
 | `movies/Synthetic BluRay (2024)/BDMV/` | BluRay folder layout: placeholder `index.bdmv` and `MovieObject.bdmv`, empty `PLAYLIST/` and `CLIPINF/`, `STREAM/00000.m2ts` (H.264 plus AC-3 in MPEG-TS) |
 | `shows/Synthetic Show/Season 01/Synthetic Show S01E01.mkv`, `S01E02.mkv` | Two regular episodes |
 | `shows/Synthetic Show/Season 00/Synthetic Show S00E01.mkv` | A special, for the specials default in the browse screen |

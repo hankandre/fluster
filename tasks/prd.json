@@ -320,10 +320,10 @@
             "Fixtures are scrubbed per the jellyfin-api contract-fixtures reference"
           ],
           "verify": "ls tests/fixtures/jellyfin/*/ && ! grep -rE '[0-9a-f]{32}' tests/fixtures/jellyfin",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "Recorded 5 PlaybackInfo cases plus the multi-version item detail on Jellyfin 10.11.7 and 12.4.0 with tests/integration/record-fixtures.mjs; fixtures are under tests/fixtures/jellyfin/<version>/ and scrubbed (no 32-hex ids, ApiKey and token REDACTED, host jellyfin.test). Verify command passes (ls + grep for 32-hex). src/lib/jellyfin/fixtures.test.ts replays them through the current gateway and documents current gaps (no DeviceProfile, BluRay VideoType unchecked, api_key in URLs). pnpm check passes."
         },
         {
           "id": "P1-02",

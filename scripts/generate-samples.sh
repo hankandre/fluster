@@ -144,6 +144,19 @@ build "$multi" \
   -c:a:1 ac3 -b:a:1 192k -ac:a:1 6 -metadata:s:a:1 language=spa -metadata:s:a:1 title="Spanish 5.1" \
   -disposition:a:0 default -disposition:a:1 0 -shortest
 
+# Multiple versions: two files in one movie folder, each starting with the folder
+# name plus " - <label>" (Jellyfin movie naming docs, "Multiple Versions"; labels
+# ending in p or i are sorted as resolutions).
+versions_dir="$movies_dir/Synthetic Versions (2024)"
+versions_1080="$versions_dir/Synthetic Versions (2024) - 1080p.mkv"
+versions_720="$versions_dir/Synthetic Versions (2024) - 720p.mkv"
+build "$versions_1080" \
+  -f lavfi -i "$(pattern 1920x1080)" -f lavfi -i "$(tone 440)" \
+  "${h264_args[@]}" "${aac_stereo[@]}" -metadata:s:a:0 language=eng -shortest
+build "$versions_720" \
+  -f lavfi -i "$(pattern 1280x720)" -f lavfi -i "$(tone 440)" \
+  "${h264_args[@]}" "${aac_stereo[@]}" -metadata:s:a:0 language=eng -shortest
+
 # BluRay folder. Jellyfin only checks that the movie folder holds a directory named
 # BDMV (BaseVideoResolver.IsBluRayDirectory). The index files are placeholders; the
 # stream is real H.264 in MPEG-TS so ffprobe can still read it.
@@ -191,6 +204,8 @@ probe "$av1" "av1"
 probe "$ass" "ass"
 probe "$sidecar_dir/Synthetic Sidecar (2024).mkv" "sidecar (+ .en.srt)"
 probe "$multi" "multitrack"
+probe "$versions_1080" "versions 1080p"
+probe "$versions_720" "versions 720p"
 probe "$bd_stream" "bluray m2ts"
 probe "$show_dir/Season 01/Synthetic Show S01E01.mkv" "show S01E01"
 
@@ -203,6 +218,7 @@ probe_value() { ffprobe -v error -select_streams "$2" -show_entries "$3" -of csv
 [ "$(probe_value "$ass" s:0 stream=codec_name)" = "ass" ] || fail "ASS track missing"
 [ "$(probe_value "$multi" a stream=codec_name | tr '\n' ' ')" = "aac ac3 " ] || fail "multitrack audio missing"
 [ -f "$sidecar_dir/Synthetic Sidecar (2024).en.srt" ] || fail "srt sidecar missing"
+[ -f "$versions_1080" ] && [ -f "$versions_720" ] || fail "multi-version files missing"
 [ -f "$bd_dir/index.bdmv" ] || fail "BDMV index missing"
 echo
 echo "All samples verified."
