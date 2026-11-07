@@ -6,7 +6,7 @@ Server transcoding and remuxing are fixed off. They are not preferences and ther
 
 ## Current vertical slice
 
-- Manual HTTPS server URL and username/password login; loopback development may use HTTP, and the access token exists in memory only.
+- Manual server URL and username/password or Quick Connect login. HTTPS works everywhere; plain HTTP works for loopback and, after a one-time warning, for private home-network addresses. The access token exists in memory only.
 - A risk-first library view containing the ten latest movies and episodes.
 - Jellyfin watched/resume state, with an explicit Resume or Start Over choice before negotiation.
 - Static `/Videos/{itemId}/stream` playback with direct play enabled and direct stream/transcoding disabled.

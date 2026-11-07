@@ -3,8 +3,11 @@ import axios from "axios";
 import type { BrowseCard, BrowsePage, BrowseQuery, CardImageType, EpisodeCard, LibraryItem, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season } from "../../domain/catalog";
 import type { PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
 import { secondsToTicks } from "../../domain/playback";
+import { classifyHost, type HostClass } from "../../domain/host-class";
+import type { ServerConnection } from "../../domain/server-connection";
 import { isSupportedServerVersion, parseServerVersion } from "../../domain/server-version";
 import { getInstallId } from "../install-id";
+import { lanHttpConfirmations, type LanHttpConfirmationStore } from "../lan-http-confirmations";
 import { redactError, redactText } from "../redact";
 import { toBrowseCards, toEpisodeCards, toHomeLibraries, toMediaCards, toSearchCards, toSearchHints, toSeasons } from "./cards";
 import { deriveDeviceId } from "./device-id";
@@ -59,9 +62,15 @@ function createSdkApi(serverUrl: string, deviceId: string, accessToken?: string)
   // The SDK's generated APIs apply basePath and authorization through their
   // Configuration object. Fluster's narrow gateway uses the raw Axios client,
   // so it must provide those values on an isolated instance explicitly.
+  // No request follows a redirect (docs/decisions/0001, edge case 8): a
+  // server or anyone on the path must not be able to move the token, or the
+  // probe, to another origin. The fetch adapter maps maxRedirects 0 to
+  // `redirect: "manual"`; the XHR adapter cannot stop a redirect.
   const axiosInstance = axios.create({
     baseURL: serverUrl,
     timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    adapter: "fetch",
+    maxRedirects: 0,
   });
   const api = createClient(deviceId).createApi(serverUrl, accessToken, axiosInstance);
   axiosInstance.defaults.headers.common.Authorization = api.authorizationHeader;
@@ -77,11 +86,14 @@ export const DIRECT_PLAY_REQUEST = Object.freeze({
   AutoOpenLiveStream: false,
 });
 
-function isLoopbackHost(hostname: string): boolean {
-  return hostname === "localhost" || hostname === "127.0.0.1";
-}
+export const PUBLIC_HTTP_REFUSED_MESSAGE =
+  "This address uses plain HTTP on the internet, so Fluster will not connect. Use HTTPS, or HTTP only for this device or a private home-network address such as 192.168.x.x, a name.local name, or a name.home.arpa name.";
+export const REDIRECT_REFUSED_MESSAGE =
+  "The server answered with a redirect, which Fluster does not follow. Enter the server's final address instead.";
+export const UNENCRYPTED_NOT_CONFIRMED_MESSAGE =
+  "Confirm the unencrypted connection to this server before signing in.";
 
-function normalizeServerUrl(input: string): string {
+function normalizeServerUrl(input: string): URL {
   const candidate = input.trim();
   let url: URL;
   try {
@@ -95,12 +107,20 @@ function normalizeServerUrl(input: string): string {
   if (url.username || url.password) {
     throw new Error("The server URL must not include a username or password.");
   }
-  if (url.protocol === "http:" && !isLoopbackHost(url.hostname)) {
-    throw new Error("Remote Jellyfin servers must use HTTPS. HTTP is allowed only for this device's loopback address.");
+  if (url.protocol === "http:" && classifyHost(url) === "public") {
+    throw new Error(PUBLIC_HTTP_REFUSED_MESSAGE);
   }
   url.hash = "";
   url.search = "";
-  return url.toString().replace(/\/$/, "");
+  return url;
+}
+
+// The server answered 3xx (Node fetch) or an opaque redirect, which browser
+// fetch reports as status 0.
+function isRedirectResponse(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  const status = (error as { response?: { status?: unknown } }).response?.status;
+  return typeof status === "number" && (status === 0 || (status >= 300 && status < 400));
 }
 
 export function selectDirectFileSource(sources: MediaSourceDto[] | undefined): MediaSourceDto {
@@ -158,6 +178,9 @@ function buildAuthenticatedResourceUrl(serverUrl: string, path: string | null | 
 
 export class JellyfinGateway {
   readonly serverUrl: string;
+  readonly origin: string;
+  readonly hostClass: HostClass;
+  private readonly plainHttp: boolean;
   private transport: HttpTransport;
   private api?: Api;
   private accessToken?: string;
@@ -169,15 +192,22 @@ export class JellyfinGateway {
     serverUrl: string,
     transport?: HttpTransport,
     private readonly installId: string = getInstallId(),
+    private readonly confirmations: LanHttpConfirmationStore = lanHttpConfirmations,
   ) {
-    this.serverUrl = normalizeServerUrl(serverUrl);
+    const url = normalizeServerUrl(serverUrl);
+    this.serverUrl = url.toString().replace(/\/$/, "");
+    this.origin = url.origin;
+    this.hostClass = classifyHost(url);
+    this.plainHttp = url.protocol === "http:";
     // Before login there is no user, so the unauthenticated API uses a
     // throwaway device id that is never sent with credentials.
     this.api = transport ? undefined : createSdkApi(this.serverUrl, "fluster-unauthenticated");
     this.transport = transport ?? (this.api!.axiosInstance as HttpTransport);
   }
 
-  async connect(signal?: AbortSignal): Promise<{ name: string; version: string }> {
+  // The unauthenticated probe. For a private-LAN HTTP server it also reports
+  // whether the user still has to confirm the unencrypted connection.
+  async connect(signal?: AbortSignal): Promise<ServerConnection> {
     const { data } = await this.get<ServerInfo>("/System/Info/Public", {
       signal,
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
@@ -190,11 +220,46 @@ export class JellyfinGateway {
     if (!parsed || !isSupportedServerVersion(parsed)) {
       throw new Error(`Fluster needs Jellyfin 10.11 or newer; this server reports ${version}.`);
     }
+    if (this.needsConsentForPlainHttp() && !data.Id) {
+      throw new Error("The server did not report its Id, so Fluster cannot remember an unencrypted connection to it.");
+    }
     this.serverId = data.Id;
-    return { name: data.ServerName ?? "Jellyfin", version };
+    return {
+      name: data.ServerName ?? "Jellyfin",
+      version,
+      hostClass: this.hostClass,
+      needsUnencryptedConfirmation: this.needsConsentForPlainHttp() && !this.hasUnencryptedConsent(),
+    };
+  }
+
+  // Records the user's choice to send the password and token without
+  // encryption to this server Id at this origin. Call only after the user
+  // confirmed the warning.
+  confirmUnencryptedConnection(): void {
+    if (!this.needsConsentForPlainHttp()) return;
+    if (!this.serverId) throw new Error("Connect to the server before confirming an unencrypted connection.");
+    this.confirmations.remember({ serverId: this.serverId, origin: this.origin });
+  }
+
+  private needsConsentForPlainHttp(): boolean {
+    return this.plainHttp && this.hostClass === "private-lan";
+  }
+
+  private hasUnencryptedConsent(): boolean {
+    if (!this.serverId) return false;
+    return this.confirmations.has({ serverId: this.serverId, origin: this.origin });
+  }
+
+  // Runs before every sign-in request, so no password, Quick Connect secret,
+  // or token reaches a private-LAN HTTP server the user has not confirmed.
+  private requireTransportConsent(): void {
+    if (this.needsConsentForPlainHttp() && !this.hasUnencryptedConsent()) {
+      throw new Error(UNENCRYPTED_NOT_CONFIRMED_MESSAGE);
+    }
   }
 
   async login(username: string, password: string, signal?: AbortSignal): Promise<{ userId: string; username: string }> {
+    this.requireTransportConsent();
     // Fall back to the server URL if connect() did not provide a server id.
     const deviceId = await deriveDeviceId(this.installId, this.serverId ?? this.serverUrl, username);
     const { data } = await this.post<AuthenticationResult>("/Users/AuthenticateByName", {
@@ -218,6 +283,7 @@ export class JellyfinGateway {
 
   // POST, not GET: Jellyfin 12 removed the GET form of this endpoint.
   async initiateQuickConnect(signal?: AbortSignal): Promise<{ secret: string; code: string }> {
+    this.requireTransportConsent();
     const deviceId = await this.quickConnectDeviceId();
     const { data } = await this.post<QuickConnectResult>("/QuickConnect/Initiate", undefined, {
       headers: { Authorization: buildAuthorizationHeader(this.serverUrl, deviceId) },
@@ -231,6 +297,7 @@ export class JellyfinGateway {
   // The API requires the secret in the query string. It is not the access
   // token, but errors still go through redaction, which covers `secret`.
   async pollQuickConnect(secret: string, signal?: AbortSignal): Promise<{ authenticated: boolean }> {
+    this.requireTransportConsent();
     const deviceId = await this.quickConnectDeviceId();
     const { data } = await this.get<QuickConnectResult>("/QuickConnect/Connect", {
       params: { secret },
@@ -242,6 +309,7 @@ export class JellyfinGateway {
   }
 
   async authenticateWithQuickConnect(secret: string, signal?: AbortSignal): Promise<{ userId: string; username: string }> {
+    this.requireTransportConsent();
     const deviceId = await this.quickConnectDeviceId();
     const { data } = await this.post<AuthenticationResult>("/Users/AuthenticateWithQuickConnect", {
       Secret: secret,
@@ -576,6 +644,7 @@ export class JellyfinGateway {
     try {
       return await this.transport.get<T>(url, config);
     } catch (error) {
+      if (isRedirectResponse(error)) throw new Error(REDIRECT_REFUSED_MESSAGE);
       throw redactError(error);
     }
   }
@@ -584,6 +653,7 @@ export class JellyfinGateway {
     try {
       return await this.transport.post<T>(url, data, config);
     } catch (error) {
+      if (isRedirectResponse(error)) throw new Error(REDIRECT_REFUSED_MESSAGE);
       throw redactError(error);
     }
   }

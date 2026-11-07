@@ -2,13 +2,23 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionProvider, type SessionGateway } from "../../app/session";
+import { JellyfinGateway, PUBLIC_HTTP_REFUSED_MESSAGE } from "../../lib/jellyfin/gateway";
+import type { LanHttpConfirmation, LanHttpConfirmationStore } from "../../lib/lan-http-confirmations";
+import type { HttpTransport } from "../../lib/jellyfin/types";
 import { SignInView } from "./index";
 import { QUICK_CONNECT_POLL_MS } from "./sign-in-view";
 
 function fakeGateway(overrides: Partial<SessionGateway> = {}): SessionGateway {
   return {
     serverUrl: "https://media.test",
-    connect: vi.fn().mockResolvedValue({ name: "Testfin", version: "10.11.7" }),
+    origin: "https://media.test",
+    connect: vi.fn().mockResolvedValue({
+      name: "Testfin",
+      version: "10.11.7",
+      hostClass: "public",
+      needsUnencryptedConfirmation: false,
+    }),
+    confirmUnencryptedConnection: vi.fn(),
     login: vi.fn().mockResolvedValue({ userId: "u1", username: "Louise" }),
     quickConnectEnabled: vi.fn().mockResolvedValue(true),
     initiateQuickConnect: vi.fn().mockResolvedValue({ secret: "s3cret", code: "482913" }),
@@ -38,8 +48,8 @@ function renderView(gateway: SessionGateway) {
   );
 }
 
-async function connect() {
-  fireEvent.change(screen.getByLabelText("Server URL"), { target: { value: "https://media.test" } });
+async function connect(serverUrl = "https://media.test") {
+  fireEvent.change(screen.getByLabelText("Server URL"), { target: { value: serverUrl } });
   await act(async () => {
     fireEvent.click(screen.getByRole("button", { name: "Connect" }));
   });
@@ -214,5 +224,169 @@ describe("SignInView with password", () => {
     await connect();
     expect(screen.getByRole("alert")).toHaveTextContent("10.11 or newer");
     expect(screen.getByLabelText("Server URL")).toBeInTheDocument();
+  });
+});
+
+const LAN_ORIGIN = "http://192.168.1.5:8096";
+
+function lanGateway(overrides: Partial<SessionGateway> = {}): SessionGateway {
+  return fakeGateway({
+    serverUrl: LAN_ORIGIN,
+    origin: LAN_ORIGIN,
+    connect: vi.fn().mockResolvedValue({
+      name: "Living Room",
+      version: "10.11.7",
+      hostClass: "private-lan",
+      needsUnencryptedConfirmation: true,
+    }),
+    ...overrides,
+  });
+}
+
+function expectNoSignInRequest(gateway: SessionGateway) {
+  expect(gateway.quickConnectEnabled).not.toHaveBeenCalled();
+  expect(gateway.initiateQuickConnect).not.toHaveBeenCalled();
+  expect(gateway.login).not.toHaveBeenCalled();
+}
+
+describe("SignInView with a private-LAN HTTP server", () => {
+  it("warns with the server name and exact origin, with Cancel focused", async () => {
+    const gateway = lanGateway();
+    renderView(gateway);
+    await connect(LAN_ORIGIN);
+    const dialog = screen.getByRole("alertdialog", { name: "This server uses an unencrypted connection." });
+    expect(dialog).toHaveTextContent("Your Jellyfin password and sign-in token will travel across your network without encryption.");
+    expect(dialog).toHaveTextContent("Anyone else on this network could read them and use your account.");
+    expect(dialog).toHaveTextContent(`Fluster will remember this choice for “Living Room” at ${LAN_ORIGIN}.`);
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
+    expectNoSignInRequest(gateway);
+    expect(gateway.confirmUnencryptedConnection).not.toHaveBeenCalled();
+  });
+
+  it("records the confirmation before any sign-in request, then continues", async () => {
+    const order: string[] = [];
+    const gateway = lanGateway({
+      confirmUnencryptedConnection: vi.fn(() => { order.push("confirm"); }),
+      quickConnectEnabled: vi.fn(async () => {
+        order.push("quick-connect-enabled");
+        return false;
+      }),
+    });
+    renderView(gateway);
+    await connect(LAN_ORIGIN);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Connect without encryption" }));
+    });
+    expect(order).toEqual(["confirm", "quick-connect-enabled"]);
+    expect(screen.getByLabelText("Username")).toHaveFocus();
+  });
+
+  it("returns to the server step on Cancel without confirming", async () => {
+    const gateway = lanGateway();
+    renderView(gateway);
+    await connect(LAN_ORIGIN);
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByLabelText("Server URL")).toBeInTheDocument();
+    expect(gateway.confirmUnencryptedConnection).not.toHaveBeenCalled();
+    expectNoSignInRequest(gateway);
+  });
+
+  it("cancels on Escape", async () => {
+    const gateway = lanGateway();
+    renderView(gateway);
+    await connect(LAN_ORIGIN);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.getByLabelText("Server URL")).toBeInTheDocument();
+    expect(gateway.confirmUnencryptedConnection).not.toHaveBeenCalled();
+  });
+
+  it("skips the warning once the server is confirmed at this origin", async () => {
+    const gateway = lanGateway({
+      connect: vi.fn().mockResolvedValue({
+        name: "Living Room",
+        version: "10.11.7",
+        hostClass: "private-lan",
+        needsUnencryptedConfirmation: false,
+      }),
+    });
+    renderView(gateway);
+    await connect(LAN_ORIGIN);
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Quick Connect code")).toHaveTextContent("482913");
+  });
+});
+
+class MemoryConfirmations implements LanHttpConfirmationStore {
+  records: LanHttpConfirmation[] = [];
+  has(confirmation: LanHttpConfirmation): boolean {
+    return this.records.some((record) => record.serverId === confirmation.serverId && record.origin === confirmation.origin);
+  }
+  remember(confirmation: LanHttpConfirmation): void {
+    this.records.push(confirmation);
+  }
+}
+
+// These use the real gateway, so they prove what reaches the network.
+describe("SignInView with the real gateway", () => {
+  function countingTransport(responses: Record<string, unknown>) {
+    const requests: string[] = [];
+    const transport: HttpTransport = {
+      async get<T>(url: string) {
+        requests.push(`GET ${url}`);
+        return { data: responses[`GET ${url}`] as T };
+      },
+      async post<T>(url: string) {
+        requests.push(`POST ${url}`);
+        return { data: responses[`POST ${url}`] as T };
+      },
+    };
+    return { transport, requests };
+  }
+
+  function renderWithRealGateway(transport: HttpTransport, confirmations: LanHttpConfirmationStore) {
+    render(
+      <SessionProvider createGateway={(serverUrl) => new JellyfinGateway(serverUrl, transport, "install-1", confirmations)}>
+        <SignInView />
+      </SessionProvider>,
+    );
+  }
+
+  it("refuses a public http:// server without sending any request", async () => {
+    const { transport, requests } = countingTransport({});
+    renderWithRealGateway(transport, new MemoryConfirmations());
+    await connect("http://media.example:8096");
+    expect(screen.getByRole("alert")).toHaveTextContent(PUBLIC_HTTP_REFUSED_MESSAGE);
+    expect(screen.getByLabelText("Server URL")).toBeInTheDocument();
+    expect(requests).toEqual([]);
+  });
+
+  it("probes a private-LAN server, then sends nothing else until the user confirms", async () => {
+    const { transport, requests } = countingTransport({
+      "GET /System/Info/Public": { ServerName: "Living Room", Version: "10.11.7", Id: "server-1" },
+      "GET /QuickConnect/Enabled": false,
+    });
+    const confirmations = new MemoryConfirmations();
+    renderWithRealGateway(transport, confirmations);
+    await connect(`${LAN_ORIGIN}/`);
+    expect(screen.getByRole("alertdialog")).toHaveTextContent(LAN_ORIGIN);
+    expect(requests).toEqual(["GET /System/Info/Public"]);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Connect without encryption" }));
+    });
+    expect(confirmations.records).toEqual([{ serverId: "server-1", origin: LAN_ORIGIN }]);
+    expect(requests).toEqual(["GET /System/Info/Public", "GET /QuickConnect/Enabled"]);
+    expect(screen.getByLabelText("Username")).toBeInTheDocument();
+  });
+
+  it("asks again when a different server answers at a confirmed origin", async () => {
+    const { transport } = countingTransport({
+      "GET /System/Info/Public": { ServerName: "Imposter", Version: "10.11.7", Id: "server-2" },
+    });
+    const confirmations = new MemoryConfirmations();
+    confirmations.remember({ serverId: "server-1", origin: LAN_ORIGIN });
+    renderWithRealGateway(transport, confirmations);
+    await connect(LAN_ORIGIN);
+    expect(screen.getByRole("alertdialog")).toHaveTextContent("“Imposter”");
   });
 });

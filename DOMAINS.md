@@ -45,7 +45,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 **Purpose.** Know which server we talk to, as whom, and what that server supports.
 
 **Owns:**
-- server URL normalization and the HTTPS/loopback policy
+- server URL normalization, the host-class plain-HTTP policy, and the private-LAN confirmation
 - LAN discovery
 - the public server info probe and version/feature gating
 - password and Quick Connect sign-in

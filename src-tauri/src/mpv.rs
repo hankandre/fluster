@@ -6,7 +6,7 @@ use crate::redaction::safe_error;
 use crate::surface;
 use crate::url_policy::parse_allowed_url;
 use libmpv2::events::{Event, PropertyData};
-use libmpv2::{mpv_end_file_reason, Format, Mpv, MpvStr};
+use libmpv2::{mpv_end_file_reason, Format, Mpv, MpvInitializer, MpvStr};
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
@@ -17,6 +17,8 @@ use thiserror::Error;
 
 const STOP_TIMEOUT: Duration = Duration::from_secs(5);
 const STATE_EVENT_INTERVAL: Duration = Duration::from_millis(200);
+// FFmpeg http protocol AVOption (libavformat/http.c, FFmpeg 6.1 and 7.1+).
+const NO_HTTP_REDIRECTS: &str = "max_redirects=0";
 
 #[derive(Debug, Error)]
 pub enum MpvError {
@@ -28,7 +30,7 @@ pub enum MpvError {
         "The playback plan is missing its item, title, media source, or play-session identity."
     )]
     InvalidPlan,
-    #[error("The playback stream URL is not allowed. Use HTTPS, or HTTP only for a loopback Jellyfin server.")]
+    #[error("The playback stream URL is not allowed. Use HTTPS, or HTTP only for this device or a private home-network server.")]
     UnsafeStreamUrl,
     #[error("An external subtitle URL is not allowed. Subtitles must use the same server origin as the playback stream.")]
     UnsafeSubtitleUrl,
@@ -157,6 +159,7 @@ impl MpvController {
             init.set_option("input-default-bindings", false)?;
             init.set_option("input-vo-keyboard", false)?;
             init.set_option("keep-open", false)?;
+            harden_network_options(&init)?;
             Ok(())
         })
         .map_err(|error| MpvError::Initialize(safe_error(error)))?;
@@ -380,6 +383,15 @@ fn native_trace(message: &str) {
 
 #[cfg(not(debug_assertions))]
 fn native_trace(_message: &str) {}
+
+fn harden_network_options(init: &MpvInitializer) -> libmpv2::Result<()> {
+    // FFmpeg's http protocol re-sends custom headers to every redirect target,
+    // whatever its origin, so redirects are refused instead.
+    init.set_option("stream-lavf-o", NO_HTTP_REDIRECTS)?;
+    // The builtin ytdl_hook script retries a failed load by running yt-dlp
+    // with the full stream URL as a process argument.
+    init.set_option("ytdl", false)
+}
 
 fn validate_playback_urls(request: &LaunchRequest) -> Result<(), MpvError> {
     let stream_url =
@@ -1012,23 +1024,36 @@ mod tests {
     }
 
     #[test]
-    fn media_urls_allow_https_and_exact_loopback_http() {
+    fn media_urls_allow_https_and_loopback_or_private_lan_http() {
         for stream_url in [
             "https://media.example/video.mkv?api_key=secret",
             "http://localhost:8096/video.mkv",
             "http://127.0.0.1:8096/video.mkv",
+            "http://127.12.34.56:8096/video.mkv",
+            "http://[::1]:8096/video.mkv",
+            "http://192.168.1.5:8096/video.mkv?api_key=secret",
+            "http://10.0.0.7/video.mkv",
+            "http://172.16.0.2/video.mkv",
+            "http://169.254.3.4/video.mkv",
+            "http://[fd00::5]:8096/video.mkv",
+            "http://[fe80::5]:8096/video.mkv",
+            "http://nas.local:8096/video.mkv",
+            "http://jellyfin.home.arpa/video.mkv",
         ] {
             assert!(validate_playback_urls(&launch_request(stream_url, None)).is_ok());
         }
     }
 
     #[test]
-    fn media_urls_reject_plaintext_remote_hosts_and_embedded_credentials() {
+    fn media_urls_reject_plaintext_public_hosts_and_embedded_credentials() {
         for stream_url in [
             "http://media.example/video.mkv?api_key=secret",
             "http://localhost.example/video.mkv",
-            "http://127.12.34.56:8096/video.mkv",
-            "http://[::1]:8096/video.mkv",
+            "http://100.64.0.1:8096/video.mkv",
+            "http://8.8.8.8/video.mkv",
+            "http://[::ffff:8.8.8.8]/video.mkv",
+            "http://jellyfin.lan/video.mkv",
+            "http://192.168.1.5.nip.io/video.mkv",
             "https://user:password@media.example/video.mkv",
             "https://media.example/video.mkv#fragment",
             "file:///tmp/video.mkv",
@@ -1058,6 +1083,42 @@ mod tests {
         assert!(matches!(error, MpvError::UnsafeSubtitleUrl));
         assert!(!error.to_string().contains("stream-secret"));
         assert!(!error.to_string().contains("subtitle-secret"));
+    }
+
+    #[test]
+    fn libmpv_accepts_the_network_hardening_options() {
+        ensure_numeric_locale().expect("numeric locale");
+        let mpv = Mpv::with_initializer(|init| {
+            init.set_option("config", false)?;
+            init.set_option("vo", "null")?;
+            init.set_option("ao", "null")?;
+            harden_network_options(&init)
+        })
+        .expect("libmpv accepts the options");
+        let lavf_options: String = mpv.get_property("stream-lavf-o").expect("stream-lavf-o");
+        assert_eq!(lavf_options, NO_HTTP_REDIRECTS);
+        let ytdl: bool = mpv.get_property("ytdl").expect("ytdl");
+        assert!(!ytdl);
+    }
+
+    #[test]
+    fn private_lan_subtitles_must_share_the_stream_scheme_host_and_port() {
+        let stream = "http://192.168.1.5:8096/video.mkv?api_key=stream-secret";
+        assert!(validate_playback_urls(&launch_request(
+            stream,
+            Some("http://192.168.1.5:8096/subtitle.ass")
+        ))
+        .is_ok());
+        for subtitle in [
+            "https://192.168.1.5:8096/subtitle.ass",
+            "http://192.168.1.5:8920/subtitle.ass",
+            "http://192.168.1.6:8096/subtitle.ass",
+            "http://media.example:8096/subtitle.ass",
+        ] {
+            let error = validate_playback_urls(&launch_request(stream, Some(subtitle)))
+                .expect_err(subtitle);
+            assert!(matches!(error, MpvError::UnsafeSubtitleUrl));
+        }
     }
 
     #[test]

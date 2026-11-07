@@ -1,5 +1,6 @@
 import type { BrowsePage, BrowseQuery, CardImageType, EpisodeCard, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season } from "../domain/catalog";
 import type { RealtimeConnection, ServerEvent } from "../domain/realtime";
+import type { ServerConnection } from "../domain/server-connection";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 // The narrow gateway surface that feature views may use. Views import this
@@ -7,7 +8,9 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 // that constructs gateways.
 export interface SessionGateway {
   readonly serverUrl: string;
-  connect(signal?: AbortSignal): Promise<{ name: string; version: string }>;
+  readonly origin: string;
+  connect(signal?: AbortSignal): Promise<ServerConnection>;
+  confirmUnencryptedConnection(): void;
   login(username: string, password: string, signal?: AbortSignal): Promise<{ userId: string; username: string }>;
   quickConnectEnabled(signal?: AbortSignal): Promise<boolean>;
   initiateQuickConnect(signal?: AbortSignal): Promise<{ secret: string; code: string }>;
