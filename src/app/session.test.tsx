@@ -2,33 +2,16 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FakeRealtime } from "../test/fake-realtime";
 import { SessionProvider, useSession, type SessionGateway } from "./session";
+import { fakeSessionGateway } from "../test/fake-session-gateway";
 
 afterEach(cleanup);
 
 function stubGateway(serverUrl: string, token: string): SessionGateway {
-  return {
+  return fakeSessionGateway({
     serverUrl,
     origin: new URL(serverUrl).origin,
-    connect: vi.fn(),
-    confirmUnencryptedConnection: vi.fn(),
-    login: vi.fn(),
-    quickConnectEnabled: vi.fn(),
-    initiateQuickConnect: vi.fn(),
-    pollQuickConnect: vi.fn(),
-    authenticateWithQuickConnect: vi.fn(),
-    logout: vi.fn().mockResolvedValue(undefined),
-    userViews: vi.fn(),
-    resumeItems: vi.fn(),
-    nextUp: vi.fn(),
-    latestInLibrary: vi.fn(),
-    imageUrl: vi.fn(),
-    libraryItems: vi.fn(),
-    seasons: vi.fn(),
-    episodes: vi.fn(),
-    searchHints: vi.fn(),
-    searchItems: vi.fn(),
     authorizationHeader: vi.fn().mockReturnValue(`MediaBrowser Token="${token}"`),
-  };
+  });
 }
 
 function Controls({ gateways }: { gateways: SessionGateway[] }) {

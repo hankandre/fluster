@@ -1,6 +1,6 @@
 import { Jellyfin, type Api } from "@jellyfin/sdk";
 import axios from "axios";
-import type { BrowseCard, BrowsePage, BrowseQuery, CardImageType, EpisodeCard, LibraryItem, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season } from "../../domain/catalog";
+import type { BrowseCard, BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, LibraryItem, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season } from "../../domain/catalog";
 import type { PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
 import { PlaybackRefusedError, secondsToTicks } from "../../domain/playback";
 import { classifyHost, type HostClass } from "../../domain/host-class";
@@ -12,6 +12,7 @@ import { redactError, redactText } from "../redact";
 import { toBrowseCards, toEpisodeCards, toHomeLibraries, toMediaCards, toSearchCards, toSearchHints, toSeasons } from "./cards";
 import { deriveDeviceId } from "./device-id";
 import { FLUSTER_PROFILE, MAX_BITRATE } from "./device-profile";
+import { toItemDetail } from "./item-detail";
 import { selectSource } from "./source-acceptance";
 import type {
   AuthenticationResult,
@@ -562,6 +563,40 @@ export class JellyfinGateway {
     return toEpisodeCards(data.Items);
   }
 
+  // GET /Items/{id} takes only a user id in @jellyfin/sdk 1.0.2 (library-api
+  // getItem), so there is no fields parameter. The server returns media
+  // sources, streams, genres, people, and user data in the full item.
+  async itemDetail(itemId: string, signal?: AbortSignal): Promise<ItemDetail> {
+    const { userId } = this.requireSession();
+    const { data } = await this.get<BaseItemDto>(`/Items/${encodeURIComponent(itemId)}`, {
+      params: { userId },
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    const detail = toItemDetail(data);
+    if (!detail) throw new Error("Jellyfin returned an item without an ID or name.");
+    return detail;
+  }
+
+  // POST marks the item played and DELETE marks it unplayed (user-data-api
+  // markPlayedItem and markUnplayedItem, /UserPlayedItems/{itemId}).
+  async setPlayed(itemId: string, played: boolean, signal?: AbortSignal): Promise<void> {
+    await this.setUserFlag("UserPlayedItems", itemId, played, signal);
+  }
+
+  // /UserFavoriteItems/{itemId}: POST marks a favorite, DELETE removes it.
+  async setFavorite(itemId: string, favorite: boolean, signal?: AbortSignal): Promise<void> {
+    await this.setUserFlag("UserFavoriteItems", itemId, favorite, signal);
+  }
+
+  private async setUserFlag(collection: string, itemId: string, on: boolean, signal?: AbortSignal): Promise<void> {
+    const { userId } = this.requireSession();
+    const url = `/${collection}/${encodeURIComponent(itemId)}`;
+    const config = { params: { userId }, signal, timeout: CONTROL_REQUEST_TIMEOUT_MS };
+    if (on) await this.post(url, undefined, config);
+    else await this.delete(url, config);
+  }
+
   // Tagged image URLs are immutable and need no token, so they carry no
   // credentials and can be cached by (item, type, tag, size).
   imageUrl(itemId: string, type: CardImageType, tag: string, maxWidth: number): string {
@@ -668,6 +703,17 @@ export class JellyfinGateway {
     let response: HttpResponse<T>;
     try {
       response = await this.transport.post<T>(url, data, config);
+    } catch (error) {
+      if (isRedirectError(error)) throw new Error(REDIRECT_REFUSED_MESSAGE);
+      throw redactError(error);
+    }
+    return refuseRedirect(response);
+  }
+
+  private async delete<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
+    let response: HttpResponse<T>;
+    try {
+      response = await this.transport.delete<T>(url, config);
     } catch (error) {
       if (isRedirectError(error)) throw new Error(REDIRECT_REFUSED_MESSAGE);
       throw redactError(error);

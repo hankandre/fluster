@@ -7,7 +7,7 @@ import { SignInView } from "../features/sign-in";
 import { HomeView, refreshHomeRows } from "../features/home";
 import { BrowseView, CollectionView, SeriesView } from "../features/browse";
 import { SearchView } from "../features/search";
-import { DetailView } from "../features/detail";
+import { DetailView, ItemDetailView } from "../features/detail";
 import { PlayerFeatureView } from "../features/player";
 import type { PocServices } from "../poc/services";
 import { createServices } from "./compose";
@@ -59,7 +59,7 @@ function renderRoute(hash: string, services: PocServices) {
   }
 }
 
-// Routes with an id: #/next/browse/<libraryId>, #/next/series/<id>, #/next/collection/<id>,
+// Routes with an id: #/next/browse/<libraryId>, #/next/item/<id>, #/next/series/<id>, #/next/collection/<id>,
 // and #/next/search/<term>.
 // Anything else, including malformed ids, is not found.
 function renderBrowseRoute(hash: string) {
@@ -74,6 +74,8 @@ function renderBrowseRoute(hash: string) {
   switch (section) {
     case "browse":
       return <BrowseView libraryId={itemId} />;
+    case "item":
+      return <ItemDetailView itemId={itemId} />;
     case "series":
       return <SeriesView seriesId={itemId} />;
     case "search":

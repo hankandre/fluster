@@ -17,7 +17,7 @@ import type { LanHttpConfirmation, LanHttpConfirmationStore } from "../lan-http-
 import type { HttpRequestConfig, HttpResponse, HttpTransport } from "./types";
 
 interface RequestRecord {
-  method: "GET" | "POST";
+  method: "GET" | "POST" | "DELETE";
   url: string;
   data?: unknown;
   params?: Record<string, unknown>;
@@ -55,6 +55,18 @@ class FakeTransport implements HttpTransport {
       timeout: config?.timeout,
     });
     return { data: this.responses.get(`POST ${url}`) as T, status: this.statuses.get(`POST ${url}`) };
+  }
+
+  async delete<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
+    this.requests.push({
+      method: "DELETE",
+      url,
+      params: config?.params,
+      headers: config?.headers,
+      signal: config?.signal,
+      timeout: config?.timeout,
+    });
+    return { data: this.responses.get(`DELETE ${url}`) as T, status: this.statuses.get(`DELETE ${url}`) };
   }
 }
 
@@ -640,6 +652,7 @@ describe("JellyfinGateway home calls", () => {
 
     await expect(gateway.resumeItems()).resolves.toEqual([{
       id: "ep-1",
+      kind: "Episode",
       title: "Show",
       subtitle: "S1E2 · Pilot",
       image: { itemId: "ep-1", type: "Primary", tag: "tag-1", blurHash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" },
@@ -687,6 +700,7 @@ describe("JellyfinGateway home calls", () => {
 
     await expect(gateway.latestInLibrary("lib-1")).resolves.toEqual([{
       id: "m1",
+      kind: "Movie",
       title: "Arrival",
       subtitle: "2016",
       image: { itemId: "m1", type: "Backdrop", tag: "b1" },
@@ -843,7 +857,7 @@ describe("JellyfinGateway home calls", () => {
       Items: [{ Id: "e1", Name: "Pilot", Type: "Episode", IndexNumber: 1, Overview: "It begins.", SeriesName: "Show" }],
     });
     await expect(gateway.episodes("series-1", "se1")).resolves.toEqual([
-      { id: "e1", title: "Pilot", subtitle: "Episode 1", overview: "It begins.", aspectRatio: 2 / 3 },
+      { id: "e1", kind: "Episode", title: "Pilot", subtitle: "Episode 1", overview: "It begins.", aspectRatio: 2 / 3 },
     ]);
     expect(transport.requests.at(-1)?.params).toEqual({
       userId: "user-1",

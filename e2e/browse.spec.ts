@@ -72,18 +72,18 @@ test("browse a library, sort, open a series and season, and open a collection", 
 
   await page.goto("/#/next/browse");
   await page.getByRole("link", { name: "Mixed Library" }).click();
-  await expect(page.getByRole("article", { name: "Plain Movie, 2016" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Plain Movie, 2016" })).toBeVisible();
 
   await page.getByLabel("Sort by").selectOption("DateCreated");
   await expect.poll(() => requests.some((url) => url.pathname === "/Items" && url.searchParams.get("sortBy") === "DateCreated")).toBe(true);
 
   await page.getByRole("link", { name: "Great Show, 2016" }).click();
-  await expect(page.getByRole("article", { name: "First Season Opener, Episode 1" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "First Season Opener, Episode 1" })).toBeVisible();
   await page.getByRole("button", { name: "Season 2" }).click();
-  await expect(page.getByRole("article", { name: "Second Season Opener, Episode 1" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Second Season Opener, Episode 1" })).toBeVisible();
 
   await page.getByRole("link", { name: "Back to libraries" }).click();
   await page.getByRole("link", { name: "Mixed Library" }).click();
   await page.getByRole("link", { name: "Great Saga, 2016" }).click();
-  await expect(page.getByRole("article", { name: "Boxed Movie, 2016" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Boxed Movie, 2016" })).toBeVisible();
 });

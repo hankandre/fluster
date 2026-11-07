@@ -65,13 +65,13 @@ test("signing in shows Continue Watching, Next Up, and Latest rows with cards", 
   await expect(page.getByRole("heading", { name: "Home" })).toBeVisible({ timeout: 8_000 });
 
   await expect(page.getByRole("heading", { name: "Continue Watching" })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Half Watched, 2016, 50% watched" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Half Watched, 2016, 50% watched" })).toBeVisible();
 
   await expect(page.getByRole("heading", { name: "Next Up" })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Great Show, S1E2 · Pilot" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Great Show, S1E2 · Pilot" })).toBeVisible();
 
   await expect(page.getByRole("heading", { name: "Latest in Movies" })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Brand New, 2016" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Brand New, 2016" })).toBeVisible();
   await expect(page.getByRole("heading", { name: /Latest in Music/ })).toHaveCount(0);
 
   const firstImage = page.getByTestId("card-image").first();

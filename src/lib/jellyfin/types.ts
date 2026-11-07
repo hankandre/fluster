@@ -32,9 +32,13 @@ export interface BaseItemDto {
   ImageTags?: Record<string, string | null> | null;
   BackdropImageTags?: string[] | null;
   ImageBlurHashes?: Record<string, Record<string, string | null> | undefined> | null;
+  Genres?: string[] | null;
+  People?: { Name?: string | null; Role?: string | null; Type?: string }[] | null;
+  MediaSources?: MediaSourceDto[] | null;
   UserData?: {
     PlaybackPositionTicks?: number;
     Played?: boolean;
+    IsFavorite?: boolean;
   };
 }
 
@@ -62,6 +66,18 @@ export interface MediaStreamDto {
   Language?: string;
   IsExternal?: boolean;
   DeliveryUrl?: string | null;
+  // Display-only fields for the detail view.
+  Profile?: string | null;
+  Width?: number | null;
+  Height?: number | null;
+  BitDepth?: number | null;
+  Channels?: number | null;
+  ChannelLayout?: string | null;
+  IsDefault?: boolean;
+  IsForced?: boolean;
+  VideoRange?: string;
+  VideoRangeType?: string;
+  ColorTransfer?: string | null;
 }
 
 export interface MediaSourceDto {
@@ -75,6 +91,7 @@ export interface MediaSourceDto {
   TranscodingUrl?: string | null;
   RequiresOpening?: boolean;
   Container?: string;
+  Size?: number | null;
   MediaStreams?: MediaStreamDto[];
 }
 
@@ -99,4 +116,5 @@ export interface HttpResponse<T> {
 export interface HttpTransport {
   get<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>>;
   post<T>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<HttpResponse<T>>;
+  delete<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>>;
 }

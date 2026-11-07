@@ -3,7 +3,6 @@ import type { SearchCard, SearchKind } from "../../domain/catalog";
 import type { SessionGateway } from "../../app/session";
 import { Card, RowError } from "../home/media-row";
 import { scopeFor } from "../query-scope";
-import { seriesRoute } from "./search-route";
 
 export const RESULT_PAGE_SIZE = 40;
 
@@ -43,8 +42,7 @@ export function SearchResults({ gateway, term }: { gateway: SessionGateway; term
             <ul className="card-grid">
               {groupCards.map((card) => (
                 <li key={card.id}>
-                  {/* Movies and episodes stay non-interactive until the detail view exists (P3-08). */}
-                  <Card card={card} gateway={gateway} href={card.kind === "Series" ? seriesRoute(card.id) : undefined} />
+                  <Card card={card} gateway={gateway} />
                 </li>
               ))}
             </ul>

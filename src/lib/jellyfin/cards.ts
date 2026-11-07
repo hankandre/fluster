@@ -52,6 +52,18 @@ function episodeLabel(item: BaseItemDto): string {
   return `${numbers}${item.Name ?? ""}`;
 }
 
+function itemKind(type: string | undefined): MediaCard["kind"] {
+  switch (type) {
+    case "Movie":
+    case "Series":
+    case "Episode":
+    case "BoxSet":
+      return type;
+    default:
+      return "Other";
+  }
+}
+
 export function toMediaCard(item: BaseItemDto): MediaCard | undefined {
   if (!item.Id || !item.Name) return undefined;
   const isEpisode = item.Type === "Episode";
@@ -59,6 +71,7 @@ export function toMediaCard(item: BaseItemDto): MediaCard | undefined {
   const subtitle = isEpisode ? episodeLabel(item) : item.ProductionYear?.toString();
   return {
     id: item.Id,
+    kind: itemKind(item.Type),
     title: isEpisode ? item.SeriesName ?? item.Name : item.Name,
     ...(subtitle ? { subtitle } : {}),
     ...(found ? { image: found.image } : {}),

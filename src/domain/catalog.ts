@@ -25,8 +25,12 @@ export interface ImageRef {
   blurHash?: string;
 }
 
+export type ItemKind = "Movie" | "Series" | "Episode" | "BoxSet" | "Other";
+
 export interface MediaCard {
   id: string;
+  // Decides where the card links. Absent when the kind is not known.
+  kind?: ItemKind;
   title: string;
   subtitle?: string;
   image?: ImageRef;
@@ -105,4 +109,87 @@ export interface SearchCard extends MediaCard {
 export interface SearchPage {
   cards: SearchCard[];
   hasMore: boolean;
+}
+
+// Item detail types. Versions are display data; playback negotiation decides
+// whether a version can play.
+
+export type DynamicRange =
+  | "SDR"
+  | "HDR"
+  | "HDR10"
+  | "HDR10+"
+  | "HLG"
+  | "Dolby Vision"
+  | "Dolby Vision / HDR10"
+  | "Dolby Vision / HDR10+"
+  | "Dolby Vision / HLG"
+  | "Dolby Vision / SDR"
+  | "Unknown";
+
+export interface VideoInfo {
+  codec?: string;
+  profile?: string;
+  width?: number;
+  height?: number;
+  bitDepth?: number;
+  hdr: DynamicRange;
+}
+
+export interface AudioInfo {
+  language?: string;
+  codec?: string;
+  channels?: number;
+  channelLayout?: string;
+  title?: string;
+  isDefault: boolean;
+}
+
+export interface SubtitleInfo {
+  language?: string;
+  codec?: string;
+  title?: string;
+  isExternal: boolean;
+  isDefault: boolean;
+  isForced: boolean;
+}
+
+// One selectable file of an item. `id` is the MediaSourceId.
+export interface ItemVersion {
+  id: string;
+  name: string;
+  container?: string;
+  sizeBytes?: number;
+  video?: VideoInfo;
+  audio: AudioInfo[];
+  subtitles: SubtitleInfo[];
+}
+
+export interface CastMember {
+  name: string;
+  role?: string;
+}
+
+export interface ItemUserData {
+  played: boolean;
+  favorite: boolean;
+  resumePositionTicks: number;
+}
+
+export interface ItemDetail {
+  id: string;
+  type: string;
+  title: string;
+  // The show an episode belongs to, with its season and episode label.
+  seriesName?: string;
+  episodeLabel?: string;
+  year?: number;
+  runTimeTicks?: number;
+  overview?: string;
+  genres: string[];
+  cast: CastMember[];
+  userData: ItemUserData;
+  versions: ItemVersion[];
+  poster?: ImageRef;
+  backdrop?: ImageRef;
 }

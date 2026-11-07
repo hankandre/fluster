@@ -7,37 +7,24 @@ import type { LanHttpConfirmation, LanHttpConfirmationStore } from "../../lib/la
 import type { HttpTransport } from "../../lib/jellyfin/types";
 import { SignInView } from "./index";
 import { QUICK_CONNECT_POLL_MS } from "./sign-in-view";
+import { fakeSessionGateway } from "../../test/fake-session-gateway";
 
 function fakeGateway(overrides: Partial<SessionGateway> = {}): SessionGateway {
-  return {
-    serverUrl: "https://media.test",
-    origin: "https://media.test",
+  return fakeSessionGateway({
     connect: vi.fn().mockResolvedValue({
       name: "Testfin",
       version: "10.11.7",
       hostClass: "public",
       needsUnencryptedConfirmation: false,
     }),
-    confirmUnencryptedConnection: vi.fn(),
     login: vi.fn().mockResolvedValue({ userId: "u1", username: "Louise" }),
     quickConnectEnabled: vi.fn().mockResolvedValue(true),
     initiateQuickConnect: vi.fn().mockResolvedValue({ secret: "s3cret", code: "482913" }),
     pollQuickConnect: vi.fn().mockResolvedValue({ authenticated: false }),
     authenticateWithQuickConnect: vi.fn().mockResolvedValue({ userId: "u1", username: "Louise" }),
-    logout: vi.fn().mockResolvedValue(undefined),
-    userViews: vi.fn(),
-    resumeItems: vi.fn(),
-    nextUp: vi.fn(),
-    latestInLibrary: vi.fn(),
-    libraryItems: vi.fn(),
-    searchHints: vi.fn(),
-    searchItems: vi.fn(),
-    seasons: vi.fn(),
-    episodes: vi.fn(),
     imageUrl: vi.fn(),
-    authorizationHeader: vi.fn().mockReturnValue('MediaBrowser Token="test-token"'),
     ...overrides,
-  };
+  });
 }
 
 function renderView(gateway: SessionGateway) {
@@ -338,6 +325,10 @@ describe("SignInView with the real gateway", () => {
       async post<T>(url: string) {
         requests.push(`POST ${url}`);
         return { data: responses[`POST ${url}`] as T };
+      },
+      async delete<T>(url: string) {
+        requests.push(`DELETE ${url}`);
+        return { data: responses[`DELETE ${url}`] as T };
       },
     };
     return { transport, requests };

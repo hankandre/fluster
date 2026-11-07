@@ -71,9 +71,9 @@ test("search with type-ahead, submit the term, and open a series result", async 
 
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { name: "Series" })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Great Movie, 2019" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Great Movie, 2019" })).toBeVisible();
   expect(requests.some((url) => url.pathname === "/Items" && url.searchParams.get("searchTerm") === "great")).toBe(true);
 
   await page.getByRole("link", { name: "Great Show, 2016" }).click();
-  await expect(page.getByRole("article", { name: "First Season Opener, Episode 1" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "First Season Opener, Episode 1" })).toBeVisible();
 });

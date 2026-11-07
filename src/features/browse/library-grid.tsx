@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import type {
-  BrowseCard,
   BrowseFilter,
   BrowseItemType,
   BrowseSortBy,
@@ -25,18 +24,6 @@ const FILTER_OPTIONS: { value: BrowseFilter; label: string }[] = [
   { value: "IsFavorite", label: "Favorites" },
   { value: "IsResumable", label: "In progress" },
 ];
-
-function cardHref(card: BrowseCard): string | undefined {
-  switch (card.kind) {
-    case "Series":
-      return `#/next/series/${encodeURIComponent(card.id)}`;
-    case "BoxSet":
-      return `#/next/collection/${encodeURIComponent(card.id)}`;
-    default:
-      // Movies stay non-interactive until the detail view exists (P3-08).
-      return undefined;
-  }
-}
 
 interface LibraryGridProps {
   gateway: SessionGateway;
@@ -115,7 +102,7 @@ export function LibraryGrid({ gateway, parentId, itemTypes, label }: LibraryGrid
         <ul className="card-grid">
           {cards.map((card) => (
             <li key={card.id}>
-              <Card card={card} gateway={gateway} href={cardHref(card)} />
+              <Card card={card} gateway={gateway} />
             </li>
           ))}
         </ul>

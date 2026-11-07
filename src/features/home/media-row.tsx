@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { MediaCard } from "../../domain/catalog";
 import type { SessionGateway } from "../../app/session";
+import { cardRoute } from "../routes";
 import { CardImage, CARD_IMAGE_WIDTH } from "./card-image";
 
 const SKELETON_COUNT = 6;
@@ -57,9 +58,10 @@ export function SkeletonStrip() {
   );
 }
 
-// Cards are not interactive until the detail view exists (P3-08). A card with
-// an href is a real link, so keyboard and screen-reader users can follow it.
-export function Card({ card, gateway, href }: { card: MediaCard; gateway: SessionGateway; href?: string }) {
+// A card of a known kind is a real link, so keyboard and screen-reader users
+// can follow it. Other cards are plain articles.
+export function Card({ card, gateway }: { card: MediaCard; gateway: SessionGateway }) {
+  const href = cardRoute(card);
   const { image } = card;
   const src = image ? gateway.imageUrl(image.itemId, image.type, image.tag, CARD_IMAGE_WIDTH) : undefined;
   const parts = [card.title, card.subtitle];

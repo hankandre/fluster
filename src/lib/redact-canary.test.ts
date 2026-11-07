@@ -115,6 +115,10 @@ class FailingTransport implements HttpTransport {
     }
     return this.fail();
   }
+
+  async delete<T>(_url: string, _config?: HttpRequestConfig): Promise<{ data: T }> {
+    return this.fail();
+  }
 }
 
 async function messageOf(operation: () => Promise<unknown>): Promise<string> {
