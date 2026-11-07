@@ -3,6 +3,7 @@
   "updated": "2026-11-07",
   "rules": [
     "Pick the first task whose status is todo and whose depends_on tasks all pass.",
+    "Skip tasks with human set to true; set them to blocked and state in evidence what the person must do.",
     "Set status to in_progress and owner to your agent name before starting.",
     "Change only status, owner, passes, and evidence fields.",
     "Set passes to true only after every acceptance item is verified.",
@@ -11,7 +12,8 @@
     "Set status to blocked and explain in evidence when a dependency or human action is missing.",
     "Use the model and skill named on the task.",
     "Tasks with human set to true need a person at this computer.",
-    "Build new UI only under src/features/; never extend the proof-of-concept screens in src/App.tsx."
+    "Build new UI only under src/features/; never extend the proof-of-concept screens in src/App.tsx.",
+    "Mark the task done in tasks/prd.json inside the same pull request that completes it."
   ],
   "status_values": [
     "todo",
@@ -66,10 +68,10 @@
             "mpv --hwdec=nvdec plays a local H.264 file with hwdec-current=nvdec"
           ],
           "verify": "nvidia-smi --query-gpu=name,driver_version --format=csv,noheader",
-          "status": "todo",
+          "status": "blocked",
           "owner": null,
           "passes": false,
-          "evidence": ""
+          "evidence": "Needs a person: reboot this computer to load the matching NVIDIA kernel module, then run the verify command."
         },
         {
           "id": "P0-02",
@@ -106,10 +108,10 @@
             "Samples are gitignored or fetched by a script; no media is committed"
           ],
           "verify": "ls tests/samples && git check-ignore tests/samples/*.mkv",
-          "status": "todo",
+          "status": "blocked",
           "owner": null,
           "passes": false,
-          "evidence": ""
+          "evidence": "Needs a person: choose licensed sample files (or approve generating synthetic samples with ffmpeg, which cannot produce PGS) and place them per tests/samples/README.md."
         },
         {
           "id": "P0-04",
@@ -262,10 +264,10 @@
             "docs/security.md and ARCHITECTURE.md reflect the decision"
           ],
           "verify": "ls docs/decisions/",
-          "status": "todo",
+          "status": "blocked",
           "owner": null,
           "passes": false,
-          "evidence": ""
+          "evidence": "Needs a person: decide whether plain HTTP is allowed for private-LAN servers such as Hankflix; an agent can draft the decision record for approval."
         }
       ]
     },
