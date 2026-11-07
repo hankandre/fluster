@@ -26,7 +26,7 @@ X11, Windows, ARM64 Linux, Flatpak, full catalog browsing, search, downloads, pe
 
 Requirements:
 
-- Node 22+ and pnpm 11
+- Node 26 LTS (pinned in `.node-version`) and pnpm 11
 - Rust 1.95.0 (pinned by `rust-toolchain.toml`)
 - Tauri 2 platform prerequisites
 - Linux: a Wayland session and libmpv 0.41+ development/runtime files
