@@ -396,4 +396,80 @@ describe("JellyfinGateway device identity and logout", () => {
     await gateway.reportStopped(plan, snapshot, undefined, true);
     expect(transport.requests.at(-1)!.data).toMatchObject({ Failed: true });
   });
+
+  describe("Quick Connect", () => {
+    function quickConnectGateway() {
+      const transport = new FakeTransport();
+      transport.responses.set("GET /System/Info/Public", { Version: "10.11.7", Id: "server-1" });
+      const gateway = new JellyfinGateway("https://media.test", transport, "install-1");
+      return { gateway, transport };
+    }
+
+    it("reads whether Quick Connect is enabled", async () => {
+      const { gateway, transport } = quickConnectGateway();
+      transport.responses.set("GET /QuickConnect/Enabled", true);
+      await expect(gateway.quickConnectEnabled()).resolves.toBe(true);
+      transport.responses.set("GET /QuickConnect/Enabled", false);
+      await expect(gateway.quickConnectEnabled()).resolves.toBe(false);
+      expect(transport.requests[0]).toMatchObject({ method: "GET", url: "/QuickConnect/Enabled" });
+    });
+
+    it("initiates with POST and the Fluster device header", async () => {
+      const { gateway, transport } = quickConnectGateway();
+      await gateway.connect();
+      transport.responses.set("POST /QuickConnect/Initiate", { Secret: "s3cret", Code: "123456" });
+      await expect(gateway.initiateQuickConnect()).resolves.toEqual({ secret: "s3cret", code: "123456" });
+      const request = transport.requests.at(-1)!;
+      expect(request.method).toBe("POST");
+      expect(request.url).toBe("/QuickConnect/Initiate");
+      expect(request.headers?.Authorization).toMatch(/^MediaBrowser /);
+      expect(request.headers?.Authorization).toContain('DeviceId="');
+      expect(request.headers?.Authorization).not.toMatch(/Token="[^"]/);
+      expect(request.url).not.toContain("api_key");
+    });
+
+    it("rejects an initiate response without a code", async () => {
+      const { gateway, transport } = quickConnectGateway();
+      transport.responses.set("POST /QuickConnect/Initiate", {});
+      await expect(gateway.initiateQuickConnect()).rejects.toThrow("Quick Connect code");
+    });
+
+    it("polls with the secret as a query parameter only", async () => {
+      const { gateway, transport } = quickConnectGateway();
+      transport.responses.set("GET /QuickConnect/Connect", { Authenticated: false, Secret: "s3cret" });
+      await expect(gateway.pollQuickConnect("s3cret")).resolves.toEqual({ authenticated: false });
+      transport.responses.set("GET /QuickConnect/Connect", { Authenticated: true });
+      await expect(gateway.pollQuickConnect("s3cret")).resolves.toEqual({ authenticated: true });
+      const request = transport.requests.at(-1)!;
+      expect(request).toMatchObject({ method: "GET", url: "/QuickConnect/Connect", params: { secret: "s3cret" } });
+      expect(request.url).not.toContain("api_key");
+      expect(request.headers?.Authorization).not.toContain("s3cret");
+    });
+
+    it("uses one device id for initiate and authenticate, then starts a session", async () => {
+      const { gateway, transport } = quickConnectGateway();
+      await gateway.connect();
+      transport.responses.set("POST /QuickConnect/Initiate", { Secret: "s3cret", Code: "123456" });
+      transport.responses.set("POST /Users/AuthenticateWithQuickConnect", {
+        AccessToken: "top-secret",
+        User: { Id: "user-1", Name: "Louise" },
+      });
+      await gateway.initiateQuickConnect();
+      await expect(gateway.authenticateWithQuickConnect("s3cret")).resolves.toEqual({ userId: "user-1", username: "Louise" });
+      const [initiate, authenticate] = transport.requests.slice(-2);
+      expect(authenticate).toMatchObject({ method: "POST", url: "/Users/AuthenticateWithQuickConnect", data: { Secret: "s3cret" } });
+      expect(authenticate.params).toBeUndefined();
+      const deviceId = (header?: string) => header?.match(/DeviceId="([^"]+)"/)?.[1];
+      expect(deviceId(authenticate.headers?.Authorization)).toBe(deviceId(initiate.headers?.Authorization));
+
+      transport.responses.set("GET /Items", { Items: [] });
+      await expect(gateway.latest()).resolves.toEqual([]);
+    });
+
+    it("does not leak the secret through errors", async () => {
+      const { gateway, transport } = quickConnectGateway();
+      vi.spyOn(transport, "get").mockRejectedValueOnce(new Error("failed GET /QuickConnect/Connect?secret=qc-canary"));
+      await expect(gateway.pollQuickConnect("qc-canary")).rejects.toThrow(/^((?!qc-canary).)*$/);
+    });
+  });
 });

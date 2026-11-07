@@ -184,3 +184,4 @@ input:focus, select:focus { border-color: var(--acid); box-shadow: 0 0 0 1px var
   .resume-actions { align-items: stretch; flex-direction: column-reverse; gap: 6px; }
   .resume-actions .text-button { text-align: left; }
 }
+.quick-connect-code { font: 700 clamp(40px, 8vw, 72px)/1 var(--font-display); letter-spacing: .24em; margin: 8px 0 24px; color: var(--ink); user-select: all; }

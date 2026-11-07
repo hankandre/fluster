@@ -5,12 +5,10 @@ import { DetailView } from "./detail";
 import { FeatureIndex } from "./index";
 import { HomeView } from "./home";
 import { PlayerFeatureView } from "./player";
-import { SignInView } from "./sign-in";
 
 afterEach(cleanup);
 
 it.each([
-  ["Sign in", SignInView],
   ["Home", HomeView],
   ["Browse", BrowseView],
   ["Detail", DetailView],

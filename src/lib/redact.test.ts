@@ -14,4 +14,11 @@ describe("credential redaction", () => {
     expect(result).not.toContain("Token=secret");
     expect(result).toContain("[redacted]");
   });
+
+  it("redacts Quick Connect secrets in URLs and bare query strings", () => {
+    const canary = "qc-secret-canary";
+    expect(redactUrl(`https://media.test/QuickConnect/Connect?secret=${canary}`)).not.toContain(canary);
+    expect(redactText(`GET /QuickConnect/Connect?secret=${canary} failed`)).not.toContain(canary);
+    expect(redactText(`{"Secret":"${canary}"}`)).not.toContain(canary);
+  });
 });
