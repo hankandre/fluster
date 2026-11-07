@@ -648,10 +648,26 @@ describe("JellyfinGateway home calls", () => {
     expect(transport.requests.at(-1)?.params?.includeItemTypes).toBe("BoxSet");
   });
 
+  it("pages from the raw list so an invalid item cannot hide the next page", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("GET /Items", {
+      Items: [{ Id: "a", Name: "A", Type: "Movie" }, { Name: "No id", Type: "Movie" }, { Id: "c", Name: "C", Type: "Movie" }],
+    });
+    const page = await gateway.libraryItems("lib-1", {
+      itemTypes: ["Movie"], startIndex: 0, limit: 2, sortBy: "SortName", sortOrder: "Ascending", filters: [],
+    });
+    // Two raw items fill the page; the third proves there is more.
+    expect(page.cards.map((card) => card.id)).toEqual(["a"]);
+    expect(page.hasMore).toBe(true);
+  });
+
   it("lists seasons with minimal fields", async () => {
     const { gateway, transport } = await authenticatedGateway();
-    transport.responses.set("GET /Shows/series-1/Seasons", { Items: [{ Id: "se1", Name: "Season 1" }, { Name: "No id" }] });
-    await expect(gateway.seasons("series-1")).resolves.toEqual([{ id: "se1", name: "Season 1" }]);
+    transport.responses.set("GET /Shows/series-1/Seasons", { Items: [{ Id: "sp", Name: "Specials", IndexNumber: 0 }, { Id: "se1", Name: "Season 1", IndexNumber: 1 }, { Name: "No id" }] });
+    await expect(gateway.seasons("series-1")).resolves.toEqual([
+      { id: "sp", name: "Specials", indexNumber: 0 },
+      { id: "se1", name: "Season 1", indexNumber: 1 },
+    ]);
     const request = transport.requests.at(-1);
     expect(request?.params).toEqual({ userId: "user-1", fields: "PrimaryImageAspectRatio" });
   });

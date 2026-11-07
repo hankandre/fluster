@@ -411,8 +411,11 @@ export class JellyfinGateway {
       signal,
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
-    const cards: BrowseCard[] = toBrowseCards(data.Items);
-    return { cards: cards.slice(0, query.limit), hasMore: cards.length > query.limit };
+    // Page from the raw list, so items dropped while converting cannot hide
+    // later pages or repeat across a page boundary.
+    const rawItems = data.Items ?? [];
+    const cards: BrowseCard[] = toBrowseCards(rawItems.slice(0, query.limit));
+    return { cards, hasMore: rawItems.length > query.limit };
   }
 
   async seasons(seriesId: string, signal?: AbortSignal): Promise<Season[]> {

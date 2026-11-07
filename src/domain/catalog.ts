@@ -72,6 +72,8 @@ export interface BrowsePage {
 export interface Season {
   id: string;
   name: string;
+  // 0 is Specials.
+  indexNumber?: number;
 }
 
 export interface EpisodeCard extends MediaCard {

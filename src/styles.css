@@ -216,3 +216,4 @@ input:focus, select:focus { border-color: var(--acid); box-shadow: 0 0 0 1px var
 .episode-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 20px; }
 .episode-list li { display: flex; gap: 16px; align-items: flex-start; }
 .episode-overview { margin: 0; max-width: 60ch; color: var(--muted); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

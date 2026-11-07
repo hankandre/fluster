@@ -99,7 +99,7 @@ export function toBrowseCards(items: BaseItemDto[] | undefined): BrowseCard[] {
 }
 
 export function toSeasons(items: BaseItemDto[] | undefined): Season[] {
-  return (items ?? []).flatMap((item) => (item.Id && item.Name ? [{ id: item.Id, name: item.Name, collectionType: item.CollectionType }] : []));
+  return (items ?? []).flatMap((item) => (item.Id && item.Name ? [{ id: item.Id, name: item.Name, ...(item.IndexNumber != null ? { indexNumber: item.IndexNumber } : {}) }] : []));
 }
 
 export function toEpisodeCards(items: BaseItemDto[] | undefined): EpisodeCard[] {
