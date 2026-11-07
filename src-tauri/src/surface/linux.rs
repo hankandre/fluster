@@ -99,6 +99,9 @@ pub fn initialize(app: &AppHandle) -> Result<String, String> {
                         let width = area.allocated_width().max(1) * scale;
                         let height = area.allocated_height().max(1) * scale;
                         let mut framebuffer = 0;
+                        // SAFETY: GTK invokes the render signal with this GLArea's context
+                        // current and the GL functions loaded, and `framebuffer` is a valid
+                        // out-pointer for the single integer this query writes.
                         unsafe { gl::GetIntegerv(gl::FRAMEBUFFER_BINDING, &mut framebuffer) };
                         match state.context.render::<()>(framebuffer, width, height, true) {
                             Ok(()) => {
@@ -192,6 +195,8 @@ pub fn attach(
                 .lock()
                 .map_err(|_| "The libmpv mutex is poisoned.".to_string())?;
             let mut context = RenderContext::new(
+                // SAFETY: `ctx` is a non-null handle owned by `Mpv`, and the held mutex
+                // guard gives this call exclusive access to it for the borrow.
                 unsafe { mpv.ctx.as_mut() },
                 vec![
                     RenderParam::ApiType(RenderParamApiType::OpenGl),
@@ -340,12 +345,17 @@ fn gl_proc_address_with_context(_: &(), name: &str) -> *mut c_void {
 fn egl_proc_address(name: *const c_char) -> *mut c_void {
     type GetProcAddress = unsafe extern "C" fn(*const c_char) -> *mut c_void;
     static EGL: OnceLock<Result<libloading::Library, String>> = OnceLock::new();
-    let library = match EGL.get_or_init(|| unsafe {
-        libloading::Library::new("libEGL.so.1").map_err(|error| error.to_string())
+    let library = match EGL.get_or_init(|| {
+        // SAFETY: libEGL initializers are trusted system code; the library is
+        // stored in a static and is never unloaded.
+        unsafe { libloading::Library::new("libEGL.so.1") }.map_err(|error| error.to_string())
     }) {
         Ok(library) => library,
         Err(_) => return std::ptr::null_mut(),
     };
+    // SAFETY: `eglGetProcAddress` has the declared C signature, `name` is a
+    // NUL-terminated string from the caller, and `library` lives in a static so
+    // the returned symbol never outlives it.
     unsafe {
         match library.get::<GetProcAddress>(b"eglGetProcAddress\0") {
             Ok(get_proc_address) => get_proc_address(name),

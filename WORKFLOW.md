@@ -136,7 +136,7 @@ Rules currently stated in prose that should become checks:
 - **No generic mpv bridge.** A Rust test that enumerates registered Tauri commands and fails if the list changes without updating an allowlist in the same commit.
 - **Redaction canaries.** Inject a known canary token. Assert it appears in no log, error string, or diagnostic export.
 - **Dependency direction.** Done (P0-07): `pnpm lint:boundaries` runs `dependency-cruiser` (`.dependency-cruiser.cjs`) over the layer rules in `DOMAINS.md`, with remediation text in each error; `pnpm check` runs it.
-- **Rust pitfalls.** Enable clippy's `debug_assert_with_mut_call`, `unwrap_used` in non-test code, and `undocumented_unsafe_blocks`. Run release-mode tests in CI, not only debug. (Bun's port regressed because a side effect inside `debug_assert!` vanished in release builds.)
+- **Rust pitfalls (enforced).** Clippy denies `debug_assert_with_mut_call`, `unwrap_used` in non-test code, and `undocumented_unsafe_blocks`. Run release-mode tests in CI, not only debug. (Bun's port regressed because a side effect inside `debug_assert!` vanished in release builds.)
 - **File size.** Flag source files over ~400 lines; `App.tsx` and `mpv.rs` are the current candidates to split along domain lines.
 
 ## Model routing

@@ -440,6 +440,8 @@ fn query_libmpv_version() -> Result<String, MpvError> {
 }
 
 fn ensure_numeric_locale() -> Result<(), MpvError> {
+    // SAFETY: `c"C"` is a valid NUL-terminated string that outlives the call;
+    // setlocale copies it. The returned pointer is only checked for null.
     let locale = unsafe { libc::setlocale(libc::LC_NUMERIC, c"C".as_ptr()) };
     if locale.is_null() {
         return Err(MpvError::Locale);

@@ -49,6 +49,8 @@ pub fn initialize(app: &AppHandle) -> Result<String, String> {
     let result_for_callback = result.clone();
     window
         .with_webview(move |platform_webview| {
+            // SAFETY: Tauri runs this callback on the main thread with the live WKWebView
+            // pointer, which is what `build_view` requires.
             let setup = unsafe { build_view(platform_webview.inner() as id) };
             *result_for_callback
                 .lock()
@@ -118,6 +120,8 @@ pub fn attach(
                 .ok_or_else(|| "The macOS video surface is not initialized.".to_string())?;
             let view = ui.view as id;
             let context = ui.context as id;
+            // SAFETY: `run_on_main` runs this on the AppKit thread, and `view` and
+            // `context` were created by `build_view` and are retained by the window.
             unsafe {
                 let _: () = msg_send![view, prepareOpenGL];
                 NSOpenGLContext::setView_(context, view);
@@ -128,6 +132,8 @@ pub fn attach(
                 .lock()
                 .map_err(|_| "The libmpv mutex is poisoned.".to_string())?;
             let mut render_context = RenderContext::new(
+                // SAFETY: `ctx` is a non-null handle owned by `Mpv`, and the held mutex
+                // guard gives this call exclusive access to it for the borrow.
                 unsafe { mpv.ctx.as_mut() },
                 vec![
                     RenderParam::ApiType(RenderParamApiType::OpenGl),
@@ -170,6 +176,8 @@ fn draw(session_id: &str) {
             if state.session_id != session_id {
                 return;
             }
+            // SAFETY: `draw` runs on the AppKit thread, and the stored view and context
+            // pointers come from `build_view` and stay valid for the app's lifetime.
             unsafe {
                 let view = ui.view as id;
                 let context = ui.context as id;
@@ -219,6 +227,8 @@ pub fn set_frame(app: &AppHandle, frame: PlayerSurfaceFrame) -> Result<(), Strin
             let ui = slot
                 .as_ref()
                 .ok_or_else(|| "The macOS video surface is not initialized.".to_string())?;
+            // SAFETY: `run_on_main` runs this on the AppKit thread, and the stored view
+            // pointers come from `build_view` and stay valid for the app's lifetime.
             unsafe {
                 let content = ui.content_view as id;
                 let view = ui.view as id;
@@ -251,6 +261,8 @@ pub fn detach(app: &AppHandle, session_id: &str) {
             RENDER_STATE.with(|state| drop(state.borrow_mut().take()));
             UI.with(|slot| {
                 if let Some(ui) = slot.borrow().as_ref() {
+                    // SAFETY: this runs on the AppKit thread via `run_on_main`, and the stored
+                    // view pointer comes from `build_view` and stays valid.
                     unsafe {
                         let view = ui.view as id;
                         let _: () = msg_send![view, setHidden: true];
@@ -282,6 +294,7 @@ fn gl_proc_address(_: &(), name: &str) -> *mut c_void {
     let handle = *OPENGL.get_or_init(|| {
         let path = CString::new("/System/Library/Frameworks/OpenGL.framework/OpenGL")
             .expect("static OpenGL path contains no null bytes");
+        // SAFETY: `path` is a valid NUL-terminated string that outlives the call.
         unsafe { libc::dlopen(path.as_ptr(), libc::RTLD_LAZY | libc::RTLD_GLOBAL) as usize }
     });
     if handle == 0 {
@@ -290,5 +303,7 @@ fn gl_proc_address(_: &(), name: &str) -> *mut c_void {
     let Ok(name) = CString::new(name) else {
         return std::ptr::null_mut();
     };
+    // SAFETY: `handle` came from a successful dlopen that is never closed, and
+    // `name` is a valid NUL-terminated string that outlives the call.
     unsafe { libc::dlsym(handle as *mut c_void, name.as_ptr() as *const c_char) }
 }
