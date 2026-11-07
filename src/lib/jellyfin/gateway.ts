@@ -151,9 +151,16 @@ export function buildStaticStreamUrl(
   return url.toString();
 }
 
-function hasCredentialQuery(url: URL): boolean {
-  const credentialNames = new Set(["access_token", "api_key", "token", "x-emby-token"]);
-  return [...url.searchParams.keys()].some((name) => credentialNames.has(name.toLowerCase()));
+// Query names Jellyfin accepts as a token, compared in lower case.
+const CREDENTIAL_QUERY_NAMES = new Set(["apikey", "api_key", "access_token", "token", "x-emby-token"]);
+
+// Jellyfin puts the session token into subtitle DeliveryUrl values as ApiKey.
+// Drop every credential parameter so only Fluster decides how to authenticate.
+function stripCredentialQuery(url: URL): void {
+  const names = [...new Set(url.searchParams.keys())];
+  for (const name of names) {
+    if (CREDENTIAL_QUERY_NAMES.has(name.toLowerCase())) url.searchParams.delete(name);
+  }
 }
 
 function buildAuthenticatedResourceUrl(serverUrl: string, path: string | null | undefined, accessToken: string): string | undefined {
@@ -164,9 +171,10 @@ function buildAuthenticatedResourceUrl(serverUrl: string, path: string | null | 
   } catch {
     throw new Error("Jellyfin returned an invalid external subtitle URL.");
   }
+  stripCredentialQuery(url);
   const serverOrigin = new URL(serverUrl).origin;
   const safeProtocol = url.protocol === "http:" || url.protocol === "https:";
-  const hasCredentials = Boolean(url.username || url.password) || hasCredentialQuery(url);
+  const hasCredentials = Boolean(url.username || url.password);
   if (!safeProtocol || url.origin !== serverOrigin || hasCredentials) {
     throw new Error("Jellyfin returned an unsafe external subtitle URL. Subtitle URLs must use the same server origin and must not contain credentials.");
   }

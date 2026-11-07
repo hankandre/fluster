@@ -73,6 +73,7 @@ export interface MediaSourceDto {
   SupportsDirectPlay?: boolean;
   SupportsDirectStream?: boolean;
   TranscodingUrl?: string | null;
+  RequiresOpening?: boolean;
   Container?: string;
   MediaStreams?: MediaStreamDto[];
 }

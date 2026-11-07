@@ -24,6 +24,15 @@ describe("evaluateSource", () => {
     [{ VideoType: "BluRay" }, "disc-source"],
     [{ VideoType: "Dvd" }, "disc-source"],
     [{ VideoType: "Iso" }, "iso-source"],
+    [{ VideoType: "bluray" }, "disc-source"],
+    [{ VideoType: "DVD" }, "disc-source"],
+    [{ VideoType: "ISO" }, "iso-source"],
+    [{ VideoType: "VideoFile", Path: "/media/Movie (2024)/BDMV/STREAM/00000.m2ts" }, "disc-source"],
+    [{ VideoType: "VideoFile", Path: "/media/Movie (2024)/bdmv" }, "disc-source"],
+    [{ VideoType: undefined, Path: "/media/Movie (2024)/VIDEO_TS/VTS_01_1.VOB" }, "disc-source"],
+    [{ VideoType: undefined, Path: "D:\\Movies\\Movie\\VIDEO_TS" }, "disc-source"],
+    [{ VideoType: "VideoFile", Path: "/media/Movie (2024)/Movie.ISO" }, "iso-source"],
+    [{ RequiresOpening: true }, "live-source"],
     [{ Id: undefined }, "missing-source-data"],
     [{ Path: undefined }, "missing-source-data"],
   ] as const)("refuses %o as %s", (change, reason) => {
@@ -48,6 +57,16 @@ describe("evaluateSource", () => {
       reason: "disc-source",
       detail: "BluRay",
     });
+  });
+
+  it("accepts paths that only mention disc names inside a file or folder name", () => {
+    expect(evaluateSource({ ...playable, Path: "/media/BDMV Collection/Movie.mkv" }).kind).toBe("accepted");
+    expect(evaluateSource({ ...playable, Path: "/media/Movie.iso.mkv" }).kind).toBe("accepted");
+    expect(evaluateSource({ ...playable, RequiresOpening: false }).kind).toBe("accepted");
+  });
+
+  it("refuses a live source even when the server reports direct play", () => {
+    expect(evaluateSource({ ...playable, RequiresOpening: true })).toEqual({ kind: "refused", reason: "live-source" });
   });
 });
 

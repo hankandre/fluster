@@ -176,7 +176,7 @@ describe("redaction canary: JellyfinGateway", () => {
             Path: "/x",
             Protocol: "File",
             SupportsDirectPlay: true,
-            MediaStreams: [{ Index: 2, Type: "Subtitle", IsExternal: true, DeliveryUrl: `/sub?api_key=${CANARY}` }],
+            MediaStreams: [{ Index: 2, Type: "Subtitle", IsExternal: true, DeliveryUrl: `https://attacker.test/sub?ApiKey=${CANARY}` }],
           }],
         } as T,
       };
