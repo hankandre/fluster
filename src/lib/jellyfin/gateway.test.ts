@@ -99,7 +99,7 @@ describe("JellyfinGateway direct-play contract", () => {
 
   it("maps Jellyfin resume position and played state", async () => {
     const { gateway, transport } = await authenticatedGateway();
-    transport.responses.set("GET /Users/user-1/Items", {
+    transport.responses.set("GET /Items", {
       Items: [{
         Id: "movie-1",
         Name: "Arrival",
@@ -113,7 +113,11 @@ describe("JellyfinGateway direct-play contract", () => {
       resumePositionTicks: 987_000_000,
       played: false,
     })]);
-    expect(transport.requests.at(-1)?.params?.EnableUserData).toBe(true);
+    const request = transport.requests.at(-1);
+    expect(request?.url).toBe("/Items");
+    expect(request?.params?.userId).toBe("user-1");
+    expect(request?.params?.Fields).toBe("Overview");
+    expect(request?.params?.EnableUserData).toBe(true);
   });
   it("configures an isolated SDK transport with the Jellyfin base URL and device authorization", async () => {
     const get = vi.fn().mockResolvedValue({ data: { ServerName: "Home", Version: "10.11.11" } });

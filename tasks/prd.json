@@ -424,10 +424,10 @@
             "Invalid fields values are removed"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "@jellyfin/sdk pinned to exact 1.0.2; gateway builds and types unchanged against the 1.0 API.\nlatest() now calls GET /Items with userId in params; test asserts path, userId, and Fields.\nFields reduced to Overview (ProductionYear/RunTimeTicks are not ItemFields values; always returned).\npnpm audit, pnpm check, pnpm test:e2e, pnpm lint:boundaries pass."
         },
         {
           "id": "P1-08",
