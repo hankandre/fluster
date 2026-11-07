@@ -1,3 +1,5 @@
+import type { LibraryItem } from "./catalog";
+
 export const TICKS_PER_SECOND = 10_000_000;
 
 export const PLAYBACK_POLICY = Object.freeze({
@@ -6,20 +8,6 @@ export const PLAYBACK_POLICY = Object.freeze({
   preferHardwareDecode: true,
   allowSoftwareDecode: true,
 });
-
-export interface LibraryItem {
-  id: string;
-  name: string;
-  type: "Movie" | "Episode";
-  seriesName?: string;
-  season?: number;
-  episode?: number;
-  productionYear?: number;
-  runTimeTicks?: number;
-  overview?: string;
-  resumePositionTicks: number;
-  played: boolean;
-}
 
 export interface PlaybackStartChoice {
   kind: "resume" | "start-over";

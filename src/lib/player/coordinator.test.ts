@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import type { LibraryItem, PlaybackPlan, PlaybackSnapshot, PlayerEngine, PlayerEvent } from "../../domain/playback";
+import type { LibraryItem } from "../../domain/catalog";
+import type { PlaybackPlan, PlaybackSnapshot, PlayerEngine, PlayerEvent } from "../../domain/playback";
 import { PlaybackCancelledError, PlaybackCoordinator, type PlaybackGateway } from "./coordinator";
 
 const item: LibraryItem = {

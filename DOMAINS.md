@@ -78,7 +78,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 
 **Language.** Library (UserView), Item, Movie, Series, Season, Episode, Collection, Card, Row, Resume position, Played, Favorite, Image tag.
 
-**Code today.** `JellyfinGateway.latest`, the `LibraryItem` type in `src/domain/playback.ts` (to move to a catalog module), and the library grid in `src/poc/PocApp.tsx`.
+**Code today.** `JellyfinGateway.latest`, the `LibraryItem` type in `src/domain/catalog.ts`, and the library grid in `src/poc/PocApp.tsx`.
 
 **Rules.**
 - Catalog code never builds stream URLs or decides playability. It hands an `itemId` (and optionally a `mediaSourceId`) to Playback Negotiation.

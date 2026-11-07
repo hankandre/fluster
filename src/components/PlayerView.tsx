@@ -14,7 +14,8 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
-import type { LibraryItem, PlayerEngine } from "../domain/playback";
+import type { LibraryItem } from "../domain/catalog";
+import type { PlayerEngine } from "../domain/playback";
 import type { PlaybackSessionState } from "../lib/player/session-state";
 import { NativeVideoSurface } from "./NativeVideoSurface";
 

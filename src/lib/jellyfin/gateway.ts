@@ -1,6 +1,7 @@
 import { Jellyfin, type Api } from "@jellyfin/sdk";
 import axios from "axios";
-import type { LibraryItem, PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
+import type { LibraryItem } from "../../domain/catalog";
+import type { PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
 import { secondsToTicks } from "../../domain/playback";
 import { isSupportedServerVersion, parseServerVersion } from "../../domain/server-version";
 import { getInstallId } from "../install-id";

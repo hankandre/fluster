@@ -13,7 +13,8 @@ import {
   Server,
   Settings2,
 } from "lucide-react";
-import type { LibraryItem, PlaybackStartChoice, PlayerCapabilities } from "../domain/playback";
+import type { LibraryItem } from "../domain/catalog";
+import type { PlaybackStartChoice, PlayerCapabilities } from "../domain/playback";
 import { resumeChoice, startOverChoice, ticksToSeconds } from "../domain/playback";
 import { PlayerView } from "../components/PlayerView";
 import { redactText } from "../lib/redact";
