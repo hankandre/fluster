@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { LibraryItem } from "./playback";
+import type { LibraryItem } from "./catalog";
 import { resumeChoice, startOverChoice } from "./playback";
 
 function libraryItem(overrides: Partial<LibraryItem> = {}): LibraryItem {

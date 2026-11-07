@@ -1,6 +1,7 @@
 import axios from "axios";
 import { describe, expect, it, vi } from "vitest";
-import type { LibraryItem, PlaybackSnapshot } from "../../domain/playback";
+import type { LibraryItem } from "../../domain/catalog";
+import type { PlaybackSnapshot } from "../../domain/playback";
 import {
   buildStaticStreamUrl,
   CONTROL_REQUEST_TIMEOUT_MS,

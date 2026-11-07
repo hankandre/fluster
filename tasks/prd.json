@@ -530,10 +530,10 @@
             "src/domain/playback.ts holds only negotiation and engine types"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "LibraryItem moved to src/domain/catalog.ts; playback.ts keeps negotiation (policy, start choice, plan) and engine types, no re-export.\nImports updated in gateway, PlayerView, PocApp (path only), coordinator, tests.\npnpm check and pnpm test:e2e pass."
         },
         {
           "id": "P2-03",

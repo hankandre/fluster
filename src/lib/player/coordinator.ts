@@ -1,5 +1,5 @@
+import type { LibraryItem } from "../../domain/catalog";
 import type {
-  LibraryItem,
   PlaybackEndReason,
   PlaybackPlan,
   PlaybackSnapshot,

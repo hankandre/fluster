@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { LibraryItem, PlaybackPlan, PlaybackSnapshot, PlayerEngine, PlayerEvent } from "../domain/playback";
+import type { LibraryItem } from "../domain/catalog";
+import type { PlaybackPlan, PlaybackSnapshot, PlayerEngine, PlayerEvent } from "../domain/playback";
 import { JellyfinGateway } from "./jellyfin/gateway";
 import type { HttpRequestConfig, HttpTransport } from "./jellyfin/types";
 import { PlaybackCoordinator, type PlaybackGateway } from "./player/coordinator";
