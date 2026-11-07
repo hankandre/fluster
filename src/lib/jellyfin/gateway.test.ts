@@ -140,15 +140,21 @@ describe("JellyfinGateway direct-play contract", () => {
     }
   });
 
-  it("accepts only Jellyfin 10.11 servers", async () => {
+  it.each(["10.11.7", "12.4.0"])("accepts Jellyfin %s", async (version) => {
     const transport = new FakeTransport();
-    transport.responses.set("GET /System/Info/Public", { ServerName: "Home", Version: "10.11.7" });
+    transport.responses.set("GET /System/Info/Public", { ServerName: "Home", Version: version });
     await expect(new JellyfinGateway("https://media.test", transport).connect()).resolves.toEqual({
       name: "Home",
-      version: "10.11.7",
+      version,
     });
-    transport.responses.set("GET /System/Info/Public", { Version: "10.10.7" });
-    await expect(new JellyfinGateway("https://media.test", transport).connect()).rejects.toThrow("supports Jellyfin 10.11.x");
+  });
+
+  it.each(["10.10.7", "", "abc", "10", "10.x.1", "v12.4.0"])("rejects Jellyfin version %j", async (version) => {
+    const transport = new FakeTransport();
+    transport.responses.set("GET /System/Info/Public", { Version: version });
+    await expect(new JellyfinGateway("https://media.test", transport).connect()).rejects.toThrow(
+      `Fluster needs Jellyfin 10.11 or newer; this server reports ${version}.`,
+    );
   });
 
   it("returns the stable user ID and applies control request cancellation", async () => {

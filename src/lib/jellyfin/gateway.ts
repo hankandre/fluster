@@ -2,6 +2,7 @@ import { Jellyfin, type Api } from "@jellyfin/sdk";
 import axios from "axios";
 import type { LibraryItem, PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
 import { secondsToTicks } from "../../domain/playback";
+import { isSupportedServerVersion, parseServerVersion } from "../../domain/server-version";
 import type {
   AuthenticationResult,
   BaseItemDto,
@@ -142,8 +143,9 @@ export class JellyfinGateway {
       throw new Error("The server returned an unexpected public-info response. Check the URL and reverse-proxy routing.");
     }
     const version = data.Version;
-    if (!/^10\.11(?:\.|$)/.test(version)) {
-      throw new Error(`Fluster supports Jellyfin 10.11.x; this server reports ${version}.`);
+    const parsed = parseServerVersion(version);
+    if (!parsed || !isSupportedServerVersion(parsed)) {
+      throw new Error(`Fluster needs Jellyfin 10.11 or newer; this server reports ${version}.`);
     }
     return { name: data.ServerName ?? "Jellyfin", version };
   }
