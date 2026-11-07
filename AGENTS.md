@@ -1,34 +1,125 @@
-# Repository Guidelines
+# Fluster agent rules
 
-## Project Structure & Module Organization
+Fluster is a direct-play-only Jellyfin client: Tauri 2 + React/TypeScript + Rust with embedded libmpv.
 
-Fluster combines a React/Vite frontend in `src/` with a Tauri/Rust native player in `src-tauri/src`. Domain types live in `src/domain`, Jellyfin code in `src/lib/jellyfin`, player coordination in `src/lib/player`, and views in `src/components`. Keep unit tests beside modules as `*.test.ts` or `*.test.tsx`. Browser journeys are in `e2e/`, integration resources in `tests/`, packaging in `release/`, and CI in `.github/workflows/`.
+## Read first
 
-## Build, Test, and Development Commands
+- Read `PRODUCT.md` before changing scope or user-facing behavior.
+- Read `ARCHITECTURE.md` before changing server calls, playback, or invariants.
+- Read `DOMAINS.md` before adding or moving code.
+- Read `WORKFLOW.md` before planning multi-step work.
+- Read the matching skill in `.claude/skills/<name>/SKILL.md` before the task it covers.
 
-- `pnpm install` installs the pinned Node dependencies (Node 22+, pnpm 11).
-- `pnpm dev` runs browser-development mode at the Vite URL.
-- `pnpm tauri dev` runs the desktop shell; Linux requires Wayland and libmpv 0.41+.
-- `pnpm build` type-checks and creates the frontend production bundle.
-- `pnpm test` runs Vitest unit/component tests; `pnpm test:watch` supports iteration.
-- `pnpm test:e2e` runs Playwright smoke and interaction tests.
-- `pnpm check` runs Vitest, the frontend build, and Rust tests.
-- `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings` enforces Rust lint cleanliness.
+## Skills
 
-## Coding Style & Naming Conventions
+- `exec-plan`: work spanning more than one session or domain.
+- `verify`: before asking for review.
+- `change-review`: reviewing any diff.
+- `jellyfin-api`: any change to server calls or playback negotiation.
+- `native-player`: any change under `src-tauri/` or to the player engine.
+- `doc-gardening`: drift checks between docs and code.
 
-Across the repository, prefer simple, human-readable code in TypeScript, React, Rust, tests, CI, and shell scripts. Choose straightforward control flow, explicit names, and focused helpers over clever abstractions, dense expressions, or premature generalization. Use `switch` statements for reducers so event branches remain easy to scan.
+## Subagents
 
-Use TypeScript with two-space indentation and semicolons, camelCase identifiers, PascalCase React components, and kebab-case file names for multiword library modules. Keep player commands typed and narrow. Format Rust with `cargo fmt`; use snake_case functions/modules and PascalCase types. Never weaken the fixed direct-play policy or introduce a generic mpv command bridge.
+- `scout` (Haiku): read-only search.
+- `ci-triage` (Haiku): failing check output.
+- `implementer` (Sonnet): one specified TypeScript milestone.
+- `reviewer` (Sonnet): routine diff review.
+- `native-engineer` (Opus): `src-tauri/` and player engine work.
+- `guardian` (Opus): high-risk diff review.
+- `planner` (Opus): plans and decision records.
 
-## Testing Guidelines
+## Commands
 
-Add focused tests with behavior changes. Cover reducers and gateways with Vitest, rendered interactions with Testing Library, native behavior with Rust tests, and user flows with Playwright. Use fixtures instead of credentials or copyrighted samples. Run `pnpm check`, Playwright, and Clippy before opening a PR.
+- Install: `pnpm install`
+- Browser dev: `pnpm dev`
+- Desktop dev: `pnpm tauri dev`
+- Unit tests: `pnpm test`
+- Build and type-check: `pnpm build`
+- All checks: `pnpm check`
+- End-to-end: `pnpm test:e2e`
+- Rust lint: `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings`
+- Format Rust: `cargo fmt --manifest-path src-tauri/Cargo.toml`
 
-## Commit & Pull Request Guidelines
+## Hard rules
 
-History follows Conventional Commit-style subjects, such as `feat: establish embedded direct-play vertical slice`. Keep commits scoped and imperative. PRs should explain user impact, testing performed, and direct-play/security implications; link relevant issues and include screenshots for visible UI changes. Call out untested Wayland, GPU, Jellyfin, or AppImage release gates explicitly.
+- Never enable server transcoding, remuxing, or direct stream.
+- Keep every direct-play flag false in both the request body and the query string.
+- Send the Fluster DeviceProfile with every PlaybackInfo request.
+- Never follow a `TranscodingUrl`.
+- Reject media sources that fail the acceptance rules in `ARCHITECTURE.md` §3.
+- Never add a generic mpv command, property, or option bridge.
+- Treat every new Tauri command as an architecture change.
+- Never log, persist, or display tokens, passwords, authenticated URLs, or play-session IDs.
+- Never add code that puts a token in a URL.
+- Never store tokens in WebView storage, Query caches, or React state.
+- Never use the browser player as a fallback for the native player.
+- Talk to Jellyfin only through `src/lib/jellyfin/gateway.ts`.
+- Build media URLs only in Playback Negotiation.
+- Keep `src/domain/` free of React, SDK, Tauri, and HTTP imports.
+- Never introduce Flutter.
 
-## Security & Configuration
+## Code style
 
-Tokens are session-only. Never log authenticated URLs, access tokens, or play-session IDs. Preserve URL redaction and keep transcoding/remuxing disabled in both request bodies and query parameters.
+- Prefer simple, explicit code over clever abstractions.
+- Use `switch` statements in reducers.
+- Use two-space indentation and semicolons in TypeScript.
+- Use camelCase identifiers, PascalCase components, kebab-case multiword module files.
+- Use snake_case functions and PascalCase types in Rust.
+- Keep player commands typed and narrow.
+- Document every `unsafe` block with a `SAFETY:` comment.
+- Never put side effects inside `debug_assert!`.
+- Split files that grow past about 400 lines along domain lines.
+
+## Tests
+
+- Add a focused test with every behavior change.
+- Place unit tests beside modules as `*.test.ts` or `*.test.tsx`.
+- Use Vitest for reducers and gateways, Testing Library for views, Rust tests for native code, Playwright for flows.
+- Never skip, weaken, or delete a test to pass a check.
+- Never stub a function to make a build pass.
+- Use fixtures; never commit credentials or copyrighted media.
+
+## Navigating code
+
+- Start unfamiliar work with codebase-memory `get_architecture`.
+- Find code by intent with semble `search`.
+- Outline files with serena `get_symbols_overview` before reading them.
+- Read single symbols with serena `find_symbol`; avoid reading whole large files.
+- Check callers with serena `find_referencing_symbols` before changing a signature.
+- Use Grep only for literal strings.
+
+## Working
+
+- Fix a red check before starting the next milestone.
+- Commit one milestone at a time with a Conventional Commit subject.
+- Never review your own change.
+- Never write long comments justifying a workaround; fix the cause or log it in the plan.
+- Record decisions in the active plan's decision log.
+- Propose a test, lint, or rule after the second correction for the same mistake.
+- Never claim a check passed without showing its output.
+
+## Parallel work
+
+- Work in your own git worktree.
+- Commit only files you own.
+- Never run `git stash`, `git reset --hard`, or force-push.
+- Never edit another agent's claimed milestone.
+- Keep native surface and mpv work serial.
+
+## Models
+
+- Use Haiku for search, log triage, summaries, and commit messages.
+- Use Sonnet for specified TypeScript milestones, tests, and routine review.
+- Use Opus for plans, pilots, Rust native code, coordinator concurrency, and policy or security review.
+- Use Fable only after Opus fails twice on the same problem.
+- Lower effort before choosing a weaker model.
+- Escalate one tier after two failed attempts.
+- Switch models only at task boundaries.
+
+## Pull requests
+
+- Explain user impact, testing performed, and direct-play and security implications.
+- List every untested Wayland, GPU, Jellyfin, or AppImage gate.
+- Include screenshots for visible UI changes.
+- Link the plan or issue.
