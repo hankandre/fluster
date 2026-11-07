@@ -14,12 +14,16 @@ export function redactUrl(value: string): string {
   }
 }
 
-// Catches credentials that are not inside an absolute URL, such as relative
-// request paths, bare query strings, and quoted Jellyfin authorization values.
+// Catches credentials that are not inside an absolute URL: relative request
+// paths, bare query strings, headers, and JSON bodies. Key names may carry a
+// prefix (auth_token, sessionToken, X-MediaBrowser-Token) and be quoted.
 function redactCredentialPairs(value: string): string {
   return value
-    .replace(/(\b(?:api[_-]?key|access[_-]?token|token|password|pw)=)"?[^&\s",]+"?/gi, "$1[redacted]")
-    .replace(/(\bx-emby-token\s*[:=]\s*)"?[^&\s",]+"?/gi, "$1[redacted]");
+    .replace(/(authorization"?\s*[:=]\s*)[^\n]*/gi, "$1[redacted]")
+    .replace(
+      /((?:[\w-]*(?:api[_-]?key|access[_-]?token|token|password|playsessionid)|\bpw)"?\s*[:=]\s*)"?[^&\s",}]+"?/gi,
+      "$1[redacted]",
+    );
 }
 
 export function redactText(value: string): string {
@@ -30,8 +34,24 @@ export function redactText(value: string): string {
 }
 
 // Redacts an error's message in place so callers keep its type and identity
-// (for example AbortError checks) while no URL or token can be surfaced.
+// (for example AbortError checks) while no URL or token can be surfaced. Some
+// errors have a read-only message (DOMException, frozen errors); those are
+// replaced by a new Error that keeps the original name.
 export function redactError(error: unknown): unknown {
-  if (error instanceof Error) error.message = redactText(error.message);
-  return error;
+  // DOMException is not an Error subclass in every runtime, so accept any
+  // object with a string message.
+  if (typeof error !== "object" || error === null) return error;
+  const candidate = error as { message?: unknown; name?: unknown };
+  if (typeof candidate.message !== "string") return error;
+  const redacted = redactText(candidate.message);
+  if (redacted === candidate.message) return error;
+  try {
+    candidate.message = redacted;
+    if (candidate.message === redacted) return error;
+  } catch {
+    // Fall through to the replacement below.
+  }
+  const replacement = new Error(redacted);
+  if (typeof candidate.name === "string") replacement.name = candidate.name;
+  return replacement;
 }

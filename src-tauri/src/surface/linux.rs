@@ -266,12 +266,12 @@ pub fn set_frame(app: &AppHandle, frame: PlayerSurfaceFrame) -> Result<(), Strin
 
 pub fn detach(app: &AppHandle, session_id: &str) {
     #[cfg(debug_assertions)]
-    eprintln!("[fluster native] scheduling GTK detach for {session_id}");
+    eprintln!("[fluster native] scheduling GTK detach");
     let session_id = session_id.to_string();
     let app_for_detach = app.clone();
     let _ = run_on_main(app, move || {
         #[cfg(debug_assertions)]
-        eprintln!("[fluster native] GTK detach started for {session_id}");
+        eprintln!("[fluster native] GTK detach started");
         let matches = RENDER_STATE.with(|state| {
             state
                 .borrow()
@@ -280,10 +280,10 @@ pub fn detach(app: &AppHandle, session_id: &str) {
         });
         if matches {
             #[cfg(debug_assertions)]
-            eprintln!("[fluster native] dropping render context for {session_id}");
+            eprintln!("[fluster native] dropping render context");
             RENDER_STATE.with(|state| drop(state.borrow_mut().take()));
             #[cfg(debug_assertions)]
-            eprintln!("[fluster native] render context dropped for {session_id}");
+            eprintln!("[fluster native] render context dropped");
             UI.with(|slot| {
                 if let Some(ui) = slot.borrow().as_ref() {
                     // Keep the GLArea mapped for the lifetime of the window.
@@ -297,7 +297,7 @@ pub fn detach(app: &AppHandle, session_id: &str) {
         }
         let result = set_composition_background(&app_for_detach, LIBRARY_BACKGROUND);
         #[cfg(debug_assertions)]
-        eprintln!("[fluster native] GTK detach finished for {session_id}");
+        eprintln!("[fluster native] GTK detach finished");
         result
     });
 }

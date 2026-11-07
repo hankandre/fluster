@@ -3,7 +3,7 @@ import type { LibraryItem, PlaybackPlan, PlaybackSnapshot, PlayerEngine, PlayerE
 import { JellyfinGateway } from "./jellyfin/gateway";
 import type { HttpRequestConfig, HttpTransport } from "./jellyfin/types";
 import { PlaybackCoordinator, type PlaybackGateway } from "./player/coordinator";
-import { redactText, redactUrl } from "./redact";
+import { redactError, redactText, redactUrl } from "./redact";
 
 const CANARY = "CANARY-7f3a9c1e5b";
 const SERVER = "https://media.test/jellyfin";
@@ -34,6 +34,17 @@ function errorTexts(): string[] {
     `Authorization: MediaBrowser Client="Fluster", Token=${CANARY}`,
     `Authorization: Bearer ${CANARY}`,
     `X-Emby-Token: ${CANARY}`,
+    `X-MediaBrowser-Token: ${CANARY}`,
+    `Authorization: Custom scheme="x" ${CANARY}`,
+    `token = ${CANARY}`,
+    `token: "${CANARY}"`,
+    `{"AccessToken":"${CANARY}","User":{}}`,
+    `{"Pw":"${CANARY}"}`,
+    `{"Password":"${CANARY}"}`,
+    `auth_token=${CANARY}`,
+    `sessionToken=${CANARY}`,
+    `password=${CANARY}`,
+    `/Videos/1/stream?PlaySessionId=${CANARY}`,
     `header x-emby-token=${CANARY}`,
   );
   return texts;
@@ -133,7 +144,7 @@ describe("redaction canary: JellyfinGateway", () => {
       }
     }
     expectNoCanaryInConsole();
-  });
+  }, 60_000);
 
   it("keeps the access token out of errors for rejected playback info", async () => {
     const transport = new FailingTransport("unused");
@@ -170,7 +181,7 @@ describe("redaction canary: JellyfinGateway", () => {
     };
     expectClean("unsafe subtitle error", await messageOf(() => gateway.createPlaybackPlan(item)));
     expectNoCanaryInConsole();
-  });
+  }, 60_000);
 
   it("rejects server URLs carrying credentials without echoing them", () => {
     for (const url of [`https://user:${CANARY}@media.test`, `https://${CANARY}@media.test`]) {
@@ -219,7 +230,50 @@ class FakePlayer implements PlayerEngine {
   stop = vi.fn<() => Promise<void>>(async () => undefined);
 }
 
+describe("redaction canary: redactError", () => {
+  it("redacts DOMException and frozen errors without throwing, keeping the name", () => {
+    const abort = new DOMException(`aborted ${canaryUrls[0]}`, "AbortError");
+    const redactedAbort = redactError(abort) as Error;
+    expectClean("DOMException", redactedAbort.message);
+    expect(redactedAbort.name).toBe("AbortError");
+
+    const frozen = Object.freeze(new Error(`failed ${canaryUrls[7]}`));
+    const redactedFrozen = redactError(frozen) as Error;
+    expectClean("frozen error", redactedFrozen.message);
+  });
+
+  it("redacts ordinary errors in place and ignores non-errors", () => {
+    const error = new Error(canaryUrls[0]);
+    expect(redactError(error)).toBe(error);
+    expectClean("in-place", error.message);
+    expect(redactError("plain")).toBe("plain");
+  });
+});
+
 describe("redaction canary: PlaybackCoordinator", () => {
+  it("redacts player error events before they reach the UI", async () => {
+    for (const text of errorTexts()) {
+      const gateway = {
+        createPlaybackPlan: vi.fn(async () => planWith("session")),
+        reportStart: vi.fn(async () => undefined),
+        reportProgress: vi.fn(async () => undefined),
+        reportStopped: vi.fn(async () => undefined),
+      } as PlaybackGateway;
+      const player = new FakePlayer();
+      const surfaced: string[] = [];
+      const coordinator = new PlaybackCoordinator(gateway, player, {
+        onEvent: (event) => { if (event.kind === "error") surfaced.push(event.message); },
+        onReportingError: vi.fn(),
+      });
+      await coordinator.start(item);
+      player.listener?.({ kind: "error", message: text });
+      await vi.waitFor(() => expect(surfaced).toHaveLength(1));
+      expectClean(`player error event "${text}"`, surfaced[0]);
+      await coordinator.stop().catch(() => undefined);
+    }
+    expectNoCanaryInConsole();
+  }, 60_000);
+
   it("surfaces no canary from reporting warnings, shutdown failures, or console", async () => {
     for (const text of errorTexts()) {
       const reportError = new Error(text);
@@ -247,7 +301,7 @@ describe("redaction canary: PlaybackCoordinator", () => {
       await coordinator.stop().catch(() => undefined);
     }
     expectNoCanaryInConsole();
-  });
+  }, 60_000);
 
   it("surfaces no canary when plan creation or launch fails", async () => {
     for (const text of errorTexts()) {
@@ -267,5 +321,5 @@ describe("redaction canary: PlaybackCoordinator", () => {
       expectClean(`plan failure for "${text}"`, await messageOf(() => failing.start(item)));
     }
     expectNoCanaryInConsole();
-  });
+  }, 60_000);
 });
