@@ -3,9 +3,11 @@ import axios from "axios";
 import type { LibraryItem, PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
 import { secondsToTicks } from "../../domain/playback";
 import { isSupportedServerVersion, parseServerVersion } from "../../domain/server-version";
+import { redactError } from "../redact";
 import type {
   AuthenticationResult,
   BaseItemDto,
+  HttpRequestConfig,
   HttpTransport,
   MediaSourceDto,
   PlaybackInfoResponse,
@@ -135,7 +137,7 @@ export class JellyfinGateway {
   }
 
   async connect(signal?: AbortSignal): Promise<{ name: string; version: string }> {
-    const { data } = await this.transport.get<ServerInfo>("/System/Info/Public", {
+    const { data } = await this.get<ServerInfo>("/System/Info/Public", {
       signal,
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
@@ -151,7 +153,7 @@ export class JellyfinGateway {
   }
 
   async login(username: string, password: string, signal?: AbortSignal): Promise<{ userId: string; username: string }> {
-    const { data } = await this.transport.post<AuthenticationResult>("/Users/AuthenticateByName", {
+    const { data } = await this.post<AuthenticationResult>("/Users/AuthenticateByName", {
       Username: username,
       Pw: password,
     }, {
@@ -179,7 +181,7 @@ export class JellyfinGateway {
 
   async latest(signal?: AbortSignal): Promise<LibraryItem[]> {
     this.requireSession();
-    const { data } = await this.transport.get<{ Items?: BaseItemDto[] }>(`/Users/${this.userId}/Items`, {
+    const { data } = await this.get<{ Items?: BaseItemDto[] }>(`/Users/${this.userId}/Items`, {
       params: {
         Recursive: true,
         IncludeItemTypes: "Movie,Episode",
@@ -213,7 +215,7 @@ export class JellyfinGateway {
   async createPlaybackPlan(item: LibraryItem, startPositionTicks = 0, signal?: AbortSignal): Promise<PlaybackPlan> {
     const { accessToken, userId } = this.requireSession();
     const request = { ...DIRECT_PLAY_REQUEST, UserId: userId, StartTimeTicks: startPositionTicks };
-    const { data } = await this.transport.post<PlaybackInfoResponse>(`/Items/${item.id}/PlaybackInfo`, request, {
+    const { data } = await this.post<PlaybackInfoResponse>(`/Items/${item.id}/PlaybackInfo`, request, {
       params: {
         UserId: userId,
         StartTimeTicks: startPositionTicks,
@@ -265,7 +267,7 @@ export class JellyfinGateway {
 
   private async report(path: string, plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal): Promise<void> {
     this.requireSession();
-    await this.transport.post(path, {
+    await this.post(path, {
       ItemId: plan.itemId,
       MediaSourceId: plan.mediaSourceId,
       PlaySessionId: plan.playSessionId,
@@ -281,6 +283,22 @@ export class JellyfinGateway {
       signal,
       timeout: REPORT_REQUEST_TIMEOUT_MS,
     });
+  }
+
+  private async get<T>(url: string, config?: HttpRequestConfig): Promise<{ data: T }> {
+    try {
+      return await this.transport.get<T>(url, config);
+    } catch (error) {
+      throw redactError(error);
+    }
+  }
+
+  private async post<T>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<{ data: T }> {
+    try {
+      return await this.transport.post<T>(url, data, config);
+    } catch (error) {
+      throw redactError(error);
+    }
   }
 
   private requireSession(): { accessToken: string; userId: string } {

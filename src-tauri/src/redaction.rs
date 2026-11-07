@@ -15,9 +15,24 @@ pub fn redact_url(value: &str) -> String {
     url.to_string()
 }
 
+const SENSITIVE_MARKERS: [&str; 8] = [
+    "http://",
+    "https://",
+    "api_key=",
+    "apikey=",
+    "token=",
+    "x-emby-token",
+    "authorization",
+    "bearer ",
+];
+
 pub fn safe_error(value: impl std::fmt::Display) -> String {
     let text = value.to_string();
-    if text.contains("http://") || text.contains("https://") || text.contains("api_key=") {
+    let lowercase = text.to_ascii_lowercase();
+    if SENSITIVE_MARKERS
+        .iter()
+        .any(|marker| lowercase.contains(marker))
+    {
         "Player operation failed; sensitive URL details were redacted.".into()
     } else {
         text

@@ -948,7 +948,7 @@ fn update_decode_label(snapshot: &mut PlaybackSnapshot) {
 mod tests {
     use super::*;
 
-    fn launch_request(stream_url: &str, subtitle_url: Option<&str>) -> LaunchRequest {
+    pub(super) fn launch_request(stream_url: &str, subtitle_url: Option<&str>) -> LaunchRequest {
         let tracks = subtitle_url
             .map(|delivery_url| MediaTrack {
                 index: 4,
@@ -1120,5 +1120,135 @@ mod tests {
     #[test]
     fn stop_is_idempotent_without_an_active_session() {
         assert!(MpvController::default().stop().is_ok());
+    }
+}
+
+#[cfg(test)]
+mod redaction_canary {
+    use super::tests::launch_request;
+    use super::*;
+    use crate::model::PlaybackDiagnostics;
+
+    const CANARY: &str = "CANARY-7f3a9c1e5b";
+
+    /// Every place the code knows a credential can sit inside a URL.
+    fn canary_urls() -> Vec<String> {
+        let mut urls = vec![
+            format!("https://user:{CANARY}@media.example/video.mkv"),
+            format!("https://{CANARY}@media.example/video.mkv"),
+        ];
+        for key in ["api_key", "ApiKey", "access_token", "token", "X-Emby-Token"] {
+            urls.push(format!(
+                "https://media.example/Videos/1/stream?{key}={CANARY}"
+            ));
+            urls.push(format!(
+                "https://media.example/Videos/1/stream?Static=true&{key}={CANARY}&PlaySessionId=s"
+            ));
+            urls.push(format!("http://127.0.0.1:8096/video.mkv?{key}={CANARY}"));
+        }
+        urls
+    }
+
+    /// Texts libmpv or the platform might produce around a URL.
+    fn error_texts(url: &str) -> Vec<String> {
+        vec![
+            url.to_string(),
+            format!("loadfile failed for {url}"),
+            format!("Failed to open {url}: HTTP error 403"),
+            format!("Failed to open {url}."),
+            format!("failed to open ({url})"),
+        ]
+    }
+
+    fn assert_clean(label: &str, text: &str) {
+        assert!(
+            !text.contains(CANARY),
+            "canary leaked through {label}: {text}"
+        );
+    }
+
+    fn assert_error_clean(label: &str, error: &MpvError) {
+        assert_clean(&format!("{label} to_string"), &error.to_string());
+        assert_clean(&format!("{label} Debug"), &format!("{error:?}"));
+    }
+
+    #[test]
+    fn redaction_canary_stays_out_of_url_carrying_error_variants() {
+        for url in canary_urls() {
+            for text in error_texts(&url) {
+                assert_error_clean("Initialize", &MpvError::Initialize(safe_error(&text)));
+                assert_error_clean("Command", &MpvError::Command(safe_error(&text)));
+            }
+        }
+    }
+
+    #[test]
+    fn redaction_canary_stays_out_of_credential_header_errors() {
+        for text in [
+            format!("request failed, X-Emby-Token: {CANARY}"),
+            format!("Authorization: MediaBrowser Client=\"Fluster\", Token=\"{CANARY}\""),
+            format!("Authorization: Bearer {CANARY}"),
+            format!("bad query ?ApiKey={CANARY}&x=1"),
+            format!("bad query ?access_token={CANARY}"),
+        ] {
+            assert_error_clean("Command", &MpvError::Command(safe_error(&text)));
+        }
+    }
+
+    #[test]
+    fn redaction_canary_stays_out_of_validation_failures() {
+        for url in canary_urls() {
+            for request in [
+                launch_request(&url, None),
+                launch_request("https://media.example/video.mkv", Some(&url)),
+            ] {
+                if let Err(error) = validate_playback_urls(&request) {
+                    assert_error_clean("validate_playback_urls", &error);
+                }
+            }
+        }
+        // The rejected-URL variants must exist for at least the userinfo cases.
+        let error = validate_playback_urls(&launch_request(&canary_urls()[0], None)).unwrap_err();
+        assert!(matches!(error, MpvError::UnsafeStreamUrl));
+    }
+
+    #[test]
+    fn redaction_canary_stays_out_of_redact_url() {
+        for url in canary_urls() {
+            assert_clean("redact_url", &crate::redaction::redact_url(&url));
+        }
+        assert_clean(
+            "redact_url (unparseable)",
+            &crate::redaction::redact_url(&format!("not a url?api_key={CANARY}")),
+        );
+    }
+
+    #[test]
+    fn redaction_canary_stays_out_of_serialized_snapshots_and_events() {
+        let url = canary_urls().remove(2);
+        let message = format!("libmpv reported a playback error: {}", safe_error(&url));
+        let mut snapshot = PlaybackSnapshot::default();
+        snapshot.diagnostics.warning = Some(safe_error(&url));
+        snapshot.diagnostics = PlaybackDiagnostics {
+            hwdec_current: Some("vaapi".into()),
+            ..snapshot.diagnostics
+        };
+        let events = [
+            PlayerEvent::Error { message },
+            PlayerEvent::Loaded {
+                snapshot: snapshot.clone(),
+            },
+            PlayerEvent::Ended {
+                snapshot: snapshot.clone(),
+                reason: "error".into(),
+            },
+        ];
+        for event in events {
+            let json = serde_json::to_string(&event).expect("event serializes");
+            assert_clean("serialized PlayerEvent", &json);
+            assert_clean("PlayerEvent Debug", &format!("{event:?}"));
+        }
+        let json = serde_json::to_string(&snapshot).expect("snapshot serializes");
+        assert_clean("serialized PlaybackSnapshot", &json);
     }
 }
