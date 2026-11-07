@@ -35,7 +35,7 @@ Suggested model routing (see `WORKFLOW.md`): Opus pilots milestones 3–5 (polic
 
 ## Progress
 
-- [ ] 1 · [x] 2 · [ ] 3 · [ ] 4 · [ ] 5 · [x] 6 · [ ] 7 · [x] 8
+- [x] 1 · [x] 2 · [ ] 3 · [ ] 4 · [ ] 5 · [x] 6 · [ ] 7 · [x] 8
 
 ## Decision log
 
@@ -48,6 +48,7 @@ Suggested model routing (see `WORKFLOW.md`): Opus pilots milestones 3–5 (polic
 
 ## Validation evidence
 
+- Milestone 1 (P1-01): fixtures for 10.11.7 and 12.4.0 under `tests/fixtures/jellyfin/` (h264 with and without profile, external subtitle, multi-version, BluRay folder). `src/lib/jellyfin/fixtures.test.ts` replays them. Both servers returned the same shape; with the profile `SupportsTranscoding` is false and the external subtitle has `DeliveryMethod: External` with an `?ApiKey=` `DeliveryUrl`; the BluRay folder source reports `VideoType: BluRay` and `SupportsDirectPlay: false`.
 - Milestone 6 (P1-06): `pnpm test -- gateway coordinator` covers DeviceId stability, `POST /Sessions/Logout`, and `Failed: true` on error stops. DeviceId uses the username in place of the user id because login needs it before the user id exists.
 - M8: SDK pinned to 1.0.2; `latest()` uses `GET /Items?userId=`; `Fields` is `Overview` only. pnpm audit, check, e2e, lint:boundaries pass.
 
