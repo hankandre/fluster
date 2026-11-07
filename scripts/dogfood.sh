@@ -14,7 +14,6 @@ The log path is printed before the app starts.
 Environment:
   FLUSTER_DOGFOOD_SERVER  Optional Jellyfin server URL for this session.
                           Never commit it. Only its host is printed.
-  RUST_LOG                Native log filter. Defaults to "trace".
 
 Options:
   -h, --help              Print this help and exit without starting anything.
@@ -57,7 +56,7 @@ run_dogfood() {
 
   # pipefail would hide tauri's own status behind tee's, so read PIPESTATUS.
   set +e
-  RUST_LOG="${RUST_LOG:-trace}" pnpm tauri dev 2>&1 | redact_stream | tee "$log_file"
+  pnpm tauri dev 2>&1 | redact_stream | tee "$log_file"
   status="${PIPESTATUS[0]}"
   set -e
   return "$status"
