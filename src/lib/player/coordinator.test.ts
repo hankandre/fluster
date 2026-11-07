@@ -354,7 +354,7 @@ describe("PlaybackCoordinator", () => {
 
   it.each([
     ["an error ending", { kind: "ended", snapshot, reason: "error" } as PlayerEvent, true],
-    ["an error event before eof", { kind: "ended", snapshot, reason: "eof" } as PlayerEvent, true],
+    ["a recovered error event before eof", { kind: "ended", snapshot, reason: "eof" } as PlayerEvent, false],
     ["a normal eof", { kind: "ended", snapshot, reason: "eof" } as PlayerEvent, false],
   ])("sends Failed correctly for %s", async (name, ending, failed) => {
     const gateway = {
@@ -368,7 +368,7 @@ describe("PlaybackCoordinator", () => {
     await coordinator.start(item);
     player.listener?.({ kind: "loaded", snapshot });
     await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
-    if (name === "an error event before eof") player.listener?.({ kind: "error", message: "decode failed" });
+    if (name === "a recovered error event before eof") player.listener?.({ kind: "error", message: "decode failed" });
     player.listener?.(ending);
     await vi.waitFor(() => expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal), failed));
   });

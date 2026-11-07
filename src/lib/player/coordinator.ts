@@ -45,7 +45,6 @@ export class PlaybackCoordinator {
   private unsubscribe?: () => void;
   private progressTimer?: number;
   private didReportStart = false;
-  private sawError = false;
   private attempt = 0;
   private operation = 0;
   private previousPlaySessionId?: string;
@@ -246,8 +245,6 @@ export class PlaybackCoordinator {
         await this.finish(event.reason, event.snapshot ?? this.snapshot);
         break;
       case "error":
-        this.sawError = true;
-        break;
       case "first-frame":
         break;
     }
@@ -284,8 +281,10 @@ export class PlaybackCoordinator {
   ): Promise<void> {
     this.clearProgressTimer();
     const plan = this.plan;
-    // A retry that follows an error event still ends a failed session.
-    const failed = reason === "error" || this.sawError;
+    // Only an error ending is a failed session. Retry is offered only after a
+    // playback error, so it ends a failed session too. A non-fatal error event
+    // (for example one dropped render) followed by a normal ending is not.
+    const failed = reason === "error" || reason === "retry";
     if (plan && snapshot && this.didReportStart) {
       this.queueReport((signal) => this.gateway.reportStopped(plan, snapshot, signal, failed));
     }
@@ -296,7 +295,6 @@ export class PlaybackCoordinator {
     this.plan = undefined;
     this.snapshot = undefined;
     this.didReportStart = false;
-    this.sawError = false;
     if (reason !== "retry") this.callbacks.onSessionEnded?.(reason);
     if (reason !== "error" && reason !== "retry") {
       this.item = undefined;
@@ -336,7 +334,6 @@ export class PlaybackCoordinator {
   private resetAttempt(): void {
     this.snapshot = undefined;
     this.didReportStart = false;
-    this.sawError = false;
     this.reportQueue = Promise.resolve();
     this.reportController = new AbortController();
   }
