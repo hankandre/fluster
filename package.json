@@ -9,13 +9,15 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:dogfood-redaction": "bash scripts/dogfood-redaction-check.sh",
     "test:e2e": "playwright test",
     "fixture:up": "docker compose -f tests/integration/docker-compose.yml up -d --wait",
     "fixture:setup": "bash tests/integration/setup-servers.sh",
     "fixture:down": "docker compose -f tests/integration/docker-compose.yml down -v",
     "tauri": "tauri",
     "lint:boundaries": "depcruise src --config .dependency-cruiser.cjs --output-type err-long",
-    "check": "pnpm lint:boundaries && pnpm test && pnpm build && cargo test --manifest-path src-tauri/Cargo.toml"
+    "dogfood": "bash scripts/dogfood.sh",
+    "check": "pnpm lint:boundaries && pnpm test:dogfood-redaction && pnpm test && pnpm build && cargo test --manifest-path src-tauri/Cargo.toml"
   },
   "dependencies": {
     "@jellyfin/sdk": "0.13.x",
