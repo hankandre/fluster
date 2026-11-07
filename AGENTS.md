@@ -26,6 +26,7 @@ Fluster is a direct-play-only Jellyfin client: Tauri 2 + React/TypeScript + Rust
 - `jellyfin-api`: any change to server calls or playback negotiation.
 - `native-player`: any change under `src-tauri/` or to the player engine.
 - `doc-gardening`: drift checks between docs and code.
+- `ship`: opening, merging, and cleaning up a pull request.
 
 ## Subagents
 
@@ -127,6 +128,10 @@ Fluster is a direct-play-only Jellyfin client: Tauri 2 + React/TypeScript + Rust
 
 ## Pull requests
 
+- Ship every finished branch with the `ship` skill.
+- Never commit directly to `main`.
+- Merge only with green CI.
+- Ask before merging changes to invariants, `docs/security.md`, release signing, or CI.
 - Explain user impact, testing performed, and direct-play and security implications.
 - List every untested Wayland, GPU, Jellyfin, or AppImage gate.
 - Include screenshots for visible UI changes.
