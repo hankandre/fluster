@@ -833,7 +833,8 @@
           "human": false,
           "depends_on": [
             "P2-05",
-            "P3-06"
+            "P3-06",
+            "P3-17"
           ],
           "acceptance": [
             "A countdown appears near the end of an episode",
@@ -855,7 +856,8 @@
           "skill": "jellyfin-api",
           "human": false,
           "depends_on": [
-            "P2-05"
+            "P2-05",
+            "P3-17"
           ],
           "acceptance": [
             "Segments load only when HasSegments is true",
@@ -917,7 +919,8 @@
           "skill": "native-player",
           "human": false,
           "depends_on": [
-            "P2-01"
+            "P2-01",
+            "P3-17"
           ],
           "acceptance": [
             "Every screen is usable with the keyboard alone",
