@@ -403,10 +403,10 @@
             "Stopped reports after errors send Failed: true"
           ],
           "verify": "pnpm test -- gateway coordinator",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "pnpm check, pnpm test:e2e, cargo clippy pass (100 vitest tests).\nDeviceId = SHA-256(installId:serverId:username.toLowerCase()), install id persisted at localStorage fluster.installId; username stands in for user id because login needs the DeviceId before the user id exists.\nlogout() POSTs /Sessions/Logout with header auth and clears local state even on failure; reportStopped sends Failed: true after error events, error endings, and error-then-retry."
         },
         {
           "id": "P1-07",

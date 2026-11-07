@@ -3,7 +3,9 @@ import axios from "axios";
 import type { LibraryItem, PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
 import { secondsToTicks } from "../../domain/playback";
 import { isSupportedServerVersion, parseServerVersion } from "../../domain/server-version";
-import { redactError } from "../redact";
+import { getInstallId } from "../install-id";
+import { redactError, redactText } from "../redact";
+import { deriveDeviceId } from "./device-id";
 import type {
   AuthenticationResult,
   BaseItemDto,
@@ -17,12 +19,20 @@ import type {
 export const CONTROL_REQUEST_TIMEOUT_MS = 15_000;
 export const REPORT_REQUEST_TIMEOUT_MS = 3_000;
 
-const client = new Jellyfin({
-  clientInfo: { name: "Fluster", version: "0.1.0" },
-  deviceInfo: { name: "Fluster Linux", id: crypto.randomUUID() },
-});
+const DEVICE_NAME = "Fluster Linux";
 
-function createSdkApi(serverUrl: string, accessToken?: string): Api {
+function createClient(deviceId: string): Jellyfin {
+  return new Jellyfin({
+    clientInfo: { name: "Fluster", version: "0.1.0" },
+    deviceInfo: { name: DEVICE_NAME, id: deviceId },
+  });
+}
+
+function buildAuthorizationHeader(serverUrl: string, deviceId: string, accessToken?: string): string {
+  return createClient(deviceId).createApi(serverUrl, accessToken).authorizationHeader;
+}
+
+function createSdkApi(serverUrl: string, deviceId: string, accessToken?: string): Api {
   // The SDK's generated APIs apply basePath and authorization through their
   // Configuration object. Fluster's narrow gateway uses the raw Axios client,
   // so it must provide those values on an isolated instance explicitly.
@@ -30,7 +40,7 @@ function createSdkApi(serverUrl: string, accessToken?: string): Api {
     baseURL: serverUrl,
     timeout: CONTROL_REQUEST_TIMEOUT_MS,
   });
-  const api = client.createApi(serverUrl, accessToken, axiosInstance);
+  const api = createClient(deviceId).createApi(serverUrl, accessToken, axiosInstance);
   axiosInstance.defaults.headers.common.Authorization = api.authorizationHeader;
   return api;
 }
@@ -129,10 +139,18 @@ export class JellyfinGateway {
   private api?: Api;
   private accessToken?: string;
   private userId?: string;
+  private serverId?: string;
+  private deviceId?: string;
 
-  constructor(serverUrl: string, transport?: HttpTransport) {
+  constructor(
+    serverUrl: string,
+    transport?: HttpTransport,
+    private readonly installId: string = getInstallId(),
+  ) {
     this.serverUrl = normalizeServerUrl(serverUrl);
-    this.api = transport ? undefined : createSdkApi(this.serverUrl);
+    // Before login there is no user, so the unauthenticated API uses a
+    // throwaway device id that is never sent with credentials.
+    this.api = transport ? undefined : createSdkApi(this.serverUrl, "fluster-unauthenticated");
     this.transport = transport ?? (this.api!.axiosInstance as HttpTransport);
   }
 
@@ -149,33 +167,51 @@ export class JellyfinGateway {
     if (!parsed || !isSupportedServerVersion(parsed)) {
       throw new Error(`Fluster needs Jellyfin 10.11 or newer; this server reports ${version}.`);
     }
+    this.serverId = data.Id;
     return { name: data.ServerName ?? "Jellyfin", version };
   }
 
   async login(username: string, password: string, signal?: AbortSignal): Promise<{ userId: string; username: string }> {
+    // Fall back to the server URL if connect() did not provide a server id.
+    const deviceId = await deriveDeviceId(this.installId, this.serverId ?? this.serverUrl, username);
     const { data } = await this.post<AuthenticationResult>("/Users/AuthenticateByName", {
       Username: username,
       Pw: password,
     }, {
+      headers: { Authorization: buildAuthorizationHeader(this.serverUrl, deviceId) },
       signal,
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
     if (!data.AccessToken || !data.User?.Id) throw new Error("Jellyfin did not return a valid user session.");
     this.accessToken = data.AccessToken;
     this.userId = data.User.Id;
+    this.deviceId = deviceId;
     if (this.api) {
-      this.api = createSdkApi(this.serverUrl, data.AccessToken);
+      this.api = createSdkApi(this.serverUrl, deviceId, data.AccessToken);
       this.transport = this.api.axiosInstance as HttpTransport;
     }
     return { userId: data.User.Id, username: data.User.Name ?? username };
   }
 
-  logout(): void {
+  async logout(): Promise<void> {
+    const { accessToken, deviceId } = this;
+    // Clear local state first so the UI can never keep a revoked token.
     this.accessToken = undefined;
     this.userId = undefined;
+    this.deviceId = undefined;
+    const transport = this.transport;
     if (this.api) {
-      this.api = createSdkApi(this.serverUrl);
+      this.api = createSdkApi(this.serverUrl, "fluster-unauthenticated");
       this.transport = this.api.axiosInstance as HttpTransport;
+    }
+    if (!accessToken || !deviceId) return;
+    try {
+      await transport.post("/Sessions/Logout", undefined, {
+        headers: { Authorization: buildAuthorizationHeader(this.serverUrl, deviceId, accessToken) },
+        timeout: REPORT_REQUEST_TIMEOUT_MS,
+      });
+    } catch (error) {
+      console.warn("Server logout failed; the local session was cleared.", error instanceof Error ? redactText(error.message) : "unknown error");
     }
   }
 
@@ -262,13 +298,14 @@ export class JellyfinGateway {
     return this.report("/Sessions/Playing/Progress", plan, snapshot, signal);
   }
 
-  reportStopped(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal): Promise<void> {
-    return this.report("/Sessions/Playing/Stopped", plan, snapshot, signal);
+  reportStopped(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal, failed = false): Promise<void> {
+    return this.report("/Sessions/Playing/Stopped", plan, snapshot, signal, { Failed: failed });
   }
 
-  private async report(path: string, plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal): Promise<void> {
+  private async report(path: string, plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal, extra?: { Failed: boolean }): Promise<void> {
     this.requireSession();
     await this.post(path, {
+      ...extra,
       ItemId: plan.itemId,
       MediaSourceId: plan.mediaSourceId,
       PlaySessionId: plan.playSessionId,

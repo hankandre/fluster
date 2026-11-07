@@ -51,6 +51,7 @@ export interface PlaybackInfoResponse {
 }
 
 export interface HttpRequestConfig {
+  headers?: Record<string, string>;
   params?: Record<string, unknown>;
   signal?: AbortSignal;
   timeout?: number;

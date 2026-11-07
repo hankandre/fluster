@@ -65,7 +65,7 @@ describe("PlaybackCoordinator", () => {
     player.listener?.({ kind: "state", snapshot: { ...snapshot, paused: true }, cause: "pause" });
     await vi.waitFor(() => expect(gateway.reportProgress).toHaveBeenCalled());
     player.listener?.({ kind: "ended", snapshot, reason: "eof" });
-    await vi.waitFor(() => expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal)));
+    await vi.waitFor(() => expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal), false));
   });
 
   it("renegotiates PlaybackInfo and replaces the authenticated session on retry", async () => {
@@ -253,7 +253,7 @@ describe("PlaybackCoordinator", () => {
 
     finishStartReport();
     await coordinator.flush();
-    expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal));
+    expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal), false);
   });
 
   it("keeps the player mounted until native teardown finishes", async () => {
@@ -350,5 +350,46 @@ describe("PlaybackCoordinator", () => {
     await stopping;
     expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1);
     expect(player.launch).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ["an error ending", { kind: "ended", snapshot, reason: "error" } as PlayerEvent, true],
+    ["an error event before eof", { kind: "ended", snapshot, reason: "eof" } as PlayerEvent, true],
+    ["a normal eof", { kind: "ended", snapshot, reason: "eof" } as PlayerEvent, false],
+  ])("sends Failed correctly for %s", async (name, ending, failed) => {
+    const gateway = {
+      createPlaybackPlan: vi.fn(async () => plan),
+      reportStart: vi.fn(async () => undefined),
+      reportProgress: vi.fn(async () => undefined),
+      reportStopped: vi.fn(async () => undefined),
+    } as PlaybackGateway;
+    const player = new FakePlayer();
+    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
+    await coordinator.start(item);
+    player.listener?.({ kind: "loaded", snapshot });
+    await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
+    if (name === "an error event before eof") player.listener?.({ kind: "error", message: "decode failed" });
+    player.listener?.(ending);
+    await vi.waitFor(() => expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal), failed));
+  });
+
+  it("marks the stop sent by a retry after an error as failed", async () => {
+    const gateway = {
+      createPlaybackPlan: vi.fn()
+        .mockResolvedValueOnce(plan)
+        .mockResolvedValueOnce({ ...plan, playSessionId: "session-2" }),
+      reportStart: vi.fn(async () => undefined),
+      reportProgress: vi.fn(async () => undefined),
+      reportStopped: vi.fn(async () => undefined),
+    } as PlaybackGateway;
+    const player = new FakePlayer();
+    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
+    await coordinator.start(item);
+    player.listener?.({ kind: "loaded", snapshot });
+    await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
+    player.listener?.({ kind: "error", message: "stalled" });
+    await coordinator.retry();
+    await coordinator.flush();
+    expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal), true);
   });
 });
