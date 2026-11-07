@@ -297,7 +297,7 @@ These rules become an import-boundary lint (`WORKFLOW.md` → Mechanical enforce
 
 ## Target layout
 
-Move toward this incrementally, one domain per PR, starting with splitting `App.tsx`:
+The core (domain, gateway, coordinator, native player, surfaces, redaction) moves here incrementally, one domain per PR, keeping its tests. The proof-of-concept UI in `src/App.tsx` is frozen, not refactored: new views are built fresh under `src/features/`, and the old screens stay runnable as the reference until their replacements pass, then are deleted (`tasks/prd.json` P3-16).
 
 ```text
 src/

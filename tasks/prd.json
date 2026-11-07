@@ -10,7 +10,8 @@
     "Never edit, remove, or weaken acceptance items without human approval.",
     "Set status to blocked and explain in evidence when a dependency or human action is missing.",
     "Use the model and skill named on the task.",
-    "Tasks with human set to true need a person at this computer."
+    "Tasks with human set to true need a person at this computer.",
+    "Build new UI only under src/features/; never extend the proof-of-concept screens in src/App.tsx."
   ],
   "status_values": [
     "todo",
@@ -483,7 +484,7 @@
     {
       "id": "P2",
       "name": "Structure by domain",
-      "goal": "Code layout matches DOMAINS.md so agents can work on one domain at a time.",
+      "goal": "Core code matches DOMAINS.md and new UI has a home in src/features/; proof-of-concept UI is frozen, not refactored.",
       "exit": [
         "All P2 tasks pass",
         "Boundary lint passes with no exceptions"
@@ -491,7 +492,7 @@
       "tasks": [
         {
           "id": "P2-01",
-          "title": "Add a composition root and split App.tsx into feature views",
+          "title": "Create the composition root and feature skeleton",
           "domain": "App Shell & Presentation",
           "model": "sonnet",
           "skill": "exec-plan",
@@ -501,10 +502,10 @@
             "P1-07"
           ],
           "acceptance": [
-            "App.tsx contains routing only",
-            "Gateway and engines are constructed only in the composition root",
-            "Sign-in, library, resume dialog, and player information live under src/features/",
-            "All existing tests and e2e journeys pass unchanged"
+            "src/app/compose.ts is the only place that constructs the gateway and player engines",
+            "src/app/App.tsx routes between src/features/ views and the proof-of-concept screens",
+            "src/features/ has empty sign-in, home, browse, detail, and player folders with an index view each",
+            "The proof-of-concept flow and existing e2e journeys still pass"
           ],
           "verify": "pnpm check && pnpm test:e2e",
           "status": "todo",
@@ -681,7 +682,8 @@
           "acceptance": [
             "The code is shown when Quick Connect is enabled",
             "Polling completes sign-in after approval",
-            "Cancel stops polling"
+            "Cancel stops polling",
+            "Built under src/features/ with a Playwright journey; no proof-of-concept screen is extended"
           ],
           "verify": "pnpm check && pnpm test:e2e",
           "status": "todo",
@@ -702,7 +704,8 @@
           "acceptance": [
             "Continue Watching, Next Up, and Latest per library load in parallel",
             "Rows use minimal fields",
-            "Images load by tag with blurhash placeholders"
+            "Images load by tag with blurhash placeholders",
+            "Built under src/features/ with a Playwright journey; no proof-of-concept screen is extended"
           ],
           "verify": "pnpm check && pnpm test:e2e",
           "status": "todo",
@@ -723,7 +726,8 @@
           "acceptance": [
             "Paged library grid with sort and filter",
             "Series to seasons to episodes navigation",
-            "Collections are browsable"
+            "Collections are browsable",
+            "Built under src/features/ with a Playwright journey; no proof-of-concept screen is extended"
           ],
           "verify": "pnpm check && pnpm test:e2e",
           "status": "todo",
@@ -743,7 +747,8 @@
           ],
           "acceptance": [
             "Type-ahead uses /Search/Hints",
-            "Result pages use /Items?searchTerm"
+            "Result pages use /Items?searchTerm",
+            "Built under src/features/ with a Playwright journey; no proof-of-concept screen is extended"
           ],
           "verify": "pnpm check && pnpm test:e2e",
           "status": "todo",
@@ -765,7 +770,8 @@
           "acceptance": [
             "Detail shows codec, HDR, audio format, and subtitles",
             "Multiple versions are selectable by name",
-            "Played and favorite toggles update the server"
+            "Played and favorite toggles update the server",
+            "Built under src/features/ with a Playwright journey; no proof-of-concept screen is extended"
           ],
           "verify": "pnpm check && pnpm test:e2e",
           "status": "todo",
@@ -786,7 +792,8 @@
           "acceptance": [
             "Each refusal reason has plain-language copy",
             "Retry and Back are always available",
-            "No play-anyway option exists"
+            "No play-anyway option exists",
+            "Built under src/features/ with a Playwright journey; no proof-of-concept screen is extended"
           ],
           "verify": "pnpm check && pnpm test:e2e",
           "status": "todo",
@@ -808,7 +815,8 @@
           "acceptance": [
             "A countdown appears near the end of an episode",
             "The next episode negotiates a fresh play session",
-            "Cancel returns to the series"
+            "Cancel returns to the series",
+            "Built under src/features/ with a Playwright journey; no proof-of-concept screen is extended"
           ],
           "verify": "pnpm check && pnpm test:e2e",
           "status": "todo",
@@ -829,7 +837,8 @@
           "acceptance": [
             "Segments load only when HasSegments is true",
             "A skip button appears during Intro and Outro segments",
-            "Empty segment data hides the feature"
+            "Empty segment data hides the feature",
+            "Built under src/features/ with a Playwright journey; no proof-of-concept screen is extended"
           ],
           "verify": "pnpm check",
           "status": "todo",
@@ -849,7 +858,8 @@
           ],
           "acceptance": [
             "Seek bar hover shows trickplay tiles when available",
-            "Chapter markers appear on the seek bar"
+            "Chapter markers appear on the seek bar",
+            "Built under src/features/ with a Playwright journey; no proof-of-concept screen is extended"
           ],
           "verify": "pnpm check && pnpm test:e2e",
           "status": "todo",
@@ -889,7 +899,8 @@
           "acceptance": [
             "Every screen is usable with the keyboard alone",
             "MPRIS exposes play state and accepts play, pause, seek, and stop",
-            "The cursor hides when idle in the player"
+            "The cursor hides when idle in the player",
+            "Built under src/features/ with a Playwright journey; no proof-of-concept screen is extended"
           ],
           "verify": "pnpm check && pnpm test:e2e",
           "status": "todo",
@@ -912,6 +923,34 @@
             "UserDataChanged refreshes affected rows"
           ],
           "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P3-16",
+          "title": "Delete the proof-of-concept screens",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "P3-04",
+            "P3-05",
+            "P3-06",
+            "P3-07",
+            "P3-08",
+            "P3-09",
+            "P3-10",
+            "P3-14"
+          ],
+          "acceptance": [
+            "Sign-in, library, resume dialog, and player wiring from the proof of concept are removed",
+            "Every e2e journey runs against src/features/ views",
+            "src/App.tsx no longer exists outside src/app/"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -947,7 +986,8 @@
             "P3-11",
             "P3-14",
             "P1-08",
-            "P1-09"
+            "P1-09",
+            "P3-16"
           ],
           "acceptance": [
             "docs/dogfood/YYYY-MM-DD.md records each session, what was watched, and every problem",
@@ -1236,5 +1276,17 @@
         }
       ]
     }
-  ]
+  ],
+  "strategy": {
+    "keep": [
+      "Native video surface and libmpv lifecycle",
+      "PlaybackCoordinator and its tests",
+      "Redaction, URL policy, and the Tauri command surface",
+      "Release pipeline"
+    ],
+    "rebuild": [
+      "UI views and navigation, built fresh in src/features/ per DOMAINS.md"
+    ],
+    "reference": "The proof-of-concept screens stay runnable as the reference until their replacements pass, then are deleted."
+  }
 }
