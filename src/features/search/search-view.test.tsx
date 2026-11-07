@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionProvider, useSession, type SessionGateway } from "../../app/session";
 import type { SearchCard, SearchHint, SearchPage } from "../../domain/catalog";
 import { SearchView } from "./index";
+import { fakeSessionGateway } from "../../test/fake-session-gateway";
 
 vi.mock("../home/blurhash", () => ({
   blurhashToDataUrl: (hash: string) => `data:image/png;base64,${hash}`,
@@ -19,30 +20,13 @@ function card(id: string, title: string, kind: SearchCard["kind"]): SearchCard {
 }
 
 function fakeGateway(overrides: Partial<SessionGateway> = {}): SessionGateway {
-  return {
+  return fakeSessionGateway({
     serverUrl: "https://jellyfin.test",
     origin: "https://jellyfin.test",
-    connect: vi.fn(),
-    confirmUnencryptedConnection: vi.fn(),
-    login: vi.fn(),
-    quickConnectEnabled: vi.fn(),
-    initiateQuickConnect: vi.fn(),
-    pollQuickConnect: vi.fn(),
-    authenticateWithQuickConnect: vi.fn(),
-    logout: vi.fn().mockResolvedValue(undefined),
-    userViews: vi.fn(),
-    resumeItems: vi.fn(),
-    nextUp: vi.fn(),
-    latestInLibrary: vi.fn(),
-    libraryItems: vi.fn(),
     searchHints: vi.fn().mockResolvedValue(HINTS),
     searchItems: vi.fn().mockResolvedValue({ cards: [], hasMore: false } satisfies SearchPage),
-    seasons: vi.fn(),
-    episodes: vi.fn(),
-    imageUrl: vi.fn(() => "https://media.test/img.webp"),
-    authorizationHeader: vi.fn(() => 'MediaBrowser Token="test"'),
     ...overrides,
-  };
+  });
 }
 
 function SignIn({ gateway }: { gateway: SessionGateway }) {
@@ -202,7 +186,7 @@ describe("route term", () => {
 });
 
 describe("results", () => {
-  it("groups results by type and links only series", async () => {
+  it("groups results by type and links each result", async () => {
     const gateway = fakeGateway({
       searchItems: vi.fn().mockResolvedValue({
         cards: [card("m1", "Arrival", "Movie"), card("s1", "Arrow", "Series"), card("e1", "Pilot", "Episode")],
@@ -215,8 +199,8 @@ describe("results", () => {
     expect(screen.getByRole("heading", { name: "Series" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Episodes" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Arrow" })).toHaveAttribute("href", "#/next/series/s1");
-    expect(screen.getByRole("article", { name: "Arrival" })).toBeInTheDocument();
-    expect(screen.getByRole("article", { name: "Pilot" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Arrival" })).toHaveAttribute("href", "#/next/item/m1");
+    expect(screen.getByRole("link", { name: "Pilot" })).toHaveAttribute("href", "#/next/item/e1");
     expect(screen.getAllByRole("status").map((node) => node.textContent)).toContain("3 results");
     expect(gateway.searchItems).toHaveBeenCalledWith("ar", { startIndex: 0, limit: 40 }, expect.any(AbortSignal));
   });
@@ -232,7 +216,7 @@ describe("results", () => {
     });
     await advance(0);
     expect(searchItems.mock.calls[1]?.[1]).toEqual({ startIndex: 40, limit: 40 });
-    expect(screen.getByRole("article", { name: "Arrow Movie" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Arrow Movie" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Load more" })).not.toBeInTheDocument();
   });
 
@@ -258,6 +242,6 @@ describe("results", () => {
       fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     });
     await advance(0);
-    expect(screen.getByRole("article", { name: "Arrival" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Arrival" })).toBeInTheDocument();
   });
 });

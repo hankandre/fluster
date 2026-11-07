@@ -1,0 +1,118 @@
+import { expect, test, type Page } from "@playwright/test";
+
+const serverUrl = "http://127.0.0.1:8096";
+
+const stream = (extra: Record<string, unknown>) => ({ IsExternal: false, IsDefault: false, IsForced: false, ...extra });
+
+const hdrSource = {
+  Id: "src-4k",
+  Name: "4K HDR",
+  Container: "mkv",
+  Size: 12 * 1024 ** 3,
+  MediaStreams: [
+    stream({ Index: 0, Type: "Video", Codec: "hevc", Profile: "Main 10", Width: 3840, Height: 2160, BitDepth: 10, VideoRange: "HDR", VideoRangeType: "HDR10" }),
+    stream({ Index: 1, Type: "Audio", Codec: "eac3", Language: "eng", Channels: 6, IsDefault: true }),
+    stream({ Index: 2, Type: "Subtitle", Codec: "subrip", Language: "eng", IsDefault: true }),
+    stream({ Index: 3, Type: "Subtitle", Codec: "pgssub", Language: "fra", IsExternal: true }),
+  ],
+};
+
+const sdrSource = {
+  Id: "src-hd",
+  Name: "1080p",
+  Container: "mp4",
+  MediaStreams: [
+    stream({ Index: 0, Type: "Video", Codec: "h264", Width: 1920, Height: 1080, BitDepth: 8, VideoRange: "SDR", VideoRangeType: "SDR" }),
+    stream({ Index: 1, Type: "Audio", Codec: "aac", Language: "eng", Channels: 2, IsDefault: true }),
+  ],
+};
+
+// Mocks a server with one movie that has two versions. Played and favorite
+// requests are recorded and change what the item reports next.
+async function mockDetailServer(page: Page) {
+  const writes: string[] = [];
+  let favorite = false;
+  await page.route(`${serverUrl}/**`, (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const cors = {
+      "access-control-allow-origin": "*",
+      "access-control-allow-headers": "*",
+      "access-control-allow-methods": "*",
+    };
+    const json = (body: unknown) => route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify(body) });
+    if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+    if (url.pathname.startsWith("/UserFavoriteItems/")) {
+      writes.push(`${request.method()} ${url.pathname}`);
+      favorite = request.method() === "POST";
+      return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: "{}" });
+    }
+    switch (url.pathname) {
+      case "/System/Info/Public":
+        return json({ ServerName: "Testfin", Version: "10.11.7", Id: "server-1" });
+      case "/QuickConnect/Enabled":
+        return json(true);
+      case "/QuickConnect/Initiate":
+        return json({ Secret: "e2e-secret", Code: "482913", Authenticated: false });
+      case "/QuickConnect/Connect":
+        return json({ Secret: "e2e-secret", Code: "482913", Authenticated: true });
+      case "/Users/AuthenticateWithQuickConnect":
+        return json({ AccessToken: "test-token", User: { Id: "user-1", Name: "Tester" } });
+      case "/UserViews":
+        return json({ Items: [{ Id: "lib-1", Name: "Movies", CollectionType: "movies" }] });
+      case "/UserItems/Resume":
+      case "/Shows/NextUp":
+        return json({ Items: [] });
+      case "/Items/Latest":
+        return json([{ Id: "movie-1", Name: "Arrival", Type: "Movie", ProductionYear: 2016 }]);
+      case "/Items/movie-1":
+        return json({
+          Id: "movie-1",
+          Name: "Arrival",
+          Type: "Movie",
+          ProductionYear: 2016,
+          Overview: "A linguist meets visitors.",
+          Genres: ["Sci-Fi"],
+          MediaSources: [hdrSource, sdrSource],
+          UserData: { Played: false, IsFavorite: favorite, PlaybackPositionTicks: 0 },
+        });
+      default:
+        return route.fulfill({ status: 404, headers: cors });
+    }
+  });
+  return writes;
+}
+
+test("open a movie, read its media info, switch version, and favorite it", async ({ page }) => {
+  const writes = await mockDetailServer(page);
+
+  await page.goto("/#/next/sign-in");
+  await page.getByLabel("Server URL").fill(serverUrl);
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { name: "Home" })).toBeVisible({ timeout: 8_000 });
+
+  await page.getByRole("link", { name: "Arrival, 2016" }).click();
+  await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
+  await expect(page.getByRole("heading", { name: "Arrival" })).toBeVisible();
+
+  const hdrInfo = page.getByRole("region", { name: "Media info for 4K HDR" });
+  await expect(hdrInfo.getByText("HEVC · Main 10 · 3840×2160 · 10-bit")).toBeVisible();
+  await expect(hdrInfo.getByText("HDR10", { exact: true })).toBeVisible();
+  await expect(hdrInfo.getByText("English · E-AC-3 5.1 · default")).toBeVisible();
+  await expect(hdrInfo.getByText("English · SRT · default")).toBeVisible();
+  await expect(hdrInfo.getByText("French · PGS · external")).toBeVisible();
+
+  await page.getByRole("radio", { name: "1080p" }).check();
+  const sdrInfo = page.getByRole("region", { name: "Media info for 1080p" });
+  await expect(sdrInfo.getByText("H.264 · 1920×1080 · 8-bit")).toBeVisible();
+  await expect(sdrInfo.getByText("SDR", { exact: true })).toBeVisible();
+
+  const favorite = page.getByRole("button", { name: "Favorite" });
+  await favorite.click();
+  await expect(favorite).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(() => writes).toEqual(["POST /UserFavoriteItems/movie-1"]);
+
+  await favorite.click();
+  await expect(favorite).toHaveAttribute("aria-pressed", "false");
+  await expect.poll(() => writes).toEqual(["POST /UserFavoriteItems/movie-1", "DELETE /UserFavoriteItems/movie-1"]);
+});

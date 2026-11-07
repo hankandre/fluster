@@ -1,4 +1,4 @@
-import type { BrowsePage, BrowseQuery, CardImageType, EpisodeCard, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season } from "../domain/catalog";
+import type { BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season } from "../domain/catalog";
 import type { RealtimeConnection, ServerEvent } from "../domain/realtime";
 import type { ServerConnection } from "../domain/server-connection";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -26,6 +26,9 @@ export interface SessionGateway {
   searchItems(term: string, query: SearchQuery, signal?: AbortSignal): Promise<SearchPage>;
   seasons(seriesId: string, signal?: AbortSignal): Promise<Season[]>;
   episodes(seriesId: string, seasonId: string, signal?: AbortSignal): Promise<EpisodeCard[]>;
+  itemDetail(itemId: string, signal?: AbortSignal): Promise<ItemDetail>;
+  setPlayed(itemId: string, played: boolean, signal?: AbortSignal): Promise<void>;
+  setFavorite(itemId: string, favorite: boolean, signal?: AbortSignal): Promise<void>;
   imageUrl(itemId: string, type: CardImageType, tag: string, maxWidth: number): string;
   // Only for opening the server socket. Never log or store it.
   authorizationHeader(): string;

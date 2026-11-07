@@ -42,6 +42,10 @@ class FixtureTransport implements HttpTransport {
     this.posts.push({ url, data: data as Record<string, unknown>, params: config?.params ?? {} });
     return { data: this.playbackInfo as T };
   }
+
+  async delete<T>(): Promise<{ data: T }> {
+    throw new Error("unexpected DELETE");
+  }
 }
 
 async function planFrom(response: PlaybackInfoResponse, itemId: string) {

@@ -7,33 +7,18 @@ import { DetailView } from "./detail";
 import { FeatureIndex } from "./index";
 import { HomeView } from "./home";
 import { PlayerFeatureView } from "./player";
+import { fakeSessionGateway } from "../test/fake-session-gateway";
 
 afterEach(cleanup);
 
 function stubGateway(): SessionGateway {
-  return {
-    serverUrl: "https://media.test",
-    origin: "https://media.test",
-    connect: vi.fn(),
-    confirmUnencryptedConnection: vi.fn(),
-    login: vi.fn(),
-    quickConnectEnabled: vi.fn(),
-    initiateQuickConnect: vi.fn(),
-    pollQuickConnect: vi.fn(),
-    authenticateWithQuickConnect: vi.fn(),
-    logout: vi.fn().mockResolvedValue(undefined),
+  return fakeSessionGateway({
     userViews: vi.fn().mockResolvedValue([]),
     resumeItems: vi.fn().mockResolvedValue([]),
     nextUp: vi.fn().mockResolvedValue([]),
     latestInLibrary: vi.fn().mockResolvedValue([]),
-    libraryItems: vi.fn(),
-    searchHints: vi.fn(),
-    searchItems: vi.fn(),
-    seasons: vi.fn(),
-    episodes: vi.fn(),
     imageUrl: vi.fn().mockReturnValue(""),
-    authorizationHeader: vi.fn().mockReturnValue('MediaBrowser Token="test-token"'),
-  };
+  });
 }
 
 function SignedIn({ gateway, label = "test sign in" }: { gateway: SessionGateway; label?: string }) {

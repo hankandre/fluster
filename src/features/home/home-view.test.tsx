@@ -5,6 +5,7 @@ import { SessionProvider, useSession, type SessionGateway } from "../../app/sess
 import type { MediaCard } from "../../domain/catalog";
 import { FakeRealtime } from "../../test/fake-realtime";
 import { HomeView, refreshHomeRows } from "./index";
+import { fakeSessionGateway } from "../../test/fake-session-gateway";
 
 vi.mock("./blurhash", () => ({
   blurhashToDataUrl: (hash: string) => `data:image/png;base64,${hash}`,
@@ -15,30 +16,14 @@ function card(id: string, title: string, overrides: Partial<MediaCard> = {}): Me
 }
 
 function fakeGateway(overrides: Partial<SessionGateway> = {}): SessionGateway {
-  return {
-    serverUrl: "https://media.test",
-    origin: "https://media.test",
-    connect: vi.fn(),
-    confirmUnencryptedConnection: vi.fn(),
-    login: vi.fn(),
-    quickConnectEnabled: vi.fn(),
-    initiateQuickConnect: vi.fn(),
-    pollQuickConnect: vi.fn(),
-    authenticateWithQuickConnect: vi.fn(),
-    logout: vi.fn().mockResolvedValue(undefined),
+  return fakeSessionGateway({
     userViews: vi.fn().mockResolvedValue([{ id: "lib-1", name: "Movies", collectionType: "movies" }]),
     resumeItems: vi.fn().mockResolvedValue([card("r1", "Resume me", { progress: 0.4 })]),
     nextUp: vi.fn().mockResolvedValue([card("n1", "Up next")]),
     latestInLibrary: vi.fn().mockResolvedValue([card("l1", "Fresh movie")]),
-    libraryItems: vi.fn(),
-    searchHints: vi.fn(),
-    searchItems: vi.fn(),
-    seasons: vi.fn(),
-    episodes: vi.fn(),
     imageUrl: vi.fn((itemId: string, type: string, tag: string) => `https://media.test/${itemId}/${type}/${tag}.webp`),
-    authorizationHeader: vi.fn().mockReturnValue('MediaBrowser Token="test-token"'),
     ...overrides,
-  };
+  });
 }
 
 function SignIn({ gateway }: { gateway: SessionGateway }) {
@@ -166,7 +151,18 @@ describe("HomeView", () => {
     expect(plain).toHaveAttribute("data-placeholder", "neutral");
   });
 
-  it("renders cards as non-interactive list items", async () => {
+  it("links movie, episode, and series cards by kind", async () => {
+    await renderHome(fakeGateway({
+      resumeItems: vi.fn().mockResolvedValue([card("m1", "A movie", { kind: "Movie" })]),
+      nextUp: vi.fn().mockResolvedValue([card("e1", "An episode", { kind: "Episode" })]),
+      latestInLibrary: vi.fn().mockResolvedValue([card("s1", "A series", { kind: "Series" })]),
+    }));
+    expect(await screen.findByRole("link", { name: "A movie" })).toHaveAttribute("href", "#/next/item/m1");
+    expect(await screen.findByRole("link", { name: "An episode" })).toHaveAttribute("href", "#/next/item/e1");
+    expect(await screen.findByRole("link", { name: "A series" })).toHaveAttribute("href", "#/next/series/s1");
+  });
+
+  it("renders cards of unknown kind as non-interactive list items", async () => {
     await renderHome(fakeGateway());
     const item = await screen.findByRole("article", { name: "Resume me, 40% watched" });
     expect(item).not.toHaveAttribute("tabindex");
