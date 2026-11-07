@@ -480,6 +480,27 @@
           "owner": null,
           "passes": false,
           "evidence": ""
+        },
+        {
+          "id": "P1-10",
+          "title": "Send stopped reports reliably",
+          "domain": "Playstate Reporting",
+          "model": "opus",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "P2-05"
+          ],
+          "acceptance": [
+            "A stopped report queued behind a report that hit the drain deadline is still sent with a live signal or its own bounded timeout",
+            "A launch failure after a start report sends a stopped report with Failed: true",
+            "Tests reproduce both cases and fail without the fix"
+          ],
+          "verify": "pnpm test -- playstate-reporter coordinator",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
         }
       ]
     },
