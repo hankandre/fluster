@@ -23,7 +23,7 @@ module.exports = {
         "DOMAINS.md > Dependency rules 3: only the composition root constructs gateways and engines. Receive them via props or context from src/app/compose.ts.",
       from: { path: "^src/(components|features)/", pathNot: tests },
       to: {
-        path: "^src/lib/(jellyfin/gateway|player/native-player|player/browser-player)",
+        path: "^src/lib/(jellyfin/gateway|player/native-player|player/browser-player|realtime/)",
       },
     },
     {

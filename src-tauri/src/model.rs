@@ -184,6 +184,27 @@ pub enum PlayerEvent {
     },
 }
 
+/// The only server-socket events the frontend sees. Everything else the
+/// server sends is dropped in Rust.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(tag = "kind", rename_all = "kebab-case")]
+pub enum ServerEvent {
+    #[serde(rename_all = "camelCase")]
+    UserDataChanged {
+        item_ids: Vec<String>,
+    },
+    Connection {
+        state: ConnectionState,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ConnectionState {
+    Connected,
+    Disconnected,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

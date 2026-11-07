@@ -219,7 +219,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 - message routing (`UserDataChanged` → Catalog; `Play`/`Playstate`/`GeneralCommand` → Playback Session)
 - SyncPlay, later
 
-**Code today.** None.
+**Code today.** `src-tauri/src/realtime.rs` (the `/socket` connection, keepalive, typed events), `src/lib/realtime/` (native and no-op adapters), the `RealtimeConnection` port in `src/domain/realtime.ts`, and socket lifecycle in `src/app/session.tsx`.
 
 **Rules.**
 - Inbound commands are translated into existing use cases. They never get a privileged path around Playback Negotiation.

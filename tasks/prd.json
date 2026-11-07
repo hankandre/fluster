@@ -973,10 +973,10 @@
             "UserDataChanged refreshes affected rows"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "native-engineer",
+          "passes": true,
+          "evidence": "Rust-side /socket (src-tauri/src/realtime.rs) sends Authorization: MediaBrowser on the upgrade and answers ForceKeepAlive at half the timeout; verified in Jellyfin source (WebSocketManager -> AuthService, SessionWebSocketListener, WebSocketConnection; 10.11.11 and 12.4). Live fixture runs (10.11.7, 12.4): connected with header auth, got UserDataChanged, held 75 s past the 60 s timeout; no-auth upgrade gets 403. user-data-changed invalidates Home rows (session.test.tsx, home-view.test.tsx). pnpm check, clippy, cargo test --release, test:e2e green."
         },
         {
           "id": "P3-17",

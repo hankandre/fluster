@@ -12,6 +12,7 @@ afterEach(cleanup);
 
 function stubGateway(): SessionGateway {
   return {
+    serverUrl: "https://media.test",
     connect: vi.fn(),
     login: vi.fn(),
     quickConnectEnabled: vi.fn(),
@@ -29,6 +30,7 @@ function stubGateway(): SessionGateway {
     seasons: vi.fn(),
     episodes: vi.fn(),
     imageUrl: vi.fn().mockReturnValue(""),
+    authorizationHeader: vi.fn().mockReturnValue('MediaBrowser Token="test-token"'),
   };
 }
 
