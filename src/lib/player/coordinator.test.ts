@@ -321,6 +321,39 @@ describe("PlaybackCoordinator", () => {
     }
   });
 
+  it("lets Back return without waiting for a hung stopped report from the previous attempt", async () => {
+    const replacementPlan = { ...plan, playSessionId: "session-2" };
+    const gateway = {
+      createPlaybackPlan: vi.fn()
+        .mockResolvedValueOnce(plan)
+        .mockResolvedValueOnce(replacementPlan),
+      reportStart: vi.fn(async () => undefined),
+      reportProgress: vi.fn(async () => undefined),
+      // A server that never answers and ignores cancellation.
+      reportStopped: vi.fn(() => new Promise<void>(() => undefined)),
+    } as PlaybackGateway;
+    const player = new FakePlayer();
+    const coordinator = new PlaybackCoordinator(gateway, player, {
+      onEvent: vi.fn(),
+      onReportingError: vi.fn(),
+    });
+
+    await coordinator.start(item);
+    player.listener?.({ kind: "loaded", snapshot });
+    await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalledTimes(1));
+    const retrying = coordinator.retry().catch(() => undefined);
+    await vi.waitFor(() => expect(gateway.reportStopped).toHaveBeenCalledTimes(1));
+
+    const outcome = await Promise.race([
+      coordinator.stop().then(() => "returned"),
+      new Promise((resolve) => setTimeout(() => resolve("blocked"), 200)),
+    ]);
+    await retrying;
+
+    expect(outcome).toBe("returned");
+    expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1);
+  });
+
   it("does not relaunch when stop overtakes a retry", async () => {
     const replacementPlan = { ...plan, playSessionId: "session-2" };
     const gateway = {
