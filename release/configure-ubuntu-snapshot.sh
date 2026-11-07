@@ -20,3 +20,6 @@ printf 'deb [snapshot=%s] http://security.ubuntu.com/ubuntu jammy-security main 
 # installs resolve to one consistent package set, downgrading when required.
 printf 'Package: *\nPin: release o=Ubuntu\nPin-Priority: 1001\n' \
   > /etc/apt/preferences.d/ubuntu-snapshot
+# Apply to every later apt-get call, including ones made by other tools.
+printf 'APT::Get::allow-downgrades "true";\n' \
+  > /etc/apt/apt.conf.d/99-ubuntu-snapshot-downgrades
