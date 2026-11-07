@@ -30,8 +30,15 @@ describe("evaluateSource", () => {
     expect(evaluateSource({ ...playable, ...change })).toMatchObject({ kind: "refused", reason });
   });
 
-  it("applies the rules in order", () => {
+  it("reports a disc source before missing direct-play support", () => {
     const decision = evaluateSource({ ...playable, SupportsDirectPlay: false, Protocol: "Http", VideoType: "BluRay" });
+    expect(decision).toMatchObject({ kind: "refused", reason: "disc-source" });
+    const iso = evaluateSource({ ...playable, SupportsDirectPlay: false, VideoType: "Iso" });
+    expect(iso).toMatchObject({ kind: "refused", reason: "iso-source" });
+  });
+
+  it("applies the remaining rules in order", () => {
+    const decision = evaluateSource({ ...playable, SupportsDirectPlay: false, Protocol: "Http", TranscodingUrl: "/x" });
     expect(decision).toMatchObject({ kind: "refused", reason: "no-direct-play" });
   });
 

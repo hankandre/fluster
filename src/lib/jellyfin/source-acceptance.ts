@@ -17,6 +17,14 @@ export type SourceDecision =
 const DISC_VIDEO_TYPES = new Set(["BluRay", "Dvd"]);
 
 export function evaluateSource(source: MediaSourceDto): SourceDecision {
+  // Disc checks come first so a disc folder always gets the clearest reason.
+  if (source.VideoType && DISC_VIDEO_TYPES.has(source.VideoType)) {
+    return refused({ reason: "disc-source", detail: source.VideoType });
+  }
+  // Rejected until mpv playback of an ISO over HTTP is verified.
+  if (source.VideoType === "Iso") {
+    return refused({ reason: "iso-source" });
+  }
   if (source.SupportsDirectPlay !== true) {
     return refused({ reason: "no-direct-play" });
   }
@@ -25,13 +33,6 @@ export function evaluateSource(source: MediaSourceDto): SourceDecision {
   }
   if (source.TranscodingUrl) {
     return refused({ reason: "server-requires-transcoding" });
-  }
-  if (source.VideoType && DISC_VIDEO_TYPES.has(source.VideoType)) {
-    return refused({ reason: "disc-source", detail: source.VideoType });
-  }
-  // Rejected until mpv playback of an ISO over HTTP is verified.
-  if (source.VideoType === "Iso") {
-    return refused({ reason: "iso-source" });
   }
   if (!source.Id || !source.Path) {
     return refused({ reason: "missing-source-data", detail: source.Id ? "Path" : "Id" });
