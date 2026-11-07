@@ -20,6 +20,7 @@ function card(id: string, title: string, kind: SearchCard["kind"]): SearchCard {
 
 function fakeGateway(overrides: Partial<SessionGateway> = {}): SessionGateway {
   return {
+    serverUrl: "https://jellyfin.test",
     connect: vi.fn(),
     login: vi.fn(),
     quickConnectEnabled: vi.fn(),
@@ -37,6 +38,7 @@ function fakeGateway(overrides: Partial<SessionGateway> = {}): SessionGateway {
     seasons: vi.fn(),
     episodes: vi.fn(),
     imageUrl: vi.fn(() => "https://media.test/img.webp"),
+    authorizationHeader: vi.fn(() => 'MediaBrowser Token="test"'),
     ...overrides,
   };
 }
