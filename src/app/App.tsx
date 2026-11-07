@@ -8,13 +8,24 @@ import { HomeView, refreshHomeRows } from "../features/home";
 import { BrowseView, CollectionView, SeriesView } from "../features/browse";
 import { SearchView } from "../features/search";
 import { DetailView, ItemDetailView } from "../features/detail";
-import { PlayerFeatureView } from "../features/player";
+import { PlayerFeatureView, PlayerRouteView } from "../features/player";
+import { parsePlayRoute } from "../features/routes";
 import type { PocServices } from "../poc/services";
 import { createServices } from "./compose";
+import { PlayerServicesProvider, type PlayerServices } from "./player-services";
 import { SessionProvider } from "./session";
 
 export function App() {
   const services = useMemo(() => createServices(), []);
+  // One player engine for the whole app, shared by the new UI and the proof of concept.
+  const player = useMemo<PlayerServices>(
+    () => ({ engine: services.createPlayerEngine(), watchWindowClose: services.watchWindowClose }),
+    [services],
+  );
+  const pocServices = useMemo<PocServices>(
+    () => ({ ...services, createPlayerEngine: () => player.engine }),
+    [services, player],
+  );
   const queryClient = useQueryClient();
   const refreshRows = useCallback(() => void refreshHomeRows(queryClient), [queryClient]);
   const [hash, setHash] = useState(window.location.hash);
@@ -31,7 +42,7 @@ export function App() {
       realtime={services.realtime}
       onServerDataChanged={refreshRows}
     >
-      {renderRoute(hash, services)}
+      <PlayerServicesProvider services={player}>{renderRoute(hash, pocServices)}</PlayerServicesProvider>
     </SessionProvider>
   );
 }
@@ -53,10 +64,18 @@ function renderRoute(hash: string, services: PocServices) {
     case "#/next/player":
       return <PlayerFeatureView />;
     default:
+      if (hash.startsWith("#/next/play/")) return renderPlayRoute(hash);
       // Only a hash outside #/next shows the proof of concept.
       if (hash === "#/next" || hash.startsWith("#/next/")) return renderBrowseRoute(hash) ?? <NotFoundView />;
       return <PocApp services={services} />;
   }
+}
+
+// #/next/play/<itemId>?source=<mediaSourceId>&start=<ticks>
+function renderPlayRoute(hash: string) {
+  const route = parsePlayRoute(hash);
+  if (!route) return <NotFoundView />;
+  return <PlayerRouteView key={hash} {...route} />;
 }
 
 // Routes with an id: #/next/browse/<libraryId>, #/next/item/<id>, #/next/series/<id>, #/next/collection/<id>,

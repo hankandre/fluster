@@ -29,6 +29,10 @@ export function fakeSessionGateway(overrides: Partial<SessionGateway> = {}): Ses
     setPlayed: vi.fn(),
     setFavorite: vi.fn(),
     imageUrl: vi.fn(() => "https://media.test/img.webp"),
+    createPlaybackPlan: vi.fn(),
+    reportStart: vi.fn().mockResolvedValue(undefined),
+    reportProgress: vi.fn().mockResolvedValue(undefined),
+    reportStopped: vi.fn().mockResolvedValue(undefined),
     authorizationHeader: vi.fn(() => 'MediaBrowser Token="test-token"'),
     ...overrides,
   };

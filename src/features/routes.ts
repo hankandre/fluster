@@ -26,3 +26,44 @@ export function cardRoute(card: MediaCard): string | undefined {
       return undefined;
   }
 }
+
+export interface PlayRoute {
+  itemId: string;
+  // The version chosen on the detail view; the server picks when absent.
+  mediaSourceId?: string;
+  // Where playback starts. Zero starts from the beginning.
+  startTicks: number;
+}
+
+const PLAY_PREFIX = "#/next/play/";
+
+export function playRoute({ itemId, mediaSourceId, startTicks }: PlayRoute): string {
+  const params = new URLSearchParams();
+  if (mediaSourceId) params.set("source", mediaSourceId);
+  if (startTicks > 0) params.set("start", String(startTicks));
+  const query = params.toString();
+  return `${PLAY_PREFIX}${encodeURIComponent(itemId)}${query ? `?${query}` : ""}`;
+}
+
+// Reads #/next/play/<itemId>?source=<mediaSourceId>&start=<ticks>.
+// A malformed id or start position is not a route.
+export function parsePlayRoute(hash: string): PlayRoute | undefined {
+  if (!hash.startsWith(PLAY_PREFIX)) return undefined;
+  const rest = hash.slice(PLAY_PREFIX.length);
+  const queryStart = rest.indexOf("?");
+  const encodedId = queryStart === -1 ? rest : rest.slice(0, queryStart);
+  const params = new URLSearchParams(queryStart === -1 ? "" : rest.slice(queryStart + 1));
+  if (!encodedId || encodedId.includes("/")) return undefined;
+
+  let itemId: string;
+  try {
+    itemId = decodeURIComponent(encodedId);
+  } catch {
+    return undefined;
+  }
+
+  const start = params.get("start") ?? "0";
+  if (!/^\d{1,18}$/.test(start)) return undefined;
+  const source = params.get("source");
+  return { itemId, mediaSourceId: source || undefined, startTicks: Number(start) };
+}

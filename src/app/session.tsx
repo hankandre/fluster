@@ -1,4 +1,5 @@
-import type { BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season } from "../domain/catalog";
+import type { BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, LibraryItem, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season } from "../domain/catalog";
+import type { PlaybackPlan, PlaybackSnapshot } from "../domain/playback";
 import type { RealtimeConnection, ServerEvent } from "../domain/realtime";
 import type { ServerConnection } from "../domain/server-connection";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -30,6 +31,10 @@ export interface SessionGateway {
   setPlayed(itemId: string, played: boolean, signal?: AbortSignal): Promise<void>;
   setFavorite(itemId: string, favorite: boolean, signal?: AbortSignal): Promise<void>;
   imageUrl(itemId: string, type: CardImageType, tag: string, maxWidth: number): string;
+  createPlaybackPlan(item: LibraryItem, startPositionTicks: number, signal?: AbortSignal, mediaSourceId?: string): Promise<PlaybackPlan>;
+  reportStart(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal): Promise<void>;
+  reportProgress(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal): Promise<void>;
+  reportStopped(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal, failed?: boolean): Promise<void>;
   // Only for opening the server socket. Never log or store it.
   authorizationHeader(): string;
 }
