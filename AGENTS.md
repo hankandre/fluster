@@ -30,6 +30,7 @@ Fluster is a direct-play-only Jellyfin client: Tauri 2 + React/TypeScript + Rust
 
 ## Commands
 
+- Use the Node version in `.node-version` (mise reads it via `mise.toml`; run `mise exec --` in non-interactive shells).
 - Install: `pnpm install`
 - Browser dev: `pnpm dev`
 - Desktop dev: `pnpm tauri dev`
