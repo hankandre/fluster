@@ -35,7 +35,7 @@ Suggested model routing (see `WORKFLOW.md`): Opus pilots milestones 3–5 (polic
 
 ## Progress
 
-- [ ] 1 · [x] 2 · [ ] 3 · [ ] 4 · [ ] 5 · [ ] 6 · [ ] 7 · [ ] 8
+- [ ] 1 · [x] 2 · [ ] 3 · [ ] 4 · [ ] 5 · [ ] 6 · [ ] 7 · [x] 8
 
 ## Decision log
 
@@ -48,7 +48,7 @@ Suggested model routing (see `WORKFLOW.md`): Opus pilots milestones 3–5 (polic
 
 ## Validation evidence
 
-_(fill in as milestones land)_
+- M8: SDK pinned to 1.0.2; `latest()` uses `GET /Items?userId=`; `Fields` is `Overview` only. pnpm audit, check, e2e, lint:boundaries pass.
 
 ## Outcome & retrospective
 

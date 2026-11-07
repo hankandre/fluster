@@ -104,7 +104,7 @@ async function prepareJellyfin(
     if (path === "/Users/AuthenticateByName") {
       return json({ AccessToken: "test-token", User: { Id: "user-1", Name: "Tester" } });
     }
-    if (path === "/Users/user-1/Items") {
+    if (path === "/Items") {
       return json({ Items: [{
         Id: "movie-1",
         Name: "Embedded Movie",

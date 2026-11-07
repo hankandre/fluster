@@ -231,7 +231,7 @@ If no source qualifies, return a typed **refusal reason** for the UI. Possible r
 
 ### SDK
 
-`@jellyfin/sdk` 1.0.x is current; Fluster pins 0.13. Upgrade as part of the 12.x compatibility work. The gateway remains the **only** module that talks to the server.
+Fluster pins `@jellyfin/sdk` 1.0.2. The gateway remains the **only** module that talks to the server.
 
 ---
 
@@ -265,7 +265,6 @@ Tracked in `docs/plans/active/001-jellyfin-api-correctness.md`.
 | High | BluRay/DVD folder sources are not rejected; ffmpeg runs silently |
 | Medium | DeviceId regenerates every launch; logout never revokes the token on the server |
 | Medium | Error stops don't send `Failed: true`; refusal reasons aren't surfaced |
-| Low | Obsolete `/Users/{id}/Items`; invalid `fields` values; SDK 0.13 |
 
 ---
 

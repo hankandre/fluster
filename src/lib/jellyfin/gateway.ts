@@ -181,14 +181,15 @@ export class JellyfinGateway {
 
   async latest(signal?: AbortSignal): Promise<LibraryItem[]> {
     this.requireSession();
-    const { data } = await this.get<{ Items?: BaseItemDto[] }>(`/Users/${this.userId}/Items`, {
+    const { data } = await this.get<{ Items?: BaseItemDto[] }>("/Items", {
       params: {
+        userId: this.userId,
         Recursive: true,
         IncludeItemTypes: "Movie,Episode",
         SortBy: "DateCreated",
         SortOrder: "Descending",
         Limit: 10,
-        Fields: "Overview,ProductionYear,RunTimeTicks",
+        Fields: "Overview",
         EnableUserData: true,
       },
       signal,
