@@ -26,4 +26,4 @@
 
 - Add the command to the list in `docs/security.md`.
 - Add the command to the list in `docs/architecture.md`.
-- Update the command allowlist test when it exists.
+- Update `ALLOWED_COMMANDS` in `src-tauri/src/command_allowlist.rs`; its tests fail until it matches `generate_handler!`.
