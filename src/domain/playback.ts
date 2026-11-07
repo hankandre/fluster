@@ -85,7 +85,11 @@ export interface PlayerTrack {
 export interface PlaybackPlan {
   itemId: string;
   title: string;
+  // Token-free: media requests authenticate with `authorization` instead.
   streamUrl: string;
+  // The signed-in `MediaBrowser …` header. Only the native engine sends it,
+  // through the typed launch request; it must never be logged or put in a URL.
+  authorization: string;
   mediaSourceId: string;
   playSessionId: string;
   startPositionTicks: number;

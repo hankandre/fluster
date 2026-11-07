@@ -208,6 +208,7 @@ function planWith(playSessionId: string): PlaybackPlan {
     itemId: "one",
     title: "One",
     streamUrl: `${SERVER}/Videos/1/stream?api_key=${CANARY}`,
+    authorization: `MediaBrowser Client="Fluster", Token="${CANARY}"`,
     mediaSourceId: "source",
     playSessionId,
     startPositionTicks: 0,

@@ -4,6 +4,7 @@
 //! token in the URL is forbidden (invariant I4), so the socket lives here.
 //! Rust answers keepalives itself and forwards only `ServerEvent`s.
 
+use crate::auth_header::MediaBrowserAuthorization;
 use crate::model::{ConnectionState, ServerEvent};
 use crate::url_policy::parse_allowed_url;
 use futures_util::{FutureExt, SinkExt, StreamExt};
@@ -36,7 +37,6 @@ const MAX_MESSAGE_BYTES: usize = 1024 * 1024;
 const DEFAULT_KEEP_ALIVE_TIMEOUT_SECONDS: u64 = 60;
 const MIN_KEEP_ALIVE_TIMEOUT_SECONDS: u64 = 2;
 const MAX_KEEP_ALIVE_TIMEOUT_SECONDS: u64 = 600;
-const MAX_AUTHORIZATION_BYTES: usize = 4096;
 const MAX_ITEM_ID_LENGTH: usize = 64;
 const KEEP_ALIVE: &str = r#"{"MessageType":"KeepAlive"}"#;
 
@@ -80,13 +80,10 @@ pub fn socket_target(server_url: &str, authorization: &str) -> Result<SocketTarg
     let socket_path = format!("{}/socket", url.path().trim_end_matches('/'));
     url.set_path(&socket_path);
 
-    let is_media_browser_header =
-        authorization.starts_with("MediaBrowser ") && authorization.contains("Token=\"");
-    if !is_media_browser_header || authorization.len() > MAX_AUTHORIZATION_BYTES {
-        return Err(RealtimeError::InvalidAuthorization);
-    }
-    let mut authorization =
-        HeaderValue::from_str(authorization).map_err(|_| RealtimeError::InvalidAuthorization)?;
+    let authorization = MediaBrowserAuthorization::parse(authorization)
+        .map_err(|_| RealtimeError::InvalidAuthorization)?;
+    let mut authorization = HeaderValue::from_str(authorization.expose())
+        .map_err(|_| RealtimeError::InvalidAuthorization)?;
     authorization.set_sensitive(true);
     Ok(SocketTarget { url, authorization })
 }

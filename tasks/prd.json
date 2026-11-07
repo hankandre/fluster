@@ -385,10 +385,10 @@
             "Playback works on the 12.x server with legacy authorization off"
           ],
           "verify": "pnpm check && cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "native-engineer",
+          "passes": true,
+          "evidence": "Stream and subtitle URLs carry no token; PlaybackPlan.authorization goes to Rust as a validated LaunchRequest.authorization and is set as the only mpv http-header-fields item; validate_playback_urls refuses credential query params in any case.\nLoopback libmpv tests prove the exact Authorization line on the stream and sub-add requests and that a 302 to another origin receives nothing with max_redirects=0.\nLive (12.4.0, legacy auth off; also 10.11.7): headless libmpv with real-gateway plans reached file-loaded and playback-restart for the H.264 and sidecar samples and sub-add loaded the sidecar; note both servers serve /Videos/{id}/stream anonymously, so no 401 baseline exists.\nfmt, clippy -D warnings, cargo test (+release) 54 passed, pnpm check 407 passed, pnpm test:e2e 14 passed."
         },
         {
           "id": "P1-05",

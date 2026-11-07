@@ -5,7 +5,8 @@ import { PlaystateReporter, type PlaystateGateway } from "./playstate-reporter";
 const plan: PlaybackPlan = {
   itemId: "one",
   title: "One",
-  streamUrl: "https://media.test/video?api_key=secret",
+  streamUrl: "https://media.test/video",
+  authorization: 'MediaBrowser Token="secret"',
   mediaSourceId: "source",
   playSessionId: "session",
   startPositionTicks: 0,

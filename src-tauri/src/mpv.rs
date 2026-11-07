@@ -1,3 +1,4 @@
+use crate::auth_header::MediaBrowserAuthorization;
 use crate::model::{
     DecodeMode, LaunchRequest, MediaTrack, PlaybackSnapshot, PlayerCapabilities, PlayerEvent,
     PlayerSurfaceFrame, PlayerTrack,
@@ -34,6 +35,8 @@ pub enum MpvError {
     UnsafeStreamUrl,
     #[error("An external subtitle URL is not allowed. Subtitles must use the same server origin as the playback stream.")]
     UnsafeSubtitleUrl,
+    #[error("A media URL must not carry a credential. Fluster authenticates media requests with a header.")]
+    CredentialInUrl,
     #[error("Could not initialize libmpv 0.41 or newer: {0}")]
     Initialize(String),
     #[error("Fluster requires libmpv 0.41 or newer, but found {0}. Install a current libmpv development/runtime package or use the release AppImage.")]
@@ -160,6 +163,7 @@ impl MpvController {
             init.set_option("input-vo-keyboard", false)?;
             init.set_option("keep-open", false)?;
             harden_network_options(&init)?;
+            set_media_authorization(&init, &request.authorization)?;
             Ok(())
         })
         .map_err(|error| MpvError::Initialize(safe_error(error)))?;
@@ -393,9 +397,42 @@ fn harden_network_options(init: &MpvInitializer) -> libmpv2::Result<()> {
     init.set_option("ytdl", false)
 }
 
+/// Sends the signed-in header with every HTTP request this handle makes: the
+/// stream and each `sub-add` subtitle (mpv builds FFmpeg's `headers` option
+/// from `http-header-fields` for every network open). The handle lives for
+/// one session, so the header is gone once the session ends.
+fn set_media_authorization(
+    init: &MpvInitializer,
+    authorization: &MediaBrowserAuthorization,
+) -> libmpv2::Result<()> {
+    init.set_option(
+        "http-header-fields",
+        escape_list_item(&format!("Authorization: {}", authorization.expose())),
+    )
+}
+
+// mpv splits string-list options on commas, and the MediaBrowser header has
+// several. A backslash right before a comma keeps it in the item and is itself
+// removed (`get_nextsep` in mpv `options/m_option.c`); other backslashes stay.
+fn escape_list_item(item: &str) -> String {
+    item.replace(',', "\\,")
+}
+
+// Query names Jellyfin accepts as a token, compared in lower case.
+const CREDENTIAL_QUERY_NAMES: [&str; 5] =
+    ["apikey", "api_key", "access_token", "token", "x-emby-token"];
+
+fn has_credential_query(url: &url::Url) -> bool {
+    url.query_pairs()
+        .any(|(name, _)| CREDENTIAL_QUERY_NAMES.contains(&name.to_ascii_lowercase().as_str()))
+}
+
 fn validate_playback_urls(request: &LaunchRequest) -> Result<(), MpvError> {
     let stream_url =
         parse_allowed_url(&request.plan.stream_url).ok_or(MpvError::UnsafeStreamUrl)?;
+    if has_credential_query(&stream_url) {
+        return Err(MpvError::CredentialInUrl);
+    }
     for track in request
         .plan
         .tracks
@@ -408,6 +445,9 @@ fn validate_playback_urls(request: &LaunchRequest) -> Result<(), MpvError> {
         let subtitle_url = parse_allowed_url(delivery_url).ok_or(MpvError::UnsafeSubtitleUrl)?;
         if subtitle_url.origin() != stream_url.origin() {
             return Err(MpvError::UnsafeSubtitleUrl);
+        }
+        if has_credential_query(&subtitle_url) {
+            return Err(MpvError::CredentialInUrl);
         }
     }
     Ok(())
@@ -968,8 +1008,16 @@ mod tests {
                 start_position_ticks: 0,
                 tracks,
             },
+            authorization: test_authorization(),
             test_force_software: false,
         }
+    }
+
+    pub(super) fn test_authorization() -> MediaBrowserAuthorization {
+        MediaBrowserAuthorization::parse(
+            "MediaBrowser Client=\"Fluster\", Device=\"Test\", DeviceId=\"d\", Version=\"0\", Token=\"header-secret\"",
+        )
+        .expect("valid test header")
     }
 
     fn player_track(id: i64, jellyfin_index: i64, selected: bool) -> PlayerTrack {
@@ -1026,12 +1074,12 @@ mod tests {
     #[test]
     fn media_urls_allow_https_and_loopback_or_private_lan_http() {
         for stream_url in [
-            "https://media.example/video.mkv?api_key=secret",
+            "https://media.example/Videos/1/stream?Static=true&MediaSourceId=s&PlaySessionId=p",
             "http://localhost:8096/video.mkv",
             "http://127.0.0.1:8096/video.mkv",
             "http://127.12.34.56:8096/video.mkv",
             "http://[::1]:8096/video.mkv",
-            "http://192.168.1.5:8096/video.mkv?api_key=secret",
+            "http://192.168.1.5:8096/video.mkv?Static=true",
             "http://10.0.0.7/video.mkv",
             "http://172.16.0.2/video.mkv",
             "http://169.254.3.4/video.mkv",
@@ -1069,13 +1117,13 @@ mod tests {
     #[test]
     fn external_subtitles_must_share_the_stream_origin() {
         let same_origin = launch_request(
-            "https://media.example/video.mkv?api_key=stream-secret",
-            Some("https://media.example/subtitle.ass?api_key=subtitle-secret"),
+            "https://media.example/video.mkv",
+            Some("https://media.example/subtitle.ass?format=ass"),
         );
         assert!(validate_playback_urls(&same_origin).is_ok());
 
         let cross_origin = launch_request(
-            "https://media.example/video.mkv?api_key=stream-secret",
+            "https://media.example/video.mkv",
             Some("https://cdn.example/subtitle.ass?api_key=subtitle-secret"),
         );
         let error = validate_playback_urls(&cross_origin)
@@ -1086,13 +1134,84 @@ mod tests {
     }
 
     #[test]
+    fn media_urls_must_not_carry_a_credential_in_any_case() {
+        for key in [
+            "api_key",
+            "ApiKey",
+            "apikey",
+            "API_KEY",
+            "access_token",
+            "Token",
+            "token",
+            "X-Emby-Token",
+            "x-emby-token",
+        ] {
+            let stream = format!("https://media.example/Videos/1/stream?Static=true&{key}=secret");
+            let error = validate_playback_urls(&launch_request(&stream, None))
+                .expect_err("a stream URL credential must be rejected");
+            assert!(matches!(error, MpvError::CredentialInUrl), "{key}");
+
+            let subtitle = format!("https://media.example/Subtitles/0/Stream.srt?{key}=secret");
+            let error = validate_playback_urls(&launch_request(
+                "https://media.example/video.mkv",
+                Some(&subtitle),
+            ))
+            .expect_err("a subtitle URL credential must be rejected");
+            assert!(matches!(error, MpvError::CredentialInUrl), "{key}");
+            assert!(!error.to_string().contains("secret"));
+        }
+        // Names that only contain a credential word are not credentials.
+        assert!(validate_playback_urls(&launch_request(
+            "https://media.example/video.mkv?PlaySessionId=p&tokenless=1",
+            None
+        ))
+        .is_ok());
+    }
+
+    #[test]
+    fn launch_requests_require_a_valid_authorization_header() {
+        let plan = serde_json::json!({
+            "itemId": "item",
+            "title": "Test video",
+            "streamUrl": "https://media.example/video.mkv",
+            "mediaSourceId": "source",
+            "playSessionId": "session",
+            "startPositionTicks": 0,
+            "tracks": [],
+        });
+        let valid: LaunchRequest = serde_json::from_value(serde_json::json!({
+            "plan": plan,
+            "authorization": test_authorization().expose(),
+        }))
+        .expect("a launch request with a header deserializes");
+        assert_eq!(valid.authorization, test_authorization());
+        assert!(!format!("{valid:?}").contains("header-secret"));
+
+        for authorization in [
+            serde_json::Value::Null,
+            serde_json::json!("Bearer header-secret"),
+            serde_json::json!("MediaBrowser Token=\"header-secret\"\r\nX-Injected: 1"),
+        ] {
+            let error = serde_json::from_value::<LaunchRequest>(serde_json::json!({
+                "plan": plan,
+                "authorization": authorization,
+            }))
+            .expect_err("an invalid header must be rejected");
+            assert!(!error.to_string().contains("header-secret"));
+        }
+        let missing = serde_json::from_value::<LaunchRequest>(serde_json::json!({ "plan": plan }));
+        assert!(missing.is_err());
+    }
+
+    #[test]
     fn libmpv_accepts_the_network_hardening_options() {
         ensure_numeric_locale().expect("numeric locale");
         let created = Mpv::with_initializer(|init| {
             init.set_option("config", false)?;
             init.set_option("vo", "null")?;
             init.set_option("ao", "null")?;
-            harden_network_options(&init)
+            harden_network_options(&init)?;
+            set_media_authorization(&init, &test_authorization())
         });
         // CI's Ubuntu 22.04 runner ships libmpv 0.34, older than the API this
         // crate links. Only that mismatch is skipped; mpv 0.41+ runs the test.
@@ -1107,11 +1226,18 @@ mod tests {
         assert_eq!(lavf_options, NO_HTTP_REDIRECTS);
         let ytdl: bool = mpv.get_property("ytdl").expect("ytdl");
         assert!(!ytdl);
+        let headers: String = mpv
+            .get_property("http-header-fields")
+            .expect("http-header-fields");
+        assert_eq!(
+            headers,
+            format!("Authorization: {}", test_authorization().expose())
+        );
     }
 
     #[test]
     fn private_lan_subtitles_must_share_the_stream_scheme_host_and_port() {
-        let stream = "http://192.168.1.5:8096/video.mkv?api_key=stream-secret";
+        let stream = "http://192.168.1.5:8096/video.mkv?Static=true";
         assert!(validate_playback_urls(&launch_request(
             stream,
             Some("http://192.168.1.5:8096/subtitle.ass")
@@ -1175,6 +1301,261 @@ mod tests {
     #[test]
     fn stop_is_idempotent_without_an_active_session() {
         assert!(MpvController::default().stop().is_ok());
+    }
+}
+
+/// Plays from a loopback HTTP server and checks the exact request bytes, so
+/// the header is proven on the wire for the stream, `sub-add`, and redirects.
+#[cfg(test)]
+mod media_auth_wire {
+    use super::tests::test_authorization;
+    use super::*;
+    use std::io::{Read, Write};
+    use std::net::{TcpListener, TcpStream};
+
+    type Requests = Arc<Mutex<Vec<String>>>;
+
+    fn silent_wav() -> Vec<u8> {
+        let samples = 8_000u32; // half a second of 8 kHz mono 16-bit silence
+        let data_len = samples * 2;
+        let mut wav = Vec::new();
+        wav.extend_from_slice(b"RIFF");
+        wav.extend_from_slice(&(36 + data_len).to_le_bytes());
+        wav.extend_from_slice(b"WAVEfmt ");
+        wav.extend_from_slice(&16u32.to_le_bytes());
+        wav.extend_from_slice(&1u16.to_le_bytes()); // PCM
+        wav.extend_from_slice(&1u16.to_le_bytes()); // mono
+        wav.extend_from_slice(&8_000u32.to_le_bytes());
+        wav.extend_from_slice(&16_000u32.to_le_bytes());
+        wav.extend_from_slice(&2u16.to_le_bytes());
+        wav.extend_from_slice(&16u16.to_le_bytes());
+        wav.extend_from_slice(b"data");
+        wav.extend_from_slice(&data_len.to_le_bytes());
+        wav.resize(wav.len() + data_len as usize, 0);
+        wav
+    }
+
+    fn read_request_head(stream: &mut TcpStream) -> String {
+        let mut head = Vec::new();
+        let mut byte = [0u8; 1];
+        while !head.ends_with(b"\r\n\r\n") && head.len() < 64 * 1024 {
+            match stream.read(&mut byte) {
+                Ok(1) => head.push(byte[0]),
+                _ => break,
+            }
+        }
+        String::from_utf8_lossy(&head).into_owned()
+    }
+
+    /// Serves `/stream` (WAV), `/sub.srt`, and `/redirect` (302 to `redirect_to`).
+    fn serve(listener: TcpListener, redirect_to: String) -> Requests {
+        let requests: Requests = Arc::default();
+        let recorded = requests.clone();
+        thread::spawn(move || {
+            for stream in listener.incoming() {
+                let Ok(mut stream) = stream else { continue };
+                let head = read_request_head(&mut stream);
+                recorded.lock().expect("requests mutex").push(head.clone());
+                let path = head.split_whitespace().nth(1).unwrap_or("").to_string();
+                let (status, content_type, body, location) = match path.as_str() {
+                    "/stream" => ("200 OK", "audio/wav", silent_wav(), None),
+                    "/sub.srt" => (
+                        "200 OK",
+                        "text/plain",
+                        b"1\r\n00:00:00,000 --> 00:00:00,400\r\nHello\r\n\r\n".to_vec(),
+                        None,
+                    ),
+                    "/redirect" => ("302 Found", "text/plain", Vec::new(), Some(&redirect_to)),
+                    _ => ("404 Not Found", "text/plain", Vec::new(), None),
+                };
+                let mut response = format!(
+                    "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n",
+                    body.len()
+                );
+                if let Some(location) = location {
+                    response.push_str(&format!("Location: {location}\r\n"));
+                }
+                response.push_str("\r\n");
+                let _ = stream.write_all(response.as_bytes());
+                let _ = stream.write_all(&body);
+            }
+        });
+        requests
+    }
+
+    /// The production session network options on a headless handle.
+    fn headless_player(authorization: Option<&MediaBrowserAuthorization>) -> Option<Mpv> {
+        ensure_numeric_locale().expect("numeric locale");
+        let created = Mpv::with_initializer(|init| {
+            init.set_option("config", false)?;
+            init.set_option("vo", "null")?;
+            init.set_option("ao", "null")?;
+            harden_network_options(&init)?;
+            match authorization {
+                Some(authorization) => set_media_authorization(&init, authorization),
+                None => Ok(()),
+            }
+        });
+        match created {
+            Err(libmpv2::Error::VersionMismatch { linked, loaded }) => {
+                eprintln!("SKIP media_auth_wire: loaded libmpv API {loaded:#x} is older than linked {linked:#x}");
+                None
+            }
+            other => Some(other.expect("libmpv starts headless")),
+        }
+    }
+
+    enum LoadOutcome {
+        Loaded,
+        Failed,
+    }
+
+    fn wait_for_load(mpv: &mut Mpv) -> LoadOutcome {
+        wait_for(mpv, |event| matches!(event, Event::FileLoaded))
+    }
+
+    /// Waits for `wanted`, or for the file to end or fail.
+    fn wait_for(mpv: &mut Mpv, wanted: impl Fn(&Event) -> bool) -> LoadOutcome {
+        let deadline = Instant::now() + Duration::from_secs(15);
+        while Instant::now() < deadline {
+            match mpv.wait_event(0.2) {
+                Some(Ok(event)) if wanted(&event) => return LoadOutcome::Loaded,
+                // libmpv2 reports an end-file with an error as `Err`.
+                Some(Ok(Event::EndFile(_))) | Some(Err(_)) => return LoadOutcome::Failed,
+                _ => {}
+            }
+        }
+        panic!("libmpv neither loaded nor failed the file in time");
+    }
+
+    fn authorization_lines(head: &str) -> Vec<&str> {
+        head.lines()
+            .filter(|line| line.to_ascii_lowercase().starts_with("authorization:"))
+            .collect()
+    }
+
+    fn assert_single_exact_header(head: &str) {
+        let expected = format!("Authorization: {}", test_authorization().expose());
+        assert_eq!(authorization_lines(head), vec![expected.as_str()], "{head}");
+        // A comma split would turn the header's later fields into extra lines.
+        assert!(!head.contains("\r\n Device="), "{head}");
+    }
+
+    fn listener() -> (TcpListener, String) {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind loopback");
+        let origin = format!("http://{}", listener.local_addr().expect("local address"));
+        (listener, origin)
+    }
+
+    #[test]
+    fn stream_and_external_subtitles_send_exactly_the_typed_header() {
+        let Some(mut mpv) = headless_player(Some(&test_authorization())) else {
+            return;
+        };
+        let (server, origin) = listener();
+        let requests = serve(server, String::new());
+
+        mpv.command("loadfile", &[&format!("{origin}/stream"), "replace"])
+            .expect("loadfile");
+        assert!(matches!(wait_for_load(&mut mpv), LoadOutcome::Loaded));
+        let subtitle = MediaTrack {
+            index: 1,
+            kind: "Subtitle".into(),
+            display_title: "English".into(),
+            language: Some("eng".into()),
+            external: true,
+            delivery_url: Some(format!("{origin}/sub.srt")),
+        };
+        load_external_subtitles(&mpv, &[subtitle]);
+
+        let requests = requests.lock().expect("requests mutex").clone();
+        let stream_requests: Vec<_> = requests
+            .iter()
+            .filter(|head| head.starts_with("GET /stream "))
+            .collect();
+        let subtitle_requests: Vec<_> = requests
+            .iter()
+            .filter(|head| head.starts_with("GET /sub.srt "))
+            .collect();
+        assert!(
+            !stream_requests.is_empty(),
+            "no stream request: {requests:?}"
+        );
+        assert!(
+            !subtitle_requests.is_empty(),
+            "no sub-add request: {requests:?}"
+        );
+        for head in stream_requests.into_iter().chain(subtitle_requests) {
+            assert_single_exact_header(head);
+        }
+    }
+
+    #[test]
+    fn redirects_are_refused_while_the_header_is_set() {
+        let Some(mut mpv) = headless_player(Some(&test_authorization())) else {
+            return;
+        };
+        let (target, target_origin) = listener();
+        let target_requests = serve(target, String::new());
+        let (server, origin) = listener();
+        let requests = serve(server, format!("{target_origin}/stream"));
+
+        mpv.command("loadfile", &[&format!("{origin}/redirect"), "replace"])
+            .expect("loadfile");
+        assert!(matches!(wait_for_load(&mut mpv), LoadOutcome::Failed));
+
+        let requests = requests.lock().expect("requests mutex").clone();
+        let redirect = requests
+            .iter()
+            .find(|head| head.starts_with("GET /redirect "))
+            .expect("the redirecting origin was asked");
+        assert_single_exact_header(redirect);
+        thread::sleep(Duration::from_millis(200));
+        assert!(
+            target_requests.lock().expect("requests mutex").is_empty(),
+            "the header followed a redirect to another origin"
+        );
+    }
+
+    /// Run against a fixture server with legacy authorization off (Jellyfin
+    /// 12.x default). `FLUSTER_MEDIA_STREAM_URL` and `FLUSTER_MEDIA_AUTH` come
+    /// from a real gateway playback plan; `FLUSTER_MEDIA_SUBTITLE_URL` is
+    /// optional. Proves the header-authenticated, token-free URLs reach the
+    /// first frame and load through `sub-add`.
+    #[test]
+    #[ignore = "needs a live Jellyfin fixture server"]
+    fn live_fixture_server_playback() {
+        let (Ok(stream_url), Ok(authorization)) = (
+            std::env::var("FLUSTER_MEDIA_STREAM_URL"),
+            std::env::var("FLUSTER_MEDIA_AUTH"),
+        ) else {
+            panic!("set FLUSTER_MEDIA_STREAM_URL and FLUSTER_MEDIA_AUTH");
+        };
+        let subtitle_url = std::env::var("FLUSTER_MEDIA_SUBTITLE_URL").ok();
+        let mut request = super::tests::launch_request(&stream_url, subtitle_url.as_deref());
+        request.authorization =
+            MediaBrowserAuthorization::parse(&authorization).expect("a valid header");
+        validate_playback_urls(&request).expect("the plan URLs pass the Rust policy");
+
+        let Some(mut mpv) = headless_player(Some(&request.authorization)) else {
+            return;
+        };
+        mpv.command("loadfile", &[&stream_url, "replace"])
+            .expect("loadfile");
+        assert!(matches!(wait_for_load(&mut mpv), LoadOutcome::Loaded));
+        let tracks_before: i64 = mpv.get_property("track-list/count").expect("tracks");
+        load_external_subtitles(&mpv, &request.plan.tracks);
+        let tracks_after: i64 = mpv.get_property("track-list/count").expect("tracks");
+        if subtitle_url.is_some() {
+            assert_eq!(tracks_after, tracks_before + 1, "sub-add did not load");
+        }
+        assert!(matches!(
+            wait_for(&mut mpv, |event| matches!(event, Event::PlaybackRestart)),
+            LoadOutcome::Loaded
+        ));
+        let codec: String = mpv.get_property("video-codec").unwrap_or_default();
+        let position: f64 = mpv.get_property("time-pos").unwrap_or(-1.0);
+        eprintln!("live playback: tracks {tracks_before}->{tracks_after}, video-codec {codec:?}, time-pos {position}");
     }
 }
 

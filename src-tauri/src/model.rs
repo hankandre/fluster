@@ -1,3 +1,4 @@
+use crate::auth_header::MediaBrowserAuthorization;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize)]
@@ -29,6 +30,9 @@ pub struct PlaybackPlan {
 #[serde(rename_all = "camelCase")]
 pub struct LaunchRequest {
     pub plan: PlaybackPlan,
+    /// Authenticates the stream and external-subtitle requests. libmpv gets
+    /// it as a fixed `Authorization` header; it never goes into a URL.
+    pub authorization: MediaBrowserAuthorization,
     #[serde(default)]
     pub test_force_software: bool,
 }

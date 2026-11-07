@@ -16,6 +16,9 @@ const browserDiagnostics: PlaybackDiagnostics = {
   warning: "Browser playback does not report authoritative hardware-decoding diagnostics.",
 };
 
+const BROWSER_PLAYBACK_ERROR =
+  "The browser could not play the direct file. Browser development mode cannot authenticate media requests; play it in the desktop app.";
+
 export class BrowserPlayerEngine implements PlayerEngine {
   readonly mode = "browser" as const;
   private video?: HTMLVideoElement;
@@ -45,6 +48,9 @@ export class BrowserPlayerEngine implements PlayerEngine {
     video.className = "browser-player";
     video.autoplay = true;
     video.playsInline = true;
+    // A <video> element cannot send an Authorization header, and tokens never
+    // go in URLs (invariant I4). Development mode therefore requests the
+    // token-free URL, which a real Jellyfin server refuses; use the desktop app.
     video.src = plan.streamUrl;
     host.append(video);
     this.video = video;
@@ -63,7 +69,7 @@ export class BrowserPlayerEngine implements PlayerEngine {
     video.addEventListener("seeked", () => emitState("seek"));
     video.addEventListener("volumechange", () => emitState());
     video.addEventListener("ended", () => this.emit({ kind: "ended", snapshot: this.snapshot(), reason: "eof" }));
-    video.addEventListener("error", () => this.emit({ kind: "error", message: "The browser could not play the direct file." }));
+    video.addEventListener("error", () => this.emit({ kind: "error", message: BROWSER_PLAYBACK_ERROR }));
     try {
       await video.play();
     } catch (error) {

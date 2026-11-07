@@ -13,7 +13,8 @@ const item: LibraryItem = {
 const plan: PlaybackPlan = {
   itemId: "one",
   title: "One",
-  streamUrl: "https://media.test/video?api_key=secret",
+  streamUrl: "https://media.test/video",
+  authorization: 'MediaBrowser Token="secret"',
   mediaSourceId: "source",
   playSessionId: "session",
   startPositionTicks: 0,
@@ -72,7 +73,7 @@ describe("PlaybackCoordinator", () => {
   it("renegotiates PlaybackInfo and replaces the authenticated session on retry", async () => {
     const replacementPlan = {
       ...plan,
-      streamUrl: "https://media.test/video?api_key=new-secret",
+      streamUrl: "https://media.test/video?other=1",
       playSessionId: "session-2",
     };
     const gateway = {
