@@ -594,10 +594,10 @@
             "Source acceptance and the profile live in their own adapter modules with their own tests"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "Completed by P1-03 (PR #50): src/lib/jellyfin/device-profile.ts and src/lib/jellyfin/source-acceptance.ts are separate adapter modules with device-profile.test.ts and source-acceptance.test.ts; gateway.ts only calls them. pnpm check green on main."
         },
         {
           "id": "P2-04",
