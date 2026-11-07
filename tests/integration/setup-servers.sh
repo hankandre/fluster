@@ -4,6 +4,8 @@
 # Credentials are written to tests/integration/.credentials (gitignored).
 # Safe to re-run: finished servers are only checked, never reconfigured.
 set -euo pipefail
+# Every file this script creates holds secrets; keep them private.
+umask 077
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 credentials_file="$script_dir/.credentials"
@@ -16,7 +18,7 @@ servers=(
 )
 
 header_file="$(mktemp)"
-trap 'rm -f "$header_file"' EXIT
+trap 'rm -f "$header_file" "$credentials_file.tmp"' EXIT
 chmod 600 "$header_file"
 
 log() {
@@ -59,7 +61,8 @@ wait_for_health() {
 # Unauthenticated JSON POST used by the startup wizard.
 post_json() {
   local url="$1" body="$2"
-  curl -fsS -o /dev/null -X POST -H "Content-Type: application/json" -d "$body" "$url"
+  # Send the body on stdin so passwords never appear in the process list.
+  printf '%s' "$body" | curl -fsS -o /dev/null -X POST -H "Content-Type: application/json" -d @- "$url"
 }
 
 run_wizard() {
@@ -77,11 +80,16 @@ run_wizard() {
 authenticate() {
   local url="$1" password="$2" response token
   local client='MediaBrowser Client="Fluster Tests", Device="ci", DeviceId="fluster-ci", Version="0"'
-  response="$(curl -fsS -X POST "$url/Users/AuthenticateByName" \
-    -H "Authorization: $client" \
-    -H "Content-Type: application/json" \
-    -d "{\"Username\":\"$user_name\",\"Pw\":\"$password\"}")"
-  token="$(echo "$response" | jq -r '.AccessToken')"
+  response="$(printf '{"Username":"%s","Pw":"%s"}' "$user_name" "$password" |
+    curl -fsS -X POST "$url/Users/AuthenticateByName" \
+      -H "Authorization: $client" \
+      -H "Content-Type: application/json" \
+      -d @-)"
+  token="$(echo "$response" | jq -r '.AccessToken // empty')"
+  if [ -z "$token" ]; then
+    echo "[setup] $url returned no access token" >&2
+    return 1
+  fi
   echo "Authorization: $client, Token=\"$token\"" > "$header_file"
 }
 
