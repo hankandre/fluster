@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:22.04@sha256:2edbbc5dc405e9612ba3584ce95480277e3eb374407b5505fe26f17df77c7dbc
 
 SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 ENV DEBIAN_FRONTEND=noninteractive
@@ -6,7 +6,14 @@ ENV PREFIX=/opt/fluster-media
 ENV PKG_CONFIG_PATH=/opt/fluster-media/lib/pkgconfig:/opt/fluster-media/lib/x86_64-linux-gnu/pkgconfig
 ENV LD_LIBRARY_PATH=/opt/fluster-media/lib:/opt/fluster-media/lib/x86_64-linux-gnu
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+COPY components.lock /tmp/components.lock
+
+RUN source /tmp/components.lock && \
+    rm -f /etc/apt/sources.list.d/ubuntu.sources && \
+    printf 'deb [snapshot=%s] http://archive.ubuntu.com/ubuntu jammy main universe restricted multiverse\n' "${UBUNTU_SNAPSHOT}" > /etc/apt/sources.list && \
+    printf 'deb [snapshot=%s] http://archive.ubuntu.com/ubuntu jammy-updates main universe restricted multiverse\n' "${UBUNTU_SNAPSHOT}" >> /etc/apt/sources.list && \
+    printf 'deb [snapshot=%s] http://security.ubuntu.com/ubuntu jammy-security main universe restricted multiverse\n' "${UBUNTU_SNAPSHOT}" >> /etc/apt/sources.list && \
+    apt-get update && apt-get install -y --no-install-recommends \
     build-essential ca-certificates git meson ninja-build nasm yasm pkg-config python3 \
     patchelf pax-utils libarchive-dev libasound2-dev libdrm-dev libegl1-mesa-dev \
     libfontconfig1-dev libfreetype6-dev libfribidi-dev libgl1-mesa-dev libharfbuzz-dev \
@@ -14,33 +21,39 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libvulkan-dev libwayland-dev libxkbcommon-dev wayland-protocols && \
     rm -rf /var/lib/apt/lists/*
 
-COPY components.lock /tmp/components.lock
-
 RUN source /tmp/components.lock && \
-    git clone --filter=blob:none https://github.com/FFmpeg/nv-codec-headers.git /src/nv-codec-headers && \
-    git -C /src/nv-codec-headers checkout "${NV_CODEC_HEADERS_REF}" && \
-    test "$(git -C /src/nv-codec-headers rev-parse --short=7 HEAD)" = "${NV_CODEC_HEADERS_COMMIT}" && \
+    git init /src/nv-codec-headers && \
+    git -C /src/nv-codec-headers remote add origin https://github.com/FFmpeg/nv-codec-headers.git && \
+    git -C /src/nv-codec-headers fetch --depth=1 origin "${NV_CODEC_HEADERS_COMMIT}" && \
+    git -C /src/nv-codec-headers checkout --detach "${NV_CODEC_HEADERS_COMMIT}" && \
+    test "$(git -C /src/nv-codec-headers rev-parse HEAD)" = "${NV_CODEC_HEADERS_COMMIT}" && \
     make -C /src/nv-codec-headers PREFIX="${PREFIX}" install
 
 RUN source /tmp/components.lock && \
-    git clone --filter=blob:none https://github.com/haasn/libplacebo.git /src/libplacebo && \
-    git -C /src/libplacebo checkout "${LIBPLACEBO_REF}" && \
-    test "$(git -C /src/libplacebo rev-parse --short=7 HEAD)" = "${LIBPLACEBO_COMMIT}" && \
+    git init /src/libplacebo && \
+    git -C /src/libplacebo remote add origin https://github.com/haasn/libplacebo.git && \
+    git -C /src/libplacebo fetch --depth=1 origin "${LIBPLACEBO_COMMIT}" && \
+    git -C /src/libplacebo checkout --detach "${LIBPLACEBO_COMMIT}" && \
+    test "$(git -C /src/libplacebo rev-parse HEAD)" = "${LIBPLACEBO_COMMIT}" && \
     meson setup /src/libplacebo/build /src/libplacebo --prefix="${PREFIX}" \
       --buildtype=release -Ddefault_library=shared -Ddemos=false -Dtests=false -Dbench=false && \
     meson compile -C /src/libplacebo/build && meson install -C /src/libplacebo/build
 
 RUN source /tmp/components.lock && \
-    git clone --filter=blob:none https://github.com/libass/libass.git /src/libass && \
-    git -C /src/libass checkout "${LIBASS_REF}" && \
-    test "$(git -C /src/libass rev-parse --short=7 HEAD)" = "${LIBASS_COMMIT}" && \
+    git init /src/libass && \
+    git -C /src/libass remote add origin https://github.com/libass/libass.git && \
+    git -C /src/libass fetch --depth=1 origin "${LIBASS_COMMIT}" && \
+    git -C /src/libass checkout --detach "${LIBASS_COMMIT}" && \
+    test "$(git -C /src/libass rev-parse HEAD)" = "${LIBASS_COMMIT}" && \
     meson setup /src/libass/build /src/libass --prefix="${PREFIX}" --buildtype=release -Ddefault_library=shared && \
     meson compile -C /src/libass/build && meson install -C /src/libass/build
 
 RUN source /tmp/components.lock && \
-    git clone --filter=blob:none https://github.com/FFmpeg/FFmpeg.git /src/ffmpeg && \
-    git -C /src/ffmpeg checkout "${FFMPEG_REF}" && \
-    test "$(git -C /src/ffmpeg rev-parse --short=7 HEAD)" = "${FFMPEG_COMMIT}" && \
+    git init /src/ffmpeg && \
+    git -C /src/ffmpeg remote add origin https://github.com/FFmpeg/FFmpeg.git && \
+    git -C /src/ffmpeg fetch --depth=1 origin "${FFMPEG_COMMIT}" && \
+    git -C /src/ffmpeg checkout --detach "${FFMPEG_COMMIT}" && \
+    test "$(git -C /src/ffmpeg rev-parse HEAD)" = "${FFMPEG_COMMIT}" && \
     cd /src/ffmpeg && \
     ./configure --prefix="${PREFIX}" --enable-shared --disable-static --disable-programs \
       --disable-doc --disable-debug --enable-gpl --enable-libass \
@@ -48,9 +61,11 @@ RUN source /tmp/components.lock && \
     make -j"$(nproc)" && make install
 
 RUN source /tmp/components.lock && \
-    git clone --filter=blob:none https://github.com/mpv-player/mpv.git /src/mpv && \
-    git -C /src/mpv checkout "${MPV_REF}" && \
-    test "$(git -C /src/mpv rev-parse --short=7 HEAD)" = "${MPV_COMMIT}" && \
+    git init /src/mpv && \
+    git -C /src/mpv remote add origin https://github.com/mpv-player/mpv.git && \
+    git -C /src/mpv fetch --depth=1 origin "${MPV_COMMIT}" && \
+    git -C /src/mpv checkout --detach "${MPV_COMMIT}" && \
+    test "$(git -C /src/mpv rev-parse HEAD)" = "${MPV_COMMIT}" && \
     meson setup /src/mpv/build /src/mpv --prefix="${PREFIX}" --buildtype=release \
       -Dbuild-date=false -Dlibmpv=true -Dtests=false && \
     meson compile -C /src/mpv/build && meson install -C /src/mpv/build
@@ -59,11 +74,23 @@ RUN mkdir -p /bundle/lib /bundle/licenses && \
     while read -r dependency; do \
       case "${dependency}" in \
         */ld-linux*|*/libc.so.*|*/libm.so.*|*/libpthread.so.*|*/libdl.so.*|*/librt.so.*) ;; \
-        *) test -f "${dependency}" && cp -L "${dependency}" "/bundle/lib/$(basename "${dependency}")" || true ;; \
+        *) test -f "${dependency}" && cp -L "${dependency}" "/bundle/lib/$(basename "${dependency}")" ;; \
       esac; \
     done < <(LD_LIBRARY_PATH="${LD_LIBRARY_PATH}" lddtree -l "${PREFIX}/lib/libmpv.so" | sort -u) && \
-    { cp -L "${PREFIX}"/lib/*.so* /bundle/lib/ 2>/dev/null || true; } && \
-    find /bundle/lib -type f -exec patchelf --set-rpath '\$ORIGIN' {} \; && \
+    find "${PREFIX}/lib" -maxdepth 1 \( -type f -o -type l \) -name '*.so*' \
+      -exec cp -L {} /bundle/lib/ \; && \
+    test -f /bundle/lib/libmpv.so.2 && \
+    find /bundle/lib -type f -exec patchelf --set-rpath '$ORIGIN' {} \; && \
+    LD_LIBRARY_PATH=/bundle/lib ldd /bundle/lib/libmpv.so.2 > /tmp/bundled-ldd.txt && \
+    ! grep -q 'not found' /tmp/bundled-ldd.txt && \
+    while read -r dependency; do \
+      case "${dependency}" in \
+        /bundle/lib/*|*/ld-linux*|*/libc.so.*|*/libm.so.*|*/libpthread.so.*|*/libdl.so.*|*/librt.so.*) ;; \
+        *) echo "Unexpected host media dependency: ${dependency}" >&2; exit 1 ;; \
+      esac; \
+    done < <(awk '/=> \// { print $3 } /^\// { print $1 }' /tmp/bundled-ldd.txt) && \
+    { echo libmpv.so.2; awk '$2 == "=>" && index($3, "/bundle/lib/") == 1 { print $1 }' /tmp/bundled-ldd.txt; } \
+      | sort -u > /bundle/media-libraries.txt && \
     cp /src/mpv/LICENSE.GPL /src/mpv/LICENSE.LGPL /bundle/licenses/ && \
     cp /src/ffmpeg/LICENSE.md /bundle/licenses/FFmpeg-LICENSE.md && \
     cp /src/libass/COPYING /bundle/licenses/libass-COPYING && \

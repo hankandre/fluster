@@ -70,7 +70,7 @@ pub struct PlayerCapabilities {
     pub libmpv_version: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayerTrack {
     pub player_id: i64,
@@ -164,9 +164,6 @@ impl Default for PlaybackSnapshot {
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
 pub enum PlayerEvent {
-    Ready {
-        capabilities: PlayerCapabilities,
-    },
     Loaded {
         snapshot: PlaybackSnapshot,
     },

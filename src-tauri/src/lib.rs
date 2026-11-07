@@ -5,23 +5,11 @@ mod surface;
 
 use model::{LaunchRequest, PlayerCapabilities, PlayerSurfaceFrame};
 use mpv::MpvController;
-use tauri::{Emitter, State};
+use tauri::State;
 
 #[tauri::command]
-fn initialize_player(
-    app: tauri::AppHandle,
-    controller: State<'_, MpvController>,
-) -> Result<PlayerCapabilities, String> {
-    let capabilities = controller
-        .capabilities()
-        .map_err(|error| error.to_string())?;
-    let _ = app.emit(
-        "fluster://player-event",
-        model::PlayerEvent::Ready {
-            capabilities: capabilities.clone(),
-        },
-    );
-    Ok(capabilities)
+fn initialize_player(controller: State<'_, MpvController>) -> Result<PlayerCapabilities, String> {
+    controller.capabilities().map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -100,8 +88,12 @@ fn set_fullscreen(
 }
 
 #[tauri::command]
-fn stop_playback(controller: State<'_, MpvController>) -> Result<(), String> {
-    controller.stop().map_err(|error| error.to_string())
+async fn stop_playback(controller: State<'_, MpvController>) -> Result<(), String> {
+    let controller = controller.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || controller.stop())
+        .await
+        .map_err(|_| "The player stop task did not finish.".to_string())?
+        .map_err(|error| error.to_string())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

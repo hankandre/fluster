@@ -16,9 +16,44 @@ cd "${extraction_dir}"
 
 application_binary="${extraction_dir}/squashfs-root/usr/bin/fluster"
 test -x "${application_binary}"
-find "${extraction_dir}/squashfs-root" -type f -name 'libmpv.so*' -print -quit | grep -q .
+mapfile -t libmpv_directories < <(
+  find "${extraction_dir}/squashfs-root" \( -type f -o -type l \) -name 'libmpv.so*' \
+    -printf '%h\n' | sort -u
+)
+if [[ ${#libmpv_directories[@]} -ne 1 ]]; then
+  echo "Expected one bundled libmpv directory, found ${#libmpv_directories[@]}." >&2
+  printf '%s\n' "${libmpv_directories[@]}" >&2
+  exit 1
+fi
+if [[ "${libmpv_directories[0]}" != "${extraction_dir}/squashfs-root/usr/lib" ]]; then
+  echo "libmpv was bundled outside the AppImage library directory:" >&2
+  echo "${libmpv_directories[0]}" >&2
+  exit 1
+fi
+if find "${extraction_dir}/squashfs-root" -path '*/resources/lib/libmpv.so*' -print -quit | grep -q .; then
+  echo "Found a duplicate resource copy of libmpv." >&2
+  exit 1
+fi
 find "${extraction_dir}/squashfs-root" -type f -name 'THIRD_PARTY_NOTICES.md' -print -quit | grep -q .
 find "${extraction_dir}/squashfs-root" -type d -name 'licenses' -print -quit | grep -q .
+find "${extraction_dir}/squashfs-root" -type f -name 'components.lock' -print -quit | grep -q .
+find "${extraction_dir}/squashfs-root" -type f -name 'mpv-version.txt' -print -quit | grep -q .
+media_manifest="$(find "${extraction_dir}/squashfs-root" -type f -name 'media-libraries.txt' -print -quit)"
+test -n "${media_manifest}"
+
+while read -r library_name; do
+  [[ -n "${library_name}" && "${library_name}" != */* ]]
+  mapfile -t library_paths < <(
+    find "${extraction_dir}/squashfs-root" \( -type f -o -type l \) -name "${library_name}" -print
+  )
+  if [[ ${#library_paths[@]} -ne 1 || "${library_paths[0]}" != "${extraction_dir}/squashfs-root/usr/lib/${library_name}" ]]; then
+    echo "Expected exactly one usr/lib copy of ${library_name}." >&2
+    printf '%s\n' "${library_paths[@]}" >&2
+    exit 1
+  fi
+  library_rpath="$(patchelf --print-rpath "${library_paths[0]}")"
+  [[ "${library_rpath}" == *'$ORIGIN'* ]]
+done < "${media_manifest}"
 
 rpath="$(patchelf --print-rpath "${application_binary}")"
 [[ "${rpath}" == *'$ORIGIN/../lib'* ]]
@@ -33,4 +68,7 @@ if grep -q 'not found' <<<"${resolved_libraries}"; then
   exit 1
 fi
 
-echo "AppImage extraction check passed with bundled libmpv."
+compressed_size="$(du -h "${appimage_path}" | awk '{print $1}')"
+extracted_size="$(du -sh "${extraction_dir}/squashfs-root" | awk '{print $1}')"
+echo "AppImage extraction check passed with one bundled media closure."
+echo "Compressed size: ${compressed_size}; extracted size: ${extracted_size}."

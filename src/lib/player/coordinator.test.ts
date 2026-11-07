@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { LibraryItem, PlaybackPlan, PlaybackSnapshot, PlayerEngine, PlayerEvent } from "../../domain/playback";
-import type { JellyfinGateway } from "../jellyfin/gateway";
-import { PlaybackCoordinator } from "./coordinator";
+import { PlaybackCancelledError, PlaybackCoordinator, type PlaybackGateway } from "./coordinator";
 
 const item: LibraryItem = {
   id: "one",
@@ -47,7 +46,7 @@ class FakePlayer implements PlayerEngine {
   setMuted = vi.fn(async () => undefined);
   selectTrack = vi.fn(async () => undefined);
   setFullscreen = vi.fn(async () => undefined);
-  stop = vi.fn(async () => undefined);
+  stop = vi.fn<() => Promise<void>>(async () => undefined);
 }
 
 describe("PlaybackCoordinator", () => {
@@ -57,16 +56,16 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-    } as unknown as JellyfinGateway;
+    } as PlaybackGateway;
     const player = new FakePlayer();
     const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
     await coordinator.start(item);
     player.listener?.({ kind: "loaded", snapshot });
-    await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalledWith(plan, snapshot));
+    await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal)));
     player.listener?.({ kind: "state", snapshot: { ...snapshot, paused: true }, cause: "pause" });
     await vi.waitFor(() => expect(gateway.reportProgress).toHaveBeenCalled());
     player.listener?.({ kind: "ended", snapshot, reason: "eof" });
-    await vi.waitFor(() => expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot));
+    await vi.waitFor(() => expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal)));
   });
 
   it("renegotiates PlaybackInfo and replaces the authenticated session on retry", async () => {
@@ -82,7 +81,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-    } as unknown as JellyfinGateway;
+    } as PlaybackGateway;
     const player = new FakePlayer();
     const coordinator = new PlaybackCoordinator(gateway, player, {
       onEvent: vi.fn(),
@@ -93,8 +92,8 @@ describe("PlaybackCoordinator", () => {
     player.listener?.({ kind: "error", message: "load failed" });
     await coordinator.retry();
 
-    expect(gateway.createPlaybackPlan).toHaveBeenNthCalledWith(1, item, item.resumePositionTicks);
-    expect(gateway.createPlaybackPlan).toHaveBeenNthCalledWith(2, item, item.resumePositionTicks);
+    expect(gateway.createPlaybackPlan).toHaveBeenNthCalledWith(1, item, item.resumePositionTicks, expect.any(AbortSignal));
+    expect(gateway.createPlaybackPlan).toHaveBeenNthCalledWith(2, item, item.resumePositionTicks, expect.any(AbortSignal));
     expect(player.launch).toHaveBeenNthCalledWith(1, plan);
     expect(player.launch).toHaveBeenNthCalledWith(2, replacementPlan);
   });
@@ -105,7 +104,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-    } as unknown as JellyfinGateway;
+    } as PlaybackGateway;
     const player = new FakePlayer();
     const coordinator = new PlaybackCoordinator(gateway, player, {
       onEvent: vi.fn(),
@@ -129,7 +128,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(() => record("start")),
       reportProgress: vi.fn(() => record("progress")),
       reportStopped: vi.fn(() => record("stop")),
-    } as unknown as JellyfinGateway;
+    } as PlaybackGateway;
     const player = new FakePlayer();
     const coordinator = new PlaybackCoordinator(gateway, player, {
       onEvent: vi.fn(),
@@ -158,7 +157,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-    } as unknown as JellyfinGateway;
+    } as PlaybackGateway;
     const player = new FakePlayer();
     const coordinator = new PlaybackCoordinator(gateway, player, {
       onEvent: vi.fn(),
@@ -171,10 +170,185 @@ describe("PlaybackCoordinator", () => {
       await coordinator.flush();
       await vi.advanceTimersByTimeAsync(10_000);
       await coordinator.flush();
-      expect(gateway.reportProgress).toHaveBeenCalledWith(plan, snapshot);
+      expect(gateway.reportProgress).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal));
       await coordinator.stop();
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("cancels negotiation before it can subscribe or launch", async () => {
+    let resolvePlan!: (value: PlaybackPlan) => void;
+    const gateway = {
+      createPlaybackPlan: vi.fn(() => new Promise<PlaybackPlan>((resolve) => { resolvePlan = resolve; })),
+      reportStart: vi.fn(async () => undefined),
+      reportProgress: vi.fn(async () => undefined),
+      reportStopped: vi.fn(async () => undefined),
+    } as PlaybackGateway;
+    const player = new FakePlayer();
+    const coordinator = new PlaybackCoordinator(gateway, player, {
+      onEvent: vi.fn(),
+      onReportingError: vi.fn(),
+    });
+
+    const starting = coordinator.start(item);
+    await vi.waitFor(() => expect(gateway.createPlaybackPlan).toHaveBeenCalled());
+    const stopping = coordinator.stop();
+    resolvePlan(plan);
+
+    await expect(starting).rejects.toBeInstanceOf(PlaybackCancelledError);
+    await stopping;
+    expect(player.subscribe).not.toHaveBeenCalled();
+    expect(player.launch).not.toHaveBeenCalled();
+  });
+
+  it("delivers later player events while a report is still pending", async () => {
+    let finishReport!: () => void;
+    const gateway = {
+      createPlaybackPlan: vi.fn(async () => plan),
+      reportStart: vi.fn(() => new Promise<void>((resolve) => { finishReport = resolve; })),
+      reportProgress: vi.fn(async () => undefined),
+      reportStopped: vi.fn(async () => undefined),
+    } as PlaybackGateway;
+    const player = new FakePlayer();
+    const onEvent = vi.fn();
+    const coordinator = new PlaybackCoordinator(gateway, player, {
+      onEvent,
+      onReportingError: vi.fn(),
+    });
+
+    await coordinator.start(item);
+    player.listener?.({ kind: "loaded", snapshot });
+    player.listener?.({ kind: "state", snapshot: { ...snapshot, positionSeconds: 43 } });
+
+    await vi.waitFor(() => expect(onEvent).toHaveBeenCalledTimes(2));
+    finishReport();
+    await coordinator.stop();
+  });
+
+  it("returns to the library without waiting for final reporting", async () => {
+    let finishStartReport!: () => void;
+    const gateway = {
+      createPlaybackPlan: vi.fn(async () => plan),
+      reportStart: vi.fn(() => new Promise<void>((resolve) => { finishStartReport = resolve; })),
+      reportProgress: vi.fn(async () => undefined),
+      reportStopped: vi.fn(async () => undefined),
+    } as PlaybackGateway;
+    const player = new FakePlayer();
+    const onSessionEnded = vi.fn();
+    const coordinator = new PlaybackCoordinator(gateway, player, {
+      onEvent: vi.fn(),
+      onReportingError: vi.fn(),
+      onSessionEnded,
+    });
+
+    await coordinator.start(item);
+    player.listener?.({ kind: "loaded", snapshot });
+    await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
+
+    await coordinator.stop();
+
+    expect(onSessionEnded).toHaveBeenCalledWith("stopped");
+    expect(gateway.reportStopped).not.toHaveBeenCalled();
+
+    finishStartReport();
+    await coordinator.flush();
+    expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal));
+  });
+
+  it("keeps the player mounted until native teardown finishes", async () => {
+    const gateway = {
+      createPlaybackPlan: vi.fn(async () => plan),
+      reportStart: vi.fn(async () => undefined),
+      reportProgress: vi.fn(async () => undefined),
+      reportStopped: vi.fn(async () => undefined),
+    } as PlaybackGateway;
+    const player = new FakePlayer();
+    let finishNativeStop!: () => void;
+    player.stop.mockImplementation(() => new Promise<void>((resolve) => {
+      finishNativeStop = resolve;
+    }));
+    const onEvent = vi.fn();
+    const onSessionEnded = vi.fn();
+    const coordinator = new PlaybackCoordinator(gateway, player, {
+      onEvent,
+      onReportingError: vi.fn(),
+      onSessionEnded,
+    });
+
+    await coordinator.start(item);
+    player.listener?.({ kind: "loaded", snapshot });
+    const stopping = coordinator.stop();
+    await vi.waitFor(() => expect(player.stop).toHaveBeenCalled());
+
+    player.listener?.({ kind: "ended", snapshot, reason: "stopped" });
+    await vi.waitFor(() => expect(onEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "ended" }),
+    ));
+    expect(onSessionEnded).not.toHaveBeenCalled();
+
+    finishNativeStop();
+    await stopping;
+    expect(onSessionEnded).toHaveBeenCalledWith("stopped");
+  });
+
+  it("bounds final report draining when the transport ignores cancellation", async () => {
+    vi.useFakeTimers();
+    const gateway = {
+      createPlaybackPlan: vi.fn(async () => plan),
+      reportStart: vi.fn(() => new Promise<void>(() => undefined)),
+      reportProgress: vi.fn(async () => undefined),
+      reportStopped: vi.fn(async () => undefined),
+    } as PlaybackGateway;
+    const player = new FakePlayer();
+    const onReportingError = vi.fn();
+    const onSessionEnded = vi.fn();
+    const coordinator = new PlaybackCoordinator(gateway, player, {
+      onEvent: vi.fn(),
+      onReportingError,
+      onSessionEnded,
+    });
+
+    try {
+      await coordinator.start(item);
+      player.listener?.({ kind: "loaded", snapshot });
+      player.listener?.({ kind: "ended", snapshot, reason: "eof" });
+      await vi.advanceTimersByTimeAsync(5_000);
+      expect(onReportingError).toHaveBeenCalledWith(expect.stringContaining("shutdown deadline"));
+      expect(onSessionEnded).toHaveBeenCalledWith("eof");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not relaunch when stop overtakes a retry", async () => {
+    const replacementPlan = { ...plan, playSessionId: "session-2" };
+    const gateway = {
+      createPlaybackPlan: vi.fn()
+        .mockResolvedValueOnce(plan)
+        .mockResolvedValueOnce(replacementPlan),
+      reportStart: vi.fn(async () => undefined),
+      reportProgress: vi.fn(async () => undefined),
+      reportStopped: vi.fn(async () => undefined),
+    } as PlaybackGateway;
+    const player = new FakePlayer();
+    let finishStop!: () => void;
+    const stoppingPlayer = new Promise<void>((resolve) => { finishStop = resolve; });
+    player.stop.mockImplementation(() => stoppingPlayer);
+    const coordinator = new PlaybackCoordinator(gateway, player, {
+      onEvent: vi.fn(),
+      onReportingError: vi.fn(),
+    });
+
+    await coordinator.start(item);
+    const retrying = coordinator.retry();
+    await vi.waitFor(() => expect(player.stop).toHaveBeenCalledTimes(1));
+    const stopping = coordinator.stop();
+    finishStop();
+
+    await expect(retrying).rejects.toBeInstanceOf(PlaybackCancelledError);
+    await stopping;
+    expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1);
+    expect(player.launch).toHaveBeenCalledTimes(1);
   });
 });

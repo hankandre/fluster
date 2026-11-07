@@ -6,11 +6,17 @@ use crate::redaction::safe_error;
 use crate::surface;
 use libmpv2::events::{Event, PropertyData};
 use libmpv2::{mpv_end_file_reason, Format, Mpv, MpvStr};
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Condvar, Mutex};
 use std::thread;
+use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
 use thiserror::Error;
+use url::{Host, Url};
+
+const STOP_TIMEOUT: Duration = Duration::from_secs(5);
+const STATE_EVENT_INTERVAL: Duration = Duration::from_millis(200);
 
 #[derive(Debug, Error)]
 pub enum MpvError {
@@ -22,6 +28,10 @@ pub enum MpvError {
         "The playback plan is missing its item, title, media source, or play-session identity."
     )]
     InvalidPlan,
+    #[error("The playback stream URL is not allowed. Use HTTPS, or HTTP only for a loopback Jellyfin server.")]
+    UnsafeStreamUrl,
+    #[error("An external subtitle URL is not allowed. Subtitles must use the same server origin as the playback stream.")]
+    UnsafeSubtitleUrl,
     #[error("Could not initialize libmpv 0.41 or newer: {0}")]
     Initialize(String),
     #[error("Fluster requires libmpv 0.41 or newer, but found {0}. Install a current libmpv development/runtime package or use the release AppImage.")]
@@ -32,6 +42,8 @@ pub enum MpvError {
     NotPlaying,
     #[error("The player command failed: {0}")]
     Command(String),
+    #[error("The playback session did not stop within five seconds.")]
+    StopTimeout,
 }
 
 struct Session {
@@ -42,14 +54,18 @@ struct Session {
 
 struct ControllerInner {
     session: Mutex<Option<Session>>,
+    session_finished: Condvar,
     renderer: Mutex<Result<String, String>>,
+    capabilities: Mutex<Option<PlayerCapabilities>>,
 }
 
 impl Default for ControllerInner {
     fn default() -> Self {
         Self {
             session: Mutex::new(None),
+            session_finished: Condvar::new(),
             renderer: Mutex::new(Err(String::new())),
+            capabilities: Mutex::new(None),
         }
     }
 }
@@ -62,9 +78,23 @@ pub struct MpvController {
 impl MpvController {
     pub fn set_renderer_result(&self, result: Result<String, String>) {
         *self.inner.renderer.lock().expect("renderer mutex poisoned") = result;
+        self.inner
+            .capabilities
+            .lock()
+            .expect("capabilities mutex poisoned")
+            .take();
     }
 
     pub fn capabilities(&self) -> Result<PlayerCapabilities, MpvError> {
+        if let Some(capabilities) = self
+            .inner
+            .capabilities
+            .lock()
+            .expect("capabilities mutex poisoned")
+            .clone()
+        {
+            return Ok(capabilities);
+        }
         let renderer = match self
             .inner
             .renderer
@@ -81,29 +111,36 @@ impl MpvController {
             Err(error) => return Err(MpvError::Renderer(error)),
         };
         let libmpv_version = query_libmpv_version()?;
-        Ok(PlayerCapabilities {
+        let capabilities = PlayerCapabilities {
             mode: "native",
             embedded: true,
             renderer: renderer.clone(),
             native_renderer: renderer,
             libmpv_version: Some(libmpv_version),
-        })
+        };
+        *self
+            .inner
+            .capabilities
+            .lock()
+            .expect("capabilities mutex poisoned") = Some(capabilities.clone());
+        Ok(capabilities)
     }
 
     pub fn launch(&self, app: AppHandle, request: LaunchRequest) -> Result<(), MpvError> {
-        self.capabilities()?;
-        {
-            let session = self.inner.session.lock().expect("session mutex poisoned");
-            if session.is_some() {
-                return Err(MpvError::AlreadyPlaying);
-            }
-        }
         if request.plan.item_id.is_empty()
             || request.plan.media_source_id.is_empty()
             || request.plan.play_session_id.is_empty()
             || request.plan.title.is_empty()
         {
             return Err(MpvError::InvalidPlan);
+        }
+        validate_playback_urls(&request)?;
+        self.capabilities()?;
+        {
+            let session = self.inner.session.lock().expect("session mutex poisoned");
+            if session.is_some() {
+                return Err(MpvError::AlreadyPlaying);
+            }
         }
 
         // GTK initializes its locale after application startup and may replace
@@ -159,15 +196,26 @@ impl MpvController {
         thread::Builder::new()
             .name("fluster-mpv-events".into())
             .spawn(move || {
-                run_event_loop(
-                    &app_for_events,
-                    &mut event_client,
-                    &plan.tracks,
-                    plan.start_position_ticks,
-                    video_loaded,
-                    finished,
-                );
-                drop(event_client);
+                let event_result = catch_unwind(AssertUnwindSafe(|| {
+                    run_event_loop(
+                        &app_for_events,
+                        &mut event_client,
+                        &plan.tracks,
+                        plan.start_position_ticks,
+                        video_loaded,
+                        finished,
+                    );
+                    drop(event_client);
+                }));
+                if event_result.is_err() {
+                    native_trace("libmpv event thread panicked; forcing session finalization");
+                    let _ = app_for_events.emit(
+                        "fluster://player-event",
+                        PlayerEvent::Error {
+                            message: "The native player event loop stopped unexpectedly.".into(),
+                        },
+                    );
+                }
                 controller.finalize_session(&app_for_events, &event_session_id);
             })
             .map_err(|error| {
@@ -245,7 +293,21 @@ impl MpvController {
     }
 
     pub fn stop(&self) -> Result<(), MpvError> {
-        self.with_mpv(|mpv| mpv.command("stop", &[]))
+        let (session_id, finished) = {
+            let session = self.inner.session.lock().expect("session mutex poisoned");
+            let Some(session) = session.as_ref() else {
+                return Ok(());
+            };
+            (session.id.clone(), session.finished.clone())
+        };
+
+        native_trace(&format!("stop requested for {session_id}"));
+        // Do not issue a synchronous mpv "stop" command while the event client
+        // is unwinding. libmpv can make those two shutdown paths wait on each
+        // other. The event loop owns shutdown: it releases the event client,
+        // detaches the renderer, and finally drops the root mpv handle.
+        finished.store(true, Ordering::Release);
+        self.wait_for_session_end(&session_id, STOP_TIMEOUT)
     }
 
     fn with_mpv<F>(&self, operation: F) -> Result<(), MpvError>
@@ -276,11 +338,87 @@ impl MpvController {
     }
 
     fn finalize_session(&self, app: &AppHandle, id: &str) {
+        native_trace(&format!("finalizing native surface for {id}"));
         surface::detach(app, id);
+        native_trace(&format!("native surface detached for {id}"));
         let mut session = self.inner.session.lock().expect("session mutex poisoned");
         if session.as_ref().is_some_and(|session| session.id == id) {
             session.take();
+            self.inner.session_finished.notify_all();
         }
+        native_trace(&format!("session finalized for {id}"));
+    }
+
+    fn wait_for_session_end(&self, id: &str, timeout: Duration) -> Result<(), MpvError> {
+        let deadline = Instant::now() + timeout;
+        let mut session = self.inner.session.lock().expect("session mutex poisoned");
+        while session.as_ref().is_some_and(|session| session.id == id) {
+            let Some(remaining) = deadline.checked_duration_since(Instant::now()) else {
+                native_trace(&format!("stop timed out for {id}"));
+                return Err(MpvError::StopTimeout);
+            };
+            let (next_session, result) = self
+                .inner
+                .session_finished
+                .wait_timeout(session, remaining)
+                .expect("session mutex poisoned");
+            session = next_session;
+            if result.timed_out() && session.as_ref().is_some_and(|session| session.id == id) {
+                native_trace(&format!("stop timed out for {id}"));
+                return Err(MpvError::StopTimeout);
+            }
+        }
+        native_trace(&format!("stop acknowledged for {id}"));
+        Ok(())
+    }
+}
+
+#[cfg(debug_assertions)]
+fn native_trace(message: &str) {
+    eprintln!("[fluster native] {message}");
+}
+
+#[cfg(not(debug_assertions))]
+fn native_trace(_message: &str) {}
+
+fn validate_playback_urls(request: &LaunchRequest) -> Result<(), MpvError> {
+    let stream_url =
+        parse_allowed_media_url(&request.plan.stream_url).ok_or(MpvError::UnsafeStreamUrl)?;
+    for track in request
+        .plan
+        .tracks
+        .iter()
+        .filter(|track| track.external && track.kind == "Subtitle")
+    {
+        let Some(delivery_url) = track.delivery_url.as_deref() else {
+            continue;
+        };
+        let subtitle_url =
+            parse_allowed_media_url(delivery_url).ok_or(MpvError::UnsafeSubtitleUrl)?;
+        if subtitle_url.origin() != stream_url.origin() {
+            return Err(MpvError::UnsafeSubtitleUrl);
+        }
+    }
+    Ok(())
+}
+
+fn parse_allowed_media_url(value: &str) -> Option<Url> {
+    let url = Url::parse(value).ok()?;
+    if !url.username().is_empty() || url.password().is_some() || url.fragment().is_some() {
+        return None;
+    }
+    match url.scheme() {
+        "https" if url.host().is_some() => Some(url),
+        "http" if url.host().is_some_and(is_loopback_host) => Some(url),
+        _ => None,
+    }
+}
+
+fn is_loopback_host(host: Host<&str>) -> bool {
+    match host {
+        Host::Domain(domain) => domain.eq_ignore_ascii_case("localhost"),
+        Host::Ipv4(address) => address == std::net::Ipv4Addr::LOCALHOST,
+        Host::Ipv6(_) => false,
     }
 }
 
@@ -358,6 +496,7 @@ struct RuntimeState {
     snapshot: PlaybackSnapshot,
     decoder_drops: u64,
     output_drops: u64,
+    seeking: bool,
 }
 
 impl RuntimeState {
@@ -366,8 +505,16 @@ impl RuntimeState {
             snapshot: PlaybackSnapshot::default(),
             decoder_drops: 0,
             output_drops: 0,
+            seeking: false,
         }
     }
+}
+
+#[derive(Debug, PartialEq)]
+enum PropertyUpdate {
+    Ordinary,
+    Immediate(&'static str),
+    TracksChanged,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -381,6 +528,8 @@ fn run_event_loop(
 ) {
     let mut state = RuntimeState::new();
     let mut sent_end = false;
+    let mut pending_state = false;
+    let mut last_state_event = Instant::now();
     while !finished.load(Ordering::Acquire) {
         match mpv.wait_event(0.2) {
             Some(Ok(Event::FileLoaded)) => {
@@ -399,26 +548,32 @@ fn run_event_loop(
                         snapshot: state.snapshot.clone(),
                     },
                 );
-                let _ = app.emit(
-                    "fluster://player-event",
-                    PlayerEvent::TracksChanged {
-                        snapshot: state.snapshot.clone(),
-                    },
-                );
+                pending_state = false;
+                last_state_event = Instant::now();
             }
             Some(Ok(Event::PropertyChange { name, change, .. })) => {
-                let cause = apply_property(&mut state, name, change);
-                let _ = app.emit(
-                    "fluster://player-event",
-                    PlayerEvent::State {
-                        snapshot: state.snapshot.clone(),
-                        cause,
-                    },
-                );
+                match apply_property(&mut state, name, change) {
+                    Some(PropertyUpdate::Ordinary) => pending_state = true,
+                    Some(PropertyUpdate::Immediate(cause)) => {
+                        emit_state(app, &state.snapshot, Some(cause));
+                        pending_state = false;
+                        last_state_event = Instant::now();
+                    }
+                    Some(PropertyUpdate::TracksChanged) => {
+                        let _ = app.emit(
+                            "fluster://player-event",
+                            PlayerEvent::TracksChanged {
+                                snapshot: state.snapshot.clone(),
+                            },
+                        );
+                        pending_state = false;
+                    }
+                    None => {}
+                }
             }
             Some(Ok(Event::AudioReconfig | Event::VideoReconfig)) => {
                 let tracks = read_tracks(mpv, jellyfin_tracks);
-                if !tracks.is_empty() {
+                if !tracks.is_empty() && tracks != state.snapshot.tracks {
                     state.snapshot.tracks = tracks;
                     refresh_selected_streams(&mut state.snapshot);
                     let _ = app.emit(
@@ -427,9 +582,11 @@ fn run_event_loop(
                             snapshot: state.snapshot.clone(),
                         },
                     );
+                    pending_state = false;
                 }
             }
             Some(Ok(Event::EndFile(reason))) => {
+                native_trace("libmpv emitted EndFile");
                 let failed =
                     reason == mpv_end_file_reason::Error || reason == mpv_end_file_reason::Redirect;
                 let reason = if reason == mpv_end_file_reason::Eof {
@@ -472,6 +629,11 @@ fn run_event_loop(
             }
             _ => {}
         }
+        if pending_state && last_state_event.elapsed() >= STATE_EVENT_INTERVAL {
+            emit_state(app, &state.snapshot, None);
+            pending_state = false;
+            last_state_event = Instant::now();
+        }
     }
     if !sent_end && !finished.load(Ordering::Acquire) {
         let _ = app.emit(
@@ -482,6 +644,16 @@ fn run_event_loop(
             },
         );
     }
+}
+
+fn emit_state(app: &AppHandle, snapshot: &PlaybackSnapshot, cause: Option<&'static str>) {
+    let _ = app.emit(
+        "fluster://player-event",
+        PlayerEvent::State {
+            snapshot: snapshot.clone(),
+            cause,
+        },
+    );
 }
 
 fn load_external_subtitles(mpv: &Mpv, jellyfin_tracks: &[MediaTrack]) {
@@ -553,65 +725,151 @@ fn apply_property(
     state: &mut RuntimeState,
     name: &str,
     data: PropertyData<'_>,
-) -> Option<&'static str> {
+) -> Option<PropertyUpdate> {
     match (name, data) {
-        ("time-pos", PropertyData::Double(value)) => state.snapshot.position_seconds = value,
-        ("duration", PropertyData::Double(value)) => state.snapshot.duration_seconds = Some(value),
-        ("pause", PropertyData::Flag(value)) => {
-            state.snapshot.paused = value;
-            return Some("pause");
+        ("time-pos", PropertyData::Double(value)) => {
+            if state.snapshot.position_seconds == value {
+                return None;
+            }
+            state.snapshot.position_seconds = value;
         }
-        ("paused-for-cache", PropertyData::Flag(value)) => state.snapshot.buffering = value,
-        ("volume", PropertyData::Double(value)) => state.snapshot.volume = value,
-        ("mute", PropertyData::Flag(value)) => state.snapshot.muted = value,
+        ("duration", PropertyData::Double(value)) => {
+            if state.snapshot.duration_seconds == Some(value) {
+                return None;
+            }
+            state.snapshot.duration_seconds = Some(value);
+        }
+        ("pause", PropertyData::Flag(value)) => {
+            if state.snapshot.paused == value {
+                return None;
+            }
+            state.snapshot.paused = value;
+            return Some(PropertyUpdate::Immediate("pause"));
+        }
+        ("paused-for-cache", PropertyData::Flag(value)) => {
+            if state.snapshot.buffering == value {
+                return None;
+            }
+            state.snapshot.buffering = value;
+            return Some(PropertyUpdate::Immediate("property"));
+        }
+        ("volume", PropertyData::Double(value)) => {
+            if state.snapshot.volume == value {
+                return None;
+            }
+            state.snapshot.volume = value;
+        }
+        ("mute", PropertyData::Flag(value)) => {
+            if state.snapshot.muted == value {
+                return None;
+            }
+            state.snapshot.muted = value;
+        }
         ("aid", PropertyData::Str(value)) => {
-            update_selected_track(&mut state.snapshot, "Audio", value.parse().ok())
+            let changed = update_selected_track(&mut state.snapshot, "Audio", value.parse().ok());
+            return changed.then_some(PropertyUpdate::TracksChanged);
         }
         ("sid", PropertyData::Str(value)) => {
-            update_selected_track(&mut state.snapshot, "Subtitle", value.parse().ok())
+            let changed =
+                update_selected_track(&mut state.snapshot, "Subtitle", value.parse().ok());
+            return changed.then_some(PropertyUpdate::TracksChanged);
         }
-        ("seeking", PropertyData::Flag(false)) => return Some("seek"),
+        ("seeking", PropertyData::Flag(value)) => {
+            let completed = state.seeking && !value;
+            state.seeking = value;
+            if completed {
+                return Some(PropertyUpdate::Immediate("seek"));
+            }
+            return None;
+        }
         ("hwdec-current", PropertyData::Str(value)) => {
+            if state.snapshot.diagnostics.hwdec_current.as_deref() == Some(value) {
+                return None;
+            }
             state.snapshot.diagnostics.hwdec_current = Some(value.into());
             update_decode_label(&mut state.snapshot);
         }
         ("hwdec-interop", PropertyData::Str(value)) => {
+            if state.snapshot.diagnostics.hwdec_interop.as_deref() == Some(value) {
+                return None;
+            }
             state.snapshot.diagnostics.hwdec_interop = Some(value.into())
         }
         ("video-params/hw-pixelformat", PropertyData::Str(value)) => {
+            if state.snapshot.diagnostics.hw_pixel_format.as_deref() == Some(value) {
+                return None;
+            }
             state.snapshot.diagnostics.hw_pixel_format = Some(value.into())
         }
         ("current-vo", PropertyData::Str(value)) => {
+            if state.snapshot.diagnostics.video_output.as_deref() == Some(value) {
+                return None;
+            }
             state.snapshot.diagnostics.video_output = Some(value.into())
         }
         ("current-gpu-context", PropertyData::Str(value)) => {
+            if state.snapshot.diagnostics.gpu_context.as_deref() == Some(value) {
+                return None;
+            }
             state.snapshot.diagnostics.gpu_context = Some(value.into())
         }
         ("video-codec", PropertyData::Str(value)) => {
+            if state.snapshot.diagnostics.video_codec.as_deref() == Some(value) {
+                return None;
+            }
             state.snapshot.diagnostics.video_codec = Some(value.into())
         }
         ("video-params/bit-depth", PropertyData::Int64(value)) => {
-            state.snapshot.diagnostics.bit_depth = u64::try_from(value).ok()
+            let value = u64::try_from(value).ok();
+            if state.snapshot.diagnostics.bit_depth == value {
+                return None;
+            }
+            state.snapshot.diagnostics.bit_depth = value;
         }
         ("width", PropertyData::Int64(value)) => {
-            state.snapshot.diagnostics.width = u64::try_from(value).ok()
+            let value = u64::try_from(value).ok();
+            if state.snapshot.diagnostics.width == value {
+                return None;
+            }
+            state.snapshot.diagnostics.width = value;
         }
         ("height", PropertyData::Int64(value)) => {
-            state.snapshot.diagnostics.height = u64::try_from(value).ok()
+            let value = u64::try_from(value).ok();
+            if state.snapshot.diagnostics.height == value {
+                return None;
+            }
+            state.snapshot.diagnostics.height = value;
         }
         ("decoder-frame-drop-count", PropertyData::Int64(value)) => {
-            state.decoder_drops = u64::try_from(value).unwrap_or(0)
+            let value = u64::try_from(value).unwrap_or(0);
+            if state.decoder_drops == value {
+                return None;
+            }
+            state.decoder_drops = value;
         }
         ("vo-drop-frame-count", PropertyData::Int64(value)) => {
-            state.output_drops = u64::try_from(value).unwrap_or(0)
+            let value = u64::try_from(value).unwrap_or(0);
+            if state.output_drops == value {
+                return None;
+            }
+            state.output_drops = value;
         }
-        _ => {}
+        _ => return None,
     }
     state.snapshot.diagnostics.dropped_frames = state.decoder_drops + state.output_drops;
-    None
+    Some(PropertyUpdate::Ordinary)
 }
 
-fn update_selected_track(snapshot: &mut PlaybackSnapshot, kind: &str, player_id: Option<i64>) {
+fn update_selected_track(
+    snapshot: &mut PlaybackSnapshot,
+    kind: &str,
+    player_id: Option<i64>,
+) -> bool {
+    let previous_player_id = snapshot
+        .tracks
+        .iter()
+        .find(|track| track.kind == kind && track.selected)
+        .map(|track| track.player_id);
     for track in snapshot
         .tracks
         .iter_mut()
@@ -631,6 +889,12 @@ fn update_selected_track(snapshot: &mut PlaybackSnapshot, kind: &str, player_id:
     } else {
         snapshot.subtitle_track = jellyfin_index;
     }
+    let selected_player_id = snapshot
+        .tracks
+        .iter()
+        .find(|track| track.kind == kind && track.selected)
+        .map(|track| track.player_id);
+    previous_player_id != selected_player_id
 }
 
 fn refresh_selected_streams(snapshot: &mut PlaybackSnapshot) {
@@ -644,8 +908,8 @@ fn refresh_selected_streams(snapshot: &mut PlaybackSnapshot) {
         .iter()
         .find(|track| track.kind == "Subtitle" && track.selected)
         .map(|track| track.player_id);
-    update_selected_track(snapshot, "Audio", audio);
-    update_selected_track(snapshot, "Subtitle", subtitle);
+    let _ = update_selected_track(snapshot, "Audio", audio);
+    let _ = update_selected_track(snapshot, "Subtitle", subtitle);
 }
 
 fn update_decode_label(snapshot: &mut PlaybackSnapshot) {
@@ -684,10 +948,51 @@ fn update_decode_label(snapshot: &mut PlaybackSnapshot) {
 mod tests {
     use super::*;
 
+    fn launch_request(stream_url: &str, subtitle_url: Option<&str>) -> LaunchRequest {
+        let tracks = subtitle_url
+            .map(|delivery_url| MediaTrack {
+                index: 4,
+                kind: "Subtitle".into(),
+                display_title: "English".into(),
+                language: Some("eng".into()),
+                external: true,
+                delivery_url: Some(delivery_url.into()),
+            })
+            .into_iter()
+            .collect();
+        LaunchRequest {
+            plan: crate::model::PlaybackPlan {
+                item_id: "item".into(),
+                title: "Test video".into(),
+                stream_url: stream_url.into(),
+                media_source_id: "source".into(),
+                play_session_id: "session".into(),
+                start_position_ticks: 0,
+                tracks,
+            },
+            test_force_software: false,
+        }
+    }
+
+    fn player_track(id: i64, jellyfin_index: i64, selected: bool) -> PlayerTrack {
+        PlayerTrack {
+            player_id: id,
+            jellyfin_index: Some(jellyfin_index),
+            kind: "Audio".into(),
+            title: format!("Audio {id}"),
+            language: Some("eng".into()),
+            external: false,
+            selected,
+        }
+    }
+
     #[test]
     fn runtime_properties_are_authoritative_for_decode_mode() {
         let mut state = RuntimeState::new();
-        apply_property(&mut state, "hwdec-current", PropertyData::Str("nvdec"));
+        assert_eq!(
+            apply_property(&mut state, "hwdec-current", PropertyData::Str("nvdec")),
+            Some(PropertyUpdate::Ordinary)
+        );
         assert!(matches!(
             state.snapshot.diagnostics.decode_mode,
             DecodeMode::Hardware
@@ -703,18 +1008,11 @@ mod tests {
     #[test]
     fn selected_player_track_reports_jellyfin_stream_index() {
         let mut snapshot = PlaybackSnapshot::default();
-        snapshot.tracks.push(PlayerTrack {
-            player_id: 2,
-            jellyfin_index: Some(7),
-            kind: "Audio".into(),
-            title: "English".into(),
-            language: Some("eng".into()),
-            external: false,
-            selected: false,
-        });
-        update_selected_track(&mut snapshot, "Audio", Some(2));
+        snapshot.tracks.push(player_track(2, 7, false));
+        assert!(update_selected_track(&mut snapshot, "Audio", Some(2)));
         assert_eq!(snapshot.audio_track, Some(7));
         assert!(snapshot.tracks[0].selected);
+        assert!(!update_selected_track(&mut snapshot, "Audio", Some(2)));
     }
 
     #[test]
@@ -725,5 +1023,102 @@ mod tests {
         assert!(is_supported_mpv_version("mpv 1.0.0"));
         assert!(!is_supported_mpv_version("0.40.0"));
         assert!(!is_supported_mpv_version("unknown"));
+    }
+
+    #[test]
+    fn media_urls_allow_https_and_exact_loopback_http() {
+        for stream_url in [
+            "https://media.example/video.mkv?api_key=secret",
+            "http://localhost:8096/video.mkv",
+            "http://127.0.0.1:8096/video.mkv",
+        ] {
+            assert!(validate_playback_urls(&launch_request(stream_url, None)).is_ok());
+        }
+    }
+
+    #[test]
+    fn media_urls_reject_plaintext_remote_hosts_and_embedded_credentials() {
+        for stream_url in [
+            "http://media.example/video.mkv?api_key=secret",
+            "http://localhost.example/video.mkv",
+            "http://127.12.34.56:8096/video.mkv",
+            "http://[::1]:8096/video.mkv",
+            "https://user:password@media.example/video.mkv",
+            "https://media.example/video.mkv#fragment",
+            "file:///tmp/video.mkv",
+        ] {
+            let error = validate_playback_urls(&launch_request(stream_url, None))
+                .expect_err("unsafe stream must be rejected");
+            assert!(matches!(error, MpvError::UnsafeStreamUrl));
+            assert!(!error.to_string().contains("secret"));
+            assert!(!error.to_string().contains("password"));
+        }
+    }
+
+    #[test]
+    fn external_subtitles_must_share_the_stream_origin() {
+        let same_origin = launch_request(
+            "https://media.example/video.mkv?api_key=stream-secret",
+            Some("https://media.example/subtitle.ass?api_key=subtitle-secret"),
+        );
+        assert!(validate_playback_urls(&same_origin).is_ok());
+
+        let cross_origin = launch_request(
+            "https://media.example/video.mkv?api_key=stream-secret",
+            Some("https://cdn.example/subtitle.ass?api_key=subtitle-secret"),
+        );
+        let error = validate_playback_urls(&cross_origin)
+            .expect_err("cross-origin subtitle must be rejected");
+        assert!(matches!(error, MpvError::UnsafeSubtitleUrl));
+        assert!(!error.to_string().contains("stream-secret"));
+        assert!(!error.to_string().contains("subtitle-secret"));
+    }
+
+    #[test]
+    fn property_updates_separate_immediate_events_from_coalesced_state() {
+        let mut state = RuntimeState::new();
+        assert_eq!(
+            apply_property(&mut state, "time-pos", PropertyData::Double(1.5)),
+            Some(PropertyUpdate::Ordinary)
+        );
+        assert_eq!(
+            apply_property(&mut state, "pause", PropertyData::Flag(true)),
+            Some(PropertyUpdate::Immediate("pause"))
+        );
+        assert_eq!(
+            apply_property(&mut state, "paused-for-cache", PropertyData::Flag(true)),
+            Some(PropertyUpdate::Immediate("property"))
+        );
+
+        assert_eq!(
+            apply_property(&mut state, "seeking", PropertyData::Flag(true)),
+            None
+        );
+        assert_eq!(
+            apply_property(&mut state, "seeking", PropertyData::Flag(false)),
+            Some(PropertyUpdate::Immediate("seek"))
+        );
+    }
+
+    #[test]
+    fn track_events_are_emitted_only_when_the_selection_changes() {
+        let mut state = RuntimeState::new();
+        state.snapshot.tracks = vec![player_track(1, 4, true), player_track(2, 7, false)];
+        state.snapshot.audio_track = Some(4);
+
+        assert_eq!(
+            apply_property(&mut state, "aid", PropertyData::Str("1")),
+            None
+        );
+        assert_eq!(
+            apply_property(&mut state, "aid", PropertyData::Str("2")),
+            Some(PropertyUpdate::TracksChanged)
+        );
+        assert_eq!(state.snapshot.audio_track, Some(7));
+    }
+
+    #[test]
+    fn stop_is_idempotent_without_an_active_session() {
+        assert!(MpvController::default().stop().is_ok());
     }
 }

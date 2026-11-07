@@ -1,20 +1,10 @@
-import type {
-  PlaybackDiagnostics,
-  PlaybackSnapshot,
-  PlayerCapabilities,
-  PlayerEvent,
-} from "../../domain/playback";
+import type { PlaybackSnapshot, PlayerEvent } from "../../domain/playback";
 
 export interface PlaybackSessionState {
-  phase: "idle" | "loading" | "playing" | "ended" | "error";
-  capabilities?: PlayerCapabilities;
   snapshot?: PlaybackSnapshot;
   firstFrameReady: boolean;
-  buffering: boolean;
-  diagnostics?: PlaybackDiagnostics;
   error?: string;
   reportingWarning?: string;
-  endReason?: string;
 }
 
 export type PlaybackSessionAction =
@@ -24,9 +14,7 @@ export type PlaybackSessionAction =
   | { type: "reporting-warning"; message?: string };
 
 export const initialPlaybackSessionState: PlaybackSessionState = {
-  phase: "idle",
   firstFrameReady: false,
-  buffering: false,
 };
 
 export function playbackSessionReducer(
@@ -35,9 +23,9 @@ export function playbackSessionReducer(
 ): PlaybackSessionState {
   switch (action.type) {
     case "reset":
-      return { ...initialPlaybackSessionState, phase: "loading", capabilities: state.capabilities };
+      return initialPlaybackSessionState;
     case "failure":
-      return { ...state, phase: "error", error: action.message, buffering: false };
+      return { ...state, error: action.message };
     case "reporting-warning":
       return { ...state, reportingWarning: action.message };
     case "event":
@@ -47,32 +35,18 @@ export function playbackSessionReducer(
 
 function reducePlayerEvent(state: PlaybackSessionState, event: PlayerEvent): PlaybackSessionState {
   switch (event.kind) {
-    case "ready":
-      return { ...state, capabilities: event.capabilities };
     case "first-frame":
-      return { ...state, firstFrameReady: true, phase: state.error ? "error" : "playing" };
+      return { ...state, firstFrameReady: true };
     case "error":
-      return { ...state, phase: "error", error: event.message, buffering: false };
-    case "ended": {
-      const snapshot = event.snapshot ?? state.snapshot;
-      return {
-        ...state,
-        phase: state.error || event.reason === "error" ? "error" : "ended",
-        snapshot,
-        buffering: false,
-        diagnostics: snapshot?.diagnostics ?? state.diagnostics,
-        endReason: event.reason,
-      };
-    }
+      return { ...state, error: event.message };
+    case "ended":
+      return { ...state, snapshot: event.snapshot ?? state.snapshot };
     case "loaded":
     case "state":
     case "tracks-changed":
       return {
         ...state,
-        phase: state.error ? "error" : state.firstFrameReady ? "playing" : "loading",
         snapshot: event.snapshot,
-        buffering: event.snapshot.buffering,
-        diagnostics: event.snapshot.diagnostics,
       };
   }
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -28,12 +28,10 @@ function time(value: number | undefined): string {
     : `${minutes}:${String(remainder).padStart(2, "0")}`;
 }
 
-export function PlayerView({ item, player, session, launchError, reportingWarning, retrying, onRetry, onBack }: {
+export function PlayerView({ item, player, session, retrying, onRetry, onBack }: {
   item: LibraryItem;
   player: PlayerEngine;
   session: PlaybackSessionState;
-  launchError?: string;
-  reportingWarning?: string;
   retrying?: boolean;
   onRetry(): Promise<void> | void;
   onBack(): Promise<void> | void;
@@ -42,9 +40,20 @@ export function PlayerView({ item, player, session, launchError, reportingWarnin
   const [fullscreen, setFullscreenState] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [seekValue, setSeekValue] = useState<number>();
+  const [volumeValue, setVolumeValue] = useState<number>();
   const hideTimer = useRef<number | undefined>(undefined);
   const snapshot = session.snapshot;
-  const error = launchError ?? commandError ?? session.error;
+  const error = commandError ?? session.error;
+  const reportingWarning = session.reportingWarning;
+  const snapshotRef = useRef(snapshot);
+  const fullscreenRef = useRef(fullscreen);
+  const onBackRef = useRef(onBack);
+
+  useEffect(() => {
+    snapshotRef.current = snapshot;
+    fullscreenRef.current = fullscreen;
+    onBackRef.current = onBack;
+  }, [fullscreen, onBack, snapshot]);
 
   useEffect(() => {
     document.documentElement.classList.add("native-playing");
@@ -55,14 +64,61 @@ export function PlayerView({ item, player, session, launchError, reportingWarnin
     };
   }, []);
 
-  const execute = async (operation: () => Promise<void>) => {
+  const execute = useCallback(async (operation: () => Promise<void>): Promise<boolean> => {
     try {
       setCommandError(undefined);
       await operation();
+      return true;
     } catch (operationError) {
       setCommandError(operationError instanceof Error ? operationError.message : String(operationError));
+      return false;
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (retrying) setCommandError(undefined);
+  }, [retrying]);
+
+  const changeFullscreen = useCallback(async (next: boolean) => {
+    const previous = fullscreenRef.current;
+    fullscreenRef.current = next;
+    setFullscreenState(next);
+    const changed = await execute(() => player.setFullscreen(next));
+    if (!changed) {
+      fullscreenRef.current = previous;
+      setFullscreenState(previous);
+    }
+  }, [execute, player]);
+
+  useEffect(() => {
+    const updateFullscreen = (value: boolean) => {
+      fullscreenRef.current = value;
+      setFullscreenState(value);
+    };
+    if (player.mode === "browser") {
+      const onFullscreenChange = () => updateFullscreen(Boolean(document.fullscreenElement));
+      document.addEventListener("fullscreenchange", onFullscreenChange);
+      return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+    }
+
+    let cancelled = false;
+    let removeListener: (() => void) | undefined;
+    void import("@tauri-apps/api/window").then(async ({ getCurrentWindow }) => {
+      const appWindow = getCurrentWindow();
+      const syncFullscreen = async () => {
+        const value = await appWindow.isFullscreen();
+        if (!cancelled) updateFullscreen(value);
+      };
+      await syncFullscreen();
+      const unlisten = await appWindow.onResized(() => void syncFullscreen());
+      if (cancelled) unlisten();
+      else removeListener = unlisten;
+    });
+    return () => {
+      cancelled = true;
+      removeListener?.();
+    };
+  }, [player.mode]);
 
   const showControls = () => {
     setControlsVisible(true);
@@ -76,28 +132,36 @@ export function PlayerView({ item, player, session, launchError, reportingWarnin
 
   useEffect(() => {
     const onKeyDown = (keyboardEvent: KeyboardEvent) => {
+      const currentSnapshot = snapshotRef.current;
+      const currentFullscreen = fullscreenRef.current;
       const target = keyboardEvent.target as HTMLElement | null;
       if (target?.matches("input, select, button")) return;
-      if (keyboardEvent.key === " " && snapshot) {
+      if (keyboardEvent.key === " " && currentSnapshot) {
         keyboardEvent.preventDefault();
-        void execute(() => player.setPaused(!snapshot.paused));
-      } else if (keyboardEvent.key === "ArrowLeft" && snapshot) {
-        void execute(() => player.seek(Math.max(0, snapshot.positionSeconds - 10)));
-      } else if (keyboardEvent.key === "ArrowRight" && snapshot) {
-        void execute(() => player.seek(snapshot.positionSeconds + 10));
-      } else if (keyboardEvent.key.toLowerCase() === "m" && snapshot) {
-        void execute(() => player.setMuted(!snapshot.muted));
+        void execute(() => player.setPaused(!currentSnapshot.paused));
+      } else if (keyboardEvent.key === "ArrowLeft" && currentSnapshot) {
+        void execute(() => player.seek(Math.max(0, currentSnapshot.positionSeconds - 10)));
+      } else if (keyboardEvent.key === "ArrowRight" && currentSnapshot) {
+        void execute(() => player.seek(currentSnapshot.positionSeconds + 10));
+      } else if (keyboardEvent.key.toLowerCase() === "m" && currentSnapshot) {
+        void execute(() => player.setMuted(!currentSnapshot.muted));
       } else if (keyboardEvent.key.toLowerCase() === "f") {
-        const next = !fullscreen;
-        setFullscreenState(next);
-        void execute(() => player.setFullscreen(next));
-      } else if (keyboardEvent.key === "Escape" && !fullscreen) {
-        void onBack();
+        const next = !currentFullscreen;
+        void changeFullscreen(next);
+      } else if (keyboardEvent.key === "Escape" && !currentFullscreen) {
+        void onBackRef.current();
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [fullscreen, onBack, player, snapshot]);
+  }, [changeFullscreen, execute, player]);
+
+  const commitVolume = () => {
+    if (volumeValue == null) return;
+    const nextVolume = volumeValue;
+    setVolumeValue(undefined);
+    void execute(() => player.setVolume(nextVolume));
+  };
 
   const audioTracks = useMemo(
     () => snapshot?.tracks.filter((track) => track.type === "Audio") ?? [],
@@ -208,8 +272,11 @@ export function PlayerView({ item, player, session, launchError, reportingWarnin
             type="range"
             min={0}
             max={100}
-            value={snapshot?.volume ?? 100}
-            onChange={(changeEvent) => void execute(() => player.setVolume(Number(changeEvent.target.value)))}
+            value={volumeValue ?? snapshot?.volume ?? 100}
+            onChange={(changeEvent) => setVolumeValue(Number(changeEvent.target.value))}
+            onPointerUp={commitVolume}
+            onKeyUp={commitVolume}
+            onBlur={commitVolume}
             disabled={!snapshot}
           />
           <label className="track-control">
@@ -238,11 +305,7 @@ export function PlayerView({ item, player, session, launchError, reportingWarnin
           <button
             className="player-control-button"
             aria-label={fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-            onClick={() => {
-              const next = !fullscreen;
-              setFullscreenState(next);
-              void execute(() => player.setFullscreen(next));
-            }}
+            onClick={() => void changeFullscreen(!fullscreen)}
           >
             {fullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
           </button>

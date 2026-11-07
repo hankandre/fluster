@@ -30,6 +30,7 @@ struct RenderState {
     context: RenderContext,
     app: AppHandle,
     first_frame_sent: bool,
+    render_error_sent: bool,
     video_loaded: Arc<AtomicBool>,
 }
 
@@ -148,6 +149,7 @@ pub fn attach(
                     context: render_context,
                     app: app_for_render,
                     first_frame_sent: false,
+                    render_error_sent: false,
                     video_loaded,
                 });
             });
@@ -192,7 +194,8 @@ fn draw(session_id: &str) {
                                 .emit("fluster://player-event", PlayerEvent::FirstFrame);
                         }
                     }
-                    Err(error) => {
+                    Err(error) if !state.render_error_sent => {
+                        state.render_error_sent = true;
                         let _ = state.app.emit(
                             "fluster://player-event",
                             PlayerEvent::Error {
@@ -202,6 +205,7 @@ fn draw(session_id: &str) {
                             },
                         );
                     }
+                    Err(_) => {}
                 }
             }
         });
