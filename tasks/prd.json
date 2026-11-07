@@ -207,10 +207,10 @@
             "All existing code passes"
           ],
           "verify": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings && cargo test --release --manifest-path src-tauri/Cargo.toml",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "native-engineer",
+          "passes": true,
+          "evidence": "src-tauri/Cargo.toml [lints.clippy] denies debug_assert_with_mut_call, undocumented_unsafe_blocks, unwrap_used; clippy.toml allows unwrap in tests.\nAdded SAFETY comments to every unsafe block (lib.rs, mpv.rs, surface/linux.rs, surface/macos.rs); no non-test unwrap existed.\nCI now runs cargo test --release after the debug cargo test.\ncargo fmt --check, clippy -D warnings, cargo test, cargo test --release, pnpm check pass on Linux; macos.rs not compiled here."
         },
         {
           "id": "P0-09",

@@ -102,6 +102,8 @@ async fn stop_playback(controller: State<'_, MpvController>) -> Result<(), Strin
 pub fn run() {
     // libmpv parses all numeric options with the C decimal separator and
     // requires embedders to establish this before creating an mpv handle.
+    // SAFETY: `c"C"` is a valid NUL-terminated string that outlives the call, and
+    // this runs at startup before any other thread reads or changes the locale.
     unsafe {
         libc::setlocale(libc::LC_NUMERIC, c"C".as_ptr());
     }
