@@ -313,10 +313,10 @@
             "Tests cover 10.10.7, 10.11.7, 12.4.0, and malformed versions"
           ],
           "verify": "pnpm test -- gateway",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "src/domain/server-version.ts parses semver (two-part = patch 0, -suffix only after three parts); connect() accepts >= 10.11.0 with no upper bound.\nTests cover 10.10.7, 10.11.7, 12.4.0, and malformed versions in server-version.test.ts and gateway.test.ts.\npnpm check and pnpm test:e2e pass."
         },
         {
           "id": "P1-03",

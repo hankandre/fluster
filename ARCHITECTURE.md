@@ -260,7 +260,6 @@ Tracked in `docs/plans/active/001-jellyfin-api-correctness.md`.
 | Severity | Gap |
 |---|---|
 | Critical | Stream/subtitle URLs use `api_key`, which fails by default on Jellyfin 12.x |
-| Critical | `connect()` rejects every version except `10.11.x` |
 | High | No DeviceProfile, so the server's direct-play checks are skipped and external subtitles never get a `DeliveryUrl` |
 | High | Track mapping ignores the external-first index numbering |
 | High | BluRay/DVD folder sources are not rejected; ffmpeg runs silently |
