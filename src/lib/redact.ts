@@ -17,11 +17,12 @@ export function redactUrl(value: string): string {
 // Catches credentials that are not inside an absolute URL: relative request
 // paths, bare query strings, headers, and JSON bodies. Key names may carry a
 // prefix (auth_token, sessionToken, X-MediaBrowser-Token) and be quoted.
+// The prefix is anchored and bounded so matching stays linear on long input.
 function redactCredentialPairs(value: string): string {
   return value
     .replace(/(authorization"?\s*[:=]\s*)[^\n]*/gi, "$1[redacted]")
     .replace(
-      /((?:[\w-]*(?:api[_-]?key|access[_-]?token|token|password|playsessionid)|\bpw)"?\s*[:=]\s*)"?[^&\s",}]+"?/gi,
+      /(\b(?:[\w-]{0,40}?(?:api[_-]?key|access[_-]?token|token|password|playsessionid)|pw)"?\s*[:=]\s*)"?[^&\s",}]+"?/gi,
       "$1[redacted]",
     );
 }
