@@ -8,7 +8,6 @@ Fluster is a direct-play-only Jellyfin client: Tauri 2 + React/TypeScript + Rust
 - Read `ARCHITECTURE.md` before changing server calls, playback, or invariants.
 - Read `DOMAINS.md` before adding or moving code.
 - Read `WORKFLOW.md` before planning multi-step work.
-- Read the matching skill in `.claude/skills/<name>/SKILL.md` before the task it covers.
 
 ## Tasks
 
@@ -18,15 +17,6 @@ Fluster is a direct-play-only Jellyfin client: Tauri 2 + React/TypeScript + Rust
 - Link the task id in commits, plans, and PRs.
 - Read the dogfood server URL from `FLUSTER_DOGFOOD_SERVER`; never commit it.
 
-## Skills
-
-- `exec-plan`: work spanning more than one session or domain.
-- `verify`: before asking for review.
-- `change-review`: reviewing any diff.
-- `jellyfin-api`: any change to server calls or playback negotiation.
-- `native-player`: any change under `src-tauri/` or to the player engine.
-- `doc-gardening`: drift checks between docs and code.
-- `ship`: opening, merging, and cleaning up a pull request.
 
 ## Subagents
 
