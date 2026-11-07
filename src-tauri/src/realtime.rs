@@ -6,13 +6,15 @@
 
 use crate::model::{ConnectionState, ServerEvent};
 use crate::url_policy::parse_allowed_url;
-use futures_util::{SinkExt, StreamExt};
+use futures_util::{FutureExt, SinkExt, StreamExt};
 use serde::Deserialize;
+use std::future::Future;
+use std::panic::AssertUnwindSafe;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 use thiserror::Error;
 use tokio::net::TcpStream;
-use tokio::time::{interval_at, timeout, Interval};
+use tokio::time::{interval_at, sleep_until, timeout, Instant as TokioInstant, Interval};
 use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 use tokio_tungstenite::tungstenite::http::header::AUTHORIZATION;
 use tokio_tungstenite::tungstenite::http::{HeaderValue, StatusCode};
@@ -29,6 +31,11 @@ const MAX_RECONNECT_DELAY_SECONDS: u64 = 30;
 // A connection that lasted this long resets the reconnect backoff.
 const STABLE_CONNECTION: Duration = Duration::from_secs(30);
 const MAX_MESSAGE_BYTES: usize = 1024 * 1024;
+// Jellyfin sends 60 (SessionWebSocketListener.WebSocketLostTimeout). Other
+// values are clamped so a hostile server cannot overflow timers or flood.
+const DEFAULT_KEEP_ALIVE_TIMEOUT_SECONDS: u64 = 60;
+const MIN_KEEP_ALIVE_TIMEOUT_SECONDS: u64 = 2;
+const MAX_KEEP_ALIVE_TIMEOUT_SECONDS: u64 = 600;
 const MAX_AUTHORIZATION_BYTES: usize = 4096;
 const MAX_ITEM_ID_LENGTH: usize = 64;
 const KEEP_ALIVE: &str = r#"{"MessageType":"KeepAlive"}"#;
@@ -118,12 +125,18 @@ pub fn parse_message(text: &str) -> InboundMessage {
         return InboundMessage::Ignored;
     };
     match envelope.message_type.as_str() {
-        "ForceKeepAlive" => match envelope.data.as_u64() {
-            Some(timeout_seconds) if timeout_seconds > 0 => {
-                InboundMessage::ForceKeepAlive { timeout_seconds }
-            }
-            _ => InboundMessage::Ignored,
-        },
+        "ForceKeepAlive" => {
+            let timeout_seconds = envelope
+                .data
+                .as_u64()
+                .filter(|seconds| *seconds > 0)
+                .unwrap_or(DEFAULT_KEEP_ALIVE_TIMEOUT_SECONDS)
+                .clamp(
+                    MIN_KEEP_ALIVE_TIMEOUT_SECONDS,
+                    MAX_KEEP_ALIVE_TIMEOUT_SECONDS,
+                );
+            InboundMessage::ForceKeepAlive { timeout_seconds }
+        }
         "UserDataChanged" => {
             let Ok(info) = serde_json::from_value::<UserDataChangeInfo>(envelope.data) else {
                 return InboundMessage::Ignored;
@@ -156,6 +169,20 @@ fn is_item_id(value: &str) -> bool {
 /// asks clients to send one at least every half of that timeout.
 pub fn keep_alive_period(timeout_seconds: u64) -> Duration {
     Duration::from_secs((timeout_seconds / 2).max(1))
+}
+
+/// Jellyfin answers every client KeepAlive with a KeepAlive
+/// (WebSocketConnection.SendKeepAliveResponse), so a healthy socket always
+/// hears from the server within one keepalive period. Silence for two
+/// periods means the connection is dead.
+pub fn idle_limit(keep_alive_period: Duration) -> Duration {
+    keep_alive_period.saturating_mul(2)
+}
+
+/// `start + duration`, or `start` itself if that would overflow; an early
+/// deadline only causes a keepalive or a reconnect, never a panic.
+fn deadline_after(start: TokioInstant, duration: Duration) -> TokioInstant {
+    start.checked_add(duration).unwrap_or(start)
 }
 
 /// 1, 2, 4, 8, 16, then 30 seconds.
@@ -198,19 +225,43 @@ fn realtime_trace(message: &'static str) {
 fn realtime_trace(_message: &'static str) {}
 
 /// Keeps the socket open until the task is aborted or the server refuses
-/// the session. Reconnects with capped backoff.
-pub async fn run(target: SocketTarget, emit: impl Fn(ServerEvent)) {
+/// the session. If the loop ever panics, the frontend hears `disconnected`
+/// and the loop starts again after the longest backoff.
+pub async fn run_supervised(target: SocketTarget, emit: impl Fn(ServerEvent)) {
+    supervise(|| run(&target, &emit), &emit).await;
+}
+
+async fn supervise<F, Fut>(mut start: F, emit: &impl Fn(ServerEvent))
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = ()>,
+{
+    loop {
+        if AssertUnwindSafe(start()).catch_unwind().await.is_ok() {
+            return;
+        }
+        realtime_trace("the socket task panicked; restarting");
+        emit(ServerEvent::Connection {
+            state: ConnectionState::Disconnected,
+        });
+        tokio::time::sleep(Duration::from_secs(MAX_RECONNECT_DELAY_SECONDS)).await;
+    }
+}
+
+/// Reconnects with capped backoff; returns only when the server refuses the
+/// session.
+async fn run(target: &SocketTarget, emit: &impl Fn(ServerEvent)) {
     // Pin rustls to ring explicitly; this fails harmlessly once installed.
     let _ = rustls::crypto::ring::default_provider().install_default();
     let mut failures: u32 = 0;
     loop {
-        match open(&target).await {
+        match open(target).await {
             Ok(socket) => {
                 emit(ServerEvent::Connection {
                     state: ConnectionState::Connected,
                 });
                 let connected_at = Instant::now();
-                let reason = serve(socket, &emit).await;
+                let reason = serve(socket, emit).await;
                 realtime_trace(reason);
                 emit(ServerEvent::Connection {
                     state: ConnectionState::Disconnected,
@@ -255,9 +306,14 @@ async fn open(target: &SocketTarget) -> Result<Socket, SocketError> {
 /// Reads until the connection ends and returns why, as a fixed description.
 async fn serve(mut socket: Socket, emit: &impl Fn(ServerEvent)) -> &'static str {
     let mut keep_alive: Option<Interval> = None;
+    let mut period = keep_alive_period(DEFAULT_KEEP_ALIVE_TIMEOUT_SECONDS);
+    let mut last_inbound = TokioInstant::now();
     loop {
+        let idle_deadline = deadline_after(last_inbound, idle_limit(period));
         tokio::select! {
-            message = socket.next() => match message {
+            message = socket.next() => {
+                last_inbound = TokioInstant::now();
+                match message {
                 None => return "connection closed",
                 Some(Err(error)) => return describe_connection_error(&error),
                 Some(Ok(Message::Close(_))) => return "the server closed the socket",
@@ -266,8 +322,9 @@ async fn serve(mut socket: Socket, emit: &impl Fn(ServerEvent)) -> &'static str 
                         if let Err(reason) = send_keep_alive(&mut socket).await {
                             return reason;
                         }
-                        let period = keep_alive_period(timeout_seconds);
-                        keep_alive = Some(interval_at(tokio::time::Instant::now() + period, period));
+                        period = keep_alive_period(timeout_seconds);
+                        let first_tick = deadline_after(TokioInstant::now(), period);
+                        keep_alive = Some(interval_at(first_tick, period));
                     }
                     InboundMessage::UserDataChanged { item_ids } => {
                         emit(ServerEvent::UserDataChanged { item_ids });
@@ -275,7 +332,9 @@ async fn serve(mut socket: Socket, emit: &impl Fn(ServerEvent)) -> &'static str 
                     InboundMessage::Ignored => {}
                 },
                 Some(Ok(_)) => {}
+                }
             },
+            _ = sleep_until(idle_deadline) => return "the server stopped answering keepalives",
             _ = next_tick(&mut keep_alive) => {
                 if let Err(reason) = send_keep_alive(&mut socket).await {
                     return reason;
@@ -321,7 +380,7 @@ impl RealtimeManager {
         if let Some(previous) = task.take() {
             previous.abort();
         }
-        *task = Some(tauri::async_runtime::spawn(run(target, emit)));
+        *task = Some(tauri::async_runtime::spawn(run_supervised(target, emit)));
     }
 
     pub fn disconnect(&self) {

@@ -26,11 +26,31 @@ fn parses_force_keep_alive_interval() {
 }
 
 #[test]
-fn rejects_unusable_keep_alive_intervals() {
-    for data in ["0", "-5", "\"60\"", "null"] {
+fn clamps_unusable_keep_alive_intervals() {
+    for (data, expected) in [
+        ("0", 60),
+        ("-5", 60),
+        ("\"60\"", 60),
+        ("null", 60),
+        ("1", 2),
+        ("18446744073709551615", 600),
+        ("1e300", 60),
+    ] {
         let message = format!(r#"{{"MessageType":"ForceKeepAlive","Data":{data}}}"#);
-        assert_eq!(parse_message(&message), InboundMessage::Ignored, "{data}");
+        assert_eq!(
+            parse_message(&message),
+            InboundMessage::ForceKeepAlive {
+                timeout_seconds: expected
+            },
+            "{data}"
+        );
     }
+    assert_eq!(keep_alive_period(600), Duration::from_secs(300));
+    assert_eq!(
+        idle_limit(Duration::from_secs(300)),
+        Duration::from_secs(600)
+    );
+    assert_eq!(idle_limit(Duration::MAX), Duration::MAX);
 }
 
 #[test]
@@ -56,6 +76,7 @@ fn drops_malformed_item_ids() {
 fn ignores_unknown_and_malformed_messages() {
     for message in [
         r#"{"MessageType":"KeepAlive"}"#,
+        r#"{"MessageType":"ForceKeepAliveX","Data":60}"#,
         r#"{"MessageType":"Play","Data":{"ItemIds":["aaaa"],"PlayCommand":"PlayNow"}}"#,
         r#"{"MessageType":"Playstate","Data":{"Command":"Stop"}}"#,
         r#"{"MessageType":"LibraryChanged","Data":{"ItemsAdded":["aaaa"]}}"#,
@@ -237,16 +258,18 @@ async fn opens_the_socket_with_header_auth_and_answers_keep_alives() {
             .send(Message::text(r#"{"MessageType":"Play","Data":{}}"#))
             .await
             .expect("send play");
+        // Like WebSocketConnection.SendKeepAliveResponse: answer each KeepAlive.
         while let Some(Ok(message)) = socket.next().await {
             if let Message::Text(text) = message {
                 let _ = keep_alive_tx.send(text.to_string());
+                let _ = socket.send(Message::text(KEEP_ALIVE)).await;
             }
         }
     });
 
     let target = socket_target(&format!("http://127.0.0.1:{port}"), HEADER).expect("target");
     let (event_tx, mut event_rx) = mpsc::unbounded_channel::<ServerEvent>();
-    let client = tokio::spawn(run(target, move |event| {
+    let client = tokio::spawn(run_supervised(target, move |event| {
         let _ = event_tx.send(event);
     }));
 
@@ -308,7 +331,7 @@ async fn stops_when_the_server_refuses_the_token() {
     let (event_tx, mut event_rx) = mpsc::unbounded_channel::<ServerEvent>();
     let finished = timeout(
         Duration::from_secs(5),
-        run(target, move |event| {
+        run_supervised(target, move |event| {
             let _ = event_tx.send(event);
         }),
     )
@@ -341,7 +364,7 @@ async fn tls_failures_are_retried_without_panicking() {
         format!("wss://localhost:{port}/socket")
     );
     let (event_tx, mut event_rx) = mpsc::unbounded_channel::<ServerEvent>();
-    let client = tokio::spawn(run(target, move |event| {
+    let client = tokio::spawn(run_supervised(target, move |event| {
         let _ = event_tx.send(event);
     }));
 
@@ -378,7 +401,7 @@ async fn live_fixture_server_socket() {
         .unwrap_or(75);
     let target = socket_target(&server, &authorization).expect("target");
     let (event_tx, mut event_rx) = mpsc::unbounded_channel::<ServerEvent>();
-    let client = tokio::spawn(run(target, move |event| {
+    let client = tokio::spawn(run_supervised(target, move |event| {
         let _ = event_tx.send(event);
     }));
 
@@ -406,5 +429,138 @@ async fn live_fixture_server_socket() {
             .iter()
             .any(|event| matches!(event, ServerEvent::UserDataChanged { .. })),
         "no UserDataChanged: {events:?}"
+    );
+}
+
+/// A server that sends one ForceKeepAlive per connection and either answers
+/// KeepAlives (like Jellyfin) or goes silent. Reports each accepted socket.
+async fn keep_alive_server(
+    data: &'static str,
+    answers_keep_alives: bool,
+) -> (u16, mpsc::UnboundedReceiver<()>) {
+    let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind");
+    let port = listener.local_addr().expect("addr").port();
+    let (accepted_tx, accepted_rx) = mpsc::unbounded_channel::<()>();
+    tokio::spawn(async move {
+        while let Ok((stream, _)) = listener.accept().await {
+            let accepted_tx = accepted_tx.clone();
+            tokio::spawn(async move {
+                let Ok(mut socket) = tokio_tungstenite::accept_async(stream).await else {
+                    return;
+                };
+                let _ = accepted_tx.send(());
+                let force = format!(r#"{{"MessageType":"ForceKeepAlive","Data":{data}}}"#);
+                let _ = socket.send(Message::text(force)).await;
+                while let Some(Ok(message)) = socket.next().await {
+                    if answers_keep_alives && message.is_text() {
+                        let _ = socket.send(Message::text(KEEP_ALIVE)).await;
+                    }
+                }
+            });
+        }
+    });
+    (port, accepted_rx)
+}
+
+fn spawn_client(
+    port: u16,
+) -> (
+    tokio::task::JoinHandle<()>,
+    mpsc::UnboundedReceiver<ServerEvent>,
+) {
+    let target = socket_target(&format!("http://127.0.0.1:{port}"), HEADER).expect("target");
+    let (event_tx, event_rx) = mpsc::unbounded_channel::<ServerEvent>();
+    let client = tokio::spawn(run_supervised(target, move |event| {
+        let _ = event_tx.send(event);
+    }));
+    (client, event_rx)
+}
+
+#[tokio::test]
+async fn a_huge_keep_alive_timeout_is_clamped_instead_of_panicking() {
+    let (port, mut accepted) = keep_alive_server("18446744073709551615", true).await;
+    let (client, mut events) = spawn_client(port);
+
+    let wait = Duration::from_secs(5);
+    timeout(wait, accepted.recv()).await.expect("accepted");
+    assert_eq!(
+        timeout(wait, events.recv()).await.expect("connected"),
+        Some(ServerEvent::Connection {
+            state: ConnectionState::Connected
+        })
+    );
+    tokio::time::sleep(Duration::from_millis(500)).await;
+    assert!(!client.is_finished(), "the socket task must survive");
+    assert!(events.try_recv().is_err(), "no disconnect expected");
+    client.abort();
+}
+
+#[tokio::test]
+async fn a_silent_server_is_treated_as_disconnected_and_reconnected() {
+    // Data 2 -> keepalive every 1 s -> idle limit 2 s.
+    let (port, mut accepted) = keep_alive_server("2", false).await;
+    let (client, mut events) = spawn_client(port);
+
+    let wait = Duration::from_secs(5);
+    timeout(wait, accepted.recv())
+        .await
+        .expect("first connection");
+    assert_eq!(
+        timeout(wait, events.recv()).await.expect("connected"),
+        Some(ServerEvent::Connection {
+            state: ConnectionState::Connected
+        })
+    );
+    assert_eq!(
+        timeout(wait, events.recv()).await.expect("idle disconnect"),
+        Some(ServerEvent::Connection {
+            state: ConnectionState::Disconnected
+        })
+    );
+    timeout(wait, accepted.recv()).await.expect("reconnected");
+    client.abort();
+}
+
+#[tokio::test]
+async fn an_answering_server_keeps_the_socket_open_past_the_idle_limit() {
+    let (port, mut accepted) = keep_alive_server("2", true).await;
+    let (client, mut events) = spawn_client(port);
+
+    let wait = Duration::from_secs(5);
+    timeout(wait, accepted.recv()).await.expect("accepted");
+    timeout(wait, events.recv()).await.expect("connected");
+    tokio::time::sleep(Duration::from_millis(3500)).await;
+    assert!(events.try_recv().is_err(), "the socket must stay open");
+    client.abort();
+}
+
+#[tokio::test(start_paused = true)]
+async fn a_panicking_socket_task_reports_disconnected_and_restarts() {
+    let starts = std::sync::atomic::AtomicU32::new(0);
+    let (event_tx, mut events) = mpsc::unbounded_channel::<ServerEvent>();
+    let emit = move |event| {
+        let _ = event_tx.send(event);
+    };
+    let supervisor = supervise(
+        || {
+            let attempt = starts.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            async move {
+                if attempt == 0 {
+                    panic!("simulated socket task failure");
+                }
+            }
+        },
+        &emit,
+    );
+    timeout(Duration::from_secs(120), supervisor)
+        .await
+        .expect("the supervisor returns once the restarted task ends");
+
+    assert_eq!(starts.load(std::sync::atomic::Ordering::SeqCst), 2);
+    assert_eq!(
+        events.try_recv().ok(),
+        Some(ServerEvent::Connection {
+            state: ConnectionState::Disconnected
+        })
     );
 }
