@@ -225,10 +225,10 @@
             "pnpm check runs it"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "src/tasks/prd.test.ts: 16 tests pass (vitest run); real-file rules and hand-written bad fixtures for duplicate ids, unknown depends_on, invalid status, passes without evidence, and done/passes mismatch all covered.\npnpm check: exit 0; vitest 59/59 pass, vite build ok, cargo test ok (12 passed).\nnode:fs needed /// <reference types=\"node\" /> in the test file; tsconfig unchanged."
         },
         {
           "id": "P0-10",
