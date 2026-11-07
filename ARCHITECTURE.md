@@ -99,7 +99,7 @@ Keep the domain, Jellyfin gateway, playback policy, and coordinator **framework-
 | Validate a stored token | `GET /Users/Me`. On 401, return to sign-in. |
 | Logout | `POST /Sessions/Logout` (revokes the token on the server), then delete the local credential |
 | Token storage | Session-only today. M1 proposes opt-in OS keyring storage (Secret Service, Keychain, Credential Manager) owned by Rust, never WebView storage. Needs a decision record and a `docs/security.md` update. |
-| Discovery | Probe a URL with `GET /System/Info/Public` (no auth; returns `Id`, `ServerName`, `Version`). LAN discovery broadcasts `who is JellyfinServer?` to UDP 7359; replies are `{Address, Id, Name}`. Key saved servers by `Id`, not URL. Discovered addresses are usually `http://` LAN URLs, which conflict with the HTTPS-only rule; this needs a policy decision (e.g. allow RFC 1918 HTTP after explicit confirmation). |
+| Discovery | Probe a URL with `GET /System/Info/Public` (no auth; returns `Id`, `ServerName`, `Version`). LAN discovery broadcasts `who is JellyfinServer?` to UDP 7359; replies are `{Address, Id, Name}`. Key saved servers by `Id`, not URL. Discovered addresses are usually `http://` LAN URLs. Plain HTTP is allowed only for loopback and private-LAN hosts (RFC 1918, link-local, ULA, `.local`), classified by the literal host and confirmed once per server `Id` and origin; public `http://` addresses are refused before any request ([decision 0001](docs/decisions/0001-private-lan-http.md), implemented by P0-12). |
 
 ### Catalog (10.9+ paths; old `/Users/{userId}/…` routes are obsolete)
 
@@ -195,7 +195,7 @@ If no source qualifies, return a typed **refusal reason** for the UI. Possible r
 
 ### Realtime and remote control (M5)
 
-- **Socket.** Open `wss://host/socket` with header auth. Answer `ForceKeepAlive` with `KeepAlive` at half the interval.
+- **Socket.** Open `wss://host/socket` (`ws://` only where decision 0001 allows `http://`) with header auth. Answer `ForceKeepAlive` with `KeepAlive` at half the interval.
 - **Messages.** Handle `UserDataChanged` (refresh watched badges), `LibraryChanged`, `Playstate`, `GeneralCommand`, `Play`, and `ServerRestarting`.
 - **Cast target.** `POST /Sessions/Capabilities/Full` with `PlayableMediaTypes: ["Video"]`, `SupportsMediaControl: true`, a `SupportedCommands` list, and the DeviceProfile.
 - **Remote `Play`.** Always route it through the same negotiation path. Never play a server-supplied URL directly.
@@ -245,7 +245,7 @@ Each invariant has an enforcement mechanism. Where the mechanism is "planned", i
 | I2 | Only `Static=true` original-file URLs reach the player | Gateway URL builder, Rust URL validation, tests |
 | I3 | No generic mpv command bridge; Rust exposes a fixed command list | Code review; `command_allowlist` Rust test (`src-tauri/src/command_allowlist.rs`) |
 | I4 | Tokens never appear in logs, errors, diagnostics, or (after the header-auth change) URLs | Redaction in TS and Rust; canary tests (TS `redact-canary.test.ts`, Rust `redaction_canary`) |
-| I5 | Remote servers require HTTPS; credentials in URLs are rejected | Gateway URL normalization, tests |
+| I5 | Servers require HTTPS, except plain HTTP to loopback and, after a one-time per-server confirmation, to private-LAN hosts classified by the literal host ([decision 0001](docs/decisions/0001-private-lan-http.md)); tokens never go over plain HTTP to public hosts or across cross-origin redirects; credentials in URLs are rejected | Gateway URL normalization, Rust URL policy (`parse_allowed_media_url`), tests. Private-LAN HTTP, the confirmation, and the redirect rule are pending P0-12; until then only `localhost`/`127.0.0.1` HTTP is accepted. |
 | I6 | Subtitle URLs must be same-origin and validated before authentication | TS + Rust checks, tests |
 | I7 | The browser engine is never a silent fallback for native | App wiring, review |
 | I8 | Only the gateway talks to Jellyfin; only the engine port talks to the player | Import-boundary lint (`pnpm lint:boundaries`, dependency-cruiser; rules in `DOMAINS.md`) |
