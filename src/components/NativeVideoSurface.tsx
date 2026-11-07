@@ -1,3 +1,4 @@
+import { redactText } from "../lib/redact";
 import { useLayoutEffect, useRef } from "react";
 import type { PlayerEngine, PlayerSurfaceFrame } from "../domain/playback";
 
@@ -37,7 +38,7 @@ class SurfaceUpdater {
       await this.player.setSurface(request.frame);
       this.lastFrame = request.frame;
     } catch (error) {
-      request.onError?.(error instanceof Error ? error.message : String(error));
+      request.onError?.(redactText(error instanceof Error ? error.message : String(error)));
     } finally {
       this.requestInFlight = false;
       void this.sendPending();

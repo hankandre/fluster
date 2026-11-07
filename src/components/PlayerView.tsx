@@ -1,3 +1,4 @@
+import { redactText } from "../lib/redact";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
@@ -70,7 +71,7 @@ export function PlayerView({ item, player, session, retrying, onRetry, onBack }:
       await operation();
       return true;
     } catch (operationError) {
-      setCommandError(operationError instanceof Error ? operationError.message : String(operationError));
+      setCommandError(redactText(operationError instanceof Error ? operationError.message : String(operationError)));
       return false;
     }
   }, []);

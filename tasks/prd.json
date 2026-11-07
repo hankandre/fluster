@@ -169,7 +169,7 @@
           "status": "done",
           "owner": "native-engineer",
           "passes": true,
-          "evidence": "TS: src/lib/redact-canary.test.ts drives JellyfinGateway and PlaybackCoordinator with canary URLs/headers and spies on console.*.\nRust: mpv.rs redaction_canary module covers MpvError variants, validate_playback_urls, redact_url, and serde_json snapshots/events.\nLeaks fixed: schemeless/relative/quoted credentials in redactText and safe_error; gateway and coordinator now redact errors at source.\npnpm check, cargo fmt --check, cargo clippy -D warnings pass."
+          "evidence": "TS: src/lib/redact-canary.test.ts drives JellyfinGateway and PlaybackCoordinator with canary URLs/headers and spies on console.*.\nRust: mpv.rs redaction_canary module covers MpvError variants, validate_playback_urls, redact_url, and serde_json snapshots/events.\nLeaks fixed: schemeless/relative/quoted credentials in redactText and safe_error; gateway and coordinator now redact errors at source.\nReview fixes: play-session IDs removed from native traces (source-scan canary), player error events redacted, redactError safe for read-only errors, header/JSON/prefixed-key patterns.\npnpm check, e2e, cargo fmt --check, cargo clippy -D warnings pass."
         },
         {
           "id": "P0-07",

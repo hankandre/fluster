@@ -208,7 +208,7 @@ impl MpvController {
                     drop(event_client);
                 }));
                 if event_result.is_err() {
-                    native_trace("libmpv event thread panicked; forcing session finalization");
+                    native_trace("libmpv event thread panicked; forcing finalization");
                     let _ = app_for_events.emit(
                         "fluster://player-event",
                         PlayerEvent::Error {
@@ -301,7 +301,7 @@ impl MpvController {
             (session.id.clone(), session.finished.clone())
         };
 
-        native_trace(&format!("stop requested for {session_id}"));
+        native_trace("stop requested");
         // Do not issue a synchronous mpv "stop" command while the event client
         // is unwinding. libmpv can make those two shutdown paths wait on each
         // other. The event loop owns shutdown: it releases the event client,
@@ -338,15 +338,15 @@ impl MpvController {
     }
 
     fn finalize_session(&self, app: &AppHandle, id: &str) {
-        native_trace(&format!("finalizing native surface for {id}"));
+        native_trace("finalizing native surface");
         surface::detach(app, id);
-        native_trace(&format!("native surface detached for {id}"));
+        native_trace("native surface detached");
         let mut session = self.inner.session.lock().expect("session mutex poisoned");
         if session.as_ref().is_some_and(|session| session.id == id) {
             session.take();
             self.inner.session_finished.notify_all();
         }
-        native_trace(&format!("session finalized for {id}"));
+        native_trace("playback finalized");
     }
 
     fn wait_for_session_end(&self, id: &str, timeout: Duration) -> Result<(), MpvError> {
@@ -354,7 +354,7 @@ impl MpvController {
         let mut session = self.inner.session.lock().expect("session mutex poisoned");
         while session.as_ref().is_some_and(|session| session.id == id) {
             let Some(remaining) = deadline.checked_duration_since(Instant::now()) else {
-                native_trace(&format!("stop timed out for {id}"));
+                native_trace("stop timed out");
                 return Err(MpvError::StopTimeout);
             };
             let (next_session, result) = self
@@ -364,11 +364,11 @@ impl MpvController {
                 .expect("session mutex poisoned");
             session = next_session;
             if result.timed_out() && session.as_ref().is_some_and(|session| session.id == id) {
-                native_trace(&format!("stop timed out for {id}"));
+                native_trace("stop timed out");
                 return Err(MpvError::StopTimeout);
             }
         }
-        native_trace(&format!("stop acknowledged for {id}"));
+        native_trace("stop acknowledged");
         Ok(())
     }
 }
@@ -1127,7 +1127,6 @@ mod tests {
 mod redaction_canary {
     use super::tests::launch_request;
     use super::*;
-    use crate::model::PlaybackDiagnostics;
 
     const CANARY: &str = "CANARY-7f3a9c1e5b";
 
@@ -1157,6 +1156,14 @@ mod redaction_canary {
             format!("Failed to open {url}: HTTP error 403"),
             format!("Failed to open {url}."),
             format!("failed to open ({url})"),
+            // Variants without a scheme: only the credential markers can catch these.
+            // (Userinfo without a scheme is not a form libmpv reports.)
+            if url.contains('?') {
+                url.replacen("https://", "", 1).replacen("http://", "", 1)
+            } else {
+                "unrelated failure".to_string()
+            },
+            format!("GET /Videos/1/stream?PlaySessionId={CANARY}&Static=true failed"),
         ]
     }
 
@@ -1190,6 +1197,12 @@ mod redaction_canary {
             format!("Authorization: Bearer {CANARY}"),
             format!("bad query ?ApiKey={CANARY}&x=1"),
             format!("bad query ?access_token={CANARY}"),
+            format!("X-MediaBrowser-Token: {CANARY}"),
+            format!("token: \"{CANARY}\""),
+            format!("api-key={CANARY}"),
+            format!("password {CANARY}"),
+            format!("{{\"AccessToken\":\"{CANARY}\"}}"),
+            format!("PlaySessionId {CANARY}"),
         ] {
             assert_error_clean("Command", &MpvError::Command(safe_error(&text)));
         }
@@ -1225,16 +1238,14 @@ mod redaction_canary {
 
     #[test]
     fn redaction_canary_stays_out_of_serialized_snapshots_and_events() {
-        let url = canary_urls().remove(2);
-        let message = format!("libmpv reported a playback error: {}", safe_error(&url));
+        // Snapshots are built from libmpv properties and fixed text, never from
+        // plan URLs. Serialize one produced by the production decode-label
+        // builder and assert the canary (a plan field) is absent.
+        let request = launch_request(&canary_urls()[2], None);
         let mut snapshot = PlaybackSnapshot::default();
-        snapshot.diagnostics.warning = Some(safe_error(&url));
-        snapshot.diagnostics = PlaybackDiagnostics {
-            hwdec_current: Some("vaapi".into()),
-            ..snapshot.diagnostics
-        };
+        snapshot.diagnostics.hwdec_current = Some("no".into());
+        update_decode_label(&mut snapshot);
         let events = [
-            PlayerEvent::Error { message },
             PlayerEvent::Loaded {
                 snapshot: snapshot.clone(),
             },
@@ -1244,11 +1255,38 @@ mod redaction_canary {
             },
         ];
         for event in events {
-            let json = serde_json::to_string(&event).expect("event serializes");
-            assert_clean("serialized PlayerEvent", &json);
-            assert_clean("PlayerEvent Debug", &format!("{event:?}"));
+            assert_clean(
+                "serialized PlayerEvent",
+                &serde_json::to_string(&event).expect("event serializes"),
+            );
         }
-        let json = serde_json::to_string(&snapshot).expect("snapshot serializes");
-        assert_clean("serialized PlaybackSnapshot", &json);
+        assert_clean(
+            "serialized PlaybackSnapshot",
+            &serde_json::to_string(&snapshot).expect("snapshot serializes"),
+        );
+        assert!(request.plan.stream_url.contains(CANARY));
+    }
+
+    #[test]
+    fn redaction_canary_keeps_play_session_ids_out_of_native_traces() {
+        // Trace output is eprintln!/native_trace text; none of it may name a
+        // session, so a play-session ID can never be logged.
+        for (name, source) in [
+            ("mpv.rs", include_str!("mpv.rs")),
+            ("surface/linux.rs", include_str!("surface/linux.rs")),
+            ("surface/macos.rs", include_str!("surface/macos.rs")),
+        ] {
+            let production = source.split("#[cfg(test)]").next().unwrap_or(source);
+            for line in production.lines().filter(|line| {
+                let line = line.trim_start();
+                line.starts_with("eprintln!") || line.starts_with("native_trace(")
+            }) {
+                let lowered = line.to_ascii_lowercase();
+                assert!(
+                    !lowered.contains("session") && !line.contains("{id}"),
+                    "{name} traces a session identifier: {line}"
+                );
+            }
+        }
     }
 }

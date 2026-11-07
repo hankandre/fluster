@@ -197,7 +197,7 @@ export class PlaybackCoordinator {
 
   private async handleEvent(attempt: number, event: PlayerEvent): Promise<void> {
     if (attempt !== this.attempt) return;
-    this.callbacks.onEvent(event);
+    this.callbacks.onEvent(event.kind === "error" ? { ...event, message: redactText(event.message) } : event);
     if ("snapshot" in event && event.snapshot) this.snapshot = event.snapshot;
     const plan = this.plan;
     if (!plan) return;

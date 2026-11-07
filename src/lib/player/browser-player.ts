@@ -1,3 +1,4 @@
+import { redactText } from "../redact";
 import type {
   PlaybackDiagnostics,
   PlaybackPlan,
@@ -66,7 +67,7 @@ export class BrowserPlayerEngine implements PlayerEngine {
     try {
       await video.play();
     } catch (error) {
-      this.emit({ kind: "error", message: error instanceof Error ? error.message : "Browser playback failed." });
+      this.emit({ kind: "error", message: error instanceof Error ? redactText(error.message) : "Browser playback failed." });
     }
   }
 
