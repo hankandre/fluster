@@ -392,4 +392,25 @@ describe("PlaybackCoordinator", () => {
     await coordinator.flush();
     expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal), true);
   });
+
+  it("sends a failed stopped report when launch fails after the start was reported", async () => {
+    const gateway = {
+      createPlaybackPlan: vi.fn(async () => plan),
+      reportStart: vi.fn(async () => undefined),
+      reportProgress: vi.fn(async () => undefined),
+      reportStopped: vi.fn(async () => undefined),
+    } as PlaybackGateway;
+    const player = new FakePlayer();
+    player.launch.mockImplementation(async () => {
+      player.listener?.({ kind: "loaded", snapshot });
+      await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
+      throw new Error("launch failed");
+    });
+    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
+
+    await expect(coordinator.start(item)).rejects.toThrow("launch failed");
+    await coordinator.flush();
+
+    expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal), true);
+  });
 });

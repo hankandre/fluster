@@ -497,10 +497,10 @@
             "Tests reproduce both cases and fail without the fix"
           ],
           "verify": "pnpm test -- playstate-reporter coordinator",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "Pre-fix: pnpm test -- playstate-reporter coordinator -> 3 failed | 111 passed; live-signal test 'expected true to be false' (stopped ran with the aborted drain signal); own-timeout and launch-failure tests 'expected vi.fn() to be called with arguments' (no stopped report). Fix: reporter drains earlier reports (5 s), then sends stopped on a fresh AbortController bounded by 5 s; coordinator ends a failed launch through finish('error'). Post-fix: 114/114 Vitest, pnpm check ok (build, Rust 20 tests), pnpm test:e2e 6 passed."
         }
       ]
     },

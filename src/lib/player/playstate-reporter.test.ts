@@ -114,4 +114,53 @@ describe("PlaystateReporter", () => {
     expect(onWarning).toHaveBeenCalledTimes(1);
     expect(onWarning).toHaveBeenCalledWith(expect.stringContaining("shutdown deadline"));
   });
+
+  it("sends the stopped report with a live signal after an earlier report hits the deadline", async () => {
+    vi.useFakeTimers();
+    const gateway = recordingGateway([]);
+    gateway.reportStart = vi.fn((_plan, _snapshot, reportSignal?: AbortSignal) => new Promise<void>((_resolve, reject) => {
+      reportSignal?.addEventListener("abort", () => reject(new Error("aborted")));
+    }));
+    let stopSignalAborted: boolean | undefined;
+    gateway.reportStopped = vi.fn(async (_plan, _snapshot, stopSignal?: AbortSignal) => {
+      stopSignalAborted = stopSignal?.aborted;
+    });
+    const reporter = new PlaystateReporter(gateway, vi.fn());
+
+    reporter.start(plan, snapshot, () => snapshot);
+    reporter.finish(plan, snapshot, false);
+    await vi.advanceTimersByTimeAsync(5_000);
+    await reporter.waitForDrains();
+
+    expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal), false);
+    expect(stopSignalAborted).toBe(false);
+  });
+
+  it("bounds the stopped report with its own timeout when an earlier report ignores cancellation", async () => {
+    vi.useFakeTimers();
+    const gateway = recordingGateway([]);
+    gateway.reportStart = vi.fn(() => new Promise<void>(() => undefined));
+    let stopSignal: AbortSignal | undefined;
+    gateway.reportStopped = vi.fn((_plan, _snapshot, reportSignal?: AbortSignal) => {
+      stopSignal = reportSignal;
+      return new Promise<void>(() => undefined);
+    });
+    const onWarning = vi.fn();
+    const reporter = new PlaystateReporter(gateway, onWarning);
+    let drained = false;
+
+    reporter.start(plan, snapshot, () => snapshot);
+    reporter.finish(plan, snapshot, true);
+    void reporter.waitForDrains().then(() => { drained = true; });
+    await vi.advanceTimersByTimeAsync(5_000);
+
+    expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal), true);
+    expect(drained).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(5_000);
+
+    expect(drained).toBe(true);
+    expect(stopSignal?.aborted).toBe(true);
+    expect(onWarning).toHaveBeenCalledWith(expect.stringContaining("stopped report"));
+  });
 });
