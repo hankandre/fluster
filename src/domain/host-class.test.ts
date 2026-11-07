@@ -9,7 +9,17 @@ describe("classifyHost", () => {
   });
 
   it.each(table.vectors)("classifies $url as $class", ({ url, class: expected }) => {
-    expect(classifyHost(new URL(url))).toBe(expected);
+    // Node versions disagree on some invalid IDNA hosts (Node 22 rejects
+    // `xn--a.local`, Node 24 parses it). A URL that cannot be parsed is
+    // refused before any request, so it may only appear as a public vector.
+    let parsed: URL;
+    try {
+      parsed = new URL(url);
+    } catch {
+      expect(expected).toBe("public");
+      return;
+    }
+    expect(classifyHost(parsed)).toBe(expected);
   });
 
   it("classifies the host the same way for every scheme and port", () => {
