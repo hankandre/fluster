@@ -187,6 +187,12 @@ for (const server of servers) {
     const response = await call(base, token, "POST", `/Items/${target.item.Id}/PlaybackInfo`, { query, body });
     save(target.file, response);
   }
+  // The detail view's request: userId only, no fields parameter.
+  for (const [file, fakeId] of [["item-detail-no-fields-multi-version", "item-versions"], ["item-detail-no-fields-hevc-hdr10", "item-hevc"]]) {
+    if (!wanted(file)) continue;
+    const target = targets.find((t) => t.fakeId === fakeId);
+    save(file, await call(base, token, "GET", `/Items/${target.item.Id}`, { query: { userId } }));
+  }
   if (wanted("item-multi-version")) {
     const detail = await call(base, token, "GET", `/Items/${versionsItem.Id}`, { query: { userId, fields: "MediaSources" } });
     save("item-multi-version", detail);

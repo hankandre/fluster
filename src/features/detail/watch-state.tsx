@@ -13,6 +13,7 @@ function useFlagMutation(gateway: SessionGateway, itemId: string, flag: Flag) {
   const key = detailKey(gateway, itemId);
 
   return useMutation({
+    mutationKey: [...key, "flag"],
     mutationFn: (value: boolean) => (flag === "played" ? gateway.setPlayed(itemId, value) : gateway.setFavorite(itemId, value)),
     onMutate: async (value: boolean) => {
       await queryClient.cancelQueries({ queryKey: key });
@@ -21,14 +22,20 @@ function useFlagMutation(gateway: SessionGateway, itemId: string, flag: Flag) {
         const userData: ItemUserData = { ...previous.userData, [flag]: value };
         queryClient.setQueryData<ItemDetail>(key, { ...previous, userData });
       }
-      return { previous };
+      return { previousValue: previous?.userData[flag] };
     },
+    // Restore only this flag; the other one may have changed since.
     onError: (_error, _value, context) => {
-      if (context?.previous) queryClient.setQueryData(key, context.previous);
+      const current = queryClient.getQueryData<ItemDetail>(key);
+      if (!current || context?.previousValue === undefined) return;
+      const userData: ItemUserData = { ...current.userData, [flag]: context.previousValue };
+      queryClient.setQueryData<ItemDetail>(key, { ...current, userData });
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: key });
       void refreshHomeRows(queryClient);
+      // While the other toggle is still in flight, a refetch would show the server's older state.
+      if (queryClient.isMutating({ mutationKey: [...key, "flag"] }) > 1) return;
+      void queryClient.invalidateQueries({ queryKey: key });
     },
   });
 }
@@ -42,16 +49,20 @@ export function WatchState({ gateway, item }: { gateway: SessionGateway; item: I
       <button
         type="button"
         aria-pressed={item.userData.played}
-        disabled={played.isPending}
-        onClick={() => played.mutate(!item.userData.played)}
+        aria-disabled={played.isPending}
+        onClick={() => {
+          if (!played.isPending) played.mutate(!item.userData.played);
+        }}
       >
         Watched
       </button>
       <button
         type="button"
         aria-pressed={item.userData.favorite}
-        disabled={favorite.isPending}
-        onClick={() => favorite.mutate(!item.userData.favorite)}
+        aria-disabled={favorite.isPending}
+        onClick={() => {
+          if (!favorite.isPending) favorite.mutate(!item.userData.favorite);
+        }}
       >
         Favorite
       </button>

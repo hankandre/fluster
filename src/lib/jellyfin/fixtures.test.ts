@@ -5,7 +5,7 @@ import { FLUSTER_PROFILE } from "./device-profile";
 import { JellyfinGateway } from "./gateway";
 import type { HttpRequestConfig, HttpTransport, PlaybackInfoResponse } from "./types";
 
-// Replays PlaybackInfo responses recorded from real Jellyfin servers
+// Replays PlaybackInfo responses recorded from Jellyfin 10.11.7 and 12.4.0 servers
 // (tests/integration/record-fixtures.mjs) through the current gateway.
 // Tests named "current gap" document behavior that later tasks change; they
 // should be rewritten then.

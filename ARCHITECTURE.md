@@ -111,14 +111,14 @@ Keep the domain, Jellyfin gateway, playback policy, and coordinator **framework-
 | Next Up | `GET /Shows/NextUp?limit=&enableRewatching=false` |
 | Latest per library | `GET /Items/Latest?parentId=&limit=&groupItems=true` (returns an array, not a QueryResult) |
 | Series | `GET /Shows/{id}/Seasons`, `GET /Shows/{id}/Episodes?seasonId=` |
-| Detail | `GET /Items/{id}` (+ `/Similar`, `/SpecialFeatures`) |
+| Detail | `GET /Items/{id}?userId=` with no `fields`: the SDK's `getItem` takes only a user id, and recordings on 10.11.7 and 12.4.0 (`item-detail-no-fields-*.json`) show the full item, including `MediaSources`, `MediaStreams`, `People`, `Genres`, and `UserData` (+ `/Similar`, `/SpecialFeatures`) |
 | Type-ahead | `GET /Search/Hints` (lighter DTO; use `/Items?searchTerm=` for result pages) |
 | Filters | `GET /Items/Filters2?parentId=`, `filters=IsUnplayed,IsResumable,IsFavorite` |
 | Played / favorite | `POST`/`DELETE /UserPlayedItems/{id}`, `POST`/`DELETE /UserFavoriteItems/{id}` |
 | Images | `GET /Items/{id}/Images/{type}?tag=&maxWidth=&quality=&format=Webp`. Tagged URLs are immutable, so cache by `(id, type, tag, size)` forever. Use `ImageBlurHashes` for placeholders. No token needed. |
 
 Performance rules:
-- Request only the `fields` a view renders. Cards need little; detail pages add `Overview, MediaSources, MediaStreams, Chapters, Trickplay`.
+- Request only the `fields` a view renders. Cards need little; list endpoints (`/Items`) honor `fields`, but `GET /Items/{id}` takes none and returns the full item.
 - `ProductionYear` and `RunTimeTicks` are always returned and are not valid `fields` values.
 - Set `enableTotalRecordCount=false` unless paging needs counts.
 - Set `enableUserData` only where watched or progress state is shown.

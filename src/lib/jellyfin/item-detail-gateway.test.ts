@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { ItemNotFoundError } from "../../domain/catalog";
 import { JellyfinGateway } from "./gateway";
 import type { HttpRequestConfig, HttpResponse, HttpTransport } from "./types";
 
@@ -48,6 +49,15 @@ describe("item detail gateway calls", () => {
     expect(detail.versions).toEqual([{ id: "s1", name: "1080p", audio: [], subtitles: [] }]);
     expect(transport.calls).toHaveLength(1);
     expect(transport.calls[0]).toMatchObject({ method: "GET", url: "/Items/movie%2F1", config: { params: { userId: "user-1" }, signal } });
+  });
+
+  it("reports a 404 as ItemNotFoundError and passes other failures through", async () => {
+    const { gateway, transport } = await signedIn();
+    const failure = (status: number) => Object.assign(new Error(`Request failed with status code ${status}`), { response: { status } });
+    transport.get = async () => { throw failure(404); };
+    await expect(gateway.itemDetail("gone")).rejects.toBeInstanceOf(ItemNotFoundError);
+    transport.get = async () => { throw failure(500); };
+    await expect(gateway.itemDetail("broken")).rejects.toThrow("status code 500");
   });
 
   it("rejects an item without an ID or name", async () => {
