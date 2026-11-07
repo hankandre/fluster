@@ -248,7 +248,7 @@ Each invariant has an enforcement mechanism. Where the mechanism is "planned", i
 | I5 | Remote servers require HTTPS; credentials in URLs are rejected | Gateway URL normalization, tests |
 | I6 | Subtitle URLs must be same-origin and validated before authentication | TS + Rust checks, tests |
 | I7 | The browser engine is never a silent fallback for native | App wiring, review |
-| I8 | Only the gateway talks to Jellyfin; only the engine port talks to the player | Import-boundary lint (planned; see `DOMAINS.md`) |
+| I8 | Only the gateway talks to Jellyfin; only the engine port talks to the player | Import-boundary lint (`pnpm lint:boundaries`, dependency-cruiser; rules in `DOMAINS.md`) |
 | I9 | libmpv user config, scripts, and default input bindings stay disabled | MpvController initialization, tests |
 
 ---

@@ -186,10 +186,10 @@
             "pnpm check runs the lint"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "dependency-cruiser 18.7.2, .dependency-cruiser.cjs; pnpm lint:boundaries added and run first by pnpm check (passes on current code, no-circular included).\nTemp files proved each rule: domain-is-pure (domain imports react), views-use-composition-root (component imports gateway), adapters-do-not-import-ui (lib imports App.tsx); err-long output prints the DOMAINS.md rule and fix; temp files deleted.\npnpm check and pnpm test:e2e (5 passed) green."
         },
         {
           "id": "P0-08",
