@@ -245,10 +245,10 @@
             "The log path is printed on start"
           ],
           "verify": "pnpm dogfood --help",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "pnpm dogfood --help prints usage and exits 0 without starting tauri. pnpm test:dogfood-redaction passes 14 canary lines (CANARY-SECRET-123) through redact_stream. scripts/dogfood.sh prints the log path before launch and redacts server URLs to host only. Not run: a live pnpm tauri dev session (no display or GPU in this task)."
         },
         {
           "id": "P0-11",
