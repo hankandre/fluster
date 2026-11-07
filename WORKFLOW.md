@@ -120,11 +120,11 @@ These are Fluster's verifiers, from cheapest to most authoritative. New work sho
 | Contract | Recorded Jellyfin responses as fixtures; gateway tests assert request bodies *and* query strings | API drift, silent transcode flags |
 | Component | Testing Library on views | Rendered interaction |
 | Journey | Playwright against browser mode with a mocked server | User flows end to end |
-| **Server tripwire** | Pinned Jellyfin 10.11 in `tests/integration/docker-compose.yml`: play each sample, then assert no active encoding job and only `Static=true` ranged requests in the access log | **The core invariant. Language-independent, like Bun's test suite.** |
+| **Server tripwire** | Implemented (P0-04): `pnpm test:tripwire` (`tests/integration/tripwire.ts`) plays every sample through the real `JellyfinGateway` against pinned Jellyfin 10.11.7 and 12.4 in `tests/integration/docker-compose.yml`. It fails on any ffmpeg process in the container, any `/Sessions` `TranscodingInfo`, any `TranscodeManager` command line or `FFmpeg.Transcode-/Remux-/DirectStream-` log file, and any media request that is not `/Videos/{id}/stream?Static=true` or an external subtitle file. Summary on stdout, JSON log in `release-evidence/tripwire/`. CI job `tripwire` (not yet required). | **The core invariant. Language-independent, like Bun's test suite.** |
 | Native | Rust tests for the command surface; native harness (`testForceSoftware`) | mpv lifecycle, decoder fallback |
 | Hardware (human) | `docs/validation.md` gates on real GPUs and compositors | NVDEC/VA-API/VideoToolbox, Wayland composition, AppImage |
 
-The server tripwire is the highest-value check to automate next. It turns the product's defining rule into a pass/fail signal that works no matter what the implementation looks like.
+The server tripwire turns the product's defining rule into a pass/fail signal that works no matter what the implementation looks like. Run `pnpm samples:generate && pnpm fixture:up && pnpm fixture:setup` first; the tripwire starts a library scan itself and waits for the server to go quiet before playing.
 
 Make check output agent-friendly: short summaries on stdout, full logs to files, `ERROR` on the same line as the cause so it can be grepped.
 

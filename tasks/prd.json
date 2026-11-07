@@ -133,10 +133,10 @@
             "CI runs it against the docker fixture"
           ],
           "verify": "pnpm test:tripwire",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "pnpm test:tripwire green twice on 2026-11-07 (exit 0): Jellyfin 10.11.7 and 12.4.0 each PASS 10/11 samples (DirectPlay, only Static=true ranged requests, no ffmpeg, no TranscodingInfo, no TranscodeManager log line or FFmpeg.* log file); bluray-folder KNOWN-GAP (P1-03): gateway accepts it, server returns 500, no encode. Sabotage (scratch copies, not committed): dropping Static=true and requesting master.m3u8 both FAIL with I2 on both servers; a real HLS HEVC->H264 transcode FAILs with I1 on all four signals (ffmpeg process, /Sessions TranscodingInfo, TranscodeManager log line, FFmpeg.Transcode-* file), then DELETE /Videos/ActiveEncodings 204 and 0 ffmpeg left. CI job tripwire (ubuntu-22.04, samples built with jellyfin-ffmpeg inside the fixture image, JSON log uploaded) added, not required. pnpm check green (219 passed, 2 expected fail; tripwire rules 14 tests)."
         },
         {
           "id": "P0-05",

@@ -243,7 +243,7 @@ Each invariant has an enforcement mechanism. Where the mechanism is "planned", i
 
 | # | Invariant | Enforced by |
 |---|---|---|
-| I1 | Fluster never causes server transcoding or remuxing | Frozen `PLAYBACK_POLICY`. False flags in body *and* query. DeviceProfile without transcoding profiles. Source acceptance rules. Server tripwire test (planned). |
+| I1 | Fluster never causes server transcoding or remuxing | Frozen `PLAYBACK_POLICY`. False flags in body *and* query. DeviceProfile without transcoding profiles. Source acceptance rules. Server tripwire `pnpm test:tripwire` (`tests/integration/tripwire.ts`; CI job `tripwire`, not yet required). |
 | I2 | Only `Static=true` original-file URLs reach the player | Gateway URL builder, Rust URL validation, tests |
 | I3 | No generic mpv command bridge; Rust exposes a fixed command list | Code review; `command_allowlist` Rust test (`src-tauri/src/command_allowlist.rs`) |
 | I4 | Tokens never appear in logs, errors, diagnostics, or (after the header-auth change) URLs | Redaction in TS and Rust; canary tests (TS `redact-canary.test.ts`, Rust `redaction_canary`) |

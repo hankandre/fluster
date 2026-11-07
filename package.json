@@ -13,6 +13,7 @@
     "test:e2e": "playwright test",
     "fixture:up": "docker compose -f tests/integration/docker-compose.yml up -d --wait",
     "fixture:setup": "bash tests/integration/setup-servers.sh",
+    "test:tripwire": "tsx tests/integration/tripwire.ts",
     "fixture:down": "docker compose -f tests/integration/docker-compose.yml down -v",
     "tauri": "tauri",
     "lint:boundaries": "depcruise src --config .dependency-cruiser.cjs --output-type err-long",
@@ -44,6 +45,7 @@
     "dependency-cruiser": "18.7.2",
     "jsdom": "^25.0.0",
     "tailwindcss": "^4.1.0",
+    "tsx": "4.23.15",
     "typescript": "~5.7.0",
     "vite": "^6.4.5",
     "vitest": "4.1.12"
