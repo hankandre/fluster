@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionProvider, useSession, type SessionGateway } from "../../app/session";
-import type { ItemDetail, ItemVersion } from "../../domain/catalog";
+import { ItemNotFoundError, type ItemDetail, type ItemVersion } from "../../domain/catalog";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
 import { ItemDetailView } from "./index";
 
@@ -210,6 +210,39 @@ describe("watch state", () => {
     expect(screen.getByRole("button", { name: "Favorite" })).toHaveAttribute("aria-pressed", "false");
   });
 
+  it("rolls back only the failed flag when the other changed meanwhile", async () => {
+    let failFavorite: (reason: Error) => void = () => undefined;
+    const setFavorite = vi.fn().mockReturnValue(new Promise<void>((_resolve, reject) => { failFavorite = reject; }));
+    // The refetch after Watched settles still reports the old favorite state.
+    const itemDetail = vi.fn().mockImplementation(() => Promise.resolve(detail({ userData: { played: true, favorite: false, resumePositionTicks: 0 } })));
+    await renderDetail(fakeGateway({ itemDetail: vi.fn().mockResolvedValueOnce(detail()).mockImplementation(itemDetail), setFavorite }));
+    fireEvent.click(await screen.findByRole("button", { name: "Favorite" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Favorite" })).toHaveAttribute("aria-pressed", "true"));
+    fireEvent.click(screen.getByRole("button", { name: "Watched" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Watched" })).toHaveAttribute("aria-pressed", "true"));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Watched" })).toHaveAttribute("aria-disabled", "false"));
+    // Watched is settled; favorite is still pending and still shown as set.
+    expect(screen.getByRole("button", { name: "Favorite" })).toHaveAttribute("aria-pressed", "true");
+    await act(async () => failFavorite(new Error("boom")));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Favorite" })).toHaveAttribute("aria-pressed", "false"));
+    expect(screen.getByRole("button", { name: "Watched" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("keeps focus on the toggled button and ignores clicks while it is pending", async () => {
+    let answer: () => void = () => undefined;
+    const setFavorite = vi.fn().mockReturnValue(new Promise<void>((resolve) => { answer = resolve; }));
+    await renderDetail(fakeGateway({ setFavorite }));
+    const button = await screen.findByRole("button", { name: "Favorite" });
+    button.focus();
+    fireEvent.click(button);
+    await waitFor(() => expect(button).toHaveAttribute("aria-disabled", "true"));
+    expect(button).toHaveFocus();
+    fireEvent.click(button);
+    expect(setFavorite).toHaveBeenCalledTimes(1);
+    await act(async () => answer());
+    expect(button).toHaveFocus();
+  });
+
   it("toggles with the keyboard", async () => {
     const user = userEvent.setup();
     const gateway = fakeGateway();
@@ -233,6 +266,15 @@ describe("route behavior", () => {
     await renderDetail(fakeGateway({ itemDetail }));
     fireEvent.click(await screen.findByRole("button", { name: "Retry" }));
     expect(await screen.findByRole("heading", { name: "Arrival" })).toBeInTheDocument();
+  });
+
+  it("shows a dedicated state without retry when the item no longer exists", async () => {
+    const itemDetail = vi.fn().mockRejectedValue(new ItemNotFoundError());
+    await renderDetail(fakeGateway({ itemDetail }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("This item no longer exists.");
+    expect(screen.getByRole("link", { name: "Go to Home" })).toHaveAttribute("href", "#/next/home");
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+    expect(itemDetail).toHaveBeenCalledTimes(1);
   });
 
   it("redirects to sign-in when signed out", () => {

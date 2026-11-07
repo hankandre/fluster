@@ -1,16 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { dynamicRangeOf, toItemDetail } from "./item-detail";
-import type { BaseItemDto, MediaSourceDto, PlaybackInfoResponse } from "./types";
+import type { BaseItemDto, MediaSourceDto } from "./types";
 
-// Fixtures recorded from real servers (tests/integration/record-fixtures.mjs).
-const itemFixtures = import.meta.glob("../../../tests/fixtures/jellyfin/*/item-multi-version.json", {
+// Items recorded from Jellyfin 10.11.7 and 12.4.0 with the detail view's exact
+// request, GET /Items/{id}?userId and no fields (tests/integration/record-fixtures.mjs).
+const itemFixtures = import.meta.glob("../../../tests/fixtures/jellyfin/*/item-detail-no-fields-multi-version.json", {
   eager: true,
   import: "default",
 }) as Record<string, BaseItemDto>;
-const hdr10Fixtures = import.meta.glob("../../../tests/fixtures/jellyfin/*/playbackinfo-hevc-hdr10-profile.json", {
+const hdr10Fixtures = import.meta.glob("../../../tests/fixtures/jellyfin/*/item-detail-no-fields-hevc-hdr10.json", {
   eager: true,
   import: "default",
-}) as Record<string, PlaybackInfoResponse>;
+}) as Record<string, BaseItemDto>;
 
 describe("toItemDetail with recorded items", () => {
   it.each(Object.entries(itemFixtures))("maps two named versions from %s", (_path, dto) => {
@@ -32,16 +33,27 @@ describe("toItemDetail with recorded items", () => {
     expect(first.sizeBytes).toBe(3250587);
   });
 
+  it("finds the sources, streams, and user data without a fields parameter", () => {
+    expect(Object.keys(itemFixtures)).toHaveLength(2);
+    for (const dto of Object.values(itemFixtures)) {
+      expect(dto.MediaSources?.[0]?.MediaStreams?.length).toBeGreaterThan(0);
+      expect(dto.UserData).toBeDefined();
+    }
+  });
+
   it("uses the primary image tag and its blurhash", () => {
-    const detail = toItemDetail(Object.values(itemFixtures)[0])!;
-    expect(detail.poster).toMatchObject({ itemId: "item-versions", type: "Primary", tag: "id-9" });
-    expect(detail.poster?.blurHash).toBeTruthy();
+    const detail = toItemDetail({
+      Id: "m1",
+      Name: "Film",
+      ImageTags: { Primary: "p1" },
+      ImageBlurHashes: { Primary: { p1: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" } },
+    })!;
+    expect(detail.poster).toEqual({ itemId: "m1", type: "Primary", tag: "p1", blurHash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" });
     expect(detail.backdrop).toBeUndefined();
   });
 
-  it.each(Object.entries(hdr10Fixtures))("maps an HDR10 HEVC source from %s", (_path, response) => {
-    const source = response.MediaSources![0];
-    const detail = toItemDetail({ Id: "item-hevc", Name: "HDR", MediaSources: [source as MediaSourceDto] })!;
+  it.each(Object.entries(hdr10Fixtures))("maps an HDR10 HEVC item from %s", (_path, dto) => {
+    const detail = toItemDetail(dto)!;
     expect(detail.versions[0].video).toMatchObject({ codec: "hevc", profile: "Main 10", bitDepth: 10, hdr: "HDR10" });
   });
 });

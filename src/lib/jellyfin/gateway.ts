@@ -1,6 +1,7 @@
 import { Jellyfin, type Api } from "@jellyfin/sdk";
 import axios from "axios";
 import type { BrowseCard, BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, LibraryItem, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season } from "../../domain/catalog";
+import { ItemNotFoundError } from "../../domain/catalog";
 import type { PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
 import { PlaybackRefusedError, secondsToTicks } from "../../domain/playback";
 import { classifyHost, type HostClass } from "../../domain/host-class";
@@ -568,11 +569,17 @@ export class JellyfinGateway {
   // sources, streams, genres, people, and user data in the full item.
   async itemDetail(itemId: string, signal?: AbortSignal): Promise<ItemDetail> {
     const { userId } = this.requireSession();
-    const { data } = await this.get<BaseItemDto>(`/Items/${encodeURIComponent(itemId)}`, {
-      params: { userId },
-      signal,
-      timeout: CONTROL_REQUEST_TIMEOUT_MS,
-    });
+    let data: BaseItemDto;
+    try {
+      ({ data } = await this.get<BaseItemDto>(`/Items/${encodeURIComponent(itemId)}`, {
+        params: { userId },
+        signal,
+        timeout: CONTROL_REQUEST_TIMEOUT_MS,
+      }));
+    } catch (error) {
+      if ((error as { response?: { status?: unknown } } | null)?.response?.status === 404) throw new ItemNotFoundError();
+      throw error;
+    }
     const detail = toItemDetail(data);
     if (!detail) throw new Error("Jellyfin returned an item without an ID or name.");
     return detail;

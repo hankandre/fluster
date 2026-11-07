@@ -176,6 +176,14 @@ export interface ItemUserData {
   resumePositionTicks: number;
 }
 
+// The server has no such item for this user: deleted, or the link is stale.
+export class ItemNotFoundError extends Error {
+  constructor() {
+    super("This item no longer exists.");
+    this.name = "ItemNotFoundError";
+  }
+}
+
 export interface ItemDetail {
   id: string;
   type: string;

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { ImageRef, ItemDetail } from "../../domain/catalog";
+import { ItemNotFoundError, type ImageRef, type ItemDetail } from "../../domain/catalog";
 import type { SessionGateway } from "../../app/session";
 import { BrowseFrame } from "../browse/browse-view";
 import { CardImage } from "../home/card-image";
@@ -29,6 +29,13 @@ function ItemDetail({ gateway, itemId }: { gateway: SessionGateway; itemId: stri
   });
 
   if (query.isPending) return <p aria-busy="true">Loading details…</p>;
+  if (query.error instanceof ItemNotFoundError) {
+    return (
+      <p role="alert">
+        This item no longer exists. <a href="#/next/home">Go to Home</a>
+      </p>
+    );
+  }
   if (query.isError) return <RowError title="this item" onRetry={() => void query.refetch()} />;
   return <DetailBody gateway={gateway} item={query.data} />;
 }
