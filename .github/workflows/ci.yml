@@ -141,3 +141,43 @@ jobs:
           test "$FRONTEND" = success
           test "$RUST_CHECKS" = success
           test "$RUST_RELEASE" = success
+
+  # Server transcode tripwire (P0-04): plays every synthetic sample through the
+  # gateway against the pinned Jellyfin 10.11 and 12.4 fixture and fails on any
+  # server encoding or non-static media request. Not a required check yet.
+  tripwire:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 11.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Ubuntu 22.04's ffmpeg lacks libsvtav1, so the samples are generated with
+      # the jellyfin-ffmpeg build that ships in the pinned fixture image.
+      - name: Generate samples with jellyfin-ffmpeg
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work \
+            -e PATH=/usr/lib/jellyfin-ffmpeg:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+            --entrypoint bash jellyfin/jellyfin:10.11.7 scripts/generate-samples.sh
+      - run: pnpm fixture:up
+      - run: pnpm fixture:setup
+      # The tripwire starts the library scan and waits for the servers to go quiet.
+      - run: pnpm test:tripwire
+      - name: Upload tripwire log
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: tripwire-log
+          path: release-evidence/tripwire/
+          if-no-files-found: warn
+      - name: Stop fixture
+        if: always()
+        run: pnpm fixture:down

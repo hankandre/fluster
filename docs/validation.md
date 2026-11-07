@@ -8,6 +8,8 @@ Before a release, record evidence for each gate:
 
 1. On Jellyfin 10.11.7, test H.264, HEVC Main10, AV1, ASS, PGS, and multitrack files. Capture server access logs showing only ranged `Static=true` stream requests.
 2. Query active encoding jobs during each playback and prove Jellyfin starts no FFmpeg process.
+
+Gates 1 and 2 are automated against the synthetic samples by `pnpm test:tripwire` (P0-04) on Jellyfin 10.11.7 and 12.4: it records every media request the gateway's plan leads to, and watches container ffmpeg processes, `/Sessions` `TranscodingInfo`, and the Jellyfin log during each playback. Attach the JSON log from `release-evidence/tripwire/` as evidence. PGS has no synthetic sample, and the BluRay folder is a known gap tracked by P1-03, so those still need a manual check with real media.
 3. Verify `DirectPlay` start, ten-second progress, pause/seek progress, and stopped reports. Resume from a second client.
 4. On Wayland with supported NVIDIA and AMD hardware, verify automatic NVDEC, VA-API, or Vulkan decoding. Record observed libmpv properties; no user selection is available or required.
 5. Set the test-only `testForceSoftware` launch field in a native harness. Confirm `Software — CPU`, continued local playback, and no second PlaybackInfo or media request.
