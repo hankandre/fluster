@@ -952,6 +952,29 @@
           "evidence": ""
         },
         {
+          "id": "P3-17",
+          "title": "Play items from the new UI",
+          "domain": "Playback Session",
+          "model": "opus",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "P3-08",
+            "P2-05"
+          ],
+          "acceptance": [
+            "Play and Resume on item detail negotiate through the coordinator and open the player under src/features/player",
+            "The player feature reuses PlayerView and the existing PlayerEngine port; no new Tauri command",
+            "Back, stop, natural end, retry, and failures return to the detail view with reports sent",
+            "Built under src/features/ with a Playwright journey; no proof-of-concept screen is extended"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "P3-16",
           "title": "Delete the proof-of-concept screens",
           "domain": "App Shell & Presentation",
@@ -966,7 +989,8 @@
             "P3-08",
             "P3-09",
             "P3-10",
-            "P3-14"
+            "P3-14",
+            "P3-17"
           ],
           "acceptance": [
             "Sign-in, library, resume dialog, and player wiring from the proof of concept are removed",
