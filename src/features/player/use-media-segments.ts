@@ -14,11 +14,13 @@ export function useMediaSegments(
   plan: PlaybackPlan | undefined,
 ): MediaSegment[] {
   const query = useQuery({
-    queryKey: ["media-segments", itemId],
+    queryKey: ["media-segments", itemId, plan?.mediaSourceId, plan?.playSessionId],
     queryFn: ({ signal }) => gateway.mediaSegments(itemId, signal),
     enabled: plan?.hasSegments === true,
     retry: false,
     gcTime: 0,
   });
+  // A disabled query still returns cached data, so gate the result as well.
+  if (plan?.hasSegments !== true) return NO_SEGMENTS;
   return query.data ?? NO_SEGMENTS;
 }
