@@ -375,4 +375,74 @@ describe("Player feature", () => {
       expect(engine.subscribe).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe("skip intro and credits", () => {
+    const intro = { kind: "Intro" as const, startSeconds: 10, endSeconds: 70 };
+    const segmentsGateway = (segments = [intro], hasSegments = true) => fakeGateway({
+      createPlaybackPlan: vi.fn().mockResolvedValue({ ...plan(), hasSegments }),
+      mediaSegments: vi.fn().mockResolvedValue(segments),
+    });
+
+    it("loads segments for a version with HasSegments and skips the intro on click", async () => {
+      const gateway = segmentsGateway();
+      const engine = new FakePlayerEngine();
+      await renderPlayer(gateway, engine);
+      await startPlaying(engine);
+
+      await waitFor(() => expect(gateway.mediaSegments).toHaveBeenCalledWith("m1", expect.any(AbortSignal)));
+      await act(async () => {
+        engine.emit({ kind: "state", snapshot: { ...snapshot, positionSeconds: 5 } });
+      });
+      expect(screen.queryByRole("button", { name: "Skip intro" })).not.toBeInTheDocument();
+
+      await act(async () => {
+        engine.emit({ kind: "state", snapshot: { ...snapshot, positionSeconds: 30 } });
+      });
+      await act(async () => {
+        fireEvent.click(await screen.findByRole("button", { name: "Skip intro" }));
+      });
+
+      expect(engine.seek).toHaveBeenCalledWith(70);
+    });
+
+    it("never asks for segments when the version has none", async () => {
+      const gateway = segmentsGateway([intro], false);
+      const engine = new FakePlayerEngine();
+      await renderPlayer(gateway, engine);
+      await startPlaying(engine);
+      await act(async () => {
+        engine.emit({ kind: "state", snapshot: { ...snapshot, positionSeconds: 30 } });
+      });
+
+      expect(gateway.mediaSegments).not.toHaveBeenCalled();
+      expect(screen.queryByRole("button", { name: /Skip/ })).not.toBeInTheDocument();
+    });
+
+    it("shows nothing when the server returns no segments", async () => {
+      const gateway = segmentsGateway([]);
+      const engine = new FakePlayerEngine();
+      await renderPlayer(gateway, engine);
+      await startPlaying(engine);
+      await act(async () => {
+        engine.emit({ kind: "state", snapshot: { ...snapshot, positionSeconds: 30 } });
+      });
+
+      await waitFor(() => expect(gateway.mediaSegments).toHaveBeenCalled());
+      expect(screen.queryByRole("button", { name: /Skip/ })).not.toBeInTheDocument();
+    });
+
+    it("shows nothing when the segments request fails", async () => {
+      const gateway = segmentsGateway();
+      vi.mocked(gateway.mediaSegments).mockRejectedValue(new Error("boom"));
+      const engine = new FakePlayerEngine();
+      await renderPlayer(gateway, engine);
+      await startPlaying(engine);
+      await act(async () => {
+        engine.emit({ kind: "state", snapshot: { ...snapshot, positionSeconds: 30 } });
+      });
+
+      await waitFor(() => expect(gateway.mediaSegments).toHaveBeenCalled());
+      expect(screen.queryByRole("button", { name: /Skip/ })).not.toBeInTheDocument();
+    });
+  });
 });

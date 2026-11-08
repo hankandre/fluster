@@ -9,6 +9,7 @@ import { refreshHomeRows } from "../home";
 import { itemRoute, leavePlayer, type PlayRoute } from "../routes";
 import { REFUSAL_COPY, type RefusalCopy } from "./refusal-copy";
 import { toPlayableItem } from "./playable-item";
+import { useMediaSegments } from "./use-media-segments";
 import { usePlaybackSession } from "./use-playback-session";
 import { useSeekPreview } from "./use-seek-preview";
 
@@ -92,6 +93,8 @@ function PlaybackScreen({ gateway, player, route, detail }: {
     onLeave: () => leavePlayer(route.itemId),
   });
 
+  const segments = useMediaSegments(gateway, route.itemId, playback.plan);
+
   if (playback.refusal) {
     return (
       <RefusalScreen
@@ -108,6 +111,7 @@ function PlaybackScreen({ gateway, player, route, detail }: {
         item={item}
         player={player.engine}
         session={playback.state}
+        segments={segments}
         retrying={playback.retrying}
         onRetry={playback.retry}
         onBack={playback.back}

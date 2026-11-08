@@ -242,6 +242,39 @@ describe("JellyfinGateway direct-play contract", () => {
     });
   });
 
+  it("reports whether the chosen version has media segments", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("POST /Items/item/one/PlaybackInfo", {
+      PlaySessionId: "play-1",
+      MediaSources: [
+        { Id: "source-1", Path: "/media/a.mkv", Protocol: "File", SupportsDirectPlay: true, HasSegments: true },
+        { Id: "source-2", Path: "/media/b.mkv", Protocol: "File", SupportsDirectPlay: true, HasSegments: false },
+      ],
+    });
+    expect((await gateway.createPlaybackPlan(item, 0, undefined, "source-1")).hasSegments).toBe(true);
+    expect((await gateway.createPlaybackPlan(item, 0, undefined, "source-2")).hasSegments).toBe(false);
+  });
+
+  it("asks for intro and outro segments with repeated type parameters and header auth", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set(
+      "GET /MediaSegments/item%2Fone?includeSegmentTypes=Intro&includeSegmentTypes=Outro",
+      { Items: [{ Id: "s1", Type: "Intro", StartTicks: 100_000_000, EndTicks: 700_000_000 }], TotalRecordCount: 1 },
+    );
+    const signal = new AbortController().signal;
+
+    await expect(gateway.mediaSegments("item/one", signal)).resolves.toEqual([
+      { kind: "Intro", startSeconds: 10, endSeconds: 70 },
+    ]);
+
+    const request = transport.requests.at(-1)!;
+    expect(request.url).toBe("/MediaSegments/item%2Fone?includeSegmentTypes=Intro&includeSegmentTypes=Outro");
+    expect(request.url).not.toMatch(/token|api_key|ApiKey/i);
+    expect(request.params).toBeUndefined();
+    expect(request.signal).toBe(signal);
+    expect(JSON.stringify(request)).not.toContain("top-secret");
+  });
+
   it("requests and plays the chosen version by MediaSourceId", async () => {
     const { gateway, transport } = await authenticatedGateway();
     transport.responses.set("POST /Items/item/one/PlaybackInfo", {

@@ -8,12 +8,14 @@ import { classifyHost, type HostClass } from "../../domain/host-class";
 import type { ServerConnection } from "../../domain/server-connection";
 import { isSupportedServerVersion, parseServerVersion } from "../../domain/server-version";
 import { getInstallId } from "../install-id";
+import type { MediaSegment } from "../../domain/media-segments";
 import { lanHttpConfirmations, type LanHttpConfirmationStore } from "../lan-http-confirmations";
 import { redactError, redactText } from "../redact";
 import { toBrowseCards, toEpisodeCards, toHomeLibraries, toMediaCards, toSearchCards, toSearchHints, toSeasons } from "./cards";
 import { deriveDeviceId } from "./device-id";
 import { FLUSTER_PROFILE, MAX_BITRATE } from "./device-profile";
 import { toItemDetail } from "./item-detail";
+import { toMediaSegments, type MediaSegmentsResponse } from "./media-segments";
 import { selectSource } from "./source-acceptance";
 import type {
   AuthenticationResult,
@@ -632,6 +634,18 @@ export class JellyfinGateway {
     return url.toString();
   }
 
+  // GET /MediaSegments/{itemId} (media-segment-api getItemSegments; 10.10+,
+  // authenticated by header like every other call). The type filter is a
+  // repeated query parameter, which Axios params would encode as `[]`, so it
+  // is written into the URL. Callers check HasSegments first.
+  async mediaSegments(itemId: string, signal?: AbortSignal): Promise<MediaSegment[]> {
+    const { data } = await this.get<MediaSegmentsResponse>(
+      `/MediaSegments/${encodeURIComponent(itemId)}?includeSegmentTypes=Intro&includeSegmentTypes=Outro`,
+      { signal, timeout: CONTROL_REQUEST_TIMEOUT_MS },
+    );
+    return toMediaSegments(data);
+  }
+
   async createPlaybackPlan(
     item: LibraryItem,
     startPositionTicks = 0,
@@ -666,6 +680,7 @@ export class JellyfinGateway {
       startPositionTicks,
       streamUrl: buildStaticStreamUrl(this.serverUrl, item.id, source.Id, data.PlaySessionId),
       authorization: this.authorizationHeader(),
+      hasSegments: source.HasSegments === true,
       tracks: (source.MediaStreams ?? []).flatMap((track) => {
         if (track.Index == null || !["Audio", "Subtitle", "Video"].includes(track.Type ?? "")) return [];
         return [{

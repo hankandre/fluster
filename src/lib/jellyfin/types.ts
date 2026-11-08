@@ -110,6 +110,7 @@ export interface MediaSourceDto {
   Container?: string;
   Size?: number | null;
   MediaStreams?: MediaStreamDto[];
+  HasSegments?: boolean;
 }
 
 export interface PlaybackInfoResponse {

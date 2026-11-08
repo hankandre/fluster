@@ -94,6 +94,8 @@ export interface PlaybackPlan {
   playSessionId: string;
   startPositionTicks: number;
   tracks: MediaTrack[];
+  // The chosen version's MediaSourceInfo.HasSegments. Absent means false.
+  hasSegments?: boolean;
 }
 
 export interface PlayerCapabilities {
