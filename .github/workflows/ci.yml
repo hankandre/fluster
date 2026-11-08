@@ -159,10 +159,11 @@ jobs:
       - run: cargo build --release --manifest-path src-tauri/Cargo.toml
 
   # The main ruleset requires this check name. It passes only when every
-  # Linux job above succeeded (a skipped or cancelled job fails it).
+  # Linux job above and the tripwire succeeded (a skipped or cancelled job
+  # fails it).
   linux-wayland-beta:
     if: always()
-    needs: [frontend, rust-checks, rust-release]
+    needs: [frontend, rust-checks, rust-release, tripwire]
     runs-on: ubuntu-22.04
     steps:
       - name: Require every Linux job to pass
@@ -170,15 +171,20 @@ jobs:
           FRONTEND: ${{ needs.frontend.result }}
           RUST_CHECKS: ${{ needs.rust-checks.result }}
           RUST_RELEASE: ${{ needs.rust-release.result }}
+          TRIPWIRE: ${{ needs.tripwire.result }}
         run: |
-          echo "frontend=$FRONTEND rust-checks=$RUST_CHECKS rust-release=$RUST_RELEASE"
+          echo "frontend=$FRONTEND rust-checks=$RUST_CHECKS rust-release=$RUST_RELEASE tripwire=$TRIPWIRE"
           test "$FRONTEND" = success
           test "$RUST_CHECKS" = success
           test "$RUST_RELEASE" = success
+          test "$TRIPWIRE" = success
 
-  # Server transcode tripwire (P0-04): plays every synthetic sample through the
-  # gateway against the pinned Jellyfin 10.11 and 12.4 fixture and fails on any
-  # server encoding or non-static media request. Not a required check yet.
+  # Server conversion tripwire (P0-04, P10-09): plays every synthetic sample
+  # through the gateway against the pinned Jellyfin 10.11 and 12.4 fixture.
+  # Playable samples must direct play with no server job; the BluRay folder,
+  # the ISO, and a forced-limit run must convert over same-origin,
+  # credential-free HLS, agree with /Sessions, and leave no job after the stop.
+  # Required through linux-wayland-beta.
   tripwire:
     runs-on: ubuntu-22.04
     timeout-minutes: 30
@@ -201,10 +207,25 @@ jobs:
           docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work \
             -e PATH=/usr/lib/jellyfin-ffmpeg:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
             --entrypoint bash jellyfin/jellyfin:10.11.7 scripts/generate-samples.sh
+      # The dvdsub and ISO samples need python3 and xorriso, which the Jellyfin
+      # image lacks. The script skips the samples made above and builds only
+      # these two on the host (H.264 and AAC from Ubuntu's ffmpeg), with the
+      # packages from the pinned Ubuntu snapshot.
+      - name: Generate conversion-only samples on the host
+        env:
+          FLUSTER_CONVERSION_SAMPLES: "1"
+        run: |
+          sudo bash release/configure-ubuntu-snapshot.sh
+          sudo apt-get update
+          sudo apt-get install -y --allow-downgrades ffmpeg xorriso
+          python3 --version
+          bash scripts/generate-samples.sh
       - run: pnpm fixture:up
       - run: pnpm fixture:setup
       # The tripwire starts the library scan and waits for the servers to go quiet.
       - run: pnpm test:tripwire
+        env:
+          FLUSTER_CONVERSION_SAMPLES: "1"
       - name: Upload tripwire log
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

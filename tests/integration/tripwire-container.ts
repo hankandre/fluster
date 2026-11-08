@@ -123,3 +123,8 @@ export class LogWatcher {
     return { text, newFiles };
   }
 }
+
+// How many ffmpeg processes run in the container right now.
+export async function countFfmpeg(service: string): Promise<number> {
+  return (await listProcesses(service)).filter((process) => classifyProcess(process.command) === "ffmpeg").length;
+}

@@ -1,7 +1,7 @@
 // Jellyfin API side of the tripwire: a monitor session separate from the
 // gateway's, and the wait for a quiet, fully scanned library.
 import { classifyProcess, findTranscodingSessions } from "./tripwire-rules";
-import type { SessionLike, TranscodingSession } from "./tripwire-rules";
+import type { SessionLike, SessionObservation, TranscodingSession } from "./tripwire-rules";
 import { listProcesses, sleep } from "./tripwire-container";
 
 const SCAN_TIMEOUT_MS = 300_000;
@@ -38,14 +38,24 @@ export class MonitorClient {
     return text ? JSON.parse(text) : undefined;
   }
 
-  async sessions(): Promise<(SessionLike & { NowPlayingItem?: { Id?: string } })[]> {
-    return (await this.request("GET", "/Sessions")) as (SessionLike & { NowPlayingItem?: { Id?: string } })[];
+  async sessions(): Promise<MonitoredSession[]> {
+    return (await this.request("GET", "/Sessions")) as MonitoredSession[];
   }
 
   async logout(): Promise<void> {
     if (this.token) await this.request("POST", "/Sessions/Logout").catch(() => undefined);
   }
 }
+
+interface TranscodingInfoDto {
+  IsVideoDirect?: boolean;
+  IsAudioDirect?: boolean;
+  VideoCodec?: string | null;
+  AudioCodec?: string | null;
+  TranscodeReasons?: string[] | null;
+}
+
+type MonitoredSession = SessionLike & { NowPlayingItem?: { Id?: string }; TranscodingInfo?: TranscodingInfoDto | null };
 
 export interface ItemDto {
   Id: string;
@@ -110,6 +120,10 @@ export async function prepareServer(monitor: MonitorClient, service: string, sam
 export class SessionWatcher {
   readonly transcoding: TranscodingSession[] = [];
   readonly playMethods = new Set<string>();
+  // Our session's PlayMethod and TranscodingInfo in every poll that saw it.
+  readonly observations: SessionObservation[] = [];
+  // Distinct TranscodingInfo answers for our session, for the evidence log.
+  readonly transcodingInfo = new Map<string, TranscodingInfoDto>();
   readonly errors: string[] = [];
   polls = 0;
   // Polls in which our own session showed the sample as now playing.
@@ -122,6 +136,8 @@ export class SessionWatcher {
   start(itemId: string): void {
     this.transcoding.length = 0;
     this.playMethods.clear();
+    this.observations.length = 0;
+    this.transcodingInfo.clear();
     this.errors.length = 0;
     this.polls = 0;
     this.sawOurSession = 0;
@@ -139,7 +155,24 @@ export class SessionWatcher {
       const sessions = await this.monitor.sessions();
       this.polls += 1;
       const ours = sessions.find((session) => session.NowPlayingItem?.Id === itemId);
-      if (ours) this.sawOurSession += 1;
+      if (ours) {
+        this.sawOurSession += 1;
+        const info = ours.TranscodingInfo ?? undefined;
+        this.observations.push({
+          playMethod: ours.PlayState?.PlayMethod ?? undefined,
+          transcoding: info && { isVideoDirect: info.IsVideoDirect, isAudioDirect: info.IsAudioDirect },
+        });
+        if (info) {
+          const summary = {
+            IsVideoDirect: info.IsVideoDirect,
+            IsAudioDirect: info.IsAudioDirect,
+            VideoCodec: info.VideoCodec,
+            AudioCodec: info.AudioCodec,
+            TranscodeReasons: info.TranscodeReasons,
+          };
+          this.transcodingInfo.set(JSON.stringify(summary), summary);
+        }
+      }
       if (ours?.PlayState?.PlayMethod) this.playMethods.add(ours.PlayState.PlayMethod);
       for (const session of findTranscodingSessions(sessions)) {
         if (!this.transcoding.some((seen) => seen.id === session.id)) this.transcoding.push(session);
@@ -154,4 +187,10 @@ export class SessionWatcher {
     await this.loop;
     await this.pollOnce(itemId);
   }
+}
+
+// How many sessions carry TranscodingInfo right now. The monitor session never
+// plays, so any count above zero is a server job.
+export async function countTranscodingSessions(monitor: MonitorClient): Promise<number> {
+  return (await monitor.sessions()).filter((session) => session.TranscodingInfo != null).length;
 }
