@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ItemNotFoundError, type ImageRef, type ItemDetail } from "../../domain/catalog";
 import type { SessionGateway } from "../../app/session";
@@ -15,15 +15,36 @@ import { AmbientBackdrop } from "../shared/ambient-backdrop";
 const POSTER_WIDTH = 400;
 const BACKDROP_WIDTH = 1280;
 
+// What the ambient backdrop shows: the Backdrop image, tinted from its BlurHash (else the poster's).
+interface ArtSource {
+  key: string;
+  image: ImageRef | undefined;
+  blurHash: string | undefined;
+}
+
 export function ItemDetailView({ itemId }: { itemId: string }) {
   return (
     <BrowseFrame title="Details" routeKey={`item/${itemId}`} back={<a href="#/next/home">Back to home</a>}>
-      {(gateway) => <ItemDetail key={itemId} gateway={gateway} itemId={itemId} />}
+      {(gateway) => <ItemDetail gateway={gateway} itemId={itemId} />}
     </BrowseFrame>
   );
 }
 
+// Stays mounted across item changes so the backdrop can crossfade between items.
 function ItemDetail({ gateway, itemId }: { gateway: SessionGateway; itemId: string }) {
+  const [art, setArt] = useState<ArtSource | undefined>();
+  return (
+    <AmbientBackdrop
+      imageKey={art?.key ?? "none"}
+      src={art?.image ? gateway.imageUrl(art.image.itemId, art.image.type, art.image.tag, BACKDROP_WIDTH) : undefined}
+      blurHash={art?.blurHash}
+    >
+      <ItemDetailContent key={itemId} gateway={gateway} itemId={itemId} onArt={setArt} />
+    </AmbientBackdrop>
+  );
+}
+
+function ItemDetailContent({ gateway, itemId, onArt }: { gateway: SessionGateway; itemId: string; onArt: (art: ArtSource | undefined) => void }) {
   const query = useQuery({
     queryKey: detailKey(gateway, itemId),
     queryFn: ({ signal }) => gateway.itemDetail(itemId, signal),
@@ -39,23 +60,23 @@ function ItemDetail({ gateway, itemId }: { gateway: SessionGateway; itemId: stri
     );
   }
   if (query.isError) return <RowError title="this item" onRetry={() => void query.refetch()} />;
-  return <DetailBody gateway={gateway} item={query.data} />;
+  return <DetailBody gateway={gateway} item={query.data} onArt={onArt} />;
 }
 
-function DetailBody({ gateway, item }: { gateway: SessionGateway; item: ItemDetail }) {
+function DetailBody({ gateway, item, onArt }: { gateway: SessionGateway; item: ItemDetail; onArt: (art: ArtSource | undefined) => void }) {
   const [chosenId, setChosenId] = useState<string | undefined>();
   const selected = item.versions.find((version) => version.id === chosenId) ?? item.versions[0];
-  const art = item.backdrop ?? item.poster;
-  const backdropKey = art ? `${art.itemId}/${art.type}/${art.tag}` : "none";
+  const tintSource = item.backdrop ?? item.poster;
+  const artKey = `${item.id}/${item.backdrop?.tag ?? "none"}`;
+  const artHash = tintSource?.blurHash;
+  const artImage = item.backdrop;
+  useEffect(() => {
+    onArt({ key: artKey, image: artImage, blurHash: artHash });
+  }, [artKey, artHash, artImage, onArt]);
   const facts = [item.year?.toString(), runtimeLabel(item.runTimeTicks), item.episodeLabel].filter(Boolean).join(" · ");
 
   return (
     <article className="item-detail" aria-label={item.title}>
-      <AmbientBackdrop
-        imageKey={backdropKey}
-        src={item.backdrop ? gateway.imageUrl(item.backdrop.itemId, item.backdrop.type, item.backdrop.tag, BACKDROP_WIDTH) : undefined}
-        blurHash={art?.blurHash}
-      >
       <div className="detail-head">
         {item.poster ? (
           <div className="detail-poster">
@@ -93,7 +114,6 @@ function DetailBody({ gateway, item }: { gateway: SessionGateway; item: ItemDeta
       ) : (
         <p>No media information for this item.</p>
       )}
-      </AmbientBackdrop>
     </article>
   );
 }

@@ -2,8 +2,19 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { blurhashToDataUrl } from "../home/blurhash";
 import { artTint } from "./art-tint";
 
-// Matches --dur-slow in tokens.css. Reduced motion swaps instantly.
-export const AMBIENT_FADE_MS = 480;
+const FALLBACK_FADE_MS = 480;
+
+// Reads --dur-slow from the document so the timer matches the CSS crossfade.
+export function ambientFadeMs(): number {
+  try {
+    const raw = getComputedStyle(document.documentElement).getPropertyValue("--dur-slow").trim();
+    const value = parseFloat(raw);
+    if (!Number.isFinite(value) || value <= 0) return FALLBACK_FADE_MS;
+    return raw.endsWith("ms") ? value : raw.endsWith("s") ? value * 1000 : FALLBACK_FADE_MS;
+  } catch {
+    return FALLBACK_FADE_MS;
+  }
+}
 
 interface Layer {
   key: string;
@@ -43,8 +54,9 @@ export function AmbientBackdrop({ imageKey, src, blurHash, strength = 1, childre
       setLayers([next]);
       return;
     }
-    setLayers((previous) => [...previous.slice(-1).filter((layer) => layer.key !== imageKey), next]);
-    const timer = window.setTimeout(() => setLayers([next]), AMBIENT_FADE_MS);
+    // A blank previous layer has nothing to fade from.
+    setLayers((previous) => [...previous.slice(-1).filter((layer) => layer.key !== imageKey && (layer.src || layer.blurHash)), next]);
+    const timer = window.setTimeout(() => setLayers([next]), ambientFadeMs());
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imageKey, src, blurHash]);
@@ -70,6 +82,7 @@ export function AmbientBackdrop({ imageKey, src, blurHash, strength = 1, childre
 }
 
 function AmbientLayer({ layer, entering }: { layer: Layer; entering: boolean }) {
+  const [failed, setFailed] = useState(false);
   const placeholder = layer.blurHash ? blurhashToDataUrl(layer.blurHash) : undefined;
   return (
     <div
@@ -79,7 +92,7 @@ function AmbientLayer({ layer, entering }: { layer: Layer; entering: boolean }) 
       data-entering={entering ? "true" : undefined}
       style={placeholder ? { backgroundImage: `url(${placeholder})` } : undefined}
     >
-      {layer.src ? <img src={layer.src} alt="" decoding="async" /> : null}
+      {layer.src && !failed ? <img src={layer.src} alt="" decoding="async" onError={() => setFailed(true)} /> : null}
     </div>
   );
 }

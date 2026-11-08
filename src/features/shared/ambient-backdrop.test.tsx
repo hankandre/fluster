@@ -1,6 +1,7 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
+import { fireEvent } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AMBIENT_FADE_MS, AmbientBackdrop } from "./ambient-backdrop";
+import { ambientFadeMs, AmbientBackdrop } from "./ambient-backdrop";
 
 function mockMotion(reduced: boolean) {
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
@@ -41,7 +42,7 @@ describe("AmbientBackdrop", () => {
     expect(layers.map((l) => l.dataset.key)).toEqual(["a", "b"]);
     expect(layers[1]).toHaveAttribute("data-entering", "true");
     expect(layers[0]).not.toHaveAttribute("data-entering");
-    act(() => vi.advanceTimersByTime(AMBIENT_FADE_MS));
+    act(() => vi.advanceTimersByTime(ambientFadeMs()));
     expect(screen.getAllByTestId("ambient-layer").map((l) => l.dataset.key)).toEqual(["b"]);
   });
 
@@ -52,6 +53,24 @@ describe("AmbientBackdrop", () => {
     const layers = screen.getAllByTestId("ambient-layer");
     expect(layers.map((l) => l.dataset.key)).toEqual(["b"]);
     expect(layers[0]).not.toHaveAttribute("data-entering");
+  });
+
+  it("reads the fade duration from --dur-slow", () => {
+    document.documentElement.style.setProperty("--dur-slow", "300ms");
+    expect(ambientFadeMs()).toBe(300);
+    document.documentElement.style.setProperty("--dur-slow", "0.2s");
+    expect(ambientFadeMs()).toBe(200);
+    document.documentElement.style.removeProperty("--dur-slow");
+    expect(ambientFadeMs()).toBe(480);
+  });
+
+  it("drops a broken image but keeps the layer and its BlurHash", () => {
+    mockMotion(false);
+    render(<AmbientBackdrop imageKey="a" src="/broken.jpg" blurHash={A} />);
+    const layer = screen.getByTestId("ambient-layer");
+    fireEvent.error(layer.querySelector("img") as HTMLImageElement);
+    expect(layer.querySelector("img")).toBeNull();
+    expect(screen.getByTestId("ambient-layer")).toBeInTheDocument();
   });
 
   it("renders children above the layers", () => {
