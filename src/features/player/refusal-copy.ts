@@ -34,13 +34,13 @@ export const REFUSAL_COPY: Record<RefusalReason, RefusalCopy> = {
   },
   "disc-source": {
     title: "This is a disc folder",
-    explanation: "This is a Blu-ray or DVD folder, not a single video file. Jellyfin offered it as it is stored, and Fluster can’t play a disc folder that way.",
-    whatYouCanDo: "Rip the disc to an MKV file and add that to your library to play it here, or ask the server admin to allow conversion for your user.",
+    explanation: "This is a Blu-ray or DVD folder, not a single video file. Jellyfin keeps offering it as it is stored, and Fluster can’t play a disc folder that way.",
+    whatYouCanDo: "Rip the disc to an MKV file and add that to your library to play it here.",
   },
   "iso-source": {
     title: "Disc images aren’t supported yet",
-    explanation: "This is a disc image (ISO). Jellyfin offered it as it is stored, and Fluster can’t play those that way yet.",
-    whatYouCanDo: "Rip or extract the disc to an MKV file and add that to your library to play it here, or ask the server admin to allow conversion for your user.",
+    explanation: "This is a disc image (ISO). Jellyfin keeps offering it as it is stored, and Fluster can’t play those that way yet.",
+    whatYouCanDo: "Rip or extract the disc to an MKV file and add that to your library to play it here.",
   },
   "missing-source-data": {
     title: "Jellyfin gave incomplete details",

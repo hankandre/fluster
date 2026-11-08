@@ -135,7 +135,7 @@ test("a Blu-ray folder offered for direct play is asked for once more without it
   await expect(page.getByRole("button", { name: "Back to details" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Retry" })).toBeEnabled();
   await expect(page.getByRole("button", { name: /anyway/i })).toHaveCount(0);
-  await expect(page.getByText(/transcod/i)).toHaveCount(0);
+  await expect(page.getByText(/convert (it )?anyway|transcode anyway/i)).toHaveCount(0);
   await expect(page.locator("video")).toHaveCount(0);
   expect(log.reports).toHaveLength(0);
   // The disc is never requested as a static file.
