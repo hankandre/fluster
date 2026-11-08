@@ -123,3 +123,8 @@
 @media (forced-colors: active) {
   :root { --focus-ring: 0 0 0 3px Highlight; }
 }
+
+/* Registered so the artwork tint can crossfade over --dur-slow (DESIGN.md §3.2). */
+@property --art-accent { syntax: "<color>"; inherits: true; initial-value: #e8c48a; }
+@property --art-glow { syntax: "<color>"; inherits: true; initial-value: rgb(232 196 138 / 0.22); }
+@property --art-shade { syntax: "<color>"; inherits: true; initial-value: #141210; }

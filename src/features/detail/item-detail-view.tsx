@@ -10,6 +10,7 @@ import { runtimeLabel } from "./format";
 import { MediaInfo, VersionPicker } from "./media-info";
 import { PlayActions } from "./play-actions";
 import { WatchState } from "./watch-state";
+import { AmbientBackdrop } from "../shared/ambient-backdrop";
 
 const POSTER_WIDTH = 400;
 const BACKDROP_WIDTH = 1280;
@@ -44,15 +45,17 @@ function ItemDetail({ gateway, itemId }: { gateway: SessionGateway; itemId: stri
 function DetailBody({ gateway, item }: { gateway: SessionGateway; item: ItemDetail }) {
   const [chosenId, setChosenId] = useState<string | undefined>();
   const selected = item.versions.find((version) => version.id === chosenId) ?? item.versions[0];
+  const art = item.backdrop ?? item.poster;
+  const backdropKey = art ? `${art.itemId}/${art.type}/${art.tag}` : "none";
   const facts = [item.year?.toString(), runtimeLabel(item.runTimeTicks), item.episodeLabel].filter(Boolean).join(" · ");
 
   return (
     <article className="item-detail" aria-label={item.title}>
-      {item.backdrop ? (
-        <div className="detail-backdrop">
-          <ArtImage gateway={gateway} image={item.backdrop} width={BACKDROP_WIDTH} />
-        </div>
-      ) : null}
+      <AmbientBackdrop
+        imageKey={backdropKey}
+        src={item.backdrop ? gateway.imageUrl(item.backdrop.itemId, item.backdrop.type, item.backdrop.tag, BACKDROP_WIDTH) : undefined}
+        blurHash={art?.blurHash}
+      >
       <div className="detail-head">
         {item.poster ? (
           <div className="detail-poster">
@@ -90,6 +93,7 @@ function DetailBody({ gateway, item }: { gateway: SessionGateway; item: ItemDeta
       ) : (
         <p>No media information for this item.</p>
       )}
+      </AmbientBackdrop>
     </article>
   );
 }
