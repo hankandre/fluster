@@ -31,6 +31,9 @@ function plan(playSessionId = "play-1"): PlaybackPlan {
     playSessionId,
     startPositionTicks: 0,
     tracks: [],
+    delivery: "static",
+    playMethod: "DirectPlay",
+    conversionReasons: [],
   };
 }
 

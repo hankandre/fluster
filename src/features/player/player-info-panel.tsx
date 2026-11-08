@@ -1,12 +1,11 @@
 import { useEffect, useId, useState } from "react";
-import type { PlaybackSnapshot } from "../../domain/playback";
+import type { PlaybackSnapshot, PlayMethod } from "../../domain/playback";
 import { redactText } from "../../lib/redact";
 import { TEXT_FIELDS } from "../use-escape-key";
 import type { ReadyPlayerStatus } from "./player-status";
 
-// Today only direct play is negotiated; DirectStream and Transcode are here so
-// the panel needs no rework when the fallback (P10-06) arrives.
-export type PlayMethod = "DirectPlay" | "DirectStream" | "Transcode";
+// The plan carries its method since P10-03; P10-06 passes it to the panel.
+export type { PlayMethod };
 
 const PLAY_METHOD_LABEL: Record<PlayMethod, string> = {
   DirectPlay: "Direct play",

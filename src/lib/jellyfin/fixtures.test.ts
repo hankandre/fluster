@@ -66,12 +66,13 @@ async function refusalOf(promise: Promise<unknown>): Promise<PlaybackRefusedErro
   return error as PlaybackRefusedError;
 }
 
-const FALSE_FLAGS = {
+// Decision 0002 "Negotiation" flags.
+const FLAGS = {
   EnableDirectPlay: true,
-  EnableDirectStream: false,
-  EnableTranscoding: false,
-  AllowVideoStreamCopy: false,
-  AllowAudioStreamCopy: false,
+  EnableDirectStream: true,
+  EnableTranscoding: true,
+  AllowVideoStreamCopy: true,
+  AllowAudioStreamCopy: true,
   AutoOpenLiveStream: false,
 };
 
@@ -86,19 +87,20 @@ describe.each(versions)("PlaybackInfo fixtures from Jellyfin %s", (version) => {
     expect(result.tracks.every((track) => !track.external)).toBe(true);
   });
 
-  it("sends the Fluster profile in the body and the false flags in body and query", async () => {
+  it("sends the Fluster profile in the body and the decision 0002 flags in body and query", async () => {
     const { transport, run } = await plan(version, "h264-profile", "item-h264");
     await run();
     const [request] = transport.posts;
     expect(request.url).toBe("/Items/item-h264/PlaybackInfo");
     expect(request.data).toEqual({
-      ...FALSE_FLAGS,
+      ...FLAGS,
+      AlwaysBurnInSubtitleWhenTranscoding: false,
       UserId: "user-test",
       StartTimeTicks: 0,
       MaxStreamingBitrate: 1000000000,
       DeviceProfile: FLUSTER_PROFILE,
     });
-    expect(request.params).toEqual({ ...FALSE_FLAGS, UserId: "user-test", StartTimeTicks: 0 });
+    expect(request.params).toEqual({ ...FLAGS, UserId: "user-test", StartTimeTicks: 0, MaxStreamingBitrate: 1000000000 });
   });
 
   // The empty-codec assumption: a profile whose DirectPlayProfiles name no
@@ -196,32 +198,35 @@ describe.each(versions)("PlaybackInfo fixtures from Jellyfin %s", (version) => {
     expect(new URL(result.streamUrl).searchParams.get("MediaSourceId")).toBe("source-versions-2");
     const [request] = transport.posts;
     expect(request.data).toEqual({
-      ...FALSE_FLAGS,
+      ...FLAGS,
+      AlwaysBurnInSubtitleWhenTranscoding: false,
       UserId: "user-test",
       StartTimeTicks: 0,
       MaxStreamingBitrate: 1000000000,
       MediaSourceId: "source-versions-2",
       DeviceProfile: FLUSTER_PROFILE,
     });
-    expect(request.params).toEqual({ ...FALSE_FLAGS, UserId: "user-test", StartTimeTicks: 0 });
+    expect(request.params).toEqual({ ...FLAGS, UserId: "user-test", StartTimeTicks: 0, MaxStreamingBitrate: 1000000000 });
   });
 
-  it("refuses the recorded BluRay folder with a typed reason", async () => {
+  // This answer was recorded with every conversion flag off, so it offers
+  // neither direct play nor a conversion. The decision 0002 answer, which
+  // converts, is covered by conversion-negotiation.test.ts.
+  it("refuses the BluRay folder recorded without conversion flags as conversion-not-allowed", async () => {
     const { run } = await plan(version, "bluray-folder", "item-bluray");
-    // The server reports SupportsDirectPlay false here, but the disc check runs first.
     const refusal = await refusalOf(run());
-    expect(refusal.reason).toBe("disc-source");
-    expect(refusal.detail).toBe("BluRay");
+    expect(refusal.reason).toBe("conversion-not-allowed");
   });
 
-  it("refuses a BluRay source by VideoType even when the server reports direct play", async () => {
+  it("never direct plays a BluRay source the server offers for direct play, even after the forced fallback", async () => {
     const response = fixture(version, "bluray-folder");
     expect(response.MediaSources?.[0].VideoType).toBe("BluRay");
     response.MediaSources![0].SupportsDirectPlay = true;
-    const { run } = await planFrom(response, "item-bluray");
+    const { transport, run } = await planFrom(response, "item-bluray");
     const refusal = await refusalOf(run());
     expect(refusal.reason).toBe("disc-source");
     expect(refusal.message).not.toContain("/media/");
+    expect(transport.posts.map((post) => post.data.EnableDirectPlay)).toEqual([true, false]);
   });
 
   // Proves the empty-codec assumption for the sample set: the profile names no

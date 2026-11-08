@@ -106,7 +106,8 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 
 **Code today.**
 - `PLAYBACK_POLICY`, `PlaybackPlan`, `resumeChoice` in `src/domain/playback.ts`
-- `DIRECT_PLAY_REQUEST`, `selectDirectFileSource`, `buildStaticStreamUrl`, `createPlaybackPlan` in `gateway.ts`
+- `PLAYBACK_INFO_FLAGS`, `buildStaticStreamUrl`, `createPlaybackPlan` (with the forced-fallback request) in `gateway.ts`
+- `decideSource`, `selectSource` in `source-acceptance.ts`; `rebuildMasterUrl` in `hls-url.ts`; `FLUSTER_PROFILE` in `device-profile.ts`
 - Rust `validate_playback_urls` in `src-tauri/src/player/network.rs`
 
 **Rules.**

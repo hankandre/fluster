@@ -24,9 +24,13 @@ const discSource = {
 
 interface ServerOptions {
   resumeTicks?: number;
+  // The server offers the disc for direct play; the forced-fallback request
+  // (EnableDirectPlay false) gets neither direct play nor a conversion.
   disc?: boolean;
-  // The first N PlaybackInfo answers say the server will not direct-play the file.
+  // The first N PlaybackInfo answers offer neither direct play nor a conversion.
   noDirectPlayAnswers?: number;
+  // Every PlaybackInfo answer is an HLS conversion instead of direct play.
+  converted?: boolean;
   failPlayback?: boolean;
   playbackDelayMs?: number;
   // Playstate reports are logged on arrival but answered only after releaseReports().
@@ -123,6 +127,20 @@ async function mockPlayerServer(page: Page, options: ServerOptions = {}): Promis
         log.playbackInfo.push(request.postDataJSON());
         log.playbackInfoQueries.push(url.searchParams);
         if (options.playbackDelayMs) await new Promise((resolve) => setTimeout(resolve, options.playbackDelayMs));
+        if (options.disc && url.searchParams.get("EnableDirectPlay") === "false") {
+          return json({ PlaySessionId: `play-${log.playbackInfo.length}`, MediaSources: [{ ...source, SupportsDirectPlay: false }] });
+        }
+        if (options.converted) {
+          return json({
+            PlaySessionId: `play-${log.playbackInfo.length}`,
+            MediaSources: [{
+              ...source,
+              SupportsDirectPlay: false,
+              TranscodingSubProtocol: "hls",
+              TranscodingUrl: `/videos/movie-1/master.m3u8?MediaSourceId=${source.Id}&VideoCodec=h264&AudioCodec=aac&PlaySessionId=play-${log.playbackInfo.length}&ApiKey=e2e-key&TranscodeReasons=ContainerBitrateExceedsLimit`,
+            }],
+          });
+        }
         if (log.playbackInfo.length <= (options.noDirectPlayAnswers ?? 0)) {
           return json({ PlaySessionId: `play-${log.playbackInfo.length}`, MediaSources: [{ ...source, SupportsDirectPlay: false }] });
         }
@@ -148,13 +166,20 @@ async function openArrival(page: Page) {
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
 }
 
-// Every direct-play flag that must stay false, in the body and in the query string.
-function expectNoServerConversion(log: ServerLog, index: number) {
-  expect(log.playbackInfo[index]).toMatchObject({ EnableDirectPlay: true, EnableDirectStream: false, EnableTranscoding: false });
+// The decision 0002 flags, in the body and in the query string. EnableDirectPlay
+// is false only on the forced-fallback request for a disc.
+function expectFallbackFlags(log: ServerLog, index: number, enableDirectPlay = true) {
+  const flags = {
+    EnableDirectPlay: enableDirectPlay,
+    EnableDirectStream: true,
+    EnableTranscoding: true,
+    AllowVideoStreamCopy: true,
+    AllowAudioStreamCopy: true,
+    AutoOpenLiveStream: false,
+  };
+  expect(log.playbackInfo[index]).toMatchObject({ ...flags, AlwaysBurnInSubtitleWhenTranscoding: false });
   const query = log.playbackInfoQueries[index];
-  expect(query.get("EnableDirectPlay")).toBe("true");
-  expect(query.get("EnableDirectStream")).toBe("false");
-  expect(query.get("EnableTranscoding")).toBe("false");
+  for (const [name, value] of Object.entries(flags)) expect(query.get(name), name).toBe(String(value));
 }
 
 function reportPaths(log: ServerLog): string[] {
@@ -172,14 +197,8 @@ test("Play opens the player and Back returns to the detail view", async ({ page 
   await expect(page.locator("video")).toHaveCount(1);
   await expect.poll(() => reportPaths(log)).toContain("/Sessions/Playing");
   expect(log.playbackInfo).toHaveLength(1);
-  expect(log.playbackInfo[0]).toMatchObject({
-    MediaSourceId: "src-hd",
-    StartTimeTicks: 0,
-    EnableDirectPlay: true,
-    EnableDirectStream: false,
-    EnableTranscoding: false,
-  });
-  expectNoServerConversion(log, 0);
+  expect(log.playbackInfo[0]).toMatchObject({ MediaSourceId: "src-hd", StartTimeTicks: 0 });
+  expectFallbackFlags(log, 0);
 
   await page.getByLabel("Back to library").click();
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
@@ -228,7 +247,7 @@ test("Resume starts at the saved position and the end of the file returns to the
   await expect(page.getByRole("heading", { name: "Arrival", level: 1 })).toBeVisible();
   await expect.poll(() => log.playbackInfo.length).toBe(1);
   expect(log.playbackInfo[0]).toMatchObject({ StartTimeTicks: 7_540_000_000, MediaSourceId: "src-hd" });
-  expectNoServerConversion(log, 0);
+  expectFallbackFlags(log, 0);
   await expect.poll(() => reportPaths(log)).toContain("/Sessions/Playing");
 
   await page.locator("video").evaluate((video) => video.dispatchEvent(new Event("ended")));
@@ -248,9 +267,9 @@ test("Retry after a playback error renegotiates, and Back returns to the detail 
   await expect.poll(() => log.playbackInfo.length).toBe(2);
   expect(log.playbackInfo[0]).toMatchObject({ StartTimeTicks: 4_200_000_000 });
   expect(log.playbackInfo[1]).toMatchObject({ StartTimeTicks: 4_200_000_000 });
-  expectNoServerConversion(log, 0);
-  expectNoServerConversion(log, 1);
-  expect(log.playbackInfo[1]).toMatchObject({ MediaSourceId: "src-hd", EnableTranscoding: false });
+  expectFallbackFlags(log, 0);
+  expectFallbackFlags(log, 1);
+  expect(log.playbackInfo[1]).toMatchObject({ MediaSourceId: "src-hd" });
   await expect.poll(() => (
     log.reports.filter((report) => report.path === "/Sessions/Playing/Stopped").map((report) => report.body.Failed)
   )).toContain(true);
@@ -260,48 +279,64 @@ test("Retry after a playback error renegotiates, and Back returns to the detail 
   await expect(page.getByRole("heading", { name: "Arrival", level: 2 })).toBeVisible();
 });
 
-test("a Blu-ray folder is explained with Retry and Back and no way to play anyway", async ({ page }) => {
+test("a Blu-ray folder offered for direct play is asked for once more without it, then explained", async ({ page }) => {
   const log = await mockPlayerServer(page, { disc: true });
   await openArrival(page);
 
   await page.getByRole("link", { name: "Play" }).click();
-  const heading = page.getByRole("heading", { name: "This is a disc folder" });
+  const heading = page.getByRole("heading", { name: "This file needs converting, and the server doesn’t allow that for your account" });
   await expect(heading).toBeVisible();
   await expect(heading).toBeFocused();
-  await expect(page.getByRole("alert")).toContainText("Blu-ray or DVD folder");
-  await expect(page.getByRole("alert")).toContainText("Rip the disc to an MKV file");
+  await expect(page.getByRole("alert")).toContainText("Ask the server admin");
   await expect(page.getByRole("button", { name: "Retry" })).toBeEnabled();
   await expect(page.getByRole("button", { name: /anyway/i })).toHaveCount(0);
-  await expect(page.getByText(/transcod/i)).toHaveCount(0);
   await expect(page.locator("video")).toHaveCount(0);
   expect(log.reports).toHaveLength(0);
+  // The disc is never requested as a static file.
+  expect(log.requestUrls.filter((url) => /\/stream|Static=true/i.test(url))).toEqual([]);
+  expect(log.playbackInfo).toHaveLength(2);
+  expectFallbackFlags(log, 0);
+  expectFallbackFlags(log, 1, false);
+  expect(log.playbackInfo[1]).toMatchObject({ MediaSourceId: "src-disc" });
 
   await page.getByRole("button", { name: "Retry" }).click();
-  await expect.poll(() => log.playbackInfo.length).toBe(2);
+  await expect.poll(() => log.playbackInfo.length).toBe(4);
   await expect(heading).toBeVisible();
-  expect(log.playbackInfo[1]).toMatchObject({ EnableTranscoding: false, EnableDirectStream: false });
+  expectFallbackFlags(log, 3, false);
 
   await page.getByRole("button", { name: "Back to details" }).click();
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
   await expect(page.getByRole("heading", { name: "Arrival", level: 2 })).toBeVisible();
 });
 
-test("a server that won't direct-play names the policy, and Retry plays once it is lifted", async ({ page }) => {
+test("a server that won't convert for this account names the setting, and Retry plays once it is lifted", async ({ page }) => {
   const log = await mockPlayerServer(page, { noDirectPlayAnswers: 1 });
   await openArrival(page);
 
   await page.getByRole("link", { name: "Play" }).click();
-  await expect(page.getByRole("heading", { name: "The server won’t let Fluster play this file as it is" })).toBeFocused();
-  await expect(page.getByRole("alert")).toContainText("remote bitrate limit");
+  await expect(page.getByRole("heading", { name: "This file needs converting, and the server doesn’t allow that for your account" })).toBeFocused();
   await expect(page.getByRole("alert")).toContainText("Ask the server admin");
   await expect(page.getByRole("button", { name: /anyway/i })).toHaveCount(0);
   await expect(page.locator("video")).toHaveCount(0);
 
   await page.getByRole("button", { name: "Retry" }).click();
   await expect.poll(() => log.playbackInfo.length).toBe(2);
-  expect(log.playbackInfo[1]).toMatchObject({ MediaSourceId: "src-hd", EnableTranscoding: false });
+  expect(log.playbackInfo[1]).toMatchObject({ MediaSourceId: "src-hd" });
+  expectFallbackFlags(log, 1);
   await expect(page.locator("video")).toHaveCount(1);
   await expect(page.getByRole("heading", { name: "Arrival", level: 1 })).toBeVisible();
+});
+
+// Decision 0002: the browser development engine never plays HLS (I7); P10-10
+// owns the final view for this case.
+test("a converted stream is not played by the browser engine and never requested", async ({ page }) => {
+  const log = await mockPlayerServer(page, { converted: true });
+  await openArrival(page);
+
+  await page.getByRole("link", { name: "Play" }).click();
+  await expect(page.getByText("This stream needs the desktop player.")).toBeVisible();
+  await expect(page.locator("video")).toHaveCount(0);
+  expect(log.requestUrls.filter((url) => /m3u8|e2e-key/i.test(url))).toEqual([]);
 });
 
 test("Back cancels an in-flight playback negotiation", async ({ page }) => {

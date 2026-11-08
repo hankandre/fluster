@@ -1,71 +1,181 @@
-// Decides whether a media source from a PlaybackInfo response may be played
-// as a static original file (ARCHITECTURE.md §3, invariants I1 and I2).
-// Rules run in order and the first one that fails decides the reason.
-import type { RefusalReason } from "../../domain/playback";
-import type { MediaSourceDto } from "./types";
+// The source decision function (ARCHITECTURE.md §3, decision 0002): each
+// media source from a PlaybackInfo answer becomes DirectPlay, DirectStream,
+// Transcode, a forced-fallback request, or a typed refusal. Rules run in
+// order and the first that decides wins.
+import { CONVERSION_REASONS, type ConversionReason, type RefusalReason } from "../../domain/playback";
+import { rebuildMasterUrl, type HlsMediaKind } from "./hls-url";
+import type { MediaSourceDto, MediaStreamDto } from "./types";
 
-export interface AcceptedSource extends MediaSourceDto {
+export interface IdentifiedSource extends MediaSourceDto {
   Id: string;
+}
+
+export interface DirectPlaySource extends IdentifiedSource {
   Path: string;
 }
 
 export type SourceDecision =
-  | { kind: "accepted"; source: AcceptedSource }
+  | { kind: "direct-play"; source: DirectPlaySource }
+  | {
+    kind: "convert";
+    source: IdentifiedSource;
+    playMethod: "DirectStream" | "Transcode";
+    masterUrl: string;
+    conversionReasons: ConversionReason[];
+  }
+  // A disc folder or ISO the server offered for direct play: ask again for
+  // this source with EnableDirectPlay false (rule 4).
+  | { kind: "force-fallback"; source: IdentifiedSource; reason: "disc-source" | "iso-source" }
   | { kind: "refused"; reason: RefusalReason; detail?: string };
 
-// A Static=true request for a disc folder makes the server start ffmpeg.
+export interface SourceContext {
+  // The normalized signed-in server URL, without a trailing slash.
+  serverUrl: string;
+  itemId: string;
+}
+
+// A Static=true request for a disc folder makes the server start ffmpeg, so
+// disc folders and ISOs never direct play.
 const DISC_VIDEO_TYPES = new Set(["bluray", "dvd"]);
 const DISC_FOLDER_PATH = /(^|\/)(BDMV|VIDEO_TS)(\/|$)/i;
 const ISO_PATH = /\.iso$/i;
 
-export function evaluateSource(source: MediaSourceDto): SourceDecision {
-  // Disc checks come first so a disc folder always gets the clearest reason.
+// Reasons that change only the container, so the server can copy both
+// streams (ARCHITECTURE.md §3 rule 5).
+const CONTAINER_ONLY_REASONS: ReadonlySet<ConversionReason> = new Set([
+  "ContainerNotSupported",
+  "VideoCodecTagNotSupported",
+]);
+const KNOWN_REASONS: ReadonlySet<string> = new Set(CONVERSION_REASONS);
+
+function discKind(source: MediaSourceDto): "disc-source" | "iso-source" | undefined {
   // The path checks back up VideoType in case a server mislabels a disc.
   const videoType = source.VideoType?.toLowerCase();
   const path = source.Path?.replace(/\\/g, "/") ?? "";
-  if (videoType && DISC_VIDEO_TYPES.has(videoType)) {
-    return refused({ reason: "disc-source", detail: source.VideoType });
-  }
-  if (DISC_FOLDER_PATH.test(path)) {
-    return refused({ reason: "disc-source", detail: "disc folder path" });
-  }
-  // Rejected until mpv playback of an ISO over HTTP is verified.
-  if (videoType === "iso" || ISO_PATH.test(path)) {
-    return refused({ reason: "iso-source" });
-  }
-  // A source that must be opened first is a live stream, not a static file.
-  if (source.RequiresOpening === true) {
-    return refused({ reason: "live-source" });
-  }
-  if (source.SupportsDirectPlay !== true) {
-    return refused({ reason: "no-direct-play" });
-  }
-  if (source.Protocol !== "File") {
-    return refused({ reason: "not-a-file", detail: source.Protocol ?? "missing protocol" });
-  }
-  if (source.TranscodingUrl) {
-    return refused({ reason: "server-requires-transcoding" });
-  }
-  if (!source.Id || !source.Path) {
-    return refused({ reason: "missing-source-data", detail: source.Id ? "Path" : "Id" });
-  }
-  return { kind: "accepted", source: { ...source, Id: source.Id, Path: source.Path } };
+  if ((videoType && DISC_VIDEO_TYPES.has(videoType)) || DISC_FOLDER_PATH.test(path)) return "disc-source";
+  if (videoType === "iso" || ISO_PATH.test(path)) return "iso-source";
+  return undefined;
 }
 
-// Picks the requested version, or the first acceptable source. When nothing
-// is accepted, the refusal of the first candidate explains why.
-export function selectSource(sources: MediaSourceDto[] | null | undefined, mediaSourceId?: string): SourceDecision {
+export function decideSource(source: MediaSourceDto, context: SourceContext): SourceDecision {
+  // Rule 1.
+  if (!source.Id) return refused("missing-source-data", "Id");
+  const identified: IdentifiedSource = { ...source, Id: source.Id };
+  // Rule 2: a source that must be opened first is a live stream.
+  if (source.RequiresOpening === true) return refused("live-source");
+
+  const disc = discKind(source);
+  const offersDirectPlay = source.SupportsDirectPlay === true;
+  // Rule 3.
+  if (offersDirectPlay && !disc && source.Protocol === "File" && source.Path && !source.TranscodingUrl) {
+    return { kind: "direct-play", source: { ...identified, Path: source.Path } };
+  }
+  // Rule 4.
+  if (offersDirectPlay && disc && !source.TranscodingUrl) {
+    return { kind: "force-fallback", source: identified, reason: disc };
+  }
+  // Rule 5.
+  if (source.TranscodingUrl) return decideConversion(identified, source.TranscodingUrl, context);
+  // Rule 6.
+  if (offersDirectPlay && source.Protocol !== "File") {
+    return refused("not-a-file", source.Protocol ?? "missing protocol");
+  }
+  if (offersDirectPlay) return refused("missing-source-data", "Path");
+  // The server offers neither direct play nor a conversion, for example
+  // because the user may not transcode or remux. Both servers send no
+  // ErrorCode in that case (P10-02 fixtures), so none is required here.
+  return refused("conversion-not-allowed");
+}
+
+function decideConversion(source: IdentifiedSource, transcodingUrl: string, context: SourceContext): SourceDecision {
+  if (source.TranscodingSubProtocol?.toLowerCase() !== "hls") return refused("unsafe-transcoding-url", "not HLS");
+  const rebuilt = rebuildMasterUrl(transcodingUrl, { ...context, mediaSourceId: source.Id });
+  if (!rebuilt.ok) return refused("unsafe-transcoding-url", rebuilt.detail);
+  const raw = (rebuilt.params.get("TranscodeReasons") ?? "").split(",").map((value) => value.trim()).filter(Boolean);
+  const conversionReasons = raw.filter((value): value is ConversionReason => KNOWN_REASONS.has(value));
+  const directStream = conversionReasons.length === raw.length
+    && copiesEverything(source, rebuilt.kind, rebuilt.params, conversionReasons);
+  return {
+    kind: "convert",
+    source,
+    playMethod: directStream ? "DirectStream" : "Transcode",
+    masterUrl: rebuilt.url,
+    conversionReasons,
+  };
+}
+
+function codecList(params: URLSearchParams, name: string): string[] {
+  return (params.get(name) ?? "").split(",").map((value) => value.trim().toLowerCase()).filter(Boolean);
+}
+
+function streamsOf(source: MediaSourceDto, type: string): MediaStreamDto[] {
+  return (source.MediaStreams ?? []).filter((stream) => stream.Type === type);
+}
+
+// DirectStream only when the URL shows that the server copies video and
+// audio; anything uncertain is Transcode, so Fluster never claims original
+// quality it cannot show (decision 0002 "Never silent"). The rules and their
+// fixture evidence are in the plan 002 decision log (P10-03).
+function copiesEverything(
+  source: IdentifiedSource,
+  kind: HlsMediaKind,
+  params: URLSearchParams,
+  reasons: ConversionReason[],
+): boolean {
+  // An absent TranscodeReasons (the BluRay folder on both servers) says
+  // nothing about what is copied.
+  if (reasons.length === 0 || !reasons.every((reason) => CONTAINER_ONLY_REASONS.has(reason))) return false;
+  // Burned-in subtitles re-encode the video.
+  if (params.get("SubtitleMethod")?.toLowerCase() === "encode") return false;
+
+  if (kind === "videos") {
+    const [video, ...others] = streamsOf(source, "Video");
+    if (!video?.Codec || others.length > 0) return false;
+    if (!codecList(params, "VideoCodec").includes(video.Codec.toLowerCase())) return false;
+  }
+
+  const audioStreams = streamsOf(source, "Audio");
+  if (audioStreams.length === 0) return true;
+  // StreamBuilder narrows AudioCodec to the one source codec only when it
+  // copies that stream; otherwise it lists the profile's codecs.
+  const audioIndex = Number(params.get("AudioStreamIndex") ?? source.DefaultAudioStreamIndex ?? Number.NaN);
+  const audioCodec = audioStreams.find((stream) => stream.Index === audioIndex)?.Codec?.toLowerCase();
+  const audioCodecs = codecList(params, "AudioCodec");
+  return Boolean(audioCodec) && audioCodecs.length === 1 && audioCodecs[0] === audioCodec;
+}
+
+function rank(decision: SourceDecision): number {
+  switch (decision.kind) {
+    case "direct-play":
+      return 0;
+    case "convert":
+      return decision.playMethod === "DirectStream" ? 1 : 2;
+    case "force-fallback":
+      return 3;
+    case "refused":
+      return 4;
+  }
+}
+
+// Picks the requested version, or the best source: the first DirectPlay,
+// then the first DirectStream, then the first Transcode, then the first that
+// needs the forced fallback. When nothing plays, the first refusal explains
+// why. A requested MediaSourceId is never replaced by another version.
+export function selectSource(
+  sources: MediaSourceDto[] | null | undefined,
+  context: SourceContext,
+  mediaSourceId?: string,
+): SourceDecision {
   const candidates = mediaSourceId
     ? (sources ?? []).filter((source) => source.Id === mediaSourceId)
     : (sources ?? []);
   if (candidates.length === 0) {
-    return refused({ reason: "no-sources", detail: mediaSourceId ? "requested version not returned" : undefined });
+    return refused("no-sources", mediaSourceId ? "requested version not returned" : undefined);
   }
-  const decisions = candidates.map(evaluateSource);
-  const accepted = decisions.find((decision) => decision.kind === "accepted");
-  return accepted ?? decisions[0];
+  const decisions = candidates.map((source) => decideSource(source, context));
+  return decisions.reduce((best, decision) => (rank(decision) < rank(best) ? decision : best));
 }
 
-function refused(refusal: { reason: RefusalReason; detail?: string }): SourceDecision {
-  return { kind: "refused", ...refusal };
+function refused(reason: RefusalReason, detail?: string): SourceDecision {
+  return detail === undefined ? { kind: "refused", reason } : { kind: "refused", reason, detail };
 }

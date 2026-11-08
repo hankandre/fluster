@@ -1,12 +1,16 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import type {
-  PlayerCapabilities,
-  PlaybackPlan,
-  PlayerEngine,
-  PlayerEvent,
-  PlayerSurfaceFrame,
+import {
+  UnsupportedDeliveryError,
+  type PlayerCapabilities,
+  type PlaybackPlan,
+  type PlayerEngine,
+  type PlayerEvent,
+  type PlayerSurfaceFrame,
 } from "../../domain/playback";
+
+export const NATIVE_HLS_UNSUPPORTED_MESSAGE =
+  "This item needs a server conversion, and the desktop player cannot play converted streams yet.";
 
 export function isTauriRuntime(): boolean {
   return "__TAURI_INTERNALS__" in window;
@@ -29,7 +33,12 @@ export class NativePlayerEngine implements PlayerEngine {
 
   // The header travels as its own typed LaunchRequest field, so Rust can
   // validate it and give it to libmpv as a fixed HTTP header.
+  // Until P10-04 wires the typed HLS path, only static plans reach Rust: an
+  // hls plan is refused here, before any invoke.
   async launch(plan: PlaybackPlan): Promise<void> {
+    if (plan.delivery !== "static") {
+      throw new UnsupportedDeliveryError("native", plan.delivery, NATIVE_HLS_UNSUPPORTED_MESSAGE);
+    }
     const { authorization, ...launchPlan } = plan;
     await invoke("launch_playback", { request: { plan: launchPlan, authorization, testForceSoftware: false } });
   }

@@ -54,4 +54,14 @@ export const REFUSAL_COPY: Record<RefusalReason, RefusalCopy> = {
     explanation: "The server’s answer for this file was missing information Fluster needs to play it safely.",
     whatYouCanDo: "Choose Retry. If it keeps happening, ask the server admin to rescan this item in the library.",
   },
+  "conversion-not-allowed": {
+    title: "This file needs converting, and the server doesn’t allow that for your account",
+    explanation: "Jellyfin can’t send this file as it is stored, for example because it is a disc or because of a limit on your account, and your account isn’t allowed to have it converted.",
+    whatYouCanDo: "Ask the server admin to allow playback that requires conversion for your user in Jellyfin’s user settings, then choose Retry.",
+  },
+  "unsafe-transcoding-url": {
+    title: "Jellyfin offered a stream address Fluster won’t use",
+    explanation: "The server offered to convert this file, but the address it gave points somewhere Fluster doesn’t trust or asks for something Fluster never allows.",
+    whatYouCanDo: "Choose Retry. If it keeps happening, check that the server address is correct and that no proxy rewrites Jellyfin’s answers.",
+  },
 };

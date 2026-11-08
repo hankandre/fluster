@@ -1,12 +1,13 @@
 import { redactText } from "../redact";
-import type {
-  PlaybackDiagnostics,
-  PlaybackPlan,
-  PlaybackSnapshot,
-  PlayerCapabilities,
-  PlayerEngine,
-  PlayerEvent,
-  PlayerSurfaceFrame,
+import {
+  UnsupportedDeliveryError,
+  type PlaybackDiagnostics,
+  type PlaybackPlan,
+  type PlaybackSnapshot,
+  type PlayerCapabilities,
+  type PlayerEngine,
+  type PlayerEvent,
+  type PlayerSurfaceFrame,
 } from "../../domain/playback";
 
 const browserDiagnostics: PlaybackDiagnostics = {
@@ -15,6 +16,10 @@ const browserDiagnostics: PlaybackDiagnostics = {
   droppedFrames: 0,
   warning: "Browser playback does not report authoritative hardware-decoding diagnostics.",
 };
+
+// Decision 0002 "Browser development engine": no HLS in the dev engine.
+// P10-10 owns the final view for this case.
+export const BROWSER_HLS_UNSUPPORTED_MESSAGE = "This stream needs the desktop player.";
 
 const BROWSER_PLAYBACK_ERROR =
   "The browser could not play the direct file. Browser development mode sends no authorization with media requests, so a server that requires it will refuse; try the desktop app.";
@@ -41,6 +46,10 @@ export class BrowserPlayerEngine implements PlayerEngine {
   async setSurface(_frame: PlayerSurfaceFrame): Promise<void> {}
 
   async launch(plan: PlaybackPlan): Promise<void> {
+    // A <video> cannot send the Authorization header that HLS needs (I4, I7).
+    if (plan.delivery !== "static") {
+      throw new UnsupportedDeliveryError("browser", plan.delivery, BROWSER_HLS_UNSUPPORTED_MESSAGE);
+    }
     await this.stop(false);
     const host = document.querySelector<HTMLElement>("[data-browser-video-host]");
     if (!host) throw new Error("The in-app browser video surface is not ready.");
