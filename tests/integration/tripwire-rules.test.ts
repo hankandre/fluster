@@ -272,10 +272,10 @@ describe("checkConversionPlan", () => {
 });
 
 describe("checkSessionAgreement", () => {
-  const copied = { playMethod: "DirectStream", transcoding: { isVideoDirect: true, isAudioDirect: true } };
+  const copied = { playMethod: "Transcode", transcoding: { isVideoDirect: true, isAudioDirect: true } };
   const encoded = { playMethod: "Transcode", transcoding: { isVideoDirect: false, isAudioDirect: false } };
 
-  it("accepts a DirectStream plan the server copies and a Transcode plan it re-encodes", () => {
+  it("accepts a DirectStream confirmation the server copies and a Transcode one it re-encodes, both reported as Transcode", () => {
     expect(checkSessionAgreement("DirectStream", [copied], true)).toEqual([]);
     expect(checkSessionAgreement("Transcode", [encoded], true)).toEqual([]);
     expect(checkSessionAgreement("Transcode", [{ playMethod: "Transcode", transcoding: { isVideoDirect: true, isAudioDirect: false } }], true)).toEqual([]);
@@ -283,35 +283,33 @@ describe("checkSessionAgreement", () => {
 
   it("ignores polls before the confirmed report and needs audio only when the source has audio", () => {
     expect(checkSessionAgreement("DirectStream", [{ at: 1, playMethod: "DirectPlay" }, { ...copied, at: 2 }], true, 2)).toEqual([]);
-    expect(checkSessionAgreement("DirectStream", [{ playMethod: "DirectStream", transcoding: { isVideoDirect: true } }], false)).toEqual([]);
+    expect(checkSessionAgreement("DirectStream", [{ playMethod: "Transcode", transcoding: { isVideoDirect: true } }], false)).toEqual([]);
   });
 
-  it("fails a DirectStream plan the server re-encodes", () => {
-    const failures = checkSessionAgreement("DirectStream", [{ playMethod: "DirectStream", transcoding: { isVideoDirect: false, isAudioDirect: true } }], true);
+  it("fails a DirectStream confirmation the server re-encodes", () => {
+    const failures = checkSessionAgreement("DirectStream", [{ playMethod: "Transcode", transcoding: { isVideoDirect: false, isAudioDirect: true } }], true);
     expect(failures).toEqual(["method: /Sessions TranscodingInfo (IsVideoDirect=false IsAudioDirect=true) means Transcode, plan DirectStream"]);
   });
 
-  it("fails a Transcode plan the server only copies", () => {
-    const failures = checkSessionAgreement("Transcode", [{ playMethod: "Transcode", transcoding: { isVideoDirect: true, isAudioDirect: true } }], true);
+  it("fails a Transcode confirmation the server only copies", () => {
+    const failures = checkSessionAgreement("Transcode", [copied], true);
     expect(failures).toEqual(["method: /Sessions TranscodingInfo (IsVideoDirect=true IsAudioDirect=true) means DirectStream, plan Transcode"]);
   });
 
-  it("fails a PlayMethod that differs from the plan", () => {
-    expect(checkSessionAgreement("Transcode", [{ ...encoded, playMethod: "DirectPlay" }], true)).toEqual(["method: /Sessions PlayMethod DirectPlay, plan Transcode"]);
+  it("fails a reported PlayMethod other than Transcode", () => {
+    expect(checkSessionAgreement("Transcode", [{ ...encoded, playMethod: "DirectPlay" }], true)).toEqual(["method: /Sessions PlayMethod DirectPlay, reports must stay Transcode"]);
+    expect(checkSessionAgreement("DirectStream", [{ ...copied, playMethod: "DirectStream" }], true)).toEqual(["method: /Sessions PlayMethod DirectStream, reports must stay Transcode"]);
   });
 
-  it("reads PlayMethod only after the confirmed method was reported, and TranscodingInfo from any poll", () => {
-    // Before confirmation the session shows the negotiated Transcode with the
-    // job; a DirectStream report then makes the server drop TranscodingInfo.
+  it("keeps TranscodingInfo on /Sessions after the confirmation was reported", () => {
     const observations = [
       { at: 1000, playMethod: "Transcode", transcoding: { isVideoDirect: true, isAudioDirect: true } },
-      { at: 5000, playMethod: "DirectStream" },
+      { at: 5000, playMethod: "Transcode", transcoding: { isVideoDirect: true, isAudioDirect: true } },
     ];
     expect(checkSessionAgreement("DirectStream", observations, true, 5000)).toEqual([]);
-    expect(checkSessionAgreement("DirectStream", observations, true)).toEqual(["method: /Sessions PlayMethod Transcode, plan DirectStream"]);
     expect(checkSessionAgreement("DirectStream", observations, true, 6000)).toEqual(["oracle: /Sessions never showed this playback after the confirmed method was reported"]);
-    // A confirmed method that was never reported fails too.
-    expect(checkSessionAgreement("DirectStream", [observations[0], { at: 5000, playMethod: "Transcode" }], true, 5000)).toEqual(["method: /Sessions PlayMethod Transcode, plan DirectStream"]);
+    // The server dropped the job once the app reported something else.
+    expect(checkSessionAgreement("DirectStream", [observations[0], { at: 5000, playMethod: "Transcode" }], true, 5000)).toEqual(["method: /Sessions lost TranscodingInfo after the confirmed method was reported"]);
   });
 
   it("is blind without TranscodingInfo", () => {

@@ -78,7 +78,7 @@ describe("PlaybackCoordinator play-method confirmation", () => {
     vi.useRealTimers();
   });
 
-  it("asks the server 3 s after the first frame and reports DirectStream once it says it copies", async () => {
+  it("asks the server 3 s after the first frame, shows DirectStream once it says it copies, and keeps reporting Transcode", async () => {
     const context = setup(hls, [async () => copies]);
     await playToFirstFrame(context);
     expect(context.gateway.reportStart).toHaveBeenCalledWith(hls, snapshot, expect.any(AbortSignal));
@@ -89,15 +89,21 @@ describe("PlaybackCoordinator play-method confirmation", () => {
     const confirmed = { ...hls, playMethod: "DirectStream", conversionReasons: ["DirectPlayError", "AudioCodecNotSupported"] };
     expect(context.onPlanConfirmed).toHaveBeenCalledWith(confirmed);
 
-    // The 10 s progress tick, a pause, and the stopped report all follow it.
+    // The UI plan is confirmed, but the 10 s progress tick, a pause, and the
+    // stopped report keep PlayMethod Transcode so the server keeps the job's
+    // TranscodingInfo (ClearTranscodingInfo runs on a non-Transcode report).
+    const reported = { ...confirmed, playMethod: "Transcode" };
     await vi.advanceTimersByTimeAsync(7_000);
-    expect(context.gateway.reportProgress).toHaveBeenLastCalledWith(confirmed, snapshot, expect.any(AbortSignal));
+    expect(context.gateway.reportProgress).toHaveBeenLastCalledWith(reported, snapshot, expect.any(AbortSignal));
     context.player.listener?.({ kind: "state", snapshot, cause: "pause" });
     await vi.advanceTimersByTimeAsync(0);
-    expect(context.gateway.reportProgress).toHaveBeenLastCalledWith(confirmed, snapshot, expect.any(AbortSignal));
+    expect(context.gateway.reportProgress).toHaveBeenLastCalledWith(reported, snapshot, expect.any(AbortSignal));
     await context.coordinator.stop();
     await vi.advanceTimersByTimeAsync(0);
-    expect(context.gateway.reportStopped).toHaveBeenCalledWith(confirmed, snapshot, expect.any(AbortSignal), false);
+    expect(context.gateway.reportStopped).toHaveBeenCalledWith(reported, snapshot, expect.any(AbortSignal), false);
+    const calls = [context.gateway.reportStart, context.gateway.reportProgress, context.gateway.reportStopped].flatMap((report) => report.mock.calls as unknown[][]);
+    expect(calls.length).toBeGreaterThan(3);
+    for (const call of calls) expect((call[0] as PlaybackPlan).playMethod).toBe("Transcode");
     expect(context.gateway.sessionPlayMethod).toHaveBeenCalledTimes(1);
   });
 
@@ -131,6 +137,12 @@ describe("PlaybackCoordinator play-method confirmation", () => {
     await playToFirstFrame(context);
     await vi.advanceTimersByTimeAsync(3_000);
     expect(context.onPlanConfirmed).toHaveBeenCalledWith(expect.objectContaining({ playMethod: "Transcode" }));
+  });
+
+  it("reports a provisional DirectStream HLS plan as Transcode from the start", async () => {
+    const context = setup({ ...hls, playMethod: "DirectStream", conversionReasons: ["ContainerNotSupported"] }, []);
+    await playToFirstFrame(context);
+    expect(context.gateway.reportStart).toHaveBeenCalledWith(expect.objectContaining({ playMethod: "Transcode" }), snapshot, expect.any(AbortSignal));
   });
 
   it("never asks for a direct-play session", async () => {

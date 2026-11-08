@@ -6,7 +6,7 @@
 // every playlist body through findCredentialInBody.
 import type { PlaybackPlan, PlaybackSnapshot, ServerPlayMethod } from "../../src/domain/playback";
 import type { JellyfinGateway } from "../../src/lib/jellyfin/gateway";
-import { confirmedPlan } from "../../src/lib/player/confirm-play-method";
+import { confirmedPlan, reportedPlan } from "../../src/lib/player/confirm-play-method";
 import { PLAY_METHOD_CHECKS_MS } from "../../src/lib/player/coordinator";
 import { countFfmpeg, sleep } from "./tripwire-container";
 import { checkHlsRequest, findCredentialInBody, playlistUris, type AfterStopObservation, type FailureKind } from "./tripwire-rules";
@@ -126,14 +126,14 @@ export async function playConversion(ctx: HlsContext): Promise<HlsOutcome> {
   // and the coordinator reports start on FileLoaded.
   const firstReads = Math.min(2, media.length);
   for (const uri of media.slice(0, firstReads)) await hlsGet(ctx, uri);
-  await gateway.reportStart(plan, snapshot(0));
+  await gateway.reportStart(reportedPlan(plan), snapshot(0));
   for (const uri of media.slice(firstReads)) await hlsGet(ctx, uri);
 
   // The play-method check the coordinator runs after the first frame: the
-  // same gateway call and the same rule. Later reports carry its answer.
+  // same gateway call and the same rule. The UI shows its answer; every report stays Transcode (reportedPlan).
   // The app asks 3 s after the first frame; waiting as long also gives the
   // independent /Sessions watcher time to see the job's TranscodingInfo
-  // before a confirmed DirectStream report makes the server drop it.
+  // while the job runs.
   await sleep(PLAY_METHOD_CHECKS_MS[0]);
   const askedAt = Date.now();
   let server: ServerPlayMethod | undefined;
@@ -143,16 +143,16 @@ export async function playConversion(ctx: HlsContext): Promise<HlsOutcome> {
   }
   const confirmed = (server && confirmedPlan(plan, server)) || plan;
   const confirmedAt = Date.now();
-  await gateway.reportProgress(confirmed, snapshot(5));
+  await gateway.reportProgress(reportedPlan(confirmed), snapshot(5));
   await sleep(PLAYBACK_HOLD_MS);
-  await gateway.reportProgress(confirmed, snapshot(6, true));
+  await gateway.reportProgress(reportedPlan(confirmed), snapshot(6, true));
 
   // The PlaystateReporter path: a stopped report, and one DELETE
   // /Videos/ActiveEncodings when it fails or times out (P10-07).
   const stoppedAt = Date.now();
   let stoppedReport = "ok";
   try {
-    await gateway.reportStopped(confirmed, snapshot(10));
+    await gateway.reportStopped(reportedPlan(confirmed), snapshot(10));
   } catch (error) {
     stoppedReport = `failed (${error instanceof Error ? error.name : "error"}); DELETE /Videos/ActiveEncodings sent`;
     await gateway.stopActiveEncoding(plan.playSessionId).catch((deleteError: unknown) => {
