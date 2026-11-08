@@ -199,7 +199,7 @@ for (const [name, reasons] of [
     await openArrival(page);
 
     await page.getByRole("link", { name: "Play" }).click();
-    await expect(page.getByText("This stream needs the desktop player.")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "This stream needs the desktop player" })).toBeVisible();
     await expect(page.locator(".conversion-chip")).toHaveCount(0);
     await expect(page.locator("video")).toHaveCount(0);
     expect(log.playbackInfo).toHaveLength(1);
