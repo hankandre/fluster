@@ -1,7 +1,9 @@
 //! Session lifecycle: launch, typed playback commands, and shutdown.
 
 use super::events::run_event_loop;
-use super::network::{harden_network_options, set_media_authorization, validate_playback_urls};
+use super::network::{
+    harden_network_options, set_media_authorization, validate_playback_urls, MediaDelivery,
+};
 use super::properties::observe_properties;
 use super::version::{ensure_numeric_locale, query_libmpv_version};
 use super::{native_trace, MpvError};
@@ -152,7 +154,7 @@ impl MpvController {
             // Only the subtitles Fluster adds may appear as external tracks,
             // so their add order identifies them (see `tracks.rs`).
             init.set_option("autoload-files", false)?;
-            harden_network_options(&init)?;
+            harden_network_options(&init, MediaDelivery::Static)?;
             set_media_authorization(&init, &request.authorization)?;
             Ok(())
         })

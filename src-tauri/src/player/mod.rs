@@ -3,6 +3,9 @@
 mod controller;
 mod diagnostics;
 mod events;
+// Launch uses it once the typed `delivery` field lands (P10-04).
+#[cfg_attr(not(test), allow(dead_code))]
+mod hls;
 mod network;
 mod properties;
 mod track_list;
@@ -61,5 +64,7 @@ fn string_property(mpv: &Mpv, property: &str) -> Option<String> {
 mod media_auth_wire;
 #[cfg(test)]
 mod redaction_canary;
+#[cfg(test)]
+mod test_http;
 #[cfg(test)]
 mod test_support;

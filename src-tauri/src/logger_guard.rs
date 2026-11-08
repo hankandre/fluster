@@ -1,8 +1,10 @@
 //! Fails when a logger crate enters the dependency tree.
 //!
 //! tungstenite trace-logs the full handshake request, including the
-//! `Authorization` header (tungstenite 0.29.0, src/handshake/client.rs:197).
-//! That is harmless only while nothing installs a `log`/`tracing` logger.
+//! `Authorization` header (tungstenite 0.29.0, src/handshake/client.rs:197),
+//! and ureq debug-logs each HLS playlist request URI and request (ureq 3.5.1,
+//! src/run.rs:153 and 174). That is harmless only while nothing installs a
+//! `log`/`tracing` logger.
 
 const LOGGER_CRATES: [&str; 9] = [
     "env_logger",
