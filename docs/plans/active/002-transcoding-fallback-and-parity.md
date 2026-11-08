@@ -195,6 +195,8 @@ Answered on 2026-11-07: E1 versus E1-B, E2, the remote default limit, and the ph
   | 10.11.7 / 12.4.0 | no report since start (`IsPaused=false`) | 1 / 1 | 0 / 0 | 200, no restart (automatic progress kept it alive) |
 
   Fluster's reporter keeps its 10 s progress timer running while paused (test `keeps sending progress every 10 s while a conversion is paused`), so acceptance 3 needs no ping. If a progress report fails for 60 s the job dies; seeking or resuming then restarts it on the server, which is acceptable. The scratch sample, fixtures, and `.credentials` were removed afterwards.
+- 2026-11-08 (guardian review of P10-07): accepted lows. (1) Worst-case window close / next-session handoff for a converting session on a server that never answers is about 13 s (5 s queue drain + 5 s stopped report + 3 s DELETE); Back never waits. (2) PRODUCT.md's "no server job 10 s after Fluster stops" metric can't hold when the stopped report hangs, since the DELETE follows 5–10 s later; P10-09 measures it. (3) Signing out during the drain loses the stopped report and the DELETE (older than P10-07); follow-up: sign-out should await whenPlaybackStopped. (4) The PingTimer citation is 145-171 in v12.4; the v10.11.7 numbers are unverified.
+
 ## Risks
 
 | Risk | Mitigation |
