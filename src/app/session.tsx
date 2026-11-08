@@ -1,4 +1,4 @@
-import type { BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, LibraryItem, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season } from "../domain/catalog";
+import type { BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, NextEpisode, LibraryItem, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season } from "../domain/catalog";
 import type { MediaSegment } from "../domain/media-segments";
 import type { PlaybackPlan, PlaybackSnapshot } from "../domain/playback";
 import type { RealtimeConnection, ServerEvent } from "../domain/realtime";
@@ -29,6 +29,8 @@ export interface SessionGateway {
   seasons(seriesId: string, signal?: AbortSignal): Promise<Season[]>;
   episodes(seriesId: string, seasonId: string, signal?: AbortSignal): Promise<EpisodeCard[]>;
   itemDetail(itemId: string, signal?: AbortSignal): Promise<ItemDetail>;
+  // The episode after this one in its series, or undefined for the last one.
+  nextEpisode(seriesId: string, episodeId: string, signal?: AbortSignal): Promise<NextEpisode | undefined>;
   trickplayTile(itemId: string, mediaSourceId: string, width: number, index: number, signal?: AbortSignal): Promise<Blob>;
   setPlayed(itemId: string, played: boolean, signal?: AbortSignal): Promise<void>;
   setFavorite(itemId: string, favorite: boolean, signal?: AbortSignal): Promise<void>;

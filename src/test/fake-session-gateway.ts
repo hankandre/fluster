@@ -26,6 +26,7 @@ export function fakeSessionGateway(overrides: Partial<SessionGateway> = {}): Ses
     seasons: vi.fn(),
     episodes: vi.fn(),
     itemDetail: vi.fn(),
+    nextEpisode: vi.fn().mockResolvedValue(undefined),
     trickplayTile: vi.fn(),
     setPlayed: vi.fn(),
     setFavorite: vi.fn(),

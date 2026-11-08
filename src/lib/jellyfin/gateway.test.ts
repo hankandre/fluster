@@ -904,6 +904,47 @@ describe("JellyfinGateway home calls", () => {
     });
   });
 
+  describe("nextEpisode", () => {
+    it("asks for the siblings of the episode and returns the one after it", async () => {
+      const { gateway, transport } = await authenticatedGateway();
+      transport.responses.set("GET /Shows/series-1/Episodes", {
+        Items: [
+          { Id: "e1", Name: "Pilot", Type: "Episode", ParentIndexNumber: 1, IndexNumber: 1 },
+          { Id: "e2", Name: "Second", Type: "Episode", ParentIndexNumber: 1, IndexNumber: 2 },
+          { Id: "e3", Name: "Third", Type: "Episode", ParentIndexNumber: 1, IndexNumber: 3 },
+        ],
+      });
+      await expect(gateway.nextEpisode("series-1", "e2")).resolves.toEqual({ id: "e3", title: "Third", label: "S1E3" });
+      const request = transport.requests.at(-1);
+      expect(request?.params).toEqual({ userId: "user-1", adjacentTo: "e2" });
+      // Auth rides in the transport's Authorization header, never in the URL or params.
+      expect(request?.url).toBe("/Shows/series-1/Episodes");
+      expect(JSON.stringify(request?.params)).not.toMatch(/token|api_key|top-secret/i);
+    });
+
+    it("finds the next episode when the current one is first", async () => {
+      const { gateway, transport } = await authenticatedGateway();
+      transport.responses.set("GET /Shows/series-1/Episodes", {
+        Items: [{ Id: "e1", Name: "Pilot" }, { Id: "e2", Name: "Second" }],
+      });
+      await expect(gateway.nextEpisode("series-1", "e1")).resolves.toEqual({ id: "e2", title: "Second" });
+    });
+
+    it("returns undefined for the last episode", async () => {
+      const { gateway, transport } = await authenticatedGateway();
+      transport.responses.set("GET /Shows/series-1/Episodes", {
+        Items: [{ Id: "e1", Name: "Pilot" }, { Id: "e2", Name: "Second" }],
+      });
+      await expect(gateway.nextEpisode("series-1", "e2")).resolves.toBeUndefined();
+    });
+
+    it("returns undefined when the current episode is not in the answer", async () => {
+      const { gateway, transport } = await authenticatedGateway();
+      transport.responses.set("GET /Shows/series-1/Episodes", { Items: [{ Id: "x", Name: "Other" }] });
+      await expect(gateway.nextEpisode("series-1", "e2")).resolves.toBeUndefined();
+    });
+  });
+
   it("builds tagged image URLs with no credentials", async () => {
     const { gateway } = await authenticatedGateway();
     const url = new URL(gateway.imageUrl("item/one", "Primary", "tag-1", 320));
