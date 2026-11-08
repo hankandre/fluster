@@ -7,13 +7,14 @@
 //!
 //! Everything here is bounded: one socket on an ephemeral port for at most
 //! `LISTEN_TIME`, datagrams over `MAX_REPLY_BYTES` dropped, at most
-//! `MAX_SERVERS` valid replies kept, and one search at a time. Junk
-//! datagrams do not end the search early; only the deadline does. A reply is
+//! `MAX_SERVERS` valid replies kept, and one search at a time. Only the
+//! deadline ends a search: neither junk nor a full list stops the reading. A reply is
 //! kept only when its address passes the URL policy
 //! (`url_policy::parse_allowed_url`), and a loopback address only when the
-//! reply itself came from loopback. Any device on the network can reply, so
-//! each entry carries the IPv4 sender, and two replies that name the same id
-//! with different addresses are both kept and marked as conflicting. Nothing
+//! reply itself came from loopback. Any device on the network can reply,
+//! and can forge both the UDP source address and a server's public Id, so
+//! each entry carries the claimed sender as a hint only, and two replies
+//! that name the same id with different addresses are marked as conflicting. Nothing
 //! here traces addresses, ids, names, or reply bodies, and errors are fixed
 //! text.
 
@@ -113,7 +114,7 @@ pub fn discover(
     let mut collector = Collector::default();
     loop {
         let remaining = deadline.saturating_duration_since(Instant::now());
-        if remaining.is_zero() || collector.is_full() {
+        if remaining.is_zero() {
             break;
         }
         socket
@@ -132,12 +133,18 @@ pub fn discover(
     Ok(collector.finish())
 }
 
-/// Keeps each distinct (id, address) pair once, up to `MAX_SERVERS`.
+/// Keeps each distinct (id, address) pair once, up to `MAX_SERVERS`. Once
+/// full it keeps reading: a later reply that names a kept id at another
+/// address still marks that id as conflicting, and every other new reply is
+/// counted as dropped, so filler replies cannot hide the real server.
 #[derive(Default)]
 struct Collector {
     pairs: HashSet<(String, String)>,
     servers: Vec<DiscoveredServer>,
+    /// Kept ids that a reply past the limit named with another address.
+    overflow_conflicts: HashSet<String>,
     refused: u32,
+    dropped: u32,
 }
 
 impl Collector {
@@ -147,20 +154,26 @@ impl Collector {
 
     fn accept(&mut self, datagram: &[u8], sender: SocketAddr) {
         match parse_reply(datagram, sender) {
-            ParsedReply::Server(server) => {
-                if self.is_full() {
-                    return;
-                }
-                if self
-                    .pairs
-                    .insert((server.id.clone(), server.address.clone()))
-                {
-                    self.servers.push(server);
-                }
-            }
+            ParsedReply::Server(server) => self.accept_server(server),
             ParsedReply::Refused => self.refused = self.refused.saturating_add(1),
             ParsedReply::Invalid => {}
         }
+    }
+
+    fn accept_server(&mut self, server: DiscoveredServer) {
+        let pair = (server.id.clone(), server.address.clone());
+        if self.pairs.contains(&pair) {
+            return;
+        }
+        if !self.is_full() {
+            self.pairs.insert(pair);
+            self.servers.push(server);
+            return;
+        }
+        if self.servers.iter().any(|kept| kept.id == server.id) {
+            self.overflow_conflicts.insert(server.id);
+        }
+        self.dropped = self.dropped.saturating_add(1);
     }
 
     fn finish(mut self) -> DiscoveryResult {
@@ -168,17 +181,19 @@ impl Collector {
         for server in &self.servers {
             *addresses_per_id.entry(server.id.as_str()).or_default() += 1;
         }
-        let conflicting: HashSet<String> = addresses_per_id
+        let mut conflicting: HashSet<String> = addresses_per_id
             .into_iter()
             .filter(|(_, count)| *count > 1)
             .map(|(id, _)| id.to_string())
             .collect();
+        conflicting.extend(self.overflow_conflicts);
         for server in &mut self.servers {
             server.conflicting = conflicting.contains(&server.id);
         }
         DiscoveryResult {
             servers: self.servers,
             refused: self.refused,
+            dropped: self.dropped,
         }
     }
 }
