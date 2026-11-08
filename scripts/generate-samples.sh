@@ -157,9 +157,10 @@ build "$versions_720" \
   -f lavfi -i "$(pattern 1280x720)" -f lavfi -i "$(tone 440)" \
   "${h264_args[@]}" "${aac_stereo[@]}" -metadata:s:a:0 language=eng -shortest
 
-# BluRay folder. Jellyfin only checks that the movie folder holds a directory named
-# BDMV (BaseVideoResolver.IsBluRayDirectory). The index files are placeholders; the
-# stream is real H.264 in MPEG-TS so ffprobe can still read it.
+# BluRay folder. Jellyfin classifies a movie folder holding a directory named BDMV as
+# BluRay (BaseVideoResolver.IsBluRayDirectory). The index files are placeholders; the
+# stream is real H.264 plus AC-3 in MPEG-TS (ffmpeg uses m2ts mode for .m2ts, so the
+# PIDs are 0x1011 and 0x1100).
 bd_dir="$movies_dir/Synthetic BluRay (2024)/BDMV"
 bd_stream="$bd_dir/STREAM/00000.m2ts"
 build "$bd_stream" \
@@ -169,9 +170,64 @@ mkdir -p "$bd_dir/PLAYLIST" "$bd_dir/CLIPINF"
 [ -e "$bd_dir/index.bdmv" ] && [ "$force" -eq 0 ] || printf 'INDX0200' > "$bd_dir/index.bdmv"
 [ -e "$bd_dir/MovieObject.bdmv" ] && [ "$force" -eq 0 ] || printf 'MOBJ0200' > "$bd_dir/MovieObject.bdmv"
 
+# A playlist (PLAYLIST/00000.mpls) and clip info (CLIPINF/00000.clpi) for the stream.
+# Jellyfin reads the disc with the BDInfo library (jellyfin/BDInfo 0.8.0, used by
+# MediaBrowser.MediaEncoding/BdInfo/BdInfoExaminer.cs): the longest valid playlist gives
+# the runtime and the .m2ts files that ffmpeg concatenates. Without a playlist the item
+# has no runtime, so the server serves a conversion as a live stream (live.m3u8,
+# EncodingJobInfo.IsSegmentedLiveStream) and ffmpeg gets an empty concat list.
+# Field layout: TSPlaylistFile.Scan and TSStreamClipFile.Scan in BDInfo. bash's printf
+# writes the bytes, so no python3 is needed (CI generates inside the Jellyfin image).
+hex() { printf "%0$((2 * $1))x" "$2"; }
+ascii() { printf '%s' "$1" | od -An -tx1 | tr -d ' \n'; }
+write_hex() { printf "$(printf '%s' "$2" | sed 's/../\\x&/g')" > "$1"; }
+bd_out_time=$((duration * 45000)) # 45 kHz ticks
+# Stream attributes: H.264 (0x1b), 720p (5) at 24 fps (2), 16:9 (3); AC-3 (0x81), stereo (3) at 48 kHz (1), eng.
+bd_video_attr="051b52300000"
+bd_audio_attr="058131$(ascii eng)"
+write_mpls() {
+  local stn item playlist marks app header
+  # STN table: reserved, 1 video, 1 audio, no other streams, 5 reserved bytes, then each
+  # stream entry (length 9: play-item PID) and its attributes.
+  stn="0000""01010000000000""0000000000""09011011000000000000$bd_video_attr""09011100000000000000$bd_audio_attr"
+  stn="$(hex 2 $((${#stn} / 2)))$stn"
+  # PlayItem: clip 00000 (M2TS), connection condition 1, STC 0, in and out times,
+  # UO mask, random access, still mode and time, STN table.
+  item="$(ascii 00000)$(ascii M2TS)000100$(hex 4 0)$(hex 4 $bd_out_time)$(hex 8 0)00000000$stn"
+  item="$(hex 2 $((${#item} / 2)))$item"
+  playlist="0000""0001""0000$item"
+  playlist="$(hex 4 $((${#playlist} / 2)))$playlist"
+  # One entry mark at the start of the play item.
+  marks="0001""0001""0000$(hex 4 0)ffff$(hex 4 0)"
+  marks="$(hex 4 $((${#marks} / 2)))$marks"
+  app="$(hex 4 14)0001$(hex 2 0)$(hex 8 0)0000"
+  # Header: type, PlayList, PlayListMark, and ExtensionData offsets, 20 reserved bytes.
+  header="$(ascii MPLS0200)$(hex 4 $((40 + ${#app} / 2)))$(hex 4 $((40 + (${#app} + ${#playlist}) / 2)))$(hex 4 0)$(hex 20 0)"
+  write_hex "$1" "$header$app$playlist$marks"
+}
+write_clpi() {
+  local clip sequence program header seq_at prog_at cpi_at
+  clip="0000""0101$(hex 4 0)$(hex 4 0)$(hex 4 0)$(hex 128 0)0000"
+  clip="$(hex 4 $((${#clip} / 2)))$clip"
+  sequence="0001$(hex 4 0)0100""1011$(hex 4 0)$(hex 4 0)$(hex 4 $bd_out_time)"
+  sequence="$(hex 4 $((${#sequence} / 2)))$sequence"
+  # ProgramInfo: one program sequence, PMT PID 0x0100, two streams.
+  program="0001$(hex 4 0)0100""0200""1011$bd_video_attr""1100$bd_audio_attr"
+  program="$(hex 4 $((${#program} / 2)))$program"
+  seq_at=$((40 + ${#clip} / 2))
+  prog_at=$((seq_at + ${#sequence} / 2))
+  cpi_at=$((prog_at + ${#program} / 2))
+  # Header: type, SequenceInfo, ProgramInfo, CPI, ClipMark, and ExtensionData offsets,
+  # 12 reserved bytes; the CPI and ClipMark blocks are empty.
+  header="$(ascii HDMV0200)$(hex 4 $seq_at)$(hex 4 $prog_at)$(hex 4 $cpi_at)$(hex 4 $((cpi_at + 4)))$(hex 4 0)$(hex 12 0)"
+  write_hex "$1" "$header$clip$sequence$program$(hex 4 0)$(hex 4 0)"
+}
+[ -e "$bd_dir/PLAYLIST/00000.mpls" ] && [ "$force" -eq 0 ] || write_mpls "$bd_dir/PLAYLIST/00000.mpls"
+[ -e "$bd_dir/CLIPINF/00000.clpi" ] && [ "$force" -eq 0 ] || write_clpi "$bd_dir/CLIPINF/00000.clpi"
+
 # Conversion-only samples (P10-02): a graphical DVD subtitle and an ISO image. They are opt-in
-# with FLUSTER_CONVERSION_SAMPLES=1 because the default run (and CI's tripwire, which still
-# checks direct play only until P10-09) must not need python3, xorriso, or docker.
+# with FLUSTER_CONVERSION_SAMPLES=1 because the default run (and CI's sample step inside the
+# Jellyfin image) must not need python3, xorriso, or docker.
 conversion_samples=0
 [ "${FLUSTER_CONVERSION_SAMPLES:-0}" = 1 ] && conversion_samples=1
 dvdsub="$movies_dir/Synthetic DVDSub (2024)/Synthetic DVDSub (2024).mkv"
@@ -283,6 +339,8 @@ probe_value() { ffprobe -v error -select_streams "$2" -show_entries "$3" -of csv
 [ -f "$sidecar_dir/Synthetic Sidecar (2024).en.srt" ] || fail "srt sidecar missing"
 [ -f "$versions_1080" ] && [ -f "$versions_720" ] || fail "multi-version files missing"
 [ -f "$bd_dir/index.bdmv" ] || fail "BDMV index missing"
+[ "$(head -c 8 "$bd_dir/PLAYLIST/00000.mpls")" = MPLS0200 ] || fail "BDMV playlist missing"
+[ "$(head -c 8 "$bd_dir/CLIPINF/00000.clpi")" = HDMV0200 ] || fail "BDMV clip info missing"
 [ "$conversion_samples" -eq 0 ] || [ "$(probe_value "$dvdsub" s:0 stream=codec_name)" = "dvd_subtitle" ] || fail "dvdsub track missing"
 echo
 echo "All samples verified."
