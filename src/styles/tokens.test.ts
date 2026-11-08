@@ -38,14 +38,14 @@ describe("DESIGN.md §3.1 token contrast", () => {
     });
   }
 
-  // KNOWN DOC DEFECT: DESIGN.md §3.1 documents 3.1:1, but rgb(242 239 233 / .20) over --surface-2 measures about
-  // 1.8:1. The token stays as specified until the owner chooses a stronger alpha; it.fails flips red once it passes.
-  it.fails("--line-strong on --surface-2 meets the 3:1 non-text minimum (documented 3.1:1)", () => {
-    const { rgb, alpha } = parseRgbAlpha(token("--line-strong"));
-    const surface = solid("--surface-2");
-    const ratio = contrastRatio(composite(rgb, alpha, surface), surface);
-    expect(ratio).toBeGreaterThanOrEqual(3);
-  });
+  // DESIGN.md §3.1 (corrected in P13-02): --line-strong borders controls, so it needs 3:1 on every surface.
+  for (const surface of ["--surface-0", "--surface-1", "--surface-2", "--surface-3"]) {
+    it(`--line-strong on ${surface} meets the 3:1 non-text minimum`, () => {
+      const { rgb, alpha } = parseRgbAlpha(token("--line-strong"));
+      const bg = solid(surface);
+      expect(contrastRatio(composite(rgb, alpha, bg), bg)).toBeGreaterThanOrEqual(3);
+    });
+  }
 
   it("holds the documented surface ramp", () => {
     expect(token("--surface-0")).toBe("#0b0c0e");
