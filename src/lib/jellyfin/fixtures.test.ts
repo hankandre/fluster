@@ -132,10 +132,10 @@ describe.each(versions)("PlaybackInfo fixtures from Jellyfin %s", (version) => {
   // the embedded video and audio are 1 and 2. The defaults are those indices.
   it("carries the source's default audio and subtitle stream indices", async () => {
     const sidecar = await (await plan(version, "external-subtitle", "item-sidecar")).run();
-    expect(sidecar.tracks.map((track) => [track.index, track.type, track.external])).toEqual([
-      [0, "Subtitle", true],
-      [1, "Video", false],
-      [2, "Audio", false],
+    expect(sidecar.tracks.map((track) => [track.index, track.type, track.external, track.codec])).toEqual([
+      [0, "Subtitle", true, "subrip"],
+      [1, "Video", false, "h264"],
+      [2, "Audio", false, "aac"],
     ]);
     expect(sidecar.defaultAudioStreamIndex).toBe(2);
     expect(sidecar.defaultSubtitleStreamIndex).toBe(0);
