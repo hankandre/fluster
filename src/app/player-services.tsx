@@ -28,3 +28,8 @@ export function usePlayerServices(): PlayerServices {
   if (!services) throw new Error("usePlayerServices must be used inside PlayerServicesProvider.");
   return services;
 }
+
+// For views that only warn about the player and must still render without one.
+export function useOptionalPlayerServices(): PlayerServices | undefined {
+  return useContext(PlayerServicesContext);
+}
