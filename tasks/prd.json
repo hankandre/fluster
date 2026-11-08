@@ -1489,10 +1489,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "src/styles/tokens.css (DESIGN.md §8) plus a reset/tokens/base/components/features/focus layer stack; Atkinson Hyperlegible Next and Mono variable woff2 (googlefonts, OFL-1.1, 48 KB + 26 KB) self-hosted under src/assets/fonts with OFL.txt. src/styles/css-rules.test.ts fails on colour literals and bare label/input/select/heading selectors outside src/styles/; src/styles/tokens.test.ts checks the §3.1 pairs (--line-strong documented 3.1:1 measures 1.8:1, kept as it.fails).\npnpm check green (971 vitest passed plus 1 expected fail, 17 new; cargo 173); pnpm test:e2e 34 passed; pnpm test:visual 76 passed, before and after captures compared at 1440x900; pnpm lint:boundaries clean. Acceptance 5 (PR screenshots) and 6 (design review) are for the PR and the reviewer."
         },
         {
           "id": "P13-03",

@@ -1,0 +1,169 @@
+/* Base layer: the only place that styles bare elements (DESIGN.md §4, §9). */
+@layer base {
+  html {
+    background: var(--surface-0);
+    color: var(--text-1);
+    font: var(--type-body);
+    font-synthesis: none;
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    scrollbar-color: var(--line-strong) transparent;
+    scrollbar-width: thin;
+  }
+
+  html,
+  body,
+  #root {
+    margin: 0;
+    min-height: 100%;
+  }
+
+  body {
+    min-width: 320px;
+    background: var(--surface-0);
+    color: var(--text-1);
+  }
+
+  html.native-playing,
+  body.native-playing {
+    background: transparent !important;
+  }
+
+  ::selection {
+    background: var(--fill-secondary);
+    color: var(--text-1);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin: 0;
+    color: var(--text-1);
+    font: var(--type-heading);
+  }
+
+  h1 {
+    font: var(--type-title);
+  }
+
+  h3,
+  h4,
+  h5,
+  h6 {
+    font: var(--type-label);
+  }
+
+  h1 em {
+    color: var(--text-2);
+    font-style: normal;
+  }
+
+  p {
+    margin-block: 0 var(--space-3);
+  }
+
+  a {
+    color: inherit;
+  }
+
+  code,
+  kbd,
+  samp {
+    font: var(--type-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: default;
+  }
+
+  label {
+    color: var(--text-2);
+    font: var(--type-meta);
+  }
+
+  input,
+  select,
+  textarea {
+    box-sizing: border-box;
+    min-height: var(--control-h);
+    padding: 0 var(--space-4);
+    background: var(--surface-2);
+    color: var(--text-1);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-control);
+  }
+
+  input::placeholder {
+    color: var(--text-3);
+  }
+
+  input:disabled,
+  select:disabled {
+    color: var(--text-3);
+  }
+
+  input[type="range"] {
+    min-height: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-height: 0;
+    padding: 0;
+  }
+
+  table {
+    border-collapse: collapse;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* Focus layer: declared after features so no component rule can remove the ring (DESIGN.md §9, §11.2).
+   The transparent outline keeps a ring in forced-colors mode, where box-shadow is dropped. */
+@layer focus {
+  :focus-visible {
+    outline: 3px solid transparent;
+    outline-offset: 0;
+    box-shadow: var(--focus-ring);
+  }
+
+  @media (forced-colors: active) {
+    :focus-visible {
+      outline-color: Highlight;
+    }
+  }
+
+  :where(h1, h2)[tabindex="-1"]:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+}
