@@ -34,6 +34,25 @@ function itemImage(item: BaseItemDto, itemId: string): { image: ImageRef; aspect
   return undefined;
 }
 
+// The item's own Logo or Thumb, else the parent's (episodes show the series
+// logo and the parent thumb).
+export function logoAndThumb(item: BaseItemDto, itemId: string): { logo?: ImageRef; thumb?: ImageRef } {
+  const hashes = item.ImageBlurHashes;
+  const logoTag = item.ImageTags?.Logo;
+  const thumbTag = item.ImageTags?.Thumb;
+  const logo = logoTag
+    ? imageRef(itemId, "Logo", logoTag, hashes?.Logo?.[logoTag])
+    : item.ParentLogoItemId && item.ParentLogoImageTag
+      ? imageRef(item.ParentLogoItemId, "Logo", item.ParentLogoImageTag, hashes?.Logo?.[item.ParentLogoImageTag])
+      : undefined;
+  const thumb = thumbTag
+    ? imageRef(itemId, "Thumb", thumbTag, hashes?.Thumb?.[thumbTag])
+    : item.ParentThumbItemId && item.ParentThumbImageTag
+      ? imageRef(item.ParentThumbItemId, "Thumb", item.ParentThumbImageTag, hashes?.Thumb?.[item.ParentThumbImageTag])
+      : undefined;
+  return { ...(logo ? { logo } : {}), ...(thumb ? { thumb } : {}) };
+}
+
 function imageRef(itemId: string, type: CardImageType, tag: string, blurHash?: string | null): ImageRef {
   return blurHash ? { itemId, type, tag, blurHash } : { itemId, type, tag };
 }
@@ -76,6 +95,7 @@ export function toMediaCard(item: BaseItemDto): MediaCard | undefined {
     ...(subtitle ? { subtitle } : {}),
     ...(found ? { image: found.image } : {}),
     aspectRatio: found?.aspectRatio ?? POSTER_ASPECT_RATIO,
+    ...logoAndThumb(item, item.Id),
     ...(watchedFraction(item) !== undefined ? { progress: watchedFraction(item) } : {}),
   };
 }

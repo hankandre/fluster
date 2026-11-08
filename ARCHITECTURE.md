@@ -108,7 +108,7 @@ Keep the domain, Jellyfin gateway, playback policy, and coordinator **framework-
 | Need | Endpoint |
 |---|---|
 | Libraries | `GET /UserViews` (filter by `CollectionType`) |
-| Browse / search | `GET /Items?parentId=&includeItemTypes=&recursive=true&sortBy=&sortOrder=&startIndex=&limit=&fields=&searchTerm=&enableImageTypes=Primary,Backdrop,Thumb&imageTypeLimit=1&enableTotalRecordCount=false` |
+| Browse / search | `GET /Items?parentId=&includeItemTypes=&recursive=true&sortBy=&sortOrder=&startIndex=&limit=&fields=&searchTerm=&enableImageTypes=Primary,Backdrop,Thumb,Logo&imageTypeLimit=1&enableTotalRecordCount=false` |
 | Continue Watching | `GET /UserItems/Resume?mediaTypes=Video&limit=` |
 | Next Up | `GET /Shows/NextUp?limit=&enableRewatching=false` |
 | Latest per library | `GET /Items/Latest?parentId=&limit=&groupItems=true` (returns an array, not a QueryResult) |
@@ -118,7 +118,7 @@ Keep the domain, Jellyfin gateway, playback policy, and coordinator **framework-
 | Type-ahead | `GET /Search/Hints` (lighter DTO; use `/Items?searchTerm=` for result pages) |
 | Filters | `GET /Items/Filters2?parentId=`, `filters=IsUnplayed,IsResumable,IsFavorite` |
 | Played / favorite | `POST`/`DELETE /UserPlayedItems/{id}`, `POST`/`DELETE /UserFavoriteItems/{id}` |
-| Images | `GET /Items/{id}/Images/{type}?tag=&maxWidth=&quality=&format=Webp`. Tagged URLs are immutable, so cache by `(id, type, tag, size)` forever. Use `ImageBlurHashes` for placeholders. No token needed. |
+| Images | `GET /Items/{id}/Images/{type}?tag=&maxWidth=&quality=&format=Webp`. Tagged URLs are immutable, so cache by `(id, type, tag, size)` forever. Use `ImageBlurHashes` for placeholders. No token needed. Cards and details carry `logo` and `thumb` refs (type `Logo`/`Thumb`, with BlurHash); an episode without its own falls back to `ParentLogoItemId`/`ParentLogoImageTag` and `ParentThumbItemId`/`ParentThumbImageTag`, which the server sets when those image types are enabled (not `ItemFields` values). |
 
 Performance rules:
 - Request only the `fields` a view renders. Cards need little; list endpoints (`/Items`) honor `fields`, but `GET /Items/{id}` takes none and returns the full item.

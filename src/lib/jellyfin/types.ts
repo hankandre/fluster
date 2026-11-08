@@ -47,6 +47,11 @@ export interface BaseItemDto {
   SeriesPrimaryImageTag?: string | null;
   ImageTags?: Record<string, string | null> | null;
   BackdropImageTags?: string[] | null;
+  // Set on episodes and seasons from the nearest ancestor that has the image.
+  ParentLogoItemId?: string | null;
+  ParentLogoImageTag?: string | null;
+  ParentThumbItemId?: string | null;
+  ParentThumbImageTag?: string | null;
   ImageBlurHashes?: Record<string, Record<string, string | null> | undefined> | null;
   Genres?: string[] | null;
   People?: { Name?: string | null; Role?: string | null; Type?: string }[] | null;

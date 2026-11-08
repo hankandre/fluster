@@ -34,3 +34,37 @@ describe("toMediaCard images and blurhashes", () => {
     expect(card?.image).toEqual({ itemId: "m1", type: "Backdrop", tag: "b1", blurHash: "HASH-B" });
   });
 });
+
+describe("toMediaCard logo and thumb", () => {
+  it("maps own Logo and Thumb with their blurhashes", () => {
+    const card = toMediaCard({
+      Id: "m1",
+      Name: "Movie",
+      ImageTags: { Logo: "l1", Thumb: "t1" },
+      ImageBlurHashes: { Logo: { l1: "HASH-L" }, Thumb: { t1: "HASH-T" } },
+    });
+    expect(card?.logo).toEqual({ itemId: "m1", type: "Logo", tag: "l1", blurHash: "HASH-L" });
+    expect(card?.thumb).toEqual({ itemId: "m1", type: "Thumb", tag: "t1", blurHash: "HASH-T" });
+  });
+
+  it("falls back to the parent Logo and Thumb for an episode", () => {
+    const card = toMediaCard({
+      Id: "e1",
+      Name: "Pilot",
+      Type: "Episode",
+      ParentLogoItemId: "s1",
+      ParentLogoImageTag: "pl",
+      ParentThumbItemId: "s1",
+      ParentThumbImageTag: "pt",
+      ImageBlurHashes: { Thumb: { pt: "HASH-PT" } },
+    });
+    expect(card?.logo).toEqual({ itemId: "s1", type: "Logo", tag: "pl" });
+    expect(card?.thumb).toEqual({ itemId: "s1", type: "Thumb", tag: "pt", blurHash: "HASH-PT" });
+  });
+
+  it("omits logo and thumb when the item has neither", () => {
+    const card = toMediaCard({ Id: "m1", Name: "Movie", ImageTags: { Primary: "p1" } });
+    expect(card).not.toHaveProperty("logo");
+    expect(card).not.toHaveProperty("thumb");
+  });
+});

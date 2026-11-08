@@ -10,6 +10,7 @@ import type {
   VideoInfo,
 } from "../../domain/catalog";
 import { ticksToSeconds } from "../../domain/playback";
+import { logoAndThumb } from "./cards";
 import type { BaseItemDto, MediaSourceDto, MediaStreamDto, TrickplayInfoDto } from "./types";
 
 const CAST_LIMIT = 8;
@@ -200,5 +201,6 @@ export function toItemDetail(item: BaseItemDto): ItemDetail | undefined {
     ...(chapters.length ? { chapters } : {}),
     ...(poster ? { poster } : {}),
     ...(backdrop ? { backdrop } : {}),
+    ...logoAndThumb(item, item.Id),
   };
 }
