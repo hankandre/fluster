@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BrowserStreamingLimits, STREAMING_LIMITS_STORAGE_KEY } from "./browser-streaming-limits";
-import { limitMbpsFor, MemoryStreamingLimits, sanitizeLimits } from "./streaming-limits";
+import type { PlaybackPlan } from "../domain/playback";
+import { limitChangeAffects, limitMbpsFor, MemoryStreamingLimits, sanitizeLimits } from "./streaming-limits";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -71,5 +72,25 @@ describe("streaming limits", () => {
     const store = new BrowserStreamingLimits();
     store.set({ remoteMbps: 10 });
     expect(store.get()).toEqual({ remoteMbps: 10 });
+  });
+
+  it("tells subscribers after a change, once get() returns it", () => {
+    for (const store of [new MemoryStreamingLimits(), new BrowserStreamingLimits()]) {
+      const seen: unknown[] = [];
+      const unsubscribe = store.subscribe(() => seen.push(store.get()));
+      store.set({ localMbps: 20 });
+      unsubscribe();
+      store.set({ localMbps: 8 });
+      expect(seen).toEqual([{ localMbps: 20 }]);
+    }
+  });
+
+  it("says a limit change affects a conversion always and the original file only below its bitrate", () => {
+    const direct = { delivery: "static", sourceBitrate: 30_000_000 } as PlaybackPlan;
+    expect(limitChangeAffects(direct, 20_000_000)).toBe(true);
+    expect(limitChangeAffects(direct, 40_000_000)).toBe(false);
+    expect(limitChangeAffects(direct, undefined)).toBe(false);
+    expect(limitChangeAffects({ delivery: "static" } as PlaybackPlan, 2_000_000)).toBe(false);
+    expect(limitChangeAffects({ delivery: "hls" } as PlaybackPlan, undefined)).toBe(true);
   });
 });

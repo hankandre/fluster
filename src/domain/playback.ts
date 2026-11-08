@@ -188,10 +188,24 @@ export interface PlaybackPlanBase {
   // True when the conversion burns subtitles into the picture
   // (`SubtitleMethod=Encode` in the rebuilt master URL). Absent means false.
   subtitlesBurnedIn?: boolean;
+  // The chosen version's MediaSourceInfo.Bitrate in bits per second, when the
+  // server knows it. A streaming limit below it changes the delivery.
+  sourceBitrate?: number;
+}
+
+// Asks Jellyfin for no subtitle stream (`SubtitleStreamIndex=-1`).
+export const SUBTITLES_OFF = -1;
+
+// The Jellyfin audio and subtitle streams a renegotiation asks for. An
+// absent field leaves the choice to the server; a subtitle of SUBTITLES_OFF
+// asks for none.
+export interface StreamSelection {
+  audioStreamIndex?: number;
+  subtitleStreamIndex?: number;
 }
 
 // Per-negotiation choices that are not part of the item.
-export interface PlaybackPlanOptions {
+export interface PlaybackPlanOptions extends StreamSelection {
   // Negotiate without the user's streaming limit. Used by Play original for
   // one session; never stored.
   ignoreStreamingLimit?: boolean;

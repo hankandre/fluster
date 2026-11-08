@@ -678,13 +678,14 @@ export class JellyfinGateway {
       itemId: item.id,
       playSessionId: answer.PlaySessionId,
     });
-    let data = await this.playbackInfo(item.id, startPositionTicks, signal, mediaSourceId, true, limit);
+    const streams = streamIndices(options);
+    let data = await this.playbackInfo(item.id, startPositionTicks, signal, mediaSourceId, true, limit, streams);
     let decision = selectSource(data.MediaSources, context(data), mediaSourceId);
     if (decision.kind === "force-fallback") {
       // Rule 4: a disc folder or ISO the server offered for direct play. Ask
       // once more for that source without direct play, and never loop.
       const { reason, source } = decision;
-      data = await this.playbackInfo(item.id, startPositionTicks, signal, source.Id, false, limit);
+      data = await this.playbackInfo(item.id, startPositionTicks, signal, source.Id, false, limit, streams);
       decision = selectSource(data.MediaSources, context(data), source.Id);
       if (decision.kind === "force-fallback") {
         decision = { kind: "refused", reason, detail: "direct play offered again" };
@@ -716,6 +717,7 @@ export class JellyfinGateway {
         : decision.masterUrl,
       authorization: this.authorizationHeader(),
       hasSegments: source.HasSegments === true,
+      ...(typeof source.Bitrate === "number" ? { sourceBitrate: source.Bitrate } : {}),
       subtitlesBurnedIn: decision.kind === "convert" && decision.subtitlesBurnedIn,
       playOriginalAvailable: decision.kind === "convert"
         && limitIsOnlyReason(source, decision.conversionReasons, limit),
@@ -748,6 +750,9 @@ export class JellyfinGateway {
   // POST /Items/{id}/PlaybackInfo with the Fluster DeviceProfile and the
   // decision 0002 flags in body and query. AlwaysBurnInSubtitleWhenTranscoding
   // is body-only: it is not a query parameter in the 10.11.7 or 12.4 OpenAPI.
+  // AudioStreamIndex and SubtitleStreamIndex go in both too (PlaybackInfoDto
+  // and getPostedPlaybackInfo in SDK 1.0.2; the query wins on the server,
+  // MediaInfoController.cs v10.11.7 and v12.4 lines 155-156).
   private async playbackInfo(
     itemId: string,
     startPositionTicks: number,
@@ -755,6 +760,7 @@ export class JellyfinGateway {
     mediaSourceId: string | undefined,
     enableDirectPlay: boolean,
     maxStreamingBitrate: number,
+    streams: StreamIndexParams,
   ): Promise<PlaybackInfoResponse> {
     const { userId } = this.requireSession();
     const flags = { ...PLAYBACK_INFO_FLAGS, EnableDirectPlay: enableDirectPlay };
@@ -764,11 +770,12 @@ export class JellyfinGateway {
       UserId: userId,
       StartTimeTicks: startPositionTicks,
       MaxStreamingBitrate: maxStreamingBitrate,
+      ...streams,
       ...(mediaSourceId ? { MediaSourceId: mediaSourceId } : {}),
       DeviceProfile: { ...FLUSTER_PROFILE, MaxStreamingBitrate: maxStreamingBitrate },
     };
     const { data } = await this.post<PlaybackInfoResponse>(`/Items/${itemId}/PlaybackInfo`, request, {
-      params: { ...flags, UserId: userId, StartTimeTicks: startPositionTicks, MaxStreamingBitrate: maxStreamingBitrate },
+      params: { ...flags, UserId: userId, StartTimeTicks: startPositionTicks, MaxStreamingBitrate: maxStreamingBitrate, ...streams },
       signal,
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
@@ -862,4 +869,23 @@ export class JellyfinGateway {
     if (!this.accessToken || !this.userId) throw new Error("Sign in before using the library.");
     return { accessToken: this.accessToken, userId: this.userId };
   }
+}
+
+interface StreamIndexParams {
+  AudioStreamIndex?: number;
+  SubtitleStreamIndex?: number;
+}
+
+// The track choice for a renegotiation. The server applies it only to the
+// source named by MediaSourceId (MediaInfoHelper.cs v10.11.7 lines 206-211,
+// v12.4 lines 218-223), so callers pass both. A subtitle index of -1 asks
+// for no subtitle: StreamBuilder finds no stream at that index and burns
+// nothing in (StreamBuilder.cs v10.11.7 lines 654-658, v12.4 lines 660-664).
+function streamIndices(options: PlaybackPlanOptions): StreamIndexParams {
+  const params: StreamIndexParams = {};
+  const audio = options.audioStreamIndex;
+  const subtitle = options.subtitleStreamIndex;
+  if (audio !== undefined && Number.isInteger(audio) && audio >= 0) params.AudioStreamIndex = audio;
+  if (subtitle !== undefined && Number.isInteger(subtitle) && subtitle >= -1) params.SubtitleStreamIndex = subtitle;
+  return params;
 }

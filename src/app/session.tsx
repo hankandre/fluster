@@ -1,5 +1,6 @@
 import type { BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, NextEpisode, LibraryItem, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season } from "../domain/catalog";
 import type { MediaSegment } from "../domain/media-segments";
+import type { HostClass } from "../domain/host-class";
 import type { PlaybackPlan, PlaybackPlanOptions, PlaybackSnapshot } from "../domain/playback";
 import type { RealtimeConnection, ServerEvent } from "../domain/realtime";
 import type { ServerConnection } from "../domain/server-connection";
@@ -11,6 +12,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 export interface SessionGateway {
   readonly serverUrl: string;
   readonly origin: string;
+  // Which streaming limit applies to this server (local or remote).
+  readonly hostClass: HostClass;
   connect(signal?: AbortSignal): Promise<ServerConnection>;
   confirmUnencryptedConnection(): void;
   login(username: string, password: string, signal?: AbortSignal): Promise<{ userId: string; username: string }>;

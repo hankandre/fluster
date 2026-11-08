@@ -17,3 +17,9 @@ export function usePreferences(): Preferences {
   if (!preferences) throw new Error("usePreferences must be used inside PreferencesProvider.");
   return preferences;
 }
+
+// For views that only follow a preference and still work without one, such
+// as the player watching the streaming limit.
+export function useOptionalPreferences(): Preferences | undefined {
+  return useContext(PreferencesContext);
+}

@@ -8,6 +8,7 @@ export function fakeSessionGateway(overrides: Partial<SessionGateway> = {}): Ses
   return {
     serverUrl: "https://media.test",
     origin: "https://media.test",
+    hostClass: "public",
     connect: vi.fn(),
     confirmUnencryptedConnection: vi.fn(),
     login: vi.fn(),

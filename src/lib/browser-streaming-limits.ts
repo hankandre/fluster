@@ -1,6 +1,6 @@
 // Browser-storage adapter for the streaming limits. The record holds two
 // bitrates and nothing else; it is never derived from a token.
-import { MemoryStreamingLimits, sanitizeLimits, type StreamingLimits, type StreamingLimitStore } from "./streaming-limits";
+import { LimitListeners, MemoryStreamingLimits, sanitizeLimits, type StreamingLimits, type StreamingLimitStore } from "./streaming-limits";
 
 export const STREAMING_LIMITS_STORAGE_KEY = "fluster.streamingLimits";
 const VERSION = 1;
@@ -8,6 +8,7 @@ const VERSION = 1;
 export class BrowserStreamingLimits implements StreamingLimitStore {
   // Holds the value when storage is blocked, so a choice lasts for this launch.
   private readonly memory = new MemoryStreamingLimits();
+  private readonly listeners = new LimitListeners();
 
   get(): StreamingLimits {
     try {
@@ -31,6 +32,11 @@ export class BrowserStreamingLimits implements StreamingLimitStore {
     } catch {
       // Keep the in-memory value only.
     }
+    this.listeners.notify();
+  }
+
+  subscribe(listener: () => void): () => void {
+    return this.listeners.add(listener);
   }
 }
 

@@ -250,6 +250,38 @@ describe("JellyfinGateway direct-play contract", () => {
     });
   });
 
+  // P10-08: a track change renegotiates with the chosen streams for the
+  // playing version (PlaybackInfoDto and getPostedPlaybackInfo, SDK 1.0.2).
+  it("sends the chosen audio and subtitle streams with the version in both body and query", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("POST /Items/item/one/PlaybackInfo", {
+      PlaySessionId: "play-1",
+      MediaSources: [{ Id: "source-1", Path: "/media/movie.mkv", Protocol: "File", SupportsDirectPlay: true, Bitrate: 8_000_000 }],
+    });
+    const plan = await gateway.createPlaybackPlan(item, 420_000_000, undefined, "source-1", {
+      audioStreamIndex: 2,
+      subtitleStreamIndex: -1,
+    });
+    const request = transport.requests.at(-1)!;
+    expect(request.data).toMatchObject({ MediaSourceId: "source-1", StartTimeTicks: 420_000_000, AudioStreamIndex: 2, SubtitleStreamIndex: -1 });
+    expect(request.params).toMatchObject({ StartTimeTicks: 420_000_000, AudioStreamIndex: 2, SubtitleStreamIndex: -1 });
+    expect(plan.sourceBitrate).toBe(8_000_000);
+  });
+
+  it("sends no stream index unless one was chosen, and never an invalid one", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("POST /Items/item/one/PlaybackInfo", {
+      PlaySessionId: "play-1",
+      MediaSources: [{ Id: "source-1", Path: "/media/movie.mkv", Protocol: "File", SupportsDirectPlay: true }],
+    });
+    await gateway.createPlaybackPlan(item, 0, undefined, "source-1", { audioStreamIndex: -1, subtitleStreamIndex: -2 });
+    const request = transport.requests.at(-1)!;
+    for (const sent of [request.data as Record<string, unknown>, request.params as Record<string, unknown>]) {
+      expect(sent).not.toHaveProperty("AudioStreamIndex");
+      expect(sent).not.toHaveProperty("SubtitleStreamIndex");
+    }
+  });
+
   it("reports whether the chosen version has media segments", async () => {
     const { gateway, transport } = await authenticatedGateway();
     transport.responses.set("POST /Items/item/one/PlaybackInfo", {
