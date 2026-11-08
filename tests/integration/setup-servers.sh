@@ -10,6 +10,8 @@ umask 077
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 credentials_file="$script_dir/.credentials"
 user_name="fluster-test"
+# A second user whose policy forbids all conversion (P10-02, decision 0002 "conversion-not-allowed").
+restricted_user_name="fluster-noconv"
 
 # Name and URL of each fixture server.
 servers=(
@@ -110,6 +112,29 @@ ensure_library() {
   log "  library $name created"
 }
 
+# Creates the restricted user with video transcoding, audio transcoding, and remuxing
+# disabled. Field names: UserPolicy in the servers' /api-docs/openapi.json (10.11.7, 12.4)
+# and @jellyfin/sdk 1.0.2 user-policy.d.ts. Uses the admin header file.
+ensure_restricted_user() {
+  local url="$1" name="$2" existing password id policy
+  existing="$(curl -fsS -H @"$header_file" "$url/Users" | jq -r --arg n "$restricted_user_name" '.[] | select(.Name == $n) | .Id')"
+  if [ -n "$existing" ]; then
+    log "  user $restricted_user_name already exists"
+    return 0
+  fi
+  password="$(openssl rand -hex 16)"
+  id="$(printf '{"Name":"%s","Password":"%s"}' "$restricted_user_name" "$password" |
+    curl -fsS -X POST -H @"$header_file" -H "Content-Type: application/json" -d @- "$url/Users/New" | jq -r '.Id')"
+  policy="$(curl -fsS -H @"$header_file" "$url/Users/$id" |
+    jq -c '.Policy | .EnableVideoPlaybackTranscoding = false | .EnableAudioPlaybackTranscoding = false | .EnablePlaybackRemuxing = false')"
+  printf '%s' "$policy" | curl -fsS -o /dev/null -X POST -H @"$header_file" -H "Content-Type: application/json" -d @- "$url/Users/$id/Policy"
+  {
+    echo "${name}_restricted_username=${restricted_user_name}"
+    echo "${name}_restricted_password=${password}"
+  } >> "$credentials_file"
+  log "  user $restricted_user_name created (transcoding and remuxing disabled)"
+}
+
 for server in "${servers[@]}"; do
   name="${server%% *}"
   url="${server##* }"
@@ -135,6 +160,7 @@ for server in "${servers[@]}"; do
   authenticate "$url" "$password"
   ensure_library "$url" "Movies" "movies" "/media/movies"
   ensure_library "$url" "Shows" "tvshows" "/media/shows"
+  ensure_restricted_user "$url" "$name"
 done
 
 log "done, credentials in $credentials_file"
