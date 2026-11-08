@@ -843,10 +843,10 @@
             "Built under src/features/ with a Playwright journey; no proof-of-concept screen is extended"
           ],
           "verify": "pnpm check && pnpm test:e2e",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "src/features/player/refusal-copy.ts: Record<RefusalReason, copy> with title, explanation, and what-you-can-do for all 8 reasons; refusal screen has a focused heading, role=alert, Retry (re-negotiates), and Back, with no play-anyway control.\nrefusal-copy.test.ts and player-view.test.tsx cover copy, Retry, and Back; e2e/player.spec.ts covers a BluRay refusal and a no-direct-play refusal that Retry clears.\npnpm check, pnpm test:e2e, and pnpm lint:boundaries pass."
         },
         {
           "id": "P3-10",

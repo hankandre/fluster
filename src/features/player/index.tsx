@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePlayerServices, type PlayerServices } from "../../app/player-services";
 import { useSession, type SessionGateway } from "../../app/session";
@@ -7,6 +7,7 @@ import type { ItemDetail } from "../../domain/catalog";
 import { detailKey } from "../detail/detail-key";
 import { refreshHomeRows } from "../home";
 import { itemRoute, leavePlayer, type PlayRoute } from "../routes";
+import { REFUSAL_COPY, type RefusalCopy } from "./refusal-copy";
 import { toPlayableItem } from "./playable-item";
 import { usePlaybackSession } from "./use-playback-session";
 
@@ -90,11 +91,11 @@ function PlaybackScreen({ gateway, player, route, detail }: {
 
   if (playback.refusal) {
     return (
-      <PlayerMessage>
-        <h1>This item can’t be played</h1>
-        <p role="alert">{playback.refusal}</p>
-        <button type="button" onClick={() => void playback.back()}>Back to details</button>
-      </PlayerMessage>
+      <RefusalScreen
+        copy={REFUSAL_COPY[playback.refusal.reason]}
+        onRetry={() => void playback.retry()}
+        onBack={() => void playback.back()}
+      />
     );
   }
 
@@ -109,6 +110,33 @@ function PlaybackScreen({ gateway, player, route, detail }: {
         onBack={playback.back}
       />
     </main>
+  );
+}
+
+// Explains why Fluster will not play this item. There is deliberately no
+// "play anyway": Retry asks the server again, Back leaves.
+function RefusalScreen({ copy, onRetry, onBack }: {
+  copy: RefusalCopy;
+  onRetry(): void;
+  onBack(): void;
+}) {
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    heading.current?.focus();
+  }, []);
+
+  return (
+    <PlayerMessage>
+      <div role="alert">
+        <h1 ref={heading} tabIndex={-1}>{copy.title}</h1>
+        <p>{copy.explanation}</p>
+        <p><strong>What you can do:</strong> {copy.whatYouCanDo}</p>
+      </div>
+      <div className="player-message-actions">
+        <button type="button" onClick={onRetry}>Retry</button>
+        <button type="button" onClick={onBack}>Back to details</button>
+      </div>
+    </PlayerMessage>
   );
 }
 
