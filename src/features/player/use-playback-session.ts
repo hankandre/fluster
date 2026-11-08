@@ -133,6 +133,9 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
 
     const unwatchClose = watchWindowClose?.(async () => {
       await stopSession(engine, active);
+      // A session that never started still owes the previous session's stop
+      // and its Stopped report before the window may close.
+      await previousStop.catch(() => undefined);
       await coordinator.flush();
     });
 
