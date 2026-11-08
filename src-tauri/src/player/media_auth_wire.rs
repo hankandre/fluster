@@ -2,22 +2,23 @@
 //! the header is proven on the wire for the stream, `sub-add`, and redirects.
 
 mod headers;
+mod hls;
+mod hls_session;
 mod references;
 mod tracks;
 
-use super::network::{harden_network_options, set_media_authorization};
+use super::network::{harden_network_options, set_media_authorization, MediaDelivery};
+use super::test_http::{authorization_lines, listener, read_request_head, Requests};
 use super::test_support::test_authorization;
 use super::version::ensure_numeric_locale;
 use crate::auth_header::MediaBrowserAuthorization;
 use libmpv2::events::Event;
 use libmpv2::Mpv;
-use std::io::{Read, Write};
-use std::net::{TcpListener, TcpStream};
-use std::sync::{Arc, Mutex};
+use std::io::Write;
+use std::net::TcpListener;
+use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
-
-type Requests = Arc<Mutex<Vec<String>>>;
 
 fn silent_wav() -> Vec<u8> {
     let samples = 8_000u32; // half a second of 8 kHz mono 16-bit silence
@@ -37,18 +38,6 @@ fn silent_wav() -> Vec<u8> {
     wav.extend_from_slice(&data_len.to_le_bytes());
     wav.resize(wav.len() + data_len as usize, 0);
     wav
-}
-
-fn read_request_head(stream: &mut TcpStream) -> String {
-    let mut head = Vec::new();
-    let mut byte = [0u8; 1];
-    while !head.ends_with(b"\r\n\r\n") && head.len() < 64 * 1024 {
-        match stream.read(&mut byte) {
-            Ok(1) => head.push(byte[0]),
-            _ => break,
-        }
-    }
-    String::from_utf8_lossy(&head).into_owned()
 }
 
 /// Serves `/stream` (WAV), `/sub.srt`, and `/redirect` (302 to `redirect_to`).
@@ -95,7 +84,7 @@ fn headless_player(authorization: &MediaBrowserAuthorization) -> Option<Mpv> {
         init.set_option("vo", "null")?;
         init.set_option("ao", "null")?;
         init.set_option("autoload-files", false)?;
-        harden_network_options(&init)?;
+        harden_network_options(&init, MediaDelivery::Static)?;
         set_media_authorization(&init, authorization)
     });
     match created {
@@ -130,23 +119,11 @@ fn wait_for(mpv: &mut Mpv, wanted: impl Fn(&Event) -> bool) -> LoadOutcome {
     panic!("libmpv neither loaded nor failed the file in time");
 }
 
-fn authorization_lines(head: &str) -> Vec<&str> {
-    head.lines()
-        .filter(|line| line.to_ascii_lowercase().starts_with("authorization:"))
-        .collect()
-}
-
 fn assert_single_exact_header(head: &str) {
     let expected = format!("Authorization: {}", test_authorization().expose());
     assert_eq!(authorization_lines(head), vec![expected.as_str()], "{head}");
     // A comma split would turn the header's later fields into extra lines.
     assert!(!head.contains("\r\n Device="), "{head}");
-}
-
-fn listener() -> (TcpListener, String) {
-    let listener = TcpListener::bind("127.0.0.1:0").expect("bind loopback");
-    let origin = format!("http://{}", listener.local_addr().expect("local address"));
-    (listener, origin)
 }
 
 /// Serves `body` with `content_type` for every path.

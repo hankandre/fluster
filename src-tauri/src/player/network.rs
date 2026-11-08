@@ -8,8 +8,25 @@ use libmpv2::MpvInitializer;
 
 // FFmpeg http protocol AVOption (libavformat/http.c, FFmpeg 6.1 and 7.1+).
 const NO_HTTP_REDIRECTS: &str = "max_redirects=0";
+// FFmpeg AVFormatContext option, copied onto every nested open by mpv
+// (`nested_io_open`). mpv quotes a list value that holds commas with `[ ]`.
+const HLS_PROTOCOL_WHITELIST: &str = "protocol_whitelist=[http,https,tcp,tls]";
 
-pub(super) fn harden_network_options(init: &MpvInitializer) -> libmpv2::Result<()> {
+/// What a session's handle may open besides its one stream URL.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum MediaDelivery {
+    /// The original file: nothing named inside a body is ever opened.
+    Static,
+    /// A master playlist that Rust validated and serves from loopback
+    /// (`player::hls`). FFmpeg must open its variants and segments.
+    #[cfg_attr(not(test), allow(dead_code))]
+    ValidatedHls,
+}
+
+pub(super) fn harden_network_options(
+    init: &MpvInitializer,
+    delivery: MediaDelivery,
+) -> libmpv2::Result<()> {
     // FFmpeg's http protocol re-sends custom headers to every redirect target,
     // whatever its origin, so redirects are refused instead.
     init.set_option("stream-lavf-o", NO_HTTP_REDIRECTS)?;
@@ -20,7 +37,13 @@ pub(super) fn harden_network_options(init: &MpvInitializer) -> libmpv2::Result<(
     // Without this, a playlist, EDL, or HLS body served as the "movie" (or as
     // a subtitle) makes mpv or FFmpeg open the URLs inside it, which never
     // passed validate_playback_urls, and send them the header.
-    init.set_option("access-references", false)
+    match delivery {
+        MediaDelivery::Static => init.set_option("access-references", false),
+        MediaDelivery::ValidatedHls => {
+            init.set_option("access-references", true)?;
+            init.set_option("demuxer-lavf-o", HLS_PROTOCOL_WHITELIST)
+        }
+    }
 }
 
 /// Sends the signed-in header with every HTTP request this handle makes: the
@@ -45,10 +68,10 @@ fn escape_list_item(item: &str) -> String {
 }
 
 // Query names Jellyfin accepts as a token, compared in lower case.
-const CREDENTIAL_QUERY_NAMES: [&str; 5] =
+pub(super) const CREDENTIAL_QUERY_NAMES: [&str; 5] =
     ["apikey", "api_key", "access_token", "token", "x-emby-token"];
 
-fn has_credential_query(url: &url::Url) -> bool {
+pub(super) fn has_credential_query(url: &url::Url) -> bool {
     url.query_pairs()
         .any(|(name, _)| CREDENTIAL_QUERY_NAMES.contains(&name.to_ascii_lowercase().as_str()))
 }
@@ -225,7 +248,7 @@ mod tests {
             init.set_option("config", false)?;
             init.set_option("vo", "null")?;
             init.set_option("ao", "null")?;
-            harden_network_options(&init)?;
+            harden_network_options(&init, MediaDelivery::Static)?;
             set_media_authorization(&init, &test_authorization())
         });
         // CI's Ubuntu 22.04 runner ships libmpv 0.34, older than the API this
