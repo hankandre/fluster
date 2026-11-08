@@ -65,7 +65,7 @@ Pilot: milestones 1 and 3 are the pilot for the conversion path. Review both (gu
 - [x] 5 (P10-05)
 - [x] 6 (P10-06)
 - [x] 7 (P10-07)
-- [ ] 8
+- [x] 8 (P10-08)
 - [ ] 9
 - [x] 10 (P10-10)
 - [x] 11 (P10-11)

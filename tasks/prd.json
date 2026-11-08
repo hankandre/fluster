@@ -1276,10 +1276,10 @@
             "The old play session is stopped before the new one starts; tests cover each path"
           ],
           "verify": "pnpm check && pnpm test:e2e",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "opus",
+          "passes": true,
+          "evidence": "Converted sessions list the source's streams (src/domain/track-choice.ts); a carried track switches in mpv, an uncarried one or a burned-in subtitle change calls PlaybackCoordinator.renegotiate at the current position with AudioStreamIndex/SubtitleStreamIndex (-1 off) in body and query plus MediaSourceId (SDK 1.0.2 PlaybackInfoDto/getPostedPlaybackInfo; MediaInfoController.cs 155-156, MediaInfoHelper.cs v10.11.7 206-211, v12.4 218-223); a limit change for the host class renegotiates a conversion, or direct play below its bitrate; direct play stays local.\nOrder stop -> Stopped (Failed=false) -> DELETE /Videos/ActiveEncodings -> PlaybackInfo, and Back cancelling a renegotiation, are covered by coordinator-renegotiate, track-renegotiation, track-choice, gateway, and streaming-limits tests (reverting the encode stop, the not-Failed report, the stream selection, the limit watch, or the source track list fails 5, 5, 7, 2, and 11 of them) and the fake-hls e2e audio switch journey.\npnpm check exit 0 (65 files, 1007 Vitest tests; Rust 173 passed, 6 ignored), pnpm test:e2e 35 passed, lint:boundaries and typecheck:core clean."
         },
         {
           "id": "P10-09",
