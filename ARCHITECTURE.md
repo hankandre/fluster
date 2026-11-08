@@ -181,6 +181,7 @@ The rules run in this order and the first failing rule names the reason; the dis
 - Embedded subtitles are rendered by mpv directly.
 - **Jellyfin numbers external streams first.** Embedded streams have `Index = ffprobeIndex + externalCount`. Map mpv `ff-index` to Jellyfin index as `ff-index + count(IsExternal)`. Map external tracks by the order Fluster added them.
 - Apply `DefaultAudioStreamIndex` and `DefaultSubtitleStreamIndex` for the initial selection.
+- Implemented in `src-tauri/src/tracks.rs` (P1-05). mpv gives each `sub-add` file its own demuxer, so an external track reports `external: yes` and `ff-index` 0 and only add order identifies it; sessions set `autoload-files=no` so no other external track can appear. An absent or -1 default subtitle, or one mpv does not expose, sets `sid=no`. Playstate reports carry the Jellyfin index of the selected track.
 
 ### Playstate reporting
 
@@ -262,7 +263,6 @@ Tracked in `docs/plans/active/001-jellyfin-api-correctness.md`.
 
 | Severity | Gap |
 |---|---|
-| High | Track mapping ignores the external-first index numbering |
 | Medium | Refusal reasons: typed reasons exist (`RefusalReason` in `src/domain/playback.ts`); UI copy is P3-09 |
 
 ---

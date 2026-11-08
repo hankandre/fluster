@@ -128,6 +128,23 @@ describe.each(versions)("PlaybackInfo fixtures from Jellyfin %s", (version) => {
     expect(subtitle?.deliveryUrl).toContain("/Videos/item-sidecar/item-sidecar/Subtitles/0/0/Stream.srt");
   });
 
+  // Jellyfin numbers external streams first, so the sidecar is Index 0 and
+  // the embedded video and audio are 1 and 2. The defaults are those indices.
+  it("carries the source's default audio and subtitle stream indices", async () => {
+    const sidecar = await (await plan(version, "external-subtitle", "item-sidecar")).run();
+    expect(sidecar.tracks.map((track) => [track.index, track.type, track.external])).toEqual([
+      [0, "Subtitle", true],
+      [1, "Video", false],
+      [2, "Audio", false],
+    ]);
+    expect(sidecar.defaultAudioStreamIndex).toBe(2);
+    expect(sidecar.defaultSubtitleStreamIndex).toBe(0);
+
+    const multitrack = await (await plan(version, "multitrack-profile", "item-multitrack")).run();
+    expect(multitrack.defaultAudioStreamIndex).toBe(1);
+    expect(multitrack.defaultSubtitleStreamIndex).toBeUndefined();
+  });
+
   it("strips the server ApiKey from the recorded subtitle DeliveryUrl", async () => {
     const response = fixture(version, "external-subtitle");
     const recorded = response.MediaSources![0].MediaStreams!.find((stream) => stream.IsExternal)!.DeliveryUrl!;

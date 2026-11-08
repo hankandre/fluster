@@ -94,6 +94,10 @@ export interface PlaybackPlan {
   playSessionId: string;
   startPositionTicks: number;
   tracks: MediaTrack[];
+  // Jellyfin stream indices (not mpv track ids) the server chose for the
+  // initial selection. An absent or -1 subtitle index means subtitles off.
+  defaultAudioStreamIndex?: number;
+  defaultSubtitleStreamIndex?: number;
 }
 
 export interface PlayerCapabilities {

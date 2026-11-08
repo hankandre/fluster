@@ -677,6 +677,8 @@ export class JellyfinGateway {
           deliveryUrl: buildSubtitleUrl(this.serverUrl, track.DeliveryUrl),
         }];
       }),
+      defaultAudioStreamIndex: source.DefaultAudioStreamIndex ?? undefined,
+      defaultSubtitleStreamIndex: source.DefaultSubtitleStreamIndex ?? undefined,
     };
   }
 

@@ -1,10 +1,11 @@
 use crate::auth_header::MediaBrowserAuthorization;
 use crate::model::{
-    DecodeMode, LaunchRequest, MediaTrack, PlaybackSnapshot, PlayerCapabilities, PlayerEvent,
-    PlayerSurfaceFrame, PlayerTrack,
+    DecodeMode, LaunchRequest, MediaTrack, PlaybackPlan, PlaybackSnapshot, PlayerCapabilities,
+    PlayerEvent, PlayerSurfaceFrame, PlayerTrack,
 };
 use crate::redaction::safe_error;
 use crate::surface;
+use crate::tracks::{self, MpvTrack};
 use crate::url_policy::parse_allowed_url;
 use libmpv2::events::{Event, PropertyData};
 use libmpv2::{mpv_end_file_reason, Format, Mpv, MpvInitializer, MpvStr};
@@ -162,6 +163,9 @@ impl MpvController {
             init.set_option("input-default-bindings", false)?;
             init.set_option("input-vo-keyboard", false)?;
             init.set_option("keep-open", false)?;
+            // Only the subtitles Fluster adds may appear as external tracks,
+            // so their add order identifies them (see `tracks.rs`).
+            init.set_option("autoload-files", false)?;
             harden_network_options(&init)?;
             set_media_authorization(&init, &request.authorization)?;
             Ok(())
@@ -207,8 +211,7 @@ impl MpvController {
                     run_event_loop(
                         &app_for_events,
                         &mut event_client,
-                        &plan.tracks,
-                        plan.start_position_ticks,
+                        &plan,
                         video_loaded,
                         finished,
                     );
@@ -560,15 +563,17 @@ enum PropertyUpdate {
     TracksChanged,
 }
 
-#[allow(clippy::too_many_arguments)]
 fn run_event_loop(
     app: &AppHandle,
     mpv: &mut Mpv,
-    jellyfin_tracks: &[MediaTrack],
-    start_position_ticks: u64,
+    plan: &PlaybackPlan,
     video_loaded: Arc<AtomicBool>,
     finished: Arc<AtomicBool>,
 ) {
+    let jellyfin_tracks = plan.tracks.as_slice();
+    let start_position_ticks = plan.start_position_ticks;
+    // Jellyfin indices of the external subtitles `sub-add` loaded, in order.
+    let mut added_externals: Vec<i64> = Vec::new();
     let mut state = RuntimeState::new();
     let mut sent_end = false;
     let mut pending_state = false;
@@ -581,8 +586,10 @@ fn run_event_loop(
                     let _ = mpv.command("seek", &[&seconds, "absolute+exact"]);
                     state.snapshot.position_seconds = start_position_ticks as f64 / 10_000_000.0;
                 }
-                load_external_subtitles(mpv, jellyfin_tracks);
-                state.snapshot.tracks = read_tracks(mpv, jellyfin_tracks);
+                added_externals = load_external_subtitles(mpv, jellyfin_tracks);
+                let tracks = read_tracks(mpv, jellyfin_tracks, &added_externals);
+                apply_initial_selection(mpv, &tracks, plan);
+                state.snapshot.tracks = read_tracks(mpv, jellyfin_tracks, &added_externals);
                 refresh_selected_streams(&mut state.snapshot);
                 video_loaded.store(true, Ordering::Release);
                 let _ = app.emit(
@@ -615,7 +622,7 @@ fn run_event_loop(
                 }
             }
             Some(Ok(Event::AudioReconfig | Event::VideoReconfig)) => {
-                let tracks = read_tracks(mpv, jellyfin_tracks);
+                let tracks = read_tracks(mpv, jellyfin_tracks, &added_externals);
                 if !tracks.is_empty() && tracks != state.snapshot.tracks {
                     state.snapshot.tracks = tracks;
                     refresh_selected_streams(&mut state.snapshot);
@@ -699,7 +706,10 @@ fn emit_state(app: &AppHandle, snapshot: &PlaybackSnapshot, cause: Option<&'stat
     );
 }
 
-fn load_external_subtitles(mpv: &Mpv, jellyfin_tracks: &[MediaTrack]) {
+/// Adds each external subtitle with `sub-add` and returns the Jellyfin
+/// indices of the ones mpv loaded, in add order.
+fn load_external_subtitles(mpv: &Mpv, jellyfin_tracks: &[MediaTrack]) -> Vec<i64> {
+    let mut added = Vec::new();
     for track in jellyfin_tracks
         .iter()
         .filter(|track| track.external && track.kind == "Subtitle")
@@ -708,54 +718,66 @@ fn load_external_subtitles(mpv: &Mpv, jellyfin_tracks: &[MediaTrack]) {
             continue;
         };
         let language = track.language.as_deref().unwrap_or("und");
-        let _ = mpv.command(
+        // `auto` adds the track without selecting it; the server's default
+        // decides the selection in `apply_initial_selection`.
+        let result = mpv.command(
             "sub-add",
             &[url, "auto", track.display_title.as_str(), language],
         );
+        if result.is_ok() {
+            added.push(track.index);
+        }
     }
+    added
 }
 
-fn read_tracks(mpv: &Mpv, jellyfin_tracks: &[MediaTrack]) -> Vec<PlayerTrack> {
+/// Selects the server's default audio and subtitle streams.
+fn apply_initial_selection(mpv: &Mpv, tracks: &[PlayerTrack], plan: &PlaybackPlan) {
+    let selection = tracks::initial_selection(
+        tracks,
+        plan.default_audio_stream_index,
+        plan.default_subtitle_stream_index,
+    );
+    if let Some(aid) = selection.aid.as_deref() {
+        let _ = mpv.set_property("aid", aid);
+    }
+    let _ = mpv.set_property("sid", selection.sid.as_str());
+}
+
+fn read_tracks(
+    mpv: &Mpv,
+    jellyfin_tracks: &[MediaTrack],
+    added_externals: &[i64],
+) -> Vec<PlayerTrack> {
     let count = mpv
         .get_property::<i64>("track-list/count")
         .unwrap_or(0)
         .max(0);
-    (0..count)
+    let listed: Vec<MpvTrack> = (0..count)
         .filter_map(|position| {
             let prefix = format!("track-list/{position}");
-            let kind = string_property(mpv, &format!("{prefix}/type"))?;
-            let kind = match kind.as_str() {
+            let kind = match string_property(mpv, &format!("{prefix}/type"))?.as_str() {
                 "audio" => "Audio",
                 "sub" => "Subtitle",
                 "video" => "Video",
                 _ => return None,
-            }
-            .to_string();
-            let player_id = mpv.get_property::<i64>(&format!("{prefix}/id")).ok()?;
-            let ff_index = mpv.get_property::<i64>(&format!("{prefix}/ff-index")).ok();
-            let jellyfin = ff_index.and_then(|index| {
-                jellyfin_tracks
-                    .iter()
-                    .find(|track| track.index == index && track.kind == kind)
-            });
-            Some(PlayerTrack {
-                player_id,
-                jellyfin_index: jellyfin.map(|track| track.index),
-                kind,
-                title: string_property(mpv, &format!("{prefix}/title"))
-                    .or_else(|| jellyfin.map(|track| track.display_title.clone()))
-                    .unwrap_or_else(|| format!("Track {player_id}")),
-                language: string_property(mpv, &format!("{prefix}/lang"))
-                    .or_else(|| jellyfin.and_then(|track| track.language.clone())),
+            };
+            Some(MpvTrack {
+                id: mpv.get_property::<i64>(&format!("{prefix}/id")).ok()?,
+                kind: kind.into(),
+                ff_index: mpv.get_property::<i64>(&format!("{prefix}/ff-index")).ok(),
                 external: mpv
                     .get_property::<bool>(&format!("{prefix}/external"))
                     .unwrap_or(false),
+                title: string_property(mpv, &format!("{prefix}/title")),
+                language: string_property(mpv, &format!("{prefix}/lang")),
                 selected: mpv
                     .get_property::<bool>(&format!("{prefix}/selected"))
                     .unwrap_or(false),
             })
         })
-        .collect()
+        .collect();
+    tracks::player_tracks(jellyfin_tracks, added_externals, &listed)
 }
 
 fn string_property(mpv: &Mpv, property: &str) -> Option<String> {
@@ -1012,6 +1034,8 @@ mod tests {
                 play_session_id: "session".into(),
                 start_position_ticks: 0,
                 tracks,
+                default_audio_stream_index: None,
+                default_subtitle_stream_index: None,
             },
             authorization: test_authorization(),
             test_force_software: false,
@@ -1399,6 +1423,7 @@ mod media_auth_wire {
             init.set_option("config", false)?;
             init.set_option("vo", "null")?;
             init.set_option("ao", "null")?;
+            init.set_option("autoload-files", false)?;
             harden_network_options(&init)?;
             set_media_authorization(&init, authorization)
         });
@@ -1494,6 +1519,99 @@ mod media_auth_wire {
         for head in stream_requests.into_iter().chain(subtitle_requests) {
             assert_single_exact_header(head);
         }
+    }
+
+    /// Reads mpv's real `track-list` for an embedded stream plus two
+    /// `sub-add` files. Each external file is its own demuxer, so both report
+    /// `external: yes` and `ff-index` 0; only add order tells them apart.
+    #[test]
+    fn real_tracks_map_by_ff_index_and_add_order_and_apply_defaults() {
+        let Some(mut mpv) = headless_player(&test_authorization()) else {
+            return;
+        };
+        let (server, origin) = listener();
+        let _requests = serve(server, String::new());
+        mpv.command("loadfile", &[&format!("{origin}/stream"), "replace"])
+            .expect("loadfile");
+        assert!(matches!(wait_for_load(&mut mpv), LoadOutcome::Loaded));
+
+        let sidecar = |index: i64| MediaTrack {
+            index,
+            kind: "Subtitle".into(),
+            display_title: format!("Sidecar {index}"),
+            language: Some("eng".into()),
+            external: true,
+            delivery_url: Some(format!("{origin}/sub.srt")),
+        };
+        let mut plan = super::tests::launch_request(&format!("{origin}/stream"), None).plan;
+        plan.tracks = vec![
+            sidecar(0),
+            sidecar(1),
+            MediaTrack {
+                index: 2,
+                kind: "Audio".into(),
+                display_title: "PCM".into(),
+                language: None,
+                external: false,
+                delivery_url: None,
+            },
+        ];
+        let added = load_external_subtitles(&mpv, &plan.tracks);
+        assert_eq!(added, vec![0, 1]);
+
+        let raw: Vec<(i64, String, i64, bool)> = (0..3)
+            .map(|n| {
+                let field = |name: &str| format!("track-list/{n}/{name}");
+                (
+                    mpv.get_property::<i64>(&field("id")).expect("id"),
+                    mpv.get_property::<String>(&field("type")).expect("type"),
+                    mpv.get_property::<i64>(&field("ff-index"))
+                        .expect("ff-index"),
+                    mpv.get_property::<bool>(&field("external"))
+                        .expect("external"),
+                )
+            })
+            .collect();
+        eprintln!("mpv track-list (id, type, ff-index, external): {raw:?}");
+        assert_eq!(
+            raw,
+            vec![
+                (1, "audio".into(), 0, false),
+                (1, "sub".into(), 0, true),
+                (2, "sub".into(), 0, true),
+            ]
+        );
+
+        let tracks = read_tracks(&mpv, &plan.tracks, &added);
+        let mapped: Vec<_> = tracks
+            .iter()
+            .map(|track| (track.kind.as_str(), track.player_id, track.jellyfin_index))
+            .collect();
+        assert_eq!(
+            mapped,
+            vec![
+                ("Audio", 1, Some(2)),
+                ("Subtitle", 1, Some(0)),
+                ("Subtitle", 2, Some(1)),
+            ]
+        );
+
+        plan.default_audio_stream_index = Some(2);
+        plan.default_subtitle_stream_index = Some(1);
+        apply_initial_selection(&mpv, &tracks, &plan);
+        assert_eq!(mpv.get_property::<String>("aid").expect("aid"), "1");
+        assert_eq!(mpv.get_property::<String>("sid").expect("sid"), "2");
+        let mut snapshot = PlaybackSnapshot {
+            tracks: read_tracks(&mpv, &plan.tracks, &added),
+            ..PlaybackSnapshot::default()
+        };
+        refresh_selected_streams(&mut snapshot);
+        assert_eq!(snapshot.audio_track, Some(2));
+        assert_eq!(snapshot.subtitle_track, Some(1));
+
+        plan.default_subtitle_stream_index = Some(-1);
+        apply_initial_selection(&mpv, &tracks, &plan);
+        assert_eq!(mpv.get_property::<String>("sid").expect("sid"), "no");
     }
 
     #[test]
@@ -1638,46 +1756,90 @@ mod media_auth_wire {
     }
 
     /// Run against a fixture server with legacy authorization off (Jellyfin
-    /// 12.x default). `FLUSTER_MEDIA_STREAM_URL` and `FLUSTER_MEDIA_AUTH` come
-    /// from a real gateway playback plan; `FLUSTER_MEDIA_SUBTITLE_URL` is
-    /// optional. Proves the header-authenticated, token-free URLs reach the
-    /// first frame and load through `sub-add`.
+    /// 12.x default). `FLUSTER_LAUNCH_REQUEST_FILE` names a private JSON file
+    /// holding the `LaunchRequest` the frontend would send, built from a real
+    /// gateway playback plan. Proves the header-authenticated, token-free URLs
+    /// reach the first frame, load through `sub-add`, map to the Jellyfin
+    /// stream indices, and select the server's default streams.
     #[test]
     #[ignore = "needs a live Jellyfin fixture server"]
     fn live_fixture_server_playback() {
-        let (Ok(stream_url), Ok(authorization)) = (
-            std::env::var("FLUSTER_MEDIA_STREAM_URL"),
-            std::env::var("FLUSTER_MEDIA_AUTH"),
-        ) else {
-            panic!("set FLUSTER_MEDIA_STREAM_URL and FLUSTER_MEDIA_AUTH");
-        };
-        let subtitle_url = std::env::var("FLUSTER_MEDIA_SUBTITLE_URL")
-            .ok()
-            .filter(|url| !url.is_empty());
-        let mut request = super::tests::launch_request(&stream_url, subtitle_url.as_deref());
-        request.authorization =
-            MediaBrowserAuthorization::parse(&authorization).expect("a valid header");
+        let path =
+            std::env::var("FLUSTER_LAUNCH_REQUEST_FILE").expect("set FLUSTER_LAUNCH_REQUEST_FILE");
+        let json = std::fs::read_to_string(path).expect("read the launch request");
+        let request: LaunchRequest = serde_json::from_str(&json).expect("a launch request");
         validate_playback_urls(&request).expect("the plan URLs pass the Rust policy");
+        let plan = &request.plan;
 
         let Some(mut mpv) = headless_player(&request.authorization) else {
             return;
         };
-        mpv.command("loadfile", &[&stream_url, "replace"])
+        mpv.command("loadfile", &[&plan.stream_url, "replace"])
             .expect("loadfile");
         assert!(matches!(wait_for_load(&mut mpv), LoadOutcome::Loaded));
-        let tracks_before: i64 = mpv.get_property("track-list/count").expect("tracks");
-        load_external_subtitles(&mpv, &request.plan.tracks);
-        let tracks_after: i64 = mpv.get_property("track-list/count").expect("tracks");
-        if subtitle_url.is_some() {
-            assert_eq!(tracks_after, tracks_before + 1, "sub-add did not load");
-        }
+        let added = load_external_subtitles(&mpv, &plan.tracks);
+        let external_subtitles = plan
+            .tracks
+            .iter()
+            .filter(|track| track.external && track.kind == "Subtitle")
+            .count();
+        assert_eq!(added.len(), external_subtitles, "sub-add did not load");
+        let tracks = read_tracks(&mpv, &plan.tracks, &added);
+        apply_initial_selection(&mpv, &tracks, plan);
         assert!(matches!(
             wait_for(&mut mpv, |event| matches!(event, Event::PlaybackRestart)),
             LoadOutcome::Loaded
         ));
-        let codec: String = mpv.get_property("video-codec").unwrap_or_default();
-        let position: f64 = mpv.get_property("time-pos").unwrap_or(-1.0);
-        eprintln!("live playback: tracks {tracks_before}->{tracks_after}, video-codec {codec:?}, time-pos {position}");
+
+        let mut snapshot = PlaybackSnapshot {
+            tracks: read_tracks(&mpv, &plan.tracks, &added),
+            ..PlaybackSnapshot::default()
+        };
+        refresh_selected_streams(&mut snapshot);
+        let mapped: Vec<_> = snapshot
+            .tracks
+            .iter()
+            .map(|track| {
+                (
+                    track.kind.as_str(),
+                    track.player_id,
+                    track.external,
+                    track.jellyfin_index,
+                    track.selected,
+                )
+            })
+            .collect();
+        let aid: String = mpv.get_property("aid").unwrap_or_default();
+        let sid: String = mpv.get_property("sid").unwrap_or_default();
+        eprintln!(
+            "live tracks (kind, mpv id, external, jellyfin index, selected): {mapped:?}; \
+             aid {aid}, sid {sid}; reported AudioStreamIndex {:?}, SubtitleStreamIndex {:?}; \
+             defaults audio {:?}, subtitle {:?}",
+            snapshot.audio_track,
+            snapshot.subtitle_track,
+            plan.default_audio_stream_index,
+            plan.default_subtitle_stream_index,
+        );
+
+        // Every stream mpv shows has a Jellyfin counterpart of the same type.
+        for track in &snapshot.tracks {
+            let jellyfin = plan
+                .tracks
+                .iter()
+                .find(|candidate| Some(candidate.index) == track.jellyfin_index);
+            assert!(
+                jellyfin.is_some_and(|candidate| candidate.kind == track.kind),
+                "unmapped mpv track {track:?}"
+            );
+        }
+        assert_eq!(snapshot.audio_track, plan.default_audio_stream_index);
+        let expected_subtitle = plan
+            .default_subtitle_stream_index
+            .filter(|index| *index >= 0);
+        assert_eq!(snapshot.subtitle_track, expected_subtitle);
+        if expected_subtitle.is_none() {
+            assert_eq!(sid, "no");
+        }
     }
 }
 

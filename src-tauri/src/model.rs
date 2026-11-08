@@ -24,6 +24,13 @@ pub struct PlaybackPlan {
     pub start_position_ticks: u64,
     #[serde(default)]
     pub tracks: Vec<MediaTrack>,
+    /// Jellyfin stream indices, not mpv track ids. Rust maps them to mpv
+    /// tracks after the file and its external subtitles load.
+    #[serde(default)]
+    pub default_audio_stream_index: Option<i64>,
+    /// Absent or -1 turns subtitles off.
+    #[serde(default)]
+    pub default_subtitle_stream_index: Option<i64>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

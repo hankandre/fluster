@@ -407,10 +407,10 @@
             "Rust tests cover an item with one external subtitle and embedded tracks"
           ],
           "verify": "cargo test --manifest-path src-tauri/Cargo.toml tracks",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "native-engineer",
+          "passes": true,
+          "evidence": "src-tauri/src/tracks.rs maps embedded tracks as ff-index + count(IsExternal) and external tracks by successful sub-add order (a real libmpv 0.41.0 track-list shows each sub-add track as external with ff-index 0); the plan carries DefaultAudio/SubtitleStreamIndex and Rust sets aid/sid from them (absent/-1/unmapped subtitle -> sid=no).\ncargo test tracks: 7 unit tests with the recorded fixture indices (sidecar SRT 0 + video 1 + audio 2; multitrack eng/spa) and edge cases, plus a real-handle loopback test; reports carry Jellyfin indices.\nLive headless libmpv with real-gateway plans on 10.11.7 and 12.4.0: sidecar aid 1/sid 1 reported Audio 2/Subtitle 0; multitrack aid 1/sid no reported Audio 1.\nfmt, clippy -D warnings, cargo test (+release) 64 passed, pnpm check 482 passed, pnpm test:e2e 15 passed."
         },
         {
           "id": "P1-06",
