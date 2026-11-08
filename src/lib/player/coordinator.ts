@@ -98,9 +98,9 @@ export class PlaybackCoordinator {
 
   // Replaces a playing session with a new one for the same version at
   // `startPositionTicks`, asking for `streams` on top of any earlier choice
-  // (a track or streaming-limit change, or Play original). The old session
-  // played fine, so its Stopped report is not Failed. Stop or Back cancels it
-  // like any attempt. When the new session fails, later attempts ask for
+  // (a track or streaming-limit change, or Play original). The old session's
+  // Stopped report says Failed so the server leaves watch history alone (see
+  // finishSession). Stop or Back cancels it like any attempt. When the new session fails, later attempts ask for
   // `fallback` instead (the streams that were playing), so Retry goes back to
   // what worked.
   renegotiate(
@@ -337,11 +337,16 @@ export class PlaybackCoordinator {
     snapshot?: PlaybackSnapshot,
   ): Promise<void> {
     const plan = this.plan;
-    // Only an error ending is a failed session. Retry is offered only after a
+    // An error ending is a failed session. Retry is offered only after a
     // playback error, so it ends a failed session too. A non-fatal error event
-    // (for example one dropped render) followed by a normal ending is not,
-    // and neither is a renegotiation.
-    const failed = reason === "error" || reason === "retry";
+    // (for example one dropped render) followed by a normal ending is not.
+    // A renegotiation is reported as failed on purpose: a Stopped report that
+    // is not Failed updates the user's play state (SessionManager.cs
+    // OnPlaybackStopped, v10.11.7 line 1115, v12.4 line 1176), so
+    // a track or quality change past the resume cutoff would mark the item
+    // played and count it again at the real end. The new session's progress
+    // reports record the position instead.
+    const failed = reason === "error" || reason === "retry" || reason === "renegotiate";
     this.reporter.finish(plan, snapshot, failed);
     this.disposeAttempt();
     this.plan = undefined;

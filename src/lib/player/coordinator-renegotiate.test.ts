@@ -86,7 +86,7 @@ async function playing(coordinator: PlaybackCoordinator, player: FakePlayer, gat
 }
 
 describe("PlaybackCoordinator.renegotiate", () => {
-  it("stops the old session, reports it stopped (not failed), deletes its encode, then negotiates the streams at the position", async () => {
+  it("stops the old session, reports it stopped as failed (no watch-history change), deletes its encode, then negotiates the streams at the position", async () => {
     const order: string[] = [];
     const gateway = orderedGateway(order, [hlsPlan("play-1"), hlsPlan("play-2")]);
     const player = new FakePlayer(order);
@@ -100,7 +100,7 @@ describe("PlaybackCoordinator.renegotiate", () => {
     expect(next.playSessionId).toBe("play-2");
     expect(order).toEqual([
       "player stop",
-      "stopped play-1 failed=false",
+      "stopped play-1 failed=true",
       "delete play-1",
       'negotiate 420000000 {"audioStreamIndex":2,"subtitleStreamIndex":-1,"mediaSourceId":"source-a"} -> play-2',
       "launch play-2",
@@ -121,7 +121,7 @@ describe("PlaybackCoordinator.renegotiate", () => {
 
     expect(order).toEqual([
       "player stop",
-      "stopped play-1 failed=false",
+      "stopped play-1 failed=true",
       'negotiate 10 {"subtitleStreamIndex":-1,"mediaSourceId":"source-a"} -> play-2',
       "launch play-2",
     ]);

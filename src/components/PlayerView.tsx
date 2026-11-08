@@ -111,7 +111,7 @@ export function PlayerView({
     fullscreenRef.current = fullscreen;
     onBackRef.current = onBack;
     convertedRef.current = { tracks: convertedTracks, onChange: onChangeConvertedTrack };
-  }, [fullscreen, onBack, snapshot]);
+  }, [fullscreen, onBack, snapshot, convertedTracks, onChangeConvertedTrack]);
 
   useEffect(() => {
     document.documentElement.classList.add("native-playing");
