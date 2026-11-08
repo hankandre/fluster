@@ -1560,10 +1560,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "Gateway card queries now send enableImageTypes=Primary,Backdrop,Thumb,Logo (gateway.test.ts asserts it; no playback request changed). Cards and ItemDetail expose logo/thumb ImageRefs with BlurHash, falling back to ParentLogo*/ParentThumb* for episodes (cards.test.ts). pnpm check 1031 tests, lint:boundaries, typecheck:core, e2e 37 passed."
         },
         {
           "id": "P13-06",

@@ -42,7 +42,7 @@ const CARD_FIELDS = "PrimaryImageAspectRatio";
 const CARD_IMAGE_PARAMS = {
   fields: CARD_FIELDS,
   imageTypeLimit: 1,
-  enableImageTypes: "Primary,Backdrop",
+  enableImageTypes: "Primary,Backdrop,Thumb,Logo",
 };
 
 const SEARCH_HINT_LIMIT = 8;

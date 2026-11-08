@@ -14,7 +14,7 @@ export interface LibraryItem {
 
 // Home-screen types. Cards carry only what a row renders.
 
-export type CardImageType = "Primary" | "Backdrop" | "Thumb";
+export type CardImageType = "Primary" | "Backdrop" | "Thumb" | "Logo";
 
 // Identifies one image by item, type, and tag. A tagged image never changes,
 // so this is also the cache key.
@@ -36,6 +36,10 @@ export interface MediaCard {
   image?: ImageRef;
   // Width divided by height of the image.
   aspectRatio: number;
+  // Title logo and 16:9 thumbnail. An episode without its own falls back to
+  // the parent's (series logo, parent thumb).
+  logo?: ImageRef;
+  thumb?: ImageRef;
   // Fraction watched, from 0 to 1. Present only for partly watched items.
   progress?: number;
 }
@@ -229,4 +233,6 @@ export interface ItemDetail {
   chapters?: Chapter[];
   poster?: ImageRef;
   backdrop?: ImageRef;
+  logo?: ImageRef;
+  thumb?: ImageRef;
 }
