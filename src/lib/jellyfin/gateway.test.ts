@@ -490,6 +490,61 @@ describe("JellyfinGateway direct-play contract", () => {
   });
 });
 
+describe("playstate reports carry the plan's play method", () => {
+  const snapshot: PlaybackSnapshot = {
+    positionSeconds: 1,
+    paused: false,
+    buffering: false,
+    volume: 50,
+    muted: false,
+    tracks: [],
+    diagnostics: { decodeMode: "hardware", decodeLabel: "Hardware", droppedFrames: 0 },
+  };
+  const base = {
+    itemId: "item-1",
+    title: "Movie",
+    streamUrl: "https://media.test/video",
+    authorization: 'MediaBrowser Token="secret"',
+    mediaSourceId: "source-1",
+    playSessionId: "play-1",
+    startPositionTicks: 0,
+    tracks: [],
+  };
+  const plans: Array<[string, PlaybackPlan]> = [
+    ["DirectPlay", { ...base, delivery: "static", playMethod: "DirectPlay", conversionReasons: [] }],
+    ["DirectStream", {
+      ...base,
+      delivery: "hls",
+      playMethod: "DirectStream",
+      conversionReasons: ["ContainerNotSupported"],
+      serverUrl: "https://media.test",
+      mediaKind: "videos",
+    }],
+    ["Transcode", {
+      ...base,
+      delivery: "hls",
+      playMethod: "Transcode",
+      conversionReasons: ["VideoCodecNotSupported"],
+      serverUrl: "https://media.test",
+      mediaKind: "videos",
+    }],
+  ];
+
+  it.each(plans)("sends %s in start, progress, and stopped", async (method, plan) => {
+    const { gateway, transport } = await authenticatedGateway();
+    await gateway.reportStart(plan, snapshot);
+    await gateway.reportProgress(plan, snapshot);
+    await gateway.reportStopped(plan, snapshot);
+    const reports = transport.requests.slice(-3);
+    expect(reports.map((request) => request.url)).toEqual([
+      "/Sessions/Playing",
+      "/Sessions/Playing/Progress",
+      "/Sessions/Playing/Stopped",
+    ]);
+    for (const report of reports) expect(report.data).toMatchObject({ PlayMethod: method });
+  });
+});
+
 async function loginWith(installId: string, serverId: string, username: string) {
   const transport = new FakeTransport();
   transport.responses.set("GET /System/Info/Public", { Version: "10.11.0", Id: serverId });

@@ -23,6 +23,7 @@ export type SourceDecision =
     masterUrl: string;
     mediaKind: HlsMediaKind;
     conversionReasons: ConversionReason[];
+    subtitlesBurnedIn: boolean;
   }
   // A disc folder or ISO the server offered for direct play: ask again for
   // this source with EnableDirectPlay false (rule 4).
@@ -105,6 +106,7 @@ function decideConversion(source: IdentifiedSource, transcodingUrl: string, cont
     masterUrl: rebuilt.url,
     mediaKind: rebuilt.kind,
     conversionReasons,
+    subtitlesBurnedIn: param(rebuilt.params, "SubtitleMethod")?.toLowerCase() === "encode",
   };
 }
 

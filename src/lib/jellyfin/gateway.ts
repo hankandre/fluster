@@ -709,6 +709,7 @@ export class JellyfinGateway {
         : decision.masterUrl,
       authorization: this.authorizationHeader(),
       hasSegments: source.HasSegments === true,
+      subtitlesBurnedIn: decision.kind === "convert" && decision.subtitlesBurnedIn,
       playOriginalAvailable: decision.kind === "convert"
         && limitIsOnlyReason(source, decision.conversionReasons, limit),
       tracks: (source.MediaStreams ?? []).flatMap((track) => {
@@ -793,7 +794,8 @@ export class JellyfinGateway {
       AudioStreamIndex: snapshot.audioTrack,
       SubtitleStreamIndex: snapshot.subtitleTrack,
       CanSeek: true,
-      PlayMethod: "DirectPlay",
+      // Jellyfin's PlayMethod enum (SDK 1.0.2 play-method.d.ts): the plan's own.
+      PlayMethod: plan.playMethod,
     }, {
       signal,
       timeout: REPORT_REQUEST_TIMEOUT_MS,

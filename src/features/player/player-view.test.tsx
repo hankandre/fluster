@@ -768,6 +768,52 @@ describe("System media controls", () => {
     });
   });
 
+  describe("conversion indicator", () => {
+    function converted(playMethod: "DirectStream" | "Transcode", reasons: PlaybackPlan["conversionReasons"] & string[], burned = false): PlaybackPlan {
+      return {
+        ...plan(),
+        delivery: "hls",
+        playMethod,
+        conversionReasons: reasons as never,
+        serverUrl: "https://media.test",
+        mediaKind: "videos",
+        subtitlesBurnedIn: burned,
+      } as PlaybackPlan;
+    }
+
+    it("shows nothing for direct play", async () => {
+      const engine = new FakePlayerEngine();
+      await renderPlayer(fakeGateway(), engine);
+      await startPlaying(engine);
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+
+    it("says the server is converting, with the reason and burned-in subtitles", async () => {
+      const engine = new FakePlayerEngine();
+      await renderPlayer(fakeGateway({
+        createPlaybackPlan: vi.fn().mockResolvedValue(converted("Transcode", ["ContainerBitrateExceedsLimit"], true)),
+      }), engine);
+      await startPlaying(engine);
+      const chip = screen.getByRole("status");
+      expect(chip).toHaveTextContent("Converting on server: the file is over your streaming limit");
+      expect(chip).toHaveTextContent("Subtitles are burned in");
+      fireEvent.click(screen.getByRole("button", { name: "Info" }));
+      expect(screen.getByRole("region", { name: "Player information" })).toHaveTextContent("the file is over your streaming limit");
+    });
+
+    it("says the server is repackaging at original quality", async () => {
+      const engine = new FakePlayerEngine();
+      await renderPlayer(fakeGateway({
+        createPlaybackPlan: vi.fn().mockResolvedValue(converted("DirectStream", ["ContainerNotSupported"])),
+      }), engine);
+      await startPlaying(engine);
+      expect(screen.getByRole("status")).toHaveTextContent(
+        "Repackaging on server, original quality: the file format is not supported here",
+      );
+      expect(screen.queryByText("Subtitles are burned in")).not.toBeInTheDocument();
+    });
+  });
+
   it("names a converted plan's play method in player information", async () => {
     const engine = new FakePlayerEngine();
     const converted: PlaybackPlan = {
