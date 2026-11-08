@@ -1,5 +1,5 @@
 use super::*;
-use crate::model::{MediaTrack, PlaybackPlan};
+use crate::model::{Delivery, MediaTrack, PlaybackPlan};
 use pretty_assertions::assert_eq;
 use std::sync::mpsc;
 
@@ -261,6 +261,7 @@ pub(in crate::media_controls) fn plan_with_secrets() -> PlaybackPlan {
         }],
         default_audio_stream_index: None,
         default_subtitle_stream_index: None,
+        delivery: Delivery::Static,
     }
 }
 

@@ -4,7 +4,7 @@ import { redactText } from "../../lib/redact";
 import { TEXT_FIELDS } from "../use-escape-key";
 import type { ReadyPlayerStatus } from "./player-status";
 
-// The plan carries its method since P10-03; P10-06 passes it to the panel.
+// The plan carries its method since P10-03; the player route passes it.
 export type { PlayMethod };
 
 const PLAY_METHOD_LABEL: Record<PlayMethod, string> = {

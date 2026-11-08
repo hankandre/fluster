@@ -3,6 +3,7 @@
 
 use super::fetch::MAX_PLAYLIST_BYTES;
 use super::{HlsError, HlsRequest, HlsSession};
+use crate::model::HlsMediaKind;
 use crate::player::test_http::{
     authorization_lines, listener, paths, serve_routes, Requests, Route,
 };
@@ -28,6 +29,9 @@ pub(super) fn open_with(
         server_url: server,
         master_url: master,
         item_id: item,
+        media_source_id: "m",
+        play_session_id: "p",
+        media_kind: HlsMediaKind::Videos,
         subtitle_urls: subtitles,
         authorization: &authorization,
     })
@@ -305,71 +309,5 @@ fn hls_session_fails_closed_on_credentials_status_and_size() {
             .expect("the session must fail");
         assert_eq!(error, expected);
         assert!(!error.to_string().contains("canary"));
-    }
-}
-
-#[test]
-fn hls_master_urls_follow_the_hls_url_rules() {
-    let origin = "http://192.168.1.5:8096";
-    let good = master_url(origin);
-    for (url, item) in [
-        (good.clone(), "0123456789ABCDEF0123456789ABCDEF"),
-        (
-            good.replace("/videos/", "/Videos/")
-                .replace("master.m3u8", "Master.m3u8"),
-            ITEM,
-        ),
-        (good.replace("/videos/", "/audio/"), ITEM),
-        (
-            good.replace(ITEM, "01234567-89ab-cdef-0123-456789abcdef"),
-            ITEM,
-        ),
-        (
-            good.replace("EnableTrickplay=false", "enabletrickplay=False"),
-            ITEM,
-        ),
-    ] {
-        assert!(
-            super::master_url::validate_master_url(&url, item).is_ok(),
-            "{url}"
-        );
-    }
-    for url in [
-        good.replace("http://192.168.1.5", "http://8.8.8.8"),
-        good.replace("http://", "http://user@"),
-        good.replace("master.m3u8", "main.m3u8"),
-        good.replace("master.m3u8", "x/master.m3u8"),
-        good.replace(ITEM, "fedcba9876543210fedcba9876543210"),
-        good.replace("/videos/", "/Audio/universal/"),
-        good.replace("/videos/", "/items/"),
-        good.replace("&EnableTrickplay=false", ""),
-        good.replace("EnableTrickplay=false", "EnableTrickplay=true"),
-        format!("{good}&EnableTrickplay=false"),
-        format!("{good}&EnableSubtitlesInManifest=false"),
-        format!("{good}&SubtitleMethod=Hls"),
-        format!("{good}&ApiKey=secret"),
-        format!("{good}&api_key=secret"),
-        format!("{good}#fragment"),
-        good.replace("http://", "file://"),
-    ] {
-        let error = open_with(origin, &url, ITEM, &[]).err();
-        assert_eq!(error, Some(HlsError::UnsafeMasterUrl), "{url}");
-    }
-    assert_eq!(
-        open_with(origin, &good, "", &[]).err(),
-        Some(HlsError::UnsafeMasterUrl)
-    );
-    // The master must be on the signed-in server's origin.
-    for server in [
-        "http://192.168.1.6:8096",
-        "https://192.168.1.5:8096",
-        "http://192.168.1.5:8920",
-        "not a url",
-    ] {
-        assert_eq!(
-            open_with(server, &good, ITEM, &[]).err(),
-            Some(HlsError::UnsafeMasterUrl),
-            "{server}"
-        );
     }
 }

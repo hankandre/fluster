@@ -1,0 +1,1685 @@
+{
+  "description": "HLS plans built by src/lib/jellyfin/hls-rust-vectors.test.ts from the recorded conversion fixtures. Rust deserializes each plan and re-checks its master URL (src-tauri/src/player/hls/master_url_tests.rs).",
+  "vectors": [
+    {
+      "name": "10.11.7 h264-force-fallback http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-h264",
+        "title": "Fixture",
+        "mediaSourceId": "item-h264",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "10.11.7 h264-force-fallback https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-h264",
+        "title": "Fixture",
+        "mediaSourceId": "item-h264",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "streamUrl": "https://media.test/jellyfin/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "10.11.7 h264-limited http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-h264",
+        "title": "Fixture",
+        "mediaSourceId": "item-h264",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "ContainerBitrateExceedsLimit"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=72000&AudioBitrate=128000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=ContainerBitrateExceedsLimit&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "10.11.7 h264-limited https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-h264",
+        "title": "Fixture",
+        "mediaSourceId": "item-h264",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "ContainerBitrateExceedsLimit"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "streamUrl": "https://media.test/jellyfin/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=72000&AudioBitrate=128000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=ContainerBitrateExceedsLimit&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "10.11.7 hevc-hdr10-force-fallback http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-hevc",
+        "title": "Fixture",
+        "mediaSourceId": "item-hevc",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-hevc/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-hevc&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-2&hevc-level=93&hevc-videobitdepth=10&hevc-profile=main10&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "720p HEVC HDR",
+            "codec": "hevc",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "10.11.7 hevc-hdr10-force-fallback https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-hevc",
+        "title": "Fixture",
+        "mediaSourceId": "item-hevc",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "streamUrl": "https://media.test/jellyfin/videos/item-hevc/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-hevc&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-2&hevc-level=93&hevc-videobitdepth=10&hevc-profile=main10&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "720p HEVC HDR",
+            "codec": "hevc",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "10.11.7 av1-force-fallback http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-av1",
+        "title": "Fixture",
+        "mediaSourceId": "item-av1",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-av1/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-av1&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-3&av1-level=1&av1-videobitdepth=10&av1-profile=main&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p AV1 SDR",
+            "codec": "av1",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "10.11.7 av1-force-fallback https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-av1",
+        "title": "Fixture",
+        "mediaSourceId": "item-av1",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "streamUrl": "https://media.test/jellyfin/videos/item-av1/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-av1&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-3&av1-level=1&av1-videobitdepth=10&av1-profile=main&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p AV1 SDR",
+            "codec": "av1",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "10.11.7 ass-force-fallback http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-ass",
+        "title": "Fixture",
+        "mediaSourceId": "item-ass",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-ass/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-ass&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-4&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          },
+          {
+            "index": 2,
+            "type": "Subtitle",
+            "displayTitle": "Styled - English - ASS",
+            "codec": "ass",
+            "language": "eng",
+            "external": false,
+            "deliveryUrl": "http://127.0.0.1:8096/Videos/item-ass/item-ass/Subtitles/2/0/Stream.ass"
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "10.11.7 ass-force-fallback https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-ass",
+        "title": "Fixture",
+        "mediaSourceId": "item-ass",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "streamUrl": "https://media.test/jellyfin/videos/item-ass/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-ass&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-4&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          },
+          {
+            "index": 2,
+            "type": "Subtitle",
+            "displayTitle": "Styled - English - ASS",
+            "codec": "ass",
+            "language": "eng",
+            "external": false,
+            "deliveryUrl": "https://media.test/Videos/item-ass/item-ass/Subtitles/2/0/Stream.ass"
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "10.11.7 sidecar-force-fallback http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-sidecar",
+        "title": "Fixture",
+        "mediaSourceId": "item-sidecar",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-sidecar/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-sidecar&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=2&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-5&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Subtitle",
+            "displayTitle": "English - SUBRIP - External",
+            "codec": "subrip",
+            "language": "eng",
+            "external": true,
+            "deliveryUrl": "http://127.0.0.1:8096/Videos/item-sidecar/item-sidecar/Subtitles/0/0/Stream.srt"
+          },
+          {
+            "index": 1,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 2,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 2,
+        "defaultSubtitleStreamIndex": 0
+      }
+    },
+    {
+      "name": "10.11.7 sidecar-force-fallback https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-sidecar",
+        "title": "Fixture",
+        "mediaSourceId": "item-sidecar",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "streamUrl": "https://media.test/jellyfin/videos/item-sidecar/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-sidecar&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=2&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-5&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Subtitle",
+            "displayTitle": "English - SUBRIP - External",
+            "codec": "subrip",
+            "language": "eng",
+            "external": true,
+            "deliveryUrl": "https://media.test/Videos/item-sidecar/item-sidecar/Subtitles/0/0/Stream.srt"
+          },
+          {
+            "index": 1,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 2,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 2,
+        "defaultSubtitleStreamIndex": 0
+      }
+    },
+    {
+      "name": "10.11.7 multitrack-force-fallback http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-multitrack",
+        "title": "Fixture",
+        "mediaSourceId": "item-multitrack",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-multitrack/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-multitrack&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&AudioSampleRate=48000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-6&h264-level=30&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=2&aac-profile=lc&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English stereo - AAC - Default",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          },
+          {
+            "index": 2,
+            "type": "Audio",
+            "displayTitle": "Spanish 5.1 - Dolby Digital",
+            "codec": "ac3",
+            "language": "spa",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "10.11.7 multitrack-force-fallback https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-multitrack",
+        "title": "Fixture",
+        "mediaSourceId": "item-multitrack",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "streamUrl": "https://media.test/jellyfin/videos/item-multitrack/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-multitrack&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&AudioSampleRate=48000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-6&h264-level=30&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=2&aac-profile=lc&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English stereo - AAC - Default",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          },
+          {
+            "index": 2,
+            "type": "Audio",
+            "displayTitle": "Spanish 5.1 - Dolby Digital",
+            "codec": "ac3",
+            "language": "spa",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "10.11.7 dvdsub-force-fallback http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-dvdsub",
+        "title": "Fixture",
+        "mediaSourceId": "item-dvdsub",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-dvdsub/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-dvdsub&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-10&SubtitleMethod=Encode&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          },
+          {
+            "index": 2,
+            "type": "Subtitle",
+            "displayTitle": "English - Default - DVDSUB",
+            "codec": "DVDSUB",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1,
+        "defaultSubtitleStreamIndex": 2
+      }
+    },
+    {
+      "name": "10.11.7 dvdsub-force-fallback https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-dvdsub",
+        "title": "Fixture",
+        "mediaSourceId": "item-dvdsub",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "streamUrl": "https://media.test/jellyfin/videos/item-dvdsub/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-dvdsub&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-10&SubtitleMethod=Encode&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          },
+          {
+            "index": 2,
+            "type": "Subtitle",
+            "displayTitle": "English - Default - DVDSUB",
+            "codec": "DVDSUB",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1,
+        "defaultSubtitleStreamIndex": 2
+      }
+    },
+    {
+      "name": "10.11.7 iso-force-fallback http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-iso",
+        "title": "Fixture",
+        "mediaSourceId": "item-iso",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-iso/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-iso&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-11&h264-level=31&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "720p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - Dolby Digital - Stereo",
+            "codec": "ac3",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "10.11.7 iso-force-fallback https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-iso",
+        "title": "Fixture",
+        "mediaSourceId": "item-iso",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "streamUrl": "https://media.test/jellyfin/videos/item-iso/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-iso&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-11&h264-level=31&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "720p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - Dolby Digital - Stereo",
+            "codec": "ac3",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "10.11.7 bluray-folder http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-bluray",
+        "title": "Fixture",
+        "mediaSourceId": "item-bluray",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-bluray/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-bluray&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&VideoBitrate=999808000&AudioBitrate=192000&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-9&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": []
+      }
+    },
+    {
+      "name": "10.11.7 bluray-folder https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-bluray",
+        "title": "Fixture",
+        "mediaSourceId": "item-bluray",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "streamUrl": "https://media.test/jellyfin/videos/item-bluray/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-bluray&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&VideoBitrate=999808000&AudioBitrate=192000&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-9&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": []
+      }
+    },
+    {
+      "name": "10.11.7 bluray-folder-force-fallback http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-bluray",
+        "title": "Fixture",
+        "mediaSourceId": "item-bluray",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-bluray/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-bluray&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&VideoBitrate=999808000&AudioBitrate=192000&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-9&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": []
+      }
+    },
+    {
+      "name": "10.11.7 bluray-folder-force-fallback https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-bluray",
+        "title": "Fixture",
+        "mediaSourceId": "item-bluray",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "streamUrl": "https://media.test/jellyfin/videos/item-bluray/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-bluray&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&VideoBitrate=999808000&AudioBitrate=192000&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-9&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": []
+      }
+    },
+    {
+      "name": "12.4.0 h264-force-fallback http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-h264",
+        "title": "Fixture",
+        "mediaSourceId": "item-h264",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "AudioCodecNotSupported",
+          "DirectPlayError"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "12.4.0 h264-force-fallback https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-h264",
+        "title": "Fixture",
+        "mediaSourceId": "item-h264",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "AudioCodecNotSupported",
+          "DirectPlayError"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "streamUrl": "https://media.test/jellyfin/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "12.4.0 h264-limited http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-h264",
+        "title": "Fixture",
+        "mediaSourceId": "item-h264",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "AudioCodecNotSupported",
+          "ContainerBitrateExceedsLimit"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=72000&AudioBitrate=128000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CContainerBitrateExceedsLimit&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "12.4.0 h264-limited https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-h264",
+        "title": "Fixture",
+        "mediaSourceId": "item-h264",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "AudioCodecNotSupported",
+          "ContainerBitrateExceedsLimit"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "streamUrl": "https://media.test/jellyfin/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=72000&AudioBitrate=128000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CContainerBitrateExceedsLimit&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "12.4.0 hevc-hdr10-force-fallback http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-hevc",
+        "title": "Fixture",
+        "mediaSourceId": "item-hevc",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "AudioCodecNotSupported",
+          "DirectPlayError"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-hevc/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-hevc&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-2&hevc-level=93&hevc-videobitdepth=10&hevc-profile=main10&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "720p HEVC HDR",
+            "codec": "hevc",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "12.4.0 hevc-hdr10-force-fallback https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-hevc",
+        "title": "Fixture",
+        "mediaSourceId": "item-hevc",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "AudioCodecNotSupported",
+          "DirectPlayError"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "streamUrl": "https://media.test/jellyfin/videos/item-hevc/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-hevc&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-2&hevc-level=93&hevc-videobitdepth=10&hevc-profile=main10&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "720p HEVC HDR",
+            "codec": "hevc",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "12.4.0 av1-force-fallback http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-av1",
+        "title": "Fixture",
+        "mediaSourceId": "item-av1",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "AudioCodecNotSupported",
+          "DirectPlayError"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-av1/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-av1&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-3&av1-level=1&av1-videobitdepth=10&av1-profile=main&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p AV1 SDR",
+            "codec": "av1",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "12.4.0 av1-force-fallback https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-av1",
+        "title": "Fixture",
+        "mediaSourceId": "item-av1",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "AudioCodecNotSupported",
+          "DirectPlayError"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "streamUrl": "https://media.test/jellyfin/videos/item-av1/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-av1&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-3&av1-level=1&av1-videobitdepth=10&av1-profile=main&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p AV1 SDR",
+            "codec": "av1",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "12.4.0 ass-force-fallback http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-ass",
+        "title": "Fixture",
+        "mediaSourceId": "item-ass",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "AudioCodecNotSupported",
+          "DirectPlayError"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-ass/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-ass&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-4&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          },
+          {
+            "index": 2,
+            "type": "Subtitle",
+            "displayTitle": "Styled - English - ASS",
+            "codec": "ass",
+            "language": "eng",
+            "external": false,
+            "deliveryUrl": "http://127.0.0.1:8096/Videos/item-ass/item-ass/Subtitles/2/0/Stream.ass"
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "12.4.0 ass-force-fallback https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-ass",
+        "title": "Fixture",
+        "mediaSourceId": "item-ass",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "AudioCodecNotSupported",
+          "DirectPlayError"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "streamUrl": "https://media.test/jellyfin/videos/item-ass/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-ass&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-4&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          },
+          {
+            "index": 2,
+            "type": "Subtitle",
+            "displayTitle": "Styled - English - ASS",
+            "codec": "ass",
+            "language": "eng",
+            "external": false,
+            "deliveryUrl": "https://media.test/Videos/item-ass/item-ass/Subtitles/2/0/Stream.ass"
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "12.4.0 sidecar-force-fallback http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-sidecar",
+        "title": "Fixture",
+        "mediaSourceId": "item-sidecar",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "AudioCodecNotSupported",
+          "DirectPlayError"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-sidecar/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-sidecar&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=2&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-5&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Subtitle",
+            "displayTitle": "English - SUBRIP - External",
+            "codec": "subrip",
+            "language": "eng",
+            "external": true,
+            "deliveryUrl": "http://127.0.0.1:8096/Videos/item-sidecar/item-sidecar/Subtitles/0/0/Stream.srt"
+          },
+          {
+            "index": 1,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 2,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 2,
+        "defaultSubtitleStreamIndex": 0
+      }
+    },
+    {
+      "name": "12.4.0 sidecar-force-fallback https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-sidecar",
+        "title": "Fixture",
+        "mediaSourceId": "item-sidecar",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "AudioCodecNotSupported",
+          "DirectPlayError"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "streamUrl": "https://media.test/jellyfin/videos/item-sidecar/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-sidecar&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=2&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-5&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Subtitle",
+            "displayTitle": "English - SUBRIP - External",
+            "codec": "subrip",
+            "language": "eng",
+            "external": true,
+            "deliveryUrl": "https://media.test/Videos/item-sidecar/item-sidecar/Subtitles/0/0/Stream.srt"
+          },
+          {
+            "index": 1,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 2,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 2,
+        "defaultSubtitleStreamIndex": 0
+      }
+    },
+    {
+      "name": "12.4.0 multitrack-force-fallback http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-multitrack",
+        "title": "Fixture",
+        "mediaSourceId": "item-multitrack",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-multitrack/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-multitrack&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&AudioSampleRate=48000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-6&h264-level=30&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=2&aac-profile=lc&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English stereo - AAC - Default",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          },
+          {
+            "index": 2,
+            "type": "Audio",
+            "displayTitle": "Spanish 5.1 - Dolby Digital",
+            "codec": "ac3",
+            "language": "spa",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "12.4.0 multitrack-force-fallback https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-multitrack",
+        "title": "Fixture",
+        "mediaSourceId": "item-multitrack",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "streamUrl": "https://media.test/jellyfin/videos/item-multitrack/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-multitrack&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&AudioSampleRate=48000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-6&h264-level=30&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=2&aac-profile=lc&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English stereo - AAC - Default",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          },
+          {
+            "index": 2,
+            "type": "Audio",
+            "displayTitle": "Spanish 5.1 - Dolby Digital",
+            "codec": "ac3",
+            "language": "spa",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "12.4.0 dvdsub-force-fallback http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-dvdsub",
+        "title": "Fixture",
+        "mediaSourceId": "item-dvdsub",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "AudioCodecNotSupported",
+          "DirectPlayError"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-dvdsub/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-dvdsub&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-10&SubtitleMethod=Encode&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          },
+          {
+            "index": 2,
+            "type": "Subtitle",
+            "displayTitle": "English - Default - DVDSUB",
+            "codec": "DVDSUB",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1,
+        "defaultSubtitleStreamIndex": 2
+      }
+    },
+    {
+      "name": "12.4.0 dvdsub-force-fallback https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-dvdsub",
+        "title": "Fixture",
+        "mediaSourceId": "item-dvdsub",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "AudioCodecNotSupported",
+          "DirectPlayError"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "streamUrl": "https://media.test/jellyfin/videos/item-dvdsub/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-dvdsub&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-10&SubtitleMethod=Encode&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false
+          },
+          {
+            "index": 2,
+            "type": "Subtitle",
+            "displayTitle": "English - Default - DVDSUB",
+            "codec": "DVDSUB",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1,
+        "defaultSubtitleStreamIndex": 2
+      }
+    },
+    {
+      "name": "12.4.0 iso-force-fallback http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-iso",
+        "title": "Fixture",
+        "mediaSourceId": "item-iso",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "AudioCodecNotSupported",
+          "DirectPlayError"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-iso/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-iso&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-9&h264-level=31&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "720p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - Dolby Digital - Stereo",
+            "codec": "ac3",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "12.4.0 iso-force-fallback https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-iso",
+        "title": "Fixture",
+        "mediaSourceId": "item-iso",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "AudioCodecNotSupported",
+          "DirectPlayError"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "streamUrl": "https://media.test/jellyfin/videos/item-iso/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-iso&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-9&h264-level=31&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "720p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - Dolby Digital - Stereo",
+            "codec": "ac3",
+            "language": "eng",
+            "external": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "12.4.0 bluray-folder http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-bluray",
+        "title": "Fixture",
+        "mediaSourceId": "item-bluray",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-bluray/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-bluray&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&VideoBitrate=999808000&AudioBitrate=192000&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-9&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": []
+      }
+    },
+    {
+      "name": "12.4.0 bluray-folder https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-bluray",
+        "title": "Fixture",
+        "mediaSourceId": "item-bluray",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "streamUrl": "https://media.test/jellyfin/videos/item-bluray/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-bluray&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&VideoBitrate=999808000&AudioBitrate=192000&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-9&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": []
+      }
+    },
+    {
+      "name": "12.4.0 bluray-folder-force-fallback http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-bluray",
+        "title": "Fixture",
+        "mediaSourceId": "item-bluray",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-bluray/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-bluray&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&VideoBitrate=999808000&AudioBitrate=192000&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-9&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": []
+      }
+    },
+    {
+      "name": "12.4.0 bluray-folder-force-fallback https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-bluray",
+        "title": "Fixture",
+        "mediaSourceId": "item-bluray",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "streamUrl": "https://media.test/jellyfin/videos/item-bluray/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-bluray&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&VideoBitrate=999808000&AudioBitrate=192000&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-9&EnableTrickplay=false",
+        "hasSegments": false,
+        "playOriginalAvailable": false,
+        "tracks": []
+      }
+    }
+  ]
+}

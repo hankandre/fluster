@@ -3,9 +3,9 @@
 //! demuxer only, and mpv fetches the segments from the server itself with
 //! the header (decision 0002 E1-B, P10-01).
 
-use super::hls::{hls_player, hls_player_with, server_routes, Network, PLAYLIST};
+use super::hls::{hls_player, server_routes, Network, PLAYLIST};
 use super::*;
-use crate::model::MediaTrack;
+use crate::model::{HlsMediaKind, MediaTrack};
 use crate::player::hls::{HlsRequest, HlsSession};
 use crate::player::network::{allow_subtitle_formats, load_validated_hls};
 use crate::player::test_http::{paths, serve_routes, Route};
@@ -23,6 +23,9 @@ fn open_session(origin: &str, routes_master: &str, subtitles: &[String]) -> HlsS
         server_url: origin,
         master_url: routes_master,
         item_id: ITEM,
+        media_source_id: "m",
+        play_session_id: "p",
+        media_kind: HlsMediaKind::Videos,
         subtitle_urls: subtitles,
         authorization: &authorization,
     })
@@ -83,7 +86,7 @@ fn master_route() -> (String, Route) {
 
 fn master_url(origin: &str) -> String {
     format!(
-        "{origin}{}/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+        "{origin}{}/master.m3u8?MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
         videos()
     )
 }
@@ -265,55 +268,4 @@ fn hls_loopback_subtitles_load_on_an_hls_handle() {
         .filter(|path| path.contains("Subtitles"))
         .collect();
     assert_eq!(subtitle_fetches.len(), 1, "{subtitle_fetches:?}");
-}
-
-/// Acceptance 6 (P10-01). `FLUSTER_HLS_SESSION_FILE` names a private JSON
-/// file `{ "masterUrl", "itemId", "authorization" }` and optionally
-/// `"serverUrl"` (default: the master URL's origin): a `master.m3u8` URL
-/// rebuilt from a recorded `TranscodingUrl` with every credential removed
-/// and `EnableTrickplay=false`. Plays to the first video frame with the
-/// header only, on a fixture server.
-#[test]
-#[ignore = "needs a live Jellyfin fixture server"]
-fn live_fixture_hls_session_plays_to_first_frame() {
-    let path = std::env::var("FLUSTER_HLS_SESSION_FILE").expect("set FLUSTER_HLS_SESSION_FILE");
-    let json: serde_json::Value =
-        serde_json::from_str(&std::fs::read_to_string(path).expect("read the session file"))
-            .expect("JSON");
-    let field = |name: &str| json[name].as_str().expect(name).to_string();
-    let authorization =
-        MediaBrowserAuthorization::parse(&field("authorization")).expect("a MediaBrowser header");
-    let master_url = field("masterUrl");
-    let server_url = json["serverUrl"]
-        .as_str()
-        .map(str::to_string)
-        .unwrap_or_else(|| {
-            url::Url::parse(&master_url)
-                .expect("master URL")
-                .origin()
-                .ascii_serialization()
-        });
-    let session = HlsSession::open(&HlsRequest {
-        server_url: &server_url,
-        master_url: &master_url,
-        item_id: &field("itemId"),
-        subtitle_urls: &[],
-        authorization: &authorization,
-    })
-    .expect("the server's playlists pass validation");
-    let Some(mut mpv) = hls_player_with(Network::Production, &authorization) else {
-        return;
-    };
-    load_validated_hls(&mpv, &session).expect("loadfile");
-    assert!(matches!(
-        wait_for(&mut mpv, |event| matches!(event, Event::PlaybackRestart)),
-        LoadOutcome::Loaded
-    ));
-    let width: i64 = mpv
-        .get_property("video-params/w")
-        .expect("a decoded video frame");
-    let codec: String = mpv.get_property("video-codec").unwrap_or_default();
-    let format: String = mpv.get_property("file-format").unwrap_or_default();
-    eprintln!("live hls first frame: width {width}, codec {codec}, file-format {format}");
-    assert!(width > 0);
 }

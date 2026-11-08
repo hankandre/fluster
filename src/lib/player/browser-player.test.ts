@@ -14,6 +14,8 @@ const plan: PlaybackPlan = {
   delivery: "hls",
   playMethod: "Transcode",
   conversionReasons: ["ContainerBitrateExceedsLimit"],
+  serverUrl: "https://media.test",
+  mediaKind: "videos",
 };
 
 afterEach(() => document.body.replaceChildren());

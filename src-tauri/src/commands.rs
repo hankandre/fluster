@@ -14,14 +14,19 @@ pub(crate) fn initialize_player(
     controller.capabilities().map_err(|error| error.to_string())
 }
 
+/// Runs off the main thread: a converted launch fetches and checks every
+/// playlist before it starts (up to 20 s per request), and the surface
+/// attach still runs on the GTK thread through `run_on_main_thread`.
 #[tauri::command]
-pub(crate) fn launch_playback(
+pub(crate) async fn launch_playback(
     app: tauri::AppHandle,
     controller: State<'_, MpvController>,
     request: LaunchRequest,
 ) -> Result<(), String> {
-    controller
-        .launch(app, request)
+    let controller = controller.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || controller.launch(app, request))
+        .await
+        .map_err(|_| "The player launch task did not finish.".to_string())?
         .map_err(|error| error.to_string())
 }
 

@@ -1,9 +1,7 @@
 //! Session lifecycle: launch, typed playback commands, and shutdown.
 
 use super::events::run_event_loop;
-use super::network::{
-    harden_network_options, set_media_authorization, validate_playback_urls, MediaDelivery,
-};
+use super::media::LaunchMedia;
 use super::properties::observe_properties;
 use super::version::{ensure_numeric_locale, query_libmpv_version};
 use super::{native_trace, MpvError};
@@ -128,7 +126,6 @@ impl MpvController {
         {
             return Err(MpvError::InvalidPlan);
         }
-        validate_playback_urls(&request)?;
         self.capabilities()?;
         {
             let session = self.inner.session.lock().expect("session mutex poisoned");
@@ -136,6 +133,9 @@ impl MpvController {
                 return Err(MpvError::AlreadyPlaying);
             }
         }
+        // For HLS this fetches and checks every playlist before any handle
+        // exists; the session's loopback server lives as long as `media`.
+        let media = Arc::new(LaunchMedia::prepare(&request)?);
 
         // GTK initializes its locale after application startup and may replace
         // LC_NUMERIC with the desktop locale. libmpv requires this category to
@@ -154,9 +154,7 @@ impl MpvController {
             // Only the subtitles Fluster adds may appear as external tracks,
             // so their add order identifies them (see `tracks.rs`).
             init.set_option("autoload-files", false)?;
-            harden_network_options(&init, MediaDelivery::Static)?;
-            set_media_authorization(&init, &request.authorization)?;
-            Ok(())
+            media.configure(&init, &request)
         })
         .map_err(|error| MpvError::Initialize(safe_error(error)))?;
         let mpv = Arc::new(Mutex::new(mpv));
@@ -192,7 +190,8 @@ impl MpvController {
         let app_for_events = app.clone();
         let plan = request.plan.clone();
         let event_session_id = session_id.clone();
-        let media = self.media();
+        let media_controls = self.media();
+        let event_media = media.clone();
         thread::Builder::new()
             .name("fluster-mpv-events".into())
             .spawn(move || {
@@ -201,11 +200,14 @@ impl MpvController {
                         &app_for_events,
                         &mut event_client,
                         &plan,
-                        &media,
+                        &event_media,
+                        &media_controls,
                         video_loaded,
                         finished,
                     );
                     drop(event_client);
+                    // Closes an HLS session's loopback server.
+                    drop(event_media);
                 }));
                 if event_result.is_err() {
                     native_trace("libmpv event thread panicked; forcing finalization");
@@ -223,10 +225,8 @@ impl MpvController {
                 MpvError::Initialize(safe_error(error))
             })?;
 
-        let result = mpv
-            .lock()
-            .expect("libmpv mutex poisoned")
-            .command("loadfile", &[&request.plan.stream_url, "replace"])
+        let result = media
+            .load(&mpv.lock().expect("libmpv mutex poisoned"))
             .map_err(|error| MpvError::Command(safe_error(error)));
         if result.is_err() {
             self.request_finish(&app, &session_id);

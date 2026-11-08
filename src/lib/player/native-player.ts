@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import {
-  UnsupportedDeliveryError,
+  PlaybackRefusedError,
   type PlayerCapabilities,
   type PlaybackPlan,
   type PlayerEngine,
@@ -9,8 +9,11 @@ import {
   type PlayerSurfaceFrame,
 } from "../../domain/playback";
 
-export const NATIVE_HLS_UNSUPPORTED_MESSAGE =
-  "This item needs a server conversion, and the desktop player cannot play converted streams yet.";
+// Rust starts every refusal of a converted stream with this text
+// (`MpvError::UnsafeConversion`, src-tauri/src/player/mod.rs): the master URL
+// broke the HLS URL rules, or a playlist or subtitle failed Rust's checks.
+// The rest of the message is fixed text and never names a URL or a body.
+export const UNSAFE_CONVERSION_PREFIX = "Fluster refused the converted stream:";
 
 export function isTauriRuntime(): boolean {
   return "__TAURI_INTERNALS__" in window;
@@ -32,15 +35,18 @@ export class NativePlayerEngine implements PlayerEngine {
   }
 
   // The header travels as its own typed LaunchRequest field, so Rust can
-  // validate it and give it to libmpv as a fixed HTTP header.
-  // Until P10-04 wires the typed HLS path, only static plans reach Rust: an
-  // hls plan is refused here, before any invoke.
+  // validate it and give it to libmpv as a fixed HTTP header. The plan's
+  // typed `delivery` field picks Rust's static or HLS path (P10-04).
   async launch(plan: PlaybackPlan): Promise<void> {
-    if (plan.delivery !== "static") {
-      throw new UnsupportedDeliveryError("native", plan.delivery, NATIVE_HLS_UNSUPPORTED_MESSAGE);
-    }
     const { authorization, ...launchPlan } = plan;
-    await invoke("launch_playback", { request: { plan: launchPlan, authorization, testForceSoftware: false } });
+    try {
+      await invoke("launch_playback", { request: { plan: launchPlan, authorization, testForceSoftware: false } });
+    } catch (error) {
+      if (typeof error === "string" && error.startsWith(UNSAFE_CONVERSION_PREFIX)) {
+        throw new PlaybackRefusedError({ reason: "unsafe-transcoding-url", detail: "converted stream checks" });
+      }
+      throw error;
+    }
   }
 
   setPaused(paused: boolean): Promise<void> {

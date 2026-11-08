@@ -690,7 +690,13 @@ export class JellyfinGateway {
     const source = decision.source;
     const delivery: PlaybackDelivery = decision.kind === "direct-play"
       ? { delivery: "static", playMethod: "DirectPlay", conversionReasons: [] }
-      : { delivery: "hls", playMethod: decision.playMethod, conversionReasons: decision.conversionReasons };
+      : {
+        delivery: "hls",
+        playMethod: decision.playMethod,
+        conversionReasons: decision.conversionReasons,
+        serverUrl: this.serverUrl,
+        mediaKind: decision.mediaKind,
+      };
     return {
       itemId: item.id,
       title: item.seriesName ? `${item.seriesName} — ${item.name}` : item.name,

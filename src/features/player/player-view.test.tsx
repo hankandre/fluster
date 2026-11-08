@@ -681,6 +681,8 @@ describe("System media controls", () => {
         delivery: "hls",
         playMethod: "Transcode",
         conversionReasons: ["ContainerBitrateExceedsLimit"],
+        serverUrl: "https://media.test",
+        mediaKind: "videos",
         playOriginalAvailable: available,
       };
     }
@@ -764,5 +766,22 @@ describe("System media controls", () => {
       await waitFor(() => expect(next.launch).toHaveBeenCalled());
       expect(vi.mocked(gateway.createPlaybackPlan).mock.calls[2][4]).toEqual({ ignoreStreamingLimit: false });
     });
+  });
+
+  it("names a converted plan's play method in player information", async () => {
+    const engine = new FakePlayerEngine();
+    const converted: PlaybackPlan = {
+      ...plan(),
+      streamUrl: "https://media.test/videos/m1/master.m3u8?MediaSourceId=src-hd&EnableTrickplay=false",
+      delivery: "hls",
+      playMethod: "Transcode",
+      conversionReasons: ["ContainerBitrateExceedsLimit"],
+      serverUrl: "https://media.test",
+      mediaKind: "videos",
+    };
+    await renderPlayer(fakeGateway({ createPlaybackPlan: vi.fn().mockResolvedValue(converted) }), engine);
+    await startPlaying(engine);
+    fireEvent.click(screen.getByRole("button", { name: "Info" }));
+    expect(screen.getByRole("region", { name: "Player information" })).toHaveTextContent("Transcode");
   });
 });
