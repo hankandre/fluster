@@ -311,6 +311,13 @@ describe("play actions", () => {
     expect(screen.queryByRole("link", { name: "Play" })).not.toBeInTheDocument();
   });
 
+  it("opens the player and marks the entry as opened from this detail view", async () => {
+    await renderDetail(fakeGateway());
+    await userEvent.click(await screen.findByRole("link", { name: "Play" }));
+    expect(window.location.hash).toBe("#/next/play/m1?source=src-4k");
+    expect(window.history.state).toEqual({ playerFromDetail: "m1" });
+  });
+
   it("does not offer Resume for a played item", async () => {
     const userData = { played: true, favorite: false, resumePositionTicks: 7_540_000_000 };
     await renderDetail(fakeGateway({ itemDetail: vi.fn().mockResolvedValue(detail({ userData })) }));

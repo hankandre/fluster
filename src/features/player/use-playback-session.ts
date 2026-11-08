@@ -39,8 +39,18 @@ function errorText(error: unknown): string {
 
 interface ActiveSession {
   coordinator: PlaybackCoordinator;
-  // Set once someone owns teardown, so unmounting does not stop twice.
+  // Set once start() runs. A session that never started has nothing to stop.
+  started: boolean;
+  // Set once Back, close, or unmount owns teardown. A stopping session never
+  // starts, and unmounting does not stop it twice.
   stopping: boolean;
+}
+
+// Stops the session, or only marks it stopping when it never started.
+function stopSession(engine: PlayerEngine, active: ActiveSession): Promise<void> {
+  active.stopping = true;
+  if (!active.started) return Promise.resolve();
+  return rememberStop(engine, active.coordinator.stop());
 }
 
 export interface PlaybackSessionOptions {
@@ -103,7 +113,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
         if (mounted && reason !== "error") leave();
       },
     });
-    const active: ActiveSession = { coordinator, stopping: false };
+    const active: ActiveSession = { coordinator, started: false, stopping: false };
     session.current = active;
     dispatch({ type: "reset" });
     setRefusal(undefined);
@@ -113,15 +123,16 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
       : startOverChoice();
     const previousStop = pendingStops.get(engine) ?? Promise.resolve();
     void previousStop.then(() => {
-      if (!mounted) return;
+      // Back or close may have come while the previous stop was running.
+      if (!mounted || active.stopping || session.current !== active) return;
+      active.started = true;
       coordinator.start(item, choice).catch((error: unknown) => {
         if (mounted) handleFailure(error);
       });
     });
 
     const unwatchClose = watchWindowClose?.(async () => {
-      active.stopping = true;
-      await rememberStop(engine, coordinator.stop());
+      await stopSession(engine, active);
       await coordinator.flush();
     });
 
@@ -129,10 +140,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
       mounted = false;
       unwatchClose?.();
       if (session.current === active) session.current = undefined;
-      if (!active.stopping) {
-        active.stopping = true;
-        void rememberStop(engine, coordinator.stop()).catch(() => undefined);
-      }
+      if (!active.stopping) void stopSession(engine, active).catch(() => undefined);
     };
   }, [gateway, engine, watchWindowClose, item, mediaSourceId, startTicks, leave, handleFailure]);
 
@@ -153,9 +161,8 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
   const back = useCallback(async () => {
     const active = session.current;
     if (!active) return;
-    active.stopping = true;
     try {
-      await rememberStop(engine, active.coordinator.stop());
+      await stopSession(engine, active);
     } catch (error) {
       active.stopping = false;
       dispatch({ type: "failure", message: errorText(error) });

@@ -6,7 +6,7 @@ import { PlayerView } from "../../components/PlayerView";
 import type { ItemDetail } from "../../domain/catalog";
 import { detailKey } from "../detail/detail-key";
 import { refreshHomeRows } from "../home";
-import { itemRoute, type PlayRoute } from "../routes";
+import { itemRoute, leavePlayer, type PlayRoute } from "../routes";
 import { toPlayableItem } from "./playable-item";
 import { usePlaybackSession } from "./use-playback-session";
 
@@ -23,8 +23,8 @@ export function PlayerFeatureView() {
   );
 }
 
-// #/next/play/<itemId>: loads the item, then plays it. Leaving replaces this
-// history entry with the item's detail view.
+// #/next/play/<itemId>: loads the item, then plays it. Leaving returns to the
+// item's detail view (see leavePlayer).
 export function PlayerRouteView(route: PlayRoute) {
   const { gateway } = useSession();
   const player = usePlayerServices();
@@ -85,7 +85,7 @@ function PlaybackScreen({ gateway, player, route, detail }: {
       void queryClient.invalidateQueries({ queryKey: detailKey(gateway, route.itemId) });
       void refreshHomeRows(queryClient);
     },
-    onLeave: () => window.location.replace(itemRoute(route.itemId)),
+    onLeave: () => leavePlayer(route.itemId),
   });
 
   if (playback.refusal) {
