@@ -1301,10 +1301,10 @@
             "The existing sabotage cases still fail for playable samples; docs/validation.md and tests/samples/README.md describe the new rules"
           ],
           "verify": "pnpm test:tripwire",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "opus",
           "passes": false,
-          "evidence": ""
+          "evidence": "BluRay live.m3u8 was a fixture defect (no MPLS, so no RunTimeTicks; DynamicHlsHelper/EncodingJobInfo.IsSegmentedLiveStream): generate-samples.sh now writes PLAYLIST/00000.mpls and CLIPINF/00000.clpi (BDInfo 0.8.0 layout) and both fixtures serve a VOD main.m3u8. Tripwire rewritten (tripwire-rules/-hls/-static/-report.ts; 40 rule tests incl. sabotage: playable sample that converts, credential param, EnableTrickplay!=false, cross-origin, leftover job, method disagreement); CI generates dvdsub+ISO on the host and the tripwire is required via linux-wayland-beta.\nLocal run (FLUSTER_CONVERSION_SAMPLES=1, 10.11.7 and 12.4.0): 11 playable samples PASS; h264-limited CONVERTED (Transcode, ContainerBitrateExceedsLimit, /Sessions Transcode, IsVideo/AudioDirect false, job gone 1.5 s after stop); bluray-noconv conversion-not-allowed with no request or job; BluRay and ISO pass HLS, reason, and job rules.\nBLOCKER acceptance 5: BluRay and ISO plans say Transcode but both servers copy video and audio (TranscodingInfo IsVideoDirect=IsAudioDirect=true, FFmpeg.Remux logs), so the tripwire fails; needs a reviewed DirectStream rule change in source-acceptance.ts or a human acceptance decision (plan 002 decision log). pnpm check exit 0 (1095 Vitest, Rust 173), test:e2e 38 passed, lint:boundaries clean."
         },
         {
           "id": "P10-10",
