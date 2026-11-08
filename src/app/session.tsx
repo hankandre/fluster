@@ -1,7 +1,7 @@
 import type { BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, NextEpisode, LibraryItem, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season } from "../domain/catalog";
 import type { MediaSegment } from "../domain/media-segments";
 import type { HostClass } from "../domain/host-class";
-import type { PlaybackPlan, PlaybackPlanOptions, PlaybackSnapshot } from "../domain/playback";
+import type { PlaybackPlan, PlaybackPlanOptions, PlaybackSnapshot, ServerPlayMethod } from "../domain/playback";
 import type { RealtimeConnection, ServerEvent } from "../domain/realtime";
 import type { ServerConnection } from "../domain/server-connection";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -46,6 +46,8 @@ export interface SessionGateway {
   reportStopped(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal, failed?: boolean): Promise<void>;
   // Stops the server's conversion for one play session. Never log the id.
   stopActiveEncoding(playSessionId: string, signal?: AbortSignal): Promise<void>;
+  // The server session's view of a running conversion (copy or encode).
+  sessionPlayMethod(plan: Pick<PlaybackPlan, "itemId" | "mediaSourceId">, signal?: AbortSignal): Promise<ServerPlayMethod | undefined>;
   // Only for opening the server socket. Never log or store it.
   authorizationHeader(): string;
 }

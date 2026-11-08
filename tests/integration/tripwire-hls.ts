@@ -4,8 +4,10 @@
 // with the same header, and the coordinator reports start once the file has
 // loaded. Every request goes through checkHlsRequest before it is sent, and
 // every playlist body through findCredentialInBody.
-import type { PlaybackPlan, PlaybackSnapshot } from "../../src/domain/playback";
+import type { PlaybackPlan, PlaybackSnapshot, ServerPlayMethod } from "../../src/domain/playback";
 import type { JellyfinGateway } from "../../src/lib/jellyfin/gateway";
+import { confirmedPlan } from "../../src/lib/player/confirm-play-method";
+import { PLAY_METHOD_CHECKS_MS } from "../../src/lib/player/coordinator";
 import { countFfmpeg, sleep } from "./tripwire-container";
 import { checkHlsRequest, findCredentialInBody, playlistUris, type AfterStopObservation, type FailureKind } from "./tripwire-rules";
 import { countTranscodingSessions, type MonitorClient } from "./tripwire-server";
@@ -33,6 +35,13 @@ export interface HlsContext {
 }
 
 export interface HlsOutcome {
+  // The plan after the app's own server check (PlaybackCoordinator asks
+  // gateway.sessionPlayMethod after the first frame), or the negotiated plan
+  // when the server never answered.
+  confirmed: PlaybackPlan;
+  server?: ServerPlayMethod;
+  // When the first report carrying the confirmed method was sent.
+  confirmedAt: number;
   // "ok", or what failed and that DELETE /Videos/ActiveEncodings followed.
   stoppedReport: string;
   afterStop: AfterStopObservation[];
@@ -42,6 +51,9 @@ export interface HlsOutcome {
 export const JOB_GONE_DEADLINE_MS = 10_000;
 const AFTER_STOP_POLL_MS = 1000;
 const PLAYBACK_HOLD_MS = 1500;
+// After the app's first check, polled each second for up to 10 s more.
+const CONFIRM_DEADLINE_MS = 10_000;
+const CONFIRM_POLL_MS = 1000;
 // Never read more than this from one response; the fixture segments are small.
 const MAX_BODY_BYTES = 64 * 1024 * 1024;
 
@@ -116,16 +128,31 @@ export async function playConversion(ctx: HlsContext): Promise<HlsOutcome> {
   for (const uri of media.slice(0, firstReads)) await hlsGet(ctx, uri);
   await gateway.reportStart(plan, snapshot(0));
   for (const uri of media.slice(firstReads)) await hlsGet(ctx, uri);
-  await gateway.reportProgress(plan, snapshot(5));
+
+  // The play-method check the coordinator runs after the first frame: the
+  // same gateway call and the same rule. Later reports carry its answer.
+  // The app asks 3 s after the first frame; waiting as long also gives the
+  // independent /Sessions watcher time to see the job's TranscodingInfo
+  // before a confirmed DirectStream report makes the server drop it.
+  await sleep(PLAY_METHOD_CHECKS_MS[0]);
+  const askedAt = Date.now();
+  let server: ServerPlayMethod | undefined;
+  while (!server && Date.now() - askedAt < CONFIRM_DEADLINE_MS) {
+    server = await gateway.sessionPlayMethod(plan).catch(() => undefined);
+    if (!server) await sleep(CONFIRM_POLL_MS);
+  }
+  const confirmed = (server && confirmedPlan(plan, server)) || plan;
+  const confirmedAt = Date.now();
+  await gateway.reportProgress(confirmed, snapshot(5));
   await sleep(PLAYBACK_HOLD_MS);
-  await gateway.reportProgress(plan, snapshot(6, true));
+  await gateway.reportProgress(confirmed, snapshot(6, true));
 
   // The PlaystateReporter path: a stopped report, and one DELETE
   // /Videos/ActiveEncodings when it fails or times out (P10-07).
   const stoppedAt = Date.now();
   let stoppedReport = "ok";
   try {
-    await gateway.reportStopped(plan, snapshot(10));
+    await gateway.reportStopped(confirmed, snapshot(10));
   } catch (error) {
     stoppedReport = `failed (${error instanceof Error ? error.name : "error"}); DELETE /Videos/ActiveEncodings sent`;
     await gateway.stopActiveEncoding(plan.playSessionId).catch((deleteError: unknown) => {
@@ -145,5 +172,5 @@ export async function playConversion(ctx: HlsContext): Promise<HlsOutcome> {
     if (msAfterStop >= JOB_GONE_DEADLINE_MS) break;
     await sleep(Math.min(AFTER_STOP_POLL_MS, JOB_GONE_DEADLINE_MS - msAfterStop));
   }
-  return { stoppedReport, afterStop };
+  return { confirmed, server, confirmedAt, stoppedReport, afterStop };
 }

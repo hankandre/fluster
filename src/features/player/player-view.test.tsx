@@ -859,6 +859,50 @@ describe("System media controls", () => {
       expect(screen.getByRole("region", { name: "Player information" })).toHaveTextContent("the file is over your streaming limit");
     });
 
+    describe("server confirmation", () => {
+      beforeEach(() => {
+        vi.useFakeTimers({ shouldAdvanceTime: true });
+      });
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      it("switches to original quality only when the server says it copies", async () => {
+        const engine = new FakePlayerEngine();
+        const gateway = fakeGateway({
+          createPlaybackPlan: vi.fn().mockResolvedValue(converted("Transcode", [])),
+          sessionPlayMethod: vi.fn().mockResolvedValue({ playMethod: "Transcode", videoDirect: true, audioDirect: true, reasons: ["DirectPlayError"] }),
+        });
+        await renderPlayer(gateway, engine);
+        await startPlaying(engine);
+        expect(screen.getByRole("status")).toHaveTextContent("Converting on server: the server needs to convert this file");
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(3_000);
+        });
+        await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(
+          "Repackaging on server, original quality: playing the original file failed",
+        ));
+        fireEvent.click(screen.getByRole("button", { name: "Info" }));
+        expect(screen.getByRole("region", { name: "Player information" })).toHaveTextContent("Direct stream");
+        expect(gateway.sessionPlayMethod).toHaveBeenCalledWith(expect.objectContaining({ itemId: "m1" }), expect.any(AbortSignal));
+      });
+
+      it("keeps Converting when the server cannot be asked", async () => {
+        const engine = new FakePlayerEngine();
+        const gateway = fakeGateway({
+          createPlaybackPlan: vi.fn().mockResolvedValue(converted("Transcode", ["DirectPlayError"])),
+          sessionPlayMethod: vi.fn().mockRejectedValue(new Error("offline")),
+        });
+        await renderPlayer(gateway, engine);
+        await startPlaying(engine);
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(11_000);
+        });
+        expect(gateway.sessionPlayMethod).toHaveBeenCalledTimes(2);
+        expect(screen.getByRole("status")).toHaveTextContent("Converting on server: playing the original file failed");
+      });
+    });
+
     it("says the server is repackaging at original quality", async () => {
       const engine = new FakePlayerEngine();
       await renderPlayer(fakeGateway({

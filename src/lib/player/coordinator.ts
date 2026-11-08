@@ -6,11 +6,17 @@ import type {
   PlaybackStartChoice,
   PlayerEngine,
   PlayerEvent,
+  ServerPlayMethod,
   StreamSelection,
 } from "../../domain/playback";
 import { startOverChoice } from "../../domain/playback";
 import { redactError, redactText } from "../redact";
+import { confirmedPlan } from "./confirm-play-method";
 import { PlaystateReporter, type PlaystateGateway } from "./playstate-reporter";
+
+// When a converted session asks the server what it really does: 3 s after
+// the first frame, and once more at 10 s if the server had no answer yet.
+export const PLAY_METHOD_CHECKS_MS = [3_000, 10_000] as const;
 
 // The version and streams a renegotiation asks for. The server applies the
 // stream indices only to the source named by mediaSourceId.
@@ -26,6 +32,9 @@ export interface PlaybackGateway extends PlaystateGateway {
     signal?: AbortSignal,
     selection?: PlaybackSelection,
   ): Promise<PlaybackPlan>;
+  // The server session's view of a running conversion. Without it a
+  // converted plan keeps its provisional label.
+  sessionPlayMethod?(plan: Pick<PlaybackPlan, "itemId" | "mediaSourceId">, signal?: AbortSignal): Promise<ServerPlayMethod | undefined>;
 }
 
 type RestartReason = "retry" | "renegotiate";
@@ -34,6 +43,8 @@ export interface CoordinatorCallbacks {
   onEvent(event: PlayerEvent): void;
   onReportingError(message: string): void;
   onSessionEnded?(reason: PlaybackEndReason): void;
+  // A converted session's plan after the server confirmed copy or encode.
+  onPlanConfirmed?(plan: PlaybackPlan): void;
 }
 
 export class PlaybackCancelledError extends Error {
@@ -65,6 +76,8 @@ export class PlaybackCoordinator {
   private finishTask?: Promise<void>;
   private requestedStopReason?: RestartReason | "stopped";
   private eventQueue: Promise<void> = Promise.resolve();
+  // The current attempt's play-method check; aborted when the attempt ends.
+  private confirmController?: AbortController;
   private readonly reporter: PlaystateReporter;
 
   constructor(
@@ -283,7 +296,7 @@ export class PlaybackCoordinator {
 
     switch (event.kind) {
       case "loaded":
-        this.reporter.start(plan, event.snapshot, () => this.snapshot);
+        this.reporter.start(plan, event.snapshot, () => this.snapshot, () => this.plan);
         break;
       case "tracks-changed":
         this.reporter.progress(plan, event.snapshot);
@@ -311,10 +324,47 @@ export class PlaybackCoordinator {
         }
         await this.finish(event.reason, event.snapshot ?? this.snapshot);
         break;
-      case "error":
       case "first-frame":
+        if (plan.delivery === "hls") this.confirmPlayMethod(attempt, plan);
+        break;
+      case "error":
         break;
     }
+  }
+
+  // Asks the server's session whether the conversion copies or encodes, at
+  // most twice, in the background: nothing waits for it, and ending the
+  // attempt aborts it. A failed or empty answer keeps the plan's label, so
+  // "original quality" is shown only when the server says it copies.
+  private confirmPlayMethod(attempt: number, plan: PlaybackPlan): void {
+    if (!this.gateway.sessionPlayMethod || this.confirmController) return;
+    const controller = new AbortController();
+    this.confirmController = controller;
+    void (async () => {
+      let waited = 0;
+      for (const at of PLAY_METHOD_CHECKS_MS) {
+        if (!(await abortableDelay(at - waited, controller.signal))) return;
+        waited = at;
+        let server: ServerPlayMethod | undefined;
+        try {
+          server = await this.gateway.sessionPlayMethod!(plan, controller.signal);
+        } catch {
+          server = undefined;
+        }
+        if (controller.signal.aborted || attempt !== this.attempt || this.plan !== plan) return;
+        const confirmed = server && confirmedPlan(plan, server);
+        if (!confirmed) continue;
+        this.plan = confirmed;
+        if (this.previousPlan === plan) this.previousPlan = confirmed;
+        this.callbacks.onPlanConfirmed?.(confirmed);
+        return;
+      }
+    })();
+  }
+
+  private cancelPlayMethodCheck(): void {
+    this.confirmController?.abort();
+    this.confirmController = undefined;
   }
 
   private finish(
@@ -371,11 +421,13 @@ export class PlaybackCoordinator {
   }
 
   private resetAttempt(): void {
+    this.cancelPlayMethodCheck();
     this.snapshot = undefined;
     this.reporter.reset();
   }
 
   private disposeAttempt(): void {
+    this.cancelPlayMethodCheck();
     this.reporter.stopProgress();
     this.unsubscribe?.();
     this.unsubscribe = undefined;
@@ -403,5 +455,21 @@ function untilSettledOrAborted(promise: Promise<void>, signal: AbortSignal): Pro
       signal.removeEventListener("abort", onAbort);
       resolve();
     }).catch(() => undefined);
+  });
+}
+
+// Resolves true after `ms`, or false as soon as `signal` aborts.
+function abortableDelay(ms: number, signal: AbortSignal): Promise<boolean> {
+  if (signal.aborted) return Promise.resolve(false);
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      signal.removeEventListener("abort", onAbort);
+      resolve(true);
+    }, ms);
+    const onAbort = () => {
+      clearTimeout(timer);
+      resolve(false);
+    };
+    signal.addEventListener("abort", onAbort, { once: true });
   });
 }

@@ -2,7 +2,7 @@ import { Jellyfin, type Api } from "@jellyfin/sdk";
 import axios from "axios";
 import type { BrowseCard, BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, LibraryItem, LibraryView, MediaCard, NextEpisode, SearchHint, SearchPage, SearchQuery, Season } from "../../domain/catalog";
 import { ItemNotFoundError } from "../../domain/catalog";
-import type { PlaybackDelivery, PlaybackPlan, PlaybackPlanOptions, PlaybackSnapshot } from "../../domain/playback";
+import type { PlaybackDelivery, PlaybackPlan, PlaybackPlanOptions, PlaybackSnapshot, ServerPlayMethod } from "../../domain/playback";
 import { PlaybackRefusedError, secondsToTicks } from "../../domain/playback";
 import { classifyHost, type HostClass } from "../../domain/host-class";
 import type { ServerConnection } from "../../domain/server-connection";
@@ -18,6 +18,7 @@ import { limitIsOnlyReason } from "./client-limit";
 import { FLUSTER_PROFILE, MAX_BITRATE } from "./device-profile";
 import { toItemDetail } from "./item-detail";
 import { toMediaSegments, type MediaSegmentsResponse } from "./media-segments";
+import { findSessionPlayMethod, type SessionDto } from "./session-play-method";
 import { selectSource } from "./source-acceptance";
 import type {
   AuthenticationResult,
@@ -808,6 +809,24 @@ export class JellyfinGateway {
       signal,
       timeout: REPORT_REQUEST_TIMEOUT_MS,
     });
+  }
+
+  // What the server's session says about a running conversion (decision
+  // 0002 rule 5 as amended by the user, 2026-11-08: the plan's label is
+  // provisional). GET /Sessions?deviceId= ([Authorize], deviceId filters by
+  // device; a non-admin sees only their own sessions: SessionController.cs
+  // GetSessions, SessionManager.GetSessions v10.11.7 lines 1939-2020, v12.4
+  // lines 2081-2162; getSessions(controllableByUserId, deviceId,
+  // activeWithinSeconds) in SDK 1.0.2). The play-session id is never sent.
+  async sessionPlayMethod(plan: Pick<PlaybackPlan, "itemId" | "mediaSourceId">, signal?: AbortSignal): Promise<ServerPlayMethod | undefined> {
+    this.requireSession();
+    if (!this.deviceId) throw new Error("Sign in before using the library.");
+    const { data } = await this.get<SessionDto[]>("/Sessions", {
+      params: { deviceId: this.deviceId },
+      signal,
+      timeout: REPORT_REQUEST_TIMEOUT_MS,
+    });
+    return findSessionPlayMethod(Array.isArray(data) ? data : [], this.deviceId, plan);
   }
 
   private async report(path: string, plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal, extra?: { Failed: boolean }): Promise<void> {

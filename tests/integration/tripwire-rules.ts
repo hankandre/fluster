@@ -260,33 +260,43 @@ export function checkConversionPlan(plan: ConversionPlanFacts, expect: Extract<E
 
 // One /Sessions poll of the converting session while its job ran.
 export interface SessionObservation {
+  // When the poll answered (Date.now()).
+  at?: number;
   playMethod?: string;
   transcoding?: { isVideoDirect?: boolean; isAudioDirect?: boolean };
 }
 
-// /Sessions must agree with the plan: PlayState.PlayMethod equals the plan's
-// method, and TranscodingInfo says DirectStream exactly when both video and
-// audio are copied (IsVideoDirect and IsAudioDirect; a source without audio
-// needs only video). A Transcode plan for a stream the server copies
-// disagrees as much as a DirectStream plan for one it re-encodes.
-export function checkSessionAgreement(planMethod: string, observations: readonly SessionObservation[], hasAudio: boolean): string[] {
+// /Sessions must agree with the play method the app reports once the server
+// confirmed it (decision 0002 rule 5 as amended 2026-11-08). TranscodingInfo,
+// seen at any time while the job ran, says DirectStream exactly when video
+// and, for a source with audio, audio are copied (IsVideoDirect,
+// IsAudioDirect); a Transcode label for a stream the server copies disagrees
+// as much as a DirectStream label for one it re-encodes. PlayState.PlayMethod
+// in every poll at or after `since` (the first report with the confirmed
+// method) must equal that method. The two are read from different polls
+// because a start or progress report whose PlayMethod is not Transcode makes
+// the server drop TranscodingInfo (SessionManager.OnPlaybackStart and
+// OnPlaybackProgress call ClearTranscodingInfo, v10.11.7 lines 759-762 and
+// 888-891, v12.4 lines 778-781 and 920-923).
+export function checkSessionAgreement(method: string, observations: readonly SessionObservation[], hasAudio: boolean, since = 0): string[] {
   const withJob = observations.filter((observation) => observation.transcoding);
   if (withJob.length === 0) return ["oracle: /Sessions never showed TranscodingInfo for this conversion"];
   const failures: string[] = [];
-  const methods = new Set(withJob.map((observation) => observation.playMethod ?? "none"));
-  for (const method of methods) {
-    if (method !== planMethod) failures.push(`method: /Sessions PlayMethod ${method}, plan ${planMethod}`);
-  }
   const copies = new Set(withJob.map(({ transcoding }) => {
     const video = transcoding!.isVideoDirect === true;
     const audio = !hasAudio || transcoding!.isAudioDirect === true;
     return video && audio ? "DirectStream" : "Transcode";
   }));
   for (const serverMethod of copies) {
-    if (serverMethod !== planMethod) {
+    if (serverMethod !== method) {
       const detail = withJob.map(({ transcoding }) => `IsVideoDirect=${transcoding!.isVideoDirect} IsAudioDirect=${transcoding!.isAudioDirect}`)[0];
-      failures.push(`method: /Sessions TranscodingInfo (${detail}) means ${serverMethod}, plan ${planMethod}`);
+      failures.push(`method: /Sessions TranscodingInfo (${detail}) means ${serverMethod}, plan ${method}`);
     }
+  }
+  const reported = observations.filter((observation) => (observation.at ?? 0) >= since);
+  if (reported.length === 0) failures.push("oracle: /Sessions never showed this playback after the confirmed method was reported");
+  for (const playMethod of new Set(reported.map((observation) => observation.playMethod ?? "none"))) {
+    if (playMethod !== method) failures.push(`method: /Sessions PlayMethod ${playMethod}, plan ${method}`);
   }
   return failures;
 }

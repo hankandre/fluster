@@ -159,6 +159,7 @@ export class SessionWatcher {
         this.sawOurSession += 1;
         const info = ours.TranscodingInfo ?? undefined;
         this.observations.push({
+          at: Date.now(),
           playMethod: ours.PlayState?.PlayMethod ?? undefined,
           transcoding: info && { isVideoDirect: info.IsVideoDirect, isAudioDirect: info.IsAudioDirect },
         });

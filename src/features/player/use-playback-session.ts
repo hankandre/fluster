@@ -70,7 +70,14 @@ function playbackGatewayFor(
     reportProgress: (plan, snapshot, signal) => gateway.reportProgress(plan, snapshot, signal),
     reportStopped: (plan, snapshot, signal, failed) => gateway.reportStopped(plan, snapshot, signal, failed),
     stopActiveEncoding: (playSessionId, signal) => gateway.stopActiveEncoding(playSessionId, signal),
+    sessionPlayMethod: (plan, signal) => gateway.sessionPlayMethod(plan, signal),
   };
+}
+
+// A server confirmation can land before the attempt's own promise resolves;
+// the confirmed copy of the same play session wins.
+function keepConfirmed(current: PlaybackPlan | undefined, launched: PlaybackPlan): PlaybackPlan {
+  return current?.playSessionId === launched.playSessionId ? current : launched;
 }
 
 function errorText(error: unknown): string {
@@ -195,6 +202,11 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
       onReportingError: (warning) => {
         if (mounted) dispatch({ type: "reporting-warning", message: redactText(warning) });
       },
+      // The server confirmed copy or encode: the indicator, the information
+      // panel, and later reports follow the confirmed plan.
+      onPlanConfirmed: (confirmed) => {
+        if (mounted && session.current === active) setPlan(confirmed);
+      },
       onSessionEnded: (reason: PlaybackEndReason) => {
         callbacks.current.onSessionEnded();
         // The engine has stopped. The Stopped report drains in the background:
@@ -220,7 +232,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
       if (!mounted || active.stopping || session.current !== active) return;
       active.started = true;
       coordinator.start(item, choice).then((started) => {
-        if (mounted) setPlan(started);
+        if (mounted) setPlan((current) => keepConfirmed(current, started));
       }).catch((error: unknown) => {
         if (mounted) handleFailure(error);
       });
@@ -265,7 +277,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
       // An end of file during this restart's own stop ended the old session,
       // not this one: the replacement may restart again.
       active.ending = false;
-      setPlan(retried);
+      setPlan((current) => keepConfirmed(current, retried));
     } catch (error) {
       if (session.current !== active) return;
       handleFailure(error);
