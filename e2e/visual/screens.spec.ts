@@ -1,10 +1,10 @@
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { installMockServer } from "../support/mock-server";
 import { scenarios } from "./scenarios";
 
-const outDir = join(process.cwd(), "test-results", "visual");
+const outDir = join(process.cwd(), "visual-captures");
 const FIXED_TIME = new Date("2026-11-08T12:00:00Z");
 
 const desktop = [{ width: 1440, height: 900 }, { width: 1920, height: 1080 }];
@@ -33,8 +33,9 @@ for (const scenario of scenarios) {
             document.head.append(style);
           });
         });
-        await installMockServer(page, scenario.opts);
+        const notFound = await installMockServer(page, scenario.opts);
         await scenario.run(page);
+        if (!scenario.expect404) expect(notFound, "mock server 404s (mock drift)").toEqual([]);
         await settle(page);
         mkdirSync(join(outDir, size), { recursive: true });
         await page.screenshot({

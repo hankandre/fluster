@@ -1,9 +1,9 @@
-// Builds test-results/visual/index.html, a contact sheet linking every capture.
+// Builds visual-captures/index.html, a contact sheet linking every capture.
 import { readdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const dir = join(dirname(fileURLToPath(import.meta.url)), "..", "test-results", "visual");
+const dir = join(dirname(fileURLToPath(import.meta.url)), "..", "visual-captures");
 const sizes = readdirSync(dir).filter((entry) => statSync(join(dir, entry)).isDirectory()).sort();
 
 const sections = sizes.map((size) => {
