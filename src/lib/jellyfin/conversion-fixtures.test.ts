@@ -70,7 +70,9 @@ const directPlaySamples = [
 describe.each(versions)("conversion fixtures on Jellyfin %s", (version) => {
   it("offers DirectPlay with no TranscodingUrl for every file sample when there is no limit", () => {
     for (const name of directPlaySamples) {
-      for (const source of load(version, name).MediaSources ?? []) {
+      const sources = load(version, name).MediaSources ?? [];
+      expect(sources.length, name).toBeGreaterThanOrEqual(1);
+      for (const source of sources) {
         expect(source.SupportsDirectPlay, name).toBe(true);
         expect(source.TranscodingUrl, name).toBeUndefined();
       }
@@ -166,8 +168,13 @@ describe("all recorded fixtures are scrubbed", () => {
     expect(files.length).toBeGreaterThan(30);
     for (const file of files) {
       const text = readFileSync(file, "utf8");
-      for (const match of text.matchAll(/(?:ApiKey|api_key|ApiToken|access_token|X-Emby-Token)=([^&"\s]*)/gi)) {
+      for (const match of text.matchAll(
+        /(?:ApiKey|api_key|ApiToken|AccessToken|access_token|X-Emby-Token|Token)(?:=|%3D)([^&"\s%]*)/gi,
+      )) {
         expect(match[1], file).toBe("REDACTED");
+      }
+      for (const match of text.matchAll(/"PlaySessionId":\s*"([^"]*)"|PlaySessionId(?:=|%3D)([^&"\s%]*)/gi)) {
+        expect(match[1] ?? match[2], file).toBe("play-session-1");
       }
       expect(text, file).not.toMatch(/Token="/);
       expect(text, file).not.toMatch(/127\.0\.0\.1|localhost/);

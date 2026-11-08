@@ -285,7 +285,9 @@ for (const server of servers) {
       if (text.includes(secret)) throw new Error(`token leaked into ${file}`);
     }
     // Every credential parameter value in a TranscodingUrl must be REDACTED.
-    if (/(?:ApiKey|api_key|access_token|X-Emby-Token)=(?!REDACTED)/i.test(text)) throw new Error(`unscrubbed key in ${file}`);
+    if (/(?:ApiKey|api_key|ApiToken|AccessToken|access_token|X-Emby-Token|Token)(?:=|%3D)(?!REDACTED(?:&|$|"|%26))/i.test(text)) {
+      throw new Error(`unscrubbed key in ${file}`);
+    }
     writeFileSync(join(outDir, `${file}.json`), text);
     console.log(`  wrote ${server.folder}/${file}.json`);
   };
