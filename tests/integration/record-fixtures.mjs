@@ -1,4 +1,5 @@
 // Records scrubbed PlaybackInfo contract fixtures from the two fixture servers.
+// Conversion fixtures also need FLUSTER_CONVERSION_SAMPLES=1 pnpm samples:generate (dvdsub and ISO).
 // Usage: pnpm fixture:up && pnpm fixture:setup && node tests/integration/record-fixtures.mjs [file ...]
 // Naming fixture files (for example playbackinfo-av1-profile) records only those;
 // the name "conversion" records every conversion-* fixture.
@@ -172,7 +173,9 @@ async function findItems(base, token) {
     if (found && (versions?.MediaSources?.length ?? 0) >= 2) return items;
     await sleep(2000);
   }
-  throw new Error("library scan did not finish");
+  const missing = allCases.filter((c) => !items.some((i) => i.Path?.endsWith(c.path))).map((c) => c.path);
+  const hint = missing.some((m) => /DVDSub|ISO/.test(m)) ? " Conversion fixtures need the dvdsub and ISO samples: run FLUSTER_CONVERSION_SAMPLES=1 pnpm samples:generate first." : "";
+  throw new Error(`library scan did not finish; missing: ${missing.join(", ")}.${hint}`);
 }
 
 function requestFor(userId, withProfile, mediaSourceId) {

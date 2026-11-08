@@ -18,6 +18,10 @@ Requires `ffmpeg` and `ffprobe` with libx264, libx265, libsvtav1, and the `ass`,
 
 Folder and file names follow the Jellyfin naming docs: [movies](https://jellyfin.org/docs/general/server/media/movies/) and [shows](https://jellyfin.org/docs/general/server/media/shows/).
 
+## Conversion-only samples
+
+The dvdsub and ISO samples (P10-02) are opt-in, because they need `python3` and an ISO tool (`xorriso`, `genisoimage`, `mkisofs`, or docker), which CI's `jellyfin/jellyfin` image lacks. Generate them with `FLUSTER_CONVERSION_SAMPLES=1 pnpm samples:generate` before recording conversion fixtures. With the variable set, a missing tool fails the script.
+
 ## Samples
 
 | Path (under `tests/samples/`) | Exercises |

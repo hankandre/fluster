@@ -169,11 +169,21 @@ mkdir -p "$bd_dir/PLAYLIST" "$bd_dir/CLIPINF"
 [ -e "$bd_dir/index.bdmv" ] && [ "$force" -eq 0 ] || printf 'INDX0200' > "$bd_dir/index.bdmv"
 [ -e "$bd_dir/MovieObject.bdmv" ] && [ "$force" -eq 0 ] || printf 'MOBJ0200' > "$bd_dir/MovieObject.bdmv"
 
+# Conversion-only samples (P10-02): a graphical DVD subtitle and an ISO image. They are opt-in
+# with FLUSTER_CONVERSION_SAMPLES=1 because the default run (and CI's tripwire, which still
+# checks direct play only until P10-09) must not need python3, xorriso, or docker.
+conversion_samples=0
+[ "${FLUSTER_CONVERSION_SAMPLES:-0}" = 1 ] && conversion_samples=1
+dvdsub="$movies_dir/Synthetic DVDSub (2024)/Synthetic DVDSub (2024).mkv"
+iso="$movies_dir/Synthetic ISO (2024)/Synthetic ISO (2024).iso"
+
+if [ "$conversion_samples" -eq 1 ]; then
+command -v python3 > /dev/null || { echo "FLUSTER_CONVERSION_SAMPLES=1 needs python3 for the dvdsub sample" >&2; exit 1; }
+
 # DVD subtitle (graphical, S_VOBSUB). ffmpeg cannot encode text to bitmap, so
 # scripts/make-vobsub.py writes a synthetic VobSub pair that ffmpeg copies into the mkv.
 vobsub_base="$work_dir/synthetic-vobsub"
 python3 -I "$script_dir/make-vobsub.py" "$vobsub_base"
-dvdsub="$movies_dir/Synthetic DVDSub (2024)/Synthetic DVDSub (2024).mkv"
 build "$dvdsub" \
   -f lavfi -i "$(pattern)" -f lavfi -i "$(tone 440)" -i "$vobsub_base.idx" \
   -map 0:v -map 1:a -map 2:s "${h264_args[@]}" "${aac_stereo[@]}" -c:s copy \
@@ -183,7 +193,6 @@ build "$dvdsub" \
 # .iso as VideoType Iso. Needs xorriso, genisoimage, or mkisofs locally; otherwise an Alpine
 # container with xorriso is used (docker is already required by pnpm fixture:up). If neither
 # works the ISO is skipped with a message, and the plan records why.
-iso="$movies_dir/Synthetic ISO (2024)/Synthetic ISO (2024).iso"
 make_iso() {
   local out="$1" tree="$work_dir/iso-tree"
   rm -rf "$tree" && mkdir -p "$tree" "$(dirname "$out")"
@@ -214,10 +223,12 @@ if needs "$iso"; then
   if make_iso "$iso"; then
     echo "made   ${iso#"$samples_dir"/}"
   else
-    echo "skip   ${iso#"$samples_dir"/} (no ISO tool: install xorriso, genisoimage, or mkisofs, or docker)" >&2
+    echo "FLUSTER_CONVERSION_SAMPLES=1 needs xorriso, genisoimage, mkisofs, or docker for the ISO sample" >&2
+    exit 1
   fi
 else
   echo "skip   ${iso#"$samples_dir"/}"
+fi
 fi
 
 # ---- Shows ------------------------------------------------------------------
@@ -258,7 +269,7 @@ probe "$multi" "multitrack"
 probe "$versions_1080" "versions 1080p"
 probe "$versions_720" "versions 720p"
 probe "$bd_stream" "bluray m2ts"
-probe "$dvdsub" "dvdsub"
+[ "$conversion_samples" -eq 0 ] || probe "$dvdsub" "dvdsub"
 probe "$show_dir/Season 01/Synthetic Show S01E01.mkv" "show S01E01"
 
 # Fail loudly if the properties the samples exist for are missing.
@@ -272,6 +283,6 @@ probe_value() { ffprobe -v error -select_streams "$2" -show_entries "$3" -of csv
 [ -f "$sidecar_dir/Synthetic Sidecar (2024).en.srt" ] || fail "srt sidecar missing"
 [ -f "$versions_1080" ] && [ -f "$versions_720" ] || fail "multi-version files missing"
 [ -f "$bd_dir/index.bdmv" ] || fail "BDMV index missing"
-[ "$(probe_value "$dvdsub" s:0 stream=codec_name)" = "dvd_subtitle" ] || fail "dvdsub track missing"
+[ "$conversion_samples" -eq 0 ] || [ "$(probe_value "$dvdsub" s:0 stream=codec_name)" = "dvd_subtitle" ] || fail "dvdsub track missing"
 echo
 echo "All samples verified."
