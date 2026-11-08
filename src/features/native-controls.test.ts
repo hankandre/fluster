@@ -10,6 +10,7 @@ const ALLOWLIST: Record<string, string> = {
   "browse/library-grid.tsx": "P13-11 (library browsing: sort selects and filter checkboxes)",
   "detail/media-info.tsx": "P13-09 (item detail: version radios)",
   "settings/settings-view.tsx": "P13-17 (Settings: streaming-limit selects)",
+  "player/track-menus.tsx": "P13-13 (player chrome: audio and subtitle selects moved here by P10-08)",
 };
 
 const featuresDir = __dirname;
