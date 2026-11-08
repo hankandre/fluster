@@ -110,6 +110,8 @@ fn redaction_canary_keeps_play_session_ids_out_of_native_traces() {
         "player/mod.rs",
         "player/controller.rs",
         "player/events.rs",
+        "media_controls.rs",
+        "media_controls/mpris.rs",
     ] {
         assert!(
             result.scanned.contains(Path::new(production)),
@@ -124,6 +126,8 @@ fn redaction_canary_keeps_play_session_ids_out_of_native_traces() {
         "player/media_auth_wire/tracks.rs",
         "player/tracks/tests.rs",
         "realtime/tests/socket.rs",
+        "media_controls/tests.rs",
+        "media_controls/mpris/tests.rs",
     ] {
         assert!(
             sources.iter().any(|(path, _)| path == Path::new(test_only)),

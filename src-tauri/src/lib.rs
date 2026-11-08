@@ -4,6 +4,7 @@ mod command_allowlist;
 mod commands;
 #[cfg(test)]
 mod logger_guard;
+mod media_controls;
 mod model;
 mod player;
 mod realtime;
@@ -37,6 +38,10 @@ pub fn run() {
         .manage(RealtimeManager::default())
         .setup(move |app| {
             renderer_controller.set_renderer_result(surface::initialize(app.handle()));
+            renderer_controller.set_media_controls(media_controls::start(
+                app.handle(),
+                renderer_controller.clone(),
+            ));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

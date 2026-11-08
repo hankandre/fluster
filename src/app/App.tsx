@@ -22,7 +22,11 @@ export function App() {
   // has one mpv behind both, so switching between them while playing is
   // unsupported; the proof of concept is removed in P3-16.
   const player = useMemo<PlayerServices>(
-    () => ({ engine: services.createPlayerEngine(), watchWindowClose: services.watchWindowClose }),
+    () => ({
+      engine: services.createPlayerEngine(),
+      watchWindowClose: services.watchWindowClose,
+      watchMediaControls: services.watchMediaControls,
+    }),
     [services],
   );
   const queryClient = useQueryClient();

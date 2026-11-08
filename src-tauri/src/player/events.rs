@@ -5,6 +5,7 @@ use super::properties::{apply_property, PropertyUpdate, RuntimeState};
 use super::track_list::{
     apply_initial_selection, load_external_subtitles, read_tracks, refresh_selected_streams,
 };
+use crate::media_controls::{MediaControls, MediaUpdate};
 use crate::model::{PlaybackPlan, PlaybackSnapshot, PlayerEvent};
 use crate::redaction::safe_error;
 use libmpv2::events::Event;
@@ -20,6 +21,7 @@ pub(super) fn run_event_loop(
     app: &AppHandle,
     mpv: &mut Mpv,
     plan: &PlaybackPlan,
+    media: &MediaControls,
     video_loaded: Arc<AtomicBool>,
     finished: Arc<AtomicBool>,
 ) {
@@ -51,6 +53,11 @@ pub(super) fn run_event_loop(
                         snapshot: state.snapshot.clone(),
                     },
                 );
+                media.publish(MediaUpdate::from_snapshot(
+                    &plan.title,
+                    &state.snapshot,
+                    false,
+                ));
                 pending_state = false;
                 last_state_event = Instant::now();
             }
@@ -59,6 +66,7 @@ pub(super) fn run_event_loop(
                     Some(PropertyUpdate::Ordinary) => pending_state = true,
                     Some(PropertyUpdate::Immediate(cause)) => {
                         emit_state(app, &state.snapshot, Some(cause));
+                        publish_state(media, &plan.title, &state.snapshot, Some(cause));
                         pending_state = false;
                         last_state_event = Instant::now();
                     }
@@ -134,6 +142,7 @@ pub(super) fn run_event_loop(
         }
         if pending_state && last_state_event.elapsed() >= STATE_EVENT_INTERVAL {
             emit_state(app, &state.snapshot, None);
+            publish_state(media, &plan.title, &state.snapshot, None);
             pending_state = false;
             last_state_event = Instant::now();
         }
@@ -157,4 +166,14 @@ fn emit_state(app: &AppHandle, snapshot: &PlaybackSnapshot, cause: Option<&'stat
             cause,
         },
     );
+}
+
+fn publish_state(
+    media: &MediaControls,
+    title: &str,
+    snapshot: &PlaybackSnapshot,
+    cause: Option<&'static str>,
+) {
+    let seeked = cause == Some("seek");
+    media.publish(MediaUpdate::from_snapshot(title, snapshot, seeked));
 }

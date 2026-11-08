@@ -20,6 +20,8 @@ description: Change Fluster's Rust native player, libmpv integration, Tauri comm
 - Keep `#[tauri::command]` handlers in `commands.rs`.
 - Keep renderer objects and render contexts on the platform UI thread.
 - Never touch Jellyfin data in `surface/`.
+- Keep D-Bus and MPRIS in `media_controls/`; route its requests to existing `MpvController` methods or the typed `fluster://media-control` event, never to a new command.
+- Expose only the title, length, play state, and position to media controls.
 
 ## Commands
 
