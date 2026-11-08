@@ -6,7 +6,7 @@ import { NativeRealtime } from "../lib/realtime/native-realtime";
 import { NoOpRealtime } from "../lib/realtime/no-op-realtime";
 import type { PocServices } from "../poc/services";
 import { isTauriRuntime, NativePlayerEngine } from "../lib/player/native-player";
-import { watchNativeMediaControls } from "./media-controls";
+import { createNativeMediaControls } from "./media-controls";
 import { watchNativeWindowClose } from "./window-close";
 
 export type AppServices = PocServices & {
@@ -27,6 +27,6 @@ export function createServices(): AppServices {
     createPlayerEngine: () => (native ? new NativePlayerEngine() : new BrowserPlayerEngine()),
     realtime: native ? new NativeRealtime() : new NoOpRealtime(),
     watchWindowClose: native ? watchNativeWindowClose : undefined,
-    watchMediaControls: native ? watchNativeMediaControls : undefined,
+    watchMediaControls: native ? createNativeMediaControls() : undefined,
   };
 }

@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { PlayerServicesProvider } from "../../app/player-services";
+import { PlayerServicesProvider, type PlayerServices } from "../../app/player-services";
 import { SessionProvider, useSession, type SessionGateway } from "../../app/session";
 import type { ItemDetail, NextEpisode } from "../../domain/catalog";
 import type { LibraryItem } from "../../domain/catalog";
@@ -96,12 +96,12 @@ function Routes() {
   return route ? <PlayerRouteView key={hash} {...route} /> : <p>{hash}</p>;
 }
 
-async function renderPlayer(gateway: SessionGateway, engine: FakePlayerEngine) {
+async function renderPlayer(gateway: SessionGateway, engine: FakePlayerEngine, services: Partial<PlayerServices> = {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
       <SessionProvider createGateway={() => gateway}>
-        <PlayerServicesProvider services={{ engine }}>
+        <PlayerServicesProvider services={{ engine, ...services }}>
           <SignIn gateway={gateway} />
           <Router />
         </PlayerServicesProvider>
@@ -538,6 +538,39 @@ describe("Leaving does not wait for playstate reports", () => {
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
       fireEvent.click(playNow);
+    });
+    expect(engine.stop).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      engineStopped.resolve();
+    });
+
+    await waitFor(() => expect(window.location.hash).toBe("#/next/item/e1"));
+    expect(engine.stop).toHaveBeenCalledTimes(1);
+    expect(gateway.setPlayed).not.toHaveBeenCalled();
+  });
+
+  it("a system Stop during the countdown's own stop wins like Back and reuses that stop", async () => {
+    const engineStopped = deferred();
+    const gateway = fakeGateway([episode("e1", "Pilot"), episode("e2", "Second")], second);
+    const engine = new FakePlayerEngine();
+    let mediaStop: (() => void) | undefined;
+    await renderPlayer(gateway, engine, {
+      watchMediaControls: (onAction) => {
+        mediaStop = () => onAction("stop");
+        return () => {
+          mediaStop = undefined;
+        };
+      },
+    });
+    await loadedAt(engine, 1175);
+    const playNow = await screen.findByRole("button", { name: "Play now" });
+    engine.stop.mockImplementationOnce(() => engineStopped.promise.then(() => undefined));
+
+    await act(async () => {
+      fireEvent.click(playNow);
+    });
+    await act(async () => {
+      mediaStop?.();
     });
     expect(engine.stop).toHaveBeenCalledTimes(1);
     await act(async () => {

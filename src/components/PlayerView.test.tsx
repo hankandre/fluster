@@ -255,6 +255,12 @@ describe("keyboard shortcuts", () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
+  it("does not leave the player on Escape from a focused track list", () => {
+    const { onBack } = renderShortcuts();
+    fireEvent.keyDown(screen.getByRole("combobox", { name: "Subtitle track" }), { key: "Escape" });
+    expect(onBack).not.toHaveBeenCalled();
+  });
+
   it("leaves arrows to a focused slider and Space to a focused button", () => {
     const { player } = renderShortcuts();
     fireEvent.keyDown(screen.getByRole("slider", { name: "Volume" }), { key: "ArrowUp" });

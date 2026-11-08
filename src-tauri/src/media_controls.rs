@@ -8,7 +8,7 @@
 //!
 //! What the desktop sees is the title, the play state, and the position.
 //! Never URLs, tokens, item ids, or play-session ids: the track id is a
-//! constant object path.
+//! fixed prefix and a per-run session counter.
 
 #[cfg(target_os = "linux")]
 mod mpris;
@@ -23,8 +23,9 @@ use tauri::{AppHandle, Emitter};
 /// The event the frontend hears when the desktop asks to stop.
 pub(crate) const MEDIA_CONTROL_EVENT: &str = "fluster://media-control";
 
-/// The constant MPRIS track id. It names no item.
-pub(crate) const TRACK_ID: &str = "/app/fluster/Fluster/CurrentTrack";
+/// MPRIS track ids are this prefix and a counter of sessions in this run, so
+/// a request for an earlier session is stale. They name no item.
+pub(crate) const TRACK_ID_PREFIX: &str = "/app/fluster/Fluster/Track/";
 
 const MICROS_PER_SECOND: f64 = 1_000_000.0;
 
@@ -94,6 +95,8 @@ pub(crate) struct NowPlaying {
     pub(crate) title: Option<String>,
     pub(crate) position_us: i64,
     pub(crate) length_us: Option<i64>,
+    /// Sessions started in this run; the current one's number while active.
+    pub(crate) track: u64,
 }
 
 impl Default for NowPlaying {
@@ -103,6 +106,7 @@ impl Default for NowPlaying {
             title: None,
             position_us: 0,
             length_us: None,
+            track: 0,
         }
     }
 }
@@ -139,31 +143,57 @@ impl NowPlaying {
                 } else {
                     PlaybackStatus::Playing
                 };
+                // A session update after a stop starts a new track.
+                let track = if self.active() {
+                    self.track
+                } else {
+                    self.track.wrapping_add(1)
+                };
                 let next = NowPlaying {
                     status,
                     title: Some(title),
                     position_us,
                     length_us,
+                    track,
                 };
                 (next, seeked)
             }
-            MediaUpdate::Stopped => (NowPlaying::default(), false),
+            MediaUpdate::Stopped => (
+                NowPlaying {
+                    track: self.track,
+                    ..NowPlaying::default()
+                },
+                false,
+            ),
         };
         let changes = Changes {
             status: next.status != self.status,
-            metadata: next.title != self.title || next.length_us != self.length_us,
+            metadata: next.title != self.title
+                || next.length_us != self.length_us
+                || next.track != self.track,
             seeked_to: seeked.then_some(next.position_us),
         };
         *self = next;
         changes
     }
 
-    /// The MPRIS metadata: the constant track id, the title, and the length.
+    /// The current session's track id, while one is active.
+    pub(crate) fn track_id(&self) -> Option<String> {
+        self.active()
+            .then(|| format!("{TRACK_ID_PREFIX}{}", self.track))
+    }
+
+    /// True when `track_id` names the current session.
+    pub(crate) fn is_current_track(&self, track_id: &str) -> bool {
+        self.track_id().as_deref() == Some(track_id)
+    }
+
+    /// The MPRIS metadata: the session's track id, the title, and the length.
     pub(crate) fn metadata(&self) -> Vec<(&'static str, MetadataValue)> {
-        if !self.active() {
+        let Some(track_id) = self.track_id() else {
             return Vec::new();
-        }
-        let mut entries = vec![("mpris:trackid", MetadataValue::ObjectPath(TRACK_ID))];
+        };
+        let mut entries = vec![("mpris:trackid", MetadataValue::ObjectPath(track_id))];
         if let Some(title) = &self.title {
             entries.push(("xesam:title", MetadataValue::Text(title.clone())));
         }
@@ -176,7 +206,7 @@ impl NowPlaying {
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum MetadataValue {
-    ObjectPath(&'static str),
+    ObjectPath(String),
     Text(String),
     Micros(i64),
 }
@@ -321,14 +351,10 @@ pub(crate) fn start(app: &AppHandle, controller: MpvController) -> MediaControls
             controller,
             app: app.clone(),
         };
-        match mpris::spawn(mpris::BUS_NAME, Box::new(target)) {
-            Some(sender) => MediaControls {
-                updates: Arc::new(Mutex::new(Some(sender))),
-            },
-            None => {
-                media_trace("MPRIS is unavailable; media keys are off");
-                MediaControls::default()
-            }
+        // Returns at once; connecting happens on the service thread.
+        let sender = mpris::spawn(mpris::BUS_NAME, Box::new(target));
+        MediaControls {
+            updates: Arc::new(Mutex::new(Some(sender))),
         }
     }
     #[cfg(not(target_os = "linux"))]

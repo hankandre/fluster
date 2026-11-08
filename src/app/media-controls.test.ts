@@ -1,21 +1,18 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { createNativeMediaControls, mediaControlAction, type Listen } from "./media-controls";
 
-const listeners = new Map<string, (event: { payload: unknown }) => void>();
-const unlisten = vi.fn();
+type Handler = (event: { payload: unknown }) => void;
 
-vi.mock("@tauri-apps/api/event", () => ({
-  listen: vi.fn(async (name: string, handler: (event: { payload: unknown }) => void) => {
-    listeners.set(name, handler);
-    return unlisten;
-  }),
-}));
-
-import { mediaControlAction, watchNativeMediaControls } from "./media-controls";
-
-afterEach(() => {
-  listeners.clear();
-  unlisten.mockClear();
-});
+function fakeListen() {
+  const handlers = new Map<string, Handler>();
+  const listen = vi.fn(async (name: string, handler: Handler) => {
+    handlers.set(name, handler);
+    return () => {
+      handlers.delete(name);
+    };
+  });
+  return { listen, emit: (payload: unknown) => handlers.get("fluster://media-control")?.({ payload }) };
+}
 
 describe("mediaControlAction", () => {
   it("accepts only the typed stop action", () => {
@@ -26,24 +23,41 @@ describe("mediaControlAction", () => {
   });
 });
 
-describe("watchNativeMediaControls", () => {
-  it("passes stop requests on, ignores anything else, and stops listening", async () => {
-    const onAction = vi.fn();
-    const stop = watchNativeMediaControls(onAction);
-    await vi.waitFor(() => expect(listeners.has("fluster://media-control")).toBe(true));
-    const emit = listeners.get("fluster://media-control")!;
-
-    emit({ payload: { action: "stop" } });
-    emit({ payload: { action: "open", uri: "https://example.test" } });
-    expect(onAction.mock.calls).toEqual([["stop"]]);
-
-    stop();
-    expect(unlisten).toHaveBeenCalledTimes(1);
+describe("createNativeMediaControls", () => {
+  it("listens once at creation, before anyone watches", async () => {
+    const { listen } = fakeListen();
+    const watch = createNativeMediaControls(async () => listen);
+    await vi.waitFor(() => expect(listen).toHaveBeenCalledTimes(1));
+    watch(vi.fn())();
+    watch(vi.fn());
+    expect(listen).toHaveBeenCalledTimes(1);
   });
 
-  it("drops a listener that arrives after watching stopped", async () => {
-    const stop = watchNativeMediaControls(vi.fn());
-    stop();
-    await vi.waitFor(() => expect(unlisten).toHaveBeenCalledTimes(1));
+  it("delivers a stop to a watcher that attached synchronously, and ignores anything else", async () => {
+    const { listen, emit } = fakeListen();
+    const watch = createNativeMediaControls(async () => listen);
+    const onAction = vi.fn();
+    const unwatch = watch(onAction);
+    await vi.waitFor(() => expect(listen).toHaveBeenCalled());
+
+    emit({ action: "stop" });
+    emit({ action: "open", uri: "https://example.test" });
+    expect(onAction.mock.calls).toEqual([["stop"]]);
+
+    unwatch();
+    emit({ action: "stop" });
+    expect(onAction).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps watchers that attached before the listener finished registering", async () => {
+    let finish!: (listen: Listen) => void;
+    const { listen, emit } = fakeListen();
+    const watch = createNativeMediaControls(() => new Promise((resolve) => { finish = resolve; }));
+    const onAction = vi.fn();
+    watch(onAction);
+    finish(listen);
+    await vi.waitFor(() => expect(listen).toHaveBeenCalled());
+    emit({ action: "stop" });
+    expect(onAction).toHaveBeenCalledWith("stop");
   });
 });

@@ -3,7 +3,7 @@
 
 use super::*;
 use crate::media_controls::tests::{plan_secrets, plan_with_secrets, snapshot, Recorder};
-use crate::media_controls::Route;
+use crate::media_controls::{Route, TRACK_ID_PREFIX};
 use dbus::arg::{prop_cast, RefArg};
 use dbus::message::MessageType;
 use pretty_assertions::assert_eq;
@@ -95,7 +95,7 @@ fn methods_route_into_the_player() {
     call(&mut cr, PLAYER_INTERFACE, "Seek", |message| {
         message.append1(-15_000_000_i64)
     });
-    let track = Path::new(TRACK_ID).expect("valid track id");
+    let track = Path::new(format!("{TRACK_ID_PREFIX}1")).expect("valid track id");
     call(&mut cr, PLAYER_INTERFACE, "SetPosition", |message| {
         message.append2(track, 90_000_000_i64)
     });
@@ -116,6 +116,67 @@ fn methods_route_into_the_player() {
             Route::SeekTo(90.0),
         ]
     );
+}
+
+#[test]
+fn set_position_for_an_earlier_session_is_ignored() {
+    let recorder = Recorder::default();
+    let mut cr = service(&recorder);
+    start_playing(&mut cr, 40.0, false);
+    let old_track = metadata_track(&mut cr);
+
+    // Auto-play moves on to the next episode.
+    update(&mut cr, MediaUpdate::Stopped);
+    start_playing(&mut cr, 0.0, false);
+    let new_track = metadata_track(&mut cr);
+    assert_ne!(old_track, new_track);
+
+    for (track, position) in [(old_track, 80_000_000_i64), (new_track, 20_000_000)] {
+        let track = Path::new(track).expect("valid track id");
+        call(&mut cr, PLAYER_INTERFACE, "SetPosition", |message| {
+            message.append2(track, position)
+        });
+    }
+    assert_eq!(recorder.routes(), vec![Route::SeekTo(20.0)]);
+}
+
+fn metadata_track(cr: &mut Crossroads) -> String {
+    let reply = call(cr, PROPERTIES, "Get", |message| {
+        message.append2(PLAYER_INTERFACE, "Metadata")
+    });
+    let metadata: Variant<PropMap> = reply.read1().expect("a metadata dictionary");
+    prop_cast::<Path>(&metadata.0, "mpris:trackid")
+        .map(|path| path.to_string())
+        .expect("a track id")
+}
+
+#[test]
+fn spawning_never_waits_for_the_session_bus() {
+    use std::time::Instant;
+
+    let (release, held) = mpsc::channel::<()>();
+    let started = Instant::now();
+    let updates = spawn_with(
+        move || {
+            // A stalled bus: connecting takes as long as the test says.
+            let _ = held.recv_timeout(Duration::from_secs(10));
+            None
+        },
+        Box::new(Recorder::default()),
+    );
+    assert!(started.elapsed() < Duration::from_millis(500));
+    // Updates queue while connecting; once it fails they stop being taken.
+    assert!(updates.send(MediaUpdate::Stopped).is_ok());
+    release.send(()).expect("the connector is waiting");
+    let mut disconnected = false;
+    for _ in 0..200 {
+        if updates.send(MediaUpdate::Stopped).is_err() {
+            disconnected = true;
+            break;
+        }
+        thread::sleep(Duration::from_millis(5));
+    }
+    assert!(disconnected, "a failed connection drops the receiver");
 }
 
 #[test]
@@ -204,7 +265,7 @@ fn metadata_reaches_the_bus_as_track_id_title_and_length() {
     assert_eq!(keys, ["mpris:length", "mpris:trackid", "xesam:title"]);
     assert_eq!(
         prop_cast::<Path>(&metadata, "mpris:trackid").map(|path| path.to_string()),
-        Some(TRACK_ID.to_string())
+        Some(format!("{TRACK_ID_PREFIX}1"))
     );
     assert_eq!(
         prop_cast::<String>(&metadata, "xesam:title").map(String::as_str),
@@ -303,7 +364,7 @@ fn live_session_bus_mpris() {
 
     let name = format!("org.mpris.MediaPlayer2.fluster_test_{}", std::process::id());
     let recorder = Recorder::default();
-    let updates = spawn(&name, Box::new(recorder.clone())).expect("a session bus");
+    let updates = spawn(&name, Box::new(recorder.clone()));
     updates
         .send(MediaUpdate::from_snapshot(
             "Arrival",
@@ -316,9 +377,10 @@ fn live_session_bus_mpris() {
     let proxy = connection.with_proxy(name.as_str(), OBJECT_PATH, Duration::from_secs(2));
     let mut status = String::new();
     for _ in 0..40 {
+        // The service owns its name a moment after spawn returns.
         status = proxy
             .get::<String>(PLAYER_INTERFACE, "PlaybackStatus")
-            .expect("PlaybackStatus");
+            .unwrap_or_default();
         if status == "Playing" {
             break;
         }
@@ -353,8 +415,7 @@ fn playerctl_controls_the_service() {
     let updates = spawn(
         &format!("org.mpris.MediaPlayer2.{player}"),
         Box::new(recorder.clone()),
-    )
-    .expect("a session bus");
+    );
     updates
         .send(MediaUpdate::from_snapshot(
             "Arrival",

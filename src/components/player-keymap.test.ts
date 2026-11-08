@@ -60,11 +60,11 @@ describe("playerKeyAction", () => {
     }
   });
 
-  it("lets a focused select keep its keys but still leaves on Escape", () => {
+  it("lets a focused select keep all its keys, Escape included", () => {
     const target = element("<select><option>a</option></select>");
     expect(press("ArrowDown", { target })).toBeUndefined();
     expect(press("k", { target })).toBeUndefined();
-    expect(press("Escape", { target })).toEqual({ kind: "escape" });
+    expect(press("Escape", { target })).toBeUndefined();
   });
 
   it("lets a focused slider keep its arrow keys", () => {

@@ -156,7 +156,48 @@ fn play_state_follows_the_session() {
             seeked_to: None
         }
     );
-    assert_eq!(now, NowPlaying::default());
+    // Stopped keeps only the session count.
+    assert_eq!(
+        now,
+        NowPlaying {
+            track: 1,
+            ..NowPlaying::default()
+        }
+    );
+}
+
+#[test]
+fn each_session_gets_a_new_track_id_and_old_ones_go_stale() {
+    let mut now = NowPlaying::default();
+    assert_eq!(now.track_id(), None);
+    now.apply(MediaUpdate::from_snapshot(
+        "Pilot",
+        &snapshot(0.0, Some(100.0), false),
+        false,
+    ));
+    let first = now.track_id().expect("a track id");
+    assert_eq!(first, format!("{TRACK_ID_PREFIX}1"));
+    // Updates within a session keep it.
+    now.apply(MediaUpdate::from_snapshot(
+        "Pilot",
+        &snapshot(5.0, Some(100.0), true),
+        false,
+    ));
+    assert_eq!(now.track_id().as_deref(), Some(first.as_str()));
+
+    now.apply(MediaUpdate::Stopped);
+    assert_eq!(now.track_id(), None);
+    assert!(!now.is_current_track(&first));
+    // The next episode, even with the same title and length, is a new track.
+    let changes = now.apply(MediaUpdate::from_snapshot(
+        "Pilot",
+        &snapshot(0.0, Some(100.0), false),
+        false,
+    ));
+    assert!(changes.metadata);
+    let second = now.track_id().expect("a track id");
+    assert_eq!(second, format!("{TRACK_ID_PREFIX}2"));
+    assert!(now.is_current_track(&second) && !now.is_current_track(&first));
 }
 
 #[test]
@@ -169,17 +210,19 @@ fn status_names_match_mpris() {
 #[test]
 fn metadata_is_a_constant_track_id_the_title_and_the_length() {
     assert!(NowPlaying::default().metadata().is_empty());
+    let track_id = format!("{TRACK_ID_PREFIX}1");
     assert_eq!(
         playing(0.0, false).metadata(),
         vec![
-            ("mpris:trackid", MetadataValue::ObjectPath(TRACK_ID)),
+            ("mpris:trackid", MetadataValue::ObjectPath(track_id.clone())),
             ("xesam:title", MetadataValue::Text("Arrival".into())),
             ("mpris:length", MetadataValue::Micros(100_000_000)),
         ]
     );
-    assert!(dbus_object_path(TRACK_ID));
+    assert!(dbus_object_path(&track_id));
+    assert!(dbus_object_path(&format!("{TRACK_ID_PREFIX}{}", u64::MAX)));
     // MPRIS reserves /org/mpris for its own paths.
-    assert!(!TRACK_ID.starts_with("/org/mpris"));
+    assert!(!TRACK_ID_PREFIX.starts_with("/org/mpris"));
 }
 
 /// The D-Bus object path grammar: `/`, or `/`-separated non-empty

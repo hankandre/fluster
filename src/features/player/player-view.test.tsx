@@ -518,41 +518,59 @@ describe("Player keyboard and pointer", () => {
     await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
   });
 
-  it("hides the cursor after three idle seconds and shows it again on movement", async () => {
+  // jsdom has no PointerEvent or hit-testing: send a mouse event of the
+  // pointer type, and say what lies under the pointer.
+  function pointAt(root: HTMLElement, under: () => Element | null) {
+    document.elementFromPoint = vi.fn(() => under());
+    fireEvent(root, new MouseEvent("pointermove", { bubbles: true, clientX: 10, clientY: 10 }));
+  }
+
+  async function renderIdlePlayer() {
     const gateway = fakeGateway();
     const engine = new FakePlayerEngine();
     await renderPlayer(gateway, engine);
     await startPlaying(engine);
-    const root = screen.getByRole("main");
+    return screen.getByRole("main");
+  }
 
+  afterEach(() => {
+    vi.useRealTimers();
+    Reflect.deleteProperty(document, "elementFromPoint");
+  });
+
+  it("hides the cursor after three idle seconds and shows it again on movement", async () => {
+    const root = await renderIdlePlayer();
     vi.useFakeTimers();
-    try {
-      fireEvent.pointerMove(root);
-      expect(root).not.toHaveClass("cursor-idle");
-      act(() => vi.advanceTimersByTime(2_900));
-      expect(root).not.toHaveClass("cursor-idle");
-      act(() => vi.advanceTimersByTime(200));
-      expect(root).toHaveClass("cursor-idle");
+    pointAt(root, () => root);
+    expect(root).not.toHaveClass("cursor-idle");
+    act(() => vi.advanceTimersByTime(2_900));
+    expect(root).not.toHaveClass("cursor-idle");
+    act(() => vi.advanceTimersByTime(200));
+    expect(root).toHaveClass("cursor-idle");
 
-      fireEvent.pointerMove(root);
-      expect(root).not.toHaveClass("cursor-idle");
+    pointAt(root, () => root);
+    expect(root).not.toHaveClass("cursor-idle");
+  });
 
-      // Resting on a control keeps the cursor.
-      fireEvent.pointerMove(screen.getByRole("button", { name: "Back to library" }));
-      act(() => vi.advanceTimersByTime(10_000));
-      expect(root).not.toHaveClass("cursor-idle");
-    } finally {
-      vi.useRealTimers();
-    }
+  it("keeps the cursor while it rests on a control, then hides it once the control fades", async () => {
+    const root = await renderIdlePlayer();
+    const back = screen.getByRole("button", { name: "Back to library" });
+    let under: Element = back;
+    vi.useFakeTimers();
+    pointAt(root, () => under);
+    act(() => vi.advanceTimersByTime(10_000));
+    expect(root).not.toHaveClass("cursor-idle");
+
+    // The chrome fades and stops taking the pointer: the video is under it now.
+    under = root;
+    act(() => vi.advanceTimersByTime(3_000));
+    expect(root).toHaveClass("cursor-idle");
   });
 });
 
 describe("System media controls", () => {
-  it("a Stop request stops the player, reports stopped, and returns to the detail view", async () => {
-    const gateway = fakeGateway();
-    const engine = new FakePlayerEngine();
-    let mediaAction: ((action: "stop") => void) | undefined;
-    const unwatch = vi.fn();
+  async function renderWithMediaControls(gateway: SessionGateway, engine: FakePlayerEngine) {
+    const watchers = new Set<(action: "stop") => void>();
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={client}>
@@ -561,8 +579,8 @@ describe("System media controls", () => {
             services={{
               engine,
               watchMediaControls: (onAction) => {
-                mediaAction = onAction;
-                return unwatch;
+                watchers.add(onAction);
+                return () => watchers.delete(onAction);
               },
             }}
           >
@@ -575,14 +593,45 @@ describe("System media controls", () => {
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "test sign in" }));
     });
+    return {
+      watchers,
+      stop: async () => {
+        await act(async () => {
+          for (const watcher of [...watchers]) watcher("stop");
+        });
+      },
+    };
+  }
+
+  it("a Stop request stops the player, reports stopped, and returns to the detail view", async () => {
+    const gateway = fakeGateway();
+    const engine = new FakePlayerEngine();
+    const media = await renderWithMediaControls(gateway, engine);
     await startPlaying(engine);
 
-    await act(async () => {
-      mediaAction?.("stop");
-    });
+    await media.stop();
 
     await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
     expect(engine.stop).toHaveBeenCalledTimes(1);
     expect(gateway.reportStopped).toHaveBeenCalledWith(plan(), snapshot, expect.any(AbortSignal), false);
+  });
+
+  it("a Stop request while the server is still negotiating leaves without launching", async () => {
+    // Negotiation hangs until the player cancels it.
+    const gateway = fakeGateway({
+      createPlaybackPlan: vi.fn((_item, _ticks, signal: AbortSignal) => new Promise<PlaybackPlan>((_resolve, reject) => {
+        signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
+      })),
+    });
+    const engine = new FakePlayerEngine();
+    const media = await renderWithMediaControls(gateway, engine);
+    await waitFor(() => expect(gateway.createPlaybackPlan).toHaveBeenCalled());
+    expect(media.watchers.size).toBe(1);
+
+    await media.stop();
+
+    await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
+    expect(engine.launch).not.toHaveBeenCalled();
+    expect(gateway.reportStopped).not.toHaveBeenCalled();
   });
 });
