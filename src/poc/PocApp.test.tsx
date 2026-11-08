@@ -7,7 +7,7 @@ import { createServices } from "../app/compose";
 it("starts with manual server connection and an explicit browser-mode label", () => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(<QueryClientProvider client={client}><PocApp services={createServices()} /></QueryClientProvider>);
-  expect(screen.getByRole("heading", { name: /Connect your Jellyfin library/i })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: /Connect your\s*Jellyfin library/i })).toBeInTheDocument();
   expect(screen.getByText("Browser development mode")).toBeInTheDocument();
   expect(screen.getByText(/access tokens remain in memory/i)).toBeInTheDocument();
 });
