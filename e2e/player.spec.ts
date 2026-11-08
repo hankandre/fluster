@@ -29,6 +29,8 @@ interface ServerOptions {
   noDirectPlayAnswers?: number;
   failPlayback?: boolean;
   playbackDelayMs?: number;
+  // Playstate reports are logged on arrival but answered only after releaseReports().
+  holdReports?: boolean;
   // The PlaybackInfo source reports HasSegments, and the segments endpoint answers with these items.
   segments?: Array<Record<string, unknown>>;
   hasSegments?: boolean;
@@ -38,11 +40,21 @@ interface ServerLog {
   playbackInfo: Array<Record<string, unknown>>;
   reports: Array<{ path: string; body: Record<string, unknown> }>;
   segmentRequests: Array<{ search: string; authorization: string | undefined }>;
+  requestUrls: string[];
+  releaseReports(): void;
 }
 
 // Mocks a server with one movie and the original-file playback endpoints.
 async function mockPlayerServer(page: Page, options: ServerOptions = {}): Promise<ServerLog> {
-  const log: ServerLog = { playbackInfo: [], reports: [], segmentRequests: [] };
+  let releaseReports = () => undefined as void;
+  const reportGate = new Promise<void>((resolve) => { releaseReports = resolve; });
+  const log: ServerLog = {
+    playbackInfo: [],
+    reports: [],
+    segmentRequests: [],
+    requestUrls: [],
+    releaseReports: () => releaseReports(),
+  };
   const source = { ...(options.disc ? discSource : fileSource), HasSegments: options.hasSegments ?? false };
 
   await page.addInitScript(({ shouldFail }) => {
@@ -70,9 +82,11 @@ async function mockPlayerServer(page: Page, options: ServerOptions = {}): Promis
       "access-control-allow-methods": "*",
     };
     const json = (body: unknown) => route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify(body) });
+    log.requestUrls.push(request.url());
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     if (url.pathname.startsWith("/Sessions/Playing")) {
       log.reports.push({ path: url.pathname, body: request.postDataJSON() });
+      if (options.holdReports) await reportGate;
       return route.fulfill({ status: 204, headers: cors });
     }
     switch (url.pathname) {
@@ -163,6 +177,33 @@ test("Play opens the player and Back returns to the detail view", async ({ page 
   await expect.poll(() => reportPaths(log)).toContain("/Sessions/Playing/Stopped");
   const stopped = log.reports.find((report) => report.path === "/Sessions/Playing/Stopped");
   expect(stopped?.body).toMatchObject({ Failed: false, PlaySessionId: "play-1", MediaSourceId: "src-hd" });
+});
+
+test("Back does not wait for a slow Jellyfin progress report, and Stopped is still sent", async ({ page }) => {
+  const log = await mockPlayerServer(page, { holdReports: true });
+  await openArrival(page);
+
+  await page.getByRole("link", { name: "Play" }).click();
+  await expect(page.locator("video")).toHaveCount(1);
+  await expect.poll(() => reportPaths(log)).toContain("/Sessions/Playing");
+
+  await page.getByLabel("Back to library").click();
+  await expect(page).toHaveURL(/#\/next\/item\/movie-1$/, { timeout: 1_000 });
+  await expect(page.getByRole("heading", { name: "Arrival", level: 2 })).toBeVisible({ timeout: 1_000 });
+  expect(reportPaths(log)).not.toContain("/Sessions/Playing/Stopped");
+
+  log.releaseReports();
+  await expect.poll(() => reportPaths(log)).toContain("/Sessions/Playing/Stopped");
+});
+
+test("never puts a token in a request URL, including the stream", async ({ page }) => {
+  const log = await mockPlayerServer(page);
+  await openArrival(page);
+  await page.getByRole("link", { name: "Play" }).click();
+  await expect(page.locator("video")).toHaveCount(1);
+  await expect(page.getByText("Browser — unverified")).toBeVisible();
+  await expect.poll(() => log.requestUrls.some((url) => new URL(url).pathname === "/Videos/movie-1/stream")).toBe(true);
+  expect(log.requestUrls.filter((url) => /api_?key|access_token|token/i.test(url))).toEqual([]);
 });
 
 test("Resume starts at the saved position and the end of the file returns to the detail view", async ({ page }) => {
