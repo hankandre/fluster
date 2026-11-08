@@ -14,16 +14,20 @@ export function TrickplayThumbnail({ info, cache, seconds, label }: {
   const place = thumbnailPlace(info, seconds);
   const [loaded, setLoaded] = useState<{ index: number; url: string }>();
 
+  const tileIndex = place?.tileIndex;
+
   useEffect(() => {
+    if (tileIndex === undefined) return;
     let current = true;
-    void cache.load(place.tileIndex).then((url) => {
-      if (current && url) setLoaded({ index: place.tileIndex, url });
+    void cache.load(tileIndex).then((url) => {
+      if (current && url) setLoaded({ index: tileIndex, url });
     });
     return () => {
       current = false;
     };
-  }, [cache, place.tileIndex]);
+  }, [cache, tileIndex]);
 
+  if (!place) return null;
   const url = cache.peek(place.tileIndex) ?? (loaded?.index === place.tileIndex ? loaded.url : undefined);
   return <div className="seek-thumbnail" role="img" aria-label={label} style={thumbnailStyle(info, place, url)} />;
 }

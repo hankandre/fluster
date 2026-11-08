@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { TileCache } from "./tile-cache";
+import { FAILED_TILE_RETRY_MS, TileCache } from "./tile-cache";
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -22,12 +22,21 @@ describe("TileCache", () => {
     expect(cache.peek(3)).toBeUndefined();
   });
 
-  it("resolves to undefined when a tile fails, and tries again next time", async () => {
-    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:tile");
-    const fetchTile = vi.fn().mockRejectedValueOnce(new Error("offline")).mockResolvedValue(new Blob(["x"]));
-    const cache = new TileCache(fetchTile);
-    await expect(cache.load(0)).resolves.toBeUndefined();
-    await expect(cache.load(0)).resolves.toBe("blob:tile");
+  it("resolves to undefined when a tile fails and retries only after the window", async () => {
+    vi.useFakeTimers();
+    try {
+      vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:tile");
+      const fetchTile = vi.fn().mockRejectedValueOnce(new Error("offline")).mockResolvedValue(new Blob(["x"]));
+      const cache = new TileCache(fetchTile);
+      await expect(cache.load(0)).resolves.toBeUndefined();
+      await expect(cache.load(0)).resolves.toBeUndefined();
+      expect(fetchTile).toHaveBeenCalledTimes(1);
+      vi.advanceTimersByTime(FAILED_TILE_RETRY_MS);
+      await expect(cache.load(0)).resolves.toBe("blob:tile");
+      expect(fetchTile).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("does not keep a tile that arrives after dispose", async () => {

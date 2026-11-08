@@ -8,7 +8,10 @@ export interface ThumbnailPlace {
   row: number;
 }
 
-export function thumbnailPlace(info: TrickplayInfo, seconds: number): ThumbnailPlace {
+// Undefined when the layout cannot be addressed (zero or negative sizes).
+export function thumbnailPlace(info: TrickplayInfo, seconds: number): ThumbnailPlace | undefined {
+  const sizes = [info.intervalMs, info.thumbnailCount, info.tileWidth, info.tileHeight];
+  if (sizes.some((size) => !(size > 0))) return undefined;
   const thumbnailIndex = Math.min(
     Math.max(0, Math.floor((seconds * 1000) / info.intervalMs)),
     info.thumbnailCount - 1,

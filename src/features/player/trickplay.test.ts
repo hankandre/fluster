@@ -19,6 +19,15 @@ describe("thumbnailPlace", () => {
     expect(thumbnailPlace(info, seconds)).toEqual({ tileIndex, column, row });
   });
 
+  it.each([
+    ["interval", { intervalMs: 0 }],
+    ["thumbnail count", { thumbnailCount: 0 }],
+    ["tile width", { tileWidth: 0 }],
+    ["tile height", { tileHeight: -1 }],
+  ])("returns no place for a zero or negative %s", (_name, change) => {
+    expect(thumbnailPlace({ ...info, ...change }, 30)).toBeUndefined();
+  });
+
   it("clamps to the first and last thumbnail", () => {
     expect(thumbnailPlace(info, -5)).toEqual({ tileIndex: 0, column: 0, row: 0 });
     expect(thumbnailPlace(info, 99999)).toEqual({ tileIndex: 1, column: 1, row: 0 });
