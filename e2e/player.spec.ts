@@ -38,6 +38,7 @@ interface ServerOptions {
 
 interface ServerLog {
   playbackInfo: Array<Record<string, unknown>>;
+  playbackInfoQueries: URLSearchParams[];
   reports: Array<{ path: string; body: Record<string, unknown> }>;
   segmentRequests: Array<{ search: string; authorization: string | undefined }>;
   requestUrls: string[];
@@ -50,6 +51,7 @@ async function mockPlayerServer(page: Page, options: ServerOptions = {}): Promis
   const reportGate = new Promise<void>((resolve) => { releaseReports = resolve; });
   const log: ServerLog = {
     playbackInfo: [],
+    playbackInfoQueries: [],
     reports: [],
     segmentRequests: [],
     requestUrls: [],
@@ -119,6 +121,7 @@ async function mockPlayerServer(page: Page, options: ServerOptions = {}): Promis
         });
       case "/Items/movie-1/PlaybackInfo":
         log.playbackInfo.push(request.postDataJSON());
+        log.playbackInfoQueries.push(url.searchParams);
         if (options.playbackDelayMs) await new Promise((resolve) => setTimeout(resolve, options.playbackDelayMs));
         if (log.playbackInfo.length <= (options.noDirectPlayAnswers ?? 0)) {
           return json({ PlaySessionId: `play-${log.playbackInfo.length}`, MediaSources: [{ ...source, SupportsDirectPlay: false }] });
@@ -145,6 +148,15 @@ async function openArrival(page: Page) {
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
 }
 
+// Every direct-play flag that must stay false, in the body and in the query string.
+function expectNoServerConversion(log: ServerLog, index: number) {
+  expect(log.playbackInfo[index]).toMatchObject({ EnableDirectPlay: true, EnableDirectStream: false, EnableTranscoding: false });
+  const query = log.playbackInfoQueries[index];
+  expect(query.get("EnableDirectPlay")).toBe("true");
+  expect(query.get("EnableDirectStream")).toBe("false");
+  expect(query.get("EnableTranscoding")).toBe("false");
+}
+
 function reportPaths(log: ServerLog): string[] {
   return log.reports.map((report) => report.path);
 }
@@ -167,6 +179,7 @@ test("Play opens the player and Back returns to the detail view", async ({ page 
     EnableDirectStream: false,
     EnableTranscoding: false,
   });
+  expectNoServerConversion(log, 0);
 
   await page.getByLabel("Back to library").click();
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
@@ -215,6 +228,7 @@ test("Resume starts at the saved position and the end of the file returns to the
   await expect(page.getByRole("heading", { name: "Arrival", level: 1 })).toBeVisible();
   await expect.poll(() => log.playbackInfo.length).toBe(1);
   expect(log.playbackInfo[0]).toMatchObject({ StartTimeTicks: 7_540_000_000, MediaSourceId: "src-hd" });
+  expectNoServerConversion(log, 0);
   await expect.poll(() => reportPaths(log)).toContain("/Sessions/Playing");
 
   await page.locator("video").evaluate((video) => video.dispatchEvent(new Event("ended")));
@@ -225,13 +239,17 @@ test("Resume starts at the saved position and the end of the file returns to the
 });
 
 test("Retry after a playback error renegotiates, and Back returns to the detail view", async ({ page }) => {
-  const log = await mockPlayerServer(page, { failPlayback: true });
+  const log = await mockPlayerServer(page, { failPlayback: true, resumeTicks: 4_200_000_000 });
   await openArrival(page);
 
-  await page.getByRole("link", { name: "Play" }).click();
+  await page.getByRole("link", { name: "Resume from 7:00" }).click();
   await expect(page.getByRole("heading", { name: "Playback could not start" })).toBeVisible();
   await page.getByRole("button", { name: "Retry" }).click();
   await expect.poll(() => log.playbackInfo.length).toBe(2);
+  expect(log.playbackInfo[0]).toMatchObject({ StartTimeTicks: 4_200_000_000 });
+  expect(log.playbackInfo[1]).toMatchObject({ StartTimeTicks: 4_200_000_000 });
+  expectNoServerConversion(log, 0);
+  expectNoServerConversion(log, 1);
   expect(log.playbackInfo[1]).toMatchObject({ MediaSourceId: "src-hd", EnableTranscoding: false });
   await expect.poll(() => (
     log.reports.filter((report) => report.path === "/Sessions/Playing/Stopped").map((report) => report.body.Failed)

@@ -1,5 +1,5 @@
 // Import-boundary rules from DOMAINS.md "Dependency rules".
-// Composition roots (src/main.tsx, src/app/) and the frozen proof of concept (src/poc/) may import adapters.
+// Composition roots (src/main.tsx, src/app/) may import adapters.
 // Test files are exempt from every rule.
 const tests = "\\.test\\.tsx?$|^src/test/";
 
@@ -13,7 +13,7 @@ module.exports = {
       from: { path: "^src/domain/", pathNot: tests },
       to: {
         path:
-          "^src/(lib|components|features|app|poc)/|node_modules/(react|react-dom|@jellyfin/sdk|@tauri-apps|axios)/",
+          "^src/(lib|components|features|app)/|node_modules/(react|react-dom|@jellyfin/sdk|@tauri-apps|axios)/",
       },
     },
     {
@@ -27,7 +27,7 @@ module.exports = {
       },
       to: {
         path:
-          "node_modules/(react|react-dom|@tanstack|@tauri-apps)/|^src/(components|features|app|poc)/|^src/lib/(player/(browser-player|native-player)|realtime/|install-id|browser-)",
+          "node_modules/(react|react-dom|@tanstack|@tauri-apps)/|^src/(components|features|app)/|^src/lib/(player/(browser-player|native-player)|realtime/|install-id|browser-)",
       },
     },
     {
@@ -47,7 +47,7 @@ module.exports = {
         "DOMAINS.md > Dependency rules 2: adapters never import UI or application code. Pass what the adapter needs in as arguments instead.",
       from: { path: "^src/lib/", pathNot: tests },
       to: {
-        path: "^src/(components|features|app|poc)/|node_modules/react/",
+        path: "^src/(components|features|app)/|node_modules/react/",
       },
     },
     {
