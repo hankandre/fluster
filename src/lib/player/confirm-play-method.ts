@@ -14,3 +14,11 @@ export function confirmedPlan(plan: PlaybackPlan, server: ServerPlayMethod): Pla
   for (const reason of server.reasons) if (!reasons.includes(reason)) reasons.push(reason);
   return { ...plan, playMethod: copies ? "DirectStream" : "Transcode", conversionReasons: reasons };
 }
+
+// What every playstate report says about a converted session: Transcode, even
+// when the server confirmed it only repackages. A DirectStream report makes
+// Jellyfin clear the session's TranscodingInfo while ffmpeg still runs, so the
+// server would lose track of the job. The UI keeps the confirmed label.
+export function reportedPlan(plan: PlaybackPlan): PlaybackPlan {
+  return plan.delivery === "hls" && plan.playMethod !== "Transcode" ? { ...plan, playMethod: "Transcode" } : plan;
+}

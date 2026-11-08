@@ -266,16 +266,16 @@ export interface SessionObservation {
   transcoding?: { isVideoDirect?: boolean; isAudioDirect?: boolean };
 }
 
-// /Sessions must agree with the play method the app reports once the server
-// confirmed it (decision 0002 rule 5 as amended 2026-11-08). TranscodingInfo,
-// seen at any time while the job ran, says DirectStream exactly when video
-// and, for a source with audio, audio are copied (IsVideoDirect,
-// IsAudioDirect); a Transcode label for a stream the server copies disagrees
-// as much as a DirectStream label for one it re-encodes. PlayState.PlayMethod
-// in every poll at or after `since` (the first report with the confirmed
-// method) must equal that method. The two are read from different polls
-// because a start or progress report whose PlayMethod is not Transcode makes
-// the server drop TranscodingInfo (SessionManager.OnPlaybackStart and
+// /Sessions must agree with the app's confirmed method (the label the viewer
+// sees) and with the app's reports (decision 0002 rule 5 as amended
+// 2026-11-08, second amendment). TranscodingInfo, seen at any time while the
+// job ran, says DirectStream exactly when video and, for a source with audio,
+// audio are copied (IsVideoDirect, IsAudioDirect); that must equal the
+// confirmed method. Every report for a converted session carries PlayMethod
+// Transcode, so PlayState.PlayMethod in every poll at or after `since` (the
+// first report after confirmation) must be Transcode and at least one such
+// poll must still show TranscodingInfo: a DirectStream or DirectPlay report
+// makes the server drop it (SessionManager.OnPlaybackStart and
 // OnPlaybackProgress call ClearTranscodingInfo, v10.11.7 lines 759-762 and
 // 888-891, v12.4 lines 778-781 and 920-923).
 export function checkSessionAgreement(method: string, observations: readonly SessionObservation[], hasAudio: boolean, since = 0): string[] {
@@ -296,7 +296,10 @@ export function checkSessionAgreement(method: string, observations: readonly Ses
   const reported = observations.filter((observation) => (observation.at ?? 0) >= since);
   if (reported.length === 0) failures.push("oracle: /Sessions never showed this playback after the confirmed method was reported");
   for (const playMethod of new Set(reported.map((observation) => observation.playMethod ?? "none"))) {
-    if (playMethod !== method) failures.push(`method: /Sessions PlayMethod ${playMethod}, plan ${method}`);
+    if (playMethod !== "Transcode") failures.push(`method: /Sessions PlayMethod ${playMethod}, reports must stay Transcode`);
+  }
+  if (reported.length > 0 && !reported.some((observation) => observation.transcoding)) {
+    failures.push("method: /Sessions lost TranscodingInfo after the confirmed method was reported");
   }
   return failures;
 }

@@ -1,5 +1,6 @@
 import type { PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
 import { redactText } from "../redact";
+import { reportedPlan } from "./confirm-play-method";
 
 const PROGRESS_INTERVAL_MS = 10_000;
 const REPORT_FLUSH_TIMEOUT_MS = 5_000;
@@ -62,12 +63,12 @@ export class PlaystateReporter {
   ): void {
     if (this.started) return;
     this.started = true;
-    this.queueReport((signal) => this.gateway.reportStart(plan, snapshot, signal));
+    this.queueReport((signal) => this.gateway.reportStart(reportedPlan(plan), snapshot, signal));
     this.progressTimer = setInterval(() => {
       const latest = currentSnapshot();
       const latestPlan = currentPlan() ?? plan;
       if (latest && this.started) {
-        this.queueReport((signal) => this.gateway.reportProgress(latestPlan, latest, signal));
+        this.queueReport((signal) => this.gateway.reportProgress(reportedPlan(latestPlan), latest, signal));
       }
     }, PROGRESS_INTERVAL_MS);
   }
@@ -75,7 +76,7 @@ export class PlaystateReporter {
   /** Report progress now. Ignored until the start has been reported. */
   progress(plan: PlaybackPlan, snapshot: PlaybackSnapshot): void {
     if (!this.started) return;
-    this.queueReport((signal) => this.gateway.reportProgress(plan, snapshot, signal));
+    this.queueReport((signal) => this.gateway.reportProgress(reportedPlan(plan), snapshot, signal));
   }
 
   stopProgress(): void {
@@ -92,7 +93,7 @@ export class PlaystateReporter {
     this.stopProgress();
     let sendStopped: ((signal: AbortSignal) => Promise<void>) | undefined;
     if (plan && snapshot && this.started) {
-      sendStopped = (signal) => this.gateway.reportStopped(plan, snapshot, signal, failed);
+      sendStopped = (signal) => this.gateway.reportStopped(reportedPlan(plan), snapshot, signal, failed);
     }
     const drain = this.drain(this.queue, this.controller, sendStopped, plan);
     this.drains = Promise.all([this.drains, drain]).then(() => undefined);

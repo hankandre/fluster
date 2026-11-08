@@ -93,7 +93,7 @@ Fluster never uses a `TranscodingUrl` as given. Playback Negotiation parses it a
 
 ### Playstate reporting
 
-`PlayMethod` in start, progress, and stopped reports is the plan's method: `DirectPlay`, `DirectStream`, or `Transcode`. The server rewrites `Transcode` to `DirectPlay` when it has no job for the session (`ValidatePlayMethod`, `PlaystateController.cs` v10.11.7 lines 522-531), so a wrong `Transcode` cannot hide a missing job, but a wrong `DirectStream` is not corrected. How the dashboard labels `DirectStream` against `TranscodingInfo` is **[unverified]**; the tripwire records both.
+`PlayMethod` in start, progress, and stopped reports is `DirectPlay` for the original file and always `Transcode` for a converted (`hls`) session, even when the server-confirmed UI label is DirectStream (amended 2026-11-08: a non-Transcode report makes the server clear `TranscodingInfo` while ffmpeg runs). The server rewrites `Transcode` to `DirectPlay` when it has no job for the session (`ValidatePlayMethod`, `PlaystateController.cs` v10.11.7 lines 522-531), so a wrong `Transcode` cannot hide a missing job, but a wrong `DirectStream` is not corrected. How the dashboard labels `DirectStream` against `TranscodingInfo` is **[unverified]**; the tripwire records both.
 
 ### Subtitles while converting
 
@@ -155,7 +155,7 @@ No exception puts a token into a URL that Fluster builds or sends.
 - The BluRay folder must come back DirectStream or Transcode (no `Static=true` request), show the indicator reason, and leave no ffmpeg process within 10 s after the stopped report.
 - A forced-limit run sets `MaxStreamingBitrate` below the sample bitrate for one sample and must come back Transcode with reason `ContainerBitrateExceedsLimit`, request only same-origin `master.m3u8`, `main.m3u8`, and `hls1/` URLs with no credential parameter and no `EnableTrickplay` other than `false`, and leave no job after stop.
 - A fixture user with transcoding disabled must get the `conversion-not-allowed` refusal for the BluRay folder.
-- `/Sessions` `PlayState.PlayMethod` and `TranscodingInfo.IsVideoDirect`/`IsAudioDirect` are recorded for every conversion and must match the plan's method.
+- `/Sessions` `PlayState.PlayMethod` and `TranscodingInfo.IsVideoDirect`/`IsAudioDirect` are recorded for every conversion and must match the confirmed method (`TranscodingInfo`), and the reported `PlayMethod` must stay `Transcode` for a conversion.
 
 ## Consequences
 
