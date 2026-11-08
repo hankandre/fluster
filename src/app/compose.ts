@@ -12,6 +12,7 @@ import { NoOpRealtime } from "../lib/realtime/no-op-realtime";
 import { NativeServerDiscovery } from "../lib/discovery/native-discovery";
 import type { PlayerEngine } from "../domain/playback";
 import { isTauriRuntime, NativePlayerEngine } from "../lib/player/native-player";
+import { E2eHlsEngine } from "../test/e2e-hls-engine";
 import { createNativeMediaControls } from "./media-controls";
 import { watchNativeWindowClose } from "./window-close";
 
@@ -37,7 +38,12 @@ export function createServices(): AppServices {
   return {
     native,
     createGateway: (serverUrl) => new JellyfinGateway(serverUrl, undefined, getInstallId(), lanHttpConfirmations, streamingLimits),
-    createPlayerEngine: () => (native ? new NativePlayerEngine() : new BrowserPlayerEngine()),
+    createPlayerEngine: () => {
+      // Build-time only: the e2e dev server sets this; a production build
+      // replaces it with undefined and drops the test engine.
+      if (import.meta.env.VITE_FLUSTER_E2E_ENGINE === "fake-hls") return new E2eHlsEngine();
+      return native ? new NativePlayerEngine() : new BrowserPlayerEngine();
+    },
     streamingLimits,
     realtime: native ? new NativeRealtime() : new NoOpRealtime(),
     discovery: native ? new NativeServerDiscovery() : undefined,

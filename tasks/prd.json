@@ -1233,7 +1233,7 @@
           "status": "done",
           "owner": "implementer",
           "passes": true,
-          "evidence": "pnpm check green (953 vitest incl. conversion-copy, per-method gateway reports, chip and info-panel view tests; cargo 173); pnpm test:e2e 32 passed; lint:boundaries and typecheck:core green.\nConversionChip (role=status, icon + words) and Info panel reasons; Record<ConversionReason, string> in src/features/player/conversion-copy.ts; plan.subtitlesBurnedIn from SubtitleMethod=Encode in Playback Negotiation; reports send plan.playMethod.\nGap: the browser engine cannot play HLS, so Playwright direct stream and transcode journeys assert refusal, no indicator, no reports; the chip is covered by player-view.test.tsx."
+          "evidence": "pnpm check green (953 vitest incl. conversion-copy, per-method gateway reports, chip and info-panel view tests; cargo 173); pnpm test:e2e 32 passed; lint:boundaries and typecheck:core green.\nConversionChip (role=status, icon + words) and Info panel reasons; Record<ConversionReason, string> in src/features/player/conversion-copy.ts; plan.subtitlesBurnedIn from SubtitleMethod=Encode in Playback Negotiation; reports send plan.playMethod.\nPlaywright conversion.spec.ts runs on a second dev server built with the test-only fake-hls engine (VITE_FLUSTER_E2E_ENGINE, absent from dist; pnpm test:no-test-engine in check) and shows the chip and PlayMethod for direct stream and transcode (34 e2e passed)."
         },
         {
           "id": "P10-07",
