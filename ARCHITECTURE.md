@@ -35,9 +35,9 @@ No alternative removes the hard problems, which come from mpv and the platforms 
 3. **Windows needs a composition spike.** Before promising Windows, test a transparent WebView2 over an mpv D3D11 surface (mpv 0.42 added a D3D11 Render API backend). **[unverified]** whether WebView2 transparency over a sibling D3D HWND is reliable.
 4. **Tauri will not reach tvOS.** The maintainers closed tvOS as not planned, and tvOS has no WebView. Tauri mobile has no native-video-under-WebView plugin.
 
-### TV and mobile direction (M6)
+### TV and mobile direction (M6, moved earlier by decision 0002)
 
-Keep the domain, Jellyfin gateway, playback policy, and coordinator **framework-free TypeScript**, so a second shell can reuse them unchanged. The leading candidate shell is React Native (`react-native-tvos`) with a native mpv module (MPVKit on Apple, libmpv on Android). Streamyfin ships this combination on iOS, Android, tvOS, and Android TV. A SwiftUI app is the fallback for Apple TV.
+Keep the domain, Jellyfin gateway, playback policy, and coordinator **framework-free TypeScript**, so a second shell can reuse them unchanged. The shell spike starts once the fallback negotiation (P10-03) lands, because the TV engine must play the same plans, including HLS with header authentication. The leading candidate shell is React Native (`react-native-tvos`) with a native mpv module (MPVKit on Apple, libmpv on Android). Streamyfin ships this combination on iOS, Android, tvOS, and Android TV. A SwiftUI app is the fallback for Apple TV.
 
 ### Revisit this decision if
 
@@ -74,7 +74,7 @@ Keep the domain, Jellyfin gateway, playback policy, and coordinator **framework-
 
 - **Desktop composition.** The native video surface sits beneath a transparent WebView. React measures the player rectangle and Rust positions the surface. See `docs/architecture.md`.
 - **The engine is a port.** `PlayerEngine` is the seam between the core and any player: native mpv, the dev-only browser engine, or a future mobile/TV engine.
-- **Rust exposes a fixed command list:** initialize, load, surface geometry, pause, seek, volume, mute, track selection, fullscreen, stop, and the server socket's connect and disconnect. Adding a command is an architectural change (see the invariants).
+- **Rust exposes a fixed command list:** initialize, load, surface geometry, pause, seek, volume, mute, track selection, fullscreen, stop, and the server socket's connect and disconnect. Adding a command is an architectural change (see the invariants). Decision 0002 adds no command: an HLS launch is a typed `delivery` field on the load request. Music queueing (P11) will need one, decided in its own task.
 - **In-process libmpv** trades fault isolation for integrated presentation. A driver crash takes the app down. Keep the native layer isolated so it can move out of process later.
 
 ---
@@ -127,58 +127,53 @@ Performance rules:
 
 ### Playback negotiation (the core)
 
+Policy: [decision 0002](docs/decisions/0002-server-transcoding-fallback.md). Play the original file whenever possible; otherwise let the server remux or transcode over HLS, show it, and authenticate every request with the header. **Implementation status:** the code still enforces the earlier direct-play-only rule (all conversion flags false, no transcoding profiles, every `TranscodingUrl` refused) until tasks P10-03 and P10-04 land.
+
 ```text
 GET  /Items/{id}?fields=MediaSources,Chapters,Trickplay      → versions, chapters, trickplay
 POST /Items/{id}/PlaybackInfo                                → MediaSources[] evaluated for THIS device
-     body:  UserId, StartTimeTicks, MediaSourceId?, MaxStreamingBitrate: 1e9,
-            EnableDirectPlay:true, EnableDirectStream:false, EnableTranscoding:false,
-            AllowVideoStreamCopy:false, AllowAudioStreamCopy:false, AutoOpenLiveStream:false,
-            DeviceProfile: FLUSTER_PROFILE
-     query: the same false flags, duplicated
-select source → GET /Videos/{id}/stream?Static=true&MediaSourceId=&PlaySessionId=  (header auth, via libmpv)
+     body:  UserId, StartTimeTicks, MediaSourceId?, MaxStreamingBitrate: <user's local or remote limit>,
+            EnableDirectPlay:true, EnableDirectStream:true, EnableTranscoding:true,
+            AllowVideoStreamCopy:true, AllowAudioStreamCopy:true, AutoOpenLiveStream:false,
+            AlwaysBurnInSubtitleWhenTranscoding:false, DeviceProfile: FLUSTER_PROFILE
+     query: the same flags, duplicated
+decide   DirectPlay   → GET /Videos/{id}/stream?Static=true&MediaSourceId=&PlaySessionId=   (header auth, via libmpv)
+         DirectStream → GET /videos/{id}/master.m3u8?… rebuilt from TranscodingUrl, credentials stripped,
+         Transcode      EnableTrickplay=false                                               (header auth on every playlist and segment)
+         Refuse       → typed RefusalReason
 ```
 
 **Always send a DeviceProfile.** The server applies `EnableDirectPlay`, user policy, the remote bitrate limit, and `ForceRemoteSourceTranscoding` only inside `SetDeviceSpecificData`, which runs **only when a profile is present**. That is also the only place subtitle `DeliveryMethod`/`DeliveryUrl` get filled in. Without a profile, the server's direct-play evaluation is skipped and external subtitles have no URL.
 
-The profile accepts everything for direct play and offers no way to transcode:
+The profile accepts everything for direct play, so a codec never causes a conversion, and offers one HLS target per media type for fallback:
 
-```json
-{
-  "Name": "Fluster",
-  "MaxStreamingBitrate": 1000000000,
-  "MaxStaticBitrate": 1000000000,
-  "DirectPlayProfiles": [{ "Type": "Video" }, { "Type": "Audio" }],
-  "TranscodingProfiles": [],
-  "ContainerProfiles": [],
-  "CodecProfiles": [],
-  "SubtitleProfiles": [
-    { "Format": "srt", "Method": "External" }, { "Format": "ass", "Method": "External" },
-    { "Format": "ssa", "Method": "External" }, { "Format": "vtt", "Method": "External" },
-    { "Format": "sub", "Method": "External" }, { "Format": "pgssub", "Method": "External" },
-    { "Format": "srt", "Method": "Embed" }, { "Format": "ass", "Method": "Embed" },
-    { "Format": "ssa", "Method": "Embed" }, { "Format": "pgssub", "Method": "Embed" },
-    { "Format": "dvdsub", "Method": "Embed" }, { "Format": "vtt", "Method": "Embed" }
-  ]
-}
-```
+- `DirectPlayProfiles`: `[{ "Type": "Video" }, { "Type": "Audio" }]` (match-all).
+- `TranscodingProfiles`: Video, `Protocol: "hls"`, `Context: "Streaming"`, `Container: "mp4"` (fMP4, so HEVC and AV1 can be stream-copied), `VideoCodec` with the encode target first (proposed `h264,hevc,av1,vp9`), `AudioCodec` (proposed `aac,ac3,eac3,opus,flac,mp3`), `EnableSubtitlesInManifest: false`; Audio, `Protocol: "hls"`, `Container: "mp4"`, `AudioCodec: "aac"`. Lists are confirmed by contract fixtures (P10-02).
+- `CodecProfiles`, `ContainerProfiles`: empty.
+- `SubtitleProfiles`: `External` and `Embed` for `srt`, `ass`, `ssa`, `vtt`, `sub`, `pgssub` (External) and `srt`, `ass`, `ssa`, `pgssub`, `dvdsub`, `vtt` (Embed). Never `Hls`: HLS subtitle renditions carry `ApiKey={token}` in the playlist (`DynamicHlsHelper.cs` v10.11.7 line 615).
+- `MaxStreamingBitrate`: the user's limit; `MaxStaticBitrate`: 1 Gbps.
 
 Empty `Container`/`VideoCodec`/`AudioCodec` fields mean "match anything": `ContainerHelper.ContainsContainer` returns true for an empty profile list (`MediaBrowser.Model/Extensions/ContainerHelper.cs` lines 82-88 at v10.11.7 and v12.4), and `StreamBuilder` uses it for the container, video, and audio checks (v12.4 lines 1346, 1357, 1366). A source with an empty `Container` does not match, which is the BluRay folder case. Contract fixtures confirm `SupportsDirectPlay: true` with this profile on 10.11.7 and 12.4.0 for the H.264/AAC, HEVC Main10 HDR10, AV1, embedded-ASS, and multi-audio (AAC + AC-3) MKV samples.
 
-**Media source acceptance.** A source is playable only if **all** of these hold:
+**Source decision.** `decideSource` (`src/lib/jellyfin/source-acceptance.ts`) returns `DirectPlay`, `DirectStream`, `Transcode`, or `Refuse`. Rules run in order and the first that decides wins:
 
-1. `VideoType` is not `BluRay` or `Dvd` (any case), and `Path` has no `BDMV` or `VIDEO_TS` segment. A `Static=true` request for a disc-folder source silently starts ffmpeg on the server.
-2. `VideoType` is not `Iso` and `Path` does not end in `.iso` (any case). Rejected for now; **[unverified]** whether mpv handles ISO over HTTP.
-3. `RequiresOpening` is not `true` (a live source).
-4. `SupportsDirectPlay === true`
-5. `Protocol === "File"`
-6. `TranscodingUrl` is empty
-7. `Id` and `Path` are present.
+1. `Id` missing: Refuse `missing-source-data`.
+2. `RequiresOpening` is `true` (a live source): Refuse `live-source`, until Live TV has a decision record.
+3. **DirectPlay** when all hold: `SupportsDirectPlay === true`; `Protocol === "File"`; `Path` present; `VideoType` is not `BluRay`, `Dvd`, or `Iso` (any case) and `Path` has no `BDMV` or `VIDEO_TS` segment and does not end in `.iso`; `TranscodingUrl` is empty. A `Static=true` request for a disc folder silently starts ffmpeg on the server, so disc sources never direct play.
+4. A disc folder or ISO that the server offered for direct play: send a second PlaybackInfo for that `MediaSourceId` with `EnableDirectPlay: false`, then apply rule 5 to the answer.
+5. **DirectStream** or **Transcode** when `TranscodingUrl` is present, `TranscodingSubProtocol` is `hls`, and the rebuilt URL passes the HLS URL rules below. DirectStream when nothing is re-encoded (every `TranscodeReasons` value in the URL is `ContainerNotSupported` or `VideoCodecTagNotSupported`, and the URL's codec lists contain the source codecs); otherwise Transcode. **[unverified]** until the tripwire compares it with `/Sessions` `TranscodingInfo` (P10-09).
+6. Otherwise Refuse: `conversion-not-allowed` (no direct play and the server offers no conversion, for example user policy), `unsafe-transcoding-url`, or `no-sources`.
 
-The rules run in this order and the first failing rule names the reason; the disc checks come first so a disc folder always reports `disc-source` or `iso-source`. If no source qualifies, the gateway throws `PlaybackRefusedError` with a typed `RefusalReason` (`src/domain/playback.ts`): `no-sources`, `no-direct-play`, `not-a-file`, `live-source`, `server-requires-transcoding`, `disc-source`, `iso-source`, or `missing-source-data`. The server reports remote bitrate limits and remote-source policy as `SupportsDirectPlay: false`, so they surface as `no-direct-play`. The profile lives in `src/lib/jellyfin/device-profile.ts` and the rules in `src/lib/jellyfin/source-acceptance.ts`. Multiple versions are listed by `MediaSources[].Name` and chosen by `MediaSourceId`; without a choice the first acceptable source plays.
+With several versions, the first DirectPlay source wins, then the first DirectStream, then the first Transcode, then the first refusal. A requested `MediaSourceId` is never replaced by another version. The gateway throws `PlaybackRefusedError` with a typed `RefusalReason` (`src/domain/playback.ts`). Multiple versions are listed by `MediaSources[].Name`.
+
+**HLS URL rules.** A `TranscodingUrl` is never used as given. Playback Negotiation resolves it against the normalized server URL and refuses it unless the path is `/videos/{itemId}/master.m3u8` or `/audio/{itemId}/master.m3u8` (any case) for the requested item, on the server's origin, with no user info. It then removes every credential parameter (`ApiKey`, `api_key`, `access_token`, `Token`, `X-Emby-Token`, any case), sets `EnableTrickplay=false` (the server defaults it to `true` and then lists trickplay playlists with `ApiKey={token}`, `DynamicHlsController.cs` v10.11.7 line 464, `DynamicHlsHelper.cs` line 652), removes `EnableSubtitlesInManifest`, and refuses `SubtitleMethod=Hls`. The server builds variant and segment URLs from the request's own query string (`DynamicHlsHelper.cs` lines 152, 188-189; `DynamicHlsPlaylistGenerator.cs` lines 72-98), so they carry no key either. `DynamicHlsController` is `[Authorize]` (line 40) and reads the header token before any `ApiKey` query (`AuthorizationContext.cs` lines 90-106). `/Audio/{id}/universal` is never used, because it can redirect (`UniversalAudioController.cs` lines 175-177).
+
+**Indicator.** A DirectStream or Transcode plan carries its method and the server's `TranscodeReasons` (read from the URL; the `MediaSourceInfo` property is `[JsonIgnore]`). The player shows "Converting on server: {reason}" or "Repackaging on server, original quality: {reason}", and the information panel shows the method.
 
 **Subtitles and track mapping.**
 
 - External subtitle `DeliveryUrl` arrives as `/Videos/{id}/{msId}/Subtitles/{idx}/0/Stream.{fmt}?ApiKey=…`. Strip every query credential (`ApiKey`, `api_key`, `access_token`, `Token`, `X-Emby-Token`, any case), validate same-origin, and load it via `sub-add` with header auth.
+- While converting, HLS segments cannot carry subtitles (`IsSubtitleEmbedSupported`, `StreamBuilder.cs` v10.11.7 line 1522), so the server offers text subtitles as `External` and Fluster loads them the same way. Graphical subtitles it cannot extract are burned in (`Encode`, lines 1514-1519), and the indicator says so.
 - Embedded subtitles are rendered by mpv directly.
 - **Jellyfin numbers external streams first.** Embedded streams have `Index = ffprobeIndex + externalCount`. Map mpv `ff-index` to Jellyfin index as `ff-index + count(IsExternal)`. Map external tracks by the order Fluster added them.
 - Apply `DefaultAudioStreamIndex` and `DefaultSubtitleStreamIndex` for the initial selection.
@@ -193,10 +188,11 @@ The rules run in this order and the first failing rule names the reason; the dis
 | Every 10 s, and on pause/seek/track change | `POST /Sessions/Playing/Progress` |
 | End / stop / error | `POST /Sessions/Playing/Stopped`, with **`Failed: true` on the error path** so the server records no bogus progress |
 
-- Report bodies carry `ItemId`, `MediaSourceId`, `PlaySessionId`, `PositionTicks`, `IsPaused`, `IsMuted`, `VolumeLevel`, `AudioStreamIndex`, `SubtitleStreamIndex`, `CanSeek`, and `PlayMethod: "DirectPlay"`.
+- Report bodies carry `ItemId`, `MediaSourceId`, `PlaySessionId`, `PositionTicks`, `IsPaused`, `IsMuted`, `VolumeLevel`, `AudioStreamIndex`, `SubtitleStreamIndex`, `CanSeek`, and `PlayMethod` from the plan (`DirectPlay`, `DirectStream`, or `Transcode`). The server rewrites `Transcode` to `DirectPlay` when it has no job for the session (`ValidatePlayMethod`, `PlaystateController.cs` v10.11.7 lines 522-531).
 - Ticks are 10,000,000 per second.
 - The server applies its min/max resume percentages when it records progress.
-- `/Sessions/Playing/Ping` exists mainly to keep transcode jobs alive, so it is not needed for direct play.
+- `/Sessions/Playing/Ping` keeps transcode jobs alive. It is not needed for direct play. The server kills an HLS job 60 s after its last ping (`TranscodeManager.PingTimer`, v10.11.7 lines 144-170); Fluster pings while a conversion is paused unless progress reports already keep the job alive (**[unverified]**, P10-07).
+- **Stopping conversions.** The stopped report kills the session's jobs (`PlaystateController.cs` v10.11.7 lines 249-253). Fluster also calls `DELETE /Videos/ActiveEncodings?deviceId=&playSessionId=` (`HlsSegmentController.cs` lines 108-115) before starting a new play session for the same item (retry, quality or track change) and when a stopped report fails. Seeking needs no call: the server restarts ffmpeg at the requested segment (`DynamicHlsController.GetDynamicSegment`, lines 1490-1539).
 
 ### Realtime and remote control (M5)
 
@@ -229,7 +225,7 @@ The rules run in this order and the first failing rule names the reason; the dis
   1. Item detail.
   2. PlaybackInfo with the profile.
   3. Accept a source or show a refusal.
-  4. Launch mpv with header auth and subtitles.
+  4. Launch mpv with header auth and subtitles (static URL, or HLS with `delivery: "hls"`).
   5. Fetch segments (optional).
   6. Report start on first frame, then progress.
 - **Stop:** report stopped (with `Failed` on error), then refresh the affected rows.
@@ -247,13 +243,13 @@ Each invariant has an enforcement mechanism. Where the mechanism is "planned", i
 
 | # | Invariant | Enforced by |
 |---|---|---|
-| I1 | Fluster never causes server transcoding or remuxing | Frozen `PLAYBACK_POLICY`. False flags in body *and* query. DeviceProfile without transcoding profiles. Source acceptance rules. Server tripwire `pnpm test:tripwire` (`tests/integration/tripwire.ts`; CI job `tripwire`, not yet required). |
-| I2 | Only `Static=true` original-file URLs reach the player | Gateway URL builder, Rust URL validation, tests |
+| I1 | Fluster plays the original file whenever the server offers direct play and the source passes the direct-play rules; it never asks the server to convert such a source, and it never converts silently: every DirectStream or Transcode is shown with its reason ([decision 0002](docs/decisions/0002-server-transcoding-fallback.md)) | Source decision function (§3) with fixture tests; flags in body *and* query; DeviceProfile without codec conditions; server tripwire `pnpm test:tripwire` (every playable sample must direct play; disc and forced-limit samples must convert with the indicator; P10-09); indicator journey tests. Until P10-03 lands, the code enforces the stricter direct-play-only rule. |
+| I2 | Only two URL shapes reach the player: a `Static=true` original-file URL, or a same-origin `master.m3u8` URL rebuilt by Playback Negotiation with no credential and `EnableTrickplay=false` | Gateway URL builders, Rust URL validation by delivery type, tests |
 | I3 | No generic mpv command bridge; Rust exposes a fixed command list | Code review; `command_allowlist` Rust test (`src-tauri/src/command_allowlist.rs`) |
-| I4 | Tokens never appear in logs, errors, diagnostics, or URLs | Redaction in TS and Rust; canary tests (TS `redact-canary.test.ts`, Rust `redaction_canary`); Rust refuses stream and subtitle URLs with a credential query parameter (`validate_playback_urls`) |
-| I5 | Servers require HTTPS, except plain HTTP to loopback and, after a one-time per-server confirmation, to private-LAN hosts classified by the literal host ([decision 0001](docs/decisions/0001-private-lan-http.md)); tokens never go over plain HTTP to public hosts or across cross-origin redirects; credentials in URLs are rejected | Enforced: one host classifier in TS (`src/domain/host-class.ts`) and Rust (`src-tauri/src/url_policy.rs`), both tested against `tests/fixtures/host-classes.json`; gateway URL normalization refuses public HTTP before any request and the gateway refuses sign-in calls until the private-LAN confirmation; the gateway client and libmpv (`max_redirects=0`) follow no redirects; gateway, sign-in, and Rust tests |
+| I4 | Tokens never appear in logs, errors, diagnostics, or URLs; HLS playlists and segments authenticate with the header | Redaction in TS and Rust; canary tests (TS `redact-canary.test.ts`, Rust `redaction_canary`); Rust refuses stream, HLS, and subtitle URLs with a credential query parameter (`validate_playback_urls`); HLS loopback canary (P10-04) |
+| I5 | Servers require HTTPS, except plain HTTP to loopback and, after a one-time per-server confirmation, to private-LAN hosts classified by the literal host ([decision 0001](docs/decisions/0001-private-lan-http.md)); tokens never go over plain HTTP to public hosts or across cross-origin redirects; credentials in URLs are rejected | Enforced: one host classifier in TS (`src/domain/host-class.ts`) and Rust (`src-tauri/src/url_policy.rs`), both tested against `tests/fixtures/host-classes.json`; gateway URL normalization refuses public HTTP before any request and the gateway refuses sign-in calls until the private-LAN confirmation; the gateway client and libmpv (`max_redirects=0`, also on HLS nested opens, P10-04) follow no redirects; gateway, sign-in, and Rust tests |
 | I6 | Subtitle URLs must be same-origin and validated before authentication | TS + Rust checks, tests |
-| I7 | The browser engine is never a silent fallback for native | App wiring, review |
+| I7 | The browser engine is never a silent fallback for native, and it does not play HLS | App wiring, review |
 | I8 | Only the gateway talks to Jellyfin; only the engine port talks to the player | Import-boundary lint (`pnpm lint:boundaries`, dependency-cruiser; rules in `DOMAINS.md`) |
 | I9 | libmpv user config, scripts, and default input bindings stay disabled | MpvController initialization, tests |
 
@@ -273,6 +269,8 @@ Tracked in `docs/plans/active/001-jellyfin-api-correctness.md`.
 
 - Jellyfin OpenAPI specs 10.10.7, 10.11.11, 12.4 — https://api.jellyfin.org/openapi/stable/
 - Jellyfin server source at `v10.11.11` / `v12.4`: `AuthorizationContext.cs`, `MediaInfoController.cs`, `MediaInfoHelper.cs`, `VideosController.cs`, `StreamInfo.cs`, `FFProbeVideoInfo.cs`, `SessionManager.cs`, `AutoDiscoveryHost.cs`
+- Jellyfin server source at `v10.11.7` / `v12.4` for decision 0002: `DynamicHlsController.cs`, `DynamicHlsHelper.cs`, `DynamicHlsPlaylistGenerator.cs`, `HlsSegmentController.cs`, `PlaystateController.cs`, `TranscodeManager.cs`, `StreamBuilder.cs`, `UniversalAudioController.cs`
+- mpv v0.41.0 `demux/demux_lavf.c`, `stream/stream_lavf.c`; FFmpeg `libavformat/hls.c`, `aviobuf.c` (master at 2bf291526e)
 - Jellyfin 12.0 release notes — https://github.com/jellyfin/jellyfin/releases/tag/v12.0
 - Jellyfin API authorization guide — https://gist.github.com/nielsvanvelzen/ea047d9028f676185832e51ffaf12a6f
 - mpv Render API / gpu-next — https://github.com/mpv-player/mpv/issues/10810, mpv v0.42.0 release notes

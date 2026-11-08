@@ -2,11 +2,11 @@
 
 ## Invariants (ARCHITECTURE.md §4)
 
-- I1: Can any path cause server transcoding or remuxing?
-- I1: Are all direct-play flags false in both body and query?
-- I1: Is the DeviceProfile sent, with no transcoding profiles?
-- I1: Are BluRay, DVD, ISO, non-File, and `TranscodingUrl` sources rejected?
-- I2: Does only a `Static=true` original-file URL reach the player?
+- I1: Can any path convert a source that passes the direct-play rules?
+- I1: Is every DirectStream or Transcode shown with its reason?
+- I1: Are the PlaybackInfo flags the same in body and query, and is the DeviceProfile sent without codec conditions?
+- I1: Do BluRay, DVD, and ISO sources never direct play?
+- I2: Is every player URL a `Static=true` URL or a rebuilt same-origin `master.m3u8` with no credential and `EnableTrickplay=false`?
 - I3: Does the diff add a generic mpv command, property, or option path?
 - I3: Does a new Tauri command have a typed request, tests, and a `docs/security.md` update?
 - I4: Can a token, password, authenticated URL, or play-session ID reach a log, error, diagnostic, or URL?
