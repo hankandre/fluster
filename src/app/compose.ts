@@ -6,12 +6,15 @@ import { JellyfinGateway } from "../lib/jellyfin/gateway";
 import { BrowserPlayerEngine } from "../lib/player/browser-player";
 import { NativeRealtime } from "../lib/realtime/native-realtime";
 import { NoOpRealtime } from "../lib/realtime/no-op-realtime";
-import type { PocServices } from "../poc/services";
+import type { PlayerEngine } from "../domain/playback";
 import { isTauriRuntime, NativePlayerEngine } from "../lib/player/native-player";
 import { createNativeMediaControls } from "./media-controls";
 import { watchNativeWindowClose } from "./window-close";
 
-export type AppServices = PocServices & {
+export type AppServices = {
+  native: boolean;
+  createGateway(serverUrl: string): JellyfinGateway;
+  createPlayerEngine(): PlayerEngine;
   realtime: RealtimeConnection;
   // Lets playback stop and report before the desktop window closes.
   watchWindowClose?: (beforeClose: () => Promise<void>) => () => void;

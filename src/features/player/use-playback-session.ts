@@ -92,8 +92,7 @@ export interface PlaybackSessionOptions {
   onLeave(reason?: PlaybackEndReason): void;
 }
 
-// Runs one playback from negotiation to teardown, like the proof of concept's
-// player wiring: one coordinator per session, retry in place, and Back stops
+// Runs one playback from negotiation to teardown: one coordinator per session, retry in place, and Back stops
 // before leaving.
 export function usePlaybackSession(options: PlaybackSessionOptions) {
   const { gateway, player, item, mediaSourceId, startTicks } = options;

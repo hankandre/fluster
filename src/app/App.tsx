@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { PocApp } from "../poc/PocApp";
 import { FeatureIndex } from "../features";
 import { NotFoundView } from "../features/not-found";
 import { SignInView } from "../features/sign-in";
@@ -10,17 +9,13 @@ import { SearchView } from "../features/search";
 import { DetailView, ItemDetailView } from "../features/detail";
 import { PlayerFeatureView, PlayerRouteView } from "../features/player";
 import { parsePlayRoute } from "../features/routes";
-import type { PocServices } from "../poc/services";
-import { createServices } from "./compose";
+import { createServices, type AppServices } from "./compose";
 import { PlayerServicesProvider, type PlayerServices } from "./player-services";
 import { SessionProvider } from "./session";
 
 export function App() {
   const services = useMemo(() => createServices(), []);
-  // One player engine for the new UI. The proof of concept keeps creating its
-  // own so its coordinator can never hear the new UI's playback. Native mode
-  // has one mpv behind both, so switching between them while playing is
-  // unsupported; the proof of concept is removed in P3-16.
+  // One player engine for the whole app.
   const player = useMemo<PlayerServices>(
     () => ({
       engine: services.createPlayerEngine(),
@@ -32,6 +27,13 @@ export function App() {
   const queryClient = useQueryClient();
   const refreshRows = useCallback(() => void refreshHomeRows(queryClient), [queryClient]);
   const [hash, setHash] = useState(window.location.hash);
+
+  // The app lives under #/next. Anything else, including an empty hash, goes
+  // to Home, which sends a signed-out visitor on to sign-in.
+  const inApp = isAppHash(hash);
+  useEffect(() => {
+    if (!inApp) window.location.replace(HOME_HASH);
+  }, [inApp]);
 
   useEffect(() => {
     const onHashChange = () => setHash(window.location.hash);
@@ -45,12 +47,25 @@ export function App() {
       realtime={services.realtime}
       onServerDataChanged={refreshRows}
     >
-      <PlayerServicesProvider services={player}>{renderRoute(hash, services)}</PlayerServicesProvider>
+      <PlayerServicesProvider services={player}>
+        {!services.native && <BrowserModeLabel />}
+        {inApp ? renderRoute(hash) : null}
+      </PlayerServicesProvider>
     </SessionProvider>
   );
 }
 
-function renderRoute(hash: string, services: PocServices) {
+const HOME_HASH = "#/next/home";
+
+function isAppHash(hash: string): boolean {
+  return hash === "#/next" || hash.startsWith("#/next/");
+}
+
+function BrowserModeLabel() {
+  return <p className="browser-mode-label" role="status">Browser development mode</p>;
+}
+
+function renderRoute(hash: string) {
   switch (hash) {
     case "#/next":
       return <FeatureIndex />;
@@ -68,9 +83,7 @@ function renderRoute(hash: string, services: PocServices) {
       return <PlayerFeatureView />;
     default:
       if (hash.startsWith("#/next/play/")) return renderPlayRoute(hash);
-      // Only a hash outside #/next shows the proof of concept.
-      if (hash === "#/next" || hash.startsWith("#/next/")) return renderBrowseRoute(hash) ?? <NotFoundView />;
-      return <PocApp services={services} />;
+      return renderBrowseRoute(hash) ?? <NotFoundView />;
   }
 }
 

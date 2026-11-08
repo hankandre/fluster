@@ -106,3 +106,10 @@ test("a public HTTP server is refused without any request", async ({ page }) => 
   await expect(page.getByRole("alert")).toContainText("plain HTTP on the internet");
   expect(requests).toEqual([]);
 });
+
+test("the app opens on manual server connection with a browser-mode label", async ({ page }) => {
+  await page.goto("/");
+  await expect(page).toHaveURL(/#\/next\/sign-in$/);
+  await expect(page.getByLabel("Server URL")).toHaveAttribute("type", "url");
+  await expect(page.getByText("Browser development mode")).toBeVisible();
+});
