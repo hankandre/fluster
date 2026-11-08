@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 
 // Acceptance for P13-03: features expose no native select, radio, or checkbox. DESIGN.md 12 replaces them with
 // Picker, SegmentedTabs, and ToggleChip. The files below predate the primitives; the P13 task named on each line
-// migrates the file and removes its entry. A new file must not be added to this list.
+// migrates the file and removes its entry. The user approved (2026-11-08) adding the acceptance line "Uses only
+// shared UI primitives; no native select, radio, or checkbox remains" to P13-09, P13-11, and P13-17. A new file must not be added to this list.
 const ALLOWLIST: Record<string, string> = {
   "browse/library-grid.tsx": "P13-11 (library browsing: sort selects and filter checkboxes)",
   "detail/media-info.tsx": "P13-09 (item detail: version radios)",

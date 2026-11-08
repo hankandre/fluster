@@ -5,6 +5,9 @@ import { Button } from "./button";
 import { DIALOG_EXEMPT_ATTRIBUTE } from "./dialog";
 import "./overlays.css";
 
+// At most this many toasts show at once; the oldest leave first.
+export const MAX_TOASTS = 3;
+
 export type ToastTone = "info" | "ok" | "error";
 
 export interface ToastInput {
@@ -21,8 +24,11 @@ type ToastAction = { type: "add"; entry: ToastEntry } | { type: "dismiss"; id: n
 
 export function toastReducer(entries: ToastEntry[], action: ToastAction): ToastEntry[] {
   switch (action.type) {
-    case "add":
-      return [...entries, action.entry];
+    case "add": {
+      // The same sentence is shown once: the new one replaces the old.
+      const rest = entries.filter((entry) => !(entry.message === action.entry.message && (entry.tone ?? "info") === (action.entry.tone ?? "info")));
+      return [...rest, action.entry].slice(-MAX_TOASTS);
+    }
     case "dismiss":
       return entries.filter((entry) => entry.id !== action.id);
     default:

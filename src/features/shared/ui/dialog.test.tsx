@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Button } from "./button";
@@ -128,5 +128,65 @@ describe("Dialog", () => {
     expect(screen.getByRole("button", { name: /Limit/ })).toHaveFocus();
     await user.keyboard("{Escape}");
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps Escape working after a veil press with closeOnVeil off", async () => {
+    const user = userEvent.setup();
+    render(<Harness closeOnVeil={false} />);
+    await user.click(screen.getByRole("button", { name: "Open" }));
+    await user.click(screen.getByRole("dialog").parentElement!);
+    expect(screen.getByRole("dialog")).toHaveFocus();
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("closes on Escape when focus has dropped to the page", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    const opener = screen.getByRole("button", { name: "Open" });
+    await user.click(opener);
+    (document.activeElement as HTMLElement).blur();
+    expect(document.body).toHaveFocus();
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(opener).toHaveFocus();
+  });
+
+  it("brings focus back into the dialog on Tab from the page", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.click(screen.getByRole("button", { name: "Open" }));
+    (document.activeElement as HTMLElement).blur();
+    await user.keyboard("{Tab}");
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
+  });
+
+  it("makes a portal added while open inert, unless it is exempt", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.click(screen.getByRole("button", { name: "Open" }));
+    const late = document.body.appendChild(document.createElement("div"));
+    const exempt = document.body.appendChild(document.createElement("div"));
+    exempt.setAttribute("data-dialog-exempt", "");
+    await waitFor(() => expect(late).toHaveAttribute("inert"));
+    expect(exempt).not.toHaveAttribute("inert");
+    await user.keyboard("{Escape}");
+    expect(late).not.toHaveAttribute("inert");
+    late.remove();
+    exempt.remove();
+  });
+
+  it("renders a Picker list outside the scrolling panel and keeps it usable", async () => {
+    const user = userEvent.setup();
+    render(
+      <Dialog open onClose={() => undefined} title="Streaming">
+        <Picker label="Limit" options={[{ value: "a", label: "A" }, { value: "b", label: "B" }]} value="a" onChange={() => undefined} />
+      </Dialog>,
+    );
+    await user.click(screen.getByRole("button", { name: /Limit/ }));
+    const list = screen.getByRole("listbox");
+    expect(screen.getByRole("dialog").contains(list)).toBe(false);
+    expect(list.closest("[inert]")).toBeNull();
+    expect(screen.getByRole("option", { name: "A" })).toHaveFocus();
   });
 });

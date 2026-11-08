@@ -86,9 +86,10 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    /* No sweep, but it still waits 150 ms before it appears (opacity only). */
     .ui-skeleton {
       background: var(--surface-2);
-      animation: none;
+      animation: ui-skeleton-in 1ms linear 150ms backwards;
     }
   }
 }

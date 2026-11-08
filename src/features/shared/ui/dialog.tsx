@@ -18,8 +18,17 @@ interface DialogProps {
 
 const TABBABLE = 'a[href], button:not(:disabled), input:not(:disabled):not([type="hidden"]), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
 
-// Portals that must stay usable above an open dialog (the toast region) opt out of the inert background.
+// Portals that must stay usable above an open dialog (the toast region, an open Picker list) opt out of the inert
+// background. A dialog's own veil opts out too, so a second dialog opened on top stays usable (one modal at a time
+// is the supported case).
 export const DIALOG_EXEMPT_ATTRIBUTE = "data-dialog-exempt";
+
+// Open dialogs, oldest first. Only the last one answers the document-level keys.
+const openDialogs: symbol[] = [];
+
+function isExempt(element: Element, veil: Element | null): boolean {
+  return element === veil || element.hasAttribute("inert") || element.hasAttribute(DIALOG_EXEMPT_ATTRIBUTE) || element.tagName === "SCRIPT";
+}
 
 // A modal dialog in a portal. Chosen over <dialog>.showModal(): jsdom does not implement it, so the
 // behaviour could not be tested here, and its WebKitGTK behaviour is unverified. The rest of the page
@@ -38,13 +47,39 @@ export function Dialog({ open, onClose, title, icon, children, actions, initialF
   useEffect(() => {
     if (!open) return;
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const inerted = Array.from(document.body.children).filter(
-      (element) => element !== veil.current && !element.hasAttribute("inert") && !element.hasAttribute(DIALOG_EXEMPT_ATTRIBUTE) && element.tagName !== "SCRIPT",
-    );
-    inerted.forEach((element) => element.setAttribute("inert", ""));
+    const inerted: Element[] = [];
+    const makeInert = (element: Element) => {
+      if (isExempt(element, veil.current)) return;
+      element.setAttribute("inert", "");
+      inerted.push(element);
+    };
+    Array.from(document.body.children).forEach(makeInert);
+    // Anything added to the page while the dialog is open (another portal) is inert too.
+    const observer = new MutationObserver((records) => {
+      records.forEach((record) => record.addedNodes.forEach((node) => node instanceof Element && makeInert(node)));
+    });
+    observer.observe(document.body, { childList: true });
+    const self = Symbol("dialog");
+    openDialogs.push(self);
+    // Escape and Tab still work when focus has dropped to the page (a focused child unmounted).
+    const onDocumentKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (openDialogs[openDialogs.length - 1] !== self || event.defaultPrevented) return;
+      const inside = panel.current?.contains(document.activeElement) ?? false;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        close.current();
+      } else if (event.key === "Tab" && !inside) {
+        event.preventDefault();
+        (panel.current?.querySelector<HTMLElement>(TABBABLE) ?? panel.current)?.focus();
+      }
+    };
+    document.addEventListener("keydown", onDocumentKeyDown);
     const first = panel.current?.querySelector<HTMLElement>(TABBABLE);
     (initialFocus?.current ?? first ?? panel.current)?.focus();
     return () => {
+      observer.disconnect();
+      document.removeEventListener("keydown", onDocumentKeyDown);
+      openDialogs.splice(openDialogs.indexOf(self), 1);
       inerted.forEach((element) => element.removeAttribute("inert"));
       if (opener?.isConnected) opener.focus();
     };
@@ -82,8 +117,16 @@ export function Dialog({ open, onClose, title, icon, children, actions, initialF
     <div
       ref={veil}
       className="ui-dialog-veil"
+      {...{ [DIALOG_EXEMPT_ATTRIBUTE]: "" }}
       onMouseDown={(event) => {
-        if (closeOnVeil && event.target === event.currentTarget) close.current();
+        if (event.target !== event.currentTarget) return;
+        if (closeOnVeil) {
+          close.current();
+        } else {
+          // Keep focus in the dialog so Escape and Tab keep working.
+          event.preventDefault();
+          panel.current?.focus();
+        }
       }}
     >
       <div

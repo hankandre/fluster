@@ -115,7 +115,8 @@ function Gallery() {
             </>
           }
         >
-          Your password would cross this network unencrypted. Only continue on a network you trust.
+          <p>Your password would cross this network unencrypted. Only continue on a network you trust.</p>
+          <Picker label="Streaming limit" options={LIMITS} value={limit} onChange={setLimit} />
         </Dialog>
       </Section>
 
