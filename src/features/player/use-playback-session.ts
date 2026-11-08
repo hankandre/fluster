@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { LibraryItem } from "../../domain/catalog";
 import {
   PlaybackRefusedError,
@@ -8,14 +8,18 @@ import {
   type PlaybackPlan,
   type PlaybackRefusal,
   type PlaybackEndReason,
+  type PlaybackSnapshot,
   type PlaybackStartChoice,
   type PlayerEngine,
+  type StreamSelection,
 } from "../../domain/playback";
+import { currentSelection, sourceTrackOptions, trackChange, type TrackKind } from "../../domain/track-choice";
 import type { SessionGateway } from "../../app/session";
 import type { PlayerServices } from "../../app/player-services";
 import { PlaybackCancelledError, PlaybackCoordinator, type PlaybackGateway } from "../../lib/player/coordinator";
 import { initialPlaybackSessionState, playbackSessionReducer } from "../../lib/player/session-state";
 import { redactText } from "../../lib/redact";
+import { limitChangeAffects, limitMbpsFor, mbpsToBitsPerSecond, type StreamingLimitStore } from "../../lib/streaming-limits";
 
 // The last session teardown on each engine: its stop and its playstate drain
 // (the Stopped report). A new session waits for it so a late stop (StrictMode
@@ -37,7 +41,8 @@ export function whenPlaybackStopped(engine: PlayerEngine): Promise<void> {
   return pendingStops.get(engine) ?? Promise.resolve();
 }
 
-// Binds the chosen version so every attempt, including retries, asks for it.
+// Binds the chosen version so every attempt, including retries, asks for it;
+// a renegotiation names the playing version and its streams instead.
 // `ignoreLimit` is read on every attempt: Play original sets it for this
 // session only, and it is never stored.
 function playbackGatewayFor(
@@ -46,10 +51,18 @@ function playbackGatewayFor(
   ignoreLimit: { current: boolean },
 ): PlaybackGateway {
   return {
-    createPlaybackPlan: (item, startPositionTicks, signal) =>
-      gateway.createPlaybackPlan(item, startPositionTicks, signal, mediaSourceId, {
+    createPlaybackPlan: (item, startPositionTicks, signal, selection) => {
+      if (!selection) {
+        return gateway.createPlaybackPlan(item, startPositionTicks, signal, mediaSourceId, {
+          ignoreStreamingLimit: ignoreLimit.current,
+        });
+      }
+      const { mediaSourceId: playing, ...streams } = selection;
+      return gateway.createPlaybackPlan(item, startPositionTicks, signal, playing, {
         ignoreStreamingLimit: ignoreLimit.current,
-      }),
+        ...streams,
+      });
+    },
     reportStart: (plan, snapshot, signal) => gateway.reportStart(plan, snapshot, signal),
     reportProgress: (plan, snapshot, signal) => gateway.reportProgress(plan, snapshot, signal),
     reportStopped: (plan, snapshot, signal, failed) => gateway.reportStopped(plan, snapshot, signal, failed),
@@ -96,6 +109,10 @@ export interface PlaybackSessionOptions {
   item: LibraryItem;
   mediaSourceId: string | undefined;
   startTicks: number;
+  // The user's streaming limits. A change to the one for this server while
+  // playing renegotiates when it can change the delivery. Optional: without
+  // it the session never watches the limit.
+  streamingLimits?: StreamingLimitStore;
   // Called whenever a session ends, including failures, so views can refresh.
   onSessionEnded(): void;
   // Leave the player: back, stop, or natural end. The reason is "eof" only
@@ -106,7 +123,7 @@ export interface PlaybackSessionOptions {
 // Runs one playback from negotiation to teardown: one coordinator per session, retry in place, and Back stops
 // before leaving.
 export function usePlaybackSession(options: PlaybackSessionOptions) {
-  const { gateway, player, item, mediaSourceId, startTicks } = options;
+  const { gateway, player, item, mediaSourceId, startTicks, streamingLimits } = options;
   const { engine, watchWindowClose, watchMediaControls } = player;
   const [state, dispatch] = useReducer(playbackSessionReducer, initialPlaybackSessionState);
   const [retrying, setRetrying] = useState(false);
@@ -208,9 +225,11 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     };
   }, [gateway, engine, watchWindowClose, item, mediaSourceId, startTicks, leave, handleFailure]);
 
-  const retry = useCallback(async (startPositionTicks?: number) => {
+  // Runs a new attempt for the same item in place: Retry, Play original, and
+  // track and limit renegotiations.
+  const restart = useCallback(async (run: (coordinator: PlaybackCoordinator) => Promise<PlaybackPlan>) => {
     const active = session.current;
-    if (!active) return;
+    if (!active || active.stopping) return;
     dispatch({ type: "reset" });
     // The player view must be on screen before the engine launches, so the
     // refusal goes away now and comes back if the server refuses again.
@@ -219,7 +238,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     setPlan(undefined);
     setRetrying(true);
     try {
-      const retried = await active.coordinator.retry(startPositionTicks);
+      const retried = await run(active.coordinator);
       if (session.current === active) setPlan(retried);
     } catch (error) {
       if (session.current === active) handleFailure(error);
@@ -227,6 +246,69 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
       setRetrying(false);
     }
   }, [handleFailure]);
+
+  const retry = useCallback((startPositionTicks?: number) => (
+    restart((coordinator) => coordinator.retry(startPositionTicks))
+  ), [restart]);
+
+  // The latest plan and snapshot, for the limit listener and track changes.
+  const live = useRef<{ plan?: PlaybackPlan; snapshot?: PlaybackSnapshot }>({});
+  useEffect(() => {
+    live.current = { plan, snapshot: state.snapshot };
+  });
+
+  // Starts a new session for the playing version at the current position
+  // with these streams. The old session is stopped and its server encode
+  // deleted first (PlaybackCoordinator.renegotiate); Back cancels it.
+  const renegotiate = useCallback((streams: StreamSelection) => {
+    const seconds = live.current.snapshot?.positionSeconds;
+    const ticks = seconds === undefined ? undefined : secondsToTicks(seconds);
+    return restart((coordinator) => coordinator.renegotiate(ticks, streams));
+  }, [restart]);
+
+  // A converted session offers every source stream; direct play offers
+  // what mpv lists (PlayerView's own lists).
+  const convertedTracks = useMemo(() => {
+    if (plan?.delivery !== "hls") return undefined;
+    return {
+      audio: sourceTrackOptions(plan, state.snapshot, "audio"),
+      subtitle: sourceTrackOptions(plan, state.snapshot, "subtitle"),
+    };
+  }, [plan, state.snapshot]);
+
+  // Chooses a source stream on a converted session: mpv switches to a
+  // stream the conversion carries, anything else renegotiates.
+  const changeTrack = useCallback(async (kind: TrackKind, jellyfinIndex: number | undefined) => {
+    const { plan: current, snapshot } = live.current;
+    if (!current) return;
+    const change = trackChange(current, snapshot, kind, jellyfinIndex);
+    switch (change.kind) {
+      case "local":
+        await engine.selectTrack(kind, change.playerId);
+        break;
+      case "renegotiate":
+        await renegotiate(change.selection);
+        break;
+      case "none":
+        break;
+    }
+  }, [engine, renegotiate]);
+
+  // A new limit for this server while playing renegotiates when it can change
+  // the delivery. Play original ignores the limit for this session.
+  useEffect(() => {
+    if (!streamingLimits) return undefined;
+    let applied = limitMbpsFor(gateway.hostClass, streamingLimits.get());
+    return streamingLimits.subscribe(() => {
+      const next = limitMbpsFor(gateway.hostClass, streamingLimits.get());
+      if (next === applied) return;
+      applied = next;
+      const { plan: current, snapshot } = live.current;
+      if (!current || ignoreLimit.current) return;
+      if (!limitChangeAffects(current, next === undefined ? undefined : mbpsToBitsPerSecond(next))) return;
+      void renegotiate(currentSelection(current, snapshot));
+    });
+  }, [gateway, streamingLimits, renegotiate]);
 
   // Renegotiates once without the user's streaming limit, for this session
   // only. Available only while the plan says the limit is the only reason.
@@ -278,5 +360,18 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     }
   }), [watchMediaControls, stopAndLeave]);
 
-  return { state, plan, retrying, refusal, unsupported, retry, playOriginal, playOriginalRequested, back, stopAndLeave };
+  return {
+    state,
+    plan,
+    retrying,
+    refusal,
+    unsupported,
+    retry,
+    playOriginal,
+    playOriginalRequested,
+    convertedTracks,
+    changeTrack,
+    back,
+    stopAndLeave,
+  };
 }

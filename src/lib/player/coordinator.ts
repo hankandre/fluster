@@ -6,19 +6,29 @@ import type {
   PlaybackStartChoice,
   PlayerEngine,
   PlayerEvent,
+  StreamSelection,
 } from "../../domain/playback";
 import { startOverChoice } from "../../domain/playback";
 import { redactError, redactText } from "../redact";
 import { PlaystateReporter, type PlaystateGateway } from "./playstate-reporter";
 
+// The version and streams a renegotiation asks for. The server applies the
+// stream indices only to the source named by mediaSourceId.
+export interface PlaybackSelection extends StreamSelection {
+  mediaSourceId: string;
+}
+
 export interface PlaybackGateway extends PlaystateGateway {
+  // `selection` is passed only after a renegotiation chose streams.
   createPlaybackPlan(
     item: LibraryItem,
     startPositionTicks: number,
     signal?: AbortSignal,
-    mediaSourceId?: string,
+    selection?: PlaybackSelection,
   ): Promise<PlaybackPlan>;
 }
+
+type RestartReason = "retry" | "renegotiate";
 
 export interface CoordinatorCallbacks {
   onEvent(event: PlayerEvent): void;
@@ -44,13 +54,16 @@ export class PlaybackCoordinator {
   // The last plan this coordinator launched. A retry must not reuse its play
   // session, and a converted one has its server encode stopped first.
   private previousPlan?: PlaybackPlan;
+  // The streams the last renegotiation chose. Later attempts for the item
+  // (Retry, another renegotiation) keep them.
+  private selection?: PlaybackSelection;
   private attemptController?: AbortController;
   private attemptTask?: Promise<PlaybackPlan>;
   // The stop that cancelled a pending launch. Every later stop waits for it,
   // so it can never reach the engine after the next launch began.
   private cancelStop?: Promise<void>;
   private finishTask?: Promise<void>;
-  private requestedStopReason?: "retry" | "stopped";
+  private requestedStopReason?: RestartReason | "stopped";
   private eventQueue: Promise<void> = Promise.resolve();
   private readonly reporter: PlaystateReporter;
 
@@ -72,13 +85,31 @@ export class PlaybackCoordinator {
     this.operation += 1;
     this.item = item;
     this.choice = choice;
+    this.selection = undefined;
     return this.runAttempt(item, choice, false);
   }
 
   // Renegotiates the same item. `startPositionTicks` restarts from that
   // position (Play original uses the current one); omitted, it keeps the
   // original start choice.
-  async retry(startPositionTicks?: number): Promise<PlaybackPlan> {
+  retry(startPositionTicks?: number): Promise<PlaybackPlan> {
+    return this.restart("retry", startPositionTicks);
+  }
+
+  // Replaces a playing session with a new one for the same version at
+  // `startPositionTicks`, asking for `streams` (a track or streaming-limit
+  // change). The old session played fine, so its Stopped report is not
+  // Failed. Stop or Back cancels it like any attempt.
+  renegotiate(startPositionTicks: number | undefined, streams: StreamSelection): Promise<PlaybackPlan> {
+    const mediaSourceId = this.previousPlan?.mediaSourceId;
+    return this.restart("renegotiate", startPositionTicks, mediaSourceId ? { ...streams, mediaSourceId } : undefined);
+  }
+
+  private async restart(
+    reason: RestartReason,
+    startPositionTicks: number | undefined,
+    selection?: PlaybackSelection,
+  ): Promise<PlaybackPlan> {
     const item = this.item;
     if (!item || !this.choice) throw new Error("There is no playback attempt to retry.");
     if (startPositionTicks !== undefined) {
@@ -90,11 +121,13 @@ export class PlaybackCoordinator {
     this.cancelAttempt();
     await this.waitForAttempt();
     this.assertCurrentOperation(operation);
-    await this.stopAttempt("retry");
+    await this.stopAttempt(reason);
     this.assertCurrentOperation(operation);
-    // Retry, Play original, and track changes start a new play session, so a
-    // converting one's server encode is stopped first. The new attempt waits
-    // for it (bounded) before negotiating; Stop or Back cancels that wait.
+    if (selection) this.selection = selection;
+    // Retry, Play original, and track and limit changes start a new play
+    // session, so a converting one's server encode is stopped first. The new
+    // attempt waits for it (bounded) before negotiating; Stop or Back cancels
+    // that wait.
     if (this.previousPlan) this.reporter.stopEncoding(this.previousPlan);
     return this.runAttempt(item, choice, true);
   }
@@ -142,12 +175,11 @@ export class PlaybackCoordinator {
     this.assertCurrentAttempt(attempt, controller);
 
     let plan: PlaybackPlan;
+    const selection = this.selection;
     try {
-      plan = await this.gateway.createPlaybackPlan(
-        item,
-        choice.startPositionTicks,
-        controller.signal,
-      );
+      plan = await (selection
+        ? this.gateway.createPlaybackPlan(item, choice.startPositionTicks, controller.signal, selection)
+        : this.gateway.createPlaybackPlan(item, choice.startPositionTicks, controller.signal));
     } catch (error) {
       if (!this.isCurrentAttempt(attempt, controller)) throw new PlaybackCancelledError();
       throw redactError(error);
@@ -207,7 +239,7 @@ export class PlaybackCoordinator {
     }
   }
 
-  private async stopAttempt(reason: "retry" | "stopped"): Promise<void> {
+  private async stopAttempt(reason: RestartReason | "stopped"): Promise<void> {
     this.reporter.stopProgress();
     this.requestedStopReason = reason;
     try {
@@ -265,7 +297,7 @@ export class PlaybackCoordinator {
   }
 
   private finish(
-    reason: PlaybackEndReason | "retry",
+    reason: PlaybackEndReason | RestartReason,
     snapshot?: PlaybackSnapshot,
   ): Promise<void> {
     if (this.finishTask) return this.finishTask;
@@ -280,23 +312,33 @@ export class PlaybackCoordinator {
   }
 
   private async finishSession(
-    reason: PlaybackEndReason | "retry",
+    reason: PlaybackEndReason | RestartReason,
     snapshot?: PlaybackSnapshot,
   ): Promise<void> {
     const plan = this.plan;
     // Only an error ending is a failed session. Retry is offered only after a
     // playback error, so it ends a failed session too. A non-fatal error event
-    // (for example one dropped render) followed by a normal ending is not.
+    // (for example one dropped render) followed by a normal ending is not,
+    // and neither is a renegotiation.
     const failed = reason === "error" || reason === "retry";
     this.reporter.finish(plan, snapshot, failed);
     this.disposeAttempt();
     this.plan = undefined;
     this.snapshot = undefined;
-    if (reason !== "retry") this.callbacks.onSessionEnded?.(reason);
-    if (reason !== "error" && reason !== "retry") {
-      this.item = undefined;
-      this.choice = undefined;
-      this.previousPlan = undefined;
+    switch (reason) {
+      case "retry":
+      case "renegotiate":
+        // The item keeps playing in a new session.
+        return;
+      case "error":
+        this.callbacks.onSessionEnded?.(reason);
+        return;
+      default:
+        this.callbacks.onSessionEnded?.(reason);
+        this.item = undefined;
+        this.choice = undefined;
+        this.previousPlan = undefined;
+        this.selection = undefined;
     }
   }
 

@@ -1,10 +1,8 @@
 import { redactText } from "../lib/redact";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
-  AudioLines,
-  Captions,
   Gauge,
   LoaderCircle,
   Maximize,
@@ -16,6 +14,8 @@ import {
 } from "lucide-react";
 import type { LibraryItem } from "../domain/catalog";
 import type { PlayerEngine, PlayerTrack } from "../domain/playback";
+import type { TrackKind } from "../domain/track-choice";
+import { TrackMenus, type ConvertedTracks } from "../features/player/track-menus";
 import { playerKeyAction } from "./player-keymap";
 import type { PlaybackSessionState } from "../lib/player/session-state";
 import type { MediaSegment } from "../domain/media-segments";
@@ -55,7 +55,19 @@ function chapterAt(chapters: SeekChapter[], seconds: number): SeekChapter | unde
   return current;
 }
 
-export function PlayerView({ item, player, session, segments, retrying, onRetry, onBack, seekPreview, chapters }: {
+export function PlayerView({
+  item,
+  player,
+  session,
+  segments,
+  retrying,
+  onRetry,
+  onBack,
+  seekPreview,
+  chapters,
+  convertedTracks,
+  onChangeConvertedTrack,
+}: {
   item: LibraryItem;
   player: PlayerEngine;
   session: PlaybackSessionState;
@@ -69,6 +81,11 @@ export function PlayerView({ item, player, session, segments, retrying, onRetry,
   // pointer (or the keyboard position); chapters adds markers and names.
   seekPreview?: (seconds: number) => ReactNode;
   chapters?: SeekChapter[];
+  // Set for a converted session: the track menus list the source's streams
+  // and a choice goes to onChangeConvertedTrack (undefined: subtitles off),
+  // which may start a new conversion. Absent, they list mpv's tracks.
+  convertedTracks?: ConvertedTracks;
+  onChangeConvertedTrack?(kind: TrackKind, jellyfinIndex: number | undefined): Promise<void>;
 }) {
   const [commandError, setCommandError] = useState<string>();
   const [fullscreen, setFullscreenState] = useState(false);
@@ -218,14 +235,6 @@ export function PlayerView({ item, player, session, segments, retrying, onRetry,
     void execute(() => player.setVolume(nextVolume));
   };
 
-  const audioTracks = useMemo(
-    () => snapshot?.tracks.filter((track) => track.type === "Audio") ?? [],
-    [snapshot?.tracks],
-  );
-  const subtitleTracks = useMemo(
-    () => snapshot?.tracks.filter((track) => track.type === "Subtitle") ?? [],
-    [snapshot?.tracks],
-  );
   const duration = snapshot?.durationSeconds ?? 0;
   const position = seekValue ?? snapshot?.positionSeconds ?? 0;
   const diagnostics = snapshot?.diagnostics;
@@ -387,28 +396,12 @@ export function PlayerView({ item, player, session, segments, retrying, onRetry,
             onBlur={commitVolume}
             disabled={!snapshot}
           />
-          <label className="track-control">
-            <AudioLines size={18} />
-            <select
-              aria-label="Audio track"
-              value={audioTracks.find((track) => track.selected)?.playerId ?? ""}
-              onChange={(changeEvent) => void execute(() => player.selectTrack("audio", Number(changeEvent.target.value)))}
-              disabled={!audioTracks.length}
-            >
-              {audioTracks.map((track) => <option key={track.playerId} value={track.playerId}>{track.title}</option>)}
-            </select>
-          </label>
-          <label className="track-control">
-            <Captions size={18} />
-            <select
-              aria-label="Subtitle track"
-              value={subtitleTracks.find((track) => track.selected)?.playerId ?? "off"}
-              onChange={(changeEvent) => void execute(() => player.selectTrack("subtitle", changeEvent.target.value === "off" ? undefined : Number(changeEvent.target.value)))}
-            >
-              <option value="off">Subtitles off</option>
-              {subtitleTracks.map((track) => <option key={track.playerId} value={track.playerId}>{track.title}</option>)}
-            </select>
-          </label>
+          <TrackMenus
+            snapshot={snapshot}
+            converted={convertedTracks && onChangeConvertedTrack ? { tracks: convertedTracks, onChange: onChangeConvertedTrack } : undefined}
+            onSelect={(kind, id) => void execute(() => player.selectTrack(kind, id))}
+            onChangeConverted={(change) => void execute(change)}
+          />
           <span className="control-spacer" />
           <button
             className="player-control-button"

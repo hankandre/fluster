@@ -12,6 +12,12 @@ const fileSource = {
   MediaStreams: [{ Index: 0, Type: "Video", Codec: "h264", DisplayTitle: "H.264", IsExternal: false, IsDefault: true, IsForced: false }],
 };
 
+// English (AAC) and French (AC-3) audio, for track-change journeys.
+const audioStreams = [
+  { Index: 1, Type: "Audio", Codec: "aac", Language: "eng", DisplayTitle: "English AAC", IsExternal: false, IsDefault: true, IsForced: false },
+  { Index: 2, Type: "Audio", Codec: "ac3", Language: "fre", DisplayTitle: "French AC3", IsExternal: false, IsDefault: false, IsForced: false },
+];
+
 const discSource = {
   Id: "src-disc",
   Name: "Blu-ray",
@@ -42,12 +48,17 @@ export interface ServerOptions {
   // The PlaybackInfo source reports HasSegments, and the segments endpoint answers with these items.
   segments?: Array<Record<string, unknown>>;
   hasSegments?: boolean;
+  // The source has two audio streams. A converted answer carries the
+  // requested AudioStreamIndex (default 1), as Jellyfin does.
+  audioStreams?: boolean;
 }
 
 export interface ServerLog {
   playbackInfo: Array<Record<string, unknown>>;
   playbackInfoQueries: URLSearchParams[];
   reports: Array<{ path: string; body: Record<string, unknown> }>;
+  // PlaybackInfo, playstate, and ActiveEncodings requests in arrival order.
+  sequence: string[];
   segmentRequests: Array<{ search: string; authorization: string | undefined }>;
   requestUrls: string[];
   releaseReports(): void;
@@ -61,11 +72,17 @@ export async function mockPlayerServer(page: Page, options: ServerOptions = {}):
     playbackInfo: [],
     playbackInfoQueries: [],
     reports: [],
+    sequence: [],
     segmentRequests: [],
     requestUrls: [],
     releaseReports: () => releaseReports(),
   };
-  const source = { ...(options.disc ? discSource : fileSource), HasSegments: options.hasSegments ?? false };
+  const base = options.disc ? discSource : fileSource;
+  const source = {
+    ...base,
+    HasSegments: options.hasSegments ?? false,
+    ...(options.audioStreams ? { MediaStreams: [...base.MediaStreams, ...audioStreams], DefaultAudioStreamIndex: 1 } : {}),
+  };
 
   await page.addInitScript(({ shouldFail }) => {
     Object.defineProperty(HTMLMediaElement.prototype, "duration", { configurable: true, get: () => 120 });
@@ -95,7 +112,9 @@ export async function mockPlayerServer(page: Page, options: ServerOptions = {}):
     log.requestUrls.push(request.url());
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     if (url.pathname.startsWith("/Sessions/Playing")) {
-      log.reports.push({ path: url.pathname, body: request.postDataJSON() });
+      const body = request.postDataJSON() as Record<string, unknown>;
+      log.reports.push({ path: url.pathname, body });
+      log.sequence.push(`${url.pathname} ${String(body.PlaySessionId)}`);
       if (options.holdReports) await reportGate;
       return route.fulfill({ status: 204, headers: cors });
     }
@@ -127,21 +146,27 @@ export async function mockPlayerServer(page: Page, options: ServerOptions = {}):
           MediaSources: [source],
           UserData: { Played: false, IsFavorite: false, PlaybackPositionTicks: options.resumeTicks ?? 0 },
         });
+      case "/Videos/ActiveEncodings":
+        log.sequence.push(`DELETE ActiveEncodings ${url.searchParams.get("playSessionId")}`);
+        return route.fulfill({ status: 204, headers: cors });
       case "/Items/movie-1/PlaybackInfo":
         log.playbackInfo.push(request.postDataJSON());
         log.playbackInfoQueries.push(url.searchParams);
+        log.sequence.push(`PlaybackInfo play-${log.playbackInfo.length}`);
         if (options.playbackDelayMs) await new Promise((resolve) => setTimeout(resolve, options.playbackDelayMs));
         if (options.disc && url.searchParams.get("EnableDirectPlay") === "false") {
           return json({ PlaySessionId: `play-${log.playbackInfo.length}`, MediaSources: [{ ...source, SupportsDirectPlay: false }] });
         }
         if (options.converted) {
+          const audioIndex = options.audioStreams ? Number(url.searchParams.get("AudioStreamIndex") ?? 1) : undefined;
           return json({
             PlaySessionId: `play-${log.playbackInfo.length}`,
             MediaSources: [{
               ...source,
+              ...(audioIndex !== undefined ? { DefaultAudioStreamIndex: audioIndex } : {}),
               SupportsDirectPlay: false,
               TranscodingSubProtocol: "hls",
-              TranscodingUrl: `/videos/movie-1/master.m3u8?MediaSourceId=${source.Id}&VideoCodec=h264&AudioCodec=aac&PlaySessionId=play-${log.playbackInfo.length}&ApiKey=e2e-key&TranscodeReasons=${options.conversionReasons ?? "ContainerBitrateExceedsLimit"}${options.conversionQuery ?? ""}`,
+              TranscodingUrl: `/videos/movie-1/master.m3u8?MediaSourceId=${source.Id}&VideoCodec=h264&AudioCodec=aac${audioIndex !== undefined ? `&AudioStreamIndex=${audioIndex}` : ""}&PlaySessionId=play-${log.playbackInfo.length}&ApiKey=e2e-key&TranscodeReasons=${options.conversionReasons ?? "ContainerBitrateExceedsLimit"}${options.conversionQuery ?? ""}`,
             }],
           });
         }

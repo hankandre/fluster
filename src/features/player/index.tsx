@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePlayerServices, type PlayerServices } from "../../app/player-services";
+import { useOptionalPreferences } from "../../app/preferences";
 import { useSession, type SessionGateway } from "../../app/session";
 import { PlayerView } from "../../components/PlayerView";
 import type { ItemDetail, NextEpisode } from "../../domain/catalog";
@@ -121,6 +122,7 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
   detail: ItemDetail;
 }) {
   const queryClient = useQueryClient();
+  const preferences = useOptionalPreferences();
   // Fixed for the whole session: a refetch of the detail must not restart playback.
   const [item] = useState(() => toPlayableItem(detail));
 
@@ -145,6 +147,7 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
     item,
     mediaSourceId: route.mediaSourceId,
     startTicks: route.startTicks,
+    streamingLimits: preferences?.streamingLimits,
     onSessionEnded: () => {
       void queryClient.invalidateQueries({ queryKey: detailKey(gateway, route.itemId) });
       void refreshHomeRows(queryClient);
@@ -192,6 +195,8 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
         retrying={playback.retrying}
         onRetry={playback.retry}
         onBack={playback.back}
+        convertedTracks={playback.convertedTracks}
+        onChangeConvertedTrack={playback.changeTrack}
         {...seekProps}
       />
       {indicator && !playback.retrying && <ConversionChip indicator={indicator} />}
