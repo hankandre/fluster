@@ -33,6 +33,36 @@ const snapshot: PlaybackSnapshot = {
   diagnostics: { decodeMode: "software", decodeLabel: "Software — CPU", droppedFrames: 0 },
 };
 
+// A converting session. Each call gets a fresh play session.
+function hlsPlan(playSessionId: string): PlaybackPlan {
+  return {
+    ...plan,
+    streamUrl: "https://media.test/videos/one/master.m3u8",
+    playSessionId,
+    delivery: "hls",
+    playMethod: "Transcode",
+    conversionReasons: ["ContainerBitrateExceedsLimit"],
+    serverUrl: "https://media.test",
+    mediaKind: "videos",
+  };
+}
+
+// Records the order of negotiation, reports, and encode stops.
+function orderedGateway(order: string[], plans: PlaybackPlan[]): PlaybackGateway {
+  const queue = [...plans];
+  return {
+    createPlaybackPlan: vi.fn(async () => {
+      const next = queue.shift()!;
+      order.push(`negotiate -> ${next.playSessionId}`);
+      return next;
+    }),
+    reportStart: vi.fn(async () => undefined),
+    reportProgress: vi.fn(async () => undefined),
+    reportStopped: vi.fn(async (stopped: PlaybackPlan) => { order.push(`stopped ${stopped.playSessionId}`); }),
+    stopActiveEncoding: vi.fn(async (playSessionId: string) => { order.push(`delete ${playSessionId}`); }),
+  };
+}
+
 class FakePlayer implements PlayerEngine {
   mode = "native" as const;
   listener?: (event: PlayerEvent) => void;
@@ -61,6 +91,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
     const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
@@ -86,6 +117,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
     const coordinator = new PlaybackCoordinator(gateway, player, {
@@ -109,6 +141,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
     const coordinator = new PlaybackCoordinator(gateway, player, {
@@ -133,6 +166,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(() => record("start")),
       reportProgress: vi.fn(() => record("progress")),
       reportStopped: vi.fn(() => record("stop")),
+      stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
     const coordinator = new PlaybackCoordinator(gateway, player, {
@@ -162,6 +196,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
     const coordinator = new PlaybackCoordinator(gateway, player, {
@@ -189,6 +224,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
     const coordinator = new PlaybackCoordinator(gateway, player, {
@@ -215,6 +251,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
     let rejectLaunch!: (error: Error) => void;
@@ -236,6 +273,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
     let rejectLaunch!: (error: Error) => void;
@@ -272,6 +310,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(() => new Promise<void>((resolve) => { finishReport = resolve; })),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
     const onEvent = vi.fn();
@@ -296,6 +335,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(() => new Promise<void>((resolve) => { finishStartReport = resolve; })),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
     const onSessionEnded = vi.fn();
@@ -325,6 +365,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
     let finishNativeStop!: () => void;
@@ -362,6 +403,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(() => new Promise<void>(() => undefined)),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
     const onReportingError = vi.fn();
@@ -394,6 +436,7 @@ describe("PlaybackCoordinator", () => {
       reportProgress: vi.fn(async () => undefined),
       // A server that never answers and ignores cancellation.
       reportStopped: vi.fn(() => new Promise<void>(() => undefined)),
+      stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
     const coordinator = new PlaybackCoordinator(gateway, player, {
@@ -426,6 +469,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
     let finishStop!: () => void;
@@ -458,6 +502,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
     const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
@@ -477,6 +522,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
     const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
@@ -495,6 +541,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
     player.launch.mockImplementation(async () => {
@@ -508,5 +555,145 @@ describe("PlaybackCoordinator", () => {
     await coordinator.flush();
 
     expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal), true);
+  });
+
+  describe("stopping server encodes (P10-07)", () => {
+    it("stops the old encode before negotiating a retry of a converting item", async () => {
+      const order: string[] = [];
+      const gateway = orderedGateway(order, [hlsPlan("old"), hlsPlan("new")]);
+      const player = new FakePlayer();
+      const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
+
+      await coordinator.start(item);
+      player.listener?.({ kind: "loaded", snapshot });
+      await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
+      player.listener?.({ kind: "ended", snapshot, reason: "error" });
+      await vi.waitFor(() => expect(order).toContain("stopped old"));
+      await coordinator.retry();
+
+      expect(order).toEqual(["negotiate -> old", "stopped old", "delete old", "negotiate -> new"]);
+      expect(gateway.stopActiveEncoding).toHaveBeenCalledWith("old", expect.any(AbortSignal));
+    });
+
+    it("stops the old encode before renegotiating at the current position (Play original, track change)", async () => {
+      const order: string[] = [];
+      const gateway = orderedGateway(order, [hlsPlan("old"), plan]);
+      const player = new FakePlayer();
+      const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
+
+      await coordinator.start(item);
+      player.listener?.({ kind: "loaded", snapshot });
+      await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
+      await coordinator.retry(420_000_000);
+
+      expect(order).toEqual(["negotiate -> old", "stopped old", "delete old", "negotiate -> session"]);
+      expect(gateway.createPlaybackPlan).toHaveBeenLastCalledWith(item, 420_000_000, expect.any(AbortSignal));
+    });
+
+    it("stops no encode when retrying a direct-play session", async () => {
+      const order: string[] = [];
+      const gateway = orderedGateway(order, [plan, { ...plan, playSessionId: "session-2" }]);
+      const player = new FakePlayer();
+      const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
+
+      await coordinator.start(item);
+      player.listener?.({ kind: "loaded", snapshot });
+      await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
+      await coordinator.retry(0);
+
+      expect(gateway.stopActiveEncoding).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ["fails", () => Promise.reject(new Error("Request failed with status code 503"))],
+      ["times out", () => new Promise<void>(() => undefined)],
+    ])("sends one DELETE when the stopped report %s, and Stop does not wait for either", async (_name, stopped) => {
+      vi.useFakeTimers();
+      try {
+        const gateway = {
+          createPlaybackPlan: vi.fn(async () => hlsPlan("converting")),
+          reportStart: vi.fn(async () => undefined),
+          reportProgress: vi.fn(async () => undefined),
+          reportStopped: vi.fn(stopped),
+          // A server that never answers and ignores cancellation.
+          stopActiveEncoding: vi.fn(() => new Promise<void>(() => undefined)),
+        } as PlaybackGateway;
+        const player = new FakePlayer();
+        const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
+        await coordinator.start(item);
+        player.listener?.({ kind: "loaded", snapshot });
+        await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
+
+        let returned = false;
+        void coordinator.stop().then(() => { returned = true; });
+        await vi.advanceTimersByTimeAsync(0);
+        expect(returned).toBe(true);
+
+        let flushed = false;
+        void coordinator.flush().then(() => { flushed = true; });
+        await vi.advanceTimersByTimeAsync(5_000);
+        expect(gateway.stopActiveEncoding).toHaveBeenCalledTimes(1);
+        expect(gateway.stopActiveEncoding).toHaveBeenCalledWith("converting", expect.any(AbortSignal));
+        await vi.advanceTimersByTimeAsync(3_000);
+        expect(flushed).toBe(true);
+        expect(gateway.stopActiveEncoding).toHaveBeenCalledTimes(1);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("sends no DELETE when the stopped report for a conversion succeeds", async () => {
+      const order: string[] = [];
+      const gateway = orderedGateway(order, [hlsPlan("converting")]);
+      const player = new FakePlayer();
+      const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
+      await coordinator.start(item);
+      player.listener?.({ kind: "loaded", snapshot });
+      await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
+
+      await coordinator.stop();
+      await coordinator.flush();
+
+      expect(order).toEqual(["negotiate -> converting", "stopped converting"]);
+    });
+
+    it("sends the DELETE once when a retry follows a failed stopped report", async () => {
+      const order: string[] = [];
+      const gateway = orderedGateway(order, [hlsPlan("old"), hlsPlan("new")]);
+      gateway.reportStopped = vi.fn(async () => {
+        order.push("stopped failed");
+        throw new Error("offline");
+      });
+      const player = new FakePlayer();
+      const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
+      await coordinator.start(item);
+      player.listener?.({ kind: "loaded", snapshot });
+      await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
+
+      await coordinator.retry();
+
+      expect(order).toEqual(["negotiate -> old", "stopped failed", "delete old", "negotiate -> new"]);
+    });
+
+    it("lets Back leave a retry that is still waiting on a hung DELETE", async () => {
+      const gateway = orderedGateway([], [hlsPlan("old"), hlsPlan("new")]);
+      gateway.stopActiveEncoding = vi.fn(() => new Promise<void>(() => undefined));
+      const player = new FakePlayer();
+      const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
+      await coordinator.start(item);
+      player.listener?.({ kind: "loaded", snapshot });
+      await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
+
+      const retrying = coordinator.retry().catch((error: unknown) => error);
+      await vi.waitFor(() => expect(gateway.stopActiveEncoding).toHaveBeenCalledTimes(1));
+      const outcome = await Promise.race([
+        coordinator.stop().then(() => "returned"),
+        new Promise((resolve) => setTimeout(() => resolve("blocked"), 200)),
+      ]);
+
+      expect(outcome).toBe("returned");
+      expect(await retrying).toBeInstanceOf(PlaybackCancelledError);
+      expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1);
+    });
   });
 });

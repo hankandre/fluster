@@ -747,6 +747,47 @@ describe("System media controls", () => {
       expect(screen.queryByRole("button", { name: "Play original" })).not.toBeInTheDocument();
     });
 
+    it("stops the converting session's server encode before renegotiating", async () => {
+      const order: string[] = [];
+      const gateway = fakeGateway({
+        createPlaybackPlan: vi.fn(async () => {
+          order.push("negotiate");
+          return order.length === 1 ? limitedPlan("play-1", true) : plan("play-2");
+        }),
+        stopActiveEncoding: vi.fn(async (playSessionId: string) => { order.push(`delete ${playSessionId}`); }),
+      });
+      const engine = new FakePlayerEngine();
+      await renderPlayer(gateway, engine);
+      await startPlaying(engine);
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Play original" }));
+      });
+
+      await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(plan("play-2")));
+      expect(order).toEqual(["negotiate", "delete play-1", "negotiate"]);
+    });
+
+    it("Back leaves a conversion without waiting for a failed stop or its DELETE", async () => {
+      const gateway = fakeGateway({
+        createPlaybackPlan: vi.fn().mockResolvedValue(limitedPlan("play-1", false)),
+        reportStopped: vi.fn().mockRejectedValue(new Error("offline")),
+        // A server that never answers.
+        stopActiveEncoding: vi.fn(() => new Promise<void>(() => undefined)),
+      });
+      const engine = new FakePlayerEngine();
+      await renderPlayer(gateway, engine);
+      await startPlaying(engine);
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
+      });
+
+      await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
+      await waitFor(() => expect(gateway.stopActiveEncoding).toHaveBeenCalledWith("play-1", expect.any(AbortSignal)));
+      expect(gateway.stopActiveEncoding).toHaveBeenCalledTimes(1);
+    });
+
     it("is not shown when the limit is not the only reason", async () => {
       const gateway = fakeGateway({ createPlaybackPlan: vi.fn().mockResolvedValue(limitedPlan("play-1", false)) });
       const engine = new FakePlayerEngine();

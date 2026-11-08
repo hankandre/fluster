@@ -36,6 +36,7 @@ export function fakeSessionGateway(overrides: Partial<SessionGateway> = {}): Ses
     reportStart: vi.fn().mockResolvedValue(undefined),
     reportProgress: vi.fn().mockResolvedValue(undefined),
     reportStopped: vi.fn().mockResolvedValue(undefined),
+    stopActiveEncoding: vi.fn().mockResolvedValue(undefined),
     authorizationHeader: vi.fn(() => 'MediaBrowser Token="test-token"'),
     ...overrides,
   };

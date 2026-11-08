@@ -142,6 +142,7 @@ describe("redaction canary: JellyfinGateway", () => {
         await messageOf(() => gateway.reportStart({ ...planWith("x") }, snapshot)),
         await messageOf(() => gateway.reportProgress({ ...planWith("x") }, snapshot)),
         await messageOf(() => gateway.reportStopped({ ...planWith("x") }, snapshot)),
+        await messageOf(() => gateway.stopActiveEncoding("play-session")),
       ];
       for (const message of messages) {
         expect(message).not.toBe("");
@@ -268,6 +269,7 @@ describe("redaction canary: PlaybackCoordinator", () => {
         reportStart: vi.fn(async () => undefined),
         reportProgress: vi.fn(async () => undefined),
         reportStopped: vi.fn(async () => undefined),
+        stopActiveEncoding: vi.fn(async () => undefined),
       } as PlaybackGateway;
       const player = new FakePlayer();
       const surfaced: string[] = [];
@@ -292,6 +294,7 @@ describe("redaction canary: PlaybackCoordinator", () => {
         reportStart: vi.fn(async () => { throw reportError; }),
         reportProgress: vi.fn(async () => { throw reportError; }),
         reportStopped: vi.fn(async () => { throw reportError; }),
+        stopActiveEncoding: vi.fn(async () => undefined),
       } as PlaybackGateway;
       const player = new FakePlayer();
       player.stop.mockRejectedValue(new Error(text));
@@ -320,6 +323,7 @@ describe("redaction canary: PlaybackCoordinator", () => {
         reportStart: vi.fn(async () => undefined),
         reportProgress: vi.fn(async () => undefined),
         reportStopped: vi.fn(async () => undefined),
+        stopActiveEncoding: vi.fn(async () => undefined),
       } as PlaybackGateway;
       const player = new FakePlayer();
       player.launch.mockRejectedValue(new Error(text));

@@ -41,6 +41,8 @@ export interface SessionGateway {
   reportStart(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal): Promise<void>;
   reportProgress(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal): Promise<void>;
   reportStopped(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal, failed?: boolean): Promise<void>;
+  // Stops the server's conversion for one play session. Never log the id.
+  stopActiveEncoding(playSessionId: string, signal?: AbortSignal): Promise<void>;
   // Only for opening the server socket. Never log or store it.
   authorizationHeader(): string;
 }
