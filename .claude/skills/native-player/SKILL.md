@@ -14,9 +14,10 @@ description: Change Fluster's Rust native player, libmpv integration, Tauri comm
 
 ## Boundaries
 
-- Keep libmpv calls in `mpv.rs`.
+- Keep libmpv calls in `player/`.
 - Keep windowing and render contexts in `surface/`.
 - Keep `lib.rs` to command registration and glue.
+- Keep `#[tauri::command]` handlers in `commands.rs`.
 - Keep renderer objects and render contexts on the platform UI thread.
 - Never touch Jellyfin data in `surface/`.
 
