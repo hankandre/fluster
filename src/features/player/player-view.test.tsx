@@ -24,8 +24,9 @@ function plan(playSessionId = "play-1"): PlaybackPlan {
   return {
     itemId: "m1",
     title: "Arrival",
-    streamUrl: "https://media.test/Videos/m1/stream?api_key=secret",
+    streamUrl: "https://media.test/Videos/m1/stream?Static=true",
     mediaSourceId: "src-hd",
+    authorization: 'MediaBrowser Client="Fluster", Token="test"',
     playSessionId,
     startPositionTicks: 0,
     tracks: [],
