@@ -43,6 +43,13 @@ describe("artTint", () => {
     }
   });
 
+  it("decodes the DC term per the BlurHash spec", () => {
+    // "00L-|1": base83 L,-,|,1 = (190, 120, 60). The spec demo hash decodes to (151, 150, 149), which is grey.
+    expect(artTint("00L-|1")).not.toEqual(DEFAULT_ART_TINT);
+    expect(artTint("00L-|1")).toEqual(artTint(encode(190, 120, 60).replace(/^L0/, "00").slice(0, 6)));
+    expect(artTint("LEHV6nWB2yk8pyo0adR*.7kCMdnj")).toEqual(DEFAULT_ART_TINT);
+  });
+
   it("matches the default accent contrast documented in DESIGN.md", () => {
     expect(contrastOnSurface(DEFAULT_ART_TINT.accent)).toBeGreaterThan(11);
   });

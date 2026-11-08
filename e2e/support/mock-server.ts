@@ -94,8 +94,8 @@ const episodes: Record<string, Dto> = Object.fromEntries(episodeNames.map((name,
   resume: index === 1 ? ticks(1320) : 0,
 }]));
 
-// DC-only BlurHashes (average colour) so the ambient tint is visible in captures.
-const backdropHashes: Record<string, string> = {"b1": "00L-|1", "b2": "005*gO", "b3": "00Cr5%"};
+// DC-only BlurHashes (average colour) matching the average colour of the synthetic backdrops b1-b3.
+const backdropHashes: Record<string, string> = {"b1": "009ly~", "b2": "00Ip-7", "b3": "00981K"};
 function movieDto(id: string, opts: MockOptions): Dto {
   const m = movies[id];
   return {

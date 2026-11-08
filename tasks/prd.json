@@ -1538,10 +1538,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "done",
+          "status": "in_progress",
           "owner": "implementer",
-          "passes": true,
-          "evidence": "artTint (src/features/shared/art-tint.ts) with 3000 random plus 4913 cube inputs all >= 3:1 vs --surface-0; AmbientBackdrop crossfades over 480ms and swaps instantly under reduced motion (Testing Library). pnpm check, test:e2e (37), test:visual (76) green; wired into item detail. Screenshots and design review pending in CI artifact."
+          "passes": false,
+          "evidence": "artTint plus AmbientBackdrop built and wired into item detail; unit tests (3:1 contrast over random and cube inputs, crossfade vs reduced motion, item A to B flow), e2e paint-order check, pnpm check, test:e2e and test:visual green. Design review fixes applied; re-review pending."
         },
         {
           "id": "P13-05",

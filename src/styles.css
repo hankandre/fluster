@@ -101,7 +101,7 @@
 .browser-mode-label { position: fixed; z-index: var(--z-toast); right: var(--space-3); bottom: var(--space-3); margin: 0; padding: var(--space-2) var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--surface-1); color: var(--text-2); font: var(--type-meta); pointer-events: none; }
 .quick-connect-code { font: 700 clamp(2.5rem, 8vw, 4.5rem) / 1 var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: .24em; margin: var(--space-2) 0 var(--space-5); color: var(--text-1); user-select: all; }
 
-.home { padding: var(--space-6) var(--gutter) var(--space-8); }
+.home { position: relative; z-index: var(--z-content); padding: var(--space-6) var(--gutter) var(--space-8); }
 .home h1 { margin-bottom: var(--space-6); }
 .home-row { margin-bottom: var(--space-6); }
 .home-row h2 { margin: 0 0 var(--space-4); }
@@ -193,8 +193,9 @@
 .play-original { position: fixed; right: var(--gutter); bottom: 96px; z-index: var(--z-player-chrome); }
 }
 
-/* Ambient backdrop (DESIGN.md §7.2) */
-.ambient { position: relative; isolation: isolate; transition: --art-accent var(--dur-slow), --art-glow var(--dur-slow), --art-shade var(--dur-slow); }
+/* Ambient backdrop (DESIGN.md §7.2). The layers sit at z-index -1 inside the frame's stacking context (.home), so the frame must create one. */
+.ambient, .ambient-content { display: contents; }
+.ambient { transition: --art-accent var(--dur-slow), --art-glow var(--dur-slow), --art-shade var(--dur-slow); }
 .ambient-layers { position: fixed; inset: 0 0 auto 0; height: min(70vh, 640px); z-index: -1; overflow: hidden; pointer-events: none; }
 .ambient-layers::before { content: ""; position: absolute; inset: 0; z-index: 2; background: var(--scrim-floor), var(--scrim-hero), linear-gradient(0deg, var(--art-shade) 0%, transparent 30%), radial-gradient(70% 90% at 75% 20%, var(--art-glow), transparent 70%); }
 .ambient-layer { position: absolute; inset: 0; background: var(--surface-1) center / cover no-repeat; opacity: var(--ambient-strength, 1); }
