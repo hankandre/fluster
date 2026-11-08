@@ -617,6 +617,25 @@ describe("JellyfinGateway device identity and logout", () => {
     warn.mockRestore();
   });
 
+  it("stops an active encoding with this device's id and the report timeout", async () => {
+    const { gateway, transport, deviceId } = await loginWith("install-1", "server-1", "Louise");
+    const controller = new AbortController();
+    await gateway.stopActiveEncoding("play-1", controller.signal);
+    const request = transport.requests.at(-1)!;
+    expect(request.method).toBe("DELETE");
+    expect(request.url).toBe("/Videos/ActiveEncodings");
+    expect(request.params).toEqual({ deviceId, playSessionId: "play-1" });
+    expect(request.signal).toBe(controller.signal);
+    expect(request.timeout).toBe(REPORT_REQUEST_TIMEOUT_MS);
+  });
+
+  it("refuses to stop an encoding before sign-in", async () => {
+    const transport = new FakeTransport();
+    const gateway = new JellyfinGateway("https://media.test", transport, "install-1");
+    await expect(gateway.stopActiveEncoding("play-1")).rejects.toThrow("Sign in");
+    expect(transport.requests).toEqual([]);
+  });
+
   it("sends Failed on stopped reports only when requested", async () => {
     const { gateway, transport } = await authenticatedGateway();
     const plan: PlaybackPlan = { itemId: "i", mediaSourceId: "m", playSessionId: "p", startPositionTicks: 0, streamUrl: "", authorization: "", title: "t", tracks: [], delivery: "static", playMethod: "DirectPlay", conversionReasons: [] };

@@ -41,7 +41,9 @@ export class PlaybackCoordinator {
   private unsubscribe?: () => void;
   private attempt = 0;
   private operation = 0;
-  private previousPlaySessionId?: string;
+  // The last plan this coordinator launched. A retry must not reuse its play
+  // session, and a converted one has its server encode stopped first.
+  private previousPlan?: PlaybackPlan;
   private attemptController?: AbortController;
   private attemptTask?: Promise<PlaybackPlan>;
   // The stop that cancelled a pending launch. Every later stop waits for it,
@@ -90,6 +92,10 @@ export class PlaybackCoordinator {
     this.assertCurrentOperation(operation);
     await this.stopAttempt("retry");
     this.assertCurrentOperation(operation);
+    // Retry, Play original, and track changes start a new play session, so a
+    // converting one's server encode is stopped first. The new attempt waits
+    // for it (bounded) before negotiating; Stop or Back cancels that wait.
+    if (this.previousPlan) this.reporter.stopEncoding(this.previousPlan);
     return this.runAttempt(item, choice, true);
   }
 
@@ -147,7 +153,7 @@ export class PlaybackCoordinator {
       throw redactError(error);
     }
     this.assertCurrentAttempt(attempt, controller);
-    if (isRetry && plan.playSessionId === this.previousPlaySessionId) {
+    if (isRetry && plan.playSessionId === this.previousPlan?.playSessionId) {
       throw new Error("Jellyfin reused the failed playback session. Retry again to request a fresh session.");
     }
 
@@ -159,7 +165,7 @@ export class PlaybackCoordinator {
       throw new PlaybackCancelledError();
     }
 
-    this.previousPlaySessionId = plan.playSessionId;
+    this.previousPlan = plan;
     this.plan = plan;
     this.unsubscribe = unsubscribe;
     // A converted launch can spend seconds checking playlists before it
@@ -290,7 +296,7 @@ export class PlaybackCoordinator {
     if (reason !== "error" && reason !== "retry") {
       this.item = undefined;
       this.choice = undefined;
-      this.previousPlaySessionId = undefined;
+      this.previousPlan = undefined;
     }
   }
 

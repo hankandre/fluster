@@ -66,6 +66,41 @@ describe("JellyfinGateway redirects", () => {
     expect(target.received).toEqual([]);
   });
 
+  it("stops an active encoding with header auth, deviceId and playSessionId, and no redirect", async () => {
+    const target = await listenForStolenRequests();
+    const seen: { method?: string; url: string; authorization?: string }[] = [];
+    const server = await listen((request, response) => {
+      switch (request.url?.split("?")[0]) {
+        case "/System/Info/Public":
+          return json(response, PUBLIC_INFO);
+        case "/Users/AuthenticateByName":
+          return json(response, AUTHENTICATION);
+        default:
+          seen.push({ method: request.method, url: request.url ?? "", authorization: request.headers.authorization });
+          if (seen.length === 1) {
+            response.writeHead(204);
+            return response.end();
+          }
+          return redirect(response, 307, `${target.origin}/Videos/ActiveEncodings`);
+      }
+    });
+    const gateway = new JellyfinGateway(server, undefined, "install-1");
+    await gateway.connect();
+    await gateway.login("Louise", "hunter2");
+    const deviceId = /DeviceId="([^"]+)"/.exec(gateway.authorizationHeader())?.[1];
+
+    await gateway.stopActiveEncoding("play-1");
+    await expect(gateway.stopActiveEncoding("play-2")).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
+
+    const first = new URL(seen[0].url, server);
+    expect(seen[0].method).toBe("DELETE");
+    expect(first.pathname).toBe("/Videos/ActiveEncodings");
+    expect(Object.fromEntries(first.searchParams)).toEqual({ deviceId, playSessionId: "play-1" });
+    expect(seen[0].authorization).toContain('Token="top-secret"');
+    expect(seen[0].url).not.toContain("top-secret");
+    expect(target.received).toEqual([]);
+  });
+
   it("does not follow a redirect on the sign-in request", async () => {
     const target = await listenForStolenRequests();
     const server = await listen((request, response) => {
