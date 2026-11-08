@@ -97,39 +97,60 @@ export class PlaybackCoordinator {
   }
 
   // Replaces a playing session with a new one for the same version at
-  // `startPositionTicks`, asking for `streams` (a track or streaming-limit
-  // change). The old session played fine, so its Stopped report is not
-  // Failed. Stop or Back cancels it like any attempt.
-  renegotiate(startPositionTicks: number | undefined, streams: StreamSelection): Promise<PlaybackPlan> {
+  // `startPositionTicks`, asking for `streams` on top of any earlier choice
+  // (a track or streaming-limit change, or Play original). The old session
+  // played fine, so its Stopped report is not Failed. Stop or Back cancels it
+  // like any attempt. When the new session fails, later attempts ask for
+  // `fallback` instead (the streams that were playing), so Retry goes back to
+  // what worked.
+  renegotiate(
+    startPositionTicks: number | undefined,
+    streams: StreamSelection,
+    fallback?: StreamSelection,
+  ): Promise<PlaybackPlan> {
     const mediaSourceId = this.previousPlan?.mediaSourceId;
-    return this.restart("renegotiate", startPositionTicks, mediaSourceId ? { ...streams, mediaSourceId } : undefined);
+    if (!mediaSourceId) return this.restart("renegotiate", startPositionTicks);
+    return this.restart(
+      "renegotiate",
+      startPositionTicks,
+      { ...this.selection, ...streams, mediaSourceId },
+      fallback && { ...fallback, mediaSourceId },
+    );
   }
 
   private async restart(
     reason: RestartReason,
     startPositionTicks: number | undefined,
     selection?: PlaybackSelection,
+    fallback?: PlaybackSelection,
   ): Promise<PlaybackPlan> {
     const item = this.item;
     if (!item || !this.choice) throw new Error("There is no playback attempt to retry.");
-    if (startPositionTicks !== undefined) {
-      this.choice = { kind: "resume", startPositionTicks: Math.max(0, Math.floor(startPositionTicks)) };
-    }
-    const choice = this.choice;
+    const choice: PlaybackStartChoice = startPositionTicks === undefined
+      ? this.choice
+      : { kind: "resume", startPositionTicks: Math.max(0, Math.floor(startPositionTicks)) };
 
     const operation = ++this.operation;
     this.cancelAttempt();
     await this.waitForAttempt();
-    this.assertCurrentOperation(operation);
+    this.assertCurrentSession(operation, item);
     await this.stopAttempt(reason);
-    this.assertCurrentOperation(operation);
+    // The session may have ended on its own (end of file) while it stopped;
+    // then nothing owns the engine any more and nothing may launch.
+    this.assertCurrentSession(operation, item);
+    this.choice = choice;
     if (selection) this.selection = selection;
     // Retry, Play original, and track and limit changes start a new play
     // session, so a converting one's server encode is stopped first. The new
     // attempt waits for it (bounded) before negotiating; Stop or Back cancels
     // that wait.
     if (this.previousPlan) this.reporter.stopEncoding(this.previousPlan);
-    return this.runAttempt(item, choice, true);
+    try {
+      return await this.runAttempt(item, choice, true);
+    } catch (error) {
+      if (fallback && !(error instanceof PlaybackCancelledError) && this.item === item) this.selection = fallback;
+      throw error;
+    }
   }
 
   async stop(): Promise<void> {
@@ -334,6 +355,8 @@ export class PlaybackCoordinator {
         this.callbacks.onSessionEnded?.(reason);
         return;
       default:
+        // A restart waiting on this session's stop must not launch.
+        this.operation += 1;
         this.callbacks.onSessionEnded?.(reason);
         this.item = undefined;
         this.choice = undefined;
@@ -361,8 +384,8 @@ export class PlaybackCoordinator {
     if (!this.isCurrentAttempt(attempt, controller)) throw new PlaybackCancelledError();
   }
 
-  private assertCurrentOperation(operation: number): void {
-    if (operation !== this.operation) throw new PlaybackCancelledError();
+  private assertCurrentSession(operation: number, item: LibraryItem): void {
+    if (operation !== this.operation || this.item !== item) throw new PlaybackCancelledError();
   }
 }
 

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { AudioLines, Captions } from "lucide-react";
 import type { PlaybackSnapshot } from "../../domain/playback";
 import type { SourceTrackOption, TrackKind } from "../../domain/track-choice";
@@ -24,16 +25,39 @@ export function TrackMenus({ snapshot, converted, onSelect, onChangeConverted }:
   onSelect(kind: TrackKind, playerId: number | undefined): void;
   onChangeConverted(change: () => Promise<void>): void;
 }) {
+  const audioSelect = useRef<HTMLSelectElement>(null);
+  const subtitleSelect = useRef<HTMLSelectElement>(null);
+  // The menu a converted-session choice came from. A renegotiation disables
+  // the menus, which drops keyboard focus; it returns once the new session
+  // offers them again.
+  const refocus = useRef<TrackKind | undefined>(undefined);
+
+  useEffect(() => {
+    const kind = refocus.current;
+    if (!kind || !converted || !snapshot) return;
+    const select = kind === "audio" ? audioSelect.current : subtitleSelect.current;
+    if (!select || select.disabled) return;
+    refocus.current = undefined;
+    // Only when focus was lost; never take it from another control.
+    const focused = document.activeElement;
+    if (!focused || focused === document.body) select.focus();
+  });
+
   if (converted) {
     const { tracks, onChange } = converted;
+    const choose = (kind: TrackKind, jellyfinIndex: number | undefined) => {
+      refocus.current = kind;
+      onChangeConverted(() => onChange(kind, jellyfinIndex));
+    };
     return (
       <>
         <label className="track-control">
           <AudioLines size={18} />
           <select
+            ref={audioSelect}
             aria-label="Audio track"
             value={tracks.audio.find((track) => track.selected)?.jellyfinIndex ?? ""}
-            onChange={(event) => onChangeConverted(() => onChange("audio", Number(event.target.value)))}
+            onChange={(event) => choose("audio", Number(event.target.value))}
             disabled={!snapshot || !tracks.audio.length}
           >
             {tracks.audio.map((track) => <option key={track.jellyfinIndex} value={track.jellyfinIndex}>{track.title}</option>)}
@@ -42,9 +66,10 @@ export function TrackMenus({ snapshot, converted, onSelect, onChangeConverted }:
         <label className="track-control">
           <Captions size={18} />
           <select
+            ref={subtitleSelect}
             aria-label="Subtitle track"
             value={tracks.subtitle.find((track) => track.selected)?.jellyfinIndex ?? OFF}
-            onChange={(event) => onChangeConverted(() => onChange("subtitle", event.target.value === OFF ? undefined : Number(event.target.value)))}
+            onChange={(event) => choose("subtitle", event.target.value === OFF ? undefined : Number(event.target.value))}
             disabled={!snapshot}
           >
             <option value={OFF}>Subtitles off</option>
@@ -62,6 +87,7 @@ export function TrackMenus({ snapshot, converted, onSelect, onChangeConverted }:
       <label className="track-control">
         <AudioLines size={18} />
         <select
+          ref={audioSelect}
           aria-label="Audio track"
           value={audio.find((track) => track.selected)?.playerId ?? ""}
           onChange={(event) => onSelect("audio", Number(event.target.value))}
@@ -73,6 +99,7 @@ export function TrackMenus({ snapshot, converted, onSelect, onChangeConverted }:
       <label className="track-control">
         <Captions size={18} />
         <select
+          ref={subtitleSelect}
           aria-label="Subtitle track"
           value={subtitles.find((track) => track.selected)?.playerId ?? OFF}
           onChange={(event) => onSelect("subtitle", event.target.value === OFF ? undefined : Number(event.target.value))}

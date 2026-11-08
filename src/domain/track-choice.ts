@@ -105,3 +105,11 @@ export function trackChange(
     }
   }
 }
+
+// The subtitle after the selected one in a converted session's source list,
+// then off (undefined). Null when the source has none.
+export function nextSourceSubtitle(options: SourceTrackOption[]): number | undefined | null {
+  if (options.length === 0) return null;
+  const selected = options.findIndex((option) => option.selected);
+  return options[selected + 1]?.jellyfinIndex;
+}
