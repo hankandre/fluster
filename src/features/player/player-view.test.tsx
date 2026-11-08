@@ -202,7 +202,8 @@ describe("Player feature", () => {
     await renderPlayer(gateway, engine);
 
     const heading = await screen.findByRole("heading", { name: REFUSAL_COPY["disc-source"].title });
-    expect(heading).toHaveFocus();
+    // The heading renders before its focus effect runs.
+    await waitFor(() => expect(heading).toHaveFocus());
     const alert = screen.getByRole("alert");
     expect(alert).toHaveTextContent(REFUSAL_COPY["disc-source"].explanation);
     expect(alert).toHaveTextContent(REFUSAL_COPY["disc-source"].whatYouCanDo);
