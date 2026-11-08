@@ -70,10 +70,16 @@ export class PlaybackCoordinator {
     return this.runAttempt(item, choice, false);
   }
 
-  async retry(): Promise<PlaybackPlan> {
+  // Renegotiates the same item. `startPositionTicks` restarts from that
+  // position (Play original uses the current one); omitted, it keeps the
+  // original start choice.
+  async retry(startPositionTicks?: number): Promise<PlaybackPlan> {
     const item = this.item;
+    if (!item || !this.choice) throw new Error("There is no playback attempt to retry.");
+    if (startPositionTicks !== undefined) {
+      this.choice = { kind: "resume", startPositionTicks: Math.max(0, Math.floor(startPositionTicks)) };
+    }
     const choice = this.choice;
-    if (!item || !choice) throw new Error("There is no playback attempt to retry.");
 
     const operation = ++this.operation;
     this.cancelAttempt();

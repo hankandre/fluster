@@ -188,6 +188,9 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
         {...seekProps}
       />
       <PlayerInfoPanel status={status} snapshot={playback.state.snapshot} />
+      {playback.playOriginalRequested && playback.plan?.delivery === "hls" && !playback.retrying && (
+        <p className="play-original-note" role="status">The server still converts this.</p>
+      )}
       {playback.plan?.playOriginalAvailable && !playback.retrying && (
         <button type="button" className="play-original" onClick={() => void playback.playOriginal()}>
           Play original

@@ -706,6 +706,28 @@ describe("System media controls", () => {
       expect(screen.queryByRole("button", { name: "Play original" })).not.toBeInTheDocument();
     });
 
+    it("continues from the current position and says so when the server still converts", async () => {
+      const gateway = fakeGateway({
+        createPlaybackPlan: vi.fn()
+          .mockResolvedValueOnce(limitedPlan("play-1", true))
+          .mockResolvedValueOnce(limitedPlan("play-2", false)),
+      });
+      const engine = new FakePlayerEngine();
+      await renderPlayer(gateway, engine, 100_000_000);
+      await startPlaying(engine);
+      expect(screen.queryByText("The server still converts this.")).not.toBeInTheDocument();
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Play original" }));
+      });
+
+      await waitFor(() => expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(2));
+      // The snapshot is at 42 s.
+      expect(vi.mocked(gateway.createPlaybackPlan).mock.calls[1][1]).toBe(420_000_000);
+      expect(await screen.findByText("The server still converts this.")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Play original" })).not.toBeInTheDocument();
+    });
+
     it("is not shown when the limit is not the only reason", async () => {
       const gateway = fakeGateway({ createPlaybackPlan: vi.fn().mockResolvedValue(limitedPlan("play-1", false)) });
       const engine = new FakePlayerEngine();

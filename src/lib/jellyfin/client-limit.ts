@@ -13,10 +13,12 @@ const BITRATE_REASONS: ReadonlySet<ConversionReason> = new Set([
 ]);
 
 // True when a limit was sent, every reason is a bitrate reason, and the file's
-// bitrate is over the limit. A file at or under the limit that the server still
-// converts is the server's own limit (for example RemoteClientBitrateLimit), so
-// the original is not offered. An absent TranscodeReasons or an unknown
-// reason says nothing about the cause and also is not offered.
+// bitrate is over the limit. The server's reasons do not say whose limit it
+// was, so a server-side cap (for example RemoteClientBitrateLimit) that is
+// lower than the user's limit also passes this check. Play original then
+// renegotiates once and the player says "The server still converts this."
+// Files at or under the limit, an absent TranscodeReasons, and any other
+// reason are not offered.
 export function limitIsOnlyReason(
   source: MediaSourceDto,
   reasons: readonly ConversionReason[],
