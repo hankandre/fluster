@@ -641,6 +641,27 @@
           "owner": "implementer",
           "passes": true,
           "evidence": "Moved the report queue, abort controller, bounded 5 s drain, 10 s progress timer, and start/progress/stopped calls into PlaystateReporter (src/lib/player/playstate-reporter.ts, 116 lines); coordinator.ts went from 363 to 292 lines. git diff origin/main -- src/lib/player/coordinator.test.ts is empty: order, bounded-drain, and failure-as-warning tests pass unchanged, plus 5 new reporter unit tests. pnpm check green (boundaries, 14 redaction canaries, 105 Vitest tests, build, cargo test); pnpm test:e2e 5/5 passed."
+        },
+        {
+          "id": "P2-06",
+          "title": "Upgrade libmpv2 to 7",
+          "domain": "Player Engine",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "P2-04"
+          ],
+          "acceptance": [
+            "src-tauri builds against libmpv2 7 with the render feature",
+            "Network hardening, header auth, track mapping, and the version gate behave as before (existing tests pass unchanged)",
+            "Every synthetic sample plays headless to playback-restart against both fixture servers"
+          ],
+          "verify": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings && cargo test --release --manifest-path src-tauri/Cargo.toml",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
         }
       ]
     },
