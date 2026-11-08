@@ -230,6 +230,41 @@ describe("PlaybackCoordinator", () => {
     expect(player.stop.mock.calls.length).toBeGreaterThanOrEqual(1);
   });
 
+  it("waits for the stop that cancelled a pending launch before its own stop", async () => {
+    const gateway = {
+      createPlaybackPlan: vi.fn(async () => plan),
+      reportStart: vi.fn(async () => undefined),
+      reportProgress: vi.fn(async () => undefined),
+      reportStopped: vi.fn(async () => undefined),
+    } as PlaybackGateway;
+    const player = new FakePlayer();
+    let rejectLaunch!: (error: Error) => void;
+    let finishCancelStop!: () => void;
+    const order: string[] = [];
+    player.launch.mockImplementation(() => new Promise<undefined>((_resolve, reject) => { rejectLaunch = reject; }));
+    player.stop
+      .mockImplementationOnce(() => {
+        rejectLaunch(new Error("The playback launch was cancelled."));
+        return new Promise<void>((resolve) => {
+          finishCancelStop = () => { order.push("cancel stop done"); resolve(); };
+        });
+      })
+      .mockImplementation(async () => { order.push("stop"); });
+    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
+
+    const starting = coordinator.start(item);
+    await vi.waitFor(() => expect(player.launch).toHaveBeenCalled());
+    let stopped = false;
+    const stopping = coordinator.stop().then(() => { stopped = true; });
+    await expect(starting).rejects.toBeInstanceOf(PlaybackCancelledError);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(stopped).toBe(false);
+    expect(order).toEqual([]);
+    finishCancelStop();
+    await stopping;
+    expect(order).toEqual(["cancel stop done", "stop"]);
+  });
+
   it("delivers later player events while a report is still pending", async () => {
     let finishReport!: () => void;
     const gateway = {
