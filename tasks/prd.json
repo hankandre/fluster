@@ -1538,10 +1538,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "artTint plus AmbientBackdrop built and wired into item detail; unit tests (3:1 contrast over random and cube inputs, crossfade vs reduced motion, item A to B flow), e2e paint-order check, pnpm check, test:e2e and test:visual green. Design review fixes applied; re-review pending."
+          "passes": true,
+          "evidence": "artTint plus AmbientBackdrop built and wired into item detail; unit tests (3:1 contrast over random and cube inputs, crossfade vs reduced motion, item A to B flow), e2e paint-order check, pnpm check, test:e2e and test:visual green. Design review passed on re-review (heading above backdrop, detail grid restored, A→B crossfade)."
         },
         {
           "id": "P13-05",
