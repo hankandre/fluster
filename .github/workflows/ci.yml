@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # The main ruleset uses a merge queue; required checks must run on its groups.
+  merge_group:
 
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
