@@ -37,7 +37,7 @@ Warm neutrals, tuned so that text never sits on pure black and never on blue-bla
 | `--line-strong` | `rgb(242 239 233 / .37)` | Input borders, secondary button border | 3.06 to 3.17:1 on surface-0 to surface-3 |
 | `--text-1` | `#f2efe9` | Titles, body, primary labels | 17.0:1 |
 | `--text-2` | `#a9a59d` | Overview, secondary labels | 8.0:1 |
-| `--text-3` | `#8a867f` | Meta, placeholders, disabled hints | 5.1:1 on surface-1 |
+| `--text-3` | `#8a867f` | Meta, placeholders, disabled hints (surface-0 to surface-2 only; 4.17:1 on surface-3) | 5.1:1 on surface-1 |
 | `--on-light` | `#0b0c0e` | Text on primary (light) buttons | 17.0:1 on text-1 |
 | `--focus` | `#fff4dc` | Focus ring (only focus) | 17.9:1 |
 | `--danger` | `#ff8a6b` | Errors, destructive confirm | 8.5:1 |

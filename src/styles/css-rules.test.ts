@@ -19,8 +19,11 @@ function cssFiles(dir: string): string[] {
 
 const featureCss = cssFiles(srcDir).filter((file) => !file.startsWith(stylesDir + sep));
 
+// Named, system, and context colours. `transparent` stays allowed (the native video surface needs it).
 const NAMED_COLOURS = new Set(
   (
+    "currentcolor canvas canvastext linktext visitedtext activetext buttonface buttontext buttonborder field fieldtext " +
+    "highlight highlighttext selecteditem selecteditemtext mark marktext graytext accentcolor accentcolortext " +
     "aliceblue antiquewhite aqua aquamarine azure beige bisque black blanchedalmond blue blueviolet brown burlywood " +
     "cadetblue chartreuse chocolate coral cornflowerblue cornsilk crimson cyan darkblue darkcyan darkgoldenrod darkgray " +
     "darkgreen darkgrey darkkhaki darkmagenta darkolivegreen darkorange darkorchid darkred darksalmon darkseagreen " +
@@ -66,19 +69,33 @@ function rules(css: string): Rule[] {
 }
 
 function declarationValues(body: string): string[] {
-  // Only text outside nested blocks matters here; nested blocks are their own rules.
-  const flat = body.replace(/\{[^{}]*\}/g, "");
-  return flat
-    .split(";")
-    .map((declaration) => declaration.slice(declaration.indexOf(":") + 1))
-    .filter((value) => value.trim() !== "");
+  // Only this rule's own declarations: text before a nested `{` is that block's prelude, not a value.
+  const values: string[] = [];
+  let depth = 0;
+  let current = "";
+  for (const ch of body) {
+    if (ch === "{") {
+      depth += 1;
+      current = "";
+    } else if (ch === "}") {
+      depth -= 1;
+      current = "";
+    } else if (depth === 0 && ch === ";") {
+      values.push(current.slice(current.indexOf(":") + 1));
+      current = "";
+    } else if (depth === 0) {
+      current += ch;
+    }
+  }
+  if (current.includes(":")) values.push(current.slice(current.indexOf(":") + 1));
+  return values.filter((value) => value.trim() !== "");
 }
 
 function colourLiterals(value: string): string[] {
   const stripped = value.replace(/var\(--[\w-]+/g, "var(").replace(/url\([^)]*\)/g, "").replace(/"[^"]*"/g, "");
   const hits: string[] = [];
   for (const match of stripped.matchAll(/#[0-9a-fA-F]{3,8}\b/g)) hits.push(match[0]);
-  for (const match of stripped.matchAll(/\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix)\(/g)) hits.push(match[0]);
+  for (const match of stripped.matchAll(/\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix|light-dark)\(/g)) hits.push(match[0]);
   for (const match of stripped.matchAll(/\b[a-z]+\b/g)) if (NAMED_COLOURS.has(match[0])) hits.push(match[0]);
   return hits;
 }
@@ -105,7 +122,9 @@ function bareSelectors(prelude: string): string[] {
     .map((selector) => selector.trim())
     .filter((selector) => {
       if (/[.#[]/.test(selector)) return false;
-      const parts = selector.replace(/::?[\w-]+(\([^)]*\))?/g, "").split(/[\s>+~]+/);
+      // Look inside :where(), :is(), :not(), and :has() so `:where(h1)` still counts as bare.
+      const flattened = selector.replace(/:(?:where|is|not|has|matches)\(/g, " ").replace(/\)/g, " ");
+      const parts = flattened.replace(/::?[\w-]+(\([^)]*\))?/g, " ").split(/[\s>+~,]+/);
       return parts.some((part) => BARE_TARGETS.test(part));
     });
 }
@@ -134,9 +153,14 @@ describe("feature CSS (everything outside src/styles/)", () => {
     expect(colourLiterals("rgba(0,0,0,.5)")).toEqual(["rgba("]);
     expect(colourLiterals("white")).toEqual(["white"]);
     expect(colourLiterals("var(--text-1) transparent")).toEqual([]);
+    const nested = rules("@layer a { .x { color: #fff; } .y { margin: 0; } }").flatMap((rule) => declarationValues(rule.body).flatMap(colourLiterals));
+    expect(nested).toEqual(["#fff"]);
     expect(bareSelectors("h1")).toEqual(["h1"]);
     expect(bareSelectors("input:focus, select")).toEqual(["input:focus", "select"]);
     expect(bareSelectors(".home h1")).toEqual([]);
+    expect(bareSelectors(":where(h1)")).toEqual([":where(h1)"]);
+    expect(colourLiterals("light-dark(#fff, #000)").length).toBeGreaterThan(0);
+    expect(colourLiterals("currentColor")).toEqual([]);
     expect(bareSelectors("@media (max-width: 600px)")).toEqual([]);
   });
 });

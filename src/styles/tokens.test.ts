@@ -47,6 +47,28 @@ describe("DESIGN.md §3.1 token contrast", () => {
     });
   }
 
+  // Every surface a text or state colour is used on. --text-3 is for meta, placeholders, and disabled text on
+  // surface-0 to surface-2 only (4.17:1 on surface-3 fails 4.5:1; DESIGN.md §3.1).
+  const textSurfaces: Record<string, string[]> = {
+    "--text-1": ["--surface-0", "--surface-1", "--surface-2", "--surface-3"],
+    "--text-2": ["--surface-0", "--surface-1", "--surface-2", "--surface-3"],
+    "--text-3": ["--surface-0", "--surface-1", "--surface-2"],
+    "--danger": ["--surface-0", "--surface-1", "--surface-2", "--surface-3"],
+    "--notice": ["--surface-0", "--surface-1", "--surface-2", "--surface-3"],
+    "--ok": ["--surface-0", "--surface-1", "--surface-2", "--surface-3"],
+  };
+  for (const [fg, surfaces] of Object.entries(textSurfaces)) {
+    for (const surface of surfaces) {
+      it(`${fg} on ${surface} meets 4.5:1`, () => {
+        expect(contrastRatio(solid(fg), solid(surface))).toBeGreaterThanOrEqual(4.5);
+      });
+    }
+  }
+
+  it("--text-3 is not for surface-3 (below 4.5:1 there)", () => {
+    expect(contrastRatio(solid("--text-3"), solid("--surface-3"))).toBeLessThan(4.5);
+  });
+
   it("holds the documented surface ramp", () => {
     expect(token("--surface-0")).toBe("#0b0c0e");
     expect(token("--text-1")).toBe("#f2efe9");
