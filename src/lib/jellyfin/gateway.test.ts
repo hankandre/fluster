@@ -984,6 +984,8 @@ describe("JellyfinGateway home calls", () => {
       seasonId: "se1",
       fields: "Overview,PrimaryImageAspectRatio",
       enableUserData: true,
+      imageTypeLimit: 1,
+      enableImageTypes: "Primary,Backdrop,Thumb,Logo",
     });
   });
 
