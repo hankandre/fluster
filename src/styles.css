@@ -142,7 +142,6 @@
 .item-detail { display: grid; gap: var(--space-5); max-width: 960px; }
 .item-detail h2 { font-size: clamp(1.5rem, 3vw, 2.25rem); margin: 0 0 var(--space-2); }
 .item-detail h3 { color: var(--text-2); margin: 0 0 var(--space-3); }
-.detail-backdrop { position: relative; aspect-ratio: 16 / 6; overflow: hidden; background: var(--surface-2); }
 .detail-head { display: flex; gap: var(--space-5); align-items: flex-start; }
 .detail-poster { position: relative; flex: none; width: 160px; aspect-ratio: 2 / 3; overflow: hidden; border-radius: var(--radius-art); background: var(--surface-2); }
 .detail-series { color: var(--text-2); margin: 0 0 var(--space-2); }
@@ -192,4 +191,17 @@
 .conversion-chip svg { flex: none; margin-top: 2px; }
 .conversion-chip small { display: block; margin-top: 2px; font: var(--type-meta); color: var(--text-2); }
 .play-original { position: fixed; right: var(--gutter); bottom: 96px; z-index: var(--z-player-chrome); }
+}
+
+/* Ambient backdrop (DESIGN.md §7.2) */
+.ambient { position: relative; isolation: isolate; transition: --art-accent var(--dur-slow), --art-glow var(--dur-slow), --art-shade var(--dur-slow); }
+.ambient-layers { position: fixed; inset: 0 0 auto 0; height: min(70vh, 640px); z-index: -1; overflow: hidden; pointer-events: none; }
+.ambient-layers::before { content: ""; position: absolute; inset: 0; z-index: 2; background: var(--scrim-floor), var(--scrim-hero), linear-gradient(0deg, var(--art-shade) 0%, transparent 30%), radial-gradient(70% 90% at 75% 20%, var(--art-glow), transparent 70%); }
+.ambient-layer { position: absolute; inset: 0; background: var(--surface-1) center / cover no-repeat; opacity: var(--ambient-strength, 1); }
+.ambient-layer img { width: 100%; height: 100%; object-fit: cover; }
+.ambient-layer[data-entering="true"] { animation: ambient-in var(--dur-slow) ease-out both; }
+@keyframes ambient-in { from { opacity: 0; } to { opacity: var(--ambient-strength, 1); } }
+@media (prefers-reduced-motion: reduce) {
+  .ambient { transition: none; }
+  .ambient-layer[data-entering="true"] { animation: none; }
 }

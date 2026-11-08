@@ -94,12 +94,15 @@ const episodes: Record<string, Dto> = Object.fromEntries(episodeNames.map((name,
   resume: index === 1 ? ticks(1320) : 0,
 }]));
 
+// DC-only BlurHashes (average colour) so the ambient tint is visible in captures.
+const backdropHashes: Record<string, string> = {"b1": "00L-|1", "b2": "005*gO", "b3": "00Cr5%"};
 function movieDto(id: string, opts: MockOptions): Dto {
   const m = movies[id];
   return {
     Id: id, Name: m.Name, Type: "Movie", ProductionYear: m.ProductionYear, RunTimeTicks: m.RunTimeTicks, Overview: m.Overview, Genres: m.Genres,
     OfficialRating: m.OfficialRating, CommunityRating: m.CommunityRating, People: m.People ?? [],
     ImageTags: { Primary: `tag-${id}`, Logo: `logo-${id}` }, BackdropImageTags: [`bd-${id}`], PrimaryImageAspectRatio: 2 / 3,
+    ImageBlurHashes: { Backdrop: { [`bd-${id}`]: backdropHashes[m.backdrop] ?? backdropHashes.b1 } },
     MediaSources: opts.disc && id === "m1" ? [discSource] : (m.MediaSources ?? [simpleSource(id)]).map((s: Dto) => ({ ...s, HasSegments: Boolean(opts.segments) })),
     ...(m.Trickplay && opts.trickplay ? { Trickplay: { "src-4k": { 320: { Width: 320, Height: 180, TileWidth: 5, TileHeight: 2, ThumbnailCount: 10, Interval: 738000 } } } } : {}),
     ...(m.Chapters && opts.trickplay ? { Chapters: [
