@@ -1,0 +1,124 @@
+/* Fluster design tokens (DESIGN.md §8). Imported by src/styles.css. */
+@font-face { font-family: "Atkinson Hyperlegible Next"; src: url("../assets/fonts/AtkinsonHyperlegibleNext-Variable.woff2") format("woff2"); font-weight: 200 800; font-display: swap; }
+@font-face { font-family: "Atkinson Hyperlegible Mono"; src: url("../assets/fonts/AtkinsonHyperlegibleMono-Variable.woff2") format("woff2"); font-weight: 200 800; font-display: swap; }
+
+:root {
+  color-scheme: dark;
+
+  /* Chrome palette */
+  --void: #060708;
+  --surface-0: #0b0c0e;
+  --surface-1: #131417;
+  --surface-2: #1b1c20;
+  --surface-3: #25262b;
+  --line: rgb(242 239 233 / 0.10);
+  --line-strong: rgb(242 239 233 / 0.20);
+  --text-1: #f2efe9;
+  --text-2: #a9a59d;
+  --text-3: #8a867f;
+  --on-light: #0b0c0e;
+  --focus: #fff4dc;
+  --focus-edge: rgb(0 0 0 / 0.6);
+  --danger: #ff8a6b;
+  --notice: #f0b65a;
+  --ok: #8fd1a8;
+  --fill-secondary: rgb(242 239 233 / 0.12);
+  --fill-icon: rgb(242 239 233 / 0.10);
+  --track: rgb(255 255 255 / 0.22);
+  --veil: rgb(0 0 0 / 0.6);
+
+  /* Artwork tint: overridden per item by artTint() as inline custom properties */
+  --art-accent: #e8c48a;
+  --art-glow: rgb(232 196 138 / 0.22);
+  --art-shade: #141210;
+
+  /* Type */
+  --font-ui: "Atkinson Hyperlegible Next", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Atkinson Hyperlegible Mono", ui-monospace, "SFMono-Regular", monospace;
+  --ui-scale: 1;
+  --type-hero: 700 clamp(2.5rem, 1.5rem + 2.6vw, 4.5rem) / 1.02 var(--font-ui);
+  --type-title: 650 2rem / 1.15 var(--font-ui);
+  --type-heading: 600 1.375rem / 1.25 var(--font-ui);
+  --type-body-lg: 400 1.125rem / 1.55 var(--font-ui);
+  --type-body: 400 1rem / 1.5 var(--font-ui);
+  --type-label: 600 0.9375rem / 1.3 var(--font-ui);
+  --type-meta: 500 0.8125rem / 1.35 var(--font-ui);
+  --type-mono: 500 0.875rem / 1.3 var(--font-mono);
+  --tracking-hero: -0.02em;
+  --measure: 62ch;
+
+  /* Space */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px;
+  --space-6: 32px; --space-7: 48px; --space-8: 64px; --space-9: 96px;
+  --gutter: clamp(24px, 4vw, 72px);
+  --safe-x: var(--gutter);
+  --safe-y: 0px;
+
+  /* Sizes */
+  --poster-w: 112px;
+  --thumb-w: 240px;
+  --nav-h: 64px;
+  --control-h: 48px;
+  --icon-button: 44px;
+  --hit-min: 44px;
+
+  /* Shape */
+  --radius-xs: 4px;
+  --radius-art: 6px;
+  --radius-control: 10px;
+  --radius-sheet: 16px;
+  --radius-pill: 999px;
+
+  /* Depth */
+  --shadow-lift: 0 14px 32px -10px rgb(0 0 0 / 0.65);
+  --shadow-sheet: 0 28px 72px -16px rgb(0 0 0 / 0.75);
+  --scrim-hero: linear-gradient(90deg, rgb(11 12 14 / 0.94) 0%, rgb(11 12 14 / 0.72) 38%, rgb(11 12 14 / 0) 72%);
+  --scrim-floor: linear-gradient(0deg, var(--surface-0) 0%, rgb(11 12 14 / 0) 40%);
+  --scrim-player-top: linear-gradient(180deg, rgb(0 0 0 / 0.72), rgb(0 0 0 / 0));
+  --scrim-player-bottom: linear-gradient(0deg, rgb(0 0 0 / 0.85), rgb(0 0 0 / 0));
+
+  /* Motion */
+  --dur-instant: 80ms;
+  --dur-quick: 160ms;
+  --dur-base: 240ms;
+  --dur-slow: 480ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --lift: scale(1.04);
+  --chrome-idle-ms: 3000;
+
+  /* Focus */
+  --focus-ring: 0 0 0 3px var(--focus), 0 0 0 4px var(--focus-edge);
+  --focus-offset: 3px;
+
+  /* Layers */
+  --z-backdrop: 0; --z-content: 1; --z-nav: 10; --z-player-chrome: 20; --z-prompt: 30; --z-sheet: 40; --z-dialog: 50; --z-toast: 60;
+}
+
+@media (min-width: 720px)  { :root { --poster-w: 140px; --thumb-w: 280px; } }
+@media (min-width: 1280px) { :root { --poster-w: 168px; --thumb-w: 320px; } }
+@media (min-width: 1920px) { :root { --poster-w: 200px; --thumb-w: 384px; } }
+
+/* 10-foot: set by the TV shell on <html data-form="tv"> */
+:root[data-form="tv"] {
+  --ui-scale: 1.5;
+  font-size: calc(16px * var(--ui-scale));
+  --safe-x: 96px;
+  --safe-y: 54px;
+  --gutter: var(--safe-x);
+  --poster-w: 248px;
+  --thumb-w: 416px;
+  --nav-h: 96px;
+  --control-h: 72px;
+  --icon-button: 64px;
+  --type-meta: 500 0.9375rem / 1.35 var(--font-ui);
+  --lift: scale(1.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-quick: 0ms; --dur-base: 0ms; --dur-slow: 120ms; --lift: none; }
+}
+
+@media (forced-colors: active) {
+  :root { --focus-ring: 0 0 0 3px Highlight; }
+}
