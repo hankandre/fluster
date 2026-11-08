@@ -12,6 +12,8 @@ use url::Url;
 /// Jellyfin lists every segment with its full query string, about 300 to 600
 /// bytes each; 8 MiB covers more than ten hours of 2-second segments.
 pub(super) const MAX_PLAYLIST_BYTES: u64 = 8 * 1024 * 1024;
+/// PGS subtitles for a long film can reach tens of MiB.
+pub(super) const MAX_SUBTITLE_BYTES: u64 = 64 * 1024 * 1024;
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(20);
 
 /// The platform roots, as the server socket uses (`rustls-native-certs`).
@@ -51,13 +53,24 @@ impl PlaylistFetcher {
         Self { agent }
     }
 
-    /// GETs `url` with exactly one `Authorization` header and returns the
-    /// body. A 3xx is refused, never followed.
+    /// GETs a playlist as UTF-8 text (see `fetch_bytes`).
     pub(super) fn fetch(
         &self,
         url: &Url,
         authorization: &MediaBrowserAuthorization,
     ) -> Result<String, HlsError> {
+        let body = self.fetch_bytes(url, authorization, MAX_PLAYLIST_BYTES)?;
+        String::from_utf8(body).map_err(|_| HlsError::Malformed)
+    }
+
+    /// GETs `url` with exactly one `Authorization` header and returns at most
+    /// `limit` bytes of body. A 3xx is refused, never followed.
+    pub(super) fn fetch_bytes(
+        &self,
+        url: &Url,
+        authorization: &MediaBrowserAuthorization,
+        limit: u64,
+    ) -> Result<Vec<u8>, HlsError> {
         let mut response = self
             .agent
             .get(url.as_str())
@@ -71,15 +84,14 @@ impl PlaylistFetcher {
         if status != 200 {
             return Err(HlsError::Status(status));
         }
-        let body = response
+        response
             .body_mut()
             .with_config()
-            .limit(MAX_PLAYLIST_BYTES)
+            .limit(limit)
             .read_to_vec()
             .map_err(|error| match error {
                 ureq::Error::BodyExceedsLimit(_) => HlsError::TooLarge,
                 _ => HlsError::Fetch,
-            })?;
-        String::from_utf8(body).map_err(|_| HlsError::Malformed)
+            })
     }
 }

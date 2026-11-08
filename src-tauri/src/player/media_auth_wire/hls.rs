@@ -249,5 +249,5 @@ fn hls_handles_set_the_protocol_whitelist_and_references() {
         .expect("access-references");
     assert!(access_references);
     let redirects: String = mpv.get_property("stream-lavf-o").expect("stream-lavf-o");
-    assert_eq!(redirects, "max_redirects=0");
+    assert_eq!(redirects, "max_redirects=0,http_proxy=direct://");
 }

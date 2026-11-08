@@ -2,7 +2,7 @@
 //! the loopback copy serves, and that nothing reaches a second origin.
 
 use super::fetch::MAX_PLAYLIST_BYTES;
-use super::{HlsError, HlsSession};
+use super::{HlsError, HlsRequest, HlsSession};
 use crate::player::test_http::{
     authorization_lines, listener, paths, serve_routes, Requests, Route,
 };
@@ -12,22 +12,46 @@ use std::net::TcpStream;
 use std::thread;
 use std::time::Duration;
 
-const ITEM: &str = "0123456789abcdef0123456789abcdef";
-const PLAYLIST: &str = "application/vnd.apple.mpegurl";
-const MASTER_PATH: &str = "/videos/0123456789abcdef0123456789abcdef/master.m3u8";
-const MAIN_PATH: &str = "/videos/0123456789abcdef0123456789abcdef/main.m3u8";
+pub(super) const ITEM: &str = "0123456789abcdef0123456789abcdef";
+pub(super) const PLAYLIST: &str = "application/vnd.apple.mpegurl";
+pub(super) const MASTER_PATH: &str = "/videos/0123456789abcdef0123456789abcdef/master.m3u8";
+pub(super) const MAIN_PATH: &str = "/videos/0123456789abcdef0123456789abcdef/main.m3u8";
 
-fn master_url(origin: &str) -> String {
+pub(super) fn open_with(
+    server: &str,
+    master: &str,
+    item: &str,
+    subtitles: &[String],
+) -> Result<HlsSession, HlsError> {
+    let authorization = test_authorization();
+    HlsSession::open(&HlsRequest {
+        server_url: server,
+        master_url: master,
+        item_id: item,
+        subtitle_urls: subtitles,
+        authorization: &authorization,
+    })
+}
+
+/// Opens a session whose signed-in server is the master URL's own origin.
+fn open(master: &str) -> Result<HlsSession, HlsError> {
+    let server = url::Url::parse(master)
+        .map(|url| url.origin().ascii_serialization())
+        .unwrap_or_default();
+    open_with(&server, master, ITEM, &[])
+}
+
+pub(super) fn master_url(origin: &str) -> String {
     format!(
         "{origin}{MASTER_PATH}?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false"
     )
 }
 
-fn jellyfin_master() -> String {
+pub(super) fn jellyfin_master() -> String {
     "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=128000,CODECS=\"mp4a.40.2\"\nmain.m3u8?DeviceId=d&PlaySessionId=p&EnableTrickplay=false\n".into()
 }
 
-fn jellyfin_media(map: &str, segment: &str) -> String {
+pub(super) fn jellyfin_media(map: &str, segment: &str) -> String {
     format!(
         "#EXTM3U\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:1\n#EXT-X-MEDIA-SEQUENCE:0\n\
          #EXT-X-MAP:URI=\"{map}\"\n#EXTINF:0.25, nodesc\n{segment}\n#EXT-X-ENDLIST\n"
@@ -46,7 +70,7 @@ fn assert_exact_header_on_every_request(requests: &Requests) {
 }
 
 /// A raw GET to the loopback copy, as FFmpeg would send it.
-fn loopback_get(url: &str) -> (String, String) {
+pub(super) fn loopback_get(url: &str) -> (String, String) {
     let rest = url.strip_prefix("http://").expect("loopback http URL");
     let (address, path) = rest.split_once('/').expect("a path");
     let mut stream = TcpStream::connect(address).expect("connect to loopback");
@@ -83,8 +107,7 @@ fn hls_session_fetches_with_the_header_and_serves_validated_copies_on_loopback()
             ),
         ],
     );
-    let session =
-        HlsSession::open(&master_url(&origin), ITEM, &test_authorization()).expect("valid session");
+    let session = open(&master_url(&origin)).expect("valid session");
 
     assert_exact_header_on_every_request(&requests);
     let fetched = paths(&requests);
@@ -201,7 +224,7 @@ fn hls_session_refuses_cross_origin_uris_and_never_contacts_the_other_origin() {
             routes.push((MAIN_PATH.into(), Route::ok(PLAYLIST, media)));
         }
         let requests = serve_routes(server, routes);
-        let result = HlsSession::open(&master_url(&origin), ITEM, &test_authorization());
+        let result = open(&master_url(&origin));
         assert_eq!(result.err(), Some(HlsError::UnsafeUri), "{label}");
         assert_exact_header_on_every_request(&requests);
     }
@@ -234,7 +257,7 @@ fn hls_session_refuses_redirects_without_following_them() {
             ]
         };
         let requests = serve_routes(server, routes);
-        let result = HlsSession::open(&master_url(&origin), ITEM, &test_authorization());
+        let result = open(&master_url(&origin));
         assert_eq!(result.err(), Some(HlsError::Redirect));
         assert_exact_header_on_every_request(&requests);
     }
@@ -277,7 +300,7 @@ fn hls_session_fails_closed_on_credentials_status_and_size() {
     for (routes, expected) in cases {
         let (server, origin) = listener();
         let _requests = serve_routes(server, routes);
-        let error = HlsSession::open(&master_url(&origin), ITEM, &test_authorization())
+        let error = open(&master_url(&origin))
             .err()
             .expect("the session must fail");
         assert_eq!(error, expected);
@@ -329,11 +352,24 @@ fn hls_master_urls_follow_the_hls_url_rules() {
         format!("{good}#fragment"),
         good.replace("http://", "file://"),
     ] {
-        let error = HlsSession::open(&url, ITEM, &test_authorization()).err();
+        let error = open_with(origin, &url, ITEM, &[]).err();
         assert_eq!(error, Some(HlsError::UnsafeMasterUrl), "{url}");
     }
     assert_eq!(
-        HlsSession::open(&good, "", &test_authorization()).err(),
+        open_with(origin, &good, "", &[]).err(),
         Some(HlsError::UnsafeMasterUrl)
     );
+    // The master must be on the signed-in server's origin.
+    for server in [
+        "http://192.168.1.6:8096",
+        "https://192.168.1.5:8096",
+        "http://192.168.1.5:8920",
+        "not a url",
+    ] {
+        assert_eq!(
+            open_with(server, &good, ITEM, &[]).err(),
+            Some(HlsError::UnsafeMasterUrl),
+            "{server}"
+        );
+    }
 }

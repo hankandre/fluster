@@ -34,6 +34,14 @@ impl MediaBrowserAuthorization {
         Ok(Self(value.to_owned()))
     }
 
+    /// The token inside the header, so a response body that echoes it can be
+    /// refused. Never format it into a message.
+    pub fn token(&self) -> Option<&str> {
+        let start = self.0.find("Token=\"")? + "Token=\"".len();
+        let length = self.0[start..].find('"')?;
+        Some(&self.0[start..start + length]).filter(|token| !token.is_empty())
+    }
+
     /// The raw header value. Pass it only to a request's `Authorization`
     /// header; never format it into a message.
     pub fn expose(&self) -> &str {
@@ -69,6 +77,10 @@ mod tests {
     fn accepts_a_signed_in_media_browser_header() {
         let authorization = MediaBrowserAuthorization::parse(&header()).expect("valid header");
         assert_eq!(authorization.expose(), header());
+        assert_eq!(authorization.token(), Some(CANARY));
+        let empty = MediaBrowserAuthorization::parse("MediaBrowser Client=\"F\", Token=\"\"")
+            .expect("valid header");
+        assert_eq!(empty.token(), None);
     }
 
     #[test]
