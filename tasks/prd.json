@@ -1253,10 +1253,10 @@
             "Coordinator tests cover each case and fail without the change"
           ],
           "verify": "pnpm test -- coordinator playstate-reporter gateway",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "opus",
+          "passes": true,
+          "evidence": "DELETE /Videos/ActiveEncodings?deviceId&playSessionId (HlsSegmentController.cs v10.11.7 108-117, v12.4 103-112; live 204, ffmpeg gone in 1 s) via JellyfinGateway.stopActiveEncoding. PlaystateReporter sends one bounded (3 s) DELETE per hls play session after a failed, timed-out, or unsent stopped report, and PlaybackCoordinator.retry (Retry, Play original, future track changes) queues it before negotiating; it runs in the background drain, so Back never waits (coordinator, reporter, player-view tests fail when each change is reverted). Fixture on 10.11.7 and 12.4.0: IsPaused=true progress every 10 s kept a paused HLS job alive 90 s with no restart; one paused report then silence was killed at ~60 s; so no ping is needed (plan 002 decision log). pnpm check (959 tests, Rust 173), pnpm test:e2e (30), lint:boundaries, typecheck:core pass."
         },
         {
           "id": "P10-08",
