@@ -22,7 +22,7 @@
 - Do views construct gateways or engines outside the composition root?
 - Does Catalog code build media URLs or decide playability?
 - Do remote commands bypass Playback Negotiation?
-- Does `mpv.rs` touch windowing, or `surface/*` touch Jellyfin data?
+- Does `player/` touch windowing, or `surface/*` touch Jellyfin data?
 
 ## Playback session
 

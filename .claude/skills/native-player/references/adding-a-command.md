@@ -9,9 +9,9 @@
 ## Rust
 
 - Define request and response types in `src-tauri/src/model.rs`.
-- Implement the behavior on `MpvController` in `mpv.rs`.
-- Add a thin `#[tauri::command]` handler in `lib.rs`.
-- Register it in `generate_handler!`.
+- Implement the behavior on `MpvController` in `player/controller.rs`.
+- Add a thin `#[tauri::command]` handler in `commands.rs`.
+- Import it in `lib.rs` and register it in `generate_handler!` by its bare name.
 - Map errors through redaction.
 - Add Rust unit tests for valid and invalid input.
 

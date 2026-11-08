@@ -617,10 +617,10 @@
             "Behavior and tests are unchanged"
           ],
           "verify": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings && cargo test --release --manifest-path src-tauri/Cargo.toml",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "native-engineer",
+          "passes": true,
+          "evidence": "mpv.rs split into src-tauri/src/player/ (mod, controller, events, properties, track_list, tracks + tracks/tests, diagnostics, network, version, media_auth_wire/*, redaction_canary, test_support); all 12 #[tauri::command] handlers moved to commands.rs; realtime/tests.rs split into tests.rs + tests/socket.rs. Pure move: only visibility (pub(super)/pub(crate)) and imports changed.\nTests before/after: 71 passed, 2 ignored; same 73 test names (module paths changed). Largest file: player/tracks/tests.rs 401 lines (moved verbatim), then realtime.rs 394.\ncargo fmt --check, clippy -D warnings, cargo test, cargo test --release, pnpm check (601 Vitest), pnpm test:e2e (28) pass on Linux."
         },
         {
           "id": "P2-05",

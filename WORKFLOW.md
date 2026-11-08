@@ -137,7 +137,7 @@ Rules currently stated in prose that should become checks:
 - **Redaction canaries.** Inject a known canary token. Assert it appears in no log, error string, or diagnostic export.
 - **Dependency direction.** Done (P0-07): `pnpm lint:boundaries` runs `dependency-cruiser` (`.dependency-cruiser.cjs`) over the layer rules in `DOMAINS.md`, with remediation text in each error; `pnpm check` runs it.
 - **Rust pitfalls (enforced).** Clippy denies `debug_assert_with_mut_call`, `unwrap_used` in non-test code, and `undocumented_unsafe_blocks`. Run release-mode tests in CI, not only debug. (Bun's port regressed because a side effect inside `debug_assert!` vanished in release builds.)
-- **File size.** Flag source files over ~400 lines; `App.tsx` and `mpv.rs` are the current candidates to split along domain lines.
+- **File size.** Flag source files over ~400 lines; `App.tsx` is the current candidate to split along domain lines.
 
 ## Model routing
 
@@ -166,7 +166,7 @@ Relative API list prices (per million input/output tokens, as of 2026-10). Subsc
 | Routine fresh-context review (UI, catalog, copy, tests) | **Sonnet** | Bounded risk |
 | Writing briefs into execution plans, architecture decisions, `DOMAINS.md` / `ARCHITECTURE.md` changes | **Opus** | Mistakes here multiply across every later task |
 | **Pilot units** of any mechanical change | **Opus** | The pilot defines the pattern everyone copies |
-| Rust native code: `mpv.rs`, `surface/*`, `unsafe`, FFI, threading, GTK/Cocoa main-thread rules | **Opus** | Hard to verify without hardware; bugs crash the process |
+| Rust native code: `player/*`, `surface/*`, `unsafe`, FFI, threading, GTK/Cocoa main-thread rules | **Opus** | Hard to verify without hardware; bugs crash the process |
 | Concurrency in `PlaybackCoordinator` (attempts, cancellation, report queue) | **Opus** | Subtle ordering bugs that unit tests catch only if someone thinks to write them |
 | Review of anything touching direct-play policy, the Tauri command surface, tokens, or redaction | **Opus** | Security and core-invariant risk. The reviewer must be at least as capable as the implementer. |
 | Debugging after a Sonnet attempt failed twice | **Opus** | Escalation |
@@ -199,7 +199,7 @@ Run the main interactive session on Opus (for steering and planning) at modest e
 
 ## Code intelligence tools
 
-Three MCP servers let agents find code without reading whole files. That saves context, and it lets cheaper models do navigation work well. **Rule: locate with tools, then read only the lines you need.** Reading a whole 1,100-line `mpv.rs` to find one function is the most common avoidable token spend.
+Three MCP servers let agents find code without reading whole files. That saves context, and it lets cheaper models do navigation work well. **Rule: locate with tools, then read only the lines you need.** Reading a whole 1,000-line file to find one function is the most common avoidable token spend.
 
 | Tool | Best at | Use for | Typical caller |
 |---|---|---|---|

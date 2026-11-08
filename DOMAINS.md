@@ -106,7 +106,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 **Code today.**
 - `PLAYBACK_POLICY`, `PlaybackPlan`, `resumeChoice` in `src/domain/playback.ts`
 - `DIRECT_PLAY_REQUEST`, `selectDirectFileSource`, `buildStaticStreamUrl`, `createPlaybackPlan` in `gateway.ts`
-- Rust `validate_playback_urls` in `mpv.rs`
+- Rust `validate_playback_urls` in `src-tauri/src/player/network.rs`
 
 **Rules.**
 - No other domain may construct a media URL or bypass source acceptance.
@@ -178,7 +178,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 
 **Code today.**
 - `src/lib/player/native-player.ts`, `src/lib/player/browser-player.ts`
-- `src-tauri/src/mpv.rs`, `src-tauri/src/model.rs`, `src-tauri/src/lib.rs` (commands)
+- `src-tauri/src/player/` (controller, events, properties, track mapping, diagnostics), `src-tauri/src/model.rs`, `src-tauri/src/commands.rs`
 
 **Rules.**
 - No generic command bridge.
@@ -265,7 +265,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 | Concern | Owns | Code |
 |---|---|---|
 | **Security & Redaction** | URL redaction (TS + Rust), credential-in-URL rejection, canary tests, CSP | `src/lib/redact.ts`, `src-tauri/src/redaction.rs`, `docs/security.md` |
-| **Diagnostics** | Player information panel, decoder labels, exportable diagnostics (must pass redaction) | `PlayerInformation` in `PocApp.tsx`, diagnostics in `mpv.rs` |
+| **Diagnostics** | Player information panel, decoder labels, exportable diagnostics (must pass redaction) | `PlayerInformation` in `PocApp.tsx`, diagnostics in `src-tauri/src/player/diagnostics.rs` |
 
 ---
 
@@ -286,8 +286,8 @@ adapters (jellyfin gateway, native/browser engines) ──► domain, ports
 3. **Only the composition root** (`main.tsx` or a dedicated `app/compose.ts`) constructs `JellyfinGateway`, `NativePlayerEngine`, and `BrowserPlayerEngine`. Feature views receive use cases through props or context.
 4. **Only Playback Negotiation constructs media URLs.**
 5. **Rust side:**
-   - `lib.rs` holds command glue only.
-   - `mpv.rs` never touches platform windowing.
+   - `lib.rs` holds command registration only; `commands.rs` holds the thin handlers.
+   - `player/` never touches platform windowing.
    - `surface/*` never touches Jellyfin data.
    - `redaction.rs` is used by every error path that can carry a URL.
 
@@ -315,7 +315,8 @@ src/
 src-tauri/src/
   lib.rs             command registration
   commands.rs        typed command handlers
-  player/            mpv.rs · tracks.rs · diagnostics.rs · model.rs
+  player/            controller.rs · events.rs · properties.rs · track_list.rs · tracks.rs · diagnostics.rs · network.rs · version.rs
+  model.rs           command request/response types
   surface/           linux.rs · macos.rs · windows.rs (planned)
   security/          redaction.rs · url_policy.rs
   vault.rs           (M1, OS keyring)
