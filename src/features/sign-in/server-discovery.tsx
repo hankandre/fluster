@@ -7,6 +7,7 @@ import {
 } from "../../domain/server-discovery";
 
 export const REFUSED_REPLY_MESSAGE = "A server answered with an address Fluster won't use over plain HTTP.";
+export const DROPPED_REPLY_MESSAGE = "More servers answered than Fluster can list.";
 
 type DiscoveryState =
   | { name: "idle" }
@@ -16,7 +17,8 @@ type DiscoveryState =
 
 // "Find servers on this network": asks the desktop shell to broadcast
 // Jellyfin's discovery datagram and lists the replies. Any device can
-// reply, so each entry shows who sent it and flags conflicts. Choosing one
+// reply, so each entry shows the sender it claims (a hint, not proof) and
+// flags conflicts. Choosing one
 // hands it to the normal connect flow, which checks the probed Id.
 export function ServerDiscoveryPanel({
   discovery,
@@ -51,6 +53,7 @@ export function ServerDiscoveryPanel({
   const searching = state.name === "searching";
   const servers = state.name === "found" ? state.result.servers : [];
   const refused = state.name === "found" ? state.result.refused : 0;
+  const dropped = state.name === "found" ? state.result.dropped : 0;
 
   return (
     <section className="server-discovery" aria-labelledby="server-discovery-title">
@@ -66,6 +69,7 @@ export function ServerDiscoveryPanel({
         </p>
       )}
       {refused > 0 && <p role="status" className="form-error">{REFUSED_REPLY_MESSAGE}</p>}
+      {dropped > 0 && <p role="status" className="form-error">{DROPPED_REPLY_MESSAGE}</p>}
       {servers.length > 0 && (
         <ul className="discovered-servers" aria-label="Servers found on this network">
           {servers.map((server) => (

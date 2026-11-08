@@ -1,13 +1,17 @@
 // One reply to LAN discovery (UDP 7359). The native side has already checked
-// `address` against the URL policy. Any device on the network can reply, so
-// a reply is a hint, not an identity: choosing it runs the public-info probe,
-// which must report the same `id`, and, for plain HTTP to a private-LAN
-// host, the unencrypted-connection confirmation (docs/decisions/0001).
+// `address` against the URL policy. Any device on the network can reply and
+// can copy a server's public Id, so a reply is a hint, not an identity:
+// choosing it runs the public-info probe, which must report the same `id`
+// (this catches only an address that points at a different real server),
+// and, for plain HTTP to a private-LAN host, the unencrypted-connection
+// confirmation (docs/decisions/0001). The origin shown on the sign-in steps
+// is what lets the user notice an unexpected server.
 export interface DiscoveredServer {
   name: string;
   id: string;
   address: string;
-  // The IPv4 address the reply came from.
+  // The UDP source address the reply claims. It can be spoofed on a LAN, so
+  // it is a hint for the user, never authentication.
   advertisedBy: string;
   // False when the address points somewhere other than the sender.
   addressIsSender: boolean;
@@ -19,6 +23,8 @@ export interface DiscoveryResult {
   servers: DiscoveredServer[];
   // Replies whose address Fluster refused (ADR 0001 decision 9).
   refused: number;
+  // Allowed replies that did not fit in the list.
+  dropped: number;
 }
 
 // Port for finding servers on the local network. Only the desktop shell has

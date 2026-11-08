@@ -22,6 +22,10 @@ function isDiscoveredServer(value: unknown): value is DiscoveredServer {
   );
 }
 
+function count(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
+}
+
 // Calls the read-only `discover_servers` command. Errors are replaced with
 // fixed text so nothing from the network or the IPC layer reaches the UI.
 export class NativeServerDiscovery implements ServerDiscovery {
@@ -33,7 +37,7 @@ export class NativeServerDiscovery implements ServerDiscovery {
       throw new Error(DISCOVERY_FAILED_MESSAGE);
     }
     if (typeof result !== "object" || result === null) throw new Error(DISCOVERY_FAILED_MESSAGE);
-    const { servers, refused } = result as Record<string, unknown>;
+    const { servers, refused, dropped } = result as Record<string, unknown>;
     if (!Array.isArray(servers)) throw new Error(DISCOVERY_FAILED_MESSAGE);
     return {
       servers: servers
@@ -42,7 +46,8 @@ export class NativeServerDiscovery implements ServerDiscovery {
         .map(({ name, id, address, advertisedBy, addressIsSender, conflicting }) => ({
           name, id, address, advertisedBy, addressIsSender, conflicting,
         })),
-      refused: typeof refused === "number" && Number.isFinite(refused) && refused > 0 ? Math.floor(refused) : 0,
+      refused: count(refused),
+      dropped: count(dropped),
     };
   }
 }

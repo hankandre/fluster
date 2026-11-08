@@ -21,8 +21,8 @@ beforeEach(() => {
 
 describe("NativeServerDiscovery", () => {
   it("invokes discover_servers with no arguments and returns the servers and refused count", async () => {
-    invoke.mockResolvedValue({ servers: [{ ...DEN, extra: 1 }], refused: 2 });
-    await expect(new NativeServerDiscovery().discover()).resolves.toEqual({ servers: [DEN], refused: 2 });
+    invoke.mockResolvedValue({ servers: [{ ...DEN, extra: 1 }], refused: 2, dropped: 3 });
+    await expect(new NativeServerDiscovery().discover()).resolves.toEqual({ servers: [DEN], refused: 2, dropped: 3 });
     expect(invoke.mock.calls).toEqual([["discover_servers"]]);
   });
 
@@ -31,11 +31,13 @@ describe("NativeServerDiscovery", () => {
     invoke.mockResolvedValue({
       servers: [null, "x", { ...DEN, name: 1 }, { ...DEN, conflicting: "yes" }, { name: "a", id: "b", address: "c" }, ...many],
       refused: "lots",
+      dropped: -1,
     });
     const result = await new NativeServerDiscovery().discover();
     expect(result.servers).toHaveLength(16);
     expect(result.servers[0]).toEqual({ ...DEN, id: "0" });
     expect(result.refused).toBe(0);
+    expect(result.dropped).toBe(0);
   });
 
   it("replaces every failure with fixed text", async () => {

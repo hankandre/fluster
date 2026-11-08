@@ -12,7 +12,7 @@ import { JellyfinGateway } from "../../lib/jellyfin/gateway";
 import type { HttpTransport } from "../../lib/jellyfin/types";
 import type { LanHttpConfirmation, LanHttpConfirmationStore } from "../../lib/lan-http-confirmations";
 import { SignInView } from "./index";
-import { REFUSED_REPLY_MESSAGE } from "./server-discovery";
+import { DROPPED_REPLY_MESSAGE, REFUSED_REPLY_MESSAGE } from "./server-discovery";
 
 const LAN_SERVER: DiscoveredServer = {
   name: "Living Room",
@@ -32,8 +32,8 @@ const HTTPS_SERVER: DiscoveredServer = {
   conflicting: false,
 };
 
-function found(servers: DiscoveredServer[], refused = 0): Promise<DiscoveryResult> {
-  return Promise.resolve({ servers, refused });
+function found(servers: DiscoveredServer[], refused = 0, dropped = 0): Promise<DiscoveryResult> {
+  return Promise.resolve({ servers, refused, dropped });
 }
 
 class MemoryConfirmations implements LanHttpConfirmationStore {
@@ -118,7 +118,7 @@ describe("Find servers on this network", () => {
     await findServers();
     expect(screen.getByRole("button", { name: "Searching…" })).toBeDisabled();
     expect(screen.getByRole("status")).toHaveTextContent("Looking for Jellyfin servers on this network…");
-    await act(async () => finish({ servers: [], refused: 0 }));
+    await act(async () => finish({ servers: [], refused: 0, dropped: 0 }));
     expect(discovery.discover).toHaveBeenCalledTimes(1);
   });
 
@@ -146,6 +146,19 @@ describe("Find servers on this network", () => {
     expect(items[0]).toHaveTextContent("Conflict: more than one device claims to be this server.");
     expect(items[1]).toHaveTextContent("Conflict: more than one device claims to be this server.");
     expect(items[2]).not.toHaveTextContent("Conflict");
+  });
+
+  it("says when more servers answered than the list can hold", async () => {
+    renderView(fakeDiscovery(found([{ ...LAN_SERVER, conflicting: true }], 0, 3)));
+    await findServers();
+    expect(screen.getByText(DROPPED_REPLY_MESSAGE)).toBeInTheDocument();
+    expect(within(screen.getByRole("list")).getByRole("button")).toHaveTextContent("Conflict");
+  });
+
+  it("does not mention dropped replies when none were dropped", async () => {
+    renderView(fakeDiscovery(found([LAN_SERVER])));
+    await findServers();
+    expect(screen.queryByText(DROPPED_REPLY_MESSAGE)).not.toBeInTheDocument();
   });
 
   it("says a server answered with a refused address instead of no servers", async () => {

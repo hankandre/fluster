@@ -273,8 +273,8 @@ fn a_repeated_reply_is_kept_once() {
     assert!(!result.servers[0].conflicting);
 }
 
-/// A spoofed reply cannot hide the real server: both are listed, both are
-/// marked, and each shows its sender.
+/// When a spoofed reply and the real server's reply both arrive, both are
+/// listed, both are marked, and each shows its claimed sender.
 #[test]
 fn the_same_id_at_different_addresses_is_kept_and_marked_conflicting() {
     let mut collector = Collector::default();
@@ -310,6 +310,53 @@ fn refused_replies_are_counted() {
     assert_eq!(result.refused, 2);
 }
 
+/// Guardian's scenario: a fake reply with the real id, then fillers until
+/// the list is full, then the real server. The real reply is still read,
+/// the kept entry is marked conflicting, and the overflow is counted.
+#[test]
+fn a_full_list_still_flags_a_later_conflicting_reply() {
+    let mut collector = Collector::default();
+    collector.accept(
+        &reply("http://192.168.1.66:8096", SERVER_ID, "Hankflix"),
+        sender("192.168.1.66"),
+    );
+    for index in 0..(MAX_SERVERS - 1) {
+        collector.accept(
+            &reply(
+                "http://192.168.1.66:8096",
+                &format!("filler{index}"),
+                "Filler",
+            ),
+            sender("192.168.1.66"),
+        );
+    }
+    assert!(collector.is_full());
+    collector.accept(
+        &reply("http://192.168.1.5:8096", SERVER_ID, "Hankflix"),
+        lan(),
+    );
+    // A repeat of a kept pair is neither a conflict nor a drop.
+    collector.accept(
+        &reply("http://192.168.1.66:8096", "filler0", "Filler"),
+        sender("192.168.1.66"),
+    );
+    let result = collector.finish();
+    assert_eq!(result.servers.len(), MAX_SERVERS);
+    let hankflix: Vec<_> = result
+        .servers
+        .iter()
+        .filter(|server| server.id == SERVER_ID)
+        .collect();
+    assert_eq!(hankflix.len(), 1);
+    assert!(hankflix[0].conflicting);
+    assert!(result
+        .servers
+        .iter()
+        .filter(|server| server.id != SERVER_ID)
+        .all(|server| !server.conflicting));
+    assert_eq!(result.dropped, 1);
+}
+
 #[test]
 fn at_most_max_servers_are_kept() {
     let mut collector = Collector::default();
@@ -324,7 +371,9 @@ fn at_most_max_servers_are_kept() {
         );
     }
     assert!(collector.is_full());
-    assert_eq!(collector.finish().servers.len(), MAX_SERVERS);
+    let result = collector.finish();
+    assert_eq!(result.servers.len(), MAX_SERVERS);
+    assert_eq!(result.dropped, 5);
 }
 
 #[test]
@@ -426,6 +475,31 @@ fn junk_datagrams_do_not_end_the_search() {
 }
 
 #[test]
+fn a_full_list_does_not_stop_reading_over_the_wire() {
+    let mut replies = vec![reply("http://192.168.1.66:8096", SERVER_ID, "Hankflix")];
+    replies.extend((0..(MAX_SERVERS - 1)).map(|index| {
+        reply(
+            "http://192.168.1.66:8096",
+            &format!("filler{index}"),
+            "Filler",
+        )
+    }));
+    replies.push(reply("http://192.168.1.5:8096", SERVER_ID, "Hankflix"));
+    let (target, _seen) = fake_responder(replies);
+    let result = discover(target, Duration::from_millis(700)).expect("discover");
+    assert_eq!(result.servers.len(), MAX_SERVERS);
+    assert!(
+        result
+            .servers
+            .iter()
+            .find(|server| server.id == SERVER_ID)
+            .expect("kept")
+            .conflicting
+    );
+    assert!(result.dropped > 0);
+}
+
+#[test]
 fn no_reply_returns_an_empty_result_after_the_deadline() {
     // Bound but never answers.
     let silent = UdpSocket::bind("127.0.0.1:0").expect("bind");
@@ -435,6 +509,7 @@ fn no_reply_returns_an_empty_result_after_the_deadline() {
     let elapsed = started.elapsed();
     assert!(result.servers.is_empty());
     assert_eq!(result.refused, 0);
+    assert_eq!(result.dropped, 0);
     assert!(elapsed >= Duration::from_millis(250), "{elapsed:?}");
     assert!(elapsed < Duration::from_secs(2), "{elapsed:?}");
 }
