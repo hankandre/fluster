@@ -77,6 +77,15 @@ Fluster is a Jellyfin client that plays the original file whenever it can and sh
 - Split files that grow past about 400 lines along domain lines.
 - Build new UI only under `src/features/`.
 
+## Design
+
+- Follow `DESIGN.md` for every UI change.
+- Use tokens from `src/styles/tokens.css`; never hard-code colours, sizes, radii, or durations.
+- Build UI from `src/features/shared/ui/`; never use a native select, radio, or checkbox in a feature.
+- Make every screen work with arrow keys, Enter, and Escape alone, and honour reduced motion.
+- Map errors to plain copy; never show a transport error message.
+- Include before/after screenshots at 1440×900 and 1920×1080 in UI PRs.
+
 ## Tests
 
 - Add a focused test with every behavior change.

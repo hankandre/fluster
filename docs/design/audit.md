@@ -1,6 +1,6 @@
 # UX audit of the current UI
 
-Date: 2026-11-08. Branch `design/system`, base `109c948`.
+Date: 2026-11-08. Branch `design/system`. Captured at `109c948` and updated after rebasing onto `c10ad9c`, which added the P10-05 Settings screen and the Play original button.
 Scope: every screen under `src/features/` and `src/components/PlayerView.tsx`, in browser development mode.
 Direction: the cinematic, artwork-first design system proposed in [`DESIGN.md`](../../DESIGN.md).
 
@@ -13,7 +13,7 @@ Screenshots: `/tmp/claude-1000/-home-handre-Code-fluster/cc6e1dda-3185-41ee-b3d1
 Capture caveats:
 
 - **"Buffering…" in every player shot is a stub artifact.** The browser engine never gets real media. Check the native buffering overlay on the desktop build before acting on that part of findings P-3 and P-4.
-- **No Settings screen exists.** No route, view, or component holds settings, so there is nothing to capture. See S-1.
+- **Settings was captured before it existed.** The screenshots predate P10-05. Settings (`#/next/settings`) was reviewed from `src/features/settings/settings-view.tsx` after the rebase. See S-1.
 - **LAN discovery appears only in the desktop shell.** Browser mode hides it (`e2e/sign-in.spec.ts`, "browser mode hides Find servers"). Its findings come from reading `server-discovery.tsx`.
 
 Severity: **P0** means a user gets lost, misreads state, or cannot finish a task. **P1** means needless friction or a broken visual. **P2** is polish.
@@ -135,11 +135,12 @@ Severity: **P0** means a user gets lost, misreads state, or cannot finish a task
 | P1 | A 70 px five-line title, unstyled buttons, and no item context. | `58-player-refusal.png` | `Notice` layout over the dimmed backdrop: the item title small, a 2-line reason title, the explanation, "What you can do", and primary Retry with secondary Back to details. |
 | P1 | The copy still says Fluster "won't ask the server to convert" in several reasons. Decision 0002 changed that. | `refusal-copy.ts` | Already owned by **P10-11**. The design system only supplies the layout and voice. |
 
-### Settings (missing)
+### Settings (`src/features/settings/`, added by P10-05)
 
 | Sev | Problem | Evidence | Recommended fix |
 |---|---|---|---|
-| P1 | S-1. No settings surface exists. P10-05 (streaming limit), P5-03 (audio passthrough), and P3-02 (stay signed in) all need one, and Sign out is scattered across page footers. | `grep -ril settings src` finds only test and copy hits | A Settings screen with Playback, Subtitles, Account, and About & Diagnostics sections, built from `SettingsRow` components (see DESIGN.md › Settings). |
+| P1 | S-1. Settings holds only the two streaming limits, as native selects inside the leaking global `label` and `select` styles. It ends in Home and "Back to features" links. It has no Account or About sections, so Sign out stays scattered across page footers. P5-03 (passthrough) and P3-02 (stay signed in) have no slot. | `settings-view.tsx` | Restyle and extend it (P13-17): Playback, Subtitles, Account, and About & diagnostics sections built from `SettingsRow` and `Picker` (see DESIGN.md §7.18). Keep the P10-05 values and storage. |
+| P2 | S-2. P10-05's Play original is a plain button fixed at the bottom right of the player, separate from the conversion indicator and the Info panel. | `player/index.tsx`, `styles.css` `.play-original` | Move it into the Info sheet's Playback section and the `ConversionChip` (DESIGN.md §7.14). |
 
 ## Keyboard and focus status (P3-14)
 

@@ -25,6 +25,7 @@ Agents read the short map first and load detail only when needed.
 | `PRODUCT.md` | What Fluster is, for whom, scope and non-goals, roadmap | stable |
 | `ARCHITECTURE.md` | Stack decision, system shape, Jellyfin API usage, invariants | stable |
 | `DOMAINS.md` | Bounded contexts, ownership, dependency rules, ubiquitous language | stable |
+| `DESIGN.md` | Design system: principles, tokens, components, interaction, voice, accessibility | stable |
 | `WORKFLOW.md` | This file | stable |
 | `docs/architecture.md`, `docs/security.md`, `docs/validation.md` | Deep detail for the playback core, security boundary, release gates | as needed |
 | `tasks/prd.json` | Phases and tasks with acceptance criteria and `passes` flags; agents may only flip status fields | living |
