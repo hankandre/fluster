@@ -45,7 +45,7 @@ fn registered_commands() -> BTreeSet<String> {
         .collect()
 }
 
-fn collect_rust_files(dir: &Path, files: &mut Vec<std::path::PathBuf>) {
+pub(crate) fn collect_rust_files(dir: &Path, files: &mut Vec<std::path::PathBuf>) {
     for entry in fs::read_dir(dir).expect("source directory should be readable") {
         let path = entry.expect("directory entry should be readable").path();
         if path.is_dir() {

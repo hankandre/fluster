@@ -9,6 +9,8 @@ mod player;
 mod realtime;
 mod redaction;
 mod surface;
+#[cfg(test)]
+mod trace_canary;
 mod url_policy;
 
 use commands::{

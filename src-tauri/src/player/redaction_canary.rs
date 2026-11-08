@@ -143,34 +143,3 @@ fn redaction_canary_stays_out_of_serialized_snapshots_and_events() {
     );
     assert!(request.plan.stream_url.contains(CANARY));
 }
-
-#[test]
-fn redaction_canary_keeps_play_session_ids_out_of_native_traces() {
-    // Trace output is eprintln!/native_trace text; none of it may name a
-    // session, so a play-session ID can never be logged.
-    for (name, source) in [
-        ("player/mod.rs", include_str!("mod.rs")),
-        ("player/controller.rs", include_str!("controller.rs")),
-        ("player/diagnostics.rs", include_str!("diagnostics.rs")),
-        ("player/events.rs", include_str!("events.rs")),
-        ("player/network.rs", include_str!("network.rs")),
-        ("player/properties.rs", include_str!("properties.rs")),
-        ("player/track_list.rs", include_str!("track_list.rs")),
-        ("player/tracks.rs", include_str!("tracks.rs")),
-        ("player/version.rs", include_str!("version.rs")),
-        ("surface/linux.rs", include_str!("../surface/linux.rs")),
-        ("surface/macos.rs", include_str!("../surface/macos.rs")),
-    ] {
-        let production = source.split("#[cfg(test)]").next().unwrap_or(source);
-        for line in production.lines().filter(|line| {
-            let line = line.trim_start();
-            line.starts_with("eprintln!") || line.starts_with("native_trace(")
-        }) {
-            let lowered = line.to_ascii_lowercase();
-            assert!(
-                !lowered.contains("session") && !line.contains("{id}"),
-                "{name} traces a session identifier: {line}"
-            );
-        }
-    }
-}
