@@ -126,8 +126,10 @@ Fluster is a Jellyfin client that plays the original file whenever it can and sh
 
 - Work in your own git worktree.
 - Commit only files you own.
-- Never run `git stash`, `git reset --hard`, or force-push.
-- Resolve PR conflicts on a new branch and PR, as the `ship` skill describes.
+- Never run `git stash` or `git reset --hard`.
+- Never force-push `main` or another agent's branch.
+- Rebase your own unmerged PR branch, then `git push --force-with-lease`.
+- Resolve PR conflicts by rebasing, as the `ship` skill describes.
 - Never edit another agent's claimed milestone.
 - Keep native surface and mpv work serial.
 

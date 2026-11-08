@@ -1923,6 +1923,37 @@
       ]
     },
     {
+      "id": "P14",
+      "name": "Open-source readiness",
+      "goal": "The repository is ready for outside contributors, with the review bar enforced by checks.",
+      "exit": [
+        "All P14 tasks pass"
+      ],
+      "tasks": [
+        {
+          "id": "P14-01",
+          "title": "Prepare the repository for outside contributors",
+          "domain": "Process",
+          "model": "sonnet",
+          "skill": "ship",
+          "human": false,
+          "depends_on": [],
+          "acceptance": [
+            "CONTRIBUTING.md describes setup, checks, commit and PR style, the review bar, and that AI-assisted PRs meet the same bar",
+            "CODEOWNERS covers native code, the gateway, playback, security docs, design, and CI",
+            "A required pr-rigor check enforces Conventional Commit titles, a task or issue link, filled PR template sections, and tests for code changes",
+            "A required maintainer-approval check passes maintainers' PRs and blocks others until a maintainer approves",
+            "A licence is chosen by the user"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        }
+      ]
+    },
+    {
       "id": "P4",
       "name": "Dogfood week",
       "goal": "Use Fluster as the only Jellyfin client on this computer for seven days.",
