@@ -1,5 +1,7 @@
-import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent } from "react";
+import { createPortal } from "react-dom";
 import { Check, ChevronDown } from "lucide-react";
+import { DIALOG_EXEMPT_ATTRIBUTE } from "./dialog";
 import "./picker.css";
 
 export interface PickerOption {
@@ -56,8 +58,41 @@ export function Picker({ label, hideLabel, options, value, onChange, placeholder
   const [active, setActive] = useState(0);
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
+  const list = useRef<HTMLUListElement>(null);
+  const [place, setPlace] = useState<CSSProperties>({});
   const optionRefs = useRef<(HTMLLIElement | null)[]>([]);
   const typed = useRef({ text: "", timer: 0 });
+
+  // The list is in a portal so no scrolling or clipping ancestor (a dialog panel) cuts it off. It sits under
+  // the trigger, or above it when there is more room there.
+  useLayoutEffect(() => {
+    if (!open) return;
+    const position = () => {
+      const anchor = trigger.current?.getBoundingClientRect();
+      const menu = list.current;
+      if (!anchor || !menu) return;
+      const margin = 8;
+      const below = window.innerHeight - anchor.bottom - margin;
+      const above = anchor.top - margin;
+      const wanted = Math.min(menu.scrollHeight, 18 * parseFloat(getComputedStyle(document.documentElement).fontSize));
+      const flip = wanted > below && above > below;
+      const room = Math.max(flip ? above : below, 96);
+      const height = Math.min(wanted, room);
+      setPlace({
+        left: Math.max(margin, Math.min(anchor.left, window.innerWidth - anchor.width - margin)),
+        top: flip ? anchor.top - 4 - height : anchor.bottom + 4,
+        minWidth: anchor.width,
+        maxHeight: `min(${room}px, 18rem)`,
+      });
+    };
+    position();
+    window.addEventListener("resize", position);
+    window.addEventListener("scroll", position, true);
+    return () => {
+      window.removeEventListener("resize", position);
+      window.removeEventListener("scroll", position, true);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (open) optionRefs.current[active]?.focus();
@@ -143,7 +178,8 @@ export function Picker({ label, hideLabel, options, value, onChange, placeholder
   }
 
   function onBlur(event: FocusEvent<HTMLDivElement>) {
-    if (open && !root.current?.contains(event.relatedTarget)) setOpen(false);
+    const next = event.relatedTarget;
+    if (open && !root.current?.contains(next) && !list.current?.contains(next)) setOpen(false);
   }
 
   const current = selected >= 0 ? options[selected] : undefined;
@@ -166,8 +202,16 @@ export function Picker({ label, hideLabel, options, value, onChange, placeholder
         <span className="ui-picker-value" data-placeholder={current ? undefined : "true"}>{current?.label ?? placeholder}</span>
         <ChevronDown aria-hidden="true" size={18} />
       </button>
-      {open ? (
-        <ul className="ui-picker-list" role="listbox" aria-labelledby={labelId} onKeyDown={onListKeyDown}>
+      {open ? createPortal(
+        <ul
+          ref={list}
+          className="ui-picker-list"
+          role="listbox"
+          aria-labelledby={labelId}
+          style={place}
+          onKeyDown={onListKeyDown}
+          {...{ [DIALOG_EXEMPT_ATTRIBUTE]: "" }}
+        >
           {options.map((option, index) => (
             <li
               key={option.value}
@@ -189,7 +233,8 @@ export function Picker({ label, hideLabel, options, value, onChange, placeholder
               </span>
             </li>
           ))}
-        </ul>
+        </ul>,
+        document.body,
       ) : null}
     </div>
   );

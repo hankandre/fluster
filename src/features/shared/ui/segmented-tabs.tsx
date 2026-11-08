@@ -79,7 +79,7 @@ export function SegmentedTabs({ label, items, value, onChange, activation = "aut
             data-tab-id={item.id}
             className="ui-tab"
             aria-selected={selected}
-            aria-controls={panelId(base, item.id)}
+            aria-controls={selected ? panelId(base, item.id) : undefined}
             tabIndex={item.id === stop ? 0 : -1}
             onFocus={() => setFocused(item.id)}
             onBlur={() => setFocused(undefined)}
@@ -93,7 +93,7 @@ export function SegmentedTabs({ label, items, value, onChange, activation = "aut
   );
 }
 
-// The panel a tab controls. Render it for the selected tab only.
+// The panel a tab controls. Render it for the selected tab only; only the selected tab names it in aria-controls.
 export function SegmentedTabPanel({ idBase, id, children }: { idBase: string; id: string; children: ReactNode }) {
   return (
     <div role="tabpanel" id={panelId(idBase, id)} aria-labelledby={tabId(idBase, id)} tabIndex={0}>

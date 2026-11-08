@@ -48,7 +48,6 @@
   .ui-button--secondary,
   .ui-button--danger {
     background: var(--fill-secondary);
-    border-color: var(--line-strong);
   }
 
   .ui-button--secondary:hover:not(:disabled),

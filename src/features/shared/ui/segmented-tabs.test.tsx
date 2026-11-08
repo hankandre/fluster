@@ -100,5 +100,7 @@ describe("SegmentedTabs", () => {
     expect(tab("Specials")).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tabpanel", { name: "Specials" })).toBeInTheDocument();
     expect(tab("Specials")).toHaveAttribute("aria-controls", screen.getByRole("tabpanel").id);
+    // A tab whose panel is not rendered does not point at it.
+    expect(tab("Season 1")).not.toHaveAttribute("aria-controls");
   });
 });

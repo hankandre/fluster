@@ -43,16 +43,13 @@
   }
 
   .ui-picker-list {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    z-index: var(--z-sheet);
+    position: fixed;
+    z-index: var(--z-toast);
     box-sizing: border-box;
     width: max-content;
-    min-width: 100%;
     max-width: min(24rem, 90vw);
     max-height: 18rem;
-    margin: var(--space-1) 0 0;
+    margin: 0;
     padding: var(--space-1);
     overflow-y: auto;
     list-style: none;

@@ -441,6 +441,7 @@ A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings
   --nav-h: 96px;
   --control-h: 72px;
   --icon-button: 64px;
+  --hit-min: 64px;
   --type-meta: 500 0.9375rem / 1.35 var(--font-ui);
   --lift: scale(1.08);
 }

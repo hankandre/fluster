@@ -107,6 +107,17 @@ describe("Toast", () => {
     expect(toastReducer(two, { type: "dismiss", id: 1 }).map((entry) => entry.id)).toEqual([2]);
   });
 
+  it("shows the same sentence once and keeps at most three toasts", () => {
+    const add = (id: number, message: string) => ({ type: "add" as const, entry: { id, message } });
+    let entries = toastReducer([], add(1, "a"));
+    entries = toastReducer(entries, add(2, "a"));
+    expect(entries.map((entry) => entry.id)).toEqual([2]);
+    entries = toastReducer(entries, add(3, "b"));
+    entries = toastReducer(entries, add(4, "c"));
+    entries = toastReducer(entries, add(5, "d"));
+    expect(entries.map((entry) => entry.message)).toEqual(["b", "c", "d"]);
+  });
+
   it("needs a provider", () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
     expect(() => render(<Trigger input={{ message: "x" }} />)).toThrow("ToastProvider");

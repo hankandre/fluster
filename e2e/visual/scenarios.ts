@@ -188,6 +188,25 @@ export const scenarios: Scenario[] = [
     await page.getByRole("button", { name: "Open dialog" }).click();
     await page.getByRole("dialog").waitFor();
   } },
+  { name: "85-ui-gallery-dialog-picker", run: async (page) => {
+    await go(page, "#/next/gallery", 400);
+    await page.getByRole("button", { name: "Open dialog" }).focus();
+    await page.keyboard.press("Enter");
+    await page.getByRole("dialog").waitFor();
+    await page.keyboard.press("Shift+Tab");
+    await page.keyboard.press("Enter");
+    await page.getByRole("listbox").waitFor();
+    await page.keyboard.press("ArrowDown");
+    await page.waitForTimeout(150);
+  } },
+  { name: "86-ui-gallery-dialog-keyboard", run: async (page) => {
+    await go(page, "#/next/gallery", 400);
+    await page.getByRole("button", { name: "Open dialog" }).focus();
+    await page.keyboard.press("Enter");
+    await page.getByRole("dialog").waitFor();
+    await page.keyboard.press("Tab");
+    await page.waitForTimeout(150);
+  } },
   { name: "83-ui-gallery-toasts", run: async (page) => {
     await go(page, "#/next/gallery", 400);
     await page.getByRole("button", { name: "Show toast" }).click();

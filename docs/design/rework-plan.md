@@ -130,3 +130,7 @@ Read DESIGN.md and the PR's screenshots first. Answer each question with evidenc
 | File | Role | Size target |
 |---|---|---|
 | `DESIGN.md` | Design system: principles, tokens, components, interaction, voice, accessibility | stable |
+
+## Idea: a keyboard shortcut for toasts (P13-03 review, not built)
+
+Toasts never take focus, so a keyboard user can miss an action such as Undo. A later task could add one key (for example `g`, "go to notification") that moves focus to the newest toast and returns it on Escape. It needs a keymap entry in DESIGN.md section 9 and a decision on TV, so it is parked here.
