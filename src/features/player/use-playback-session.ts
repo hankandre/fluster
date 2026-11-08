@@ -84,7 +84,8 @@ interface ActiveSession {
   // Set once Back, close, or unmount owns teardown. A stopping session never
   // starts, and unmounting does not stop it twice.
   stopping: boolean;
-  // Set when the file ended on its own. An ending session never restarts.
+  // Set when the file ended on its own. An ending session never restarts;
+  // a replacement that a restart launched clears it.
   ending: boolean;
   // The engine stop in flight or done. Repeated Back or Play now presses
   // share it instead of stopping the engine again.
@@ -260,7 +261,11 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     setRetrying(true);
     try {
       const retried = await run(active.coordinator);
-      if (session.current === active) setPlan(retried);
+      if (session.current !== active) return;
+      // An end of file during this restart's own stop ended the old session,
+      // not this one: the replacement may restart again.
+      active.ending = false;
+      setPlan(retried);
     } catch (error) {
       if (session.current !== active) return;
       handleFailure(error);

@@ -175,7 +175,7 @@ describe("track changes while converting", () => {
     expect(order).toEqual([
       "negotiate 0 -> play-1",
       "player stop",
-      "stopped play-1 failed=false",
+      "stopped play-1 failed=true",
       "delete play-1",
       "negotiate 420000000 -> play-2",
     ]);
@@ -245,7 +245,7 @@ describe("track changes while converting", () => {
 
     await waitFor(() => expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(2));
     expect(negotiationOptions(gateway, 1)[4]).toEqual({ ignoreStreamingLimit: false, audioStreamIndex: 1, subtitleStreamIndex: -1 });
-    expect(order.slice(1)).toEqual(["stopped play-1 failed=false", "delete play-1", "negotiate 420000000 -> play-2"]);
+    expect(order.slice(1)).toEqual(["stopped play-1 failed=true", "delete play-1", "negotiate 420000000 -> play-2"]);
     expect(engine.selectTrack).not.toHaveBeenCalled();
   });
 
@@ -307,6 +307,60 @@ describe("guardian review fixes", () => {
     expect(engine.launch).toHaveBeenCalledTimes(1);
   });
 
+  it("an end of file during a renegotiation's own stop still lets the replacement change tracks", async () => {
+    const gateway = orderedGateway([], [
+      convertedPlan("play-1"),
+      convertedPlan("play-2", { defaultAudioStreamIndex: 2 }),
+      convertedPlan("play-3"),
+    ]);
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await startPlaying(engine, convertedSnapshot);
+    let release = () => undefined as void;
+    engine.stop.mockImplementationOnce(() => new Promise<undefined>((resolve) => { release = () => resolve(undefined); }));
+
+    await choose("Audio track", "2");
+    await waitFor(() => expect(engine.stop).toHaveBeenCalledTimes(1));
+    // The file ends while the renegotiation is stopping it.
+    await act(async () => {
+      engine.emit({ kind: "ended", reason: "eof", snapshot: convertedSnapshot });
+    });
+    await act(async () => release());
+    await startPlaying(engine, snapshotWith([{ ...englishAudio, jellyfinIndex: 2, title: "French" }]), 2);
+
+    await choose("Audio track", "1");
+
+    await waitFor(() => expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(3));
+    expect(negotiationOptions(gateway, 2)[4]).toEqual({ ignoreStreamingLimit: false, audioStreamIndex: 1, subtitleStreamIndex: -1 });
+  });
+
+  it("the c key uses the new conversion's subtitles as soon as its plan arrives", async () => {
+    const burned = convertedPlan("play-2", { subtitlesBurnedIn: true, defaultSubtitleStreamIndex: 4 });
+    const gateway = orderedGateway([], [convertedPlan("play-1"), burned, convertedPlan("play-3")]);
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await startPlaying(engine, convertedSnapshot);
+    let launched = () => undefined as void;
+    engine.launch.mockImplementationOnce(() => new Promise<undefined>((resolve) => { launched = () => resolve(undefined); }));
+    await choose("Subtitle track", "4");
+    await waitFor(() => expect(engine.launch).toHaveBeenCalledTimes(2));
+    // The new session's snapshot arrives before its launch resolves, so its
+    // plan reaches the view in a render where the snapshot did not change.
+    await act(async () => {
+      engine.emit({ kind: "loaded", snapshot: convertedSnapshot });
+    });
+    await act(async () => launched());
+    await waitFor(() => expect(screen.getByLabelText<HTMLSelectElement>("Subtitle track").value).toBe("4"));
+
+    await act(async () => {
+      fireEvent.keyDown(document.body, { key: "c" });
+    });
+
+    await waitFor(() => expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(3));
+    expect(negotiationOptions(gateway, 2)[4]).toEqual({ ignoreStreamingLimit: false, audioStreamIndex: 1, subtitleStreamIndex: -1 });
+    expect(engine.selectTrack).not.toHaveBeenCalled();
+  });
+
   it("Play original after the file ended does nothing", async () => {
     const gateway = orderedGateway([], [
       convertedPlan("play-1", { conversionReasons: ["ContainerBitrateExceedsLimit"], playOriginalAvailable: true }),
@@ -327,7 +381,7 @@ describe("guardian review fixes", () => {
     expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1);
   });
 
-  it("Play original reports the old session stopped, not failed, and keeps the chosen version", async () => {
+  it("Play original reports the old session stopped as failed and keeps the chosen version", async () => {
     const order: string[] = [];
     const gateway = orderedGateway(order, [
       convertedPlan("play-1", { conversionReasons: ["ContainerBitrateExceedsLimit"], playOriginalAvailable: true }),
@@ -342,7 +396,7 @@ describe("guardian review fixes", () => {
     });
 
     await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(directPlan("play-2")));
-    expect(order).toContain("stopped play-1 failed=false");
+    expect(order).toContain("stopped play-1 failed=true");
     expect(negotiationOptions(gateway, 1)[3]).toBe("src-hd");
     expect(negotiationOptions(gateway, 1)[4]).toEqual({ ignoreStreamingLimit: true });
   });
@@ -485,7 +539,7 @@ describe("streaming limit changes during playback", () => {
     await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(convertedPlan("play-2")));
     expect(negotiationOptions(gateway, 1)[1]).toBe(420_000_000);
     expect(negotiationOptions(gateway, 1)[4]).toEqual({ ignoreStreamingLimit: false, audioStreamIndex: 1, subtitleStreamIndex: 3 });
-    expect(order.slice(1)).toEqual(["stopped play-1 failed=false", "delete play-1", "negotiate 420000000 -> play-2"]);
+    expect(order.slice(1)).toEqual(["stopped play-1 failed=true", "delete play-1", "negotiate 420000000 -> play-2"]);
   });
 
   it("renegotiate direct play only when the new limit is below the file's bitrate", async () => {
