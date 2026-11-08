@@ -107,7 +107,11 @@ export interface MediaSourceDto {
   Protocol?: string;
   SupportsDirectPlay?: boolean;
   SupportsDirectStream?: boolean;
+  SupportsTranscoding?: boolean;
+  // A relative `/videos/{id}/master.m3u8?…` URL that carries ApiKey. Only
+  // hls-url.ts reads it; it is never followed, logged, or shown as given.
   TranscodingUrl?: string | null;
+  TranscodingSubProtocol?: string | null;
   RequiresOpening?: boolean;
   Container?: string;
   Size?: number | null;

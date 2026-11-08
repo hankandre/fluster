@@ -2,15 +2,21 @@ import type { LibraryItem } from "./catalog";
 
 export const TICKS_PER_SECOND = 10_000_000;
 
+// Decision 0002: the original file first, then a server remux (DirectStream),
+// then a transcode, always shown with its reason.
 export const PLAYBACK_POLICY = Object.freeze({
-  allowServerTranscoding: false,
-  allowServerRemux: false,
+  allowServerTranscoding: true,
+  allowServerRemux: true,
   preferHardwareDecode: true,
   allowSoftwareDecode: true,
 });
 
 // Why Fluster refused every media source a PlaybackInfo response offered.
-// Each value maps to one source-acceptance rule in ARCHITECTURE.md §3.
+// Each value maps to one source decision rule in ARCHITECTURE.md §3.
+// `no-direct-play` and `server-requires-transcoding` are no longer produced
+// since P10-03; P10-11 removes them with their copy. `disc-source` and
+// `iso-source` remain only for a disc the server still offers for direct play
+// after the forced-fallback request.
 export type RefusalReason =
   | "no-sources"
   | "no-direct-play"
@@ -19,7 +25,49 @@ export type RefusalReason =
   | "server-requires-transcoding"
   | "disc-source"
   | "iso-source"
-  | "missing-source-data";
+  | "missing-source-data"
+  | "conversion-not-allowed"
+  | "unsafe-transcoding-url";
+
+// How the media reaches the player (decision 0002). DirectPlay is the
+// original file; DirectStream is a server remux that copies video and audio;
+// Transcode is anything the server may re-encode.
+export type PlayMethod = "DirectPlay" | "DirectStream" | "Transcode";
+
+// Jellyfin's TranscodeReason names (MediaBrowser.Model/Session/TranscodeReason.cs,
+// 10.11.7 and 12.4.0). The server sends them only inside TranscodingUrl.
+export const CONVERSION_REASONS = [
+  "ContainerNotSupported",
+  "VideoCodecNotSupported",
+  "AudioCodecNotSupported",
+  "SubtitleCodecNotSupported",
+  "AudioIsExternal",
+  "SecondaryAudioNotSupported",
+  "StreamCountExceedsLimit",
+  "VideoProfileNotSupported",
+  "VideoRangeTypeNotSupported",
+  "VideoCodecTagNotSupported",
+  "VideoLevelNotSupported",
+  "VideoResolutionNotSupported",
+  "VideoBitDepthNotSupported",
+  "VideoFramerateNotSupported",
+  "VideoRotationNotSupported",
+  "RefFramesNotSupported",
+  "AnamorphicVideoNotSupported",
+  "InterlacedVideoNotSupported",
+  "AudioChannelsNotSupported",
+  "AudioProfileNotSupported",
+  "AudioSampleRateNotSupported",
+  "AudioBitDepthNotSupported",
+  "ContainerBitrateExceedsLimit",
+  "VideoBitrateNotSupported",
+  "AudioBitrateNotSupported",
+  "UnknownVideoStreamInfo",
+  "UnknownAudioStreamInfo",
+  "DirectPlayError",
+] as const;
+
+export type ConversionReason = (typeof CONVERSION_REASONS)[number];
 
 export interface PlaybackRefusal {
   reason: RefusalReason;
@@ -35,7 +83,23 @@ const REFUSAL_MESSAGES: Record<RefusalReason, string> = {
   "disc-source": "This item is a Blu-ray or DVD folder, which Fluster cannot play directly.",
   "iso-source": "This item is a disc image (ISO), which Fluster does not play yet.",
   "missing-source-data": "Jellyfin returned an incomplete media source for this item.",
+  "conversion-not-allowed": "This item needs converting, and the server does not allow that for this account.",
+  "unsafe-transcoding-url": "Jellyfin offered a stream address Fluster will not use.",
 };
+
+// An engine was handed a plan whose delivery it cannot play. It refuses
+// before any player call; it never falls back to another engine (I7).
+export class UnsupportedDeliveryError extends Error {
+  readonly delivery: PlaybackPlan["delivery"];
+  readonly engine: "native" | "browser";
+
+  constructor(engine: "native" | "browser", delivery: PlaybackPlan["delivery"], message: string) {
+    super(message);
+    this.name = "UnsupportedDeliveryError";
+    this.engine = engine;
+    this.delivery = delivery;
+  }
+}
 
 export class PlaybackRefusedError extends Error {
   readonly reason: RefusalReason;
@@ -84,10 +148,20 @@ export interface PlayerTrack {
   selected: boolean;
 }
 
-export interface PlaybackPlan {
+// A static plan plays the original file; an hls plan plays a server
+// conversion whose master playlist URL Playback Negotiation rebuilt.
+export type PlaybackDelivery =
+  | { delivery: "static"; playMethod: "DirectPlay"; conversionReasons: readonly [] }
+  | { delivery: "hls"; playMethod: "DirectStream" | "Transcode"; conversionReasons: readonly ConversionReason[] };
+
+export type PlaybackPlan = PlaybackPlanBase & PlaybackDelivery;
+
+export interface PlaybackPlanBase {
   itemId: string;
   title: string;
   // Token-free: media requests authenticate with `authorization` instead.
+  // Static delivery: the `Static=true` original-file URL. HLS delivery: the
+  // rebuilt same-origin `master.m3u8` URL (ARCHITECTURE.md §3 HLS URL rules).
   streamUrl: string;
   // The signed-in `MediaBrowser …` header. Only the native engine sends it,
   // through the typed launch request; it must never be logged or put in a URL.

@@ -141,8 +141,8 @@ test("the countdown near the end of an episode starts the next one with a fresh 
   expect(log.playbackInfo.map((entry) => entry.itemId)).toEqual(["ep-1", "ep-2"]);
   expect(log.playbackInfo[1].body).toMatchObject({
     EnableDirectPlay: true,
-    EnableDirectStream: false,
-    EnableTranscoding: false,
+    EnableDirectStream: true,
+    EnableTranscoding: true,
   });
   await expect.poll(() => log.stopped.length).toBeGreaterThanOrEqual(1);
   expect(log.stopped[0]).toMatchObject({ PlaySessionId: "play-ep-1-1", Failed: false });

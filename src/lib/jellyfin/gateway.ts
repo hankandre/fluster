@@ -2,7 +2,7 @@ import { Jellyfin, type Api } from "@jellyfin/sdk";
 import axios from "axios";
 import type { BrowseCard, BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, LibraryItem, LibraryView, MediaCard, NextEpisode, SearchHint, SearchPage, SearchQuery, Season } from "../../domain/catalog";
 import { ItemNotFoundError } from "../../domain/catalog";
-import type { PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
+import type { PlaybackDelivery, PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
 import { PlaybackRefusedError, secondsToTicks } from "../../domain/playback";
 import { classifyHost, type HostClass } from "../../domain/host-class";
 import type { ServerConnection } from "../../domain/server-connection";
@@ -11,6 +11,7 @@ import type { MediaSegment } from "../../domain/media-segments";
 import { MemoryLanHttpConfirmations, type LanHttpConfirmationStore } from "../lan-http-confirmations";
 import { redactError, redactText } from "../redact";
 import { toBrowseCards, toEpisodeCards, toNextEpisode, toHomeLibraries, toMediaCards, toSearchCards, toSearchHints, toSeasons } from "./cards";
+import { stripCredentialQuery } from "./credential-query";
 import { deriveDeviceId } from "./device-id";
 import { FLUSTER_PROFILE, MAX_BITRATE } from "./device-profile";
 import { toItemDetail } from "./item-detail";
@@ -82,12 +83,15 @@ function createSdkApi(serverUrl: string, deviceId: string, accessToken?: string)
   return api;
 }
 
-export const DIRECT_PLAY_REQUEST = Object.freeze({
+// The decision 0002 "Negotiation" flags. They go in the body and the query
+// string, so a body-binding change on the server cannot flip them.
+// EnableDirectPlay is false only on the forced-fallback request.
+export const PLAYBACK_INFO_FLAGS = Object.freeze({
   EnableDirectPlay: true,
-  EnableDirectStream: false,
-  EnableTranscoding: false,
-  AllowVideoStreamCopy: false,
-  AllowAudioStreamCopy: false,
+  EnableDirectStream: true,
+  EnableTranscoding: true,
+  AllowVideoStreamCopy: true,
+  AllowAudioStreamCopy: true,
   AutoOpenLiveStream: false,
 });
 
@@ -150,19 +154,6 @@ export function buildStaticStreamUrl(
   url.searchParams.set("MediaSourceId", mediaSourceId);
   url.searchParams.set("PlaySessionId", playSessionId);
   return url.toString();
-}
-
-// Query names Jellyfin accepts as a token, compared in lower case.
-const CREDENTIAL_QUERY_NAMES = new Set(["apikey", "api_key", "access_token", "token", "x-emby-token"]);
-
-// Jellyfin puts the session token into subtitle DeliveryUrl values as ApiKey.
-// Drop every credential parameter: media requests authenticate with the
-// Authorization header that Rust hands to libmpv (invariant I4).
-function stripCredentialQuery(url: URL): void {
-  const names = [...new Set(url.searchParams.keys())];
-  for (const name of names) {
-    if (CREDENTIAL_QUERY_NAMES.has(name.toLowerCase())) url.searchParams.delete(name);
-  }
 }
 
 function buildSubtitleUrl(serverUrl: string, path: string | null | undefined): string | undefined {
@@ -670,33 +661,37 @@ export class JellyfinGateway {
     signal?: AbortSignal,
     mediaSourceId?: string,
   ): Promise<PlaybackPlan> {
-    const { userId } = this.requireSession();
-    const request = {
-      ...DIRECT_PLAY_REQUEST,
-      UserId: userId,
-      StartTimeTicks: startPositionTicks,
-      MaxStreamingBitrate: MAX_BITRATE,
-      ...(mediaSourceId ? { MediaSourceId: mediaSourceId } : {}),
-      DeviceProfile: FLUSTER_PROFILE,
-    };
-    const { data } = await this.post<PlaybackInfoResponse>(`/Items/${item.id}/PlaybackInfo`, request, {
-      params: { ...DIRECT_PLAY_REQUEST, UserId: userId, StartTimeTicks: startPositionTicks },
-      signal,
-      timeout: CONTROL_REQUEST_TIMEOUT_MS,
-    });
-    const decision = selectSource(data.MediaSources, mediaSourceId);
+    const context = { serverUrl: this.serverUrl, itemId: item.id };
+    let data = await this.playbackInfo(item.id, startPositionTicks, signal, mediaSourceId, true);
+    let decision = selectSource(data.MediaSources, context, mediaSourceId);
+    if (decision.kind === "force-fallback") {
+      // Rule 4: a disc folder or ISO the server offered for direct play. Ask
+      // once more for that source without direct play, and never loop.
+      const { reason, source } = decision;
+      data = await this.playbackInfo(item.id, startPositionTicks, signal, source.Id, false);
+      decision = selectSource(data.MediaSources, context, source.Id);
+      if (decision.kind === "force-fallback") {
+        decision = { kind: "refused", reason, detail: "direct play offered again" };
+      }
+    }
     if (decision.kind === "refused") {
       throw new PlaybackRefusedError({ reason: decision.reason, detail: decision.detail });
     }
     if (!data.PlaySessionId) throw new Error("Jellyfin did not provide a play-session ID.");
     const source = decision.source;
+    const delivery: PlaybackDelivery = decision.kind === "direct-play"
+      ? { delivery: "static", playMethod: "DirectPlay", conversionReasons: [] }
+      : { delivery: "hls", playMethod: decision.playMethod, conversionReasons: decision.conversionReasons };
     return {
       itemId: item.id,
       title: item.seriesName ? `${item.seriesName} — ${item.name}` : item.name,
       mediaSourceId: source.Id,
       playSessionId: data.PlaySessionId,
       startPositionTicks,
-      streamUrl: buildStaticStreamUrl(this.serverUrl, item.id, source.Id, data.PlaySessionId),
+      ...delivery,
+      streamUrl: decision.kind === "direct-play"
+        ? buildStaticStreamUrl(this.serverUrl, item.id, source.Id, data.PlaySessionId)
+        : decision.masterUrl,
       authorization: this.authorizationHeader(),
       hasSegments: source.HasSegments === true,
       tracks: (source.MediaStreams ?? []).flatMap((track) => {
@@ -714,6 +709,35 @@ export class JellyfinGateway {
       defaultAudioStreamIndex: source.DefaultAudioStreamIndex ?? undefined,
       defaultSubtitleStreamIndex: source.DefaultSubtitleStreamIndex ?? undefined,
     };
+  }
+
+  // POST /Items/{id}/PlaybackInfo with the Fluster DeviceProfile and the
+  // decision 0002 flags in body and query. AlwaysBurnInSubtitleWhenTranscoding
+  // is body-only: it is not a query parameter in the 10.11.7 or 12.4 OpenAPI.
+  private async playbackInfo(
+    itemId: string,
+    startPositionTicks: number,
+    signal: AbortSignal | undefined,
+    mediaSourceId: string | undefined,
+    enableDirectPlay: boolean,
+  ): Promise<PlaybackInfoResponse> {
+    const { userId } = this.requireSession();
+    const flags = { ...PLAYBACK_INFO_FLAGS, EnableDirectPlay: enableDirectPlay };
+    const request = {
+      ...flags,
+      AlwaysBurnInSubtitleWhenTranscoding: false,
+      UserId: userId,
+      StartTimeTicks: startPositionTicks,
+      MaxStreamingBitrate: MAX_BITRATE,
+      ...(mediaSourceId ? { MediaSourceId: mediaSourceId } : {}),
+      DeviceProfile: FLUSTER_PROFILE,
+    };
+    const { data } = await this.post<PlaybackInfoResponse>(`/Items/${itemId}/PlaybackInfo`, request, {
+      params: { ...flags, UserId: userId, StartTimeTicks: startPositionTicks, MaxStreamingBitrate: MAX_BITRATE },
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    return data;
   }
 
   reportStart(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal): Promise<void> {

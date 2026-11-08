@@ -1,12 +1,12 @@
 import axios from "axios";
 import { describe, expect, it, vi } from "vitest";
 import type { LibraryItem } from "../../domain/catalog";
-import { PlaybackRefusedError, type PlaybackSnapshot } from "../../domain/playback";
+import { PlaybackRefusedError, type PlaybackPlan, type PlaybackSnapshot } from "../../domain/playback";
 import { FLUSTER_PROFILE } from "./device-profile";
 import {
   buildStaticStreamUrl,
   CONTROL_REQUEST_TIMEOUT_MS,
-  DIRECT_PLAY_REQUEST,
+  PLAYBACK_INFO_FLAGS,
   JellyfinGateway,
   PUBLIC_HTTP_REFUSED_MESSAGE,
   REDIRECT_REFUSED_MESSAGE,
@@ -214,7 +214,8 @@ describe("JellyfinGateway direct-play contract", () => {
     });
   });
 
-  it("sends the Fluster profile in the body and the false flags in both body and query", async () => {
+  // Decision 0002 "Negotiation" table, in the body and the query string.
+  it("sends the Fluster profile in the body and the decision 0002 flags in both body and query", async () => {
     const { gateway, transport } = await authenticatedGateway();
     transport.responses.set("POST /Items/item/one/PlaybackInfo", {
       PlaySessionId: "play-1",
@@ -224,7 +225,13 @@ describe("JellyfinGateway direct-play contract", () => {
     const request = transport.requests.at(-1)!;
     expect(request.url).toBe("/Items/item/one/PlaybackInfo");
     expect(request.data).toEqual({
-      ...DIRECT_PLAY_REQUEST,
+      EnableDirectPlay: true,
+      EnableDirectStream: true,
+      EnableTranscoding: true,
+      AllowVideoStreamCopy: true,
+      AllowAudioStreamCopy: true,
+      AutoOpenLiveStream: false,
+      AlwaysBurnInSubtitleWhenTranscoding: false,
       UserId: "user-1",
       StartTimeTicks: 42,
       MaxStreamingBitrate: 1000000000,
@@ -232,13 +239,14 @@ describe("JellyfinGateway direct-play contract", () => {
     });
     expect(request.params).toEqual({
       EnableDirectPlay: true,
-      EnableDirectStream: false,
-      EnableTranscoding: false,
-      AllowVideoStreamCopy: false,
-      AllowAudioStreamCopy: false,
+      EnableDirectStream: true,
+      EnableTranscoding: true,
+      AllowVideoStreamCopy: true,
+      AllowAudioStreamCopy: true,
       AutoOpenLiveStream: false,
       UserId: "user-1",
       StartTimeTicks: 42,
+      MaxStreamingBitrate: 1000000000,
     });
   });
 
@@ -287,12 +295,8 @@ describe("JellyfinGateway direct-play contract", () => {
     const plan = await gateway.createPlaybackPlan(item, 0, undefined, "source-2");
     const request = transport.requests.at(-1)!;
     expect(request.data).toEqual({
-      EnableDirectPlay: true,
-      EnableDirectStream: false,
-      EnableTranscoding: false,
-      AllowVideoStreamCopy: false,
-      AllowAudioStreamCopy: false,
-      AutoOpenLiveStream: false,
+      ...PLAYBACK_INFO_FLAGS,
+      AlwaysBurnInSubtitleWhenTranscoding: false,
       UserId: "user-1",
       StartTimeTicks: 0,
       MaxStreamingBitrate: 1000000000,
@@ -322,8 +326,10 @@ describe("JellyfinGateway direct-play contract", () => {
       Protocol: "File",
       SupportsDirectPlay: true,
       TranscodingUrl: "/Videos/ActiveEncodings/x/master.m3u8",
-    }, "server-requires-transcoding"],
+    }, "unsafe-transcoding-url"],
+    // The forced-fallback answer offers direct play again, so it is refused.
     [{ Id: "disc", Path: "/media/Disc", Protocol: "File", SupportsDirectPlay: true, VideoType: "BluRay" }, "disc-source"],
+    [{ Id: "limited", Path: "/media/movie.mkv", Protocol: "File", SupportsDirectPlay: false }, "conversion-not-allowed"],
   ])("refuses %o with a typed reason", async (source, reason) => {
     const { gateway, transport } = await authenticatedGateway();
     transport.responses.set("POST /Items/item/one/PlaybackInfo", { PlaySessionId: "play-1", MediaSources: [source] });
@@ -434,7 +440,7 @@ describe("JellyfinGateway direct-play contract", () => {
 
   it("reports position and DirectPlay for start, progress, and stop", async () => {
     const { gateway, transport } = await authenticatedGateway();
-    const plan = {
+    const plan: PlaybackPlan = {
       itemId: "item-1",
       title: "Movie",
       streamUrl: "https://media.test/video",
@@ -443,6 +449,9 @@ describe("JellyfinGateway direct-play contract", () => {
       playSessionId: "play-1",
       startPositionTicks: 0,
       tracks: [],
+      delivery: "static",
+      playMethod: "DirectPlay",
+      conversionReasons: [],
     };
     const snapshot: PlaybackSnapshot = {
       positionSeconds: 12.5,
@@ -555,7 +564,7 @@ describe("JellyfinGateway device identity and logout", () => {
 
   it("sends Failed on stopped reports only when requested", async () => {
     const { gateway, transport } = await authenticatedGateway();
-    const plan = { itemId: "i", mediaSourceId: "m", playSessionId: "p", startPositionTicks: 0, streamUrl: "", authorization: "", title: "t", tracks: [] };
+    const plan: PlaybackPlan = { itemId: "i", mediaSourceId: "m", playSessionId: "p", startPositionTicks: 0, streamUrl: "", authorization: "", title: "t", tracks: [], delivery: "static", playMethod: "DirectPlay", conversionReasons: [] };
     const snapshot = { positionSeconds: 1, paused: false, buffering: false, volume: 50, muted: false, tracks: [], diagnostics: { decodeMode: "hardware", decodeLabel: "x", droppedFrames: 0 } } as PlaybackSnapshot;
     await gateway.reportStopped(plan, snapshot, undefined, true);
     expect(transport.requests.at(-1)!.data).toMatchObject({ Failed: true });
@@ -1105,7 +1114,7 @@ describe("JellyfinGateway plain-HTTP policy (docs/decisions/0001)", () => {
 // In WebKitGTK the fetch adapter's `redirect: "manual"` yields an opaque
 // redirect with status 0, and Axios resolves it instead of rejecting.
 describe("JellyfinGateway resolved redirect responses", () => {
-  const plan = { itemId: "i", mediaSourceId: "m", playSessionId: "p", startPositionTicks: 0, streamUrl: "", authorization: "", title: "t", tracks: [] };
+  const plan: PlaybackPlan = { itemId: "i", mediaSourceId: "m", playSessionId: "p", startPositionTicks: 0, streamUrl: "", authorization: "", title: "t", tracks: [], delivery: "static", playMethod: "DirectPlay", conversionReasons: [] };
   const snapshot = { positionSeconds: 1, paused: false, buffering: false, volume: 50, muted: false, tracks: [], diagnostics: { decodeMode: "hardware", decodeLabel: "x", droppedFrames: 0 } } as PlaybackSnapshot;
 
   it.each([0, 302, 307])("refuses a probe that resolves with status %i", async (status) => {

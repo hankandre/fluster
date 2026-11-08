@@ -46,10 +46,14 @@ const SERVERS = [
 // make no stream request. Any other refusal fails the sample.
 // expectExternalSubtitle: the plan must carry an external subtitle URL, and
 // fetching it must pass the I2 rule.
+// "converted" is a bridge until P10-09 checks conversions: the gateway
+// returned an HLS plan, which this tripwire neither plays nor requests.
+type ExpectedOutcome = RefusalReason | "converted";
+
 interface Sample {
   name: string;
   path: string;
-  expectRefused?: RefusalReason;
+  expectRefused?: ExpectedOutcome;
   expectExternalSubtitle?: boolean;
 }
 
@@ -62,8 +66,9 @@ const SAMPLES: Sample[] = [
   { name: "multitrack", path: "/media/movies/Synthetic Multitrack (2024)/Synthetic Multitrack (2024).mkv" },
   { name: "versions", path: "/media/movies/Synthetic Versions (2024)/Synthetic Versions (2024) - 1080p.mkv" },
   // Jellyfin ignores Static=true for BluRay/DVD and starts ffmpeg instead
-  // (VideosController.GetVideoStream), so the gateway must refuse disc folders.
-  { name: "bluray-folder", path: "/media/movies/Synthetic BluRay (2024)", expectRefused: "disc-source" },
+  // (VideosController.GetVideoStream), so the gateway never direct plays disc
+  // folders; since P10-03 it returns an HLS conversion plan for them.
+  { name: "bluray-folder", path: "/media/movies/Synthetic BluRay (2024)", expectRefused: "converted" },
   { name: "show-s01e01", path: "/media/shows/Synthetic Show/Season 01/Synthetic Show S01E01.mkv" },
   { name: "show-s01e02", path: "/media/shows/Synthetic Show/Season 01/Synthetic Show S01E02.mkv" },
   { name: "show-s00e01", path: "/media/shows/Synthetic Show/Season 00/Synthetic Show S00E01.mkv" },
@@ -250,6 +255,11 @@ async function playSample(
       if (!(error instanceof PlaybackRefusedError)) throw error;
       result.refusal = error.reason;
       result.notes.push(`gateway refused (${error.reason}): ${errorText(error)}`);
+    }
+    if (plan && plan.delivery !== "static") {
+      result.refusal = "converted";
+      result.notes.push(`gateway returned a ${plan.playMethod} plan; not played until P10-09`);
+      plan = undefined;
     }
     if (plan) {
       const streamParams = new URL(plan.streamUrl).searchParams;

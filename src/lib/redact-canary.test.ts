@@ -213,6 +213,9 @@ function planWith(playSessionId: string): PlaybackPlan {
     playSessionId,
     startPositionTicks: 0,
     tracks: [],
+    delivery: "static",
+    playMethod: "DirectPlay",
+    conversionReasons: [],
   };
 }
 

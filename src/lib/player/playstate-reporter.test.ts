@@ -11,6 +11,9 @@ const plan: PlaybackPlan = {
   playSessionId: "session",
   startPositionTicks: 0,
   tracks: [],
+  delivery: "static",
+  playMethod: "DirectPlay",
+  conversionReasons: [],
 };
 const snapshot: PlaybackSnapshot = {
   positionSeconds: 42,
