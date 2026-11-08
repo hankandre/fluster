@@ -1230,10 +1230,10 @@
             "Playwright journeys cover direct play with no indicator, direct stream, and transcode"
           ],
           "verify": "pnpm check && pnpm test:e2e",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "pnpm check green (953 vitest incl. conversion-copy, per-method gateway reports, chip and info-panel view tests; cargo 173); pnpm test:e2e 32 passed; lint:boundaries and typecheck:core green.\nConversionChip (role=status, icon + words) and Info panel reasons; Record<ConversionReason, string> in src/features/player/conversion-copy.ts; plan.subtitlesBurnedIn from SubtitleMethod=Encode in Playback Negotiation; reports send plan.playMethod.\nGap: the browser engine cannot play HLS, so Playwright direct stream and transcode journeys assert refusal, no indicator, no reports; the chip is covered by player-view.test.tsx."
         },
         {
           "id": "P10-07",

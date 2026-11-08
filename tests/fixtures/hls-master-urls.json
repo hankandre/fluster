@@ -18,6 +18,7 @@
         "mediaKind": "videos",
         "streamUrl": "http://127.0.0.1:8096/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -56,6 +57,7 @@
         "mediaKind": "videos",
         "streamUrl": "https://media.test/jellyfin/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -94,6 +96,7 @@
         "mediaKind": "videos",
         "streamUrl": "http://127.0.0.1:8096/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=72000&AudioBitrate=128000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=ContainerBitrateExceedsLimit&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -132,6 +135,7 @@
         "mediaKind": "videos",
         "streamUrl": "https://media.test/jellyfin/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=72000&AudioBitrate=128000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=ContainerBitrateExceedsLimit&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -170,6 +174,7 @@
         "mediaKind": "videos",
         "streamUrl": "http://127.0.0.1:8096/videos/item-hevc/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-hevc&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-2&hevc-level=93&hevc-videobitdepth=10&hevc-profile=main10&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -208,6 +213,7 @@
         "mediaKind": "videos",
         "streamUrl": "https://media.test/jellyfin/videos/item-hevc/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-hevc&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-2&hevc-level=93&hevc-videobitdepth=10&hevc-profile=main10&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -246,6 +252,7 @@
         "mediaKind": "videos",
         "streamUrl": "http://127.0.0.1:8096/videos/item-av1/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-av1&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-3&av1-level=1&av1-videobitdepth=10&av1-profile=main&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -284,6 +291,7 @@
         "mediaKind": "videos",
         "streamUrl": "https://media.test/jellyfin/videos/item-av1/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-av1&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-3&av1-level=1&av1-videobitdepth=10&av1-profile=main&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -322,6 +330,7 @@
         "mediaKind": "videos",
         "streamUrl": "http://127.0.0.1:8096/videos/item-ass/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-ass&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-4&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -369,6 +378,7 @@
         "mediaKind": "videos",
         "streamUrl": "https://media.test/jellyfin/videos/item-ass/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-ass&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-4&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -416,6 +426,7 @@
         "mediaKind": "videos",
         "streamUrl": "http://127.0.0.1:8096/videos/item-sidecar/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-sidecar&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=2&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-5&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -464,6 +475,7 @@
         "mediaKind": "videos",
         "streamUrl": "https://media.test/jellyfin/videos/item-sidecar/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-sidecar&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=2&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-5&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -512,6 +524,7 @@
         "mediaKind": "videos",
         "streamUrl": "http://127.0.0.1:8096/videos/item-multitrack/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-multitrack&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&AudioSampleRate=48000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-6&h264-level=30&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=2&aac-profile=lc&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -558,6 +571,7 @@
         "mediaKind": "videos",
         "streamUrl": "https://media.test/jellyfin/videos/item-multitrack/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-multitrack&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&AudioSampleRate=48000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-6&h264-level=30&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=2&aac-profile=lc&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -604,6 +618,7 @@
         "mediaKind": "videos",
         "streamUrl": "http://127.0.0.1:8096/videos/item-dvdsub/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-dvdsub&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-10&SubtitleMethod=Encode&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": true,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -651,6 +666,7 @@
         "mediaKind": "videos",
         "streamUrl": "https://media.test/jellyfin/videos/item-dvdsub/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-dvdsub&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-10&SubtitleMethod=Encode&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": true,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -698,6 +714,7 @@
         "mediaKind": "videos",
         "streamUrl": "http://127.0.0.1:8096/videos/item-iso/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-iso&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-11&h264-level=31&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -736,6 +753,7 @@
         "mediaKind": "videos",
         "streamUrl": "https://media.test/jellyfin/videos/item-iso/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-iso&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-11&h264-level=31&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -772,6 +790,7 @@
         "mediaKind": "videos",
         "streamUrl": "http://127.0.0.1:8096/videos/item-bluray/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-bluray&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&VideoBitrate=999808000&AudioBitrate=192000&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-9&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": []
       }
@@ -791,6 +810,7 @@
         "mediaKind": "videos",
         "streamUrl": "https://media.test/jellyfin/videos/item-bluray/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-bluray&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&VideoBitrate=999808000&AudioBitrate=192000&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-9&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": []
       }
@@ -810,6 +830,7 @@
         "mediaKind": "videos",
         "streamUrl": "http://127.0.0.1:8096/videos/item-bluray/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-bluray&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&VideoBitrate=999808000&AudioBitrate=192000&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-9&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": []
       }
@@ -829,6 +850,7 @@
         "mediaKind": "videos",
         "streamUrl": "https://media.test/jellyfin/videos/item-bluray/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-bluray&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&VideoBitrate=999808000&AudioBitrate=192000&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-9&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": []
       }
@@ -851,6 +873,7 @@
         "mediaKind": "videos",
         "streamUrl": "http://127.0.0.1:8096/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -890,6 +913,7 @@
         "mediaKind": "videos",
         "streamUrl": "https://media.test/jellyfin/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -929,6 +953,7 @@
         "mediaKind": "videos",
         "streamUrl": "http://127.0.0.1:8096/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=72000&AudioBitrate=128000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CContainerBitrateExceedsLimit&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -968,6 +993,7 @@
         "mediaKind": "videos",
         "streamUrl": "https://media.test/jellyfin/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=72000&AudioBitrate=128000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CContainerBitrateExceedsLimit&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -1007,6 +1033,7 @@
         "mediaKind": "videos",
         "streamUrl": "http://127.0.0.1:8096/videos/item-hevc/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-hevc&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-2&hevc-level=93&hevc-videobitdepth=10&hevc-profile=main10&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -1046,6 +1073,7 @@
         "mediaKind": "videos",
         "streamUrl": "https://media.test/jellyfin/videos/item-hevc/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-hevc&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-2&hevc-level=93&hevc-videobitdepth=10&hevc-profile=main10&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -1085,6 +1113,7 @@
         "mediaKind": "videos",
         "streamUrl": "http://127.0.0.1:8096/videos/item-av1/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-av1&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-3&av1-level=1&av1-videobitdepth=10&av1-profile=main&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -1124,6 +1153,7 @@
         "mediaKind": "videos",
         "streamUrl": "https://media.test/jellyfin/videos/item-av1/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-av1&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-3&av1-level=1&av1-videobitdepth=10&av1-profile=main&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -1163,6 +1193,7 @@
         "mediaKind": "videos",
         "streamUrl": "http://127.0.0.1:8096/videos/item-ass/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-ass&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-4&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -1211,6 +1242,7 @@
         "mediaKind": "videos",
         "streamUrl": "https://media.test/jellyfin/videos/item-ass/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-ass&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-4&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -1259,6 +1291,7 @@
         "mediaKind": "videos",
         "streamUrl": "http://127.0.0.1:8096/videos/item-sidecar/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-sidecar&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=2&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-5&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -1308,6 +1341,7 @@
         "mediaKind": "videos",
         "streamUrl": "https://media.test/jellyfin/videos/item-sidecar/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-sidecar&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=2&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-5&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -1356,6 +1390,7 @@
         "mediaKind": "videos",
         "streamUrl": "http://127.0.0.1:8096/videos/item-multitrack/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-multitrack&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&AudioSampleRate=48000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-6&h264-level=30&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=2&aac-profile=lc&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -1402,6 +1437,7 @@
         "mediaKind": "videos",
         "streamUrl": "https://media.test/jellyfin/videos/item-multitrack/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-multitrack&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&AudioSampleRate=48000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-6&h264-level=30&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=2&aac-profile=lc&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -1449,6 +1485,7 @@
         "mediaKind": "videos",
         "streamUrl": "http://127.0.0.1:8096/videos/item-dvdsub/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-dvdsub&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-10&SubtitleMethod=Encode&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": true,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -1497,6 +1534,7 @@
         "mediaKind": "videos",
         "streamUrl": "https://media.test/jellyfin/videos/item-dvdsub/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-dvdsub&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-10&SubtitleMethod=Encode&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": true,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -1545,6 +1583,7 @@
         "mediaKind": "videos",
         "streamUrl": "http://127.0.0.1:8096/videos/item-iso/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-iso&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-9&h264-level=31&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -1584,6 +1623,7 @@
         "mediaKind": "videos",
         "streamUrl": "https://media.test/jellyfin/videos/item-iso/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-iso&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-9&h264-level=31&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": [
           {
@@ -1620,6 +1660,7 @@
         "mediaKind": "videos",
         "streamUrl": "http://127.0.0.1:8096/videos/item-bluray/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-bluray&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&VideoBitrate=999808000&AudioBitrate=192000&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-9&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": []
       }
@@ -1639,6 +1680,7 @@
         "mediaKind": "videos",
         "streamUrl": "https://media.test/jellyfin/videos/item-bluray/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-bluray&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&VideoBitrate=999808000&AudioBitrate=192000&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-9&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": []
       }
@@ -1658,6 +1700,7 @@
         "mediaKind": "videos",
         "streamUrl": "http://127.0.0.1:8096/videos/item-bluray/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-bluray&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&VideoBitrate=999808000&AudioBitrate=192000&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-9&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": []
       }
@@ -1677,6 +1720,7 @@
         "mediaKind": "videos",
         "streamUrl": "https://media.test/jellyfin/videos/item-bluray/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-bluray&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&VideoBitrate=999808000&AudioBitrate=192000&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-9&EnableTrickplay=false",
         "hasSegments": false,
+        "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": []
       }

@@ -191,6 +191,9 @@ export interface PlaybackPlanBase {
   // True when the user's streaming limit is the only reason for the
   // conversion, so Play original may renegotiate without it. Absent means false.
   playOriginalAvailable?: boolean;
+  // True when the conversion burns subtitles into the picture
+  // (`SubtitleMethod=Encode` in the rebuilt master URL). Absent means false.
+  subtitlesBurnedIn?: boolean;
 }
 
 // Per-negotiation choices that are not part of the item.
