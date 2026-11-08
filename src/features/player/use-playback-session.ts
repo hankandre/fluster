@@ -3,6 +3,7 @@ import type { LibraryItem } from "../../domain/catalog";
 import {
   PlaybackRefusedError,
   startOverChoice,
+  type PlaybackRefusal,
   type PlaybackEndReason,
   type PlaybackStartChoice,
   type PlayerEngine,
@@ -73,7 +74,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
   const { engine, watchWindowClose } = player;
   const [state, dispatch] = useReducer(playbackSessionReducer, initialPlaybackSessionState);
   const [retrying, setRetrying] = useState(false);
-  const [refusal, setRefusal] = useState<string>();
+  const [refusal, setRefusal] = useState<PlaybackRefusal>();
   const session = useRef<ActiveSession | undefined>(undefined);
   const callbacks = useRef(options);
 
@@ -92,7 +93,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
   const handleFailure = useCallback((error: unknown) => {
     if (error instanceof PlaybackCancelledError) return;
     if (error instanceof PlaybackRefusedError) {
-      setRefusal(error.message);
+      setRefusal({ reason: error.reason, detail: error.detail });
       return;
     }
     dispatch({ type: "failure", message: errorText(error) });
@@ -151,6 +152,9 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     const active = session.current;
     if (!active) return;
     dispatch({ type: "reset" });
+    // The player view must be on screen before the engine launches, so the
+    // refusal goes away now and comes back if the server refuses again.
+    setRefusal(undefined);
     setRetrying(true);
     try {
       await active.coordinator.retry();

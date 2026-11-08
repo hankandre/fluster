@@ -9,6 +9,7 @@ import { PlaybackRefusedError, type PlaybackPlan, type PlaybackSnapshot } from "
 import { FakePlayerEngine } from "../../test/fake-player-engine";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
 import { PlayerRouteView } from "./index";
+import { REFUSAL_COPY } from "./refusal-copy";
 
 const detail: ItemDetail = {
   id: "m1",
@@ -193,22 +194,64 @@ describe("Player feature", () => {
     await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
   });
 
-  it("shows a refusal with Back and no way to play anyway", async () => {
+  it("explains a refusal, focuses the heading, and offers Retry and Back but no way to play anyway", async () => {
     const gateway = fakeGateway({
-      createPlaybackPlan: vi.fn().mockRejectedValue(new PlaybackRefusedError({ reason: "disc-source" })),
+      createPlaybackPlan: vi.fn().mockRejectedValue(new PlaybackRefusedError({ reason: "disc-source", detail: "BluRay" })),
     });
     const engine = new FakePlayerEngine();
     await renderPlayer(gateway, engine);
 
-    expect(await screen.findByRole("heading", { name: "This item can’t be played" })).toBeInTheDocument();
-    expect(screen.getByRole("alert")).toHaveTextContent("Blu-ray or DVD folder");
-    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+    const heading = await screen.findByRole("heading", { name: REFUSAL_COPY["disc-source"].title });
+    expect(heading).toHaveFocus();
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent(REFUSAL_COPY["disc-source"].explanation);
+    expect(alert).toHaveTextContent(REFUSAL_COPY["disc-source"].whatYouCanDo);
+    expect(screen.queryByText(/BluRay/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeEnabled();
+    expect(screen.queryByText(/play anyway|transcod/i)).not.toBeInTheDocument();
     expect(engine.launch).not.toHaveBeenCalled();
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Back to details" }));
     });
     await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
+  });
+
+  it("Retry on a refusal negotiates again and plays once the server allows it", async () => {
+    const gateway = fakeGateway({
+      createPlaybackPlan: vi.fn()
+        .mockRejectedValueOnce(new PlaybackRefusedError({ reason: "no-direct-play" }))
+        .mockResolvedValueOnce(plan("play-2")),
+    });
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await screen.findByRole("heading", { name: REFUSAL_COPY["no-direct-play"].title });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    });
+
+    await waitFor(() => expect(engine.launch).toHaveBeenCalledWith(plan("play-2")));
+    expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole("heading", { name: REFUSAL_COPY["no-direct-play"].title })).not.toBeInTheDocument();
+  });
+
+  it("Retry keeps the refusal on screen when the server still refuses", async () => {
+    const gateway = fakeGateway({
+      createPlaybackPlan: vi.fn().mockRejectedValue(new PlaybackRefusedError({ reason: "no-direct-play" })),
+    });
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await screen.findByRole("heading", { name: REFUSAL_COPY["no-direct-play"].title });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    });
+
+    await waitFor(() => expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(2));
+    expect(await screen.findByRole("heading", { name: REFUSAL_COPY["no-direct-play"].title })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeEnabled();
+    expect(engine.launch).not.toHaveBeenCalled();
   });
 
   it("stops playback when the view goes away without Back", async () => {

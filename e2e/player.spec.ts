@@ -25,6 +25,8 @@ const discSource = {
 interface ServerOptions {
   resumeTicks?: number;
   disc?: boolean;
+  // The first N PlaybackInfo answers say the server will not direct-play the file.
+  noDirectPlayAnswers?: number;
   failPlayback?: boolean;
   playbackDelayMs?: number;
 }
@@ -100,6 +102,9 @@ async function mockPlayerServer(page: Page, options: ServerOptions = {}): Promis
       case "/Items/movie-1/PlaybackInfo":
         log.playbackInfo.push(request.postDataJSON());
         if (options.playbackDelayMs) await new Promise((resolve) => setTimeout(resolve, options.playbackDelayMs));
+        if (log.playbackInfo.length <= (options.noDirectPlayAnswers ?? 0)) {
+          return json({ PlaySessionId: `play-${log.playbackInfo.length}`, MediaSources: [{ ...source, SupportsDirectPlay: false }] });
+        }
         return json({ PlaySessionId: `play-${log.playbackInfo.length}`, MediaSources: [source] });
       case "/Videos/movie-1/stream":
         return route.fulfill({ status: 200, headers: cors, contentType: "video/mp4", body: "" });
@@ -189,20 +194,48 @@ test("Retry after a playback error renegotiates, and Back returns to the detail 
   await expect(page.getByRole("heading", { name: "Arrival", level: 2 })).toBeVisible();
 });
 
-test("a Blu-ray folder shows the refusal with Back and no way to play anyway", async ({ page }) => {
+test("a Blu-ray folder is explained with Retry and Back and no way to play anyway", async ({ page }) => {
   const log = await mockPlayerServer(page, { disc: true });
   await openArrival(page);
 
   await page.getByRole("link", { name: "Play" }).click();
-  await expect(page.getByRole("heading", { name: "This item can’t be played" })).toBeVisible();
+  const heading = page.getByRole("heading", { name: "This is a disc folder" });
+  await expect(heading).toBeVisible();
+  await expect(heading).toBeFocused();
   await expect(page.getByRole("alert")).toContainText("Blu-ray or DVD folder");
-  await expect(page.getByRole("button", { name: "Retry" })).toHaveCount(0);
+  await expect(page.getByRole("alert")).toContainText("Rip the disc to an MKV file");
+  await expect(page.getByRole("button", { name: "Retry" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: /anyway/i })).toHaveCount(0);
+  await expect(page.getByText(/transcod/i)).toHaveCount(0);
   await expect(page.locator("video")).toHaveCount(0);
   expect(log.reports).toHaveLength(0);
+
+  await page.getByRole("button", { name: "Retry" }).click();
+  await expect.poll(() => log.playbackInfo.length).toBe(2);
+  await expect(heading).toBeVisible();
+  expect(log.playbackInfo[1]).toMatchObject({ EnableTranscoding: false, EnableDirectStream: false });
 
   await page.getByRole("button", { name: "Back to details" }).click();
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
   await expect(page.getByRole("heading", { name: "Arrival", level: 2 })).toBeVisible();
+});
+
+test("a server that won't direct-play names the policy, and Retry plays once it is lifted", async ({ page }) => {
+  const log = await mockPlayerServer(page, { noDirectPlayAnswers: 1 });
+  await openArrival(page);
+
+  await page.getByRole("link", { name: "Play" }).click();
+  await expect(page.getByRole("heading", { name: "The server won’t let Fluster play this file as it is" })).toBeFocused();
+  await expect(page.getByRole("alert")).toContainText("remote bitrate limit");
+  await expect(page.getByRole("alert")).toContainText("Ask the server admin");
+  await expect(page.getByRole("button", { name: /anyway/i })).toHaveCount(0);
+  await expect(page.locator("video")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Retry" }).click();
+  await expect.poll(() => log.playbackInfo.length).toBe(2);
+  expect(log.playbackInfo[1]).toMatchObject({ MediaSourceId: "src-hd", EnableTranscoding: false });
+  await expect(page.locator("video")).toHaveCount(1);
+  await expect(page.getByRole("heading", { name: "Arrival", level: 1 })).toBeVisible();
 });
 
 test("Back cancels an in-flight playback negotiation", async ({ page }) => {
