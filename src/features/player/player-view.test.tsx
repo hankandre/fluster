@@ -431,6 +431,37 @@ describe("Player feature", () => {
       expect(screen.queryByRole("button", { name: /Skip/ })).not.toBeInTheDocument();
     });
 
+    it("drops the skip button when Retry picks a version without segments", async () => {
+      const gateway = fakeGateway({
+        createPlaybackPlan: vi.fn()
+          .mockResolvedValueOnce({ ...plan("play-1"), hasSegments: true })
+          .mockResolvedValueOnce({ ...plan("play-2"), hasSegments: false }),
+        mediaSegments: vi.fn().mockResolvedValue([intro]),
+      });
+      const engine = new FakePlayerEngine();
+      await renderPlayer(gateway, engine);
+      await startPlaying(engine);
+      await act(async () => {
+        engine.emit({ kind: "state", snapshot: { ...snapshot, positionSeconds: 30 } });
+      });
+      expect(await screen.findByRole("button", { name: "Skip intro" })).toBeInTheDocument();
+
+      await act(async () => {
+        engine.emit({ kind: "error", message: "Decoder failed" });
+        engine.emit({ kind: "ended", reason: "error", snapshot });
+      });
+      await act(async () => {
+        fireEvent.click(await screen.findByRole("button", { name: "Retry" }));
+      });
+      await waitFor(() => expect(engine.launch).toHaveBeenCalledTimes(2));
+      await act(async () => {
+        engine.emit({ kind: "loaded", snapshot: { ...snapshot, positionSeconds: 30 } });
+      });
+
+      expect(screen.queryByRole("button", { name: /Skip/ })).not.toBeInTheDocument();
+      expect(gateway.mediaSegments).toHaveBeenCalledTimes(1);
+    });
+
     it("shows nothing when the segments request fails", async () => {
       const gateway = segmentsGateway();
       vi.mocked(gateway.mediaSegments).mockRejectedValue(new Error("boom"));
