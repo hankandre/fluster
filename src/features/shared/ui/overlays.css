@@ -1,0 +1,131 @@
+@layer reset, tokens, base, components, features, focus;
+
+@layer components {
+  /* Dialog (DESIGN.md 7.16) */
+  .ui-dialog-veil {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-dialog);
+    display: grid;
+    place-items: center;
+    padding: var(--space-5);
+    background: var(--veil);
+    animation: ui-fade-in var(--dur-base) var(--ease-out);
+  }
+
+  .ui-dialog {
+    box-sizing: border-box;
+    display: grid;
+    gap: var(--space-4);
+    width: min(560px, 100%);
+    max-height: 100%;
+    padding: var(--space-6);
+    overflow-y: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sheet);
+    background: var(--surface-1);
+    box-shadow: var(--shadow-sheet);
+  }
+
+  .ui-dialog-head {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .ui-dialog-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    height: 2rem;
+    color: var(--text-2);
+  }
+
+  .ui-dialog-title {
+    font: var(--type-title);
+    font-size: 1.5rem;
+    overflow-wrap: anywhere;
+  }
+
+  .ui-dialog-body {
+    color: var(--text-2);
+    font: var(--type-body);
+  }
+
+  .ui-dialog-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
+  }
+
+  /* Toast (DESIGN.md 7.16) */
+  .ui-toast-region {
+    position: fixed;
+    bottom: var(--space-5);
+    left: var(--space-5);
+    z-index: var(--z-toast);
+    display: grid;
+    gap: var(--space-2);
+    max-width: min(28rem, calc(100vw - 2 * var(--space-5)));
+    pointer-events: none;
+  }
+
+  .ui-toast-list {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .ui-toast {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-control);
+    background: var(--surface-1);
+    box-shadow: var(--shadow-sheet);
+    pointer-events: auto;
+    animation: ui-toast-in var(--dur-base) var(--ease-out);
+  }
+
+  .ui-toast-icon {
+    flex: none;
+    color: var(--text-2);
+  }
+
+  .ui-toast[data-tone="ok"] .ui-toast-icon {
+    color: var(--ok);
+  }
+
+  .ui-toast[data-tone="error"] .ui-toast-icon {
+    color: var(--danger);
+  }
+
+  .ui-toast-message {
+    flex: 1;
+    margin: 0;
+    font: var(--type-body);
+  }
+
+  @keyframes ui-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes ui-toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(var(--space-2));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-dialog-veil,
+    .ui-toast {
+      animation: none;
+    }
+  }
+}

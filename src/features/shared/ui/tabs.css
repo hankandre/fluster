@@ -1,0 +1,40 @@
+@layer reset, tokens, base, components, features, focus;
+
+@layer components {
+  .ui-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+
+  .ui-tab {
+    position: relative;
+    box-sizing: border-box;
+    min-height: var(--hit-min);
+    padding: 0 var(--space-4);
+    border: 0;
+    border-radius: var(--radius-control);
+    background: transparent;
+    color: var(--text-2);
+    font: var(--type-label);
+    transition: color var(--dur-quick) var(--ease-out);
+  }
+
+  .ui-tab:hover {
+    color: var(--text-1);
+  }
+
+  .ui-tab[aria-selected="true"] {
+    color: var(--text-1);
+  }
+
+  /* The selected bar is a shape, so selection never rests on colour alone. */
+  .ui-tab[aria-selected="true"]::after {
+    content: "";
+    position: absolute;
+    inset: auto var(--space-4) 0;
+    height: 2px;
+    border-radius: var(--radius-pill);
+    background: var(--art-accent);
+  }
+}

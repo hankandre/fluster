@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { FeatureIndex } from "../features";
 import { NotFoundView } from "../features/not-found";
@@ -14,6 +14,12 @@ import { createServices, type AppServices } from "./compose";
 import { PlayerServicesProvider, type PlayerServices } from "./player-services";
 import { PreferencesProvider } from "./preferences";
 import { SessionProvider } from "./session";
+
+// The UI gallery exists only in browser development. Vite replaces import.meta.env.DEV with false in a
+// build, so the branch and the module behind it are dropped (scripts/check-no-test-engine.sh proves it).
+const GalleryView = import.meta.env.DEV
+  ? lazy(() => import("../features/gallery").then((module) => ({ default: module.GalleryView })))
+  : undefined;
 
 export function App() {
   const services = useMemo(() => createServices(), []);
@@ -88,6 +94,8 @@ function renderRoute(hash: string, services: AppServices) {
       return <SettingsView />;
     case "#/next/player":
       return <PlayerFeatureView />;
+    case "#/next/gallery":
+      return GalleryView && !services.native ? <Suspense fallback={null}><GalleryView /></Suspense> : <NotFoundView />;
     default:
       if (hash.startsWith("#/next/play/")) return renderPlayRoute(hash);
       return renderBrowseRoute(hash) ?? <NotFoundView />;

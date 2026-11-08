@@ -52,4 +52,12 @@ describe("App entry", () => {
     renderApp();
     expect(screen.getByText("Browser development mode")).toBeInTheDocument();
   });
+
+  it("shows the UI gallery in browser development mode without signing in", async () => {
+    window.location.hash = "#/next/gallery";
+    renderApp();
+    expect(await screen.findByRole("heading", { name: "UI gallery" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Streaming limit/ })).toBeInTheDocument();
+    expect(window.location.hash).toBe("#/next/gallery");
+  });
 });
