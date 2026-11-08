@@ -661,15 +661,19 @@ export class JellyfinGateway {
     signal?: AbortSignal,
     mediaSourceId?: string,
   ): Promise<PlaybackPlan> {
-    const context = { serverUrl: this.serverUrl, itemId: item.id };
+    const context = (answer: PlaybackInfoResponse) => ({
+      serverUrl: this.serverUrl,
+      itemId: item.id,
+      playSessionId: answer.PlaySessionId,
+    });
     let data = await this.playbackInfo(item.id, startPositionTicks, signal, mediaSourceId, true);
-    let decision = selectSource(data.MediaSources, context, mediaSourceId);
+    let decision = selectSource(data.MediaSources, context(data), mediaSourceId);
     if (decision.kind === "force-fallback") {
       // Rule 4: a disc folder or ISO the server offered for direct play. Ask
       // once more for that source without direct play, and never loop.
       const { reason, source } = decision;
       data = await this.playbackInfo(item.id, startPositionTicks, signal, source.Id, false);
-      decision = selectSource(data.MediaSources, context, source.Id);
+      decision = selectSource(data.MediaSources, context(data), source.Id);
       if (decision.kind === "force-fallback") {
         decision = { kind: "refused", reason, detail: "direct play offered again" };
       }

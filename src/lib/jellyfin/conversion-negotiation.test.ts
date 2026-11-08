@@ -207,6 +207,12 @@ describe.each(["10.11.7", "12.4.0"])("negotiation with the conversion fixtures f
     expect(transport.posts).toHaveLength(1);
   });
 
+  it("refuses a recorded conversion whose URL names another play session than the answer", async () => {
+    const answer = fixture(version, "h264-limited");
+    answer.PlaySessionId = "play-session-2";
+    expect(refusalOf((await negotiate("item-h264", [answer])).result)).toMatchObject({ reason: "unsafe-transcoding-url", detail: "play session" });
+  });
+
   it("refuses a recorded conversion whose URL names another server", async () => {
     const answer = fixture(version, "h264-limited");
     answer.MediaSources![0].TranscodingUrl = `https://evil.test${answer.MediaSources![0].TranscodingUrl}`;

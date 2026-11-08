@@ -13,8 +13,9 @@ const CREDENTIAL_QUERY_NAMES = new Set([
 ]);
 
 // URLSearchParams decodes names, so an encoded name (`Api%4Bey`) matches too.
+// Surrounding whitespace is ignored, so `%20ApiKey` matches as well.
 export function isCredentialQueryName(name: string): boolean {
-  return CREDENTIAL_QUERY_NAMES.has(name.toLowerCase());
+  return CREDENTIAL_QUERY_NAMES.has(name.trim().toLowerCase());
 }
 
 // Jellyfin puts the session token into DeliveryUrl and TranscodingUrl values

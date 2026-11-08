@@ -2,10 +2,16 @@ import { describe, expect, it } from "vitest";
 import { rebuildMasterUrl, type HlsUrlContext } from "./hls-url";
 
 const ITEM = "0123456789abcdef0123456789abcdef";
-const context: HlsUrlContext = { serverUrl: "https://media.test", itemId: ITEM, mediaSourceId: ITEM };
+const context: HlsUrlContext = { serverUrl: "https://media.test", itemId: ITEM, mediaSourceId: ITEM, mediaKind: "videos", playSessionId: "p1" };
+const SOURCE = `MediaSourceId=${ITEM}`;
 
 // The 10.11.7 shape: a leading "?&", ApiKey, no EnableTrickplay (P10-02).
-const RECORDED = `/videos/${ITEM}/master.m3u8?&DeviceId=fluster&MediaSourceId=${ITEM}&VideoCodec=h264,hevc,av1,vp9&AudioCodec=aac&AudioStreamIndex=1&SegmentContainer=mp4&PlaySessionId=p1&ApiKey=secret-key&Tag=t&TranscodeReasons=ContainerBitrateExceedsLimit`;
+const RECORDED = `/videos/${ITEM}/master.m3u8?&DeviceId=fluster&${SOURCE}&VideoCodec=h264,hevc,av1,vp9&AudioCodec=aac&AudioStreamIndex=1&SegmentContainer=mp4&PlaySessionId=p1&ApiKey=secret-key&Tag=t&TranscodeReasons=ContainerBitrateExceedsLimit`;
+
+// A master URL for the item that names the chosen source, plus `query`.
+function master(query = "", path = `/videos/${ITEM}/master.m3u8`): string {
+  return `${path}?${SOURCE}${query ? `&${query}` : ""}`;
+}
 
 function rebuilt(transcodingUrl: string, overrides: Partial<HlsUrlContext> = {}) {
   return rebuildMasterUrl(transcodingUrl, { ...context, ...overrides });
@@ -33,21 +39,26 @@ describe("rebuildMasterUrl", () => {
   });
 
   it("keeps the server base path, as the static stream URL does", () => {
-    const url = urlOf(`/videos/${ITEM}/master.m3u8?ApiKey=k`, { serverUrl: "https://media.test/jellyfin" });
+    const url = urlOf(master("ApiKey=k"), { serverUrl: "https://media.test/jellyfin" });
     expect(url.pathname).toBe(`/jellyfin/videos/${ITEM}/master.m3u8`);
-    expect(rebuilt(`/jellyfin/videos/${ITEM}/master.m3u8`, { serverUrl: "https://media.test/jellyfin" })).toEqual({ ok: false, detail: "path" });
+    expect(rebuilt(master("", `/jellyfin/videos/${ITEM}/master.m3u8`), { serverUrl: "https://media.test/jellyfin" })).toEqual({ ok: false, detail: "path" });
   });
 
-  it("accepts the audio path and any case in the fixed path segments, as Rust does", () => {
-    expect(urlOf(`/Audio/${ITEM}/Master.M3U8`).pathname).toBe(`/Audio/${ITEM}/Master.M3U8`);
-    expect(rebuilt(`/audio/${ITEM}/master.m3u8`)).toMatchObject({ ok: true, kind: "audio" });
-    expect(rebuilt(`/VIDEOS/${ITEM}/master.m3u8`)).toMatchObject({ ok: true, kind: "videos" });
+  it("accepts any case in the fixed path segments, as Rust does", () => {
+    expect(urlOf(master("", `/Audio/${ITEM}/Master.M3U8`), { mediaKind: "audio" }).pathname).toBe(`/Audio/${ITEM}/Master.M3U8`);
+    expect(rebuilt(master("", `/audio/${ITEM}/master.m3u8`), { mediaKind: "audio" })).toMatchObject({ ok: true, kind: "audio" });
+    expect(rebuilt(master("", `/VIDEOS/${ITEM}/master.m3u8`))).toMatchObject({ ok: true, kind: "videos" });
     // Jellyfin writes ids without dashes; a dashed or upper-case id is the same item.
-    expect(rebuilt("/videos/01234567-89AB-CDEF-0123-456789ABCDEF/master.m3u8")).toMatchObject({ ok: true });
+    expect(rebuilt(master("", "/videos/01234567-89AB-CDEF-0123-456789ABCDEF/master.m3u8"))).toMatchObject({ ok: true });
+  });
+
+  it("requires the videos path for a video source and the audio path for an audio-only one", () => {
+    expect(rebuilt(master("", `/audio/${ITEM}/master.m3u8`))).toEqual({ ok: false, detail: "media type" });
+    expect(rebuilt(master(), { mediaKind: "audio" })).toEqual({ ok: false, detail: "media type" });
   });
 
   it("accepts an absolute master URL on the server origin", () => {
-    expect(urlOf(`https://media.test/videos/${ITEM}/master.m3u8?ApiKey=k`).searchParams.has("ApiKey")).toBe(false);
+    expect(urlOf(`https://media.test/videos/${ITEM}/master.m3u8?${SOURCE}&ApiKey=k`).searchParams.has("ApiKey")).toBe(false);
   });
 
   it.each([
@@ -65,35 +76,52 @@ describe("rebuildMasterUrl", () => {
   });
 
   it.each([
-    ["the main playlist", `/videos/${ITEM}/main.m3u8`, "path"],
-    ["a segment", `/videos/${ITEM}/hls1/main/0.mp4`, "path"],
-    ["the static stream", `/Videos/${ITEM}/stream`, "path"],
-    ["the universal audio route", `/Audio/${ITEM}/universal`, "path"],
-    ["an extra segment", `/videos/${ITEM}/extra/master.m3u8`, "path"],
+    ["the main playlist", master("", `/videos/${ITEM}/main.m3u8`), "path"],
+    ["a segment", master("", `/videos/${ITEM}/hls1/main/0.mp4`), "path"],
+    ["the static stream", master("", `/Videos/${ITEM}/stream`), "path"],
+    ["the universal audio route", master("", `/Audio/${ITEM}/universal`), "path"],
+    ["an extra segment", master("", `/videos/${ITEM}/extra/master.m3u8`), "path"],
     // The URL parser removes dot segments first, so this names another item.
-    ["a dot segment that escapes the item", `/videos/${ITEM}/../ffffffffffffffffffffffffffffffff/master.m3u8`, "item"],
-    ["a dot segment that leaves the videos path", `/videos/../Items/${ITEM}/master.m3u8`, "path"],
-    ["an encoded slash in the id", `/videos/${ITEM}%2Fx/master.m3u8`, "item"],
-    ["another item", "/videos/ffffffffffffffffffffffffffffffff/master.m3u8", "item"],
+    ["a dot segment that escapes the item", master("", `/videos/${ITEM}/../ffffffffffffffffffffffffffffffff/master.m3u8`), "item"],
+    ["a dot segment that leaves the videos path", master("", `/videos/../Items/${ITEM}/master.m3u8`), "path"],
+    ["an encoded slash in the id", master("", `/videos/${ITEM}%2Fx/master.m3u8`), "item"],
+    ["another item", master("", "/videos/ffffffffffffffffffffffffffffffff/master.m3u8"), "item"],
     ["a wrong media source", `/videos/${ITEM}/master.m3u8?MediaSourceId=ffffffffffffffffffffffffffffffff`, "media source"],
+    ["no media source", `/videos/${ITEM}/master.m3u8?DeviceId=d`, "media source"],
+    ["the media source twice", master(SOURCE), "media source"],
+    ["the media source twice in another case", master(`mediasourceid=${ITEM}`), "media source"],
+    ["another play session", master("PlaySessionId=other"), "play session"],
   ])("refuses %s", (_case, transcodingUrl, detail) => {
     expect(rebuilt(transcodingUrl)).toEqual({ ok: false, detail });
+  });
+
+  it("accepts the answer's play session and a URL without one", () => {
+    expect(urlOf(master("PlaySessionId=p1")).searchParams.get("PlaySessionId")).toBe("p1");
+    expect(urlOf(master()).searchParams.has("PlaySessionId")).toBe(false);
   });
 
   it.each([
     "ApiKey", "apikey", "APIKEY", "api_key", "API_KEY", "access_token", "Access_Token", "Token", "token",
     "X-Emby-Token", "x-emby-token", "ApiToken", "AccessToken", "Api%4Bey", "%61pi_key", "X%2DEmby%2DToken",
   ])("removes the credential parameter %s", (name) => {
-    const result = rebuilt(`/videos/${ITEM}/master.m3u8?${name}=secret-key&DeviceId=d`);
+    const result = rebuilt(master(`${name}=secret-key&DeviceId=d`));
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.url).not.toContain("secret-key");
-    expect([...new URL(result.url).searchParams.keys()]).toEqual(["DeviceId", "EnableTrickplay"]);
+    expect([...new URL(result.url).searchParams.keys()]).toEqual(["MediaSourceId", "DeviceId", "EnableTrickplay"]);
   });
 
+  // A parser that trims names differently could read these as a credential.
+  it.each(["%20ApiKey", "ApiKey%20", "Api%20Key", "%09api_key", "Token%00", "+ApiKey", "Device%0AId"])(
+    "refuses the parameter name %s with whitespace or a control character",
+    (name) => {
+      expect(rebuilt(master(`${name}=T`))).toEqual({ ok: false, detail: "parameter name" });
+    },
+  );
+
   it("removes every repeat of a credential parameter", () => {
-    const url = urlOf(`/videos/${ITEM}/master.m3u8?ApiKey=a&apikey=b&ApiKey=c&api_key=d`);
-    expect(url.search).toBe("?EnableTrickplay=false");
+    const url = urlOf(master("ApiKey=a&apikey=b&ApiKey=c&api_key=d"));
+    expect(url.search).toBe(`?${SOURCE}&EnableTrickplay=false`);
   });
 
   it.each([
@@ -101,25 +129,32 @@ describe("rebuildMasterUrl", () => {
     ["true", "EnableTrickplay=true"],
     ["repeated in any case", "EnableTrickplay=true&enabletrickplay=1&ENABLETRICKPLAY=false"],
   ])("sets EnableTrickplay=false exactly once when it is %s", (_case, query) => {
-    const url = urlOf(`/videos/${ITEM}/master.m3u8?${query}`);
+    const url = urlOf(master(query));
     const values = [...url.searchParams].filter(([name]) => name.toLowerCase() === "enabletrickplay");
     expect(values).toEqual([["EnableTrickplay", "false"]]);
   });
 
-  it.each(["SubtitleMethod=Hls", "subtitlemethod=hls", "SubtitleMethod=HLS", "Subtitle%4Dethod=Hls"])("refuses %s", (query) => {
-    expect(rebuilt(`/videos/${ITEM}/master.m3u8?${query}`)).toEqual({ ok: false, detail: "HLS subtitles" });
+  it.each(["SubtitleMethod=Hls", "subtitlemethod=hls", "SubtitleMethod=HLS", "Subtitle%4Dethod=Hls", "SubtitleMethod=Hls%20", "SubtitleMethod=%20hls"])(
+    "refuses %s",
+    (query) => {
+      expect(rebuilt(master(query))).toEqual({ ok: false, detail: "HLS subtitles" });
+    },
+  );
+
+  // SubtitleDeliveryMethod also binds from its numeric value (3 is Hls).
+  it.each(["SubtitleMethod=3", "SubtitleMethod=0", "SubtitleMethod=", "SubtitleMethod=Burn"])("refuses the unknown subtitle method %s", (query) => {
+    expect(rebuilt(master(query))).toEqual({ ok: false, detail: "subtitle method" });
   });
 
-  it("keeps burned-in and external subtitle methods", () => {
-    expect(urlOf(`/videos/${ITEM}/master.m3u8?SubtitleMethod=Encode`).searchParams.get("SubtitleMethod")).toBe("Encode");
-    expect(urlOf(`/videos/${ITEM}/master.m3u8?SubtitleMethod=External`).searchParams.get("SubtitleMethod")).toBe("External");
+  it.each(["Encode", "Embed", "External", "Drop", "encode"])("keeps SubtitleMethod=%s", (method) => {
+    expect(urlOf(master(`SubtitleMethod=${method}`)).searchParams.get("SubtitleMethod")).toBe(method);
   });
 
   it("refuses subtitles in the manifest and removes a false value", () => {
     for (const query of ["EnableSubtitlesInManifest=true", "enablesubtitlesinmanifest=True", "EnableSubtitlesInManifest=1"]) {
-      expect(rebuilt(`/videos/${ITEM}/master.m3u8?${query}`)).toEqual({ ok: false, detail: "subtitles in manifest" });
+      expect(rebuilt(master(query))).toEqual({ ok: false, detail: "subtitles in manifest" });
     }
-    expect(urlOf(`/videos/${ITEM}/master.m3u8?EnableSubtitlesInManifest=false`).searchParams.has("EnableSubtitlesInManifest")).toBe(false);
+    expect(urlOf(master("EnableSubtitlesInManifest=false")).searchParams.has("EnableSubtitlesInManifest")).toBe(false);
   });
 
   it("never echoes the original URL in a refusal", () => {

@@ -32,6 +32,8 @@ export interface SourceContext {
   // The normalized signed-in server URL, without a trailing slash.
   serverUrl: string;
   itemId: string;
+  // The PlaybackInfo answer's PlaySessionId, which the TranscodingUrl must repeat.
+  playSessionId?: string;
 }
 
 // A Static=true request for a disc folder makes the server start ffmpeg, so
@@ -89,9 +91,9 @@ export function decideSource(source: MediaSourceDto, context: SourceContext): So
 
 function decideConversion(source: IdentifiedSource, transcodingUrl: string, context: SourceContext): SourceDecision {
   if (source.TranscodingSubProtocol?.toLowerCase() !== "hls") return refused("unsafe-transcoding-url", "not HLS");
-  const rebuilt = rebuildMasterUrl(transcodingUrl, { ...context, mediaSourceId: source.Id });
+  const rebuilt = rebuildMasterUrl(transcodingUrl, { ...context, mediaSourceId: source.Id, mediaKind: mediaKindOf(source) });
   if (!rebuilt.ok) return refused("unsafe-transcoding-url", rebuilt.detail);
-  const raw = (rebuilt.params.get("TranscodeReasons") ?? "").split(",").map((value) => value.trim()).filter(Boolean);
+  const raw = (param(rebuilt.params, "TranscodeReasons") ?? "").split(",").map((value) => value.trim()).filter(Boolean);
   const conversionReasons = raw.filter((value): value is ConversionReason => KNOWN_REASONS.has(value));
   const directStream = conversionReasons.length === raw.length
     && copiesEverything(source, rebuilt.kind, rebuilt.params, conversionReasons);
@@ -104,8 +106,39 @@ function decideConversion(source: IdentifiedSource, transcodingUrl: string, cont
   };
 }
 
+// Audio only for a source with audio and no sign of video; a disc folder
+// has a VideoType but no probed streams, so it stays `videos`.
+function mediaKindOf(source: MediaSourceDto): HlsMediaKind {
+  const audioOnly = !source.VideoType
+    && streamsOf(source, "Video").length === 0
+    && streamsOf(source, "Audio").length > 0;
+  return audioOnly ? "audio" : "videos";
+}
+
+// Query names are matched case-insensitively, as ASP.NET binds them.
+function param(params: URLSearchParams, name: string): string | undefined {
+  const wanted = name.toLowerCase();
+  for (const [key, value] of params) {
+    if (key.toLowerCase() === wanted) return value.trim();
+  }
+  return undefined;
+}
+
 function codecList(params: URLSearchParams, name: string): string[] {
-  return (params.get(name) ?? "").split(",").map((value) => value.trim().toLowerCase()).filter(Boolean);
+  return (param(params, name) ?? "").split(",").map((value) => value.trim().toLowerCase()).filter(Boolean);
+}
+
+function isTrue(value: string | undefined): boolean {
+  return value?.toLowerCase() === "true";
+}
+
+// A limit in the URL that the source exceeds, or that cannot be compared
+// because the source value is unknown, means the server may re-encode.
+function exceeds(limit: string | undefined, actual: number | null | undefined, slack = 0): boolean {
+  if (limit === undefined) return false;
+  const value = Number(limit);
+  if (!Number.isFinite(value)) return true;
+  return actual == null || actual > value + slack;
 }
 
 function streamsOf(source: MediaSourceDto, type: string): MediaStreamDto[] {
@@ -114,8 +147,10 @@ function streamsOf(source: MediaSourceDto, type: string): MediaStreamDto[] {
 
 // DirectStream only when the URL shows that the server copies video and
 // audio; anything uncertain is Transcode, so Fluster never claims original
-// quality it cannot show (decision 0002 "Never silent"). The rules and their
-// fixture evidence are in the plan 002 decision log (P10-03).
+// quality it cannot show (decision 0002 "Never silent"). The limits mirror
+// Jellyfin's EncodingHelper.CanStreamCopyVideo and CanStreamCopyAudio
+// (v10.11.7 lines 2317-2560), read from the URL the server will be sent. The
+// rules and their fixture evidence are in the plan 002 decision log (P10-03).
 function copiesEverything(
   source: IdentifiedSource,
   kind: HlsMediaKind,
@@ -125,23 +160,35 @@ function copiesEverything(
   // An absent TranscodeReasons (the BluRay folder on both servers) says
   // nothing about what is copied.
   if (reasons.length === 0 || !reasons.every((reason) => CONTAINER_ONLY_REASONS.has(reason))) return false;
+  if (param(params, "AllowVideoStreamCopy")?.toLowerCase() === "false") return false;
+  if (param(params, "AllowAudioStreamCopy")?.toLowerCase() === "false") return false;
   // Burned-in subtitles re-encode the video.
-  if (params.get("SubtitleMethod")?.toLowerCase() === "encode") return false;
+  if (param(params, "SubtitleMethod")?.toLowerCase() === "encode") return false;
+  if (isTrue(param(params, "AlwaysBurnInSubtitleWhenTranscoding"))) return false;
+  if (isTrue(param(params, "RequireAvc"))) return false;
 
   if (kind === "videos") {
     const [video, ...others] = streamsOf(source, "Video");
     if (!video?.Codec || others.length > 0) return false;
     if (!codecList(params, "VideoCodec").includes(video.Codec.toLowerCase())) return false;
+    if (exceeds(param(params, "VideoBitrate"), video.BitRate)) return false;
+    if (exceeds(param(params, "MaxWidth"), video.Width)) return false;
+    if (exceeds(param(params, "MaxHeight"), video.Height)) return false;
+    if (exceeds(param(params, "MaxFramerate") ?? param(params, "Framerate"), video.ReferenceFrameRate, 0.05)) return false;
   }
 
   const audioStreams = streamsOf(source, "Audio");
   if (audioStreams.length === 0) return true;
   // StreamBuilder narrows AudioCodec to the one source codec only when it
   // copies that stream; otherwise it lists the profile's codecs.
-  const audioIndex = Number(params.get("AudioStreamIndex") ?? source.DefaultAudioStreamIndex ?? Number.NaN);
-  const audioCodec = audioStreams.find((stream) => stream.Index === audioIndex)?.Codec?.toLowerCase();
+  const audioIndex = Number(param(params, "AudioStreamIndex") ?? source.DefaultAudioStreamIndex ?? Number.NaN);
+  const audio = audioStreams.find((stream) => stream.Index === audioIndex);
+  const audioCodec = audio?.Codec?.toLowerCase();
   const audioCodecs = codecList(params, "AudioCodec");
-  return Boolean(audioCodec) && audioCodecs.length === 1 && audioCodecs[0] === audioCodec;
+  if (!audio || !audioCodec || audioCodecs.length !== 1 || audioCodecs[0] !== audioCodec) return false;
+  if (exceeds(param(params, "AudioBitrate"), audio.BitRate)) return false;
+  if (exceeds(param(params, "AudioSampleRate"), audio.SampleRate)) return false;
+  return true;
 }
 
 function rank(decision: SourceDecision): number {
