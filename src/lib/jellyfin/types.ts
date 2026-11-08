@@ -42,6 +42,8 @@ export interface BaseItemDto {
   CollectionType?: string;
   PrimaryImageAspectRatio?: number | null;
   SeriesId?: string | null;
+  // "Virtual" marks an episode the library knows about but has no file for.
+  LocationType?: string | null;
   SeriesPrimaryImageTag?: string | null;
   ImageTags?: Record<string, string | null> | null;
   BackdropImageTags?: string[] | null;

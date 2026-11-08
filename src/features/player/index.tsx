@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePlayerServices, type PlayerServices } from "../../app/player-services";
 import { useSession, type SessionGateway } from "../../app/session";
 import { PlayerView } from "../../components/PlayerView";
-import type { ItemDetail } from "../../domain/catalog";
+import type { ItemDetail, NextEpisode } from "../../domain/catalog";
 import { detailKey } from "../detail/detail-key";
 import { refreshHomeRows } from "../home";
 import { itemRoute, leavePlayer, type PlayRoute } from "../routes";
@@ -11,7 +11,7 @@ import { REFUSAL_COPY, type RefusalCopy } from "./refusal-copy";
 import { toPlayableItem } from "./playable-item";
 import { useMediaSegments } from "./use-media-segments";
 import { NextEpisodeCard } from "./next-episode-card";
-import { leaveToNext, useAutoPlayCountdown, useNextEpisode } from "./use-auto-play-next";
+import { creditsStart, leaveToNext, useAutoPlayCountdown, useNextEpisode } from "./use-auto-play-next";
 import { usePlaybackSession } from "./use-playback-session";
 import { useSeekPreview } from "./use-seek-preview";
 
@@ -83,6 +83,16 @@ function PlaybackScreen({ gateway, player, route, detail }: {
   const seekProps = useSeekPreview(gateway, detail, route.mediaSourceId);
   const next = useNextEpisode(gateway, detail);
 
+  // Leaving at the credits stops short of the server's played threshold, so
+  // finishing an episode into the next one marks it played. This runs after
+  // the Stopped report. Cancel and Back do not mark anything.
+  const advanceTo = (target: NextEpisode) => {
+    leaveToNext(target);
+    void gateway.setPlayed(route.itemId, true)
+      .then(() => refreshHomeRows(queryClient))
+      .catch(() => undefined);
+  };
+
   const playback = usePlaybackSession({
     gateway,
     player,
@@ -95,7 +105,7 @@ function PlaybackScreen({ gateway, player, route, detail }: {
     },
     // A file that plays to its end goes straight to the next episode.
     onLeave: (reason) => {
-      if (reason === "eof" && next) leaveToNext(next);
+      if (reason === "eof" && next) advanceTo(next);
       else leavePlayer(route.itemId);
     },
   });
@@ -104,7 +114,9 @@ function PlaybackScreen({ gateway, player, route, detail }: {
     next,
     seriesId: detail.seriesId,
     snapshot: playback.state.snapshot,
-    outroStartSeconds: segments.find((segment) => segment.kind === "Outro")?.startSeconds,
+    outroStartSeconds: creditsStart(segments),
+    failed: Boolean(playback.state.error),
+    advance: advanceTo,
     stopAndLeave: playback.stopAndLeave,
   });
 

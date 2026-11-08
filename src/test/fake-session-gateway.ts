@@ -28,7 +28,7 @@ export function fakeSessionGateway(overrides: Partial<SessionGateway> = {}): Ses
     itemDetail: vi.fn(),
     nextEpisode: vi.fn().mockResolvedValue(undefined),
     trickplayTile: vi.fn(),
-    setPlayed: vi.fn(),
+    setPlayed: vi.fn().mockResolvedValue(undefined),
     setFavorite: vi.fn(),
     imageUrl: vi.fn(() => "https://media.test/img.webp"),
     createPlaybackPlan: vi.fn(),

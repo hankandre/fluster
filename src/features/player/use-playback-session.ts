@@ -46,15 +46,19 @@ interface ActiveSession {
   // Set once Back, close, or unmount owns teardown. A stopping session never
   // starts, and unmounting does not stop it twice.
   stopping: boolean;
-  // Where to go once stopped (Play next, Cancel). Absent means onLeave.
-  destination?: () => void;
+  // Where to go once stopped (Play next, Cancel). "back" is the viewer's own
+  // Back and wins over everything else. Absent means onLeave.
+  destination?: (() => void) | "back";
 }
 
 // Stops the session, or only marks it stopping when it never started.
 function stopSession(engine: PlayerEngine, active: ActiveSession): Promise<void> {
   active.stopping = true;
   if (!active.started) return Promise.resolve();
-  return rememberStop(engine, active.coordinator.stop());
+  // The stop includes the Stopped report (bounded by the reporter's own
+  // deadlines), so whatever waits on it, a leave or the next session, never
+  // runs ahead of it.
+  return rememberStop(engine, active.coordinator.stop().then(() => active.coordinator.flush()));
 }
 
 export interface PlaybackSessionOptions {
@@ -95,8 +99,9 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     active.stopping = true;
     // The stop itself ends the session, and that ending lands here first, so
     // the destination is kept on the session rather than passed in.
-    if (active.destination) active.destination();
-    else callbacks.current.onLeave(reason);
+    const destination = active.destination;
+    if (typeof destination === "function") destination();
+    else callbacks.current.onLeave(destination === "back" ? undefined : reason);
   }, []);
 
   const handleFailure = useCallback((error: unknown) => {
@@ -120,7 +125,12 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
       onSessionEnded: (reason: PlaybackEndReason) => {
         callbacks.current.onSessionEnded();
         // An error keeps the player open with Retry and Back.
-        if (mounted && reason !== "error") leave(reason);
+        // The Stopped report goes out before the player is left.
+        if (mounted && reason !== "error") {
+          void coordinator.flush().catch(() => undefined).then(() => {
+            if (mounted) leave(reason);
+          });
+        }
       },
     });
     const active: ActiveSession = { coordinator, started: false, stopping: false };
@@ -184,12 +194,12 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
   const stopAndLeave = useCallback(async (destination?: () => void): Promise<boolean> => {
     const active = session.current;
     if (!active) return false;
-    active.destination = destination;
+    if (active.destination !== "back") active.destination = destination ?? "back";
     try {
       await stopSession(engine, active);
     } catch (error) {
       active.stopping = false;
-      active.destination = undefined;
+      if (active.destination === (destination ?? "back")) active.destination = undefined;
       dispatch({ type: "failure", message: errorText(error) });
       return false;
     }

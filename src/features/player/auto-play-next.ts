@@ -7,7 +7,9 @@ export const DEFAULT_END_WINDOW_SECONDS = 30;
 // marks one, else DEFAULT_END_WINDOW_SECONDS before the end. Never later than
 // the full countdown before the end, so the countdown always fits.
 export function cardStartSeconds(durationSeconds: number, outroStartSeconds?: number): number {
-  const wanted = outroStartSeconds ?? durationSeconds - DEFAULT_END_WINDOW_SECONDS;
+  // An Outro that starts at zero or before the middle is bad data, not credits.
+  const credible = outroStartSeconds !== undefined && outroStartSeconds > 0 && outroStartSeconds >= durationSeconds / 2;
+  const wanted = credible ? outroStartSeconds : durationSeconds - DEFAULT_END_WINDOW_SECONDS;
   return Math.min(wanted, durationSeconds - AUTO_PLAY_SECONDS);
 }
 
