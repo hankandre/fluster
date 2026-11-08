@@ -12,6 +12,7 @@
     "test:dogfood-redaction": "bash scripts/dogfood-redaction-check.sh",
     "test:e2e": "playwright test",
     "test:visual": "playwright test -c playwright.visual.config.ts && node scripts/build-visual-index.mjs",
+    "test:no-test-engine": "bash scripts/check-no-test-engine.sh",
     "fixture:up": "docker compose -f tests/integration/docker-compose.yml up -d --wait",
     "fixture:setup": "bash tests/integration/setup-servers.sh",
     "test:tripwire": "tsx tests/integration/tripwire.ts",
@@ -22,7 +23,7 @@
     "dogfood": "bash scripts/dogfood.sh",
     "typecheck:integration": "tsc -p tsconfig.integration.json",
     "typecheck:core": "tsc -p tsconfig.core.json",
-    "check": "pnpm lint:boundaries && pnpm test:dogfood-redaction && pnpm test && pnpm build && pnpm typecheck:integration && pnpm typecheck:core && cargo test --manifest-path src-tauri/Cargo.toml"
+    "check": "pnpm lint:boundaries && pnpm test:dogfood-redaction && pnpm test && pnpm build && pnpm test:no-test-engine && pnpm typecheck:integration && pnpm typecheck:core && cargo test --manifest-path src-tauri/Cargo.toml"
   },
   "dependencies": {
     "@jellyfin/sdk": "1.0.2",
