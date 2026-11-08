@@ -166,6 +166,8 @@ async function playSample(server: ServerContext, sample: Sample, item: ItemDto):
   sessionWatcher.start(item.Id);
   let plan: PlaybackPlan | undefined;
   let hasAudio = false;
+  let confirmedAt = 0;
+  let confirmedMethod: string | undefined;
   try {
     const gateway = await server.gatewayFor(sample);
     try {
@@ -191,18 +193,14 @@ async function playSample(server: ServerContext, sample: Sample, item: ItemDto):
       if (plan.delivery === "static" && sample.expect.kind === "direct-play") {
         await playStatic(gateway, result, plan, sample.expect.externalSubtitle === true);
       } else if (plan.delivery === "hls" && sample.expect.kind === "conversion") {
-        const indicator = conversionIndicator(plan);
         result.conversion = {
+          negotiatedMethod: plan.playMethod,
           playMethod: plan.playMethod,
+          serverConfirmed: false,
           conversionReasons: [...plan.conversionReasons],
-          indicator: indicator?.chip,
           stoppedReport: "not sent",
           afterStop: [],
         };
-        for (const failure of checkConversionPlan(
-          { playMethod: plan.playMethod, conversionReasons: plan.conversionReasons, indicatorReasons: indicator?.reasons ?? [] },
-          sample.expect,
-        )) result.failures.push(failure);
         const outcome = await playConversion({
           plan,
           gateway,
@@ -213,6 +211,22 @@ async function playSample(server: ServerContext, sample: Sample, item: ItemDto):
           safeUrl,
           fail: (kind, message) => fail(result, kind, scrub(message)),
         });
+        // What the viewer sees and the reports say: the plan after the
+        // server confirmed copy or encode.
+        const shown = outcome.confirmed;
+        const indicator = conversionIndicator(shown);
+        result.conversion.playMethod = shown.playMethod;
+        result.conversion.serverConfirmed = outcome.server !== undefined;
+        result.conversion.server = outcome.server;
+        result.conversion.conversionReasons = [...shown.conversionReasons];
+        result.conversion.indicator = indicator?.chip;
+        confirmedAt = outcome.confirmedAt;
+        confirmedMethod = shown.playMethod;
+        if (!outcome.server) fail(result, "oracle", "the server never answered the play-method check within 10 s");
+        for (const failure of checkConversionPlan(
+          { playMethod: shown.playMethod, conversionReasons: shown.conversionReasons, indicatorReasons: indicator?.reasons ?? [] },
+          sample.expect,
+        )) result.failures.push(failure);
         result.conversion.stoppedReport = outcome.stoppedReport;
         result.conversion.afterStop = outcome.afterStop;
         const gone = checkJobGone(outcome.afterStop, JOB_GONE_DEADLINE_MS);
@@ -253,10 +267,11 @@ async function playSample(server: ServerContext, sample: Sample, item: ItemDto):
   }
 
   if (sample.expect.kind === "conversion") {
-    // A conversion is expected to start a job; it must match the plan and be
-    // gone after the stop (checked above).
-    if (plan?.delivery === "hls" && result.mediaRequests.length > 0) {
-      result.failures.push(...checkSessionAgreement(plan.playMethod, sessionWatcher.observations, hasAudio));
+    // A conversion is expected to start a job; /Sessions must agree with the
+    // confirmed method from the first report that carried it, and the job
+    // must be gone after the stop (checked above).
+    if (confirmedMethod && result.mediaRequests.length > 0) {
+      result.failures.push(...checkSessionAgreement(confirmedMethod, sessionWatcher.observations, hasAudio, confirmedAt));
     }
   } else {
     // Direct play and refusals: no job signal at all.

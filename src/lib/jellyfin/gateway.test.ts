@@ -668,6 +668,54 @@ describe("JellyfinGateway device identity and logout", () => {
     expect(transport.requests).toEqual([]);
   });
 
+  it("asks /Sessions for this device's session and reads the conversion it runs", async () => {
+    const { gateway, transport, deviceId } = await loginWith("install-1", "server-1", "Louise");
+    transport.responses.set("GET /Sessions", [
+      { DeviceId: "other-device", NowPlayingItem: { Id: "item-1" }, PlayState: { MediaSourceId: "source-1", PlayMethod: "Transcode" }, TranscodingInfo: { IsVideoDirect: false, IsAudioDirect: false } },
+      {
+        DeviceId: deviceId,
+        NowPlayingItem: { Id: "item-1" },
+        PlayState: { MediaSourceId: "source-1", PlayMethod: "Transcode" },
+        TranscodingInfo: { IsVideoDirect: true, IsAudioDirect: true, TranscodeReasons: ["DirectPlayError", "SomethingNew"] },
+      },
+    ]);
+    const controller = new AbortController();
+    await expect(gateway.sessionPlayMethod({ itemId: "item-1", mediaSourceId: "source-1" }, controller.signal)).resolves.toEqual({
+      playMethod: "Transcode",
+      videoDirect: true,
+      audioDirect: true,
+      reasons: ["DirectPlayError"],
+    });
+    const request = transport.requests.at(-1)!;
+    expect(request.method).toBe("GET");
+    expect(request.url).toBe("/Sessions");
+    // Only the device id: the play-session id never leaves Fluster here.
+    expect(request.params).toEqual({ deviceId });
+    expect(JSON.stringify(request)).not.toContain("play-1");
+    expect(request.signal).toBe(controller.signal);
+    expect(request.timeout).toBe(REPORT_REQUEST_TIMEOUT_MS);
+  });
+
+  it("answers undefined until the matching session has TranscodingInfo", async () => {
+    const { gateway, transport, deviceId } = await loginWith("install-1", "server-1", "Louise");
+    const playing = { itemId: "item-1", mediaSourceId: "source-1" };
+    transport.responses.set("GET /Sessions", [{ DeviceId: deviceId, NowPlayingItem: { Id: "item-1" }, PlayState: { MediaSourceId: "source-1", PlayMethod: "Transcode" } }]);
+    await expect(gateway.sessionPlayMethod(playing)).resolves.toBeUndefined();
+    transport.responses.set("GET /Sessions", [{ DeviceId: deviceId, NowPlayingItem: { Id: "item-2" }, PlayState: { MediaSourceId: "source-1" }, TranscodingInfo: { IsVideoDirect: true, IsAudioDirect: true } }]);
+    await expect(gateway.sessionPlayMethod(playing)).resolves.toBeUndefined();
+    transport.responses.set("GET /Sessions", [{ DeviceId: deviceId, NowPlayingItem: { Id: "item-1" }, PlayState: { MediaSourceId: "source-2" }, TranscodingInfo: { IsVideoDirect: true, IsAudioDirect: true } }]);
+    await expect(gateway.sessionPlayMethod(playing)).resolves.toBeUndefined();
+    transport.responses.set("GET /Sessions", [{ DeviceId: deviceId, NowPlayingItem: { Id: "ITEM1" }, PlayState: { MediaSourceId: "SOURCE-1" }, TranscodingInfo: {} }]);
+    await expect(gateway.sessionPlayMethod({ itemId: "item-1", mediaSourceId: "source-1" })).resolves.toEqual({ videoDirect: false, audioDirect: false, reasons: [] });
+  });
+
+  it("refuses to read sessions before sign-in", async () => {
+    const transport = new FakeTransport();
+    const gateway = new JellyfinGateway("https://media.test", transport, "install-1");
+    await expect(gateway.sessionPlayMethod({ itemId: "i", mediaSourceId: "m" })).rejects.toThrow("Sign in");
+    expect(transport.requests).toEqual([]);
+  });
+
   it("sends Failed on stopped reports only when requested", async () => {
     const { gateway, transport } = await authenticatedGateway();
     const plan: PlaybackPlan = { itemId: "i", mediaSourceId: "m", playSessionId: "p", startPositionTicks: 0, streamUrl: "", authorization: "", title: "t", tracks: [], delivery: "static", playMethod: "DirectPlay", conversionReasons: [] };

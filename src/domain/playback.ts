@@ -162,6 +162,16 @@ export type PlaybackDelivery =
 
 export type PlaybackPlan = PlaybackPlanBase & PlaybackDelivery;
 
+// What the server's own session reports for a running conversion
+// (GET /Sessions: PlayState.PlayMethod and TranscodingInfo). `videoDirect`
+// and `audioDirect` are true when the server copies that stream.
+export interface ServerPlayMethod {
+  playMethod?: PlayMethod;
+  videoDirect: boolean;
+  audioDirect: boolean;
+  reasons: readonly ConversionReason[];
+}
+
 export interface PlaybackPlanBase {
   itemId: string;
   title: string;

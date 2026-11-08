@@ -51,20 +51,23 @@ export class PlaystateReporter {
 
   /**
    * Report the start once per attempt and begin periodic progress reports.
-   * `currentSnapshot` is read on every progress tick.
+   * `currentSnapshot` and `currentPlan` are read on every progress tick, so
+   * a play method the server confirmed later is what the ticks report.
    */
   start(
     plan: PlaybackPlan,
     snapshot: PlaybackSnapshot,
     currentSnapshot: () => PlaybackSnapshot | undefined,
+    currentPlan: () => PlaybackPlan | undefined = () => plan,
   ): void {
     if (this.started) return;
     this.started = true;
     this.queueReport((signal) => this.gateway.reportStart(plan, snapshot, signal));
     this.progressTimer = setInterval(() => {
       const latest = currentSnapshot();
+      const latestPlan = currentPlan() ?? plan;
       if (latest && this.started) {
-        this.queueReport((signal) => this.gateway.reportProgress(plan, latest, signal));
+        this.queueReport((signal) => this.gateway.reportProgress(latestPlan, latest, signal));
       }
     }, PROGRESS_INTERVAL_MS);
   }

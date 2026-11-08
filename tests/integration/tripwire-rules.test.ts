@@ -281,8 +281,8 @@ describe("checkSessionAgreement", () => {
     expect(checkSessionAgreement("Transcode", [{ playMethod: "Transcode", transcoding: { isVideoDirect: true, isAudioDirect: false } }], true)).toEqual([]);
   });
 
-  it("ignores polls before the job and needs audio only when the source has audio", () => {
-    expect(checkSessionAgreement("DirectStream", [{ playMethod: "DirectPlay" }, copied], true)).toEqual([]);
+  it("ignores polls before the confirmed report and needs audio only when the source has audio", () => {
+    expect(checkSessionAgreement("DirectStream", [{ at: 1, playMethod: "DirectPlay" }, { ...copied, at: 2 }], true, 2)).toEqual([]);
     expect(checkSessionAgreement("DirectStream", [{ playMethod: "DirectStream", transcoding: { isVideoDirect: true } }], false)).toEqual([]);
   });
 
@@ -298,6 +298,20 @@ describe("checkSessionAgreement", () => {
 
   it("fails a PlayMethod that differs from the plan", () => {
     expect(checkSessionAgreement("Transcode", [{ ...encoded, playMethod: "DirectPlay" }], true)).toEqual(["method: /Sessions PlayMethod DirectPlay, plan Transcode"]);
+  });
+
+  it("reads PlayMethod only after the confirmed method was reported, and TranscodingInfo from any poll", () => {
+    // Before confirmation the session shows the negotiated Transcode with the
+    // job; a DirectStream report then makes the server drop TranscodingInfo.
+    const observations = [
+      { at: 1000, playMethod: "Transcode", transcoding: { isVideoDirect: true, isAudioDirect: true } },
+      { at: 5000, playMethod: "DirectStream" },
+    ];
+    expect(checkSessionAgreement("DirectStream", observations, true, 5000)).toEqual([]);
+    expect(checkSessionAgreement("DirectStream", observations, true)).toEqual(["method: /Sessions PlayMethod Transcode, plan DirectStream"]);
+    expect(checkSessionAgreement("DirectStream", observations, true, 6000)).toEqual(["oracle: /Sessions never showed this playback after the confirmed method was reported"]);
+    // A confirmed method that was never reported fails too.
+    expect(checkSessionAgreement("DirectStream", [observations[0], { at: 5000, playMethod: "Transcode" }], true, 5000)).toEqual(["method: /Sessions PlayMethod Transcode, plan DirectStream"]);
   });
 
   it("is blind without TranscodingInfo", () => {

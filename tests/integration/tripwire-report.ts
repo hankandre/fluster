@@ -1,4 +1,5 @@
 // Result types, redaction, and the summary table for the tripwire (tripwire.ts).
+import type { ServerPlayMethod } from "../../src/domain/playback";
 import { redactText } from "../../src/lib/redact";
 import type { AfterStopObservation, Expectation, FailureKind, SampleStatus } from "./tripwire-rules";
 
@@ -13,7 +14,12 @@ export interface MediaRequestLog {
 }
 
 export interface ConversionResult {
+  // The label PlaybackInfo's URL gave, before the server check.
+  negotiatedMethod: string;
+  // The label the app shows and reports after the server check.
   playMethod: string;
+  serverConfirmed: boolean;
+  server?: ServerPlayMethod;
   conversionReasons: string[];
   indicator?: string;
   stoppedReport: string;
@@ -100,7 +106,7 @@ function sampleDetail(sample: SampleResult): string {
       const conversion = sample.conversion!;
       const reasons = conversion.conversionReasons.join(",") || "none";
       const gone = conversion.jobGoneAfterMs === undefined ? "?" : `${(conversion.jobGoneAfterMs / 1000).toFixed(1)} s`;
-      return `${conversion.playMethod} (reasons ${reasons}), /Sessions ${sample.sessions.ourPlayMethods.join("/")}, job gone ${gone} after stop`;
+      return `${conversion.negotiatedMethod} -> ${conversion.playMethod} (reasons ${reasons}), /Sessions ${sample.sessions.ourPlayMethods.join("/")}, job gone ${gone} after stop`;
     }
   }
 }
