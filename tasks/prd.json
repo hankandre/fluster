@@ -1183,10 +1183,10 @@
             "docs/security.md replaces its planned HLS section with the tested boundary"
           ],
           "verify": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings && cargo test --manifest-path src-tauri/Cargo.toml",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "native-engineer",
+          "passes": true,
+          "evidence": "Typed delivery (static|hls with serverUrl, mediaKind) on the launch plan; no new command, allowlist unchanged. LaunchMedia (player/media.rs) prepares before any handle and is the only loader (source-scan test); Rust master_url.rs mirrors the TS rules incl. base path, MediaSourceId, PlaySessionId, SubtitleMethod, unsafe names; 44 TS-built plans in tests/fixtures/hls-master-urls.json pass Rust and 8 mutations each are refused.\nTests: static_launches_keep_access_references_off; hls_launch_with_a_cross_origin_playlist_is_refused_and_contacts_nobody_else; hls_launch_sends_the_header_on_every_request_and_never_follows_a_segment_redirect; redaction_canary_in_a_playlist_body_fails_the_launch_closed, redaction_canary_the_converted_path_never_prints.\nLive: live_fixture_transcode_plan_reaches_playback_restart passed on 10.11.7 and 12.4.0 (gateway ISO Transcode plan, 1280-wide H.264, file-format hls); BluRay folder fails server-side (live.m3u8 HTTP 500), logged in plan 002.\ncargo fmt --check, clippy -D warnings clean; cargo test and --release 167 passed, 6 ignored; cargo test hls 40 passed; pnpm check exit 0 (899 Vitest); pnpm test:e2e 29 passed. docs/security.md HLS section is now the tested boundary."
         },
         {
           "id": "P10-05",
