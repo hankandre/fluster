@@ -108,7 +108,7 @@ async function mockServer(page: Page): Promise<ServerLog> {
         log.nextLookups.push(url.searchParams.get("adjacentTo") ?? "");
         return json({ Items: [episode("ep-1", "Pilot", 1), episode("ep-2", "Second", 2)] });
       case "/Shows/series-1/Seasons":
-        return json({ Items: [] });
+        return json({ Items: [{ Id: "season-1", Name: "Season 1", Type: "Season", IndexNumber: 1 }] });
       default:
         return route.fulfill({ status: 404, headers: cors });
     }
@@ -155,6 +155,7 @@ test("Cancel stops the episode and returns to the series", async ({ page }) => {
   await page.getByLabel("Up next").getByRole("button", { name: "Cancel" }).click();
 
   await expect(page).toHaveURL(/#\/next\/series\/series-1$/);
+  await expect(page.getByRole("button", { name: "Season 1" })).toBeVisible();
   await expect(page.locator("video")).toHaveCount(0);
   await expect.poll(() => log.stopped.length).toBe(1);
   expect(log.stopped[0]).toMatchObject({ PlaySessionId: "play-ep-1-1" });

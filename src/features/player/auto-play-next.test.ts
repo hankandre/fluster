@@ -3,32 +3,40 @@ import {
   AUTO_PLAY_SECONDS,
   DEFAULT_END_WINDOW_SECONDS,
   autoPlayReducer,
-  endWindowSeconds,
+  cardStartSeconds,
   inEndWindow,
   type AutoPlayState,
 } from "./auto-play-next";
 
-describe("endWindowSeconds", () => {
-  it("is 30 seconds without credits data", () => {
-    expect(endWindowSeconds()).toBe(DEFAULT_END_WINDOW_SECONDS);
+describe("cardStartSeconds", () => {
+  it("is 30 seconds before the end without credits", () => {
+    expect(cardStartSeconds(1200)).toBe(1200 - DEFAULT_END_WINDOW_SECONDS);
   });
 
-  it("is the longer of the credits length and 30 seconds", () => {
-    expect(endWindowSeconds(90)).toBe(90);
-    expect(endWindowSeconds(12)).toBe(30);
+  it("is the start of the Outro when there is one", () => {
+    expect(cardStartSeconds(1200, 1100)).toBe(1100);
+  });
+
+  it("is never later than the full countdown before the end", () => {
+    expect(cardStartSeconds(1200, 1195)).toBe(1200 - AUTO_PLAY_SECONDS);
   });
 });
 
 describe("inEndWindow", () => {
-  it("is true once the time left is within the window", () => {
-    expect(inEndWindow(1170, 1200, 30)).toBe(true);
-    expect(inEndWindow(1169.9, 1200, 30)).toBe(false);
+  it("is true from 30 seconds before the end without credits", () => {
+    expect(inEndWindow(1170, 1200)).toBe(true);
+    expect(inEndWindow(1169.9, 1200)).toBe(false);
+  });
+
+  it("starts at the Outro when one is marked", () => {
+    expect(inEndWindow(1099, 1200, 1100)).toBe(false);
+    expect(inEndWindow(1100, 1200, 1100)).toBe(true);
   });
 
   it("is false when the duration or position is not known", () => {
-    expect(inEndWindow(0, 0, 30)).toBe(false);
-    expect(inEndWindow(Number.NaN, 1200, 30)).toBe(false);
-    expect(inEndWindow(5, undefined, 30)).toBe(false);
+    expect(inEndWindow(0, 0)).toBe(false);
+    expect(inEndWindow(Number.NaN, 1200)).toBe(false);
+    expect(inEndWindow(5, undefined)).toBe(false);
   });
 });
 

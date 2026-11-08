@@ -55,7 +55,11 @@ function snapshotAt(positionSeconds: number): PlaybackSnapshot {
   };
 }
 
-function fakeGateway(details: ItemDetail[], next: NextEpisode | undefined): SessionGateway {
+function fakeGateway(
+  details: ItemDetail[],
+  next: NextEpisode | undefined,
+  overrides: Partial<SessionGateway> = {},
+): SessionGateway {
   const sessions = new Map<string, number>();
   return fakeSessionGateway({
     itemDetail: vi.fn(async (id: string) => details.find((detail) => detail.id === id)!),
@@ -65,6 +69,7 @@ function fakeGateway(details: ItemDetail[], next: NextEpisode | undefined): Sess
       sessions.set(item.id, count);
       return plan(item.id, `play-${item.id}-${count}`);
     }),
+    ...overrides,
   });
 }
 
@@ -146,6 +151,22 @@ describe("Auto-play the next episode", () => {
 
     await moveTo(engine, 600);
     expect(screen.queryByLabelText("Up next")).not.toBeInTheDocument();
+  });
+
+  it("starts at the Outro when the server marks credits", async () => {
+    const gateway = fakeGateway([episode("e1", "Pilot")], second, {
+      createPlaybackPlan: vi.fn(async (item: LibraryItem) => ({ ...plan(item.id, "play-e1-1"), hasSegments: true })),
+      mediaSegments: vi.fn().mockResolvedValue([{ kind: "Outro", startSeconds: 1000, endSeconds: 1200 }]),
+    });
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await loadedAt(engine, 500);
+    await waitFor(() => expect(gateway.mediaSegments).toHaveBeenCalled());
+    await act(async () => undefined);
+    expect(screen.queryByLabelText("Up next")).not.toBeInTheDocument();
+
+    await moveTo(engine, 1000);
+    expect(await screen.findByLabelText("Up next")).toBeInTheDocument();
   });
 
   it("Play now stops this session and negotiates a fresh one for the next episode", async () => {

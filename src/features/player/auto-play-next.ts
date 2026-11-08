@@ -3,20 +3,22 @@
 export const AUTO_PLAY_SECONDS = 10;
 export const DEFAULT_END_WINDOW_SECONDS = 30;
 
-// How close to the end the card appears. When the server marks credits (an
-// Outro segment), pass how long they last; never less than the default.
-export function endWindowSeconds(creditsSeconds?: number): number {
-  return Math.max(DEFAULT_END_WINDOW_SECONDS, creditsSeconds ?? 0);
+// Where the card appears: at the start of the Outro (credits) when the server
+// marks one, else DEFAULT_END_WINDOW_SECONDS before the end. Never later than
+// the full countdown before the end, so the countdown always fits.
+export function cardStartSeconds(durationSeconds: number, outroStartSeconds?: number): number {
+  const wanted = outroStartSeconds ?? durationSeconds - DEFAULT_END_WINDOW_SECONDS;
+  return Math.min(wanted, durationSeconds - AUTO_PLAY_SECONDS);
 }
 
 export function inEndWindow(
   positionSeconds: number,
   durationSeconds: number | undefined,
-  windowSeconds: number,
+  outroStartSeconds?: number,
 ): boolean {
   if (durationSeconds === undefined || !Number.isFinite(durationSeconds) || durationSeconds <= 0) return false;
   if (!Number.isFinite(positionSeconds)) return false;
-  return durationSeconds - positionSeconds <= windowSeconds;
+  return positionSeconds >= cardStartSeconds(durationSeconds, outroStartSeconds);
 }
 
 // secondsLeft is undefined while the card is hidden.

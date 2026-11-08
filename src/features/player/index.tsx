@@ -99,14 +99,14 @@ function PlaybackScreen({ gateway, player, route, detail }: {
       else leavePlayer(route.itemId);
     },
   });
+  const segments = useMediaSegments(gateway, route.itemId, playback.plan);
   const upNext = useAutoPlayCountdown({
     next,
     seriesId: detail.seriesId,
     snapshot: playback.state.snapshot,
+    outroStartSeconds: segments.find((segment) => segment.kind === "Outro")?.startSeconds,
     stopAndLeave: playback.stopAndLeave,
   });
-
-  const segments = useMediaSegments(gateway, route.itemId, playback.plan);
 
   if (playback.refusal) {
     return (
