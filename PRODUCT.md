@@ -57,7 +57,7 @@ Jellyfin 10.11.x and 12.x with default settings. Jellyfin 12 disables legacy que
 - **Transcode** (the server re-encodes, for example a remote bitrate limit): "Converting on server: {reason}", naming what is converted (video, audio, or burned-in subtitles). If the user's own streaming limit is the only reason, the indicator offers "Play original".
 - **Refusal** (nothing can be played or converted): Fluster stops before playback and explains why in plain language, for example the admin turned off conversion for this user, or the item is a live channel. Retry and Back are always available.
 
-A streaming-limit setting holds a local and a remote maximum bitrate. Local means the server address is on this device or the home network.
+A streaming-limit setting holds a local and a remote maximum bitrate; both default to no limit (the server's own remote limit still applies). Local means the server address is on this device or the home network.
 
 ## Roadmap
 
@@ -140,6 +140,5 @@ M0, M1, M1b, then M6's shell spike in parallel with M2, then M7, M3, M4, M5. Mil
 ## Open product questions
 
 - **Persistent login.** Session-only tokens are safe but annoying daily. Proposal: opt-in keyring storage in M1. Needs a decision record.
-- **Remote (off-LAN) defaults.** Decision 0002 adds a streaming limit. Should the remote default be "no limit" (original first, server limits still apply) or a fixed value such as 20 Mbps?
 - **Multiple servers and users.** One server and one user per session is simpler. Do households need quick user switching in M1 or later?
 - **Live TV.** Still out of scope. Needs a decision record before `RequiresOpening` sources are played.

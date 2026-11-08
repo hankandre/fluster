@@ -6,9 +6,9 @@ Make Fluster a full replacement for other Jellyfin clients: keep playing the ori
 
 Tasks: P10-01 to P10-12 (playback parity), P11-01 to P11-07 (music), P12-01 and P12-02 (early TV/mobile shell) in `tasks/prd.json`.
 
-- [ ] The user approved exceptions E1 (or chose E1-B) and E2, and answered the open questions below
+- [x] The user chose E1-B, accepted E2 with a canary test, set both streaming-limit defaults to no limit, and approved the order and acceptance changes (2026-11-07)
 - [ ] `pnpm test:tripwire` passes the decision 0002 rules on 10.11.7 and 12.4.0: every playable sample direct plays with no server job; the BluRay folder and a forced-limit sample convert over same-origin, credential-free HLS with the indicator reason; no job survives 10 s after stop; `/Sessions` play method matches the plan
-- [ ] Loopback Rust tests show the `Authorization` header on every HLS master, variant, segment, and subtitle request, nothing sent to a second origin, and no token canary in logs, errors, or events
+- [ ] Loopback Rust tests show the `Authorization` header on every HLS master, variant, segment, and subtitle request; a playlist with a cross-origin or credential-bearing URI, or a credential parameter anywhere in its body, is refused before mpv reads it; nothing reaches a second origin; and no token canary reaches logs, errors, events, or the UI
 - [ ] A Transcode plan plays, seeks, pauses, and stops in `pnpm tauri dev` on Hankflix with the indicator visible and no job left on the server (P10-12)
 - [ ] A music album plays as a gapless queue with playstate reported (P11-05, P11-06)
 - [ ] The Android TV shell decision is recorded and P9-01 can start (P12-02)
@@ -27,11 +27,11 @@ Until P10-03 and P10-04 land, the code keeps enforcing the old direct-play-only 
 
 Phase P10, playback parity (M1b). Native and mpv work stays serial: P10-01, then P10-04, then P11-05.
 
-1. **HLS auth spike (P10-01).** Loopback libmpv tests for HLS with the header on master, variant, and fMP4 segments; redirect and cross-origin URI behavior; whether `max_redirects` and `protocol_whitelist` reach nested opens; a rebuilt, key-free `master.m3u8` played to first frame on both fixtures. Prototype enough of E1-B (Rust-validated playlists) to estimate it. Records a recommendation for the user. Validation: `cargo test --manifest-path src-tauri/Cargo.toml hls`. Model: Opus (`native-engineer`).
+1. **HLS auth spike (P10-01).** Prototype E1-B: Rust fetches and validates the master and variant playlists (every URI same-origin and credential-free, fail closed on a credential parameter in the body) and serves validated copies to libmpv from a `127.0.0.1` loopback server. Loopback tests for the header on every server request, a cross-origin URI in a playlist being refused, redirect behavior, and whether `max_redirects` and `protocol_whitelist` reach nested opens; a rebuilt, key-free `master.m3u8` played to first frame on both fixtures. Decide whether mpv fetches segments directly with the header or Rust proxies them, and record the evidence. Validation: `cargo test --manifest-path src-tauri/Cargo.toml hls`. Model: Opus (`native-engineer`).
 2. **Conversion contract fixtures (P10-02).** Record PlaybackInfo with the fallback profile for every sample at no limit, one sample under a forced limit, the BluRay folder, a user with transcoding disabled, a dvdsub sample, and an ISO sample if one can be generated. Tokens are replaced before commit. Validation: `pnpm test -- fixtures`. Model: Sonnet (`implementer`).
 3. **Negotiation with fallback (P10-03).** `decideSource`, the new profile, flags in body and query, the forced-fallback re-request, HLS URL rebuilding, `playMethod` and reasons on the plan, new refusal reasons. Validation: `pnpm test -- source-acceptance device-profile gateway fixtures`. Model: Opus.
-4. **mpv HLS playback with header auth (P10-04).** Typed `delivery` field, Rust HLS URL validation, the approved E1 or E1-B path, loopback and canary tests, final `docs/security.md` text. Validation: `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings && cargo test --manifest-path src-tauri/Cargo.toml`. Model: Opus (`native-engineer`).
-5. **Streaming limit setting (P10-05).** Local and remote maximum bitrate, sent as `MaxStreamingBitrate`; "Play original" for the session when the user's limit is the only reason. Validation: `pnpm check && pnpm test:e2e`. Model: Sonnet.
+4. **mpv HLS playback with header auth (P10-04).** Typed `delivery` field, Rust HLS URL validation, E1-B playlist validation and loopback serving, cross-origin playlist and canary tests, final `docs/security.md` text. Validation: `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings && cargo test --manifest-path src-tauri/Cargo.toml`. Model: Opus (`native-engineer`).
+5. **Streaming limit setting (P10-05).** Local and remote maximum bitrate (both default to no limit), sent as `MaxStreamingBitrate`; "Play original" for the session when the user's limit is the only reason. Validation: `pnpm check && pnpm test:e2e`. Model: Sonnet.
 6. **Indicator and PlayMethod reporting (P10-06).** "Converting on server: {reason}", "Repackaging on server, original quality: {reason}", burned-in subtitles, information panel, reports carry the plan's method. Validation: `pnpm check && pnpm test:e2e`. Model: Sonnet.
 7. **Stop server conversions (P10-07).** `DELETE /Videos/ActiveEncodings` before a new play session for the same item and after a failed stopped report; ping while paused if the fixture shows it is needed. Validation: `pnpm test -- coordinator playstate-reporter gateway`. Model: Opus (coordinator concurrency).
 8. **Track and quality changes while converting (P10-08).** Renegotiate at the current position for tracks the conversion lacks and for a limit change. Validation: `pnpm check && pnpm test:e2e`. Model: Opus.
@@ -90,9 +90,9 @@ Pilot: milestones 1 and 3 are the pilot for the conversion path. Review both (gu
 
 Every refusal still offers Retry and Back. "Play original" is offered only when the user's own streaming limit is the only reason; it is never offered when the server says direct play is not allowed, because the anonymous static route (ARCHITECTURE.md §3) would let Fluster bypass an admin's limit.
 
-## Acceptance changes needing human approval
+## Acceptance changes (approved by the user on 2026-11-07)
 
-The rules forbid editing existing tasks' acceptance or `depends_on` without approval. These conflict with decision 0002; proposed wording follows.
+The rules forbid editing existing tasks' acceptance or `depends_on` without approval. These conflicted with decision 0002. The user approved them as proposed on 2026-11-07, and they are applied in `tasks/prd.json`. P1-03 took the "never direct played" wording; P3-09 is unchanged.
 
 | Task or phase | Field | Current | Proposed |
 |---|---|---|---|
@@ -111,14 +111,12 @@ No other open task conflicts: P1-08, P1-09 ("The server dashboard shows Direct P
 
 ## Open questions for the human
 
-1. **E1:** accept `access-references` on for typed HLS sessions only (residual risk: a compromised server or rewriting proxy could list a cross-origin URI that receives the header), or require E1-B (Rust validates every playlist first, more native code)? P10-01 brings evidence for both.
-2. **E2:** accept that a server ignoring `EnableTrickplay=false` would put the token in a playlist body mpv parses but Fluster never logs?
-3. **Remote default limit:** no limit (original first; the server's own remote limit still applies) or a fixed value such as 20 Mbps? Local stays unlimited.
-4. **PlayMethod for stream-copy HLS:** report `DirectStream` (accurate) or `Transcode` (what the server's own `StreamInfo` says, `MediaInfoHelper.cs` v10.11.7 line 312)? The plan assumes `DirectStream` and checks the dashboard in P10-12.
-5. **Phase order:** P10 before the P4 dogfood week (proposed), and P12 in parallel with P10?
-6. **Live TV:** write its decision record after P10 (parity) or after Music?
-7. **Apple TV and iOS:** after Android TV and phones (proposed), or alongside?
-8. **ISO:** if the server cannot convert the ISO sample, keep `iso-source` as a refusal, or add an mpv-side ISO spike?
+1. **PlayMethod for stream-copy HLS:** report `DirectStream` (accurate) or `Transcode` (what the server's own `StreamInfo` says, `MediaInfoHelper.cs` v10.11.7 line 312)? The plan assumes `DirectStream` and checks the dashboard in P10-12.
+2. **Live TV:** write its decision record after P10 (parity) or after Music?
+3. **Apple TV and iOS:** after Android TV and phones (proposed), or alongside?
+4. **ISO:** if the server cannot convert the ISO sample, keep `iso-source` as a refusal, or add an mpv-side ISO spike?
+
+Answered on 2026-11-07: E1 versus E1-B, E2, the remote default limit, and the phase order (see the decision log).
 
 ## Decision log
 
@@ -128,13 +126,25 @@ No other open task conflicts: P1-08, P1-09 ("The server dashboard shows Direct P
 - 2026-11-07: No new Tauri command for HLS; a typed `delivery` field on the load request selects it.
 - 2026-11-07: The browser development engine does not play HLS and gets no hls.js dependency.
 - 2026-11-07: Disc folders and ISOs never direct play, even if the server offers it; Fluster re-requests with `EnableDirectPlay: false`.
+- 2026-11-07: E1 (trust server playlists with `access-references` on) rejected; E1-B adopted: Rust fetches and validates every HLS playlist (master and variant) before mpv reads it; every variant, segment, media, key, and map URI must resolve same-origin and credential-free, or the playlist is rejected. Approved by the user on 2026-11-07.
+- 2026-11-07: E2 accepted with a canary test (P10-04: a token in a playlist body never reaches logs, errors, or the UI). Defence in depth: Rust rejects a playlist body containing `ApiKey`, `api_key`, `access_token`, `Token`, or `X-Emby-Token` parameters and fails closed. Approved by the user on 2026-11-07.
+- 2026-11-07: Streaming limit defaults are no limit for both local and remote; the server's own remote limit still applies. Approved by the user on 2026-11-07.
+- 2026-11-07: Phase order P10 and P12 before the P4 dogfood week, P11 after it, P12 in parallel with P10. Approved by the user on 2026-11-07.
+- 2026-11-07: P0-04 acceptance 2 and 3 reworded for decision 0002. Approved by the user on 2026-11-07.
+- 2026-11-07: P1 phase goal reworded to "never converts a file Fluster can play as stored". Approved by the user on 2026-11-07.
+- 2026-11-07: P1-03 acceptance 2 reworded to "never direct played". Approved by the user on 2026-11-07.
+- 2026-11-07: P4 exit 2 reworded to cover only files Fluster could play as stored. Approved by the user on 2026-11-07.
+- 2026-11-07: P4-01 acceptance 2 reworded and `P10-12` added to its `depends_on`. Approved by the user on 2026-11-07.
+- 2026-11-07: P9-01 `depends_on` changed to `["P2-02", "P12-02"]` and acceptance 2 extended to a converted sample over HLS with header authentication. Approved by the user on 2026-11-07.
 - 2026-11-07: New phases are P10 (parity), P11 (music), P12 (early shell). In `tasks/prd.json` they sit after P3, before P4 (P10, P12) and after P4 (P11), so the "first todo task" rule picks them in the intended order. Phase ids are names, not order.
 
 ## Risks
 
 | Risk | Mitigation |
 |---|---|
-| HLS needs `access-references` on, which widens what the mpv handle opens | Only typed HLS sessions; Rust URL validation; redirect and cross-origin loopback tests; E1-B as the stronger option |
+| HLS needs `access-references` on, which widens what the mpv handle opens | Only typed HLS sessions; E1-B: mpv reads only playlists Rust validated (same-origin, credential-free, fail closed on credential names); redirect and cross-origin loopback tests |
+| The Rust playlist validator misses a URI form (a new tag, an unusual attribute) | Validate every `URI=` attribute and URI line generically, not by tag allowlist; reject unparsable playlists; fixture playlists from both servers in tests |
+| The loopback playlist server is reachable by other local processes | Bind `127.0.0.1` only, random per-session path, serve only validated playlists (no token), close with the session |
 | `max_redirects=0` or the header does not reach nested opens in some FFmpeg build | P10-01 loopback tests on the bundled FFmpeg; the AppImage FFmpeg must pass them (release gate) |
 | DirectStream vs Transcode classified wrongly from the URL | Tripwire compares with `/Sessions` `TranscodingInfo`; the indicator falls back to "Converting on server" when unsure |
 | A conversion keeps running after the user leaves | Stopped report kills jobs; `DELETE /Videos/ActiveEncodings` on new sessions and failed stops; tripwire checks no job after 10 s |
