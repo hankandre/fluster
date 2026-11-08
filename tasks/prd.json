@@ -1156,10 +1156,10 @@
             "PlaybackPlan carries the play method and conversion reasons; RefusalReason gains conversion-not-allowed and unsafe-transcoding-url"
           ],
           "verify": "pnpm test -- source-acceptance device-profile gateway fixtures",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "opus",
+          "passes": true,
+          "evidence": "decideSource (source-acceptance.ts) returns DirectPlay, DirectStream, Transcode, a one-time forced fallback (EnableDirectPlay false) for a disc or ISO offered for direct play, or a typed refusal (new conversion-not-allowed, unsafe-transcoding-url); hls-url.ts rebuilds TranscodingUrl (same origin, exact master.m3u8 path, credentials stripped, EnableTrickplay=false, SubtitleMethod=Hls refused); plan carries delivery, playMethod, conversionReasons; both engines refuse hls plans until P10-04.\nFixtures (conversion-negotiation.test.ts, both servers): 12 no-limit samples DirectPlay with one request; ISO re-requested once then Transcode; BluRay and limited H.264 Transcode; restricted user conversion-not-allowed. Classification rules and evidence in plan 002 decision log.\npnpm check exit 0 (829 Vitest tests, lint:boundaries no violations, build, typecheck:integration, typecheck:core, cargo test 135 passed); pnpm test:e2e 28 passed. Tripwire not run (needs fixture servers; bridged for BluRay, P10-09)."
         },
         {
           "id": "P10-04",
