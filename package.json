@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "test:dogfood-redaction": "bash scripts/dogfood-redaction-check.sh",
     "test:e2e": "playwright test",
+    "test:visual": "playwright test -c playwright.visual.config.ts && node scripts/build-visual-index.mjs",
     "fixture:up": "docker compose -f tests/integration/docker-compose.yml up -d --wait",
     "fixture:setup": "bash tests/integration/setup-servers.sh",
     "test:tripwire": "tsx tests/integration/tripwire.ts",

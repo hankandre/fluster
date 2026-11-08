@@ -81,6 +81,8 @@ pnpm test:e2e
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 ```
 
+For visible UI changes also run `pnpm test:visual`. It writes screenshots to `test-results/visual/<width>x<height>/` and a contact sheet at `test-results/visual/index.html`; attach the affected captures to the PR. It is output only and not part of `pnpm check` or CI.
+
 The PR or plan records the commands run and their results. "Tests pass" without output is not evidence. User-visible changes are checked by driving the app (Playwright in browser mode, or the native harness), not only by unit tests.
 
 ### 6. Independent review (fresh context)
