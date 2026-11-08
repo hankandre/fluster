@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-const TEXT_FIELDS = "textarea, input:not([type=range], [type=checkbox], [type=radio], [type=button], [type=submit], [type=reset])";
+export const TEXT_FIELDS = "textarea, input:not([type=range], [type=checkbox], [type=radio], [type=button], [type=submit], [type=reset])";
 
 // Runs `onEscape` when Escape is pressed anywhere on the page, unless a text
 // field or another handler already used it.

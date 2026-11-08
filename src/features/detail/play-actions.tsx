@@ -2,6 +2,7 @@ import type { MouseEvent, ReactNode } from "react";
 import type { ItemDetail } from "../../domain/catalog";
 import { resumeTicksOf } from "../player/playable-item";
 import { openPlayerFromDetail, playRoute, type PlayRoute } from "../routes";
+import { safeReason } from "../player/safe-reason";
 import { usePlayerStatus } from "../player/player-status";
 import { positionLabel } from "./format";
 
@@ -10,11 +11,12 @@ import { positionLabel } from "./format";
 export function PlayActions({ item, mediaSourceId }: { item: ItemDetail; mediaSourceId: string | undefined }) {
   const resumeTicks = resumeTicksOf(item);
   const startOver: PlayRoute = { itemId: item.id, mediaSourceId, startTicks: 0 };
-  const { status } = usePlayerStatus();
+  const { status, recheck } = usePlayerStatus();
   // Said before Play is pressed. The player route repeats the reason.
   const warning = status.kind === "unavailable" ? (
     <p className="detail-player-warning" role="alert">
-      The player cannot start, so Play will fail: {status.reason}
+      The player cannot start, so Play will fail: {safeReason(status.reason)}{" "}
+      <button type="button" className="text-button" onClick={recheck}>Check again</button>
     </p>
   ) : null;
 

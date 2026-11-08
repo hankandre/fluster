@@ -637,13 +637,13 @@ describe("System media controls", () => {
   it("reports a player that cannot start instead of launching, with the redacted reason", async () => {
     const gateway = fakeGateway();
     const engine = new FakePlayerEngine();
-    engine.initialize.mockRejectedValue("libmpv is missing (api_key=SECRET-TOKEN)");
+    engine.initialize.mockRejectedValue("libmpv is missing (api_key=SECRET-TOKEN) /usr/lib/x86_64-linux-gnu/libEGL.so.1 file:///home/u/x");
     await renderPlayer(gateway, engine);
 
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("The player cannot start");
     expect(alert).toHaveTextContent("libmpv is missing");
-    expect(alert.textContent).not.toContain("SECRET-TOKEN");
+    for (const leak of ["SECRET-TOKEN", "libEGL", "/home/u"]) expect(alert.textContent).not.toContain(leak);
     expect(engine.launch).not.toHaveBeenCalled();
     expect(gateway.createPlaybackPlan).not.toHaveBeenCalled();
     expect(screen.getByRole("link", { name: "Back to details" })).toBeInTheDocument();

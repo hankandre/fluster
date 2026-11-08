@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import type { PlaybackSnapshot, PlayerCapabilities } from "../../domain/playback";
 import { PlayerInfoPanel } from "./player-info-panel";
-import type { PlayerStatus } from "./player-status";
+import type { ReadyPlayerStatus } from "./player-status";
 
 afterEach(cleanup);
 
@@ -15,7 +15,7 @@ const nativeCapabilities: PlayerCapabilities = {
   libmpvVersion: "mpv 0.38.0",
 };
 
-const nativeStatus: PlayerStatus = { kind: "ready", capabilities: nativeCapabilities };
+const nativeStatus: ReadyPlayerStatus = { kind: "ready", capabilities: nativeCapabilities };
 
 const snapshot: PlaybackSnapshot = {
   positionSeconds: 1,
@@ -60,7 +60,7 @@ describe("PlayerInfoPanel", () => {
   });
 
   it("labels the browser player unverified", () => {
-    const status: PlayerStatus = {
+    const status: ReadyPlayerStatus = {
       kind: "ready",
       capabilities: { mode: "browser", embedded: true, renderer: "html-video", nativeRenderer: "browser-html-video" },
     };
@@ -92,17 +92,11 @@ describe("PlayerInfoPanel", () => {
     expect(text).not.toContain("://");
   });
 
-  it("redacts an unavailable reason", () => {
-    const status: PlayerStatus = { kind: "unavailable", reason: "libmpv too old; token=SECRET-TOKEN" };
-    render(<PlayerInfoPanel status={status} snapshot={undefined} />);
-    expect(panel()).toHaveTextContent("Native player cannot start");
-    expect(panel().textContent).not.toContain("SECRET-TOKEN");
-  });
-
   it("toggles with the i key, but not while typing or with a modifier", () => {
     render(
       <>
         <input aria-label="Field" />
+        <input aria-label="Seek" type="range" />
         <PlayerInfoPanel status={nativeStatus} snapshot={snapshot} />
       </>,
     );
@@ -110,6 +104,10 @@ describe("PlayerInfoPanel", () => {
     fireEvent.keyDown(window, { key: "i" });
     expect(panel()).toBeVisible();
     fireEvent.keyDown(screen.getByLabelText("Field"), { key: "i" });
+    expect(panel()).toBeVisible();
+    fireEvent.keyDown(screen.getByLabelText("Seek"), { key: "i" });
+    expect(panel()).not.toBeVisible();
+    fireEvent.keyDown(window, { key: "i" });
     expect(panel()).toBeVisible();
     fireEvent.keyDown(window, { key: "i", ctrlKey: true });
     expect(panel()).toBeVisible();

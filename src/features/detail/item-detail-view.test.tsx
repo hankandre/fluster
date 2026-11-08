@@ -357,6 +357,22 @@ describe("player availability", () => {
     expect(screen.getByRole("link", { name: /Play/ })).toBeInTheDocument();
   });
 
+  it("hides paths and addresses in the reason, and Check again asks the player again", async () => {
+    const engine = new FakePlayerEngine();
+    engine.initialize.mockRejectedValueOnce(
+      "x: /usr/lib/x86_64-linux-gnu/libEGL.so.1 file:///home/u/x ftp://h/x C:\\Users\\u\\x.dll api_key=SECRET-TOKEN",
+    );
+    await renderWithEngine(engine);
+    const alert = await screen.findByRole("alert");
+    for (const leak of ["libEGL", "/home/u", "ftp://", "x.dll", "SECRET-TOKEN"]) expect(alert.textContent).not.toContain(leak);
+
+    await act(async () => {
+      fireEvent.click(within(alert).getByRole("button", { name: "Check again" }));
+    });
+    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+    expect(engine.initialize).toHaveBeenCalledTimes(2);
+  });
+
   it("shows no warning when the player starts", async () => {
     await renderWithEngine(new FakePlayerEngine());
     await screen.findByRole("link", { name: "Play" });
