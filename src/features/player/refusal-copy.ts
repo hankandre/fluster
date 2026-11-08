@@ -6,23 +6,21 @@ export interface RefusalCopy {
   whatYouCanDo: string;
 }
 
-// Plain-language copy for every reason Fluster refuses to start playback.
-// Record<RefusalReason, …> makes a new reason fail compilation until it has
-// copy. None of it offers conversion: Fluster plays files exactly as stored.
+// Plain-language copy for every reason Fluster still refuses to start playback
+// (decision 0002). Conversion on the server is the normal fallback, so no copy
+// here promises or refuses it on Fluster's behalf; conversion-not-allowed names
+// the Jellyfin user settings that allow it. Record<RefusalReason, …> makes a
+// new reason fail compilation until it has copy.
 //
-// Remote bitrate limits and forced remote transcoding need no reason of their
-// own: the server folds them into SupportsDirectPlay=false (MediaInfoHelper.cs
-// v12.4 lines 259, 277, 307-309), so they surface as "no-direct-play".
+// Dashboard labels are jellyfin-web's own strings (src/strings/en-us.json
+// OptionAllow*, shown under "Media playback" on Dashboard > Users > the user >
+// Profile; Profile.tsx maps them to EnableVideoPlaybackTranscoding,
+// EnableAudioPlaybackTranscoding, and EnablePlaybackRemuxing).
 export const REFUSAL_COPY: Record<RefusalReason, RefusalCopy> = {
   "no-sources": {
     title: "No file to play",
     explanation: "Jellyfin did not offer a file for this item, or not the version you chose.",
     whatYouCanDo: "Go back and pick another version, or ask the server admin to check that the file is still in the library. Retry asks the server again.",
-  },
-  "no-direct-play": {
-    title: "The server won’t let Fluster play this file as it is",
-    explanation: "Fluster plays files exactly as they are stored. Jellyfin said this file can’t be sent that way. This usually means your account or this connection is limited, for example by a remote bitrate limit or a setting that forces conversion for remote users.",
-    whatYouCanDo: "Ask the server admin to lift that limit or setting for your user, then choose Retry. Fluster won’t ask the server to convert the file.",
   },
   "not-a-file": {
     title: "This isn’t a file Fluster can stream",
@@ -34,20 +32,15 @@ export const REFUSAL_COPY: Record<RefusalReason, RefusalCopy> = {
     explanation: "This item is a live stream, not a stored file. Fluster plays recorded files only.",
     whatYouCanDo: "Play it with another app, or play a recording of it once one exists.",
   },
-  "server-requires-transcoding": {
-    title: "This file would have to be converted",
-    explanation: "Jellyfin can only deliver this file by converting it first. Fluster plays files exactly as stored and won’t ask the server to convert them.",
-    whatYouCanDo: "Ask the server admin whether a setting or limit on your user is forcing conversion. If it is changed, choose Retry.",
-  },
   "disc-source": {
     title: "This is a disc folder",
-    explanation: "This is a Blu-ray or DVD folder, not a single video file. Fluster plays files exactly as stored and won’t ask the server to convert discs.",
-    whatYouCanDo: "Rip the disc to an MKV file and add that to your library to play it here.",
+    explanation: "This is a Blu-ray or DVD folder, not a single video file. Jellyfin offered it as it is stored, and Fluster can’t play a disc folder that way.",
+    whatYouCanDo: "Rip the disc to an MKV file and add that to your library to play it here, or ask the server admin to allow conversion for your user.",
   },
   "iso-source": {
     title: "Disc images aren’t supported yet",
-    explanation: "This is a disc image (ISO). Fluster can’t play those directly yet, and it won’t ask the server to convert them.",
-    whatYouCanDo: "Rip or extract the disc to an MKV file and add that to your library to play it here.",
+    explanation: "This is a disc image (ISO). Jellyfin offered it as it is stored, and Fluster can’t play those that way yet.",
+    whatYouCanDo: "Rip or extract the disc to an MKV file and add that to your library to play it here, or ask the server admin to allow conversion for your user.",
   },
   "missing-source-data": {
     title: "Jellyfin gave incomplete details",
@@ -56,12 +49,12 @@ export const REFUSAL_COPY: Record<RefusalReason, RefusalCopy> = {
   },
   "conversion-not-allowed": {
     title: "This file needs converting, and the server doesn’t allow that for your account",
-    explanation: "Jellyfin can’t send this file as it is stored, for example because it is a disc or because of a limit on your account, and your account isn’t allowed to have it converted.",
-    whatYouCanDo: "Ask the server admin to allow playback that requires conversion for your user in Jellyfin’s user settings, then choose Retry.",
+    explanation: "Jellyfin can’t send this file as it is stored, for example because of its format or a limit on your account, and your account isn’t allowed to have it converted.",
+    whatYouCanDo: "Ask the server admin to turn on “Allow video playback that requires transcoding”, “Allow audio playback that requires transcoding”, and “Allow video playback that requires conversion without re-encoding” for your user (Dashboard, Users, your user, Profile, Media playback). Then choose Retry.",
   },
   "unsafe-transcoding-url": {
     title: "Jellyfin offered a stream address Fluster won’t use",
-    explanation: "The server offered to convert this file, but the address it gave points somewhere Fluster doesn’t trust or asks for something Fluster never allows.",
+    explanation: "The server offered a converted stream for this file, but the address it gave points somewhere Fluster doesn’t trust or asks for something Fluster never allows.",
     whatYouCanDo: "Choose Retry. If it keeps happening, check that the server address is correct and that no proxy rewrites Jellyfin’s answers.",
   },
 };

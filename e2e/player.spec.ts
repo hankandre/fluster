@@ -127,7 +127,12 @@ test("a Blu-ray folder offered for direct play is asked for once more without it
   const heading = page.getByRole("heading", { name: "This file needs converting, and the server doesn’t allow that for your account" });
   await expect(heading).toBeVisible();
   await expect(heading).toBeFocused();
-  await expect(page.getByRole("alert")).toContainText("Ask the server admin");
+  const alert = page.getByRole("alert");
+  await expect(alert).toContainText("Allow video playback that requires transcoding");
+  await expect(alert).toContainText("Allow audio playback that requires transcoding");
+  await expect(alert).toContainText("Allow video playback that requires conversion without re-encoding");
+  await expect(alert).not.toContainText("won’t ask the server");
+  await expect(page.getByRole("button", { name: "Back to details" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Retry" })).toBeEnabled();
   await expect(page.getByRole("button", { name: /anyway/i })).toHaveCount(0);
   await expect(page.getByText(/transcod/i)).toHaveCount(0);
