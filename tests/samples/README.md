@@ -30,6 +30,8 @@ Folder and file names follow the Jellyfin naming docs: [movies](https://jellyfin
 | `movies/Synthetic Multitrack (2024)/Synthetic Multitrack (2024).mkv` | Two audio tracks: eng stereo AAC (default) and spa 5.1 AC-3 |
 | `movies/Synthetic Versions (2024)/Synthetic Versions (2024) - 1080p.mkv` and `- 720p.mkv` | Multi-version movie: two H.264 files in one folder, each starting with the folder name plus a ` - <label>` suffix ([movie naming docs, Multiple Versions](https://jellyfin.org/docs/general/server/media/movies/)) |
 | `movies/Synthetic BluRay (2024)/BDMV/` | BluRay folder layout: placeholder `index.bdmv` and `MovieObject.bdmv`, empty `PLAYLIST/` and `CLIPINF/`, `STREAM/00000.m2ts` (H.264 plus AC-3 in MPEG-TS) |
+| `movies/Synthetic DVDSub (2024)/Synthetic DVDSub (2024).mkv` | H.264 plus a graphical DVD subtitle (S_VOBSUB, eng) built by `scripts/make-vobsub.py` |
+| `movies/Synthetic ISO (2024)/Synthetic ISO (2024).iso` | ISO 9660 image holding the BluRay sample's `BDMV` tree (xorriso, so not UDF); built with a local `xorriso`/`genisoimage`/`mkisofs` or an Alpine container with docker |
 | `shows/Synthetic Show/Season 01/Synthetic Show S01E01.mkv`, `S01E02.mkv` | Two regular episodes |
 | `shows/Synthetic Show/Season 00/Synthetic Show S00E01.mkv` | A special, for the specials default in the browse screen |
 

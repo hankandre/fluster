@@ -1109,10 +1109,10 @@
             "Fixtures keep TranscodingUrl, TranscodingSubProtocol, TranscodeReasons, and subtitle DeliveryMethod; every ApiKey value is replaced before commit"
           ],
           "verify": "pnpm test -- fixtures",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "Recorded 26 conversion fixtures per server (10.11.7, 12.4.0) with the decision 0002 profile and flags: every sample, H.264 under a 200 kbit/s limit, forced fallback, BluRay folder with and without the fluster-noconv user (video/audio transcoding and remuxing off), dvdsub (Encode while converting, Embed direct), synthetic ISO via xorriso (offered DirectPlay; HLS when forced).\nKeys scrubbed (ApiKey=REDACTED, PlaySessionId fake); TranscodingUrl, TranscodingSubProtocol, TranscodeReasons, DeliveryMethod kept. Findings tables in docs/plans/active/002 Surprises.\nTests: src/lib/jellyfin/conversion-fixtures.test.ts (22 pass); pnpm check, pnpm test:e2e (28 pass), pnpm lint:boundaries pass. PGS not recordable (no encoder)."
         },
         {
           "id": "P10-03",
