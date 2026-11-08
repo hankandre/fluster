@@ -1,13 +1,18 @@
 //! Network hardening, the media Authorization header, and media URL checks.
 
+use super::hls::HlsSession;
 use super::MpvError;
 use crate::auth_header::MediaBrowserAuthorization;
 use crate::model::LaunchRequest;
 use crate::url_policy::parse_allowed_url;
-use libmpv2::MpvInitializer;
+use libmpv2::{Mpv, MpvInitializer};
 
-// FFmpeg http protocol AVOption (libavformat/http.c, FFmpeg 6.1 and 7.1+).
-const NO_HTTP_REDIRECTS: &str = "max_redirects=0";
+// FFmpeg http protocol AVOptions (libavformat/http.c, FFmpeg 6.1 and 7.1+).
+// FFmpeg re-sends custom headers to every redirect target, whatever its
+// origin, so redirects are refused. It also tunnels through the `http_proxy`
+// environment variable unless the option is set; any value that does not
+// start with `http://` turns the proxy off (http.c `http_open_cnx_internal`).
+const STREAM_LAVF_OPTIONS: &str = "max_redirects=0,http_proxy=direct://";
 // FFmpeg AVFormatContext option, copied onto every nested open by mpv
 // (`nested_io_open`). mpv quotes a list value that holds commas with `[ ]`.
 const HLS_PROTOCOL_WHITELIST: &str = "protocol_whitelist=[http,https,tcp,tls]";
@@ -27,9 +32,7 @@ pub(super) fn harden_network_options(
     init: &MpvInitializer,
     delivery: MediaDelivery,
 ) -> libmpv2::Result<()> {
-    // FFmpeg's http protocol re-sends custom headers to every redirect target,
-    // whatever its origin, so redirects are refused instead.
-    init.set_option("stream-lavf-o", NO_HTTP_REDIRECTS)?;
+    init.set_option("stream-lavf-o", STREAM_LAVF_OPTIONS)?;
     // The builtin ytdl_hook script retries a failed load by running yt-dlp
     // with the full stream URL as a process argument.
     init.set_option("ytdl", false)?;
@@ -44,6 +47,31 @@ pub(super) fn harden_network_options(
             init.set_option("demuxer-lavf-o", HLS_PROTOCOL_WHITELIST)
         }
     }
+}
+
+// Per-file options for the validated master playlist: only FFmpeg's `hls`
+// demuxer may read it. Without them a failed `hls` open falls back to mpv's
+// playlist demuxer, which turns the variant and its segments into playlist
+// entries opened as top-level files with references on.
+const HLS_FILE_OPTIONS: &str = "demuxer=lavf,demuxer-lavf-format=hls";
+
+/// Loads the loopback master of a validated session on a
+/// `MediaDelivery::ValidatedHls` handle.
+#[cfg_attr(not(test), allow(dead_code))]
+pub(super) fn load_validated_hls(mpv: &Mpv, session: &HlsSession) -> libmpv2::Result<()> {
+    // loadfile <url> <flags> <index> <options> (mpv 0.38+; -1 means none).
+    mpv.command(
+        "loadfile",
+        &[session.playlist_url(), "replace", "-1", HLS_FILE_OPTIONS],
+    )
+}
+
+/// Clears the per-file `hls` format once the master is open, so `sub-add`
+/// can open the loopback subtitle copies. Call it after `FileLoaded` and
+/// before `sub-add`; `demuxer=lavf` stays for the file.
+#[cfg_attr(not(test), allow(dead_code))]
+pub(super) fn allow_subtitle_formats(mpv: &Mpv) -> libmpv2::Result<()> {
+    mpv.set_property("file-local-options/demuxer-lavf-format", "")
 }
 
 /// Sends the signed-in header with every HTTP request this handle makes: the
@@ -261,7 +289,7 @@ mod tests {
             other => other.expect("libmpv accepts the options"),
         };
         let lavf_options: String = mpv.get_property("stream-lavf-o").expect("stream-lavf-o");
-        assert_eq!(lavf_options, NO_HTTP_REDIRECTS);
+        assert_eq!(lavf_options, STREAM_LAVF_OPTIONS);
         let ytdl: bool = mpv.get_property("ytdl").expect("ytdl");
         assert!(!ytdl);
         let access_references: bool = mpv

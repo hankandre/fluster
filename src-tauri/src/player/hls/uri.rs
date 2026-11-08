@@ -66,3 +66,26 @@ fn names_credential(lowercase: &str) -> bool {
         })
     })
 }
+
+/// True when the token itself appears in `body`, as written or after up to
+/// three rounds of percent decoding, ignoring ASCII case.
+pub(super) fn contains_secret(body: &str, secret: &str) -> bool {
+    if secret.is_empty() {
+        return false;
+    }
+    let secret = secret.to_ascii_lowercase();
+    let mut text = body.to_ascii_lowercase();
+    for _ in 0..4 {
+        if text.contains(&secret) {
+            return true;
+        }
+        let decoded = percent_decode_str(&text)
+            .decode_utf8_lossy()
+            .to_ascii_lowercase();
+        if decoded == text {
+            return false;
+        }
+        text = decoded;
+    }
+    text.contains(&secret)
+}

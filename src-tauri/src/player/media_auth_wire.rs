@@ -4,6 +4,7 @@
 mod headers;
 mod hls;
 mod hls_session;
+mod proxy;
 mod references;
 mod tracks;
 
