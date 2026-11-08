@@ -91,6 +91,10 @@ export interface MediaStreamDto {
   Height?: number | null;
   BitDepth?: number | null;
   Channels?: number | null;
+  // Read by the DirectStream classification (source-acceptance.ts).
+  BitRate?: number | null;
+  SampleRate?: number | null;
+  ReferenceFrameRate?: number | null;
   ChannelLayout?: string | null;
   IsDefault?: boolean;
   IsForced?: boolean;

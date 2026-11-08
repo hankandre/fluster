@@ -19,10 +19,20 @@ export interface HlsUrlContext {
   serverUrl: string;
   itemId: string;
   mediaSourceId: string;
+  // `videos` for any source with video; `audio` only for audio-only sources.
+  mediaKind: HlsMediaKind;
+  // The PlaybackInfo answer's PlaySessionId; a URL naming another is refused.
+  playSessionId?: string;
 }
 
 const MASTER_PATH = /^\/(videos|audio)\/([^/]+)\/master\.m3u8$/i;
 const ITEM_ID = /^[0-9a-z-]+$/i;
+// Whitespace or control characters in a name could hide a credential name
+// from a parser that trims differently, so such a name is refused.
+const UNSAFE_NAME = /[\s\p{Cc}]/u;
+// SubtitleDeliveryMethod values Fluster accepts by name. Hls, numeric enum
+// values, and anything else are refused.
+const SUBTITLE_METHODS = new Set(["encode", "embed", "external", "drop"]);
 
 function normalizedId(id: string): string {
   return id.replace(/-/g, "").toLowerCase();
@@ -59,9 +69,12 @@ export function rebuildMasterUrl(transcodingUrl: string, context: HlsUrlContext)
   if (!ITEM_ID.test(id) || !context.itemId || normalizedId(id) !== normalizedId(context.itemId)) {
     return refuse("item");
   }
+  if (kind.toLowerCase() !== context.mediaKind) return refuse("media type");
 
   const params = new URLSearchParams();
+  let mediaSourceIds = 0;
   for (const [name, value] of url.searchParams) {
+    if (UNSAFE_NAME.test(name)) return refuse("parameter name");
     const lower = name.toLowerCase();
     if (isCredentialQueryName(name) || lower === "enabletrickplay") continue;
     if (lower === "enablesubtitlesinmanifest") {
@@ -69,12 +82,22 @@ export function rebuildMasterUrl(transcodingUrl: string, context: HlsUrlContext)
       if (value.toLowerCase() !== "false") return refuse("subtitles in manifest");
       continue;
     }
-    if (lower === "subtitlemethod" && value.toLowerCase() === "hls") return refuse("HLS subtitles");
-    if (lower === "mediasourceid" && normalizedId(value) !== normalizedId(context.mediaSourceId)) {
-      return refuse("media source");
+    if (lower === "subtitlemethod") {
+      const method = value.trim().toLowerCase();
+      if (method === "hls") return refuse("HLS subtitles");
+      if (!SUBTITLE_METHODS.has(method)) return refuse("subtitle method");
+    }
+    if (lower === "mediasourceid") {
+      if (normalizedId(value) !== normalizedId(context.mediaSourceId)) return refuse("media source");
+      mediaSourceIds += 1;
+    }
+    if (lower === "playsessionid" && context.playSessionId !== undefined && value !== context.playSessionId) {
+      return refuse("play session");
     }
     params.append(name, value);
   }
+  // The server's job and the plan's reports must name the same source.
+  if (mediaSourceIds !== 1) return refuse("media source");
   // The server defaults EnableTrickplay to true on master.m3u8 and then lists
   // trickplay playlists with ApiKey={token} (DynamicHlsController.cs v10.11.7 line 464).
   params.append("EnableTrickplay", "false");

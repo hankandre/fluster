@@ -118,6 +118,89 @@ describe("decideSource", () => {
     expect(decideSource({ ...remux, TranscodingUrl: hlsUrl(query) }, context)).toMatchObject({ kind: "convert", playMethod: "Transcode" });
   });
 
+  // Limits the server applies before it copies a stream, from Jellyfin's
+  // EncodingHelper.CanStreamCopyVideo and CanStreamCopyAudio (v10.11.7 lines 2317-2560).
+  describe("with the stream-copy limits in the URL", () => {
+    const measured: MediaSourceDto = {
+      ...remux,
+      MediaStreams: [
+        { Index: 0, Type: "Video", Codec: "h264", BitRate: 8_000_000, Width: 1920, Height: 1080, ReferenceFrameRate: 24 },
+        { Index: 1, Type: "Audio", Codec: "aac", BitRate: 192_000, SampleRate: 48_000, Channels: 2 },
+      ],
+    };
+    const limited = (query: string) => ({
+      ...measured,
+      TranscodingUrl: hlsUrl(`AudioCodec=aac&AudioStreamIndex=1&TranscodeReasons=ContainerNotSupported&${query}`),
+    });
+
+    it("stays DirectStream when every limit is at or above the source", () => {
+      const query = "VideoBitrate=8000000&AudioBitrate=192000&MaxWidth=1920&MaxHeight=1080&MaxFramerate=24&AudioSampleRate=48000"
+        + "&RequireAvc=false&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AlwaysBurnInSubtitleWhenTranscoding=false&SubtitleMethod=External";
+      expect(decideSource(limited(query), context)).toMatchObject({ playMethod: "DirectStream" });
+    });
+
+    it.each([
+      ["an audio bitrate below the stream's", "AudioBitrate=128000"],
+      ["a video bitrate below the stream's", "VideoBitrate=1000000"],
+      ["a video stream copy that is not allowed", "AllowVideoStreamCopy=false"],
+      ["an audio stream copy that is not allowed, in another case", "allowaudiostreamcopy=False"],
+      ["burn-in always on", "alwaysBurnInSubtitleWhenTranscoding=true"],
+      ["burned-in subtitles in lower case", "subtitlemethod=encode"],
+      ["RequireAvc", "RequireAvc=true"],
+      ["a maximum width below the source", "MaxWidth=1280"],
+      ["a maximum height below the source", "maxheight=720"],
+      ["a maximum frame rate below the source", "MaxFramerate=23"],
+      ["an audio sample rate below the source", "AudioSampleRate=44100"],
+      ["an unreadable limit", "VideoBitrate=lots"],
+    ])("labels it Transcode for %s", (_case, query) => {
+      expect(decideSource(limited(query), context)).toMatchObject({ playMethod: "Transcode" });
+    });
+
+    it.each([
+      ["the video bitrate", "VideoBitrate=999000000", 0, "BitRate"],
+      ["the audio bitrate", "AudioBitrate=999000000", 1, "BitRate"],
+      ["the width", "MaxWidth=4096", 0, "Width"],
+      ["the frame rate", "MaxFramerate=60", 0, "ReferenceFrameRate"],
+    ] as const)("labels it Transcode when the source's %s is unknown", (_case, query, index, field) => {
+      const source = limited(query);
+      source.MediaStreams = source.MediaStreams!.map((stream, at) => (at === index ? { ...stream, [field]: undefined } : stream));
+      expect(decideSource(source, context)).toMatchObject({ playMethod: "Transcode" });
+    });
+
+    // Guardian's example: a FLAC 7.1 stream the server must squeeze into 7168 kbit/s.
+    it("labels a FLAC 7.1 stream over AudioBitrate=7168000 Transcode", () => {
+      const flac: MediaSourceDto = {
+        ...measured,
+        TranscodingUrl: hlsUrl("AudioCodec=flac&AudioStreamIndex=1&TranscodeReasons=ContainerNotSupported&AudioBitrate=7168000&VideoBitrate=999000000"),
+        MediaStreams: [
+          { Index: 0, Type: "Video", Codec: "h264", BitRate: 8_000_000 },
+          { Index: 1, Type: "Audio", Codec: "flac", BitRate: 9_000_000, Channels: 8 },
+        ],
+      };
+      expect(decideSource(flac, context)).toMatchObject({ playMethod: "Transcode" });
+    });
+  });
+
+  it("refuses a TranscodingUrl whose play session is not the answer's", () => {
+    expect(decideSource(remux, { ...context, playSessionId: "p" })).toMatchObject({ kind: "convert" });
+    expect(decideSource(remux, { ...context, playSessionId: "other" })).toEqual({ kind: "refused", reason: "unsafe-transcoding-url", detail: "play session" });
+  });
+
+  it("requires the audio path for an audio-only source and the videos path otherwise", () => {
+    const song: MediaSourceDto = {
+      ...remux,
+      VideoType: undefined,
+      TranscodingUrl: hlsUrl("AudioCodec=aac&AudioStreamIndex=0&TranscodeReasons=ContainerNotSupported", `/audio/${ITEM}/master.m3u8`),
+      MediaStreams: [{ Index: 0, Type: "Audio", Codec: "aac" }],
+    };
+    expect(decideSource(song, context)).toMatchObject({ kind: "convert", playMethod: "DirectStream" });
+    expect(decideSource({ ...song, TranscodingUrl: song.TranscodingUrl!.replace("/audio/", "/videos/") }, context)).toMatchObject({ reason: "unsafe-transcoding-url", detail: "media type" });
+    expect(decideSource({ ...remux, TranscodingUrl: remux.TranscodingUrl!.replace("/videos/", "/audio/") }, context)).toMatchObject({ reason: "unsafe-transcoding-url", detail: "media type" });
+    // A disc folder has no probed streams but is still video.
+    const disc = { ...remux, VideoType: "BluRay", MediaStreams: [] };
+    expect(decideSource({ ...disc, TranscodingUrl: disc.TranscodingUrl!.replace("/videos/", "/audio/") }, context)).toMatchObject({ detail: "media type" });
+  });
+
   it("labels a conversion Transcode when the video codec is not in the URL's list", () => {
     const vc1 = { ...remux, MediaStreams: [{ Index: 0, Type: "Video", Codec: "vc1" }, { Index: 1, Type: "Audio", Codec: "aac" }] };
     expect(decideSource(vc1, context)).toMatchObject({ playMethod: "Transcode" });
