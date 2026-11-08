@@ -7,10 +7,12 @@ import { HomeView, refreshHomeRows } from "../features/home";
 import { BrowseView, CollectionView, SeriesView } from "../features/browse";
 import { SearchView } from "../features/search";
 import { DetailView, ItemDetailView } from "../features/detail";
+import { SettingsView } from "../features/settings";
 import { PlayerFeatureView, PlayerRouteView } from "../features/player";
 import { parsePlayRoute } from "../features/routes";
 import { createServices, type AppServices } from "./compose";
 import { PlayerServicesProvider, type PlayerServices } from "./player-services";
+import { PreferencesProvider } from "./preferences";
 import { SessionProvider } from "./session";
 
 export function App() {
@@ -24,6 +26,7 @@ export function App() {
     }),
     [services],
   );
+  const preferences = useMemo(() => ({ streamingLimits: services.streamingLimits }), [services]);
   const queryClient = useQueryClient();
   const refreshRows = useCallback(() => void refreshHomeRows(queryClient), [queryClient]);
   const [hash, setHash] = useState(window.location.hash);
@@ -48,8 +51,10 @@ export function App() {
       onServerDataChanged={refreshRows}
     >
       <PlayerServicesProvider services={player}>
-        {!services.native && <BrowserModeLabel />}
-        {inApp ? renderRoute(hash, services) : null}
+        <PreferencesProvider preferences={preferences}>
+          {!services.native && <BrowserModeLabel />}
+          {inApp ? renderRoute(hash, services) : null}
+        </PreferencesProvider>
       </PlayerServicesProvider>
     </SessionProvider>
   );
@@ -79,6 +84,8 @@ function renderRoute(hash: string, services: AppServices) {
       return <SearchView />;
     case "#/next/detail":
       return <DetailView />;
+    case "#/next/settings":
+      return <SettingsView />;
     case "#/next/player":
       return <PlayerFeatureView />;
     default:

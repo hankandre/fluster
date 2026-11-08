@@ -1207,10 +1207,10 @@
             "Built under src/features/ with a Playwright journey; no proof-of-concept screen is extended"
           ],
           "verify": "pnpm check && pnpm test:e2e",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "Settings view at #/next/settings (src/features/settings) stores local and remote limits (default No limit) in fluster.streamingLimits; the gateway picks by host class and sends MaxStreamingBitrate in body, query, and profile (src/lib/jellyfin/streaming-limit-negotiation.test.ts). Play original renegotiates once with ignoreStreamingLimit for the session only (player-view.test.tsx). pnpm check, pnpm test:e2e (30 passed, e2e/settings.spec.ts), lint:boundaries, typecheck:core pass."
         },
         {
           "id": "P10-06",

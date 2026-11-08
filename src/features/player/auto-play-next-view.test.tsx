@@ -196,6 +196,7 @@ describe("Auto-play the next episode", () => {
       0,
       expect.any(AbortSignal),
       undefined,
+      { ignoreStreamingLimit: false },
     );
     expect(engine.launch).toHaveBeenLastCalledWith(plan("e2", "play-e2-1"));
     const reportStopped = vi.mocked(gateway.reportStopped).mock.invocationCallOrder[0];

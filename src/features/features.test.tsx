@@ -73,5 +73,5 @@ it.each([
 
 it("lists every feature", () => {
   render(<SessionProvider createGateway={() => stubGateway()}><FeatureIndex /></SessionProvider>);
-  expect(screen.getAllByRole("link")).toHaveLength(6);
+  expect(screen.getAllByRole("link")).toHaveLength(7);
 });

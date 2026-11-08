@@ -1,6 +1,6 @@
 import type { BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, NextEpisode, LibraryItem, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season } from "../domain/catalog";
 import type { MediaSegment } from "../domain/media-segments";
-import type { PlaybackPlan, PlaybackSnapshot } from "../domain/playback";
+import type { PlaybackPlan, PlaybackPlanOptions, PlaybackSnapshot } from "../domain/playback";
 import type { RealtimeConnection, ServerEvent } from "../domain/realtime";
 import type { ServerConnection } from "../domain/server-connection";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -35,7 +35,7 @@ export interface SessionGateway {
   setPlayed(itemId: string, played: boolean, signal?: AbortSignal): Promise<void>;
   setFavorite(itemId: string, favorite: boolean, signal?: AbortSignal): Promise<void>;
   imageUrl(itemId: string, type: CardImageType, tag: string, maxWidth: number): string;
-  createPlaybackPlan(item: LibraryItem, startPositionTicks: number, signal?: AbortSignal, mediaSourceId?: string): Promise<PlaybackPlan>;
+  createPlaybackPlan(item: LibraryItem, startPositionTicks: number, signal?: AbortSignal, mediaSourceId?: string, options?: PlaybackPlanOptions): Promise<PlaybackPlan>;
   // Intro and outro segments of an item. Call only when the playing version has HasSegments.
   mediaSegments(itemId: string, signal?: AbortSignal): Promise<MediaSegment[]>;
   reportStart(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal): Promise<void>;

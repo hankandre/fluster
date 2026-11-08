@@ -188,6 +188,11 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
         {...seekProps}
       />
       <PlayerInfoPanel status={status} snapshot={playback.state.snapshot} />
+      {playback.plan?.playOriginalAvailable && !playback.retrying && (
+        <button type="button" className="play-original" onClick={() => void playback.playOriginal()}>
+          Play original
+        </button>
+      )}
       {next && upNext.secondsLeft !== undefined && !playback.state.error && (
         <NextEpisodeCard
           next={next}

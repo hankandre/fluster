@@ -216,3 +216,9 @@ input:focus, select:focus { border-color: var(--acid); box-shadow: 0 0 0 1px var
 .player-info dd { margin: 0; }
 .player-info button { transition: opacity .2s ease; }
 .cursor-idle .player-info[data-open="false"]:not(:focus-within) button { opacity: 0; pointer-events: none; }
+
+.settings { padding: 40px 4vw 90px; }
+.settings h1 { font-size: clamp(32px, 4vw, 48px); margin-bottom: 32px; }
+.settings-field { margin: 16px 0; }
+.settings-field label { display: grid; gap: 6px; max-width: 24rem; }
+.play-original { position: fixed; right: 4vw; bottom: 96px; z-index: 5; }

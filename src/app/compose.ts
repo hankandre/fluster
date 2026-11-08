@@ -2,6 +2,8 @@ import type { RealtimeConnection } from "../domain/realtime";
 import type { ServerDiscovery } from "../domain/server-discovery";
 import type { PlayerServices } from "./player-services";
 import { lanHttpConfirmations } from "../lib/browser-lan-http-confirmations";
+import { streamingLimits } from "../lib/browser-streaming-limits";
+import type { StreamingLimitStore } from "../lib/streaming-limits";
 import { getInstallId } from "../lib/install-id";
 import { JellyfinGateway } from "../lib/jellyfin/gateway";
 import { BrowserPlayerEngine } from "../lib/player/browser-player";
@@ -18,6 +20,8 @@ export type AppServices = {
   createGateway(serverUrl: string): JellyfinGateway;
   createPlayerEngine(): PlayerEngine;
   realtime: RealtimeConnection;
+  // The user's streaming limits; a non-secret preference.
+  streamingLimits: StreamingLimitStore;
   // LAN server discovery; desktop only, because a browser cannot send UDP.
   discovery?: ServerDiscovery;
   // Lets playback stop and report before the desktop window closes.
@@ -32,8 +36,9 @@ export function createServices(): AppServices {
   const native = isTauriRuntime();
   return {
     native,
-    createGateway: (serverUrl) => new JellyfinGateway(serverUrl, undefined, getInstallId(), lanHttpConfirmations),
+    createGateway: (serverUrl) => new JellyfinGateway(serverUrl, undefined, getInstallId(), lanHttpConfirmations, streamingLimits),
     createPlayerEngine: () => (native ? new NativePlayerEngine() : new BrowserPlayerEngine()),
+    streamingLimits,
     realtime: native ? new NativeRealtime() : new NoOpRealtime(),
     discovery: native ? new NativeServerDiscovery() : undefined,
     watchWindowClose: native ? watchNativeWindowClose : undefined,

@@ -176,6 +176,16 @@ export interface PlaybackPlanBase {
   defaultSubtitleStreamIndex?: number;
   // The chosen version's MediaSourceInfo.HasSegments. Absent means false.
   hasSegments?: boolean;
+  // True when the user's streaming limit is the only reason for the
+  // conversion, so Play original may renegotiate without it. Absent means false.
+  playOriginalAvailable?: boolean;
+}
+
+// Per-negotiation choices that are not part of the item.
+export interface PlaybackPlanOptions {
+  // Negotiate without the user's streaming limit. Used by Play original for
+  // one session; never stored.
+  ignoreStreamingLimit?: boolean;
 }
 
 export interface PlayerCapabilities {

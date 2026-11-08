@@ -107,6 +107,7 @@ describe("Player feature", () => {
       420_000_000,
       expect.any(AbortSignal),
       "src-hd",
+      { ignoreStreamingLimit: false },
     );
     expect(engine.launch).toHaveBeenCalledWith(plan());
     await waitFor(() => expect(gateway.reportStart).toHaveBeenCalledWith(plan(), snapshot, expect.any(AbortSignal)));
@@ -671,5 +672,75 @@ describe("System media controls", () => {
     expect(panel).toHaveTextContent("Direct play");
     const text = panel.textContent ?? "";
     for (const secret of ["media.test", "play-1", "Token", "src-hd"]) expect(text).not.toContain(secret);
+  });
+
+  describe("Play original", () => {
+    function limitedPlan(playSessionId: string, available: boolean): PlaybackPlan {
+      return {
+        ...plan(playSessionId),
+        delivery: "hls",
+        playMethod: "Transcode",
+        conversionReasons: ["ContainerBitrateExceedsLimit"],
+        playOriginalAvailable: available,
+      };
+    }
+
+    it("renegotiates once without the user's limit, then offers nothing more", async () => {
+      const gateway = fakeGateway({
+        createPlaybackPlan: vi.fn()
+          .mockResolvedValueOnce(limitedPlan("play-1", true))
+          .mockResolvedValueOnce(plan("play-2")),
+      });
+      const engine = new FakePlayerEngine();
+      await renderPlayer(gateway, engine);
+      await startPlaying(engine);
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Play original" }));
+      });
+
+      await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(plan("play-2")));
+      expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(2);
+      expect(vi.mocked(gateway.createPlaybackPlan).mock.calls[0][4]).toEqual({ ignoreStreamingLimit: false });
+      expect(vi.mocked(gateway.createPlaybackPlan).mock.calls[1][4]).toEqual({ ignoreStreamingLimit: true });
+      expect(screen.queryByRole("button", { name: "Play original" })).not.toBeInTheDocument();
+    });
+
+    it("is not shown when the limit is not the only reason", async () => {
+      const gateway = fakeGateway({ createPlaybackPlan: vi.fn().mockResolvedValue(limitedPlan("play-1", false)) });
+      const engine = new FakePlayerEngine();
+      await renderPlayer(gateway, engine);
+      await startPlaying(engine);
+      expect(screen.queryByRole("button", { name: "Play original" })).not.toBeInTheDocument();
+    });
+
+    it("is not shown for direct play", async () => {
+      const engine = new FakePlayerEngine();
+      await renderPlayer(fakeGateway(), engine);
+      await startPlaying(engine);
+      expect(screen.queryByRole("button", { name: "Play original" })).not.toBeInTheDocument();
+    });
+
+    it("applies to this session only: a new player view negotiates with the limit again", async () => {
+      const gateway = fakeGateway({
+        createPlaybackPlan: vi.fn()
+          .mockResolvedValueOnce(limitedPlan("play-1", true))
+          .mockResolvedValueOnce(plan("play-2"))
+          .mockResolvedValueOnce(plan("play-3")),
+      });
+      const engine = new FakePlayerEngine();
+      await renderPlayer(gateway, engine);
+      await startPlaying(engine);
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Play original" }));
+      });
+      await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(plan("play-2")));
+      cleanup();
+
+      const next = new FakePlayerEngine();
+      await renderPlayer(gateway, next);
+      await waitFor(() => expect(next.launch).toHaveBeenCalled());
+      expect(vi.mocked(gateway.createPlaybackPlan).mock.calls[2][4]).toEqual({ ignoreStreamingLimit: false });
+    });
   });
 });
