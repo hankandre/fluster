@@ -87,8 +87,9 @@ fn hls_session_serves_checked_subtitles_from_loopback() {
 
     let served = session.subtitle_urls();
     assert_eq!(served.len(), 1);
-    assert!(served[0].starts_with("http://127.0.0.1:") && served[0].ends_with("/sub0.srt"));
-    let (status, body) = loopback_get(&served[0]);
+    let served = served[0].as_deref().expect("served");
+    assert!(served.starts_with("http://127.0.0.1:") && served.ends_with("/sub0.srt"));
+    let (status, body) = loopback_get(served);
     assert_eq!(status, "HTTP/1.1 200 OK");
     assert_eq!(body, SRT);
     let expected = format!("authorization: {}", test_authorization().expose());
@@ -175,4 +176,43 @@ fn hls_session_refuses_unsafe_subtitles_and_token_echoes() {
     assert_eq!(paths(&requests).len(), 2);
     thread::sleep(Duration::from_millis(100));
     assert!(other_requests.lock().expect("requests mutex").is_empty());
+}
+
+/// Guardian M2: a subtitle that cannot be fetched (status, size) is left out
+/// and the launch goes on; a later good subtitle still loads.
+#[test]
+fn hls_session_leaves_out_subtitles_it_cannot_fetch() {
+    let (server, origin) = listener();
+    let big = format!(
+        "1\r\n00:00:00,000 --> 00:00:01,000\r\n{}\r\n",
+        "x".repeat(70 * 1024 * 1024)
+    );
+    let _requests = serve_routes(
+        server,
+        vec![
+            (MASTER_PATH.into(), Route::ok(PLAYLIST, jellyfin_master())),
+            (
+                MAIN_PATH.into(),
+                Route::ok(
+                    PLAYLIST,
+                    jellyfin_media("hls1/main/-1.mp4", "hls1/main/0.mp4"),
+                ),
+            ),
+            ("/big.srt".into(), Route::ok("text/plain", big)),
+            (SUBTITLE_PATH.into(), Route::ok("text/plain", SRT)),
+        ],
+    );
+    let subtitles = vec![
+        format!("{origin}/missing.srt"),
+        format!("{origin}/big.srt"),
+        format!("{origin}{SUBTITLE_PATH}"),
+    ];
+    let session =
+        open_with(&origin, &master_url(&origin), ITEM, &subtitles).expect("the launch goes on");
+    let served = session.subtitle_urls();
+    assert_eq!(served.len(), 3);
+    assert!(served[0].is_none() && served[1].is_none());
+    let (status, body) = loopback_get(served[2].as_deref().expect("served"));
+    assert_eq!(status, "HTTP/1.1 200 OK");
+    assert_eq!(body, SRT);
 }

@@ -2,7 +2,10 @@
 //! subtitle, then serve the checked copies from loopback for as long as the
 //! session lives.
 
-use super::fetch::{PlaylistFetcher, MAX_SUBTITLE_BYTES};
+use super::fetch::{
+    PlaylistFetcher, MAX_SUBTITLE_BYTES, MAX_SUBTITLE_TOTAL_BYTES, PLAYLIST_TIMEOUT,
+    SUBTITLE_TIMEOUT,
+};
 use super::loopback::{BoundLoopback, LoopbackServer, Served};
 use super::master_url::{audio_stream_index, validate_master_url, MasterRules};
 use super::playlist::{Kind, Playlist};
@@ -36,7 +39,7 @@ pub(crate) struct HlsRequest<'a> {
 
 pub(crate) struct HlsSession {
     playlist_url: String,
-    subtitle_urls: Vec<String>,
+    subtitle_urls: Vec<Option<String>>,
     audio_stream_index: Option<i64>,
     _server: LoopbackServer,
 }
@@ -47,6 +50,18 @@ struct Checker<'a> {
     fetcher: PlaylistFetcher,
     authorization: &'a MediaBrowserAuthorization,
     server: Origin,
+    /// True once the launch was cancelled; checked before every request.
+    stopped: &'a dyn Fn() -> bool,
+}
+
+/// A subtitle that could not be fetched (network, HTTP status, or size) is
+/// left out and the launch goes on without it; one that fails a safety
+/// check fails the launch.
+fn subtitle_unavailable(error: &HlsError) -> bool {
+    matches!(
+        error,
+        HlsError::Fetch | HlsError::Status(_) | HlsError::TooLarge
+    )
 }
 
 impl Checker<'_> {
@@ -59,8 +74,18 @@ impl Checker<'_> {
         Ok(())
     }
 
+    fn check_stopped(&self) -> Result<(), HlsError> {
+        if (self.stopped)() {
+            return Err(HlsError::Cancelled);
+        }
+        Ok(())
+    }
+
     fn playlist(&self, url: &Url, expected: Kind) -> Result<Playlist, HlsError> {
-        let body = self.fetcher.fetch(url, self.authorization)?;
+        self.check_stopped()?;
+        let body = self
+            .fetcher
+            .fetch(url, self.authorization, PLAYLIST_TIMEOUT)?;
         self.refuse_secret(&body)?;
         let playlist = Playlist::parse(&body, url, &self.server)?;
         if playlist.kind() != expected {
@@ -69,14 +94,24 @@ impl Checker<'_> {
         Ok(playlist)
     }
 
-    fn subtitle(&self, raw: &str) -> Result<Vec<u8>, HlsError> {
+    /// `Ok(None)` when the subtitle is unavailable (`subtitle_unavailable`).
+    /// `budget` is what is left of the session's subtitle memory.
+    fn subtitle(&self, raw: &str, budget: &mut u64) -> Result<Option<Vec<u8>>, HlsError> {
         let url = subtitle_url(raw, &self.server)?;
-        let body = self
+        self.check_stopped()?;
+        let limit = MAX_SUBTITLE_BYTES.min(*budget);
+        let body = match self
             .fetcher
-            .fetch_bytes(&url, self.authorization, MAX_SUBTITLE_BYTES)?;
+            .fetch_bytes(&url, self.authorization, limit, SUBTITLE_TIMEOUT)
+        {
+            Ok(body) => body,
+            Err(error) if subtitle_unavailable(&error) => return Ok(None),
+            Err(error) => return Err(error),
+        };
         self.refuse_secret(&String::from_utf8_lossy(&body))?;
         check_subtitle(&body)?;
-        Ok(body)
+        *budget -= body.len() as u64;
+        Ok(Some(body))
     }
 }
 
@@ -108,8 +143,19 @@ impl HlsSession {
     /// Validates the master URL against the server origin and `item_id`,
     /// fetches and checks the master, every child playlist, and every
     /// external subtitle with the header, and starts the loopback server.
-    /// Any failure fails the whole session.
+    /// Any failure fails the whole session, except a subtitle that could not
+    /// be fetched, which is left out.
+    #[cfg(test)]
     pub(crate) fn open(request: &HlsRequest<'_>) -> Result<Self, HlsError> {
+        Self::open_until(request, &|| false)
+    }
+
+    /// `open`, giving up with `HlsError::Cancelled` before the next request
+    /// once `stopped` returns true.
+    pub(crate) fn open_until(
+        request: &HlsRequest<'_>,
+        stopped: &dyn Fn() -> bool,
+    ) -> Result<Self, HlsError> {
         let server_url = parse_allowed_url(request.server_url).ok_or(HlsError::UnsafeMasterUrl)?;
         let master_url = validate_master_url(
             request.master_url,
@@ -126,6 +172,7 @@ impl HlsSession {
             fetcher: PlaylistFetcher::new(),
             authorization: request.authorization,
             server,
+            stopped,
         };
         let master = checker.playlist(&master_url, Kind::Master)?;
         let children = master
@@ -133,11 +180,13 @@ impl HlsSession {
             .iter()
             .map(|child_url| checker.playlist(child_url, Kind::Media))
             .collect::<Result<Vec<_>, _>>()?;
+        let mut budget = MAX_SUBTITLE_TOTAL_BYTES;
         let subtitles = request
             .subtitle_urls
             .iter()
-            .map(|raw| checker.subtitle(raw))
+            .map(|raw| checker.subtitle(raw, &mut budget))
             .collect::<Result<Vec<_>, _>>()?;
+        checker.check_stopped()?;
 
         let loopback = BoundLoopback::bind()?;
         let mut bodies = HashMap::new();
@@ -156,8 +205,12 @@ impl HlsSession {
         }
         let mut subtitle_urls = Vec::with_capacity(subtitles.len());
         for (index, (raw, body)) in request.subtitle_urls.iter().zip(subtitles).enumerate() {
+            let Some(body) = body else {
+                subtitle_urls.push(None);
+                continue;
+            };
             let name = subtitle_name(index, raw);
-            subtitle_urls.push(loopback.url(&name));
+            subtitle_urls.push(Some(loopback.url(&name)));
             let served = Served {
                 content_type: SUBTITLE_TYPE,
                 body,
@@ -181,8 +234,9 @@ impl HlsSession {
     }
 
     /// Loopback URLs of the checked external subtitles, in request order,
-    /// for `sub-add` on the HLS handle instead of the server URLs.
-    pub(crate) fn subtitle_urls(&self) -> &[String] {
+    /// for `sub-add` on the HLS handle instead of the server URLs; `None` for
+    /// a subtitle that was unavailable.
+    pub(crate) fn subtitle_urls(&self) -> &[Option<String>] {
         &self.subtitle_urls
     }
 

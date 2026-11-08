@@ -178,6 +178,11 @@ pub fn attach(
 ) -> Result<(), String> {
     let app_for_render = app.clone();
     let result = run_on_main(app, move || {
+        // One render context at a time: a session that has not been
+        // detached yet keeps the surface.
+        if RENDER_STATE.with(|state| state.borrow().is_some()) {
+            return Err("Another playback session still owns the video surface.".to_string());
+        }
         set_composition_background(&app_for_render, PLAYBACK_BACKGROUND)?;
         UI.with(|slot| {
             let slot = slot.borrow();

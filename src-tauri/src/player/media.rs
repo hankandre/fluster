@@ -38,7 +38,8 @@ impl From<HlsError> for MpvError {
     /// `unsafe-transcoding-url` copy); a network or local failure is not.
     fn from(error: HlsError) -> Self {
         match error {
-            HlsError::Fetch | HlsError::Status(_) | HlsError::Loopback => {
+            HlsError::Cancelled => MpvError::Cancelled,
+            HlsError::Fetch | HlsError::Status(_) | HlsError::TooLarge | HlsError::Loopback => {
                 MpvError::Conversion(error)
             }
             _ => MpvError::UnsafeConversion(error),
@@ -50,7 +51,17 @@ impl LaunchMedia {
     /// Checks every URL the launch names and, for HLS, fetches and checks
     /// every playlist and subtitle with the header before any mpv handle
     /// exists. Any failure refuses the launch.
+    #[cfg(test)]
     pub(super) fn prepare(request: &LaunchRequest) -> Result<Self, MpvError> {
+        Self::prepare_until(request, &|| false)
+    }
+
+    /// `prepare`, giving up with `MpvError::Cancelled` before the next
+    /// network request once `stopped` returns true.
+    pub(super) fn prepare_until(
+        request: &LaunchRequest,
+        stopped: &dyn Fn() -> bool,
+    ) -> Result<Self, MpvError> {
         let plan = &request.plan;
         let (server_url, media_kind) = match &plan.delivery {
             Delivery::Static => {
@@ -78,23 +89,29 @@ impl LaunchMedia {
             .iter()
             .filter_map(|track| track.delivery_url.clone())
             .collect();
-        let session = HlsSession::open(&HlsRequest {
-            server_url,
-            master_url: &plan.stream_url,
-            item_id: &plan.item_id,
-            media_source_id: &plan.media_source_id,
-            play_session_id: &plan.play_session_id,
-            media_kind,
-            subtitle_urls: &subtitle_urls,
-            authorization: &request.authorization,
-        })?;
+        let session = HlsSession::open_until(
+            &HlsRequest {
+                server_url,
+                master_url: &plan.stream_url,
+                item_id: &plan.item_id,
+                media_source_id: &plan.media_source_id,
+                play_session_id: &plan.play_session_id,
+                media_kind,
+                subtitle_urls: &subtitle_urls,
+                authorization: &request.authorization,
+            },
+            stopped,
+        )?;
+        // A subtitle Rust could not fetch is left out: mpv never lists it.
         let tracks = subtitles
             .into_iter()
             .zip(session.subtitle_urls())
-            .map(|(track, loopback)| MediaTrack {
-                external: true,
-                delivery_url: Some(loopback.clone()),
-                ..track.clone()
+            .filter_map(|(track, loopback)| {
+                Some(MediaTrack {
+                    external: true,
+                    delivery_url: Some(loopback.clone()?),
+                    ..track.clone()
+                })
             })
             .collect();
         let audio = session.audio_stream_index().and_then(|index| {

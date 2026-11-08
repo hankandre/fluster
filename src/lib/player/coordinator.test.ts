@@ -207,6 +207,29 @@ describe("PlaybackCoordinator", () => {
     expect(player.launch).not.toHaveBeenCalled();
   });
 
+  // P10-04: a converted launch checks playlists before it resolves. Stop
+  // asks the engine to stop at once, which cancels the pending launch.
+  it("stops the engine while a launch is still pending, so Stop does not wait it out", async () => {
+    const gateway = {
+      createPlaybackPlan: vi.fn(async () => plan),
+      reportStart: vi.fn(async () => undefined),
+      reportProgress: vi.fn(async () => undefined),
+      reportStopped: vi.fn(async () => undefined),
+    } as PlaybackGateway;
+    const player = new FakePlayer();
+    let rejectLaunch!: (error: Error) => void;
+    player.launch.mockImplementation(() => new Promise<undefined>((_resolve, reject) => { rejectLaunch = reject; }));
+    player.stop.mockImplementation(async () => rejectLaunch(new Error("The playback launch was cancelled.")));
+    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
+
+    const starting = coordinator.start(item);
+    await vi.waitFor(() => expect(player.launch).toHaveBeenCalled());
+    await coordinator.stop();
+
+    await expect(starting).rejects.toBeInstanceOf(PlaybackCancelledError);
+    expect(player.stop.mock.calls.length).toBeGreaterThanOrEqual(1);
+  });
+
   it("delivers later player events while a report is still pending", async () => {
     let finishReport!: () => void;
     const gateway = {

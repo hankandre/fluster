@@ -6,6 +6,7 @@ mod events;
 mod hls;
 mod media;
 mod network;
+mod pending;
 mod properties;
 mod track_list;
 mod tracks;
@@ -38,6 +39,10 @@ pub(crate) enum MpvError {
     UnsafeConversion(HlsError),
     #[error("Could not start the converted stream: {0}")]
     Conversion(HlsError),
+    #[error("The playback launch was cancelled.")]
+    Cancelled,
+    #[error("The converted stream took too long to check, so Fluster stopped the launch.")]
+    LaunchTimedOut,
     #[error("Could not initialize libmpv 0.41 or newer: {0}")]
     Initialize(String),
     #[error("Fluster requires libmpv 0.41 or newer, but found {0}. Install a current libmpv development/runtime package or use the release AppImage.")]

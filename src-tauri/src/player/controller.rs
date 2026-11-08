@@ -1,7 +1,7 @@
 //! Session lifecycle: launch, typed playback commands, and shutdown.
 
 use super::events::run_event_loop;
-use super::media::LaunchMedia;
+use super::pending::{PendingSlot, PREPARE_DEADLINE};
 use super::properties::observe_properties;
 use super::version::{ensure_numeric_locale, query_libmpv_version};
 use super::{native_trace, MpvError};
@@ -27,6 +27,8 @@ struct Session {
 
 struct ControllerInner {
     session: Mutex<Option<Session>>,
+    /// Lock order: `session`, then `pending`.
+    pending: PendingSlot,
     session_finished: Condvar,
     renderer: Mutex<Result<String, String>>,
     capabilities: Mutex<Option<PlayerCapabilities>>,
@@ -37,6 +39,7 @@ impl Default for ControllerInner {
     fn default() -> Self {
         Self {
             session: Mutex::new(None),
+            pending: PendingSlot::default(),
             session_finished: Condvar::new(),
             renderer: Mutex::new(Err(String::new())),
             capabilities: Mutex::new(None),
@@ -127,15 +130,18 @@ impl MpvController {
             return Err(MpvError::InvalidPlan);
         }
         self.capabilities()?;
-        {
+        // One launch at a time: the pending marker refuses a second launch
+        // until this one becomes a session or fails, and `stop` cancels it.
+        let pending = {
             let session = self.inner.session.lock().expect("session mutex poisoned");
             if session.is_some() {
                 return Err(MpvError::AlreadyPlaying);
             }
-        }
+            self.inner.pending.begin()?
+        };
         // For HLS this fetches and checks every playlist before any handle
         // exists; the session's loopback server lives as long as `media`.
-        let media = Arc::new(LaunchMedia::prepare(&request)?);
+        let media = Arc::new(pending.prepare(&request, PREPARE_DEADLINE)?);
 
         // GTK initializes its locale after application startup and may replace
         // LC_NUMERIC with the desktop locale. libmpv requires this category to
@@ -157,6 +163,7 @@ impl MpvController {
             media.configure(&init, &request)
         })
         .map_err(|error| MpvError::Initialize(safe_error(error)))?;
+        pending.check()?;
         let mpv = Arc::new(Mutex::new(mpv));
         let mut event_client = {
             let mpv_guard = mpv.lock().expect("libmpv mutex poisoned");
@@ -169,15 +176,27 @@ impl MpvController {
 
         let session_id = request.plan.play_session_id.clone();
         let video_loaded = Arc::new(AtomicBool::new(false));
-        surface::attach(&app, mpv.clone(), session_id.clone(), video_loaded.clone())
-            .map_err(MpvError::Renderer)?;
+        if let Err(error) =
+            surface::attach(&app, mpv.clone(), session_id.clone(), video_loaded.clone())
+        {
+            // A timed-out attach can still run later on the UI thread; this
+            // detach is queued behind it and removes what it installed.
+            surface::detach(&app, &session_id);
+            return Err(MpvError::Renderer(error));
+        }
 
         let finished = Arc::new(AtomicBool::new(false));
         {
             let mut session = self.inner.session.lock().expect("session mutex poisoned");
-            if session.is_some() {
+            let refused = if session.is_some() {
+                Some(MpvError::AlreadyPlaying)
+            } else {
+                pending.check().err()
+            };
+            if let Some(error) = refused {
+                drop(session);
                 surface::detach(&app, &session_id);
-                return Err(MpvError::AlreadyPlaying);
+                return Err(error);
             }
             *session = Some(Session {
                 id: session_id.clone(),
@@ -300,6 +319,9 @@ impl MpvController {
         let (session_id, finished) = {
             let session = self.inner.session.lock().expect("session mutex poisoned");
             let Some(session) = session.as_ref() else {
+                // A launch still checking its stream gives up before it
+                // creates a handle; `stop` does not wait for it.
+                self.inner.pending.cancel();
                 return Ok(());
             };
             (session.id.clone(), session.finished.clone())
