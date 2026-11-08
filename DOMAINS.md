@@ -55,7 +55,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 
 **Language.** Server, ServerId, User, Session, DeviceId, Access token, Quick Connect code, Server capabilities.
 
-**Code today.** `JellyfinGateway.connect/login`, `normalizeServerUrl`, `createSdkApi` in `src/lib/jellyfin/gateway.ts`; the login UI inside `src/poc/PocApp.tsx`.
+**Code today.** `JellyfinGateway.connect/login`, `normalizeServerUrl`, `createSdkApi` in `src/lib/jellyfin/gateway.ts`; the sign-in UI in `src/features/sign-in/`.
 
 **Rules.**
 - The token is held only by the gateway (and later by the Rust-owned vault). It is never in React state, Query caches, or WebView storage.
@@ -79,7 +79,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 
 **Language.** Library (UserView), Item, Movie, Series, Season, Episode, Collection, Card, Row, Resume position, Played, Favorite, Image tag.
 
-**Code today.** `JellyfinGateway.latest`, the `LibraryItem` type in `src/domain/catalog.ts`, and the library grid in `src/poc/PocApp.tsx`.
+**Code today.** `JellyfinGateway.latest`, the `LibraryItem` type in `src/domain/catalog.ts`, and the home and browse views in `src/features/home/` and `src/features/browse/`.
 
 **Rules.**
 - Catalog code never builds stream URLs or decides playability. It hands an `itemId` (and optionally a `mediaSourceId`) to Playback Negotiation.
@@ -132,7 +132,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 
 **Language.** Attempt, Operation, First frame, End reason (eof / stopped / quit / error), Retry, Up next, Segment (intro / outro / recap).
 
-**Code today.** `PlaybackCoordinator` (`src/lib/player/coordinator.ts`), `playbackSessionReducer` (`src/lib/player/session-state.ts`), the player routing inside `src/poc/PocApp.tsx`.
+**Code today.** `PlaybackCoordinator` (`src/lib/player/coordinator.ts`), `playbackSessionReducer` (`src/lib/player/session-state.ts`), the player wiring in `src/features/player/use-playback-session.ts`.
 
 **Rules.**
 - Talks to the player only through the `PlayerEngine` port.
@@ -241,11 +241,11 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 - keyboard, remote, and focus navigation
 - media keys (MPRIS, Now Playing, SMTC; these are wired natively but are presentation concerns)
 
-**Code today.** `src/poc/PocApp.tsx` (448 lines: routing, login, library, resume dialog, player wiring), `src/components/PlayerView.tsx` (player shortcuts in `src/components/player-keymap.ts`), `src/features/roving-focus.ts` (arrow keys in card lists), `src/features/use-escape-key.ts`, `src/features/player/use-idle-cursor.ts`, `src/styles.css`. MPRIS: `src-tauri/src/media_controls.rs` (routing and state) and `src-tauri/src/media_controls/mpris.rs` (the D-Bus service, Linux only), with the stop request handled by `src/app/media-controls.ts` and `use-playback-session.ts`.
+**Code today.** `src/app/App.tsx` (hash routing), `src/features/` (the views), `src/components/PlayerView.tsx` (player shortcuts in `src/components/player-keymap.ts`), `src/features/roving-focus.ts` (arrow keys in card lists), `src/features/use-escape-key.ts`, `src/features/player/use-idle-cursor.ts`, `src/styles.css`. MPRIS: `src-tauri/src/media_controls.rs` (routing and state) and `src-tauri/src/media_controls/mpris.rs` (the D-Bus service, Linux only), with the stop request handled by `src/app/media-controls.ts` and `use-playback-session.ts`.
 
 **Rules.**
 - Media-control requests become existing player operations (pause, seek) or the Back path (stop). They never add a command or carry ids, URLs, or tokens.
-- Views call application use cases. They do not instantiate gateways or engines (today `src/poc/PocApp.tsx` receives them from `src/app/compose.ts`; this is the first split).
+- Views call application use cases. They do not instantiate gateways or engines (`src/app/compose.ts` builds them and hands them to views through context).
 
 ---
 
@@ -269,7 +269,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 | Concern | Owns | Code |
 |---|---|---|
 | **Security & Redaction** | URL redaction (TS + Rust), credential-in-URL rejection, canary tests, CSP | `src/lib/redact.ts`, `src-tauri/src/redaction.rs`, `docs/security.md` |
-| **Diagnostics** | Player information panel, decoder labels, exportable diagnostics (must pass redaction) | `PlayerInformation` in `PocApp.tsx`, diagnostics in `src-tauri/src/player/diagnostics.rs` |
+| **Diagnostics** | Player information panel, decoder labels, exportable diagnostics (must pass redaction) | diagnostics in `src-tauri/src/player/diagnostics.rs` |
 
 ---
 
@@ -299,7 +299,7 @@ These rules become an import-boundary lint (`WORKFLOW.md` → Mechanical enforce
 
 ## Target layout
 
-The core (domain, gateway, coordinator, native player, surfaces, redaction) moves here incrementally, one domain per PR, keeping its tests. The proof-of-concept UI in `src/poc/PocApp.tsx` is frozen, not refactored: new views are built fresh under `src/features/`, and the old screens stay runnable as the reference until their replacements pass, then are deleted (`tasks/prd.json` P3-16).
+The core (domain, gateway, coordinator, native player, surfaces, redaction) moves here incrementally, one domain per PR, keeping its tests. The proof-of-concept UI is deleted (P3-16); all views live under `src/features/`.
 
 ```text
 src/

@@ -1,5 +1,5 @@
 // Holds the desktop window open until `beforeClose` finishes, so a playing
-// session can stop and send its final report. Mirrors the proof of concept.
+// session can stop and send its final report.
 export function watchNativeWindowClose(beforeClose: () => Promise<void>): () => void {
   let cancelled = false;
   let closing = false;

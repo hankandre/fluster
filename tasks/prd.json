@@ -1046,10 +1046,10 @@
             "src/App.tsx no longer exists outside src/app/"
           ],
           "verify": "pnpm check && pnpm test:e2e",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "src/poc/ and the POC e2e journeys are deleted; src/app/App.tsx routes every hash outside #/next to #/next/home (sign-in when signed out) and labels browser mode.\nPorted before deleting: slow-progress-report Back, no-token-in-URL, browser-mode label, manual server entry (e2e/player.spec.ts, e2e/sign-in.spec.ts, src/app/App.test.tsx).\nVitest 672 -> 678, Playwright 29 -> 26; pnpm check, pnpm test:e2e, pnpm lint:boundaries pass."
         }
       ]
     },
