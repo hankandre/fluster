@@ -316,6 +316,20 @@ function deferred() {
   return { promise, resolve };
 }
 
+// Signs in and loads the first episode at `position` under fake timeouts.
+async function startWithFakeTimers(gateway: SessionGateway, engine: FakePlayerEngine, position: number) {
+  await renderPlayer(gateway, engine);
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(0);
+  });
+  expect(engine.launch).toHaveBeenCalledTimes(1);
+  await act(async () => {
+    engine.emit({ kind: "loaded", snapshot: snapshotAt(position) });
+    engine.emit({ kind: "first-frame" });
+    await vi.advanceTimersByTimeAsync(0);
+  });
+}
+
 describe("Auto-play hardening", () => {
   it("does not advance after a playback error, even one that arrives mid-countdown", async () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
@@ -351,47 +365,38 @@ describe("Auto-play hardening", () => {
     expect(gateway.setPlayed).not.toHaveBeenCalled();
   });
 
-  it("lets an explicit Back win over a natural end that is still reporting", async () => {
-    const stopped = deferred();
-    const gateway = fakeGateway([episode("e1", "Pilot"), episode("e2", "Second")], second, {
-      reportStopped: vi.fn(() => stopped.promise),
-    });
+  it("lets an explicit Back win over a natural end whose engine stop is still running", async () => {
+    const engineStopped = deferred();
+    const gateway = fakeGateway([episode("e1", "Pilot"), episode("e2", "Second")], second);
     const engine = new FakePlayerEngine();
     await renderPlayer(gateway, engine);
     await loadedAt(engine, 100);
     await waitFor(() => expect(gateway.nextEpisode).toHaveBeenCalled());
     await act(async () => undefined);
+    engine.stop.mockImplementationOnce(() => engineStopped.promise.then(() => undefined));
 
     await act(async () => {
       engine.emit({ kind: "ended", reason: "eof", snapshot: snapshotAt(1200) });
     });
-    await waitFor(() => expect(gateway.reportStopped).toHaveBeenCalled());
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
     });
+    expect(window.location.hash).toBe("#/next/play/e1");
     await act(async () => {
-      stopped.resolve();
+      engineStopped.resolve();
     });
 
     await waitFor(() => expect(window.location.hash).toBe("#/next/item/e1"));
+    expect(gateway.setPlayed).not.toHaveBeenCalled();
   });
 
-  it("negotiates the next episode only after the old Stopped report, even with a slow progress report", async () => {
+  it("leaves for the next episode at once with a slow progress report, and negotiates it only after the old Stopped report", async () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
-    const progress = deferred();
     const gateway = fakeGateway([episode("e1", "Pilot"), episode("e2", "Second")], second, {
-      reportProgress: vi.fn(() => progress.promise),
+      reportProgress: vi.fn(() => new Promise<void>(() => undefined)),
     });
     const engine = new FakePlayerEngine();
-    await renderPlayer(gateway, engine);
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(0);
-    });
-    await act(async () => {
-      engine.emit({ kind: "loaded", snapshot: snapshotAt(1175) });
-      engine.emit({ kind: "first-frame" });
-      await vi.advanceTimersByTimeAsync(0);
-    });
+    await startWithFakeTimers(gateway, engine, 1175);
     await act(async () => {
       engine.emit({ kind: "state", snapshot: snapshotAt(1176), cause: "seek" });
       await vi.advanceTimersByTimeAsync(0);
@@ -402,17 +407,21 @@ describe("Auto-play hardening", () => {
       fireEvent.click(screen.getByRole("button", { name: "Play now" }));
       await vi.advanceTimersByTimeAsync(0);
     });
+    expect(window.location.hash).toBe("#/next/play/e2");
+    expect(gateway.reportStopped).not.toHaveBeenCalled();
     expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1);
-    expect(window.location.hash).toBe("#/next/play/e1");
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(11_000);
+      await vi.advanceTimersByTimeAsync(4_900);
+    });
+    expect(gateway.reportStopped).not.toHaveBeenCalled();
+    expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(200);
     });
     expect(gateway.reportStopped).toHaveBeenCalledTimes(1);
-    expect(window.location.hash).toBe("#/next/play/e2");
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(0);
-    });
+    expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(2);
     const stoppedAt = vi.mocked(gateway.reportStopped).mock.invocationCallOrder[0];
     const negotiatedAt = vi.mocked(gateway.createPlaybackPlan).mock.invocationCallOrder[1];
     expect(negotiatedAt).toBeGreaterThan(stoppedAt);
@@ -443,5 +452,130 @@ describe("Auto-play hardening", () => {
     });
     await waitFor(() => expect(window.location.hash).toBe("#/next/series/s1"));
     expect(other.setPlayed).not.toHaveBeenCalled();
+  });
+});
+
+describe("Leaving does not wait for playstate reports", () => {
+  it("Back leaves at once while a progress report hangs, and the Stopped report still goes out", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const gateway = fakeGateway([episode("e1", "Pilot")], undefined, {
+      reportProgress: vi.fn(() => new Promise<void>(() => undefined)),
+    });
+    const engine = new FakePlayerEngine();
+    await startWithFakeTimers(gateway, engine, 100);
+    await act(async () => {
+      engine.emit({ kind: "state", snapshot: snapshotAt(200), cause: "seek" });
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(gateway.reportProgress).toHaveBeenCalled();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
+      await vi.advanceTimersByTimeAsync(100);
+    });
+    expect(window.location.hash).toBe("#/next/item/e1");
+    expect(gateway.reportStopped).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    expect(gateway.reportStopped).toHaveBeenCalledTimes(1);
+    expect(gateway.reportStopped).toHaveBeenCalledWith(
+      plan("e1", "play-e1-1"),
+      expect.objectContaining({ positionSeconds: 200 }),
+      expect.any(AbortSignal),
+      false,
+    );
+  });
+
+  it("a natural end leaves at once, then negotiates and marks played after the Stopped report", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const gateway = fakeGateway([episode("e1", "Pilot"), episode("e2", "Second")], second, {
+      reportProgress: vi.fn(() => new Promise<void>(() => undefined)),
+      setPlayed: vi.fn().mockResolvedValue(undefined),
+    });
+    const engine = new FakePlayerEngine();
+    await startWithFakeTimers(gateway, engine, 100);
+    expect(gateway.nextEpisode).toHaveBeenCalled();
+    await act(async () => {
+      engine.emit({ kind: "state", snapshot: snapshotAt(200), cause: "seek" });
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(gateway.reportProgress).toHaveBeenCalled();
+
+    await act(async () => {
+      engine.emit({ kind: "ended", reason: "eof", snapshot: snapshotAt(1200) });
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(window.location.hash).toBe("#/next/play/e2");
+    expect(gateway.reportStopped).not.toHaveBeenCalled();
+    expect(gateway.setPlayed).not.toHaveBeenCalled();
+    expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_100);
+    });
+    expect(gateway.reportStopped).toHaveBeenCalledTimes(1);
+    expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(2);
+    expect(gateway.setPlayed).toHaveBeenCalledWith("e1", true);
+    const stoppedAt = vi.mocked(gateway.reportStopped).mock.invocationCallOrder[0];
+    expect(vi.mocked(gateway.createPlaybackPlan).mock.invocationCallOrder[1]).toBeGreaterThan(stoppedAt);
+    expect(vi.mocked(gateway.setPlayed).mock.invocationCallOrder[0]).toBeGreaterThan(stoppedAt);
+  });
+
+  it("stops the engine once however often Back and Play now are pressed during the stop", async () => {
+    const engineStopped = deferred();
+    const gateway = fakeGateway([episode("e1", "Pilot"), episode("e2", "Second")], second);
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await loadedAt(engine, 1175);
+    const playNow = await screen.findByRole("button", { name: "Play now" });
+    engine.stop.mockImplementationOnce(() => engineStopped.promise.then(() => undefined));
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
+      fireEvent.click(playNow);
+    });
+    expect(engine.stop).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      engineStopped.resolve();
+    });
+
+    await waitFor(() => expect(window.location.hash).toBe("#/next/item/e1"));
+    expect(engine.stop).toHaveBeenCalledTimes(1);
+    expect(gateway.setPlayed).not.toHaveBeenCalled();
+  });
+
+  it("stays on the player and forgets every pending destination when the stop fails", async () => {
+    const engineStopped = deferred();
+    const gateway = fakeGateway([episode("e1", "Pilot"), episode("e2", "Second")], second);
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await loadedAt(engine, 1175);
+    const playNow = await screen.findByRole("button", { name: "Play now" });
+    engine.stop.mockImplementationOnce(() => engineStopped.promise.then(() => {
+      throw new Error("The player did not stop.");
+    }));
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
+      fireEvent.click(playNow);
+    });
+    await act(async () => {
+      engineStopped.resolve();
+    });
+    expect(await screen.findByText(/The player did not stop/)).toBeInTheDocument();
+    expect(window.location.hash).toBe("#/next/play/e1");
+    expect(engine.stop).toHaveBeenCalledTimes(1);
+
+    // The error panel repeats Back; either one leaves.
+    await act(async () => {
+      fireEvent.click(screen.getAllByRole("button", { name: "Back to library" })[0]);
+    });
+    await waitFor(() => expect(window.location.hash).toBe("#/next/item/e1"));
+    expect(engine.stop).toHaveBeenCalledTimes(2);
   });
 });
