@@ -12,7 +12,7 @@ import { toPlayableItem } from "./playable-item";
 import { useMediaSegments } from "./use-media-segments";
 import { NextEpisodeCard } from "./next-episode-card";
 import { creditsStart, leaveToNext, useAutoPlayCountdown, useNextEpisode } from "./use-auto-play-next";
-import { usePlaybackSession } from "./use-playback-session";
+import { usePlaybackSession, whenPlaybackStopped } from "./use-playback-session";
 import { useSeekPreview } from "./use-seek-preview";
 
 const SIGN_IN_ROUTE = "#/next/sign-in";
@@ -85,10 +85,12 @@ function PlaybackScreen({ gateway, player, route, detail }: {
 
   // Leaving at the credits stops short of the server's played threshold, so
   // finishing an episode into the next one marks it played. This runs after
-  // the Stopped report. Cancel and Back do not mark anything.
+  // the Stopped report, which may still be draining when the player leaves.
+  // Cancel and Back do not mark anything.
   const advanceTo = (target: NextEpisode) => {
     leaveToNext(target);
-    void gateway.setPlayed(route.itemId, true)
+    void whenPlaybackStopped(player.engine)
+      .then(() => gateway.setPlayed(route.itemId, true))
       .then(() => refreshHomeRows(queryClient))
       .catch(() => undefined);
   };

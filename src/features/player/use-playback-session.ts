@@ -15,13 +15,24 @@ import { PlaybackCancelledError, PlaybackCoordinator, type PlaybackGateway } fro
 import { initialPlaybackSessionState, playbackSessionReducer } from "../../lib/player/session-state";
 import { redactText } from "../../lib/redact";
 
-// The last stop sent to each engine. A new session waits for it so a late
-// stop (StrictMode remount, quick Back then Play) never ends the new playback.
+// The last session teardown on each engine: its stop and its playstate drain
+// (the Stopped report). A new session waits for it so a late stop (StrictMode
+// remount, quick Back then Play) never ends the new playback, and the next
+// negotiation never runs ahead of the old Stopped report. Leaving the player
+// never waits for it.
 const pendingStops = new WeakMap<PlayerEngine, Promise<void>>();
 
-function rememberStop(engine: PlayerEngine, stop: Promise<void>): Promise<void> {
-  pendingStops.set(engine, stop.catch(() => undefined));
-  return stop;
+// Adds to the engine's teardown rather than replacing it, so a natural end
+// and an explicit stop of the same session are both covered.
+function rememberStop(engine: PlayerEngine, teardown: Promise<void>): void {
+  const earlier = pendingStops.get(engine) ?? Promise.resolve();
+  pendingStops.set(engine, Promise.all([earlier, teardown.catch(() => undefined)]).then(() => undefined));
+}
+
+// Resolves once the engine's last session is stopped and its Stopped report
+// has been sent or hit its deadline.
+export function whenPlaybackStopped(engine: PlayerEngine): Promise<void> {
+  return pendingStops.get(engine) ?? Promise.resolve();
 }
 
 // Binds the chosen version so every attempt, including retries, asks for it.
@@ -46,19 +57,26 @@ interface ActiveSession {
   // Set once Back, close, or unmount owns teardown. A stopping session never
   // starts, and unmounting does not stop it twice.
   stopping: boolean;
+  // The engine stop in flight or done. Repeated Back or Play now presses
+  // share it instead of stopping the engine again.
+  stop?: Promise<void>;
   // Where to go once stopped (Play next, Cancel). "back" is the viewer's own
-  // Back and wins over everything else. Absent means onLeave.
+  // Back and wins over everything else. Absent means onLeave. It lives only
+  // as long as the stop it waits for: a failed stop clears it.
   destination?: (() => void) | "back";
 }
 
-// Stops the session, or only marks it stopping when it never started.
+// Stops the session, or only marks it stopping when it never started. Resolves
+// once the engine has stopped; the Stopped report drains in the background and
+// is remembered for the next session.
 function stopSession(engine: PlayerEngine, active: ActiveSession): Promise<void> {
   active.stopping = true;
+  if (active.stop) return active.stop;
   if (!active.started) return Promise.resolve();
-  // The stop includes the Stopped report (bounded by the reporter's own
-  // deadlines), so whatever waits on it, a leave or the next session, never
-  // runs ahead of it.
-  return rememberStop(engine, active.coordinator.stop().then(() => active.coordinator.flush()));
+  const stop = active.coordinator.stop();
+  active.stop = stop;
+  rememberStop(engine, stop.then(() => active.coordinator.flush()));
+  return stop;
 }
 
 export interface PlaybackSessionOptions {
@@ -97,6 +115,8 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     if (!active) return;
     session.current = undefined;
     active.stopping = true;
+    // The engine has already stopped (an explicit stop or a natural end).
+    active.stop ??= Promise.resolve();
     // The stop itself ends the session, and that ending lands here first, so
     // the destination is kept on the session rather than passed in.
     const destination = active.destination;
@@ -124,13 +144,11 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
       },
       onSessionEnded: (reason: PlaybackEndReason) => {
         callbacks.current.onSessionEnded();
+        // The engine has stopped. The Stopped report drains in the background:
+        // the next session and the window close wait for it, leaving does not.
+        rememberStop(engine, coordinator.flush());
         // An error keeps the player open with Retry and Back.
-        // The Stopped report goes out before the player is left.
-        if (mounted && reason !== "error") {
-          void coordinator.flush().catch(() => undefined).then(() => {
-            if (mounted) leave(reason);
-          });
-        }
+        if (mounted && reason !== "error") leave(reason);
       },
     });
     const active: ActiveSession = { coordinator, started: false, stopping: false };
@@ -189,18 +207,25 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     }
   }, [handleFailure]);
 
-  // Stops the session (which sends the Stopped report), then leaves. Resolves
-  // false when the stop failed and the player stays open.
+  // Stops the engine, then leaves without waiting for the Stopped report.
+  // Resolves false when the stop failed and the player stays open.
   const stopAndLeave = useCallback(async (destination?: () => void): Promise<boolean> => {
     const active = session.current;
     if (!active) return false;
     if (active.destination !== "back") active.destination = destination ?? "back";
+    const stop = stopSession(engine, active);
     try {
-      await stopSession(engine, active);
+      await stop;
     } catch (error) {
-      active.stopping = false;
-      if (active.destination === (destination ?? "back")) active.destination = undefined;
-      dispatch({ type: "failure", message: errorText(error) });
+      // Every press waiting on this stop failed with it and the viewer stays
+      // on the player, so none of their destinations survives. The next press
+      // starts a fresh stop with its own destination.
+      if (active.stop === stop) {
+        active.stop = undefined;
+        active.stopping = false;
+        active.destination = undefined;
+        dispatch({ type: "failure", message: errorText(error) });
+      }
       return false;
     }
     leave();
