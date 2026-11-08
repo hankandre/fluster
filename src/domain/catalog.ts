@@ -154,6 +154,24 @@ export interface SubtitleInfo {
   isForced: boolean;
 }
 
+// Where the preview thumbnails of one version live. Thumbnails are packed
+// into tile images of tileWidth x tileHeight thumbnails each, one thumbnail
+// every intervalMs of playback.
+export interface TrickplayInfo {
+  // Width and height in pixels of one thumbnail; also the width path segment of the tile URL.
+  width: number;
+  height: number;
+  tileWidth: number;
+  tileHeight: number;
+  thumbnailCount: number;
+  intervalMs: number;
+}
+
+export interface Chapter {
+  startSeconds: number;
+  name: string;
+}
+
 // One selectable file of an item. `id` is the MediaSourceId.
 export interface ItemVersion {
   id: string;
@@ -163,6 +181,7 @@ export interface ItemVersion {
   video?: VideoInfo;
   audio: AudioInfo[];
   subtitles: SubtitleInfo[];
+  trickplay?: TrickplayInfo;
 }
 
 export interface CastMember {
@@ -198,6 +217,7 @@ export interface ItemDetail {
   cast: CastMember[];
   userData: ItemUserData;
   versions: ItemVersion[];
+  chapters?: Chapter[];
   poster?: ImageRef;
   backdrop?: ImageRef;
 }

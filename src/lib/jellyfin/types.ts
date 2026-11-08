@@ -15,6 +15,20 @@ export interface QuickConnectResult {
   Code?: string;
 }
 
+export interface TrickplayInfoDto {
+  Width?: number;
+  Height?: number;
+  TileWidth?: number;
+  TileHeight?: number;
+  ThumbnailCount?: number;
+  Interval?: number;
+}
+
+export interface ChapterInfoDto {
+  StartPositionTicks?: number;
+  Name?: string | null;
+}
+
 export interface BaseItemDto {
   Id?: string;
   Name?: string;
@@ -35,6 +49,9 @@ export interface BaseItemDto {
   Genres?: string[] | null;
   People?: { Name?: string | null; Role?: string | null; Type?: string }[] | null;
   MediaSources?: MediaSourceDto[] | null;
+  Chapters?: ChapterInfoDto[] | null;
+  // Keyed by MediaSourceId, then by thumbnail width in pixels.
+  Trickplay?: Record<string, Record<string, TrickplayInfoDto> | null> | null;
   UserData?: {
     PlaybackPositionTicks?: number;
     Played?: boolean;
@@ -101,6 +118,7 @@ export interface PlaybackInfoResponse {
 }
 
 export interface HttpRequestConfig {
+  responseType?: "blob";
   headers?: Record<string, string>;
   params?: Record<string, unknown>;
   signal?: AbortSignal;

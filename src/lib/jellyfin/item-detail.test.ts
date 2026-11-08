@@ -140,3 +140,41 @@ describe("toItemDetail", () => {
     expect(toItemDetail({ Id: "x" })).toBeUndefined();
   });
 });
+
+describe("trickplay and chapters", () => {
+  const info = (width: number) => ({ Width: width, Height: width / 2, TileWidth: 10, TileHeight: 10, ThumbnailCount: 100, Interval: 10000 });
+  const base: BaseItemDto = { Id: "i", Name: "N", MediaSources: [{ Id: "a" }, { Id: "b" }] as MediaSourceDto[] };
+
+  it("recorded no-fields fixtures carry empty Trickplay and Chapters and map to no previews", () => {
+    for (const dto of [...Object.values(itemFixtures), ...Object.values(hdr10Fixtures)]) {
+      expect(dto).toHaveProperty("Trickplay");
+      expect(dto).toHaveProperty("Chapters");
+      const detail = toItemDetail(dto)!;
+      expect(detail.chapters).toBeUndefined();
+      expect(detail.versions.every((version) => version.trickplay === undefined)).toBe(true);
+    }
+  });
+
+  it("maps per version and picks the width closest to 320", () => {
+    const detail = toItemDetail({ ...base, Trickplay: { a: { "200": info(200), "360": info(360), "1080": info(1080) }, b: { "480": info(480) } } })!;
+    expect(detail.versions[0].trickplay).toEqual({ width: 360, height: 180, tileWidth: 10, tileHeight: 10, thumbnailCount: 100, intervalMs: 10000 });
+    expect(detail.versions[1].trickplay?.width).toBe(480);
+  });
+
+  it("ignores incomplete tile layouts and versions without trickplay", () => {
+    const detail = toItemDetail({ ...base, Trickplay: { a: { "320": { ...info(320), Interval: 0 } } } })!;
+    expect(detail.versions.map((version) => version.trickplay)).toEqual([undefined, undefined]);
+  });
+
+  it("maps chapters in order with fallback names", () => {
+    const detail = toItemDetail({
+      ...base,
+      Chapters: [{ StartPositionTicks: 600_000_000, Name: "Second" }, { StartPositionTicks: 0, Name: "First" }, { StartPositionTicks: 1_200_000_000, Name: " " }],
+    })!;
+    expect(detail.chapters).toEqual([
+      { startSeconds: 0, name: "First" },
+      { startSeconds: 60, name: "Second" },
+      { startSeconds: 120, name: "Chapter 3" },
+    ]);
+  });
+});

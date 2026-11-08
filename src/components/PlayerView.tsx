@@ -1,5 +1,5 @@
 import { redactText } from "../lib/redact";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -30,19 +30,40 @@ function time(value: number | undefined): string {
     : `${minutes}:${String(remainder).padStart(2, "0")}`;
 }
 
-export function PlayerView({ item, player, session, retrying, onRetry, onBack }: {
+// A named point on the seek bar.
+export interface SeekChapter {
+  startSeconds: number;
+  name: string;
+}
+
+function chapterAt(chapters: SeekChapter[], seconds: number): SeekChapter | undefined {
+  let current: SeekChapter | undefined;
+  for (const chapter of chapters) {
+    if (chapter.startSeconds <= seconds) current = chapter;
+  }
+  return current;
+}
+
+export function PlayerView({ item, player, session, retrying, onRetry, onBack, seekPreview, chapters }: {
   item: LibraryItem;
   player: PlayerEngine;
   session: PlaybackSessionState;
   retrying?: boolean;
   onRetry(): Promise<void> | void;
   onBack(): Promise<void> | void;
+  // Both are optional and off by default: without them the seek bar is a bare
+  // slider. seekPreview draws the picture shown above the time under the
+  // pointer (or the keyboard position); chapters adds markers and names.
+  seekPreview?: (seconds: number) => ReactNode;
+  chapters?: SeekChapter[];
 }) {
   const [commandError, setCommandError] = useState<string>();
   const [fullscreen, setFullscreenState] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [seekValue, setSeekValue] = useState<number>();
   const [volumeValue, setVolumeValue] = useState<number>();
+  const [hoverSeconds, setHoverSeconds] = useState<number>();
+  const [seekFocused, setSeekFocused] = useState(false);
   const hideTimer = useRef<number | undefined>(undefined);
   const snapshot = session.snapshot;
   const error = commandError ?? session.error;
@@ -176,6 +197,41 @@ export function PlayerView({ item, player, session, retrying, onRetry, onBack }:
   const duration = snapshot?.durationSeconds ?? 0;
   const position = seekValue ?? snapshot?.positionSeconds ?? 0;
   const diagnostics = snapshot?.diagnostics;
+  const seekEnhanced = Boolean(seekPreview) || Boolean(chapters?.length);
+  const previewSeconds = hoverSeconds ?? (seekFocused ? position : undefined);
+  const chapterName = previewSeconds != null && chapters ? chapterAt(chapters, previewSeconds)?.name : undefined;
+
+  const seekControl = (
+    <input
+      aria-label="Playback position"
+      type="range"
+      min={0}
+      max={Math.max(duration, 1)}
+      step={0.25}
+      value={Math.min(position, Math.max(duration, 1))}
+      onChange={(changeEvent) => setSeekValue(Number(changeEvent.target.value))}
+      onPointerUp={() => {
+        if (seekValue != null) void execute(() => player.seek(seekValue));
+        setSeekValue(undefined);
+      }}
+      onKeyUp={() => {
+        if (seekValue != null) void execute(() => player.seek(seekValue));
+        setSeekValue(undefined);
+      }}
+      onFocus={() => setSeekFocused(true)}
+      onBlur={() => setSeekFocused(false)}
+      disabled={!snapshot || !duration}
+    />
+  );
+
+  const moveSeekPreview = (pointerEvent: ReactPointerEvent<HTMLDivElement>) => {
+    if (!duration) return;
+    const box = pointerEvent.currentTarget.getBoundingClientRect();
+    if (box.width <= 0) return;
+    const fraction = (pointerEvent.clientX - box.left) / box.width;
+    if (!Number.isFinite(fraction)) return;
+    setHoverSeconds(Math.min(Math.max(fraction, 0), 1) * duration);
+  };
 
   return (
     <section className="player-page" onMouseMove={showControls} onMouseLeave={() => !snapshot?.paused && setControlsVisible(false)}>
@@ -231,24 +287,34 @@ export function PlayerView({ item, player, session, retrying, onRetry, onBack }:
       <footer className={`player-controls ${controlsVisible || snapshot?.paused ? "is-visible" : ""}`}>
         <div className="seek-row">
           <span>{time(position)}</span>
-          <input
-            aria-label="Playback position"
-            type="range"
-            min={0}
-            max={Math.max(duration, 1)}
-            step={0.25}
-            value={Math.min(position, Math.max(duration, 1))}
-            onChange={(changeEvent) => setSeekValue(Number(changeEvent.target.value))}
-            onPointerUp={() => {
-              if (seekValue != null) void execute(() => player.seek(seekValue));
-              setSeekValue(undefined);
-            }}
-            onKeyUp={() => {
-              if (seekValue != null) void execute(() => player.seek(seekValue));
-              setSeekValue(undefined);
-            }}
-            disabled={!snapshot || !duration}
-          />
+          {seekEnhanced ? (
+            <div
+              className="seek-track"
+              onPointerMove={moveSeekPreview}
+              onPointerLeave={() => setHoverSeconds(undefined)}
+            >
+              {seekControl}
+              {duration > 0 && chapters?.map((chapter) => {
+                if (chapter.startSeconds <= 0 || chapter.startSeconds >= duration) return null;
+                return (
+                  <span
+                    key={`${chapter.startSeconds}-${chapter.name}`}
+                    className="seek-chapter"
+                    role="img"
+                    aria-label={`Chapter: ${chapter.name} at ${time(chapter.startSeconds)}`}
+                    style={{ left: `${(chapter.startSeconds / duration) * 100}%` }}
+                  />
+                );
+              })}
+              {previewSeconds != null && duration > 0 && (
+                <div className="seek-preview" style={{ "--seek-x": `${(previewSeconds / duration) * 100}%` } as CSSProperties}>
+                  {seekPreview?.(previewSeconds)}
+                  <strong>{time(previewSeconds)}</strong>
+                  {chapterName && <em>{chapterName}</em>}
+                </div>
+              )}
+            </div>
+          ) : seekControl}
           <span>{time(snapshot?.durationSeconds)}</span>
         </div>
         <div className="control-row">

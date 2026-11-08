@@ -78,6 +78,19 @@ describe("item detail gateway calls", () => {
     expect(transport.calls[0]).toMatchObject({ method, url, config: { params: { userId: "user-1" } } });
   });
 
+  it("fetches a trickplay tile with header auth and no token in the URL", async () => {
+    const { gateway, transport } = await signedIn();
+    const tile = new Blob(["jpeg"]);
+    transport.responses.set("GET /Videos/i%2F1/Trickplay/320/2.jpg", tile);
+    await expect(gateway.trickplayTile("i/1", "src-1", 320, 2)).resolves.toBe(tile);
+    expect(transport.calls[0]).toMatchObject({
+      method: "GET",
+      url: "/Videos/i%2F1/Trickplay/320/2.jpg",
+      config: { params: { mediaSourceId: "src-1" }, responseType: "blob" },
+    });
+    expect(JSON.stringify(transport.calls[0])).not.toContain("top-secret");
+  });
+
   it("requires a session", async () => {
     const gateway = new JellyfinGateway("https://media.test", new RecordingTransport(), "install-1");
     await expect(gateway.setFavorite("i", true)).rejects.toThrow("Sign in");

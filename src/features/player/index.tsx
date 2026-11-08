@@ -10,6 +10,7 @@ import { itemRoute, leavePlayer, type PlayRoute } from "../routes";
 import { REFUSAL_COPY, type RefusalCopy } from "./refusal-copy";
 import { toPlayableItem } from "./playable-item";
 import { usePlaybackSession } from "./use-playback-session";
+import { useSeekPreview } from "./use-seek-preview";
 
 const SIGN_IN_ROUTE = "#/next/sign-in";
 
@@ -76,6 +77,8 @@ function PlaybackScreen({ gateway, player, route, detail }: {
   // Fixed for the whole session: a refetch of the detail must not restart playback.
   const [item] = useState(() => toPlayableItem(detail));
 
+  const seekProps = useSeekPreview(gateway, detail, route.mediaSourceId);
+
   const playback = usePlaybackSession({
     gateway,
     player,
@@ -108,6 +111,7 @@ function PlaybackScreen({ gateway, player, route, detail }: {
         retrying={playback.retrying}
         onRetry={playback.retry}
         onBack={playback.back}
+        {...seekProps}
       />
     </main>
   );
