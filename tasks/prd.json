@@ -1049,7 +1049,28 @@
           "status": "done",
           "owner": "implementer",
           "passes": true,
-          "evidence": "src/poc/ and the POC e2e journeys are deleted; src/app/App.tsx routes every hash outside #/next to #/next/home (sign-in when signed out) and labels browser mode.\nPorted before deleting: slow-progress-report Back, no-token-in-URL, browser-mode label, manual server entry (e2e/player.spec.ts, e2e/sign-in.spec.ts, src/app/App.test.tsx).\nVitest 672 -> 678, Playwright 29 -> 26; pnpm check, pnpm test:e2e, pnpm lint:boundaries pass."
+          "evidence": "src/poc/ and the POC e2e journeys are deleted; src/app/App.tsx routes every hash outside #/next to #/next/home (sign-in when signed out) and labels browser mode.\nPorted before deleting: slow-progress-report Back, no-token-in-URL, browser-mode label, manual server entry (e2e/player.spec.ts, e2e/sign-in.spec.ts, src/app/App.test.tsx).\nVitest 672 -> 678, Playwright 29 -> 26; pnpm check, pnpm test:e2e, pnpm lint:boundaries pass.\nGap: the POC player information panel had no feature equivalent; P3-18 owns it."
+        },
+        {
+          "id": "P3-18",
+          "title": "Show a player information panel",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "P3-16"
+          ],
+          "acceptance": [
+            "A panel in the feature player shows the libmpv version, renderer, decode mode and hwdec, and the play method, from the existing initialize_player and snapshot data, with no URLs, tokens, ids, or play-session ids",
+            "A native player that cannot start (missing or too-old libmpv, unsupported session) is reported before the user presses Play, with the reason",
+            "Built under src/features/ with a test"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
         }
       ]
     },

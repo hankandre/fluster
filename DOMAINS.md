@@ -269,7 +269,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 | Concern | Owns | Code |
 |---|---|---|
 | **Security & Redaction** | URL redaction (TS + Rust), credential-in-URL rejection, canary tests, CSP | `src/lib/redact.ts`, `src-tauri/src/redaction.rs`, `docs/security.md` |
-| **Diagnostics** | Player information panel, decoder labels, exportable diagnostics (must pass redaction) | diagnostics in `src-tauri/src/player/diagnostics.rs` |
+| **Diagnostics** | Player information panel, decoder labels, exportable diagnostics (must pass redaction) | player information panel (`tasks/prd.json` P3-18), diagnostics in `src-tauri/src/player/diagnostics.rs` |
 
 ---
 
