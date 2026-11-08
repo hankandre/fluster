@@ -175,6 +175,31 @@ export const scenarios: Scenario[] = [
     await page.getByLabel("Local network maximum bitrate").waitFor();
   } },
 
+  // UI gallery (browser development only)
+  { name: "80-ui-gallery", fullPage: true, run: (page) => go(page, "#/next/gallery", 600) },
+  { name: "81-ui-gallery-picker-open", run: async (page) => {
+    await go(page, "#/next/gallery", 400);
+    await page.getByRole("button", { name: /^Streaming limit/ }).click();
+    await page.getByRole("listbox").waitFor();
+    await page.keyboard.press("ArrowDown");
+  } },
+  { name: "82-ui-gallery-dialog", run: async (page) => {
+    await go(page, "#/next/gallery", 400);
+    await page.getByRole("button", { name: "Open dialog" }).click();
+    await page.getByRole("dialog").waitFor();
+  } },
+  { name: "83-ui-gallery-toasts", run: async (page) => {
+    await go(page, "#/next/gallery", 400);
+    await page.getByRole("button", { name: "Show toast" }).click();
+    await page.getByRole("button", { name: "Show error toast" }).click();
+    await page.getByText("Marked as watched").waitFor();
+  } },
+  { name: "84-ui-gallery-keyboard-focus", run: async (page) => {
+    await go(page, "#/next/gallery", 400);
+    for (let i = 0; i < 3; i += 1) await page.keyboard.press("Tab");
+    await page.waitForTimeout(150);
+  } },
+
   // Phone
   { name: "62-phone-home", phone: true, run: async (page) => { await signIn(page); await page.waitForTimeout(900); } },
   { name: "63-phone-detail", phone: true, fullPage: true, run: (page) => signedInAt(page, "#/next/item/m1", 1_000) },

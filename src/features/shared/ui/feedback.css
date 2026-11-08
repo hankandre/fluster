@@ -1,0 +1,94 @@
+@layer reset, tokens, base, components, features, focus;
+
+@layer components {
+  /* Empty state (DESIGN.md 7.17) */
+  .ui-empty {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-3);
+    max-width: var(--measure);
+    margin: 0 auto;
+    padding: var(--space-7) var(--space-4);
+    text-align: center;
+  }
+
+  .ui-empty-icon {
+    color: var(--text-3);
+  }
+
+  .ui-empty-title {
+    font: var(--type-heading);
+  }
+
+  .ui-empty-body {
+    margin: 0;
+    color: var(--text-2);
+    font: var(--type-body);
+  }
+
+  .ui-empty .ui-button {
+    margin-top: var(--space-2);
+  }
+
+  /* Inline error (DESIGN.md 7.16) */
+  .ui-inline-error {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .ui-inline-error-icon {
+    flex: none;
+    color: var(--danger);
+  }
+
+  .ui-inline-error-message {
+    margin: 0;
+    color: var(--text-1);
+    font: var(--type-body);
+  }
+
+  /* Skeleton: shimmer sweep, off under reduced motion; hidden for the first 150 ms. */
+  .ui-skeleton {
+    max-width: 100%;
+    height: var(--space-4);
+    border-radius: var(--radius-art);
+    background: linear-gradient(90deg, var(--surface-2) 0%, var(--surface-3) 50%, var(--surface-2) 100%) 0 0 / 200% 100%;
+    animation:
+      ui-skeleton-in 1ms linear 150ms backwards,
+      ui-skeleton-sweep 1.6s linear infinite;
+  }
+
+  .ui-skeleton[data-shape="line"] {
+    height: var(--space-3);
+    border-radius: var(--radius-xs);
+  }
+
+  .ui-skeleton[data-shape="circle"] {
+    border-radius: var(--radius-pill);
+  }
+
+  @keyframes ui-skeleton-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes ui-skeleton-sweep {
+    from {
+      background-position: 100% 0;
+    }
+
+    to {
+      background-position: -100% 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-skeleton {
+      background: var(--surface-2);
+      animation: none;
+    }
+  }
+}
