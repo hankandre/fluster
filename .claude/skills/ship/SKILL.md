@@ -39,6 +39,13 @@ description: Open a pull request for a finished Fluster branch, wait for CI, mer
 - Run `gh pr update-branch <number> --rebase` and let CI re-run.
 - Never update a branch that is `DIRTY`; resolve conflicts instead.
 
+## Dependabot
+
+- Let the auto-merge workflow merge minor and patch npm and cargo updates.
+- Triage majors, GitHub Actions, and ignored crates at each task boundary.
+- Ask before merging GitHub Actions updates.
+- Keep `@tauri-apps/api` on the Rust `tauri` crate's minor.
+
 ## Resolve conflicts
 
 - Treat a `DIRTY` merge state as a conflict; CI does not run on it.
