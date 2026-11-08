@@ -151,6 +151,8 @@ Answered on 2026-11-07: E1 versus E1-B, E2, the remote default limit, and the ph
 - 2026-11-07 (P10-01 review): The loopback server accepts without blocking, answers each connection on its own thread with a 2 s deadline for the whole request head and at most 16 connections, and `Drop` returns within one 10 ms poll without waiting for open connections. Test `hls_loopback_serves_past_slow_clients_and_drops_promptly` (review probe): four slow clients do not delay a GET past 500 ms, a stalled client is closed before 4 s, and drop takes under 200 ms.
 - 2026-11-07 (P10-01 review): `HlsRequest` carries the signed-in server URL; the master and every subtitle must share its origin (`hls_master_urls_follow_the_hls_url_rules`). Rust also refuses any playlist or subtitle body that contains the token value itself (any ASCII case, after percent decoding), on top of the credential-name check (`hls_bodies_echoing_the_token_are_detected_in_any_case_or_encoding`, `hls_session_refuses_unsafe_subtitles_and_token_echoes`).
 
+- 2026-11-07 (guardian re-review of P10-01, for P10-04): every `loadfile` on a `ValidatedHls` handle must go through `network::load_validated_hls` (a plain `loadfile`/`append` reopens the playlist fallback leak); enforce by type or test. The subtitle check passes any body starting `PG` on magic alone. TTML/SAMI external subtitles are refused and fail the session, so the DeviceProfile must not request them externally. A local process holding 16 loopback connections can deny a launch (accepted: no data exposed).
+
 ## Risks
 
 | Risk | Mitigation |
