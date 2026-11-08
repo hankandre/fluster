@@ -248,3 +248,13 @@ mod tests {
         .is_err());
     }
 }
+
+/// One Jellyfin server that answered LAN discovery. `address` has passed the
+/// URL policy; the frontend still probes it and, for plain HTTP to a
+/// private-LAN host, asks the user to confirm before sign-in.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct DiscoveredServer {
+    pub name: String,
+    pub id: String,
+    pub address: String,
+}

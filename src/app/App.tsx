@@ -49,7 +49,7 @@ export function App() {
     >
       <PlayerServicesProvider services={player}>
         {!services.native && <BrowserModeLabel />}
-        {inApp ? renderRoute(hash) : null}
+        {inApp ? renderRoute(hash, services) : null}
       </PlayerServicesProvider>
     </SessionProvider>
   );
@@ -65,12 +65,12 @@ function BrowserModeLabel() {
   return <p className="browser-mode-label" role="status">Browser development mode</p>;
 }
 
-function renderRoute(hash: string) {
+function renderRoute(hash: string, services: AppServices) {
   switch (hash) {
     case "#/next":
       return <FeatureIndex />;
     case "#/next/sign-in":
-      return <SignInView />;
+      return <SignInView discovery={services.discovery} />;
     case "#/next/home":
       return <HomeView />;
     case "#/next/browse":

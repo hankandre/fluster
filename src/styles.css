@@ -50,6 +50,15 @@ input:focus, select:focus { border-color: var(--acid); box-shadow: 0 0 0 1px var
 .form-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 30px; }
 .form-actions .primary-button { height: 48px; }
 .text-button { border: 0; background: none; color: var(--muted); padding: 10px 0; }
+.text-button:disabled { opacity: .55; cursor: wait; }
+.server-discovery { margin-top: 34px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; line-height: 1.5; }
+.server-discovery .text-button { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
+.discovered-servers { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
+.discovered-server { width: 100%; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; text-align: left; padding: 14px 16px; background: #080a10; color: var(--ink); border: 1px solid #282d37; }
+.discovered-server:hover, .discovered-server:focus-visible { border-color: var(--acid); outline: none; }
+.discovered-server:disabled { opacity: .55; cursor: wait; }
+.discovered-server-name { font-weight: 600; overflow-wrap: anywhere; }
+.discovered-server-address { color: var(--muted); font-family: var(--font-display); font-size: 12px; overflow-wrap: anywhere; }
 
 
 .browser-player { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }

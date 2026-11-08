@@ -10,6 +10,9 @@ vi.mock("../lib/jellyfin/gateway", () => ({
   },
 }));
 
+// The native media controls listen for a Tauri event; not under test here.
+vi.mock("./media-controls", () => ({ createNativeMediaControls: () => undefined }));
+
 import { lanHttpConfirmations } from "../lib/browser-lan-http-confirmations";
 import { getInstallId } from "../lib/install-id";
 import { createServices } from "./compose";
@@ -30,6 +33,22 @@ describe("createServices", () => {
     for (const [, , installId, confirmations] of constructed) {
       expect(installId).toBe(getInstallId());
       expect(confirmations).toBe(lanHttpConfirmations);
+    }
+  });
+});
+
+describe("server discovery", () => {
+  it("is absent in browser mode, where UDP is not available", () => {
+    expect("__TAURI_INTERNALS__" in window).toBe(false);
+    expect(createServices().discovery).toBeUndefined();
+  });
+
+  it("is the native adapter in the desktop shell", () => {
+    Object.defineProperty(window, "__TAURI_INTERNALS__", { value: {}, configurable: true });
+    try {
+      expect(createServices().discovery).toBeDefined();
+    } finally {
+      delete (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
     }
   });
 });

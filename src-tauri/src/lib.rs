@@ -2,6 +2,7 @@ mod auth_header;
 #[cfg(test)]
 mod command_allowlist;
 mod commands;
+mod discovery;
 #[cfg(test)]
 mod logger_guard;
 mod media_controls;
@@ -15,9 +16,9 @@ mod trace_canary;
 mod url_policy;
 
 use commands::{
-    initialize_player, launch_playback, realtime_connect, realtime_disconnect, seek_absolute,
-    select_track, set_fullscreen, set_muted, set_paused, set_player_surface, set_volume,
-    stop_playback,
+    discover_servers, initialize_player, launch_playback, realtime_connect, realtime_disconnect,
+    seek_absolute, select_track, set_fullscreen, set_muted, set_paused, set_player_surface,
+    set_volume, stop_playback,
 };
 use player::MpvController;
 use realtime::RealtimeManager;
@@ -57,6 +58,7 @@ pub fn run() {
             stop_playback,
             realtime_connect,
             realtime_disconnect,
+            discover_servers,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Fluster");

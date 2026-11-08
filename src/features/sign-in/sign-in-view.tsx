@@ -1,5 +1,9 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useSession, type SessionGateway } from "../../app/session";
+import type { ServerDiscovery } from "../../domain/server-discovery";
+import { PasswordStep } from "./password-step";
+import { ServerDiscoveryPanel } from "./server-discovery";
+import { errorMessage, isAbort, Shell } from "./sign-in-shell";
 
 export const QUICK_CONNECT_POLL_MS = 2_000;
 const HOME_ROUTE = "#/next/home";
@@ -9,16 +13,6 @@ type Stage =
   | { name: "confirm-unencrypted"; gateway: SessionGateway; serverName: string }
   | { name: "quick-connect"; gateway: SessionGateway }
   | { name: "password"; gateway: SessionGateway };
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Something went wrong. Try again.";
-}
-
-function isAbort(error: unknown): boolean {
-  if (typeof error !== "object" || error === null) return false;
-  const name = (error as { name?: unknown }).name;
-  return name === "AbortError" || name === "CanceledError";
-}
 
 function isNotFound(error: unknown): boolean {
   if (typeof error !== "object" || error === null) return false;
@@ -33,7 +27,8 @@ async function chooseSignInStage(gateway: SessionGateway, signal: AbortSignal): 
   return { name: quickConnect ? "quick-connect" : "password", gateway };
 }
 
-export function SignInView() {
+// `discovery` is present only in the desktop shell.
+export function SignInView({ discovery }: { discovery?: ServerDiscovery } = {}) {
   const session = useSession();
   const [stage, setStage] = useState<Stage>({ name: "server" });
 
@@ -44,7 +39,7 @@ export function SignInView() {
 
   switch (stage.name) {
     case "server":
-      return <ServerStep onConnected={setStage} />;
+      return <ServerStep discovery={discovery} onConnected={setStage} />;
     case "confirm-unencrypted":
       return (
         <ConfirmUnencryptedStep
@@ -74,19 +69,7 @@ export function SignInView() {
   }
 }
 
-function Shell({ kicker, title, titleId, children }: { kicker: string; title: string; titleId?: string; children: ReactNode }) {
-  return (
-    <main className="content auth-content">
-      <section className="auth-card">
-        <p className="kicker">{kicker}</p>
-        <h1 id={titleId}>{title}</h1>
-        {children}
-      </section>
-    </main>
-  );
-}
-
-function ServerStep({ onConnected }: { onConnected: (stage: Stage) => void }) {
+function ServerStep({ discovery, onConnected }: { discovery?: ServerDiscovery; onConnected: (stage: Stage) => void }) {
   const session = useSession();
   const [serverUrl, setServerUrl] = useState("");
   const [busy, setBusy] = useState(false);
@@ -95,15 +78,25 @@ function ServerStep({ onConnected }: { onConnected: (stage: Stage) => void }) {
 
   useEffect(() => () => controller.current?.abort(), []);
 
-  async function submit(event: FormEvent) {
+  function submit(event: FormEvent) {
     event.preventDefault();
+    void connectTo(serverUrl);
+  }
+
+  // A discovered address goes through the same probe and confirmation.
+  function choose(address: string) {
+    setServerUrl(address);
+    void connectTo(address);
+  }
+
+  async function connectTo(url: string) {
     setError("");
     setBusy(true);
     const abort = new AbortController();
     controller.current = abort;
     try {
       // A public http:// address throws here, before any request is sent.
-      const gateway = session.createGateway(serverUrl);
+      const gateway = session.createGateway(url);
       const server = await gateway.connect(abort.signal);
       if (server.needsUnencryptedConfirmation) {
         onConnected({ name: "confirm-unencrypted", gateway, serverName: server.name });
@@ -138,6 +131,7 @@ function ServerStep({ onConnected }: { onConnected: (stage: Stage) => void }) {
           </button>
         </div>
       </form>
+      {discovery && <ServerDiscoveryPanel discovery={discovery} disabled={busy} onChoose={choose} />}
     </Shell>
   );
 }
@@ -326,75 +320,6 @@ function QuickConnectStep({
         <button type="button" className="text-button" onClick={onUsePassword}>Use password instead</button>
         <button type="button" className="primary-button" autoFocus onClick={cancel}>Cancel</button>
       </div>
-    </Shell>
-  );
-}
-
-function PasswordStep({
-  gateway,
-  onSignedIn,
-  onBack,
-}: {
-  gateway: SessionGateway;
-  onSignedIn: () => void;
-  onBack: () => void;
-}) {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const controller = useRef<AbortController | undefined>(undefined);
-
-  useEffect(() => () => controller.current?.abort(), []);
-
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    setError("");
-    setBusy(true);
-    const abort = new AbortController();
-    controller.current = abort;
-    try {
-      await gateway.login(username, password, abort.signal);
-      if (abort.signal.aborted) {
-        void gateway.logout().catch(() => undefined);
-        return;
-      }
-      onSignedIn();
-    } catch (caught) {
-      if (isAbort(caught)) return;
-      setError(errorMessage(caught));
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Shell kicker="STEP 02 / SIGN IN" title="Sign in with your password">
-      <form className="login-form" onSubmit={submit}>
-        <label htmlFor="sign-in-username">Username</label>
-        <input
-          id="sign-in-username"
-          autoFocus
-          required
-          autoComplete="username"
-          value={username}
-          onChange={(event) => setUsername(event.target.value)}
-        />
-        <label htmlFor="sign-in-password">Password</label>
-        <input
-          id="sign-in-password"
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-        />
-        {error && <p role="alert" className="form-error">{error}</p>}
-        <div className="form-actions">
-          <button type="button" className="text-button" onClick={onBack}>Change server</button>
-          <button type="submit" className="primary-button" disabled={busy}>
-            {busy ? "Signing in…" : "Sign in"}
-          </button>
-        </div>
-      </form>
     </Shell>
   );
 }
