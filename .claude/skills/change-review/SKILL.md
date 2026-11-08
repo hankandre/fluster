@@ -18,6 +18,7 @@ description: Review a Fluster diff in a fresh context against its brief, invaria
 ## Review
 
 - Walk every item in `references/checklist.md`.
+- Walk `references/design-checklist.md` when the diff touches `src/features/`, `src/components/`, or `src/styles/`.
 - Look for correctness bugs and missed edge cases.
 - Look for invariant and dependency-rule violations.
 - Look for stubs, skipped tests, weakened assertions, and justified workarounds.

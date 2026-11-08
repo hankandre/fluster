@@ -1,6 +1,6 @@
 # Fluster design system
 
-Status: **proposal, awaiting approval** (2026-11-08). Nothing here is wired into the app yet. The token block in §8 is the proposed content of `src/styles/tokens.css`. The audit behind it is [`docs/design/audit.md`](docs/design/audit.md). The work to adopt it is in [`docs/design/rework-plan.md`](docs/design/rework-plan.md).
+Status: **Accepted 2026-11-08.** The owner approved this system and the five decisions in §13. The app adopts it through phase P13 in `tasks/prd.json`. Until P13-02 lands, the token block in §8 is the planned content of `src/styles/tokens.css`. The audit behind it is [`docs/design/audit.md`](docs/design/audit.md). The work to adopt it is in [`docs/design/rework-plan.md`](docs/design/rework-plan.md).
 
 ## 1. The idea
 
@@ -76,7 +76,12 @@ How:
 - **Atkinson Hyperlegible Mono.** Timecodes, Quick Connect codes, server addresses, and technical values (codec, bitrate) only. These are measurements, not decoration.
 - **The title's own Logo image** is the display face. When Jellyfin has a `Logo` image (`ImageTags.Logo`, or `ParentLogoImageTag` for episodes), the hero shows it instead of set type, with `alt` set to the title. Without one, the title is set in Atkinson Hyperlegible Next 700.
 - Fallback stack: `"Atkinson Hyperlegible Next", system-ui, -apple-system, "Segoe UI", sans-serif`.
-- **[unverified]** Check the release, the OFL licence text, and tabular-figure support of both Atkinson faces before bundling. If Next lacks `tnum`, timecodes already use Mono.
+- **Verified 2026-11-08.**
+  - Licence: both faces are under the SIL Open Font License 1.1. Sources: the `license` field of the GitHub repositories [googlefonts/atkinson-hyperlegible-next](https://github.com/googlefonts/atkinson-hyperlegible-next) and [googlefonts/atkinson-hyperlegible-next-mono](https://github.com/googlefonts/atkinson-hyperlegible-next-mono) (`OFL-1.1`), and the README of the first.
+  - Next: `fonts/variable/AtkinsonHyperlegibleNext[wght].ttf` has a `wght` axis of 200–800 and GSUB features `tnum` and `pnum`, so timecodes and counts can use `font-variant-numeric: tabular-nums`.
+  - Mono: `fonts/variable/AtkinsonHyperlegibleMono[wght].ttf` is fixed-pitch (`post.isFixedPitch` = 1), so every glyph is tabular, and it has a slashed-zero `zero` feature.
+  - These checks parsed the font tables directly.
+  - The Mono repository is archived. P13-02 vendors both woff2 files with `OFL.txt` under `src/assets/fonts/`.
 
 **Scale** (rem at `--ui-scale: 1`, root 16 px; see §6 for TV):
 
@@ -167,7 +172,7 @@ Reduced motion (`prefers-reduced-motion: reduce`):
 
 ## 7. Components
 
-Each component lists its anatomy, variants, states, and accessibility notes. All of them live under `src/features/shared/ui/` (proposed), use tokens only, and have a Testing Library test plus a screenshot in the design review.
+Each component lists its anatomy, variants, states, and accessibility notes. All of them live under `src/features/shared/ui/`, use tokens only, and have a Testing Library test plus a screenshot in the design review.
 
 ### 7.1 App shell and nav (`AppShell`, `AppNav`)
 
@@ -199,7 +204,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 | Variant | Frame | Under the art | Primary action (Enter or click) |
 |---|---|---|---|
 | `poster` | 2:3, `--poster-w` | Title (1 line), year or "3 new" | Open detail or series |
-| `thumb` (Continue Watching, Next Up) | 16:9, `--thumb-w`, Thumb, then Backdrop, then Primary | Series or title, then "S1 · E2 · 38 min left" | **Resume or play** (one activation). The `i` key, Menu on TV, or right-click opens details. Needs user approval (rework plan open question 1) |
+| `thumb` (Continue Watching, Next Up) | 16:9, `--thumb-w`, Thumb, then Backdrop, then Primary | Series or title, then "S1 · E2 · 38 min left" | **Resume or play** (one activation). The `i` key, Menu on TV, or right-click opens details (decision 1) |
 | `episode` | 16:9 inside `EpisodeRow` | n/a | Play the episode |
 | `library` | 16:9, library image | Library name | Open the library |
 
@@ -258,7 +263,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 
 Pure video by default. The chrome is three zones, shown together and hidden together:
 
-1. **Top bar** (`PlayerTopBar`, over `--scrim-player-top`): Back (icon button), then the title block. Episodes show the series name (`--type-meta`, `--text-2`) above the episode title ("S1 · E2 The Keeper's Log", `--type-heading`). On the right, a `ConversionChip` only when the play method is not direct play: "Converting on server · bitrate limit" in `--notice` with an icon. It opens the Info sheet. Nothing is shown for direct play (PRODUCT.md: "no indicator beyond the player information panel").
+1. **Top bar** (`PlayerTopBar`, over `--scrim-player-top`): Back (icon button), then the title block. Episodes show the series name (`--type-meta`, `--text-2`) above the episode title ("S1 · E2 The Keeper's Log", `--type-heading`). On the right, a `ConversionChip` only when the play method is not direct play: "Converting on server · bitrate limit" in `--notice` with an icon. It opens the Info sheet. Nothing is shown for direct play (PRODUCT.md: "no indicator beyond the player information panel"). The **Play original** action that P10-05 added as a floating button moves into the Info sheet's Playback section. The chip also offers it when the user's own streaming limit is the only reason.
 2. **Scrubber** (`Scrubber`, full width inside the gutter): a 4 px track that grows to 8 px when hovered or focused. Elapsed time sits left and remaining time right ("−1:21:40"), in `--type-mono`. "Ends at 22:41" appears beside the remaining time when there is room. Chapters are 2 px gaps cut into the track, not ticks above it. The buffered range shows at 35% white. The fill is `--art-accent`. The thumb is a 16 px `--text-1` disc that appears on hover or focus.
    - `ScrubPreview`: a frame sized to the trickplay tile (320×180 desktop, 384×216 TV) at `--radius-art`, with time and chapter name inside its lower edge on a scrim, clamped within the gutter. Keyboard focus on the scrubber shows the preview at the playhead, and Left and Right step 10 s with the preview following.
 3. **Control row** (`TransportControls`). Desktop: Play or Pause (56 px light disc, the only light-filled control), back 10, forward 10, then Volume (icon plus slider revealed on hover or focus), then a spacer. Right side: "Audio & Subtitles" (speech icon), Chapters (list icon, when there are chapters), Info (`i` icon), Fullscreen. TV: transport is centred (back 10, Play or Pause, forward 10) and the rest sits right. Volume is the TV's.
@@ -266,7 +271,7 @@ Pure video by default. The chrome is three zones, shown together and hidden toge
 Panels:
 
 - **`TrackPanel`**: a right side sheet (`--surface-1`, 420 px, or 33% on TV) with Audio and Subtitles lists (see `Picker`). Video keeps playing. It closes on Back or Escape, and focus returns to the trigger.
-- **`InfoSheet`** (the P3-18 content): a right side sheet with sections Playback (method, reason, "Original file" in `--ok`), Video, Audio, Decoder, and Renderer. Values are Mono. It never shows URLs, IDs, or tokens (existing redaction rules).
+- **`InfoSheet`** (restyles the existing P3-18 `PlayerInfoPanel` and keeps its redaction tests): a right side sheet with sections Playback (method, reason, "Original file" in `--ok`), Video, Audio, Decoder, and Renderer. Values are Mono. It never shows URLs, IDs, or tokens (existing redaction rules).
 - **`ChapterList`**: a right sheet of chapter thumbnails (trickplay at the chapter start) and names.
 
 OSD (`Osd`): a transient pill at top centre, under the top bar's position, visible for 1.2 s, for actions taken by key while the chrome is hidden: "Subtitles: English (SDH)", "Volume 65%", "Muted", "+10 s". Today `c`, `m`, and the arrow keys give no visible feedback. `role="status"`, and reduced motion makes it appear without a fade.
@@ -277,7 +282,7 @@ Idle: the chrome hides 3 s after the last input while playing. It never hides wh
 
 ### 7.15 Skip and Up Next
 
-- **`SkipButton`**: a pill (`--text-1` at 92% fill, `--on-light` text, skip icon) at the bottom right, above the scrubber's position. It sits higher when the chrome is visible. It appears with a fade when an Intro or Outro segment is active and stays until the segment ends. Desktop: never takes focus (as today), and the `s` key (proposed) activates it. TV: while the chrome is hidden, OK activates the visible Skip and arrows wake the chrome. This needs user approval (open question 4).
+- **`SkipButton`**: a pill (`--text-1` at 92% fill, `--on-light` text, skip icon) at the bottom right, above the scrubber's position. It sits higher when the chrome is visible. It appears with a fade when an Intro or Outro segment is active and stays until the segment ends. Desktop: never takes focus (as today), and the `s` key activates it. TV: while the chrome is hidden, OK activates the visible Skip and arrows wake the chrome (decision 4).
 - **`UpNextCard`**: bottom right, 400 px (TV 560), `--surface-1` at 96% with `--shadow-sheet` and `--radius-sheet`. It shows the next episode's 16:9 still (with series poster fallback), "Up next · S1 · E2", the title, then **Play now** (primary, with the countdown drawn as a fill sweeping the button over the remaining seconds) and **Hide** (quiet; cancels autoplay, as today's Cancel). Text is announced once on appear ("Up next: The Keeper's Log, playing in 10 seconds") and again at 5 s, not every second.
 
 ### 7.16 Notices, dialogs, toasts
@@ -294,9 +299,12 @@ Idle: the chrome hides 3 s after the last input while playing. It never hides wh
 
 ### 7.18 Settings (`SettingsPage`, `SettingsSection`, `SettingsRow`)
 
+A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings/settings-view.tsx`). It holds local and remote streaming limits as two native selects, with Home and "Back to features" links. P13-17 restyles it to this spec and extends it with the sections below.
+
+
 - Layout: section list on the left (desktop or TV) and section content on the right. Compact windows use a single list that drills in.
 - Sections:
-  - **Playback**: streaming limit, local and remote (P10-05), shown as a choice row with "No limit" and presets plus custom Mbps; auto-play next episode (on or off, countdown 5, 10, or 15 s); skip intros (offer button or never). Audio passthrough (P5-03) joins later.
+  - **Playback**: streaming limit, local and remote (exists since P10-05; same values and storage), shown as a choice row with "No limit" and presets plus custom Mbps; auto-play next episode (on or off, countdown 5, 10, or 15 s); skip intros (offer button or never). Audio passthrough (P5-03) joins later.
   - **Subtitles**: read-only display of the Jellyfin language preferences with a link-out note. Styling comes in M2.
   - **Account**: server name and address (Mono), user, stay signed in (P3-02), sign out, change server.
   - **About & diagnostics**: version, player and libmpv version, renderer, and "Copy diagnostics" (redacted).
@@ -315,10 +323,10 @@ Idle: the chrome hides 3 s after the last input while playing. It never hides wh
 - All buttons have a `--dur-quick` hover fill change, `--dur-instant` press (scale .98, none with reduced motion), and the shared focus ring.
 - `TextField`: a 52 px `--surface-2` field with a `--line-strong` border and `--radius-control`, label above in `--type-label` and `--text-2` (never tiny tracked capitals), helper and error text below, with the error linked via `aria-describedby`.
 
-## 8. Tokens (proposed `src/styles/tokens.css`)
+## 8. Tokens (`src/styles/tokens.css`)
 
 ```css
-/* Fluster design tokens. Proposal: not yet imported by src/styles.css. */
+/* Fluster design tokens (DESIGN.md §8). Imported by src/styles.css from P13-02. */
 @font-face { font-family: "Atkinson Hyperlegible Next"; src: url("../assets/fonts/AtkinsonHyperlegibleNext-Variable.woff2") format("woff2"); font-weight: 200 800; font-display: swap; }
 @font-face { font-family: "Atkinson Hyperlegible Mono"; src: url("../assets/fonts/AtkinsonHyperlegibleMono-Variable.woff2") format("woff2"); font-weight: 200 800; font-display: swap; }
 
@@ -455,25 +463,25 @@ Idle: the chrome hides 3 s after the last input while playing. It never hides wh
 
 **Hover and focus.** Hover previews (half-strength lift, row arrows, scrubber thickening) but never moves focus. Every hover-revealed control is also reachable and visible on focus.
 
-**Back.** Back or Escape closes the topmost layer: menu, then sheet, then dialog, then fullscreen, then player, then screen (browser history). Backspace does the same outside text fields (proposed).
+**Back.** Back or Escape closes the topmost layer: menu, then sheet, then dialog, then fullscreen, then player, then screen (browser history). Backspace does the same outside text fields.
 
 **Keyboard map**
 
-| Where | Key | Action | Status |
+| Where | Key | Action | Today |
 |---|---|---|---|
 | Anywhere | Arrows, Enter, Escape | Move, activate, back | Exists (partly) |
-| Anywhere | `/` | Focus search | Proposed |
-| Anywhere outside fields | Backspace | Back | Proposed |
-| Card | `i` or Menu | Open details (when Enter resumes) | Proposed |
+| Anywhere | `/` | Focus search | New in P13 |
+| Anywhere outside fields | Backspace | Back | New in P13 |
+| Card | `i` or Menu | Open details (when Enter resumes) | New in P13 |
 | Player | Space or `k` | Play or pause | Exists |
 | Player | Left / Right or `j` / `l` | Seek ∓10 s | Exists |
 | Player | Up / Down | Volume ±5 | Exists |
 | Player | `m` / `f` / `c` | Mute / fullscreen / cycle subtitles | Exists, gains OSD feedback |
 | Player | `i` | Info sheet | Exists, restyled |
-| Player | `a` | Audio & Subtitles panel | Proposed |
-| Player | `s` | Activate the visible Skip | Proposed |
-| Player | `n` | Play now on the Up Next card | Proposed |
-| Player | Home / End, 0–9 | Start / end, jump to 0–90% | Proposed |
+| Player | `a` | Audio & Subtitles panel | New in P13 |
+| Player | `s` | Activate the visible Skip | New in P13 |
+| Player | `n` | Play now on the Up Next card | New in P13 |
+| Player | Home / End, 0–9 | Start / end, jump to 0–90% | New in P13 |
 
 **Idle hiding.** See §7.14. Home's ambient backdrop follows focus only after a 300 ms dwell, so fast scrolling doesn't flicker.
 
@@ -517,7 +525,7 @@ Fluster talks like a knowledgeable friend running the projector: calm, brief, pl
 
 ## 12. What changes from today
 
-| Today | Proposed |
+| Today | New in P13 |
 |---|---|
 | Acid lime `#c8ff3d` for primary, focus, progress, kicker, slider | Neutral light primary, warm-white focus only, artwork-tinted progress |
 | Blue-black `#080a0f` with a fixed radial glow | Warm black, plus ambient light from the current item's art |
@@ -529,12 +537,12 @@ Fluster talks like a knowledgeable friend running the projector: calm, brief, pl
 | Decode chip and floating "Info" in the player | Title-only top bar, `ConversionChip` only when converting, Info sheet |
 | Silent key actions in the player | OSD feedback |
 | Raw errors; giant refusal headline | Copy table; `Notice` over the dimmed backdrop |
-| No Settings | Settings with Playback, Subtitles, Account, About |
+| Settings with two native selects and developer links (P10-05) | Settings with Playback, Subtitles, Account, About, built from `SettingsRow` and `Picker` |
 
-## 13. Open decisions for the owner
+## 13. Decisions (accepted 2026-11-08)
 
-1. **One-activation resume**: Continue Watching and Next Up cards play on Enter, and details move to `i` or Menu. This changes the e2e journeys that click a card and then Play.
-2. **Typeface**: Atkinson Hyperlegible Next and Mono (self-hosted). The alternative is the system UI stack, as today.
-3. **Logo images as titles**: needs `Logo` in the image fields the gateway requests (`ARCHITECTURE.md` §3 `enableImageTypes`).
-4. **TV Skip on OK**: while the chrome is hidden, OK activates a visible Skip. This differs from desktop, where Skip never takes focus.
-5. **Ambient backdrop on Home focus**: a richer feel at the cost of extra image loads on dwell. Off on a metered connection (later).
+1. **One-press resume.** Continue Watching and Next Up cards play on Enter, and details open on `i` or Menu. The e2e journeys that click a card and then Play change in P13-08.
+2. **Typeface.** Atkinson Hyperlegible Next and Mono, self-hosted. Licence and tabular figures are verified in §4. If either check had failed, the system UI stack would have stood.
+3. **Logo and Thumb images.** The gateway requests Jellyfin `Logo` and `Thumb` images (P13-05). The Logo becomes the title in heroes and detail headers.
+4. **TV Skip on OK.** While the chrome is hidden, OK activates a visible Skip. On desktop, Skip still never takes focus.
+5. **Ambient Home backdrop.** It follows the focused card after a 300 ms dwell (§7.2). Reduced motion swaps it without a crossfade.
