@@ -14,7 +14,7 @@ export function useMediaSegments(
   plan: PlaybackPlan | undefined,
 ): MediaSegment[] {
   const query = useQuery({
-    queryKey: ["media-segments", itemId, plan?.mediaSourceId, plan?.playSessionId],
+    queryKey: ["media-segments", itemId, plan?.mediaSourceId],
     queryFn: ({ signal }) => gateway.mediaSegments(itemId, signal),
     enabled: plan?.hasSegments === true,
     retry: false,
