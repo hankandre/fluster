@@ -1033,6 +1033,365 @@
       ]
     },
     {
+      "id": "P10",
+      "name": "Playback parity (M1b)",
+      "goal": "Fluster plays the original file whenever mpv can, falls back to server direct stream and then transcode only when it must, and always shows it. Decision: docs/decisions/0002-server-transcoding-fallback.md. Plan: docs/plans/active/002-transcoding-fallback-and-parity.md.",
+      "exit": [
+        "All P10 tasks pass",
+        "Tripwire passes the decision 0002 rules on both servers",
+        "A converted title plays on Hankflix with the indicator and leaves no server job"
+      ],
+      "tasks": [
+        {
+          "id": "P10-01",
+          "title": "Spike HLS playback in libmpv with header authentication",
+          "domain": "Player Engine",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "P0-02",
+            "P0-03",
+            "P1-04"
+          ],
+          "acceptance": [
+            "A loopback Rust test plays an HLS master playlist, a variant playlist, and fMP4 segments through libmpv with access-references on for that handle only, and asserts the exact Authorization line on every request",
+            "Loopback tests record whether a 302 on a segment and a cross-origin URI inside a playlist reach a second origin, and with which headers",
+            "The spike records whether max_redirects from stream-lavf-o and a demuxer-lavf-o protocol_whitelist reach nested opens",
+            "On both fixture servers, a master.m3u8 URL rebuilt from a recorded TranscodingUrl with every credential parameter removed and EnableTrickplay=false plays to first frame with header auth only",
+            "A prototype of E1-B (Rust validates each playlist before mpv reads it) is sized in the plan",
+            "The plan's decision log recommends E1 or E1-B with evidence, and records the user's approval before P10-04 starts"
+          ],
+          "verify": "cargo test --manifest-path src-tauri/Cargo.toml hls",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P10-02",
+          "title": "Record conversion contract fixtures for 10.11 and 12.x",
+          "domain": "Playback Negotiation",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P0-02",
+            "P0-03"
+          ],
+          "acceptance": [
+            "Fixtures record PlaybackInfo with the decision 0002 profile and flags on 10.11.7 and 12.4.0 for every sample with no limit, for the H.264 sample with MaxStreamingBitrate below its bitrate, and for the BluRay folder",
+            "A fixture user with video transcoding, audio transcoding, and remuxing disabled is recorded for the BluRay folder",
+            "A synthetic dvdsub sample records whether the server offers External or Encode for graphical subtitles while converting",
+            "A synthetic ISO sample is generated without third-party media and recorded, or the reason it cannot be is recorded",
+            "Fixtures keep TranscodingUrl, TranscodingSubProtocol, TranscodeReasons, and subtitle DeliveryMethod; every ApiKey value is replaced before commit"
+          ],
+          "verify": "pnpm test -- fixtures",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P10-03",
+          "title": "Negotiate playback with server fallback",
+          "domain": "Playback Negotiation",
+          "model": "opus",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P10-01",
+            "P10-02"
+          ],
+          "acceptance": [
+            "decideSource implements the ARCHITECTURE.md §3 rules and returns DirectPlay, DirectStream, Transcode, or a typed refusal",
+            "Every sample that direct plays today still returns DirectPlay in the fixtures",
+            "PlaybackInfo flags match the decision 0002 table in both body and query; tests assert both",
+            "The DeviceProfile has the §3 TranscodingProfiles, no CodecProfiles or ContainerProfiles entries, and no Hls subtitle profile; a test fails otherwise",
+            "TranscodingUrl is rebuilt by the §3 HLS URL rules; tests cover another origin, a wrong path or item, credential parameters in any case, SubtitleMethod=Hls, and EnableTrickplay",
+            "A disc folder or ISO offered for direct play triggers one PlaybackInfo re-request with EnableDirectPlay false",
+            "PlaybackPlan carries the play method and conversion reasons; RefusalReason gains conversion-not-allowed and unsafe-transcoding-url"
+          ],
+          "verify": "pnpm test -- source-acceptance device-profile gateway fixtures",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P10-04",
+          "title": "Play converted streams in libmpv with header authentication",
+          "domain": "Player Engine",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "P10-01",
+            "P10-03"
+          ],
+          "acceptance": [
+            "The load request gains a typed delivery field (static or hls); no Tauri command is added and the command allowlist test is unchanged",
+            "Rust validates HLS URLs (same origin as the server, master.m3u8 path, no credential query, EnableTrickplay=false) and refuses every other URL for hls delivery",
+            "Only hls sessions use the approved E1 or E1-B path; a test shows static sessions keep access-references off",
+            "Loopback tests prove the header on master, variant, segment, and sub-add requests, nothing sent to a second origin after a redirect or from a cross-origin playlist URI, and a canary ApiKey in a playlist body reaching no log, error, diagnostic, or event",
+            "Headless libmpv reaches playback-restart for a Transcode plan on both fixture servers",
+            "docs/security.md replaces its planned HLS section with the tested boundary"
+          ],
+          "verify": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings && cargo test --manifest-path src-tauri/Cargo.toml",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P10-05",
+          "title": "Add a streaming limit setting with local and remote values",
+          "domain": "Playback Negotiation",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P10-03"
+          ],
+          "acceptance": [
+            "A settings view under src/features/ holds a local and a remote maximum streaming bitrate; local applies to loopback and private-LAN host classes, remote to public hosts",
+            "Defaults follow the plan's answer to open question 3",
+            "The value is sent as MaxStreamingBitrate in the PlaybackInfo body and query; tests assert both",
+            "The setting is a non-secret preference and is never stored with or derived from a token",
+            "When the user's limit is the only conversion reason, Play original renegotiates once without the client limit for this session only",
+            "Built under src/features/ with a Playwright journey; no proof-of-concept screen is extended"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P10-06",
+          "title": "Show server conversions and report the play method",
+          "domain": "Playstate Reporting",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P10-03"
+          ],
+          "acceptance": [
+            "The player shows Converting on server: {reason} for Transcode, Repackaging on server, original quality: {reason} for DirectStream, and says when subtitles are burned in",
+            "Every TranscodeReason value has plain-language copy in a Record keyed by reason, so a new value fails compilation",
+            "The player information panel shows the play method",
+            "Start, progress, and stopped reports carry the plan's PlayMethod; tests assert each method",
+            "Playwright journeys cover direct play with no indicator, direct stream, and transcode"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P10-07",
+          "title": "Stop server conversions when a session ends or restarts",
+          "domain": "Playback Session",
+          "model": "opus",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "P10-03"
+          ],
+          "acceptance": [
+            "Retry, a quality change, or a track change that starts a new play session for a converting item first calls DELETE /Videos/ActiveEncodings with deviceId and playSessionId",
+            "A failed or timed-out stopped report for a conversion is followed by one bounded DELETE /Videos/ActiveEncodings",
+            "The fixture shows whether progress reports keep a paused HLS job alive past 60 s; if not, Fluster pings while a conversion is paused",
+            "Leaving the player never waits on these calls",
+            "Coordinator tests cover each case and fail without the change"
+          ],
+          "verify": "pnpm test -- coordinator playstate-reporter gateway",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P10-08",
+          "title": "Change tracks and quality during a conversion",
+          "domain": "Playback Session",
+          "model": "opus",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "P10-04",
+            "P10-07"
+          ],
+          "acceptance": [
+            "Choosing an audio or subtitle track the running conversion does not carry renegotiates at the current position with AudioStreamIndex or SubtitleStreamIndex",
+            "Changing the streaming limit during playback renegotiates at the current position",
+            "Track changes during direct play stay local in mpv",
+            "The old play session is stopped before the new one starts; tests cover each path"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P10-09",
+          "title": "Repurpose the tripwire to never convert what can be direct played",
+          "domain": "Playback Negotiation",
+          "model": "opus",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P10-03",
+            "P10-07"
+          ],
+          "acceptance": [
+            "Every playable sample returns DirectPlay with no job signal and only Static=true stream or external subtitle requests, with no streaming limit",
+            "The BluRay folder returns DirectStream or Transcode with a conversion reason, makes only same-origin master.m3u8, main.m3u8, or hls1 requests with no credential parameter and EnableTrickplay=false, and leaves no job 10 s after the stopped report",
+            "A forced-limit run of the H.264 sample returns Transcode with a bitrate reason under the same HLS request rules and leaves no job after stop",
+            "A fixture user without conversion rights gets conversion-not-allowed for the BluRay folder with no media request",
+            "For every conversion, /Sessions PlayMethod and TranscodingInfo IsVideoDirect and IsAudioDirect are recorded and agree with the plan",
+            "The existing sabotage cases still fail for playable samples; docs/validation.md and tests/samples/README.md describe the new rules"
+          ],
+          "verify": "pnpm test:tripwire",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P10-10",
+          "title": "Refuse converted streams in the browser development engine",
+          "domain": "Player Engine",
+          "model": "sonnet",
+          "skill": null,
+          "human": false,
+          "depends_on": [
+            "P10-03"
+          ],
+          "acceptance": [
+            "BrowserPlayerEngine refuses DirectStream and Transcode plans with a typed error and never requests an HLS URL",
+            "The player shows This stream needs the desktop player with Back; it is never presented as a fallback for native",
+            "No hls.js or other HLS dependency is added",
+            "A Playwright journey covers the refusal"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P10-11",
+          "title": "Rewrite refusal copy for the fallback policy",
+          "domain": "Playback Negotiation",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P10-03"
+          ],
+          "acceptance": [
+            "Refusal copy exists only for reasons that remain refusals: live-source, no-sources, missing-source-data, conversion-not-allowed, unsafe-transcoding-url, and iso-source while it remains",
+            "No copy says Fluster will not ask the server to convert",
+            "conversion-not-allowed names the admin settings that allow transcoding and remuxing for the user",
+            "Retry and Back are always available",
+            "Built under src/features/ with a Playwright journey for conversion-not-allowed; no proof-of-concept screen is extended"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P10-12",
+          "title": "Dogfood server conversions on Hankflix",
+          "domain": "Playback Negotiation",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": true,
+          "depends_on": [
+            "P10-04",
+            "P10-05",
+            "P10-06",
+            "P10-07",
+            "P10-08"
+          ],
+          "acceptance": [
+            "A movie and an episode that direct played before still direct play, and the dashboard shows Direct Play",
+            "With a low remote limit or the user's limit set below the file's bitrate, a title converts, seeks, pauses for two minutes, and resumes with the indicator showing its reason",
+            "The dashboard's play method for that session is recorded next to Fluster's",
+            "After stop, the dashboard shows no active transcode within 10 s",
+            "A disc folder or ISO on Hankflix plays through conversion, or the gap is recorded as a task"
+          ],
+          "verify": "pnpm tauri dev",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "P12",
+      "name": "Early TV and mobile shell",
+      "goal": "The TypeScript core is ready for a second shell and the Android TV shell is chosen, so P9-01 can start before the desktop milestones finish.",
+      "exit": [
+        "All P12 tasks pass",
+        "P9-01 has no unmet dependency except the approved reorder"
+      ],
+      "tasks": [
+        {
+          "id": "P12-01",
+          "title": "Keep the TypeScript core shell-neutral",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": null,
+          "human": false,
+          "depends_on": [
+            "P2-02"
+          ],
+          "acceptance": [
+            "A dependency-cruiser rule fails if src/domain, src/lib/jellyfin, the playback coordinator, or the playstate reporter import Tauri, React, or DOM-only modules, with remediation text",
+            "Those modules type-check under a tsconfig without the DOM lib",
+            "Every current exception is fixed or listed as a task",
+            "pnpm check runs both checks"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P12-02",
+          "title": "Choose the TV and mobile shell",
+          "domain": "Player Engine",
+          "model": "opus",
+          "skill": "exec-plan",
+          "human": false,
+          "depends_on": [
+            "P10-01",
+            "P12-01"
+          ],
+          "acceptance": [
+            "A decision record compares React Native (react-native-tvos) with libmpv on Android against at least one alternative, using current sources",
+            "It states how the TV engine sends the Authorization header on static and HLS requests and refuses redirects, matching decision 0002",
+            "It lists what P9-01 must prove, including a converted sample over HLS",
+            "The user approves it"
+          ],
+          "verify": "test -f docs/decisions/0003-tv-and-mobile-shell.md",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        }
+      ]
+    },
+    {
       "id": "P4",
       "name": "Dogfood week",
       "goal": "Use Fluster as the only Jellyfin client on this computer for seven days.",
@@ -1087,6 +1446,174 @@
             "Every problem in the log is fixed or added to this file as a task"
           ],
           "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "P11",
+      "name": "Music (M7)",
+      "goal": "Music libraries play in Fluster: artists, albums, a queue, gapless audio in mpv, and accurate playstate, with lossless files played as stored.",
+      "exit": [
+        "All P11 tasks pass",
+        "An album plays gaplessly on this computer"
+      ],
+      "tasks": [
+        {
+          "id": "P11-01",
+          "title": "Decide music playback and the queue",
+          "domain": "Playback Session",
+          "model": "opus",
+          "skill": "exec-plan",
+          "human": false,
+          "depends_on": [
+            "P10-03"
+          ],
+          "acceptance": [
+            "A decision record chooses how a queue reaches mpv (typed queue commands or one load per track) and lists every new Tauri command it needs",
+            "It states how gapless playback works (mpv playlist with gapless-audio, prefetch-playlist) and its limits for converted streams, citing the mpv manual",
+            "It defines audio negotiation: an audio DeviceProfile, /Audio/{id}/stream?Static=true for direct play, the HLS fallback, and never /Audio/{id}/universal",
+            "The plan lists the resulting changes and the user approves the record"
+          ],
+          "verify": "test -f docs/decisions/0004-music-playback.md",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P11-02",
+          "title": "Browse music libraries",
+          "domain": "Catalog",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P3-06"
+          ],
+          "acceptance": [
+            "scripts/generate-samples.sh adds synthetic tagged FLAC and MP3 albums with no third-party media, and both fixture servers scan them as a music library",
+            "Music libraries list album artists, albums, and tracks with sort and paging",
+            "Requests ask only for the fields the views render; contract fixtures on 10.11.7 and 12.4.0 back every new call",
+            "Built under src/features/ with a Playwright journey; no proof-of-concept screen is extended"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P11-03",
+          "title": "Show album and artist views",
+          "domain": "Catalog",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P11-02"
+          ],
+          "acceptance": [
+            "An album view shows artwork, track list with durations, disc numbers, and Play and Shuffle",
+            "An artist view shows albums and top tracks",
+            "Favorites and played state update from the server socket",
+            "Built under src/features/ with a Playwright journey"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P11-04",
+          "title": "Negotiate audio playback",
+          "domain": "Playback Negotiation",
+          "model": "opus",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P11-01",
+            "P10-03"
+          ],
+          "acceptance": [
+            "Audio items negotiate through the same decideSource rules with the audio DeviceProfile",
+            "Lossless and lossy samples return DirectPlay with a /Audio/{id}/stream?Static=true URL",
+            "A forced limit returns an HLS audio conversion rebuilt by the §3 HLS URL rules",
+            "Contract fixtures on both servers back each case; tests assert body and query"
+          ],
+          "verify": "pnpm test -- source-acceptance device-profile gateway fixtures",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P11-05",
+          "title": "Play a queue gaplessly in mpv",
+          "domain": "Player Engine",
+          "model": "opus",
+          "skill": "native-player",
+          "human": true,
+          "depends_on": [
+            "P11-01",
+            "P11-04",
+            "P10-04"
+          ],
+          "acceptance": [
+            "The queue transport chosen in P11-01 is implemented with typed commands, command allowlist and docs/security.md updates",
+            "Consecutive direct-play tracks of an album play without a gap in a listening check on this computer",
+            "Next, previous, and seek within the queue work; each track's header auth and URL validation match single-item playback",
+            "Rust tests cover the queue commands"
+          ],
+          "verify": "cargo test --manifest-path src-tauri/Cargo.toml",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P11-06",
+          "title": "Report playstate for audio and the queue",
+          "domain": "Playstate Reporting",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P11-05"
+          ],
+          "acceptance": [
+            "Each track sends start, progress, and stopped reports with its own play session and PlayMethod",
+            "Moving to the next track stops the previous report before starting the next",
+            "Played state and play counts appear in the Jellyfin web UI",
+            "Tests cover queue transitions"
+          ],
+          "verify": "pnpm test -- playstate-reporter coordinator",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P11-07",
+          "title": "Add a now-playing bar and queue view",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": null,
+          "human": false,
+          "depends_on": [
+            "P11-05"
+          ],
+          "acceptance": [
+            "A now-playing bar shows the current track, artwork, position, and play/pause, next, and previous while browsing",
+            "A queue view lists, reorders, and removes upcoming tracks",
+            "Keyboard navigation reaches every control",
+            "Built under src/features/ with a Playwright journey"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
           "status": "todo",
           "owner": null,
           "passes": false,

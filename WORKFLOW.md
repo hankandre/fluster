@@ -1,6 +1,6 @@
 # Workflow
 
-How Fluster is built: one human steering, coding agents executing. This document adapts practices published by Anthropic, OpenAI, and the Bun team to a small Tauri/Rust + React codebase whose most important property, *never transcode*, can be checked mechanically.
+How Fluster is built: one human steering, coding agents executing. This document adapts practices published by Anthropic, OpenAI, and the Bun team to a small Tauri/Rust + React codebase whose most important property, *never convert what it can play as stored, and never convert silently*, can be checked mechanically.
 
 Sources are listed at the end. Where a practice is adopted, the reason is stated so it can be dropped when the reason stops being true.
 
@@ -120,7 +120,7 @@ These are Fluster's verifiers, from cheapest to most authoritative. New work sho
 | Contract | Recorded Jellyfin responses as fixtures; gateway tests assert request bodies *and* query strings | API drift, silent transcode flags |
 | Component | Testing Library on views | Rendered interaction |
 | Journey | Playwright against browser mode with a mocked server | User flows end to end |
-| **Server tripwire** | Implemented (P0-04): `pnpm test:tripwire` (`tests/integration/tripwire.ts`) plays every sample through the real `JellyfinGateway` against pinned Jellyfin 10.11.7 and 12.4 in `tests/integration/docker-compose.yml`. It fails on any ffmpeg process in the container, any `/Sessions` `TranscodingInfo`, any `TranscodeManager` command line or `FFmpeg.Transcode-/Remux-/DirectStream-` log file, and any media request that is not `/Videos/{id}/stream` with exactly one `Static=true`, or an external subtitle file, or that is redirected. A refusal passes only for a sample that declares that refusal reason; liveness checks fail the run if the Jellyfin log does not grow, `/Sessions` never shows the playback, or a poll errors. Summary on stdout, JSON log in `release-evidence/tripwire/`. CI job `tripwire` (not yet required). | **The core invariant. Language-independent, like Bun's test suite.** |
+| **Server tripwire** | Repurposed by decision 0002 (P10-09, planned): every sample mpv can play must direct play with no server job; the BluRay folder and a forced-limit run must come back DirectStream or Transcode over same-origin, credential-free HLS with the indicator reason, and leave no job after stop; `/Sessions` play method must match the plan. Today (P0-04): `pnpm test:tripwire` (`tests/integration/tripwire.ts`) plays every sample through the real `JellyfinGateway` against pinned Jellyfin 10.11.7 and 12.4 in `tests/integration/docker-compose.yml`. It fails on any ffmpeg process in the container, any `/Sessions` `TranscodingInfo`, any `TranscodeManager` command line or `FFmpeg.Transcode-/Remux-/DirectStream-` log file, and any media request that is not `/Videos/{id}/stream` with exactly one `Static=true`, or an external subtitle file, or that is redirected. A refusal passes only for a sample that declares that refusal reason; liveness checks fail the run if the Jellyfin log does not grow, `/Sessions` never shows the playback, or a poll errors. Summary on stdout, JSON log in `release-evidence/tripwire/`. CI job `tripwire` (not yet required). | **The core invariant. Language-independent, like Bun's test suite.** |
 | Native | Rust tests for the command surface; native harness (`testForceSoftware`) | mpv lifecycle, decoder fallback |
 | Hardware (human) | `docs/validation.md` gates on real GPUs and compositors | NVDEC/VA-API/VideoToolbox, Wayland composition, AppImage |
 
@@ -132,7 +132,7 @@ Make check output agent-friendly: short summaries on stdout, full logs to files,
 
 Rules currently stated in prose that should become checks:
 
-- **Direct-play policy.** A test that scans request construction for `EnableTranscoding`, `EnableDirectStream`, `AllowVideoStreamCopy`, `AllowAudioStreamCopy` and fails on any value other than the frozen policy, in both body and query.
+- **Playback policy.** A test that scans request construction for `EnableTranscoding`, `EnableDirectStream`, `AllowVideoStreamCopy`, `AllowAudioStreamCopy` and fails unless body and query carry the same values as the policy, and a test that fails if the DeviceProfile gains a codec or container condition or an `Hls` subtitle profile.
 - **No generic mpv bridge.** A Rust test that enumerates registered Tauri commands and fails if the list changes without updating an allowlist in the same commit.
 - **Redaction canaries.** Inject a known canary token. Assert it appears in no log, error string, or diagnostic export.
 - **Dependency direction.** Done (P0-07): `pnpm lint:boundaries` runs `dependency-cruiser` (`.dependency-cruiser.cjs`) over the layer rules in `DOMAINS.md`, with remediation text in each error; `pnpm check` runs it.
@@ -168,7 +168,7 @@ Relative API list prices (per million input/output tokens, as of 2026-10). Subsc
 | **Pilot units** of any mechanical change | **Opus** | The pilot defines the pattern everyone copies |
 | Rust native code: `player/*`, `surface/*`, `unsafe`, FFI, threading, GTK/Cocoa main-thread rules | **Opus** | Hard to verify without hardware; bugs crash the process |
 | Concurrency in `PlaybackCoordinator` (attempts, cancellation, report queue) | **Opus** | Subtle ordering bugs that unit tests catch only if someone thinks to write them |
-| Review of anything touching direct-play policy, the Tauri command surface, tokens, or redaction | **Opus** | Security and core-invariant risk. The reviewer must be at least as capable as the implementer. |
+| Review of anything touching playback policy (direct play or conversion), the Tauri command surface, tokens, or redaction | **Opus** | Security and core-invariant risk. The reviewer must be at least as capable as the implementer. |
 | Debugging after a Sonnet attempt failed twice | **Opus** | Escalation |
 | Spikes with no known answer (Wayland subsurface + `gpu-next` HDR, WebView2-over-D3D11 on Windows), or Opus stuck after two attempts | **Fable** | Rare. Reserve for genuinely novel, high-stakes design problems. |
 

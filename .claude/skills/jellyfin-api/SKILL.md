@@ -32,10 +32,10 @@ description: Add or change Jellyfin server calls, playback negotiation, playstat
 ## Negotiation
 
 - Send the Fluster DeviceProfile with every PlaybackInfo request.
-- Keep direct-play flags false in both body and query.
-- Accept only sources that pass every rule in `ARCHITECTURE.md` §3.
-- Return a typed refusal reason when no source passes.
-- Never follow a `TranscodingUrl`.
+- Send the same flags in body and query.
+- Decide each source with the `ARCHITECTURE.md` §3 rules: DirectPlay, DirectStream, Transcode, or Refuse.
+- Return a typed refusal reason when no source can be played or converted.
+- Rebuild a `TranscodingUrl` with the §3 HLS URL rules before use; never use it as given.
 - Route remote `Play` commands through the same negotiation.
 
 ## Tracks and reports

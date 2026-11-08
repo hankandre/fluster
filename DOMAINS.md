@@ -71,6 +71,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 - libraries (UserViews)
 - browse queries, sorting, filters, and search
 - home rows (Continue Watching, Next Up, Latest)
+- music libraries: artists, albums, and tracks (P11)
 - the series → season → episode hierarchy
 - item detail and multiple versions as *display* data
 - image URL construction and caching by tag
@@ -88,20 +89,20 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 
 ## 3. Playback Negotiation — core
 
-**Purpose.** Turn "play this item" into a direct-play `PlaybackPlan`, or a typed refusal. This is where the product's defining rule lives.
+**Purpose.** Turn "play this item" into a `PlaybackPlan` that uses the original file whenever possible and a server conversion only when it must ([decision 0002](docs/decisions/0002-server-transcoding-fallback.md)), or a typed refusal. This is where the product's defining rule lives.
 
 **Owns:**
 - `PLAYBACK_POLICY`
 - the Fluster DeviceProfile
-- the PlaybackInfo request (flags in body and query)
-- media source acceptance rules (`SupportsDirectPlay`, `Protocol`, `TranscodingUrl`, `VideoType`)
-- refusal reasons
-- static stream URL construction
+- the PlaybackInfo request (flags in body and query) and the streaming limit it sends
+- the source decision function (DirectPlay, DirectStream, Transcode, Refuse)
+- refusal reasons and conversion reasons
+- static stream URL construction and HLS URL rebuilding (credentials stripped, `EnableTrickplay=false`)
 - external subtitle validation
 - the PlaySessionId
 - start position (`PlaybackStartChoice`)
 
-**Language.** Direct play, Transcode, Remux, Media source, Version, Device profile, Play session, Playback plan, Refusal reason, Start choice (resume / start over), Ticks.
+**Language.** Direct play, Direct stream, Transcode, Remux, Play method, Conversion reason, Streaming limit, Media source, Version, Device profile, Play session, Playback plan, Refusal reason, Start choice (resume / start over), Ticks.
 
 **Code today.**
 - `PLAYBACK_POLICY`, `PlaybackPlan`, `resumeChoice` in `src/domain/playback.ts`
@@ -109,7 +110,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 - Rust `validate_playback_urls` in `src-tauri/src/player/network.rs`
 
 **Rules.**
-- No other domain may construct a media URL or bypass source acceptance.
+- No other domain may construct a media URL, use a `TranscodingUrl`, or bypass the source decision.
 - Remote-control `Play` commands (M5) go through this domain exactly like a local click.
 - Every rule change needs an Opus-level review and a fixture-backed test (`WORKFLOW.md`).
 
@@ -126,6 +127,8 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 - stop and back
 - the UI-facing session state reducer
 - later: next-episode auto-play, intro/credits skip using media segments, trickplay scrubbing data
+- stopping server conversions (`DELETE /Videos/ActiveEncodings`) before a new play session for the same item
+- the play queue for music (P11)
 
 **Language.** Attempt, Operation, First frame, End reason (eof / stopped / quit / error), Retry, Up next, Segment (intro / outro / recap).
 
@@ -146,7 +149,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 - the ordered report queue
 - bounded draining on stop or close
 - tick conversion
-- `PlayMethod: DirectPlay`
+- `PlayMethod` from the plan (`DirectPlay`, `DirectStream`, or `Transcode`)
 - `Failed: true` on error stops
 
 **Language.** Report, Progress interval, Drain, PositionTicks.
@@ -328,12 +331,15 @@ src-tauri/src/
 
 | Term | Meaning |
 |---|---|
-| **Direct play** | Streaming the original file byte-for-byte (`Static=true`) and decoding it locally. The only playback mode. |
-| **Remux / Direct stream** | The server repackages streams into another container. Forbidden. |
-| **Transcode** | The server re-encodes video or audio. Forbidden. |
+| **Direct play** | Streaming the original file byte-for-byte (`Static=true`) and decoding it locally. The preferred mode. |
+| **Remux / Direct stream** | The server repackages streams into HLS segments without re-encoding. Allowed only when direct play is impossible, and always shown. |
+| **Transcode** | The server re-encodes video or audio, or burns in subtitles. Allowed only when direct play is impossible, and always shown with its reason. |
+| **Play method** | `DirectPlay`, `DirectStream`, or `Transcode`: the method a plan uses, shown in the player and reported to the server |
+| **Conversion reason** | The server's `TranscodeReasons` for a DirectStream or Transcode plan, shown as "Converting on server: {reason}" |
+| **Streaming limit** | The user's maximum streaming bitrate, with a local and a remote value, sent as `MaxStreamingBitrate` |
 | **Media source** | One playable version of an item (`MediaSourceInfo`). An item can have several. |
-| **Refusal reason** | A typed explanation for why no media source can be direct played |
-| **Playback plan** | The output of negotiation: stream URL, media source, play session, start position, tracks |
+| **Refusal reason** | A typed explanation for why no media source can be played or converted |
+| **Playback plan** | The output of negotiation: play method, stream URL, conversion reasons, media source, play session, start position, tracks |
 | **Play session** | The server-issued `PlaySessionId` for one negotiation. Retry creates a new one. |
 | **Attempt** | One coordinator run from negotiation to teardown. Stale attempts are discarded. |
 | **Start choice** | Resume from the saved position, or start over |

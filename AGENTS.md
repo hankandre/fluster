@@ -1,6 +1,6 @@
 # Fluster agent rules
 
-Fluster is a direct-play-only Jellyfin client: Tauri 2 + React/TypeScript + Rust with embedded libmpv.
+Fluster is a Jellyfin client that plays the original file whenever it can and shows every server conversion: Tauri 2 + React/TypeScript + Rust with embedded libmpv.
 
 ## Read first
 
@@ -43,15 +43,19 @@ Fluster is a direct-play-only Jellyfin client: Tauri 2 + React/TypeScript + Rust
 
 ## Hard rules
 
-- Never enable server transcoding, remuxing, or direct stream.
-- Keep every direct-play flag false in both the request body and the query string.
+- Prefer direct play; fall back to direct stream, then transcode, only through Playback Negotiation.
+- Never request conversion for a source that passes the direct-play rules in `ARCHITECTURE.md` §3.
+- Show every server conversion and its reason in the player.
+- Send the same PlaybackInfo flags in the request body and the query string.
 - Send the Fluster DeviceProfile with every PlaybackInfo request.
-- Never follow a `TranscodingUrl`.
-- Reject media sources that fail the acceptance rules in `ARCHITECTURE.md` §3.
+- Never add codec or container conditions to the DeviceProfile.
+- Use a `TranscodingUrl` only after Playback Negotiation validates and rebuilds it.
+- Never let an HLS master playlist list subtitle or trickplay renditions.
+- Refuse media sources that `ARCHITECTURE.md` §3 can neither play nor convert.
 - Never add a generic mpv command, property, or option bridge.
 - Treat every new Tauri command as an architecture change.
 - Never log, persist, or display tokens, passwords, authenticated URLs, or play-session IDs.
-- Never add code that puts a token in a URL.
+- Never put a token in a URL; authenticate HLS playlists and segments with the header.
 - Never store tokens in WebView storage, Query caches, or React state.
 - Never use the browser player as a fallback for the native player.
 - Talk to Jellyfin only through `src/lib/jellyfin/gateway.ts`.
@@ -134,7 +138,7 @@ Fluster is a direct-play-only Jellyfin client: Tauri 2 + React/TypeScript + Rust
 - Never commit directly to `main`.
 - Merge only with green CI.
 - Ask before merging changes to invariants, `docs/security.md`, release signing, or CI.
-- Explain user impact, testing performed, and direct-play and security implications.
+- Explain user impact, testing performed, and direct-play, conversion, and security implications.
 - List every untested Wayland, GPU, Jellyfin, or AppImage gate.
 - Include screenshots for visible UI changes.
 - Link the plan or issue.
