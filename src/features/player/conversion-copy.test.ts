@@ -26,11 +26,11 @@ function hls(playMethod: "DirectStream" | "Transcode", reasons: PlaybackPlan["co
 }
 
 describe("conversion copy", () => {
-  it("has plain copy for every reason, with no jargon", () => {
+  it("has plain copy for every reason, with no jargon or raw enum names", () => {
     for (const reason of CONVERSION_REASONS) {
       const copy = CONVERSION_REASON_COPY[reason];
       expect(copy.length, reason).toBeGreaterThan(10);
-      expect(copy, reason).not.toMatch(/transcod|remux|Supported$/);
+      expect(copy, reason).not.toMatch(/transcod|remux|[A-Z][a-z]+[A-Z]/);
     }
   });
 
