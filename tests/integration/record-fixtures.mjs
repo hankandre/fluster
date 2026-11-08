@@ -190,12 +190,17 @@ for (const server of servers) {
   const setConfig = (config) => call(base, token, "POST", "/Users/Configuration", { query: { userId }, body: config });
   for (const target of targets.filter((t) => wanted(t.file))) {
     const { body, query } = requestFor(userId, target.profile);
-    if (target.userConfig) await setConfig({ ...originalConfig, ...target.userConfig });
     try {
+      if (target.userConfig) await setConfig({ ...originalConfig, ...target.userConfig });
       const response = await call(base, token, "POST", `/Items/${target.item.Id}/PlaybackInfo`, { query, body });
       save(target.file, response);
     } finally {
-      if (target.userConfig) await setConfig(originalConfig);
+      if (target.userConfig) {
+        await setConfig(originalConfig).catch((error) => {
+          console.error(`  could not restore the user configuration after ${target.file}`);
+          throw error;
+        });
+      }
     }
   }
   // The detail view's request: userId only, no fields parameter.
