@@ -2,6 +2,7 @@ import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import type { LibraryItem } from "../../domain/catalog";
 import {
   PlaybackRefusedError,
+  secondsToTicks,
   startOverChoice,
   type PlaybackPlan,
   type PlaybackRefusal,
@@ -111,6 +112,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
   const [plan, setPlan] = useState<PlaybackPlan>();
   const session = useRef<ActiveSession | undefined>(undefined);
   const ignoreLimit = useRef(false);
+  const [playOriginalRequested, setPlayOriginalRequested] = useState(false);
   const callbacks = useRef(options);
 
   useEffect(() => {
@@ -144,6 +146,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
   useEffect(() => {
     let mounted = true;
     ignoreLimit.current = false;
+    setPlayOriginalRequested(false);
     const coordinator = new PlaybackCoordinator(playbackGatewayFor(gateway, mediaSourceId, ignoreLimit), engine, {
       onEvent: (event) => {
         if (mounted) dispatch({ type: "event", event });
@@ -197,7 +200,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     };
   }, [gateway, engine, watchWindowClose, item, mediaSourceId, startTicks, leave, handleFailure]);
 
-  const retry = useCallback(async () => {
+  const retry = useCallback(async (startPositionTicks?: number) => {
     const active = session.current;
     if (!active) return;
     dispatch({ type: "reset" });
@@ -207,7 +210,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     setPlan(undefined);
     setRetrying(true);
     try {
-      const retried = await active.coordinator.retry();
+      const retried = await active.coordinator.retry(startPositionTicks);
       if (session.current === active) setPlan(retried);
     } catch (error) {
       if (session.current === active) handleFailure(error);
@@ -221,8 +224,11 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
   const playOriginal = useCallback(async () => {
     if (!plan?.playOriginalAvailable || ignoreLimit.current) return;
     ignoreLimit.current = true;
-    await retry();
-  }, [plan, retry]);
+    setPlayOriginalRequested(true);
+    // Continue from where the viewer is, not from the launch position.
+    const seconds = state.snapshot?.positionSeconds;
+    await retry(seconds === undefined ? undefined : secondsToTicks(seconds));
+  }, [plan, retry, state.snapshot]);
 
   // Stops the engine, then leaves without waiting for the Stopped report.
   // Resolves false when the stop failed and the player stays open.
@@ -263,5 +269,5 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     }
   }), [watchMediaControls, stopAndLeave]);
 
-  return { state, plan, retrying, refusal, retry, playOriginal, back, stopAndLeave };
+  return { state, plan, retrying, refusal, retry, playOriginal, playOriginalRequested, back, stopAndLeave };
 }

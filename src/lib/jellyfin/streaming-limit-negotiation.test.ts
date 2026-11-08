@@ -110,6 +110,11 @@ describe("MaxStreamingBitrate", () => {
     }
   });
 
+  it("stays DirectPlay with a limit set when the server offers direct play", async () => {
+    const { plan } = await negotiate("https://media.example.com", { remoteMbps: 2 }, directPlay);
+    expect(plan).toMatchObject({ delivery: "static", playMethod: "DirectPlay" });
+  });
+
   it("sends no limit when the caller skips the user's limit", async () => {
     const { posts } = await negotiate("https://media.example.com", { remoteMbps: 4 }, directPlay, { ignoreStreamingLimit: true });
     expect(posts[0].data.MaxStreamingBitrate).toBe(MAX_BITRATE);

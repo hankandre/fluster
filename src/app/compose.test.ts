@@ -14,6 +14,7 @@ vi.mock("../lib/jellyfin/gateway", () => ({
 vi.mock("./media-controls", () => ({ createNativeMediaControls: () => undefined }));
 
 import { lanHttpConfirmations } from "../lib/browser-lan-http-confirmations";
+import { streamingLimits } from "../lib/browser-streaming-limits";
 import { getInstallId } from "../lib/install-id";
 import { createServices } from "./compose";
 
@@ -30,10 +31,12 @@ describe("createServices", () => {
     createServices().createGateway("https://other.test");
 
     expect(constructed).toHaveLength(2);
-    for (const [, , installId, confirmations] of constructed) {
+    for (const [, , installId, confirmations, limits] of constructed) {
       expect(installId).toBe(getInstallId());
       expect(confirmations).toBe(lanHttpConfirmations);
+      expect(limits).toBe(streamingLimits);
     }
+    expect(createServices().streamingLimits).toBe(streamingLimits);
   });
 });
 
