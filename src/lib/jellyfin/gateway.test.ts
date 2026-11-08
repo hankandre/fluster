@@ -916,7 +916,7 @@ describe("JellyfinGateway home calls", () => {
       });
       await expect(gateway.nextEpisode("series-1", "e2")).resolves.toEqual({ id: "e3", title: "Third", label: "S1E3" });
       const request = transport.requests.at(-1);
-      expect(request?.params).toEqual({ userId: "user-1", adjacentTo: "e2" });
+      expect(request?.params).toEqual({ userId: "user-1", adjacentTo: "e2", isMissing: false });
       // Auth rides in the transport's Authorization header, never in the URL or params.
       expect(request?.url).toBe("/Shows/series-1/Episodes");
       expect(JSON.stringify(request?.params)).not.toMatch(/token|api_key|top-secret/i);
@@ -928,6 +928,18 @@ describe("JellyfinGateway home calls", () => {
         Items: [{ Id: "e1", Name: "Pilot" }, { Id: "e2", Name: "Second" }],
       });
       await expect(gateway.nextEpisode("series-1", "e1")).resolves.toEqual({ id: "e2", title: "Second" });
+    });
+
+    it("skips virtual (missing) episodes", async () => {
+      const { gateway, transport } = await authenticatedGateway();
+      transport.responses.set("GET /Shows/series-1/Episodes", {
+        Items: [
+          { Id: "e1", Name: "Pilot", LocationType: "FileSystem" },
+          { Id: "e2", Name: "Missing", LocationType: "Virtual" },
+          { Id: "e3", Name: "Third", LocationType: "FileSystem" },
+        ],
+      });
+      await expect(gateway.nextEpisode("series-1", "e1")).resolves.toEqual({ id: "e3", title: "Third" });
     });
 
     it("returns undefined for the last episode", async () => {

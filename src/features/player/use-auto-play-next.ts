@@ -2,6 +2,7 @@ import { useCallback, useEffect, useReducer, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { SessionGateway } from "../../app/session";
 import type { ItemDetail, NextEpisode } from "../../domain/catalog";
+import type { MediaSegment } from "../../domain/media-segments";
 import type { PlaybackSnapshot } from "../../domain/playback";
 import { scopeFor } from "../query-scope";
 import { playRoute, seriesRoute } from "../routes";
@@ -34,6 +35,11 @@ export function leaveToNext(next: NextEpisode): void {
   window.location.replace(playNextRoute(next));
 }
 
+// The Outro that counts as credits: the last one the server marks.
+export function creditsStart(segments: MediaSegment[]): number | undefined {
+  return segments.filter((segment) => segment.kind === "Outro").at(-1)?.startSeconds;
+}
+
 export function leaveToSeries(seriesId: string): void {
   window.location.replace(seriesRoute(seriesId));
 }
@@ -48,12 +54,17 @@ export interface AutoPlayCountdown {
 // Shows the card near the end of an episode and counts down one second at a
 // time (a timeout per tick, cleared on every change). Playing counts; paused
 // holds the countdown. At zero it advances.
-export function useAutoPlayCountdown({ next, seriesId, snapshot, outroStartSeconds, stopAndLeave }: {
+export function useAutoPlayCountdown({ next, seriesId, snapshot, outroStartSeconds, failed, advance, stopAndLeave }: {
   next: NextEpisode | undefined;
   seriesId: string | undefined;
   snapshot: PlaybackSnapshot | undefined;
   // Where the credits start, from the Outro media segment, when there is one.
   outroStartSeconds?: number;
+  // Any playback error or refusal: no card and no advance, so the viewer can
+  // read the error and choose Retry or Back.
+  failed: boolean;
+  // Leaves for the next episode. Called once the old session is stopped.
+  advance(next: NextEpisode): void;
   stopAndLeave(destination: () => void): Promise<boolean>;
 }): AutoPlayCountdown {
   const [state, dispatch] = useReducer(autoPlayReducer, { secondsLeft: undefined } satisfies AutoPlayState);
@@ -61,7 +72,7 @@ export function useAutoPlayCountdown({ next, seriesId, snapshot, outroStartSecon
   const position = snapshot?.positionSeconds ?? 0;
   const duration = snapshot?.durationSeconds;
   const paused = snapshot?.paused ?? false;
-  const inWindow = Boolean(next) && inEndWindow(position, duration, outroStartSeconds);
+  const inWindow = Boolean(next) && !failed && inEndWindow(position, duration, outroStartSeconds);
 
   useEffect(() => {
     dispatch({ type: "window", inWindow });
@@ -76,14 +87,14 @@ export function useAutoPlayCountdown({ next, seriesId, snapshot, outroStartSecon
   }, [stopAndLeave]);
 
   const playNow = useCallback(() => {
-    if (next) go(() => leaveToNext(next));
+    if (next) go(() => advance(next));
   }, [go, next]);
 
   const cancel = useCallback(() => {
     if (seriesId) go(() => leaveToSeries(seriesId));
   }, [go, seriesId]);
 
-  const secondsLeft = next ? state.secondsLeft : undefined;
+  const secondsLeft = next && !failed ? state.secondsLeft : undefined;
   useEffect(() => {
     if (secondsLeft === undefined || paused) return;
     if (secondsLeft === 0) {

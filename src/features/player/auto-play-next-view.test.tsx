@@ -307,3 +307,141 @@ describe("Auto-play the next episode", () => {
     expect(gateway.reportStopped).toHaveBeenCalledTimes(1);
   });
 });
+
+function deferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+
+describe("Auto-play hardening", () => {
+  it("does not advance after a playback error, even one that arrives mid-countdown", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const gateway = fakeGateway([episode("e1", "Pilot"), episode("e2", "Second")], second);
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    await act(async () => {
+      engine.emit({ kind: "loaded", snapshot: snapshotAt(1175) });
+      engine.emit({ kind: "first-frame" });
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(screen.getByLabelText("Up next")).toBeInTheDocument();
+
+    await act(async () => {
+      engine.emit({ kind: "error", message: "decoder hiccup" });
+    });
+    expect(screen.queryByLabelText("Up next")).not.toBeInTheDocument();
+    for (let second = 0; second < 15; second += 1) {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+    }
+    expect(window.location.hash).toBe("#/next/play/e1");
+
+    await act(async () => {
+      engine.emit({ kind: "ended", reason: "error", snapshot: snapshotAt(1176) });
+      await vi.advanceTimersByTimeAsync(20_000);
+    });
+    expect(window.location.hash).toBe("#/next/play/e1");
+    expect(gateway.setPlayed).not.toHaveBeenCalled();
+  });
+
+  it("lets an explicit Back win over a natural end that is still reporting", async () => {
+    const stopped = deferred();
+    const gateway = fakeGateway([episode("e1", "Pilot"), episode("e2", "Second")], second, {
+      reportStopped: vi.fn(() => stopped.promise),
+    });
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await loadedAt(engine, 100);
+    await waitFor(() => expect(gateway.nextEpisode).toHaveBeenCalled());
+    await act(async () => undefined);
+
+    await act(async () => {
+      engine.emit({ kind: "ended", reason: "eof", snapshot: snapshotAt(1200) });
+    });
+    await waitFor(() => expect(gateway.reportStopped).toHaveBeenCalled());
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
+    });
+    await act(async () => {
+      stopped.resolve();
+    });
+
+    await waitFor(() => expect(window.location.hash).toBe("#/next/item/e1"));
+  });
+
+  it("negotiates the next episode only after the old Stopped report, even with a slow progress report", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const progress = deferred();
+    const gateway = fakeGateway([episode("e1", "Pilot"), episode("e2", "Second")], second, {
+      reportProgress: vi.fn(() => progress.promise),
+    });
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    await act(async () => {
+      engine.emit({ kind: "loaded", snapshot: snapshotAt(1175) });
+      engine.emit({ kind: "first-frame" });
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    await act(async () => {
+      engine.emit({ kind: "state", snapshot: snapshotAt(1176), cause: "seek" });
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(gateway.reportProgress).toHaveBeenCalled();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Play now" }));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1);
+    expect(window.location.hash).toBe("#/next/play/e1");
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(11_000);
+    });
+    expect(gateway.reportStopped).toHaveBeenCalledTimes(1);
+    expect(window.location.hash).toBe("#/next/play/e2");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    const stoppedAt = vi.mocked(gateway.reportStopped).mock.invocationCallOrder[0];
+    const negotiatedAt = vi.mocked(gateway.createPlaybackPlan).mock.invocationCallOrder[1];
+    expect(negotiatedAt).toBeGreaterThan(stoppedAt);
+  });
+
+  it("marks the episode played when advancing, after its Stopped report, but not on Cancel", async () => {
+    const gateway = fakeGateway([episode("e1", "Pilot"), episode("e2", "Second")], second, {
+      setPlayed: vi.fn().mockResolvedValue(undefined),
+    });
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await loadedAt(engine, 1175);
+    await act(async () => {
+      fireEvent.click(await screen.findByRole("button", { name: "Play now" }));
+    });
+    await waitFor(() => expect(gateway.setPlayed).toHaveBeenCalledWith("e1", true));
+    expect(vi.mocked(gateway.setPlayed).mock.invocationCallOrder[0])
+      .toBeGreaterThan(vi.mocked(gateway.reportStopped).mock.invocationCallOrder[0]);
+
+    cleanup();
+    window.location.hash = "#/next/play/e1";
+    const other = fakeGateway([episode("e1", "Pilot")], second, { setPlayed: vi.fn().mockResolvedValue(undefined) });
+    const otherEngine = new FakePlayerEngine();
+    await renderPlayer(other, otherEngine);
+    await loadedAt(otherEngine, 1175);
+    await act(async () => {
+      fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+    });
+    await waitFor(() => expect(window.location.hash).toBe("#/next/series/s1"));
+    expect(other.setPlayed).not.toHaveBeenCalled();
+  });
+});

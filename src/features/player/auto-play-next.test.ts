@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { creditsStart } from "./use-auto-play-next";
 import {
   AUTO_PLAY_SECONDS,
   DEFAULT_END_WINDOW_SECONDS,
@@ -19,6 +20,20 @@ describe("cardStartSeconds", () => {
 
   it("is never later than the full countdown before the end", () => {
     expect(cardStartSeconds(1200, 1195)).toBe(1200 - AUTO_PLAY_SECONDS);
+  });
+});
+
+describe("credits data", () => {
+  it("ignores an Outro at zero or before the middle of the video", () => {
+    expect(cardStartSeconds(1200, 0)).toBe(1170);
+    expect(cardStartSeconds(1200, 300)).toBe(1170);
+    expect(cardStartSeconds(1200, 600)).toBe(600);
+  });
+
+  it("uses the last Outro segment", () => {
+    const outro = (startSeconds: number) => ({ kind: "Outro" as const, startSeconds, endSeconds: startSeconds + 60 });
+    expect(creditsStart([outro(100), { kind: "Intro", startSeconds: 0, endSeconds: 30 }, outro(1100)])).toBe(1100);
+    expect(creditsStart([{ kind: "Intro", startSeconds: 0, endSeconds: 30 }])).toBeUndefined();
   });
 });
 

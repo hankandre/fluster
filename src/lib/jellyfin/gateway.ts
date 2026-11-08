@@ -572,11 +572,12 @@ export class JellyfinGateway {
   async nextEpisode(seriesId: string, episodeId: string, signal?: AbortSignal): Promise<NextEpisode | undefined> {
     const { userId } = this.requireSession();
     const { data } = await this.get<ItemsResult>(`/Shows/${encodeURIComponent(seriesId)}/Episodes`, {
-      params: { userId, adjacentTo: episodeId },
+      params: { userId, adjacentTo: episodeId, isMissing: false },
       signal,
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
-    const items = data.Items ?? [];
+    // isMissing=false asks the server to leave out placeholders; this guards a server that does not.
+    const items = (data.Items ?? []).filter((item) => item.LocationType !== "Virtual");
     const current = items.findIndex((item) => item.Id === episodeId);
     return current === -1 ? undefined : toNextEpisode(items[current + 1]);
   }
