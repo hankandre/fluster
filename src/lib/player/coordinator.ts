@@ -159,6 +159,13 @@ export class PlaybackCoordinator {
     this.previousPlaySessionId = plan.playSessionId;
     this.plan = plan;
     this.unsubscribe = unsubscribe;
+    // A converted launch can spend seconds checking playlists before it
+    // resolves. Back, Stop, or a newer attempt asks the engine to stop at
+    // once, which cancels a pending launch, instead of waiting it out.
+    const cancelLaunch = () => {
+      void this.player.stop().catch(() => undefined);
+    };
+    controller.signal.addEventListener("abort", cancelLaunch, { once: true });
     try {
       await this.player.launch(plan);
       this.assertCurrentAttempt(attempt, controller);
@@ -169,8 +176,12 @@ export class PlaybackCoordinator {
         // session as failed so a reported start always gets a stopped report.
         await this.eventQueue;
         await this.finish("error", this.snapshot);
+        throw redactError(error);
       }
-      throw redactError(error);
+      // Stop or a newer attempt cancelled this launch; its error is moot.
+      throw new PlaybackCancelledError();
+    } finally {
+      controller.signal.removeEventListener("abort", cancelLaunch);
     }
   }
 

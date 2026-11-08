@@ -260,7 +260,7 @@ fn hls_loopback_subtitles_load_on_an_hls_handle() {
         codec: Some("subrip".into()),
         language: Some("eng".into()),
         external: true,
-        delivery_url: Some(session.subtitle_urls()[0].clone()),
+        delivery_url: session.subtitle_urls()[0].clone(),
     };
     assert_eq!(load_external_subtitles(&mpv, &[track]), vec![2]);
     let subtitle_fetches: Vec<_> = paths(&requests)

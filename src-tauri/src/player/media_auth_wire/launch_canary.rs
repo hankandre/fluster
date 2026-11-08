@@ -1,11 +1,10 @@
 //! P10-04 acceptance 6 (decision 0002, E2): a server that writes the token
 //! into a playlist or subtitle body fails the launch closed, before any mpv
-//! handle exists, and the token reaches no log, error, diagnostic, event, or
-//! UI text.
+//! handle exists (so no player event or diagnostic can exist), and the token
+//! reaches no log, error, or UI text.
 
 use super::*;
 use crate::command_allowlist::collect_rust_files;
-use crate::model::{PlaybackSnapshot, PlayerEvent};
 use crate::player::hls::HlsError;
 use crate::player::media::LaunchMedia;
 use crate::player::test_http::{serve_routes, Route};
@@ -128,20 +127,9 @@ fn redaction_canary_in_a_playlist_body_fails_the_launch_closed() {
         assert_clean(&format!("{label}: error"), &message);
         assert_clean(&format!("{label}: Debug"), &format!("{error:?}"));
         assert_clean(&format!("{label}: safe_error"), &safe_error(&message));
-        // Events and diagnostics: the only player event a failure produces
-        // carries fixed text, and the snapshot holds only libmpv properties.
-        let event = PlayerEvent::Error {
-            message: message.clone(),
-        };
-        assert_clean(
-            &format!("{label}: event"),
-            &serde_json::to_string(&event).expect("event serializes"),
-        );
-        assert_clean(
-            &format!("{label}: diagnostics"),
-            &serde_json::to_string(&PlaybackSnapshot::default()).expect("snapshot serializes"),
-        );
-        // mpv never ran: every server request is Rust's own fetch.
+        // Player events and diagnostics come only from a session's event
+        // loop, which needs an mpv handle; the launch failed before one
+        // existed, and mpv never ran: every server request is Rust's own.
         let heads = requests.lock().expect("requests mutex").clone();
         assert!(
             heads

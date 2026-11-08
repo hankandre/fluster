@@ -134,6 +134,36 @@ fn static_launches_keep_access_references_off() {
     assert_eq!(media.delivery(), MediaDelivery::Static);
 }
 
+/// Guardian L3: the signed-in server URL itself must pass the URL policy;
+/// a converted launch bound to an unparsable or public plain-HTTP server is
+/// refused before any request.
+#[test]
+fn converted_launches_need_an_allowed_server_url() {
+    let (server, origin) = listener();
+    let requests = serve_routes(server, vec![]);
+    let master = format!(
+        "{origin}/videos/{ITEM}/master.m3u8?MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false"
+    );
+    for server_url in [
+        "not a url",
+        "http://8.8.8.8:8096",
+        "http://media.example",
+        "https://user:pw@media.example",
+        "file:///srv/jellyfin",
+    ] {
+        let request = hls_launch_request(server_url, &master, ITEM, &[]);
+        let error = LaunchMedia::prepare(&request).err();
+        assert!(
+            matches!(
+                error,
+                Some(MpvError::UnsafeConversion(HlsError::UnsafeMasterUrl))
+            ),
+            "{server_url}: {error:?}"
+        );
+    }
+    assert!(requests.lock().expect("requests mutex").is_empty());
+}
+
 /// Validation failures are refusals the frontend recognizes by prefix;
 /// network failures are not.
 #[test]
@@ -141,7 +171,6 @@ fn unsafe_conversions_are_refusals_and_network_failures_are_not() {
     for error in [
         HlsError::UnsafeMasterUrl,
         HlsError::Redirect,
-        HlsError::TooLarge,
         HlsError::Malformed,
         HlsError::NotComplete,
         HlsError::UnsafeUri,
@@ -155,10 +184,19 @@ fn unsafe_conversions_are_refusals_and_network_failures_are_not() {
             "{message}"
         );
     }
-    for error in [HlsError::Fetch, HlsError::Status(502), HlsError::Loopback] {
+    for error in [
+        HlsError::Fetch,
+        HlsError::Status(502),
+        HlsError::TooLarge,
+        HlsError::Loopback,
+    ] {
         let message = MpvError::from(error).to_string();
         assert!(message.starts_with("Could not start the converted stream:"));
     }
+    assert!(matches!(
+        MpvError::from(HlsError::Cancelled),
+        MpvError::Cancelled
+    ));
 }
 
 fn production_sources() -> Vec<(PathBuf, String)> {

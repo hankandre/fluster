@@ -49,6 +49,8 @@ pub(crate) enum HlsError {
     UnsafeSubtitle,
     #[error("The local playlist server could not start.")]
     Loopback,
+    #[error("The converted stream launch was cancelled.")]
+    Cancelled,
 }
 
 #[cfg(test)]

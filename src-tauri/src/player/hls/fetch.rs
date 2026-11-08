@@ -14,7 +14,11 @@ use url::Url;
 pub(super) const MAX_PLAYLIST_BYTES: u64 = 8 * 1024 * 1024;
 /// PGS subtitles for a long film can reach tens of MiB.
 pub(super) const MAX_SUBTITLE_BYTES: u64 = 64 * 1024 * 1024;
-const REQUEST_TIMEOUT: Duration = Duration::from_secs(20);
+/// What one session holds in memory for all its subtitles together.
+pub(super) const MAX_SUBTITLE_TOTAL_BYTES: u64 = 96 * 1024 * 1024;
+pub(super) const PLAYLIST_TIMEOUT: Duration = Duration::from_secs(20);
+/// A large PGS file over a slow link takes longer than a playlist.
+pub(super) const SUBTITLE_TIMEOUT: Duration = Duration::from_secs(45);
 
 /// The platform roots, as the server socket uses (`rustls-native-certs`).
 fn native_roots() -> Vec<Certificate<'static>> {
@@ -46,7 +50,7 @@ impl PlaylistFetcher {
             .max_redirects(0)
             .proxy(None)
             .http_status_as_error(false)
-            .timeout_global(Some(REQUEST_TIMEOUT))
+            .timeout_global(Some(PLAYLIST_TIMEOUT))
             .user_agent("Fluster")
             .build()
             .new_agent();
@@ -58,8 +62,9 @@ impl PlaylistFetcher {
         &self,
         url: &Url,
         authorization: &MediaBrowserAuthorization,
+        timeout: Duration,
     ) -> Result<String, HlsError> {
-        let body = self.fetch_bytes(url, authorization, MAX_PLAYLIST_BYTES)?;
+        let body = self.fetch_bytes(url, authorization, MAX_PLAYLIST_BYTES, timeout)?;
         String::from_utf8(body).map_err(|_| HlsError::Malformed)
     }
 
@@ -70,10 +75,14 @@ impl PlaylistFetcher {
         url: &Url,
         authorization: &MediaBrowserAuthorization,
         limit: u64,
+        timeout: Duration,
     ) -> Result<Vec<u8>, HlsError> {
         let mut response = self
             .agent
             .get(url.as_str())
+            .config()
+            .timeout_global(Some(timeout))
+            .build()
             .header("Authorization", authorization.expose())
             .call()
             .map_err(|_| HlsError::Fetch)?;
