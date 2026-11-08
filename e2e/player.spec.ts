@@ -26,6 +26,7 @@ interface ServerOptions {
   resumeTicks?: number;
   disc?: boolean;
   failPlayback?: boolean;
+  playbackDelayMs?: number;
 }
 
 interface ServerLog {
@@ -54,7 +55,7 @@ async function mockPlayerServer(page: Page, options: ServerOptions = {}): Promis
     HTMLMediaElement.prototype.load = () => undefined;
   }, { shouldFail: Boolean(options.failPlayback) });
 
-  await page.route(`${serverUrl}/**`, (route) => {
+  await page.route(`${serverUrl}/**`, async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const cors = {
@@ -98,6 +99,7 @@ async function mockPlayerServer(page: Page, options: ServerOptions = {}): Promis
         });
       case "/Items/movie-1/PlaybackInfo":
         log.playbackInfo.push(request.postDataJSON());
+        if (options.playbackDelayMs) await new Promise((resolve) => setTimeout(resolve, options.playbackDelayMs));
         return json({ PlaySessionId: `play-${log.playbackInfo.length}`, MediaSources: [source] });
       case "/Videos/movie-1/stream":
         return route.fulfill({ status: 200, headers: cors, contentType: "video/mp4", body: "" });
@@ -125,6 +127,7 @@ test("Play opens the player and Back returns to the detail view", async ({ page 
   const log = await mockPlayerServer(page);
   await openArrival(page);
 
+  const historyLength = await page.evaluate(() => history.length);
   await page.getByRole("link", { name: "Play" }).click();
   await expect(page).toHaveURL(/#\/next\/play\/movie-1\?source=src-hd$/);
   await expect(page.getByRole("heading", { name: "Arrival", level: 1 })).toBeVisible();
@@ -143,6 +146,8 @@ test("Play opens the player and Back returns to the detail view", async ({ page 
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
   await expect(page.getByRole("heading", { name: "Arrival", level: 2 })).toBeVisible();
   await expect(page.locator("video")).toHaveCount(0);
+  // Back went back through history instead of adding a second detail entry.
+  expect(await page.evaluate(() => history.length)).toBe(historyLength + 1);
   await expect.poll(() => reportPaths(log)).toContain("/Sessions/Playing/Stopped");
   const stopped = log.reports.find((report) => report.path === "/Sessions/Playing/Stopped");
   expect(stopped?.body).toMatchObject({ Failed: false, PlaySessionId: "play-1", MediaSourceId: "src-hd" });
@@ -198,4 +203,20 @@ test("a Blu-ray folder shows the refusal with Back and no way to play anyway", a
   await page.getByRole("button", { name: "Back to details" }).click();
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
   await expect(page.getByRole("heading", { name: "Arrival", level: 2 })).toBeVisible();
+});
+
+test("Back cancels an in-flight playback negotiation", async ({ page }) => {
+  const log = await mockPlayerServer(page, { playbackDelayMs: 300 });
+  await openArrival(page);
+
+  await page.getByRole("link", { name: "Play" }).click();
+  await expect.poll(() => log.playbackInfo.length).toBe(1);
+  await page.getByLabel("Back to library").click();
+
+  await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
+  await page.waitForTimeout(450);
+  await expect(page.getByRole("heading", { name: "Arrival", level: 1 })).toHaveCount(0);
+  await expect(page.locator("video")).toHaveCount(0);
+  expect(log.playbackInfo).toHaveLength(1);
+  expect(log.reports).toHaveLength(0);
 });

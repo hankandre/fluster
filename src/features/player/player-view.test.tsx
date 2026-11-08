@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { StrictMode, type ReactNode } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PlayerServicesProvider } from "../../app/player-services";
@@ -219,5 +220,114 @@ describe("Player feature", () => {
 
     await waitFor(() => expect(engine.stop).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(gateway.reportStopped).toHaveBeenCalledWith(plan(), snapshot, expect.any(AbortSignal), false));
+  });
+
+  describe("sessions on one engine", () => {
+    // Renders the player for `session`, or nothing when it is undefined, on a
+    // shared client and engine so a test can end one session and start another.
+    function harness(gateway: SessionGateway, engine: FakePlayerEngine, strict = false) {
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      const tree = (session: number | undefined): ReactNode => {
+        const content = (
+          <QueryClientProvider client={client}>
+            <SessionProvider createGateway={() => gateway}>
+              <PlayerServicesProvider services={{ engine }}>
+                <SignIn gateway={gateway} />
+                {session === undefined ? null : <PlayerRouteView key={session} itemId="m1" mediaSourceId="src-hd" startTicks={0} />}
+              </PlayerServicesProvider>
+            </SessionProvider>
+          </QueryClientProvider>
+        );
+        return strict ? <StrictMode>{content}</StrictMode> : content;
+      };
+      return tree;
+    }
+
+    function deferStops(engine: FakePlayerEngine): Array<() => void> {
+      const resolvers: Array<() => void> = [];
+      engine.stop.mockImplementation(() => new Promise<undefined>((resolve) => {
+        resolvers.push(() => resolve(undefined));
+      }));
+      return resolvers;
+    }
+
+    async function signIn() {
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "test sign in" }));
+      });
+    }
+
+    it("negotiates, launches, and stops exactly once under StrictMode", async () => {
+      const gateway = fakeGateway();
+      const engine = new FakePlayerEngine();
+      const tree = harness(gateway, engine, true);
+      render(tree(1));
+      await signIn();
+      await startPlaying(engine);
+
+      expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1);
+      expect(engine.launch).toHaveBeenCalledTimes(1);
+      expect(engine.stop).not.toHaveBeenCalled();
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
+      });
+      await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
+      expect(engine.stop).toHaveBeenCalledTimes(1);
+      expect(gateway.reportStopped).toHaveBeenCalledTimes(1);
+    });
+
+    it("waits for the previous session's stop before negotiating the next one", async () => {
+      const gateway = fakeGateway({
+        createPlaybackPlan: vi.fn().mockResolvedValueOnce(plan("play-1")).mockResolvedValueOnce(plan("play-2")),
+      });
+      const engine = new FakePlayerEngine();
+      const tree = harness(gateway, engine);
+      const { rerender } = render(tree(1));
+      await signIn();
+      await startPlaying(engine);
+      const stops = deferStops(engine);
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
+      });
+      await waitFor(() => expect(engine.stop).toHaveBeenCalledTimes(1));
+      rerender(tree(undefined));
+      rerender(tree(2));
+      await screen.findByRole("button", { name: "Back to library" });
+      await act(async () => undefined);
+      expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1);
+
+      await act(async () => stops[0]());
+      await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(plan("play-2")));
+      expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(2);
+    });
+
+    it("never starts a session whose Back came before the previous stop finished", async () => {
+      const gateway = fakeGateway();
+      const engine = new FakePlayerEngine();
+      const tree = harness(gateway, engine);
+      const { rerender } = render(tree(1));
+      await signIn();
+      await startPlaying(engine);
+      const stops = deferStops(engine);
+
+      // Session 1 goes away without Back; its stop is still running.
+      rerender(tree(undefined));
+      await waitFor(() => expect(engine.stop).toHaveBeenCalledTimes(1));
+      rerender(tree(2));
+      await act(async () => {
+        fireEvent.click(await screen.findByRole("button", { name: "Back to library" }));
+      });
+
+      await act(async () => stops[0]());
+      await act(async () => stops[1]?.());
+      await act(async () => undefined);
+      await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
+
+      expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1);
+      expect(engine.launch).toHaveBeenCalledTimes(1);
+      expect(engine.subscribe).toHaveBeenCalledTimes(1);
+    });
   });
 });

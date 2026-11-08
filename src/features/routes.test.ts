@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parsePlayRoute, playRoute } from "./routes";
+import { waitFor } from "@testing-library/react";
+import { leavePlayer, openPlayerFromDetail, parsePlayRoute, playRoute } from "./routes";
 
 describe("play route", () => {
   it("round-trips the item, version, and start position", () => {
@@ -23,5 +24,30 @@ describe("play route", () => {
     "#/next/item/m1",
   ])("rejects %s", (hash) => {
     expect(parsePlayRoute(hash)).toBeUndefined();
+  });
+});
+
+describe("leaving the player", () => {
+  it("goes back to the detail entry it was opened from, adding no history", async () => {
+    window.location.hash = "#/next/item/m1";
+    const length = window.history.length;
+    openPlayerFromDetail({ itemId: "m1", startTicks: 0 });
+    expect(window.location.hash).toBe("#/next/play/m1");
+    expect(window.history.length).toBe(length + 1);
+
+    leavePlayer("m1");
+
+    await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
+    expect(window.history.length).toBe(length + 1);
+  });
+
+  it("replaces the player entry when it was not opened from that detail view", () => {
+    window.location.hash = "#/next/play/m2";
+    const length = window.history.length;
+
+    leavePlayer("m2");
+
+    expect(window.location.hash).toBe("#/next/item/m2");
+    expect(window.history.length).toBe(length);
   });
 });

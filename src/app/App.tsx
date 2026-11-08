@@ -17,14 +17,13 @@ import { SessionProvider } from "./session";
 
 export function App() {
   const services = useMemo(() => createServices(), []);
-  // One player engine for the whole app, shared by the new UI and the proof of concept.
+  // One player engine for the new UI. The proof of concept keeps creating its
+  // own so its coordinator can never hear the new UI's playback. Native mode
+  // has one mpv behind both, so switching between them while playing is
+  // unsupported; the proof of concept is removed in P3-16.
   const player = useMemo<PlayerServices>(
     () => ({ engine: services.createPlayerEngine(), watchWindowClose: services.watchWindowClose }),
     [services],
-  );
-  const pocServices = useMemo<PocServices>(
-    () => ({ ...services, createPlayerEngine: () => player.engine }),
-    [services, player],
   );
   const queryClient = useQueryClient();
   const refreshRows = useCallback(() => void refreshHomeRows(queryClient), [queryClient]);
@@ -42,7 +41,7 @@ export function App() {
       realtime={services.realtime}
       onServerDataChanged={refreshRows}
     >
-      <PlayerServicesProvider services={player}>{renderRoute(hash, pocServices)}</PlayerServicesProvider>
+      <PlayerServicesProvider services={player}>{renderRoute(hash, services)}</PlayerServicesProvider>
     </SessionProvider>
   );
 }
