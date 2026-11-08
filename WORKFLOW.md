@@ -234,7 +234,7 @@ Parallelism helps when work is independent and verifiable. It hurts when everyon
 - **When not:** native surface and mpv work. It needs real hardware and a human watching the screen. Keep it serial.
 - **Isolation:** one git worktree per agent. Rules every parallel agent follows:
   - commit only files you own
-  - no `git stash`, `git reset`, or force pushes
+  - no `git stash` or `git reset --hard`; force-push only your own unmerged PR branch, with `--force-with-lease`, after a rebase
   - do not edit another agent's plan
   - pull and rebase before pushing
 - **Claiming:** when running more than two agents from a plan, each claims a milestone by writing its name under that milestone in the plan file and committing. Git conflicts tell the loser to pick another.

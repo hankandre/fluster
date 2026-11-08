@@ -50,10 +50,9 @@ description: Open a pull request for a finished Fluster branch, wait for CI, mer
 
 - Treat a `DIRTY` merge state as a conflict; CI does not run on it.
 - Rebase the branch on `origin/main` locally and rerun `verify`.
-- Push the result to a new branch named `<branch>-r<N>`.
-- Open a new PR from it and enable auto-merge.
-- Close the old PR with a comment linking the new one.
-- Never force-push.
+- Push it with `git push --force-with-lease`; the PR and its auto-merge stay.
+- Use this only on your own unmerged PR branch.
+- Never force-push `main` or another agent's branch.
 
 ## Merge
 
