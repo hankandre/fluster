@@ -55,7 +55,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 
 **Language.** Server, ServerId, User, Session, DeviceId, Access token, Quick Connect code, Server capabilities.
 
-**Code today.** `JellyfinGateway.connect/login`, `normalizeServerUrl`, `createSdkApi` in `src/lib/jellyfin/gateway.ts`; the sign-in UI in `src/features/sign-in/`.
+**Code today.** `JellyfinGateway.connect/login`, `normalizeServerUrl`, `createSdkApi` in `src/lib/jellyfin/gateway.ts`; the sign-in UI in `src/features/sign-in/`; LAN discovery in `src-tauri/src/discovery.rs` (`discover_servers`), the `ServerDiscovery` port in `src/domain/server-discovery.ts`, and its desktop adapter in `src/lib/discovery/native-discovery.ts`.
 
 **Rules.**
 - The token is held only by the gateway (and later by the Rust-owned vault). It is never in React state, Query caches, or WebView storage.

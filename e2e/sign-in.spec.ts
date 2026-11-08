@@ -113,3 +113,10 @@ test("the app opens on manual server connection with a browser-mode label", asyn
   await expect(page.getByLabel("Server URL")).toHaveAttribute("type", "url");
   await expect(page.getByText("Browser development mode")).toBeVisible();
 });
+
+// UDP discovery needs the desktop shell; browser mode has no way to send it.
+test("browser mode hides Find servers on this network", async ({ page }) => {
+  await page.goto("/#/next/sign-in");
+  await expect(page.getByLabel("Server URL")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Find servers on this network" })).toHaveCount(0);
+});

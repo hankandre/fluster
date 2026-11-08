@@ -114,6 +114,7 @@ fn redaction_canary_keeps_play_session_ids_out_of_native_traces() {
         "media_controls/mpris.rs",
         "player/hls/session.rs",
         "player/hls/loopback.rs",
+        "discovery.rs",
     ] {
         assert!(
             result.scanned.contains(Path::new(production)),
@@ -133,6 +134,7 @@ fn redaction_canary_keeps_play_session_ids_out_of_native_traces() {
         "player/hls/session_tests.rs",
         "player/media_auth_wire/hls_session.rs",
         "player/test_http.rs",
+        "discovery/tests.rs",
     ] {
         assert!(
             sources.iter().any(|(path, _)| path == Path::new(test_only)),

@@ -1,4 +1,5 @@
 import type { RealtimeConnection } from "../domain/realtime";
+import type { ServerDiscovery } from "../domain/server-discovery";
 import type { PlayerServices } from "./player-services";
 import { lanHttpConfirmations } from "../lib/browser-lan-http-confirmations";
 import { getInstallId } from "../lib/install-id";
@@ -6,6 +7,7 @@ import { JellyfinGateway } from "../lib/jellyfin/gateway";
 import { BrowserPlayerEngine } from "../lib/player/browser-player";
 import { NativeRealtime } from "../lib/realtime/native-realtime";
 import { NoOpRealtime } from "../lib/realtime/no-op-realtime";
+import { NativeServerDiscovery } from "../lib/discovery/native-discovery";
 import type { PlayerEngine } from "../domain/playback";
 import { isTauriRuntime, NativePlayerEngine } from "../lib/player/native-player";
 import { createNativeMediaControls } from "./media-controls";
@@ -16,6 +18,8 @@ export type AppServices = {
   createGateway(serverUrl: string): JellyfinGateway;
   createPlayerEngine(): PlayerEngine;
   realtime: RealtimeConnection;
+  // LAN server discovery; desktop only, because a browser cannot send UDP.
+  discovery?: ServerDiscovery;
   // Lets playback stop and report before the desktop window closes.
   watchWindowClose?: (beforeClose: () => Promise<void>) => () => void;
   // Lets the system media controls stop playback like Back.
@@ -23,7 +27,7 @@ export type AppServices = {
 };
 
 // Composition root: the only module that constructs the gateway, player
-// engines, and the realtime connection.
+// engines, the realtime connection, and server discovery.
 export function createServices(): AppServices {
   const native = isTauriRuntime();
   return {
@@ -31,6 +35,7 @@ export function createServices(): AppServices {
     createGateway: (serverUrl) => new JellyfinGateway(serverUrl, undefined, getInstallId(), lanHttpConfirmations),
     createPlayerEngine: () => (native ? new NativePlayerEngine() : new BrowserPlayerEngine()),
     realtime: native ? new NativeRealtime() : new NoOpRealtime(),
+    discovery: native ? new NativeServerDiscovery() : undefined,
     watchWindowClose: native ? watchNativeWindowClose : undefined,
     watchMediaControls: native ? createNativeMediaControls() : undefined,
   };

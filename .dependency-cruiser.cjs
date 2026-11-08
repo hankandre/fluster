@@ -27,7 +27,7 @@ module.exports = {
       },
       to: {
         path:
-          "node_modules/(react|react-dom|@tanstack|@tauri-apps)/|^src/(components|features|app)/|^src/lib/(player/(browser-player|native-player)|realtime/|install-id|browser-)",
+          "node_modules/(react|react-dom|@tanstack|@tauri-apps)/|^src/(components|features|app)/|^src/lib/(player/(browser-player|native-player)|realtime/|discovery/|install-id|browser-)",
       },
     },
     {
@@ -37,7 +37,7 @@ module.exports = {
         "DOMAINS.md > Dependency rules 3: only the composition root constructs gateways and engines. Receive them via props or context from src/app/compose.ts.",
       from: { path: "^src/(components|features)/", pathNot: tests },
       to: {
-        path: "^src/lib/(jellyfin/gateway|player/native-player|player/browser-player|realtime/)",
+        path: "^src/lib/(jellyfin/gateway|player/native-player|player/browser-player|realtime/|discovery/)",
       },
     },
     {
