@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { MediaCard } from "../../domain/catalog";
 import type { SessionGateway } from "../../app/session";
+import { useRovingFocus } from "../roving-focus";
 import { cardRoute } from "../routes";
 import { CardImage, CARD_IMAGE_WIDTH } from "./card-image";
 
@@ -18,6 +19,7 @@ interface MediaRowProps {
 export function MediaRow({ title, queryKey, load, gateway }: MediaRowProps) {
   const query = useQuery({ queryKey, queryFn: ({ signal }) => load(signal), gcTime: 0 });
   const headingId = `row-${queryKey.join("-")}`;
+  const roving = useRovingFocus<HTMLUListElement>("row");
 
   if (query.isSuccess && query.data.length === 0) return null;
 
@@ -27,7 +29,7 @@ export function MediaRow({ title, queryKey, load, gateway }: MediaRowProps) {
       {query.isPending ? <SkeletonStrip /> : null}
       {query.isError ? <RowError title={title} onRetry={() => void query.refetch()} /> : null}
       {query.isSuccess ? (
-        <ul className="card-strip">
+        <ul className="card-strip" {...roving}>
           {query.data.map((card) => (
             <li key={card.id}>
               <Card card={card} gateway={gateway} />
@@ -59,7 +61,8 @@ export function SkeletonStrip() {
 }
 
 // A card of a known kind is a real link, so keyboard and screen-reader users
-// can follow it. Other cards are plain articles.
+// can follow it. Other cards are plain articles. Links join the roving focus
+// of the list around them (see roving-focus.ts).
 export function Card({ card, gateway }: { card: MediaCard; gateway: SessionGateway }) {
   const href = cardRoute(card);
   const { image } = card;
@@ -84,7 +87,7 @@ export function Card({ card, gateway }: { card: MediaCard; gateway: SessionGatew
   );
 
   if (href) {
-    return <a className="media-card-button media-card-link" href={href} aria-label={label}>{body}</a>;
+    return <a className="media-card-button media-card-link" href={href} aria-label={label} data-roving-item="">{body}</a>;
   }
   return <article className="media-card-button" aria-label={label}>{body}</article>;
 }

@@ -205,6 +205,23 @@ describe("results", () => {
     expect(gateway.searchItems).toHaveBeenCalledWith("ar", { startIndex: 0, limit: 40 }, expect.any(AbortSignal));
   });
 
+  it("moves through each result group with the arrow keys", async () => {
+    const gateway = fakeGateway({
+      searchItems: vi.fn().mockResolvedValue({
+        cards: [card("m1", "Arrival", "Movie"), card("m2", "Armageddon", "Movie"), card("s1", "Arrow", "Series")],
+        hasMore: false,
+      } satisfies SearchPage),
+    });
+    await renderView(gateway, "ar");
+    await advance(0);
+    const arrival = screen.getByRole("link", { name: "Arrival" });
+    arrival.focus();
+    fireEvent.keyDown(arrival, { key: "ArrowRight" });
+    expect(screen.getByRole("link", { name: "Armageddon" })).toHaveFocus();
+    // Each group is its own Tab stop.
+    expect(screen.getByRole("link", { name: "Arrow" })).toHaveAttribute("tabindex", "0");
+  });
+
   it("loads more pages", async () => {
     const searchItems = vi.fn()
       .mockResolvedValueOnce({ cards: [card("m1", "Arrival", "Movie")], hasMore: true } satisfies SearchPage)

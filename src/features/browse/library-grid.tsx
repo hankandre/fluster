@@ -9,6 +9,7 @@ import type {
 import type { SessionGateway } from "../../app/session";
 import { Card, RowError } from "../home/media-row";
 import { scopeFor } from "../query-scope";
+import { useRovingFocus } from "../roving-focus";
 
 export const PAGE_SIZE = 60;
 
@@ -55,6 +56,7 @@ export function LibraryGrid({ gateway, parentId, itemTypes, label }: LibraryGrid
   }
 
   const [announcement, setAnnouncement] = useState("");
+  const roving = useRovingFocus<HTMLUListElement>("grid");
 
   async function loadMore() {
     const before = cards.length;
@@ -99,7 +101,7 @@ export function LibraryGrid({ gateway, parentId, itemTypes, label }: LibraryGrid
       {query.isError && cards.length === 0 ? <RowError title={label} onRetry={() => void query.refetch()} /> : null}
       {query.isSuccess && cards.length === 0 ? <p>Nothing here.</p> : null}
       {cards.length > 0 ? (
-        <ul className="card-grid">
+        <ul className="card-grid" {...roving}>
           {cards.map((card) => (
             <li key={card.id}>
               <Card card={card} gateway={gateway} />

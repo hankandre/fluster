@@ -974,8 +974,8 @@
             "Built under src/features/ with a Playwright journey; no proof-of-concept screen is extended"
           ],
           "verify": "pnpm check && pnpm test:e2e",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "native-engineer",
           "passes": false,
           "evidence": ""
         },

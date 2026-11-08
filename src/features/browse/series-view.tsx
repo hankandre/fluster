@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { SessionGateway } from "../../app/session";
 import { Card, RowError } from "../home/media-row";
 import { scopeFor } from "../query-scope";
+import { useRovingFocus } from "../roving-focus";
 import { BrowseFrame } from "./browse-view";
 
 export function SeriesView({ seriesId }: { seriesId: string }) {
@@ -58,6 +59,7 @@ function Episodes({ gateway, seriesId, seasonId, seasonName }: { gateway: Sessio
     queryFn: ({ signal }) => gateway.episodes(seriesId, seasonId, signal),
     gcTime: 0,
   });
+  const roving = useRovingFocus<HTMLUListElement>("column");
 
   return (
     <section aria-label={`${seasonName} episodes`} aria-busy={episodes.isPending}>
@@ -66,7 +68,7 @@ function Episodes({ gateway, seriesId, seasonId, seasonName }: { gateway: Sessio
       {episodes.isError ? <RowError title="episodes" onRetry={() => void episodes.refetch()} /> : null}
       {episodes.isSuccess && episodes.data.length === 0 ? <p>No episodes.</p> : null}
       {episodes.isSuccess ? (
-        <ul className="episode-list">
+        <ul className="episode-list" {...roving}>
           {episodes.data.map((episode) => (
             <li key={episode.id}>
               <Card card={episode} gateway={gateway} />

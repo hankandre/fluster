@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 afterEach(cleanup);
 import type { PlaybackSnapshot, PlayerEngine } from "../domain/playback";
@@ -170,4 +170,101 @@ it("shows the preview at the keyboard position while the seek bar has focus", ()
   expect(screen.getByTestId("thumb")).toHaveTextContent("52");
   fireEvent.blur(slider);
   expect(container.querySelector(".seek-preview")).toBeNull();
+});
+
+describe("keyboard shortcuts", () => {
+  const subtitles: PlaybackSnapshot["tracks"] = [
+    { playerId: 3, type: "Subtitle", title: "English", external: false, selected: false },
+    { playerId: 4, type: "Subtitle", title: "French", external: false, selected: true },
+  ];
+
+  function renderShortcuts(overrides: Partial<PlaybackSnapshot> = {}) {
+    const player = fakePlayer();
+    const onBack = vi.fn();
+    render(
+      <PlayerView
+        item={movie}
+        player={player}
+        session={{ snapshot: { ...snapshot, ...overrides }, firstFrameReady: true }}
+        onRetry={vi.fn()}
+        onBack={onBack}
+      />,
+    );
+    return { player, onBack };
+  }
+
+  it("plays and pauses with Space and K", () => {
+    const { player } = renderShortcuts();
+    fireEvent.keyDown(document.body, { key: " " });
+    fireEvent.keyDown(document.body, { key: "k" });
+    expect(player.setPaused).toHaveBeenCalledTimes(2);
+    expect(player.setPaused).toHaveBeenCalledWith(false);
+  });
+
+  it("seeks ten seconds with the arrows and J/L, within the file", () => {
+    const { player } = renderShortcuts({ positionSeconds: 5, durationSeconds: 3600 });
+    fireEvent.keyDown(document.body, { key: "ArrowRight" });
+    fireEvent.keyDown(document.body, { key: "l" });
+    fireEvent.keyDown(document.body, { key: "ArrowLeft" });
+    fireEvent.keyDown(document.body, { key: "j" });
+    expect(vi.mocked(player.seek).mock.calls.map(([seconds]) => seconds)).toEqual([15, 15, 0, 0]);
+  });
+
+  it("does not seek past the end", () => {
+    const { player } = renderShortcuts({ positionSeconds: 3595, durationSeconds: 3600 });
+    fireEvent.keyDown(document.body, { key: "ArrowRight" });
+    expect(player.seek).toHaveBeenCalledWith(3600);
+  });
+
+  it("changes volume with Up and Down, within 0 to 100, and mutes with M", () => {
+    const { player } = renderShortcuts({ volume: 98 });
+    fireEvent.keyDown(document.body, { key: "ArrowUp" });
+    fireEvent.keyDown(document.body, { key: "ArrowDown" });
+    fireEvent.keyDown(document.body, { key: "m" });
+    expect(vi.mocked(player.setVolume).mock.calls.map(([volume]) => volume)).toEqual([100, 93]);
+    expect(player.setMuted).toHaveBeenCalledWith(true);
+  });
+
+  it("cycles subtitles with C, ending at off", () => {
+    const { player } = renderShortcuts({ tracks: subtitles });
+    fireEvent.keyDown(document.body, { key: "c" });
+    expect(player.selectTrack).toHaveBeenLastCalledWith("subtitle", undefined);
+  });
+
+  it("starts the subtitle cycle at the first track", () => {
+    const { player } = renderShortcuts({ tracks: subtitles.map((track) => ({ ...track, selected: false })) });
+    fireEvent.keyDown(document.body, { key: "c" });
+    expect(player.selectTrack).toHaveBeenLastCalledWith("subtitle", 3);
+  });
+
+  it("does nothing with C when there are no subtitles", () => {
+    const { player } = renderShortcuts();
+    fireEvent.keyDown(document.body, { key: "c" });
+    expect(player.selectTrack).not.toHaveBeenCalled();
+  });
+
+  it("toggles fullscreen with F, and Escape leaves fullscreen before the player", async () => {
+    const { player, onBack } = renderShortcuts();
+    fireEvent.keyDown(document.body, { key: "f" });
+    await waitFor(() => expect(screen.getByRole("button", { name: "Exit fullscreen" })).toBeVisible());
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    await waitFor(() => expect(screen.getByRole("button", { name: "Enter fullscreen" })).toBeVisible());
+    expect(player.setFullscreen).toHaveBeenLastCalledWith(false);
+    expect(onBack).not.toHaveBeenCalled();
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves arrows to a focused slider and Space to a focused button", () => {
+    const { player } = renderShortcuts();
+    fireEvent.keyDown(screen.getByRole("slider", { name: "Volume" }), { key: "ArrowUp" });
+    fireEvent.keyDown(screen.getByRole("slider", { name: "Playback position" }), { key: "ArrowRight" });
+    fireEvent.keyDown(screen.getByRole("button", { name: "Mute" }), { key: " " });
+    expect(player.setVolume).not.toHaveBeenCalled();
+    expect(player.seek).not.toHaveBeenCalled();
+    expect(player.setPaused).not.toHaveBeenCalled();
+    // Other shortcuts still work from those controls.
+    fireEvent.keyDown(screen.getByRole("button", { name: "Mute" }), { key: "k" });
+    expect(player.setPaused).toHaveBeenCalledWith(false);
+  });
 });
