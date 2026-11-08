@@ -31,6 +31,8 @@ interface ServerOptions {
   noDirectPlayAnswers?: number;
   // Every PlaybackInfo answer is an HLS conversion instead of direct play.
   converted?: boolean;
+  // TranscodeReasons the converted answer names (default: a bitrate limit, so a Transcode).
+  conversionReasons?: string;
   failPlayback?: boolean;
   playbackDelayMs?: number;
   // Playstate reports are logged on arrival but answered only after releaseReports().
@@ -137,7 +139,7 @@ async function mockPlayerServer(page: Page, options: ServerOptions = {}): Promis
               ...source,
               SupportsDirectPlay: false,
               TranscodingSubProtocol: "hls",
-              TranscodingUrl: `/videos/movie-1/master.m3u8?MediaSourceId=${source.Id}&VideoCodec=h264&AudioCodec=aac&PlaySessionId=play-${log.playbackInfo.length}&ApiKey=e2e-key&TranscodeReasons=ContainerBitrateExceedsLimit`,
+              TranscodingUrl: `/videos/movie-1/master.m3u8?MediaSourceId=${source.Id}&VideoCodec=h264&AudioCodec=aac&PlaySessionId=play-${log.playbackInfo.length}&ApiKey=e2e-key&TranscodeReasons=${options.conversionReasons ?? "ContainerBitrateExceedsLimit"}`,
             }],
           });
         }
@@ -199,6 +201,11 @@ test("Play opens the player and Back returns to the detail view", async ({ page 
   expect(log.playbackInfo).toHaveLength(1);
   expect(log.playbackInfo[0]).toMatchObject({ MediaSourceId: "src-hd", StartTimeTicks: 0 });
   expectFallbackFlags(log, 0);
+  // Direct play shows no conversion indicator, and the report names its method.
+  await expect(page.locator(".conversion-chip")).toHaveCount(0);
+  expect(log.reports.find((report) => report.path === "/Sessions/Playing")?.body).toMatchObject({ PlayMethod: "DirectPlay" });
+  await page.keyboard.press("i");
+  await expect(page.getByRole("region", { name: "Player information" })).toContainText("Direct play");
 
   await page.getByLabel("Back to library").click();
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
@@ -339,6 +346,29 @@ test("a converted stream is not played by the browser engine and never requested
   await expect(page.locator("video")).toHaveCount(0);
   expect(log.requestUrls.filter((url) => /m3u8|e2e-key/i.test(url))).toEqual([]);
 });
+
+// The browser engine cannot play HLS (I7), so the indicator itself is covered
+// by player-view.test.tsx and the reports by gateway.test.ts. These journeys
+// check what the browser can reach: the server's conversion answer is
+// accepted as a conversion, nothing is played, reported, or requested, and no
+// indicator claims a conversion that is not running.
+for (const [name, reasons] of [
+  ["direct stream", "ContainerNotSupported"],
+  ["transcode", "VideoCodecNotSupported"],
+] as const) {
+  test(`a ${name} answer is refused by the browser engine without an indicator or a report`, async ({ page }) => {
+    const log = await mockPlayerServer(page, { converted: true, conversionReasons: reasons });
+    await openArrival(page);
+
+    await page.getByRole("link", { name: "Play" }).click();
+    await expect(page.getByText("This stream needs the desktop player.")).toBeVisible();
+    await expect(page.locator(".conversion-chip")).toHaveCount(0);
+    await expect(page.locator("video")).toHaveCount(0);
+    expect(log.playbackInfo).toHaveLength(1);
+    expect(log.reports).toEqual([]);
+    expect(log.requestUrls.filter((url) => /m3u8|e2e-key/i.test(url))).toEqual([]);
+  });
+}
 
 test("Back cancels an in-flight playback negotiation", async ({ page }) => {
   const log = await mockPlayerServer(page, { playbackDelayMs: 300 });

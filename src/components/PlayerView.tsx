@@ -310,7 +310,7 @@ export function PlayerView({ item, player, session, segments, retrying, onRetry,
       )}
 
       {diagnostics?.decodeMode === "software" && !error && (
-        <div className="player-cpu-warning"><AlertTriangle size={15} /> Software decoding on this CPU. Jellyfin transcoding remains disabled.</div>
+        <div className="player-cpu-warning"><AlertTriangle size={15} /> Software decoding on this CPU.</div>
       )}
       {reportingWarning && !error && (
         <div className="player-reporting-warning"><AlertTriangle size={15} /> Jellyfin progress reporting failed: {reportingWarning}</div>

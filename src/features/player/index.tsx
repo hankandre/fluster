@@ -17,6 +17,8 @@ import { useSeekPreview } from "./use-seek-preview";
 import { useIdleCursor } from "./use-idle-cursor";
 import { useEscapeKey } from "../use-escape-key";
 import { safeReason } from "./safe-reason";
+import { ConversionChip } from "./conversion-chip";
+import { conversionIndicator } from "./conversion-copy";
 import { PlayerInfoPanel } from "./player-info-panel";
 import { usePlayerStatus, type ReadyPlayerStatus } from "./player-status";
 
@@ -153,6 +155,7 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
       else leavePlayer(route.itemId);
     },
   });
+  const indicator = conversionIndicator(playback.plan);
   const segments = useMediaSegments(gateway, route.itemId, playback.plan);
   const cursor = useIdleCursor();
   const upNext = useAutoPlayCountdown({
@@ -187,7 +190,13 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
         onBack={playback.back}
         {...seekProps}
       />
-      <PlayerInfoPanel status={status} snapshot={playback.state.snapshot} playMethod={playback.plan?.playMethod} />
+      {indicator && !playback.retrying && <ConversionChip indicator={indicator} />}
+      <PlayerInfoPanel
+        status={status}
+        snapshot={playback.state.snapshot}
+        playMethod={playback.plan?.playMethod}
+        indicator={indicator}
+      />
       {playback.playOriginalRequested && playback.plan?.delivery === "hls" && !playback.retrying && (
         <p className="play-original-note" role="status">The server still converts this.</p>
       )}

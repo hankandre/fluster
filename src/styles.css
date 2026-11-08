@@ -20,6 +20,7 @@
   --panel: #0e1118;
   --line: rgba(255,255,255,.1);
   --acid: #c8ff3d;
+  --notice: #f0b65a;
   --orange: #ff6a38;
 }
 
@@ -221,4 +222,7 @@ input:focus, select:focus { border-color: var(--acid); box-shadow: 0 0 0 1px var
 .settings h1 { font-size: clamp(32px, 4vw, 48px); margin-bottom: 32px; }
 .settings-field { margin: 16px 0; }
 .settings-field label { display: grid; gap: 6px; max-width: 24rem; }
+.conversion-chip { position: fixed; top: 76px; left: 16px; z-index: 5; display: flex; align-items: flex-start; gap: 8px; max-width: min(34rem, 60vw); margin: 0; padding: 8px 12px; border-radius: 8px; background: rgba(0, 0, 0, 0.8); color: var(--notice); font-size: 13px; }
+.conversion-chip svg { flex: none; margin-top: 2px; }
+.conversion-chip small { display: block; margin-top: 2px; font-size: 12px; opacity: 0.85; }
 .play-original { position: fixed; right: 4vw; bottom: 96px; z-index: 5; }

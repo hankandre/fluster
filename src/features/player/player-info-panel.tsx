@@ -2,6 +2,7 @@ import { useEffect, useId, useState } from "react";
 import type { PlaybackSnapshot, PlayMethod } from "../../domain/playback";
 import { redactText } from "../../lib/redact";
 import { TEXT_FIELDS } from "../use-escape-key";
+import { BURNED_IN_COPY, type ConversionIndicator } from "./conversion-copy";
 import type { ReadyPlayerStatus } from "./player-status";
 
 // The plan carries its method since P10-03; the player route passes it.
@@ -43,10 +44,11 @@ function hwdecLine(snapshot: PlaybackSnapshot | undefined): string {
     : plain(diagnostics.hwdecCurrent);
 }
 
-export function PlayerInfoPanel({ status, snapshot, playMethod = "DirectPlay" }: {
+export function PlayerInfoPanel({ status, snapshot, playMethod = "DirectPlay", indicator }: {
   status: ReadyPlayerStatus;
   snapshot: PlaybackSnapshot | undefined;
   playMethod?: PlayMethod;
+  indicator?: ConversionIndicator;
 }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -84,6 +86,18 @@ export function PlayerInfoPanel({ status, snapshot, playMethod = "DirectPlay" }:
           <dd>{hwdecLine(snapshot)}</dd>
           <dt>Play method</dt>
           <dd>{PLAY_METHOD_LABEL[playMethod]}</dd>
+          {indicator && (
+            <>
+              <dt>Why</dt>
+              <dd>{indicator.reasons.join("; ")}</dd>
+              {indicator.subtitlesBurnedIn && (
+                <>
+                  <dt>Subtitles</dt>
+                  <dd>{BURNED_IN_COPY}</dd>
+                </>
+              )}
+            </>
+          )}
         </dl>
       </section>
     </div>

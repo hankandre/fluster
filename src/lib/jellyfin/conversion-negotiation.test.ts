@@ -189,6 +189,12 @@ describe.each(["10.11.7", "12.4.0"])("negotiation with the conversion fixtures f
   it("keeps the burned-in DVD subtitle method in the rebuilt URL", async () => {
     const plan = planOf((await negotiate("item-dvdsub", [fixture(version, "dvdsub-force-fallback")])).result);
     expect(new URL(plan.streamUrl).searchParams.get("SubtitleMethod")).toBe("Encode");
+    expect(plan.subtitlesBurnedIn).toBe(true);
+  });
+
+  it("does not flag burned-in subtitles for a conversion that delivers them as files", async () => {
+    const plan = planOf((await negotiate("item-sidecar", [fixture(version, "sidecar-force-fallback")])).result);
+    expect(plan.subtitlesBurnedIn).toBe(false);
   });
 
   it("strips the key from external subtitle URLs while converting", async () => {
