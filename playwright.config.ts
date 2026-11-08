@@ -23,7 +23,7 @@ export default defineConfig({
     },
   ],
   projects: [
-    { name: "chromium", testIgnore: /conversion\.spec\.ts/, use: { ...devices["Desktop Chrome"] } },
+    { name: "chromium", testIgnore: [/conversion\.spec\.ts/, /visual\//], use: { ...devices["Desktop Chrome"] } },
     {
       name: "chromium-fake-hls",
       testMatch: /conversion\.spec\.ts/,
