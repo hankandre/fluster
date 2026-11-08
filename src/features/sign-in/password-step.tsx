@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { SessionGateway } from "../../app/session";
-import { errorMessage, isAbort, Shell } from "./sign-in-shell";
+import { errorMessage, isAbort, ServerOrigin, Shell } from "./sign-in-shell";
 
 export function PasswordStep({
   gateway,
@@ -41,6 +41,7 @@ export function PasswordStep({
 
   return (
     <Shell kicker="STEP 02 / SIGN IN" title="Sign in with your password">
+      <ServerOrigin origin={gateway.origin} />
       <form className="login-form" onSubmit={submit}>
         <label htmlFor="sign-in-username">Username</label>
         <input

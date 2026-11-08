@@ -249,12 +249,29 @@ mod tests {
     }
 }
 
-/// One Jellyfin server that answered LAN discovery. `address` has passed the
-/// URL policy; the frontend still probes it and, for plain HTTP to a
-/// private-LAN host, asks the user to confirm before sign-in.
+/// One reply to LAN discovery. `address` has passed the URL policy; the
+/// frontend still probes it, checks that the probe reports the same `id`,
+/// and, for plain HTTP to a private-LAN host, asks the user to confirm.
+/// Any device on the network can send a reply, so `advertised_by` (the
+/// IPv4 address the datagram came from) is shown next to it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DiscoveredServer {
     pub name: String,
     pub id: String,
     pub address: String,
+    pub advertised_by: String,
+    /// True when the address host is the sender's own IP address.
+    pub address_is_sender: bool,
+    /// True when another reply named the same id with a different address.
+    pub conflicting: bool,
+}
+
+/// The result of one search. `refused` counts replies whose address the URL
+/// policy refused (ADR 0001 decision 9: they are reported, never probed).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DiscoveryResult {
+    pub servers: Vec<DiscoveredServer>,
+    pub refused: u32,
 }

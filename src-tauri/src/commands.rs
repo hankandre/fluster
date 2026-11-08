@@ -2,7 +2,7 @@
 //! the behavior lives on `MpvController`, `RealtimeManager`, and `discovery`.
 
 use crate::discovery;
-use crate::model::{DiscoveredServer, LaunchRequest, PlayerCapabilities, PlayerSurfaceFrame};
+use crate::model::{DiscoveryResult, LaunchRequest, PlayerCapabilities, PlayerSurfaceFrame};
 use crate::player::MpvController;
 use crate::realtime::{self, RealtimeManager};
 use tauri::{Emitter, State};
@@ -119,9 +119,10 @@ pub(crate) fn realtime_disconnect(realtime: State<'_, RealtimeManager>) {
 }
 
 /// Read-only LAN discovery (P3-03, approved by the user on 2026-11-07). Takes
-/// no arguments; returns only servers whose address passes the URL policy.
+/// no arguments; returns only servers whose address passes the URL policy,
+/// and a count of replies it refused.
 #[tauri::command]
-pub(crate) async fn discover_servers() -> Result<Vec<DiscoveredServer>, String> {
+pub(crate) async fn discover_servers() -> Result<DiscoveryResult, String> {
     tauri::async_runtime::spawn_blocking(discovery::discover_on_lan)
         .await
         .map_err(|_| "The server search did not finish.".to_string())?
