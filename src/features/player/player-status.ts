@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { useOptionalPlayerServices } from "../../app/player-services";
 import type { PlayerCapabilities, PlayerEngine } from "../../domain/playback";
-import { redactText } from "../../lib/redact";
+import { safeReason } from "./safe-reason";
 
 // What the app knows about the player before anything plays.
 export type PlayerStatus =
   | { kind: "checking" }
   | { kind: "ready"; capabilities: PlayerCapabilities }
   | { kind: "unavailable"; reason: string };
+
+export type ReadyPlayerStatus = Extract<PlayerStatus, { kind: "ready" }>;
 
 const CHECKING: PlayerStatus = { kind: "checking" };
 const UNKNOWN_REASON = "The player did not say why it cannot start.";
@@ -20,7 +22,7 @@ const known = new WeakMap<PlayerEngine, PlayerStatus>();
 
 function reasonOf(error: unknown): string {
   const text = typeof error === "string" ? error : error instanceof Error ? error.message : "";
-  return text.trim() ? redactText(text) : UNKNOWN_REASON;
+  return text.trim() ? safeReason(text) : UNKNOWN_REASON;
 }
 
 export function checkPlayer(engine: PlayerEngine): Promise<PlayerStatus> {

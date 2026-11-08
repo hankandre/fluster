@@ -201,3 +201,5 @@ input:focus, select:focus { border-color: var(--acid); box-shadow: 0 0 0 1px var
 .player-info dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 0; }
 .player-info dt { opacity: 0.7; }
 .player-info dd { margin: 0; }
+.player-info button { transition: opacity .2s ease; }
+.cursor-idle .player-info[data-open="false"]:not(:focus-within) button { opacity: 0; pointer-events: none; }

@@ -1,7 +1,8 @@
 import { useEffect, useId, useState } from "react";
 import type { PlaybackSnapshot } from "../../domain/playback";
 import { redactText } from "../../lib/redact";
-import type { PlayerStatus } from "./player-status";
+import { TEXT_FIELDS } from "../use-escape-key";
+import type { ReadyPlayerStatus } from "./player-status";
 
 // Today only direct play is negotiated; DirectStream and Transcode are here so
 // the panel needs no rework when the fallback (P10-06) arrives.
@@ -23,16 +24,9 @@ function plain(value: string | undefined): string {
   return redactText(value);
 }
 
-function playerLine(status: PlayerStatus): string {
-  switch (status.kind) {
-    case "checking":
-      return "Checking…";
-    case "unavailable":
-      return "Native player cannot start";
-    case "ready":
-      if (status.capabilities.mode === "browser") return "Browser — unverified";
-      return `Native, libmpv ${plain(status.capabilities.libmpvVersion)}`;
-  }
+function playerLine(status: ReadyPlayerStatus): string {
+  if (status.capabilities.mode === "browser") return "Browser — unverified";
+  return `Native, libmpv ${plain(status.capabilities.libmpvVersion)}`;
 }
 
 function decodeLine(snapshot: PlaybackSnapshot | undefined): string {
@@ -51,7 +45,7 @@ function hwdecLine(snapshot: PlaybackSnapshot | undefined): string {
 }
 
 export function PlayerInfoPanel({ status, snapshot, playMethod = "DirectPlay" }: {
-  status: PlayerStatus;
+  status: ReadyPlayerStatus;
   snapshot: PlaybackSnapshot | undefined;
   playMethod?: PlayMethod;
 }) {
@@ -61,11 +55,11 @@ export function PlayerInfoPanel({ status, snapshot, playMethod = "DirectPlay" }:
   // "i" toggles, unless the user is typing or the key carries a modifier.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() !== "i" || event.repeat) return;
+      if (event.key.toLowerCase() !== "i" || event.repeat || event.defaultPrevented) return;
       if (event.ctrlKey || event.metaKey || event.altKey) return;
       const target = event.target;
       if (target instanceof HTMLElement) {
-        if (target.isContentEditable || target.closest("input, textarea, select")) return;
+        if (target.isContentEditable || target.matches(`${TEXT_FIELDS}, select`)) return;
       }
       setOpen((value) => !value);
     };
@@ -73,9 +67,9 @@ export function PlayerInfoPanel({ status, snapshot, playMethod = "DirectPlay" }:
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const renderer = status.kind === "ready" ? plain(status.capabilities.renderer) : UNKNOWN;
+  const renderer = plain(status.capabilities.renderer);
   return (
-    <div className="player-info">
+    <div className="player-info" data-open={open}>
       <button type="button" aria-expanded={open} aria-controls={panelId} onClick={() => setOpen((value) => !value)}>
         Info
       </button>
@@ -92,7 +86,6 @@ export function PlayerInfoPanel({ status, snapshot, playMethod = "DirectPlay" }:
           <dt>Play method</dt>
           <dd>{PLAY_METHOD_LABEL[playMethod]}</dd>
         </dl>
-        {status.kind === "unavailable" && <p role="alert">{plain(status.reason)}</p>}
       </section>
     </div>
   );

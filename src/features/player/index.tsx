@@ -16,8 +16,9 @@ import { usePlaybackSession, whenPlaybackStopped } from "./use-playback-session"
 import { useSeekPreview } from "./use-seek-preview";
 import { useIdleCursor } from "./use-idle-cursor";
 import { useEscapeKey } from "../use-escape-key";
+import { safeReason } from "./safe-reason";
 import { PlayerInfoPanel } from "./player-info-panel";
-import { usePlayerStatus, type PlayerStatus } from "./player-status";
+import { usePlayerStatus, type ReadyPlayerStatus } from "./player-status";
 
 const SIGN_IN_ROUTE = "#/next/sign-in";
 
@@ -64,7 +65,7 @@ function PlayerGate({ gateway, player, route }: { gateway: SessionGateway; playe
       <PlayerMessage onEscape={() => leavePlayer(route.itemId)}>
         <div role="alert">
           <h1>The player cannot start</h1>
-          <p>{status.reason}</p>
+          <p>{safeReason(status.reason)}</p>
         </div>
         <div className="player-message-actions">
           <button type="button" onClick={recheck}>Try again</button>
@@ -80,7 +81,7 @@ function PlayerLoader({ gateway, player, route, status }: {
   gateway: SessionGateway;
   player: PlayerServices;
   route: PlayRoute;
-  status: PlayerStatus;
+  status: ReadyPlayerStatus;
 }) {
   const query = useQuery({
     queryKey: detailKey(gateway, route.itemId),
@@ -111,7 +112,7 @@ function PlayerLoader({ gateway, player, route, status }: {
 }
 
 function PlaybackScreen({ gateway, player, route, detail, status }: {
-  status: PlayerStatus;
+  status: ReadyPlayerStatus;
   gateway: SessionGateway;
   player: PlayerServices;
   route: PlayRoute;
