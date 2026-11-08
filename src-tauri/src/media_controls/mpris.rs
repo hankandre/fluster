@@ -6,7 +6,7 @@
 
 use super::{
     dispatch, media_trace, route, Changes, MediaAction, MediaTarget, MediaUpdate, MetadataValue,
-    NowPlaying, TRACK_ID,
+    NowPlaying,
 };
 use dbus::arg::{PropMap, RefArg, Variant};
 use dbus::blocking::stdintf::org_freedesktop_dbus::{
@@ -120,7 +120,7 @@ fn register_player(b: &mut IfaceBuilder<Service>) {
         (),
         |_, service: &mut Service, (track, position): (Path<'static>, i64)| {
             service.handle(MediaAction::SetPosition {
-                current_track: &*track == TRACK_ID,
+                current_track: service.now.is_current_track(&track),
                 position_us: position,
             });
             Ok(())
@@ -224,30 +224,40 @@ fn own_name(connection: &Connection, name: &str) -> bool {
     )
 }
 
-/// Connects to the session bus as `bus_name` (or, when another Fluster has
-/// it, a per-process instance name) and serves MPRIS on a new thread.
-/// Returns None when there is no session bus.
-pub(super) fn spawn(bus_name: &str, target: Box<dyn MediaTarget>) -> Option<Sender<MediaUpdate>> {
+/// Connects to the session bus as `bus_name`, or as a per-process instance
+/// name when another Fluster holds it.
+fn connect(bus_name: &str) -> Option<Connection> {
+    let connection = Connection::new_session().ok()?;
+    let instance = format!("{bus_name}.instance{}", std::process::id());
+    (own_name(&connection, bus_name) || own_name(&connection, &instance)).then_some(connection)
+}
+
+/// Serves MPRIS as `bus_name` on a new thread and returns at once: a stalled
+/// session bus never holds up the caller. When connecting fails the thread
+/// ends and drops the receiver, so `MediaControls::publish` stops sending.
+pub(super) fn spawn(bus_name: &str, target: Box<dyn MediaTarget>) -> Sender<MediaUpdate> {
     let bus_name = bus_name.to_string();
-    let (ready_sender, ready) = mpsc::sync_channel(1);
+    spawn_with(move || connect(&bus_name), target)
+}
+
+pub(super) fn spawn_with<C>(connect: C, target: Box<dyn MediaTarget>) -> Sender<MediaUpdate>
+where
+    C: FnOnce() -> Option<Connection> + Send + 'static,
+{
     let (updates_sender, updates) = mpsc::channel();
-    thread::Builder::new()
+    let spawned = thread::Builder::new()
         .name("fluster-mpris".into())
         .spawn(move || {
-            let Ok(connection) = Connection::new_session() else {
-                let _ = ready_sender.send(false);
+            let Some(connection) = connect() else {
+                media_trace("MPRIS is unavailable; media keys are off");
                 return;
             };
-            let instance = format!("{bus_name}.instance{}", std::process::id());
-            if !own_name(&connection, &bus_name) && !own_name(&connection, &instance) {
-                let _ = ready_sender.send(false);
-                return;
-            }
-            let _ = ready_sender.send(true);
             serve(&connection, build(target), &updates);
-        })
-        .ok()?;
-    ready.recv().ok()?.then_some(updates_sender)
+        });
+    if spawned.is_err() {
+        media_trace("MPRIS thread did not start; media keys are off");
+    }
+    updates_sender
 }
 
 fn serve(connection: &Connection, mut cr: Crossroads, updates: &Receiver<MediaUpdate>) {

@@ -22,8 +22,9 @@ export interface PlayerKeyInput {
 export const SEEK_STEP_SECONDS = 10;
 export const VOLUME_STEP = 5;
 
-// What the focused element does with keys of its own.
-type TargetKind = "text" | "choice" | "slider" | "activator" | "other";
+// What the focused element does with keys of its own. A select keeps every
+// key, Escape included: Escape closes its list instead of leaving the player.
+type TargetKind = "text" | "slider" | "activator" | "other";
 
 const ACTIVATOR_INPUTS = new Set(["checkbox", "radio", "button", "submit", "reset"]);
 const SLIDER_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"]);
@@ -31,7 +32,7 @@ const SLIDER_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", 
 function targetKind(target: EventTarget | null): TargetKind {
   if (!(target instanceof HTMLElement)) return "other";
   if (target.isContentEditable || target instanceof HTMLTextAreaElement) return "text";
-  if (target instanceof HTMLSelectElement) return "choice";
+  if (target instanceof HTMLSelectElement) return "text";
   if (target instanceof HTMLInputElement) {
     if (target.type === "range") return "slider";
     return ACTIVATOR_INPUTS.has(target.type) ? "activator" : "text";
@@ -82,8 +83,6 @@ export function playerKeyAction(input: PlayerKeyInput): PlayerKeyAction | undefi
   switch (targetKind(input.target)) {
     case "text":
       return undefined;
-    case "choice":
-      return action.kind === "escape" ? action : undefined;
     case "slider":
       return SLIDER_KEYS.has(key) ? undefined : action;
     case "activator":
