@@ -89,7 +89,7 @@ Fluster never uses a `TranscodingUrl` as given. Playback Negotiation parses it a
 - `POST /Sessions/Playing/Stopped` already makes the server kill the jobs for that `PlaySessionId` (`PlaystateController.cs` v10.11.7 lines 249-253).
 - Fluster also calls `DELETE /Videos/ActiveEncodings?deviceId=&playSessionId=` (`[Authorize]`, both parameters required; `HlsSegmentController.cs` v10.11.7 lines 108-115, v12.4 lines 103-110) before it starts a new play session for the same item (retry, quality change, audio or subtitle change that needs a new stream) and when a stopped report fails or times out.
 - Seek needs no call: when a requested segment is behind or more than `24 / SegmentLength` segments ahead of the running job, the server kills and restarts ffmpeg itself (`DynamicHlsController.GetDynamicSegment`, v10.11.7 lines 1490-1539).
-- Paused HLS jobs: the server kills an HLS job 60 s after its last ping (`TranscodeManager.PingTimer`, v10.11.7 lines 144-170). Fluster sends `POST /Sessions/Playing/Ping?playSessionId=` while paused during a conversion if progress reports do not keep the job alive. Whether `OnPlaybackProgress` pings the job is **[unverified]** (P10-07 checks it on the fixture).
+- Paused HLS jobs: the server kills an HLS job 60 s after its last ping (`TranscodeManager.PingTimer`, v10.11.7 lines 144-170). Fluster would send `POST /Sessions/Playing/Ping?playSessionId=` while paused during a conversion if progress reports did not keep the job alive. They do: `TranscodeManager.OnPlaybackProgress` pings the session's jobs on every start and progress report (v10.11.7 lines 709-715, v12.4 lines 710-716), and the P10-07 fixture check confirmed it on both servers (plan 002 decision log), so no ping is sent.
 
 ### Playstate reporting
 

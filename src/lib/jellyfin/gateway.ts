@@ -780,6 +780,22 @@ export class JellyfinGateway {
     return this.report("/Sessions/Playing/Stopped", plan, snapshot, signal, { Failed: failed });
   }
 
+  // DELETE /Videos/ActiveEncodings?deviceId=&playSessionId= kills the
+  // server's conversion jobs for one play session ([Authorize], both
+  // parameters required; HlsSegmentController.cs v10.11.7 lines 108-117,
+  // v12.4 lines 103-112). Neither the 12.4 OpenAPI nor SDK 1.0.2 lists it, so
+  // it uses the gateway's request path: header auth, no redirects, redacted
+  // errors, and the report timeout.
+  async stopActiveEncoding(playSessionId: string, signal?: AbortSignal): Promise<void> {
+    this.requireSession();
+    if (!this.deviceId) throw new Error("Sign in before using the library.");
+    await this.delete("/Videos/ActiveEncodings", {
+      params: { deviceId: this.deviceId, playSessionId },
+      signal,
+      timeout: REPORT_REQUEST_TIMEOUT_MS,
+    });
+  }
+
   private async report(path: string, plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal, extra?: { Failed: boolean }): Promise<void> {
     this.requireSession();
     await this.post(path, {

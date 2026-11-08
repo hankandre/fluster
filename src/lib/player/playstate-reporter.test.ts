@@ -25,6 +25,19 @@ const snapshot: PlaybackSnapshot = {
   diagnostics: { decodeMode: "software", decodeLabel: "Software — CPU", droppedFrames: 0 },
 };
 
+// A converted session: its server encode must be stopped if the stopped
+// report cannot do it.
+const hlsPlan: PlaybackPlan = {
+  ...plan,
+  streamUrl: "https://media.test/videos/one/master.m3u8",
+  playSessionId: "converting",
+  delivery: "hls",
+  playMethod: "Transcode",
+  conversionReasons: ["ContainerBitrateExceedsLimit"],
+  serverUrl: "https://media.test",
+  mediaKind: "videos",
+};
+
 function recordingGateway(calls: string[]): PlaystateGateway {
   return {
     reportStart: vi.fn(async () => { calls.push("start"); }),
@@ -32,6 +45,7 @@ function recordingGateway(calls: string[]): PlaystateGateway {
     reportStopped: vi.fn(async (_plan, _snapshot, _signal, failed) => {
       calls.push(failed ? "stopped:failed" : "stopped");
     }),
+    stopActiveEncoding: vi.fn(async () => { calls.push("delete"); }),
   };
 }
 
@@ -166,5 +180,135 @@ describe("PlaystateReporter", () => {
     expect(drained).toBe(true);
     expect(stopSignal?.aborted).toBe(true);
     expect(onWarning).toHaveBeenCalledWith(expect.stringContaining("stopped report"));
+  });
+
+  describe("stopping the server encode of a converted session", () => {
+    it("sends one DELETE after a failed stopped report", async () => {
+      const calls: string[] = [];
+      const gateway = recordingGateway(calls);
+      gateway.reportStopped = vi.fn(async () => {
+        calls.push("stopped:failed-request");
+        throw new Error("Request failed with status code 500");
+      });
+      const reporter = new PlaystateReporter(gateway, vi.fn());
+
+      reporter.start(hlsPlan, snapshot, () => snapshot);
+      reporter.finish(hlsPlan, snapshot, false);
+      await reporter.waitForDrains();
+
+      expect(calls).toEqual(["start", "stopped:failed-request", "delete"]);
+      expect(gateway.stopActiveEncoding).toHaveBeenCalledTimes(1);
+      expect(gateway.stopActiveEncoding).toHaveBeenCalledWith("converting", expect.any(AbortSignal));
+    });
+
+    it("sends one DELETE after a stopped report times out, and bounds the DELETE too", async () => {
+      vi.useFakeTimers();
+      const calls: string[] = [];
+      const gateway = recordingGateway(calls);
+      gateway.reportStopped = vi.fn(() => new Promise<void>(() => undefined));
+      let deleteSignal: AbortSignal | undefined;
+      gateway.stopActiveEncoding = vi.fn((_id: string, signal?: AbortSignal) => {
+        deleteSignal = signal;
+        calls.push("delete");
+        return new Promise<void>(() => undefined);
+      });
+      const onWarning = vi.fn();
+      const reporter = new PlaystateReporter(gateway, onWarning);
+      let drained = false;
+
+      reporter.start(hlsPlan, snapshot, () => snapshot);
+      reporter.finish(hlsPlan, snapshot, false);
+      void reporter.waitForDrains().then(() => { drained = true; });
+      await vi.advanceTimersByTimeAsync(4_999);
+      expect(gateway.stopActiveEncoding).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(1);
+      expect(calls).toEqual(["start", "delete"]);
+      expect(drained).toBe(false);
+
+      await vi.advanceTimersByTimeAsync(3_000);
+      expect(drained).toBe(true);
+      expect(deleteSignal?.aborted).toBe(true);
+      expect(gateway.stopActiveEncoding).toHaveBeenCalledTimes(1);
+      expect(onWarning).toHaveBeenCalledWith(expect.stringContaining("server conversion"));
+    });
+
+    it("sends no DELETE when the stopped report succeeds or the session direct played", async () => {
+      const calls: string[] = [];
+      const gateway = recordingGateway(calls);
+      const reporter = new PlaystateReporter(gateway, vi.fn());
+
+      reporter.start(hlsPlan, snapshot, () => snapshot);
+      reporter.finish(hlsPlan, snapshot, false);
+      await reporter.waitForDrains();
+      gateway.reportStopped = vi.fn(async () => { throw new Error("offline"); });
+      reporter.reset();
+      reporter.start(plan, snapshot, () => snapshot);
+      reporter.finish(plan, snapshot, false);
+      reporter.stopEncoding(plan);
+      await reporter.waitForDrains();
+
+      expect(calls).toEqual(["start", "stopped", "start"]);
+      expect(gateway.stopActiveEncoding).not.toHaveBeenCalled();
+    });
+
+    it("sends a DELETE when a converted session ends before its start was reported", async () => {
+      const calls: string[] = [];
+      const reporter = new PlaystateReporter(recordingGateway(calls), vi.fn());
+
+      reporter.finish(hlsPlan, undefined, true);
+      await reporter.waitForDrains();
+
+      expect(calls).toEqual(["delete"]);
+    });
+
+    it("stops an encode for a new play session after the old stopped report, once per session", async () => {
+      const calls: string[] = [];
+      const gateway = recordingGateway(calls);
+      const reporter = new PlaystateReporter(gateway, vi.fn());
+
+      reporter.start(hlsPlan, snapshot, () => snapshot);
+      reporter.finish(hlsPlan, snapshot, true);
+      reporter.stopEncoding(hlsPlan);
+      reporter.stopEncoding(hlsPlan);
+      await reporter.waitForDrains();
+
+      expect(calls).toEqual(["start", "stopped:failed", "delete"]);
+    });
+
+    // Fixture finding (plan 002, P10-07): a progress report pings the HLS job
+    // (TranscodeManager.OnPlaybackProgress), and IsPaused=true stops the
+    // server's own automatic progress, so these reports alone keep a paused
+    // conversion alive past the 60 s kill timer. No separate ping is sent.
+    it("keeps sending progress every 10 s while a conversion is paused", async () => {
+      vi.useFakeTimers();
+      const gateway = recordingGateway([]);
+      const paused = { ...snapshot, paused: true };
+      const reporter = new PlaystateReporter(gateway, vi.fn());
+
+      reporter.start(hlsPlan, snapshot, () => paused);
+      reporter.progress(hlsPlan, paused);
+      await vi.advanceTimersByTimeAsync(90_000);
+
+      expect(gateway.reportProgress).toHaveBeenCalledTimes(10);
+      expect(vi.mocked(gateway.reportProgress).mock.calls.every(([, sent]) => sent.paused)).toBe(true);
+      expect(gateway.stopActiveEncoding).not.toHaveBeenCalled();
+      reporter.stopProgress();
+    });
+
+    it("turns a failed DELETE into a redacted warning", async () => {
+      const gateway = recordingGateway([]);
+      gateway.stopActiveEncoding = vi.fn(async () => {
+        throw new Error("DELETE https://media.test/Videos/ActiveEncodings?api_key=secret failed");
+      });
+      const onWarning = vi.fn();
+      const reporter = new PlaystateReporter(gateway, onWarning);
+
+      reporter.stopEncoding(hlsPlan);
+      await reporter.waitForDrains();
+
+      expect(onWarning).toHaveBeenCalledTimes(1);
+      expect(onWarning.mock.calls[0][0]).not.toContain("secret");
+    });
   });
 });
