@@ -65,3 +65,12 @@ export const REFUSAL_COPY: Record<RefusalReason, RefusalCopy> = {
     whatYouCanDo: "Choose Retry. If it keeps happening, check that the server address is correct and that no proxy rewrites Jellyfin’s answers.",
   },
 };
+
+// The browser development engine cannot send the Authorization header a
+// converted (HLS) stream needs, so it refuses those plans. This is the desktop
+// app's job, not a substitute for it (decision 0002).
+export const DESKTOP_ONLY_COPY: RefusalCopy = {
+  title: "This stream needs the desktop player",
+  explanation: "Jellyfin is converting this file for playback. The browser version of Fluster can only play files exactly as stored.",
+  whatYouCanDo: "Open this item in the Fluster desktop app.",
+};

@@ -169,15 +169,20 @@ test("a server that won't convert for this account names the setting, and Retry 
 });
 
 // Decision 0002: the browser development engine never plays HLS (I7); P10-10
-// owns the final view for this case.
+// shows the desktop-only screen.
 test("a converted stream is not played by the browser engine and never requested", async ({ page }) => {
   const log = await mockPlayerServer(page, { converted: true });
   await openArrival(page);
 
   await page.getByRole("link", { name: "Play" }).click();
-  await expect(page.getByText("This stream needs the desktop player.")).toBeVisible();
+  const heading = page.getByRole("heading", { name: "This stream needs the desktop player" });
+  await expect(heading).toBeFocused();
+  await expect(page.getByRole("button", { name: "Retry" })).toHaveCount(0);
   await expect(page.locator("video")).toHaveCount(0);
   expect(log.requestUrls.filter((url) => /m3u8|e2e-key/i.test(url))).toEqual([]);
+
+  await page.getByRole("button", { name: "Back to details" }).click();
+  await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
 });
 
 // The browser engine cannot play HLS (I7), so the indicator itself is covered

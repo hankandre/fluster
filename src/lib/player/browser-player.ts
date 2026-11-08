@@ -18,7 +18,6 @@ const browserDiagnostics: PlaybackDiagnostics = {
 };
 
 // Decision 0002 "Browser development engine": no HLS in the dev engine.
-// P10-10 owns the final view for this case.
 export const BROWSER_HLS_UNSUPPORTED_MESSAGE = "This stream needs the desktop player.";
 
 const BROWSER_PLAYBACK_ERROR =
