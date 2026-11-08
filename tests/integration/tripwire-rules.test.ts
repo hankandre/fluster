@@ -114,9 +114,9 @@ describe("decideStatus", () => {
   });
 
   it("fails an unexpected refusal", () => {
-    const result = decideStatus({ failures: [], streamRequests: 0, refusal: "no-direct-play" });
+    const result = decideStatus({ failures: [], streamRequests: 0, refusal: "conversion-not-allowed" });
     expect(result.status).toBe("FAIL");
-    expect(result.extraFailure).toContain("no-direct-play");
+    expect(result.extraFailure).toContain("conversion-not-allowed");
   });
 
   it("accepts only the declared refusal reason with no stream request", () => {

@@ -242,12 +242,12 @@ describe("Player feature", () => {
   it("Retry on a refusal negotiates again and plays once the server allows it", async () => {
     const gateway = fakeGateway({
       createPlaybackPlan: vi.fn()
-        .mockRejectedValueOnce(new PlaybackRefusedError({ reason: "no-direct-play" }))
+        .mockRejectedValueOnce(new PlaybackRefusedError({ reason: "conversion-not-allowed" }))
         .mockResolvedValueOnce(plan("play-2")),
     });
     const engine = new FakePlayerEngine();
     await renderPlayer(gateway, engine);
-    await screen.findByRole("heading", { name: REFUSAL_COPY["no-direct-play"].title });
+    await screen.findByRole("heading", { name: REFUSAL_COPY["conversion-not-allowed"].title });
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Retry" }));
@@ -255,23 +255,23 @@ describe("Player feature", () => {
 
     await waitFor(() => expect(engine.launch).toHaveBeenCalledWith(plan("play-2")));
     expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(2);
-    expect(screen.queryByRole("heading", { name: REFUSAL_COPY["no-direct-play"].title })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: REFUSAL_COPY["conversion-not-allowed"].title })).not.toBeInTheDocument();
   });
 
   it("Retry keeps the refusal on screen when the server still refuses", async () => {
     const gateway = fakeGateway({
-      createPlaybackPlan: vi.fn().mockRejectedValue(new PlaybackRefusedError({ reason: "no-direct-play" })),
+      createPlaybackPlan: vi.fn().mockRejectedValue(new PlaybackRefusedError({ reason: "conversion-not-allowed" })),
     });
     const engine = new FakePlayerEngine();
     await renderPlayer(gateway, engine);
-    await screen.findByRole("heading", { name: REFUSAL_COPY["no-direct-play"].title });
+    await screen.findByRole("heading", { name: REFUSAL_COPY["conversion-not-allowed"].title });
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     });
 
     await waitFor(() => expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(2));
-    expect(await screen.findByRole("heading", { name: REFUSAL_COPY["no-direct-play"].title })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: REFUSAL_COPY["conversion-not-allowed"].title })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Retry" })).toBeEnabled();
     expect(engine.launch).not.toHaveBeenCalled();
   });

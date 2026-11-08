@@ -68,7 +68,7 @@ Pilot: milestones 1 and 3 are the pilot for the conversion path. Review both (gu
 - [ ] 8
 - [ ] 9
 - [x] 10 (P10-10)
-- [ ] 11
+- [x] 11 (P10-11)
 - [ ] 12
 - [x] 13 (P12-01: rule `core-is-shell-neutral` plus `pnpm typecheck:core` with `tsconfig.core.json`, both in `pnpm check`; window timers and the gateway's browser-storage defaults fixed, no open exceptions; `@types/node` supplies URL, AbortSignal, TextEncoder, crypto, console, and a React Native shell needs polyfills for URL and crypto.subtle) · [ ] 14
 - [ ] 15 · [ ] 16 · [ ] 17 · [ ] 18 · [ ] 19

@@ -13,16 +13,12 @@ export const PLAYBACK_POLICY = Object.freeze({
 
 // Why Fluster refused every media source a PlaybackInfo response offered.
 // Each value maps to one source decision rule in ARCHITECTURE.md §3.
-// `no-direct-play` and `server-requires-transcoding` are no longer produced
-// since P10-03; P10-11 removes them with their copy. `disc-source` and
-// `iso-source` remain only for a disc the server still offers for direct play
+// `disc-source` and `iso-source` remain only for a disc the server still offers for direct play
 // after the forced-fallback request.
 export type RefusalReason =
   | "no-sources"
-  | "no-direct-play"
   | "not-a-file"
   | "live-source"
-  | "server-requires-transcoding"
   | "disc-source"
   | "iso-source"
   | "missing-source-data"
@@ -76,10 +72,8 @@ export interface PlaybackRefusal {
 
 const REFUSAL_MESSAGES: Record<RefusalReason, string> = {
   "no-sources": "Jellyfin returned no media source for this item.",
-  "no-direct-play": "Jellyfin cannot direct-play this item for Fluster.",
   "not-a-file": "This item is not a file on the server, so Fluster cannot play it directly.",
   "live-source": "This item is a live stream, which Fluster cannot play directly.",
-  "server-requires-transcoding": "Jellyfin would need to convert this item. Server conversion is disabled.",
   "disc-source": "This item is a Blu-ray or DVD folder, which Fluster cannot play directly.",
   "iso-source": "This item is a disc image (ISO), which Fluster does not play yet.",
   "missing-source-data": "Jellyfin returned an incomplete media source for this item.",
