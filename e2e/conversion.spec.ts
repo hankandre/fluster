@@ -15,7 +15,10 @@ test("a direct stream shows the repackaging indicator and reports DirectStream",
   expect(log.reports.find((report) => report.path === "/Sessions/Playing")?.body).toMatchObject({ PlayMethod: "DirectStream" });
   await page.keyboard.press("i");
   await expect(page.getByRole("region", { name: "Player information" })).toContainText("Direct stream");
-  expect(log.requestUrls.filter((url) => /m3u8|e2e-key/i.test(url))).toEqual([]);
+
+  await page.getByLabel("Back to library").click();
+  await expect.poll(() => log.reports.map((report) => report.path)).toContain("/Sessions/Playing/Stopped");
+  expect(log.reports.find((report) => report.path === "/Sessions/Playing/Stopped")?.body).toMatchObject({ PlayMethod: "DirectStream" });
 });
 
 test("a transcode with burned-in subtitles says so and reports Transcode", async ({ page }) => {

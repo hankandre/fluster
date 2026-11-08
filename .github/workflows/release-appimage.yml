@@ -38,6 +38,8 @@ jobs:
       - run: pnpm audit --audit-level moderate
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test
+      - run: pnpm build
+      - run: pnpm test:no-test-engine
       - run: pnpm test:e2e
       - run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
       - run: cargo test --manifest-path src-tauri/Cargo.toml
