@@ -119,6 +119,8 @@ export interface MediaSourceDto {
   RequiresOpening?: boolean;
   Container?: string;
   Size?: number | null;
+  // The container's total bitrate in bits per second.
+  Bitrate?: number | null;
   MediaStreams?: MediaStreamDto[];
   DefaultAudioStreamIndex?: number | null;
   DefaultSubtitleStreamIndex?: number | null;

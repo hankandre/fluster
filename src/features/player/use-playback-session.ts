@@ -36,10 +36,18 @@ export function whenPlaybackStopped(engine: PlayerEngine): Promise<void> {
 }
 
 // Binds the chosen version so every attempt, including retries, asks for it.
-function playbackGatewayFor(gateway: SessionGateway, mediaSourceId: string | undefined): PlaybackGateway {
+// `ignoreLimit` is read on every attempt: Play original sets it for this
+// session only, and it is never stored.
+function playbackGatewayFor(
+  gateway: SessionGateway,
+  mediaSourceId: string | undefined,
+  ignoreLimit: { current: boolean },
+): PlaybackGateway {
   return {
     createPlaybackPlan: (item, startPositionTicks, signal) =>
-      gateway.createPlaybackPlan(item, startPositionTicks, signal, mediaSourceId),
+      gateway.createPlaybackPlan(item, startPositionTicks, signal, mediaSourceId, {
+        ignoreStreamingLimit: ignoreLimit.current,
+      }),
     reportStart: (plan, snapshot, signal) => gateway.reportStart(plan, snapshot, signal),
     reportProgress: (plan, snapshot, signal) => gateway.reportProgress(plan, snapshot, signal),
     reportStopped: (plan, snapshot, signal, failed) => gateway.reportStopped(plan, snapshot, signal, failed),
@@ -102,6 +110,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
   const [refusal, setRefusal] = useState<PlaybackRefusal>();
   const [plan, setPlan] = useState<PlaybackPlan>();
   const session = useRef<ActiveSession | undefined>(undefined);
+  const ignoreLimit = useRef(false);
   const callbacks = useRef(options);
 
   useEffect(() => {
@@ -134,7 +143,8 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
 
   useEffect(() => {
     let mounted = true;
-    const coordinator = new PlaybackCoordinator(playbackGatewayFor(gateway, mediaSourceId), engine, {
+    ignoreLimit.current = false;
+    const coordinator = new PlaybackCoordinator(playbackGatewayFor(gateway, mediaSourceId, ignoreLimit), engine, {
       onEvent: (event) => {
         if (mounted) dispatch({ type: "event", event });
       },
@@ -206,6 +216,14 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     }
   }, [handleFailure]);
 
+  // Renegotiates once without the user's streaming limit, for this session
+  // only. Available only while the plan says the limit is the only reason.
+  const playOriginal = useCallback(async () => {
+    if (!plan?.playOriginalAvailable || ignoreLimit.current) return;
+    ignoreLimit.current = true;
+    await retry();
+  }, [plan, retry]);
+
   // Stops the engine, then leaves without waiting for the Stopped report.
   // Resolves false when the stop failed and the player stays open.
   const stopAndLeave = useCallback(async (destination?: () => void): Promise<boolean> => {
@@ -245,5 +263,5 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     }
   }), [watchMediaControls, stopAndLeave]);
 
-  return { state, plan, retrying, refusal, retry, back, stopAndLeave };
+  return { state, plan, retrying, refusal, retry, playOriginal, back, stopAndLeave };
 }

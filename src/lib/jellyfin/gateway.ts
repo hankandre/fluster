@@ -2,17 +2,19 @@ import { Jellyfin, type Api } from "@jellyfin/sdk";
 import axios from "axios";
 import type { BrowseCard, BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, LibraryItem, LibraryView, MediaCard, NextEpisode, SearchHint, SearchPage, SearchQuery, Season } from "../../domain/catalog";
 import { ItemNotFoundError } from "../../domain/catalog";
-import type { PlaybackDelivery, PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
+import type { PlaybackDelivery, PlaybackPlan, PlaybackPlanOptions, PlaybackSnapshot } from "../../domain/playback";
 import { PlaybackRefusedError, secondsToTicks } from "../../domain/playback";
 import { classifyHost, type HostClass } from "../../domain/host-class";
 import type { ServerConnection } from "../../domain/server-connection";
 import { isSupportedServerVersion, parseServerVersion } from "../../domain/server-version";
 import type { MediaSegment } from "../../domain/media-segments";
 import { MemoryLanHttpConfirmations, type LanHttpConfirmationStore } from "../lan-http-confirmations";
+import { limitMbpsFor, mbpsToBitsPerSecond, MemoryStreamingLimits, type StreamingLimitStore } from "../streaming-limits";
 import { redactError, redactText } from "../redact";
 import { toBrowseCards, toEpisodeCards, toNextEpisode, toHomeLibraries, toMediaCards, toSearchCards, toSearchHints, toSeasons } from "./cards";
 import { stripCredentialQuery } from "./credential-query";
 import { deriveDeviceId } from "./device-id";
+import { limitIsOnlyReason } from "./client-limit";
 import { FLUSTER_PROFILE, MAX_BITRATE } from "./device-profile";
 import { toItemDetail } from "./item-detail";
 import { toMediaSegments, type MediaSegmentsResponse } from "./media-segments";
@@ -192,6 +194,7 @@ export class JellyfinGateway {
     transport?: HttpTransport,
     private readonly installId: string = crypto.randomUUID(),
     private readonly confirmations: LanHttpConfirmationStore = new MemoryLanHttpConfirmations(),
+    private readonly streamingLimits: StreamingLimitStore = new MemoryStreamingLimits(),
   ) {
     const url = normalizeServerUrl(serverUrl);
     this.serverUrl = url.toString().replace(/\/$/, "");
@@ -660,19 +663,21 @@ export class JellyfinGateway {
     startPositionTicks = 0,
     signal?: AbortSignal,
     mediaSourceId?: string,
+    options: PlaybackPlanOptions = {},
   ): Promise<PlaybackPlan> {
+    const limit = this.clientLimitBitrate(options);
     const context = (answer: PlaybackInfoResponse) => ({
       serverUrl: this.serverUrl,
       itemId: item.id,
       playSessionId: answer.PlaySessionId,
     });
-    let data = await this.playbackInfo(item.id, startPositionTicks, signal, mediaSourceId, true);
+    let data = await this.playbackInfo(item.id, startPositionTicks, signal, mediaSourceId, true, limit);
     let decision = selectSource(data.MediaSources, context(data), mediaSourceId);
     if (decision.kind === "force-fallback") {
       // Rule 4: a disc folder or ISO the server offered for direct play. Ask
       // once more for that source without direct play, and never loop.
       const { reason, source } = decision;
-      data = await this.playbackInfo(item.id, startPositionTicks, signal, source.Id, false);
+      data = await this.playbackInfo(item.id, startPositionTicks, signal, source.Id, false, limit);
       decision = selectSource(data.MediaSources, context(data), source.Id);
       if (decision.kind === "force-fallback") {
         decision = { kind: "refused", reason, detail: "direct play offered again" };
@@ -698,6 +703,8 @@ export class JellyfinGateway {
         : decision.masterUrl,
       authorization: this.authorizationHeader(),
       hasSegments: source.HasSegments === true,
+      playOriginalAvailable: decision.kind === "convert"
+        && limitIsOnlyReason(source, decision.conversionReasons, limit),
       tracks: (source.MediaStreams ?? []).flatMap((track) => {
         if (track.Index == null || !["Audio", "Subtitle", "Video"].includes(track.Type ?? "")) return [];
         return [{
@@ -715,6 +722,15 @@ export class JellyfinGateway {
     };
   }
 
+  // The user's limit for this server's host class, as the bitrate to send.
+  // "No limit" sends MAX_BITRATE, as before the setting existed. Play original
+  // skips the user's limit for one negotiation and is never stored.
+  private clientLimitBitrate(options: PlaybackPlanOptions): number {
+    if (options.ignoreStreamingLimit) return MAX_BITRATE;
+    const mbps = limitMbpsFor(this.hostClass, this.streamingLimits.get());
+    return mbps === undefined ? MAX_BITRATE : mbpsToBitsPerSecond(mbps);
+  }
+
   // POST /Items/{id}/PlaybackInfo with the Fluster DeviceProfile and the
   // decision 0002 flags in body and query. AlwaysBurnInSubtitleWhenTranscoding
   // is body-only: it is not a query parameter in the 10.11.7 or 12.4 OpenAPI.
@@ -724,6 +740,7 @@ export class JellyfinGateway {
     signal: AbortSignal | undefined,
     mediaSourceId: string | undefined,
     enableDirectPlay: boolean,
+    maxStreamingBitrate: number,
   ): Promise<PlaybackInfoResponse> {
     const { userId } = this.requireSession();
     const flags = { ...PLAYBACK_INFO_FLAGS, EnableDirectPlay: enableDirectPlay };
@@ -732,12 +749,12 @@ export class JellyfinGateway {
       AlwaysBurnInSubtitleWhenTranscoding: false,
       UserId: userId,
       StartTimeTicks: startPositionTicks,
-      MaxStreamingBitrate: MAX_BITRATE,
+      MaxStreamingBitrate: maxStreamingBitrate,
       ...(mediaSourceId ? { MediaSourceId: mediaSourceId } : {}),
-      DeviceProfile: FLUSTER_PROFILE,
+      DeviceProfile: { ...FLUSTER_PROFILE, MaxStreamingBitrate: maxStreamingBitrate },
     };
     const { data } = await this.post<PlaybackInfoResponse>(`/Items/${itemId}/PlaybackInfo`, request, {
-      params: { ...flags, UserId: userId, StartTimeTicks: startPositionTicks, MaxStreamingBitrate: MAX_BITRATE },
+      params: { ...flags, UserId: userId, StartTimeTicks: startPositionTicks, MaxStreamingBitrate: maxStreamingBitrate },
       signal,
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
