@@ -14,6 +14,8 @@ import { NextEpisodeCard } from "./next-episode-card";
 import { creditsStart, leaveToNext, useAutoPlayCountdown, useNextEpisode } from "./use-auto-play-next";
 import { usePlaybackSession, whenPlaybackStopped } from "./use-playback-session";
 import { useSeekPreview } from "./use-seek-preview";
+import { useIdleCursor } from "./use-idle-cursor";
+import { useEscapeKey } from "../use-escape-key";
 
 const SIGN_IN_ROUTE = "#/next/sign-in";
 
@@ -49,10 +51,11 @@ function PlayerLoader({ gateway, player, route }: { gateway: SessionGateway; pla
     gcTime: 0,
   });
   const backHref = itemRoute(route.itemId);
+  const leave = () => leavePlayer(route.itemId);
 
   if (query.isPending) {
     return (
-      <PlayerMessage>
+      <PlayerMessage onEscape={leave}>
         <p aria-busy="true">Loading…</p>
         <a href={backHref}>Back to details</a>
       </PlayerMessage>
@@ -60,7 +63,7 @@ function PlayerLoader({ gateway, player, route }: { gateway: SessionGateway; pla
   }
   if (query.isError) {
     return (
-      <PlayerMessage>
+      <PlayerMessage onEscape={leave}>
         <p role="alert">Could not load this item.</p>
         <button type="button" onClick={() => void query.refetch()}>Try again</button>
         <a href={backHref}>Back to details</a>
@@ -112,6 +115,7 @@ function PlaybackScreen({ gateway, player, route, detail }: {
     },
   });
   const segments = useMediaSegments(gateway, route.itemId, playback.plan);
+  const cursor = useIdleCursor();
   const upNext = useAutoPlayCountdown({
     next,
     seriesId: detail.seriesId,
@@ -133,7 +137,7 @@ function PlaybackScreen({ gateway, player, route, detail }: {
   }
 
   return (
-    <main className="app-shell has-player">
+    <main className={`app-shell has-player${cursor.idle ? " cursor-idle" : ""}`} onPointerMove={cursor.onPointerMove}>
       <PlayerView
         item={item}
         player={player.engine}
@@ -169,7 +173,7 @@ function RefusalScreen({ copy, onRetry, onBack }: {
   }, []);
 
   return (
-    <PlayerMessage>
+    <PlayerMessage onEscape={onBack}>
       <div role="alert">
         <h1 ref={heading} tabIndex={-1}>{copy.title}</h1>
         <p>{copy.explanation}</p>
@@ -183,7 +187,9 @@ function RefusalScreen({ copy, onRetry, onBack }: {
   );
 }
 
-function PlayerMessage({ children }: { children: ReactNode }) {
+// Escape leaves, like the player itself.
+function PlayerMessage({ onEscape, children }: { onEscape(): void; children: ReactNode }) {
+  useEscapeKey(onEscape);
   return (
     <main className="app-shell">
       <section className="player-message">{children}</section>

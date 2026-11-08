@@ -145,6 +145,42 @@ describe("series", () => {
   });
 });
 
+describe("keyboard", () => {
+  it("moves through the library grid with the arrow keys", async () => {
+    const gateway = fakeGateway({
+      libraryItems: vi.fn().mockResolvedValue({
+        cards: [card("m1", "Arrival"), card("m2", "Blade Runner"), card("m3", "Contact")],
+        hasMore: false,
+      } satisfies BrowsePage),
+    });
+    await renderView(gateway, <BrowseView libraryId="lib-1" />);
+    const first = await screen.findByRole("link", { name: "Arrival" });
+    first.focus();
+    fireEvent.keyDown(first, { key: "ArrowRight" });
+    expect(screen.getByRole("link", { name: "Blade Runner" })).toHaveFocus();
+    fireEvent.keyDown(document.activeElement as HTMLElement, { key: "End" });
+    expect(screen.getByRole("link", { name: "Contact" })).toHaveFocus();
+    expect(screen.getAllByRole("link").filter((link) => link.closest(".card-grid") && link.getAttribute("tabindex") === "0"))
+      .toEqual([screen.getByRole("link", { name: "Contact" })]);
+  });
+
+  it("moves through episodes with Up and Down", async () => {
+    const gateway = fakeGateway({
+      episodes: vi.fn().mockResolvedValue([
+        { id: "e1", kind: "Episode", title: "Pilot", aspectRatio: 1.78 },
+        { id: "e2", kind: "Episode", title: "Second", aspectRatio: 1.78 },
+      ]),
+    });
+    await renderView(gateway, <SeriesView seriesId="series-1" />);
+    const pilot = await screen.findByRole("link", { name: "Pilot" });
+    pilot.focus();
+    fireEvent.keyDown(pilot, { key: "ArrowDown" });
+    expect(screen.getByRole("link", { name: "Second" })).toHaveFocus();
+    fireEvent.keyDown(document.activeElement as HTMLElement, { key: "ArrowUp" });
+    expect(pilot).toHaveFocus();
+  });
+});
+
 describe("series defaults", () => {
   it("opens the first regular season, not Specials", async () => {
     const gateway = fakeGateway({

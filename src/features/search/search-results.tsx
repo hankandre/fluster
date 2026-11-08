@@ -3,6 +3,7 @@ import type { SearchCard, SearchKind } from "../../domain/catalog";
 import type { SessionGateway } from "../../app/session";
 import { Card, RowError } from "../home/media-row";
 import { scopeFor } from "../query-scope";
+import { useRovingFocus } from "../roving-focus";
 
 export const RESULT_PAGE_SIZE = 40;
 
@@ -37,16 +38,7 @@ export function SearchResults({ gateway, term }: { gateway: SessionGateway; term
         const groupCards = cards.filter((card) => card.kind === group.kind);
         if (groupCards.length === 0) return null;
         return (
-          <section key={group.kind} aria-labelledby={`results-${group.kind}`}>
-            <h2 id={`results-${group.kind}`}>{group.title}</h2>
-            <ul className="card-grid">
-              {groupCards.map((card) => (
-                <li key={card.id}>
-                  <Card card={card} gateway={gateway} />
-                </li>
-              ))}
-            </ul>
-          </section>
+          <ResultGroup key={group.kind} kind={group.kind} title={group.title} cards={groupCards} gateway={gateway} />
         );
       })}
       {query.isError && cards.length > 0 ? <RowError title="more results" onRetry={() => void query.fetchNextPage()} /> : null}
@@ -55,6 +47,22 @@ export function SearchResults({ gateway, term }: { gateway: SessionGateway; term
           {query.isFetchingNextPage ? "Loading…" : "Load more"}
         </button>
       ) : null}
+    </section>
+  );
+}
+
+function ResultGroup({ kind, title, cards, gateway }: { kind: SearchKind; title: string; cards: SearchCard[]; gateway: SessionGateway }) {
+  const roving = useRovingFocus<HTMLUListElement>("grid");
+  return (
+    <section aria-labelledby={`results-${kind}`}>
+      <h2 id={`results-${kind}`}>{title}</h2>
+      <ul className="card-grid" {...roving}>
+        {cards.map((card) => (
+          <li key={card.id}>
+            <Card card={card} gateway={gateway} />
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

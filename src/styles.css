@@ -262,3 +262,12 @@ input:focus, select:focus { border-color: var(--acid); box-shadow: 0 0 0 1px var
 .skip-segment-button { position: absolute; z-index: 6; right: 3vw; bottom: 150px; height: 44px; padding: 0 18px; display: flex; align-items: center; gap: 8px; color: white; background: rgba(5,7,10,.78); border: 1px solid rgba(255,255,255,.4); backdrop-filter: blur(12px); font-size: 13px; font-weight: 600; }
 .skip-segment-button:hover { background: rgba(5,7,10,.92); border-color: var(--acid); }
 .skip-segment-button:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+
+/* Keyboard focus: one visible ring everywhere, shown only for keyboard focus. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+:where(h1, h2)[tabindex="-1"]:focus-visible { outline: none; }
+.media-card-link:focus-visible .card-art { box-shadow: 0 0 0 3px var(--acid); }
+/* Player chrome hides while playing, but never while a control holds focus. */
+.player-header:focus-within, .player-controls:focus-within { opacity: 1; transform: none; pointer-events: auto; }
+/* The pointer hides over the player after it stops moving. */
+.cursor-idle, .cursor-idle * { cursor: none !important; }

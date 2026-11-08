@@ -477,3 +477,72 @@ describe("Player feature", () => {
     });
   });
 });
+
+describe("Player keyboard and pointer", () => {
+  it("Escape stops the player, reports stopped, and returns to the detail view", async () => {
+    const gateway = fakeGateway();
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await startPlaying(engine);
+
+    await act(async () => {
+      fireEvent.keyDown(document.body, { key: "Escape" });
+    });
+
+    await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
+    expect(engine.stop).toHaveBeenCalledTimes(1);
+    expect(gateway.reportStopped).toHaveBeenCalledWith(plan(), snapshot, expect.any(AbortSignal), false);
+  });
+
+  it("Escape leaves a refusal", async () => {
+    const gateway = fakeGateway({
+      createPlaybackPlan: vi.fn().mockRejectedValue(new PlaybackRefusedError({ reason: "disc-source" })),
+    });
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await screen.findByRole("heading", { name: REFUSAL_COPY["disc-source"].title });
+
+    await act(async () => {
+      fireEvent.keyDown(document.body, { key: "Escape" });
+    });
+    await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
+  });
+
+  it("Escape leaves while the item is still loading", async () => {
+    const gateway = fakeGateway({ itemDetail: vi.fn(() => new Promise<ItemDetail>(() => undefined)) });
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    expect(screen.getByText("Loading…")).toBeInTheDocument();
+
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
+  });
+
+  it("hides the cursor after three idle seconds and shows it again on movement", async () => {
+    const gateway = fakeGateway();
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await startPlaying(engine);
+    const root = screen.getByRole("main");
+
+    vi.useFakeTimers();
+    try {
+      fireEvent.pointerMove(root);
+      expect(root).not.toHaveClass("cursor-idle");
+      act(() => vi.advanceTimersByTime(2_900));
+      expect(root).not.toHaveClass("cursor-idle");
+      act(() => vi.advanceTimersByTime(200));
+      expect(root).toHaveClass("cursor-idle");
+
+      fireEvent.pointerMove(root);
+      expect(root).not.toHaveClass("cursor-idle");
+
+      // Resting on a control keeps the cursor.
+      fireEvent.pointerMove(screen.getByRole("button", { name: "Back to library" }));
+      act(() => vi.advanceTimersByTime(10_000));
+      expect(root).not.toHaveClass("cursor-idle");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

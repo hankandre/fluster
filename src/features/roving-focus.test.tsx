@@ -1,0 +1,112 @@
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+import { nextRovingIndex, useRovingFocus, type RovingLayout } from "./roving-focus";
+
+afterEach(cleanup);
+
+describe("nextRovingIndex", () => {
+  it("moves along a row with Left and Right, and leaves Up and Down alone", () => {
+    expect(nextRovingIndex("ArrowRight", 0, 3, "row", 3)).toBe(1);
+    expect(nextRovingIndex("ArrowRight", 2, 3, "row", 3)).toBe(2);
+    expect(nextRovingIndex("ArrowLeft", 0, 3, "row", 3)).toBe(0);
+    expect(nextRovingIndex("ArrowDown", 0, 3, "row", 3)).toBeUndefined();
+    expect(nextRovingIndex("ArrowUp", 1, 3, "row", 3)).toBeUndefined();
+  });
+
+  it("moves along a column with Up and Down, and leaves Left and Right alone", () => {
+    expect(nextRovingIndex("ArrowDown", 0, 3, "column", 1)).toBe(1);
+    expect(nextRovingIndex("ArrowUp", 1, 3, "column", 1)).toBe(0);
+    expect(nextRovingIndex("ArrowDown", 2, 3, "column", 1)).toBeUndefined();
+    expect(nextRovingIndex("ArrowRight", 0, 3, "column", 1)).toBeUndefined();
+  });
+
+  it("moves by a visual row in a grid", () => {
+    // 7 items in rows of 3: [0 1 2] [3 4 5] [6]
+    expect(nextRovingIndex("ArrowDown", 1, 7, "grid", 3)).toBe(4);
+    expect(nextRovingIndex("ArrowUp", 4, 7, "grid", 3)).toBe(1);
+    expect(nextRovingIndex("ArrowUp", 1, 7, "grid", 3)).toBeUndefined();
+    // From above a short last row, Down lands on its last item.
+    expect(nextRovingIndex("ArrowDown", 5, 7, "grid", 3)).toBe(6);
+    expect(nextRovingIndex("ArrowDown", 6, 7, "grid", 3)).toBeUndefined();
+    expect(nextRovingIndex("ArrowRight", 2, 7, "grid", 3)).toBe(3);
+  });
+
+  it("jumps to the ends with Home and End, and ignores other keys", () => {
+    expect(nextRovingIndex("Home", 2, 5, "row", 5)).toBe(0);
+    expect(nextRovingIndex("End", 0, 5, "grid", 2)).toBe(4);
+    expect(nextRovingIndex("a", 0, 5, "row", 5)).toBeUndefined();
+    expect(nextRovingIndex("ArrowRight", 0, 0, "row", 0)).toBeUndefined();
+  });
+});
+
+function List({ layout, count }: { layout: RovingLayout; count: number }) {
+  const roving = useRovingFocus<HTMLUListElement>(layout);
+  return (
+    <ul {...roving}>
+      {Array.from({ length: count }, (_, index) => (
+        <li key={index}><a href={`#/item/${index}`} data-roving-item="">Item {index}</a></li>
+      ))}
+    </ul>
+  );
+}
+
+function tabStops(): string[] {
+  return screen.getAllByRole("link")
+    .filter((link) => link.getAttribute("tabindex") === "0")
+    .map((link) => link.textContent ?? "");
+}
+
+describe("useRovingFocus", () => {
+  it("makes the list one Tab stop and moves focus with the arrows", () => {
+    render(<List layout="row" count={3} />);
+    expect(tabStops()).toEqual(["Item 0"]);
+
+    const first = screen.getByRole("link", { name: "Item 0" });
+    first.focus();
+    fireEvent.keyDown(first, { key: "ArrowRight" });
+    expect(screen.getByRole("link", { name: "Item 1" })).toHaveFocus();
+    expect(tabStops()).toEqual(["Item 1"]);
+
+    fireEvent.keyDown(document.activeElement as HTMLElement, { key: "End" });
+    expect(screen.getByRole("link", { name: "Item 2" })).toHaveFocus();
+    fireEvent.keyDown(document.activeElement as HTMLElement, { key: "Home" });
+    expect(first).toHaveFocus();
+  });
+
+  it("keeps the Tab stop on the item focused by other means", () => {
+    render(<List layout="row" count={3} />);
+    screen.getByRole("link", { name: "Item 2" }).focus();
+    expect(tabStops()).toEqual(["Item 2"]);
+  });
+
+  it("gives new items no Tab stop, and resets when the focused item goes away", () => {
+    const { rerender } = render(<List layout="row" count={3} />);
+    screen.getByRole("link", { name: "Item 2" }).focus();
+    rerender(<List layout="row" count={5} />);
+    expect(tabStops()).toEqual(["Item 2"]);
+    rerender(<List layout="row" count={2} />);
+    expect(tabStops()).toEqual(["Item 0"]);
+  });
+
+  it("leaves modified arrows to the browser", () => {
+    render(<List layout="row" count={3} />);
+    const first = screen.getByRole("link", { name: "Item 0" });
+    first.focus();
+    fireEvent.keyDown(first, { key: "ArrowRight", shiftKey: true });
+    expect(first).toHaveFocus();
+  });
+
+  it("moves by the laid-out row in a grid", () => {
+    render(<List layout="grid" count={6} />);
+    // Two rows of three.
+    screen.getAllByRole("link").forEach((link, index) => {
+      Object.defineProperty(link, "offsetTop", { configurable: true, value: Math.floor(index / 3) * 100 });
+    });
+    const second = screen.getByRole("link", { name: "Item 1" });
+    second.focus();
+    fireEvent.keyDown(second, { key: "ArrowDown" });
+    expect(screen.getByRole("link", { name: "Item 4" })).toHaveFocus();
+    fireEvent.keyDown(document.activeElement as HTMLElement, { key: "ArrowUp" });
+    expect(second).toHaveFocus();
+  });
+});

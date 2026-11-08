@@ -162,6 +162,25 @@ describe("HomeView", () => {
     expect(await screen.findByRole("link", { name: "A series" })).toHaveAttribute("href", "#/next/series/s1");
   });
 
+  it("makes each row one Tab stop and moves between its cards with the arrow keys", async () => {
+    await renderHome(fakeGateway({
+      latestInLibrary: vi.fn().mockResolvedValue([
+        card("m1", "First", { kind: "Movie" }),
+        card("m2", "Second", { kind: "Movie" }),
+      ]),
+    }));
+    const first = await screen.findByRole("link", { name: "First" });
+    const second = screen.getByRole("link", { name: "Second" });
+    expect(first).toHaveAttribute("tabindex", "0");
+    expect(second).toHaveAttribute("tabindex", "-1");
+
+    first.focus();
+    fireEvent.keyDown(first, { key: "ArrowRight" });
+    expect(second).toHaveFocus();
+    fireEvent.keyDown(second, { key: "ArrowLeft" });
+    expect(first).toHaveFocus();
+  });
+
   it("renders cards of unknown kind as non-interactive list items", async () => {
     await renderHome(fakeGateway());
     const item = await screen.findByRole("article", { name: "Resume me, 40% watched" });

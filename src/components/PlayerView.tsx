@@ -15,7 +15,8 @@ import {
   VolumeX,
 } from "lucide-react";
 import type { LibraryItem } from "../domain/catalog";
-import type { PlayerEngine } from "../domain/playback";
+import type { PlayerEngine, PlayerTrack } from "../domain/playback";
+import { playerKeyAction } from "./player-keymap";
 import type { PlaybackSessionState } from "../lib/player/session-state";
 import type { MediaSegment } from "../domain/media-segments";
 import { NativeVideoSurface } from "./NativeVideoSurface";
@@ -36,6 +37,14 @@ function time(value: number | undefined): string {
 export interface SeekChapter {
   startSeconds: number;
   name: string;
+}
+
+// The subtitle after the selected one, then off. Null when there are none.
+function nextSubtitle(tracks: PlayerTrack[]): number | undefined | null {
+  const subtitles = tracks.filter((track) => track.type === "Subtitle");
+  if (subtitles.length === 0) return null;
+  const selected = subtitles.findIndex((track) => track.selected);
+  return subtitles[selected + 1]?.playerId;
 }
 
 function chapterAt(chapters: SeekChapter[], seconds: number): SeekChapter | undefined {
@@ -159,24 +168,43 @@ export function PlayerView({ item, player, session, segments, retrying, onRetry,
 
   useEffect(() => {
     const onKeyDown = (keyboardEvent: KeyboardEvent) => {
-      const currentSnapshot = snapshotRef.current;
-      const currentFullscreen = fullscreenRef.current;
-      const target = keyboardEvent.target as HTMLElement | null;
-      if (target?.matches("input, select, button")) return;
-      if (keyboardEvent.key === " " && currentSnapshot) {
-        keyboardEvent.preventDefault();
-        void execute(() => player.setPaused(!currentSnapshot.paused));
-      } else if (keyboardEvent.key === "ArrowLeft" && currentSnapshot) {
-        void execute(() => player.seek(Math.max(0, currentSnapshot.positionSeconds - 10)));
-      } else if (keyboardEvent.key === "ArrowRight" && currentSnapshot) {
-        void execute(() => player.seek(currentSnapshot.positionSeconds + 10));
-      } else if (keyboardEvent.key.toLowerCase() === "m" && currentSnapshot) {
-        void execute(() => player.setMuted(!currentSnapshot.muted));
-      } else if (keyboardEvent.key.toLowerCase() === "f") {
-        const next = !currentFullscreen;
-        void changeFullscreen(next);
-      } else if (keyboardEvent.key === "Escape" && !currentFullscreen) {
-        void onBackRef.current();
+      const action = playerKeyAction(keyboardEvent);
+      if (!action) return;
+      keyboardEvent.preventDefault();
+      const current = snapshotRef.current;
+      switch (action.kind) {
+        case "toggle-pause":
+          if (current) void execute(() => player.setPaused(!current.paused));
+          break;
+        case "seek-by": {
+          if (!current) break;
+          const end = current.durationSeconds ?? Number.POSITIVE_INFINITY;
+          const target = Math.min(Math.max(0, current.positionSeconds + action.seconds), end);
+          void execute(() => player.seek(target));
+          break;
+        }
+        case "volume-by": {
+          if (!current) break;
+          const volume = Math.min(100, Math.max(0, current.volume + action.amount));
+          void execute(() => player.setVolume(volume));
+          break;
+        }
+        case "toggle-mute":
+          if (current) void execute(() => player.setMuted(!current.muted));
+          break;
+        case "toggle-fullscreen":
+          void changeFullscreen(!fullscreenRef.current);
+          break;
+        case "cycle-subtitles": {
+          const next = current ? nextSubtitle(current.tracks) : null;
+          if (next !== null) void execute(() => player.selectTrack("subtitle", next));
+          break;
+        }
+        case "escape":
+          // Escape leaves fullscreen first, then the player.
+          if (fullscreenRef.current) void changeFullscreen(false);
+          else void onBackRef.current();
+          break;
       }
     };
     window.addEventListener("keydown", onKeyDown);
