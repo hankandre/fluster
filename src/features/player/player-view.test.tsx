@@ -546,3 +546,43 @@ describe("Player keyboard and pointer", () => {
     }
   });
 });
+
+describe("System media controls", () => {
+  it("a Stop request stops the player, reports stopped, and returns to the detail view", async () => {
+    const gateway = fakeGateway();
+    const engine = new FakePlayerEngine();
+    let mediaAction: ((action: "stop") => void) | undefined;
+    const unwatch = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <SessionProvider createGateway={() => gateway}>
+          <PlayerServicesProvider
+            services={{
+              engine,
+              watchMediaControls: (onAction) => {
+                mediaAction = onAction;
+                return unwatch;
+              },
+            }}
+          >
+            <SignIn gateway={gateway} />
+            <PlayerRouteView itemId="m1" mediaSourceId="src-hd" startTicks={0} />
+          </PlayerServicesProvider>
+        </SessionProvider>
+      </QueryClientProvider>,
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "test sign in" }));
+    });
+    await startPlaying(engine);
+
+    await act(async () => {
+      mediaAction?.("stop");
+    });
+
+    await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
+    expect(engine.stop).toHaveBeenCalledTimes(1);
+    expect(gateway.reportStopped).toHaveBeenCalledWith(plan(), snapshot, expect.any(AbortSignal), false);
+  });
+});

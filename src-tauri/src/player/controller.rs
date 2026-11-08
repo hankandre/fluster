@@ -5,6 +5,7 @@ use super::network::{harden_network_options, set_media_authorization, validate_p
 use super::properties::observe_properties;
 use super::version::{ensure_numeric_locale, query_libmpv_version};
 use super::{native_trace, MpvError};
+use crate::media_controls::{MediaControls, MediaUpdate};
 use crate::model::{LaunchRequest, PlayerCapabilities, PlayerEvent, PlayerSurfaceFrame};
 use crate::redaction::safe_error;
 use crate::surface;
@@ -29,6 +30,7 @@ struct ControllerInner {
     session_finished: Condvar,
     renderer: Mutex<Result<String, String>>,
     capabilities: Mutex<Option<PlayerCapabilities>>,
+    media: Mutex<MediaControls>,
 }
 
 impl Default for ControllerInner {
@@ -38,6 +40,7 @@ impl Default for ControllerInner {
             session_finished: Condvar::new(),
             renderer: Mutex::new(Err(String::new())),
             capabilities: Mutex::new(None),
+            media: Mutex::new(MediaControls::default()),
         }
     }
 }
@@ -55,6 +58,23 @@ impl MpvController {
             .lock()
             .expect("capabilities mutex poisoned")
             .take();
+    }
+
+    /// Where session state goes for the system media controls.
+    pub(crate) fn set_media_controls(&self, media: MediaControls) {
+        *self
+            .inner
+            .media
+            .lock()
+            .expect("media controls mutex poisoned") = media;
+    }
+
+    fn media(&self) -> MediaControls {
+        self.inner
+            .media
+            .lock()
+            .expect("media controls mutex poisoned")
+            .clone()
     }
 
     pub(crate) fn capabilities(&self) -> Result<PlayerCapabilities, MpvError> {
@@ -170,6 +190,7 @@ impl MpvController {
         let app_for_events = app.clone();
         let plan = request.plan.clone();
         let event_session_id = session_id.clone();
+        let media = self.media();
         thread::Builder::new()
             .name("fluster-mpv-events".into())
             .spawn(move || {
@@ -178,6 +199,7 @@ impl MpvController {
                         &app_for_events,
                         &mut event_client,
                         &plan,
+                        &media,
                         video_loaded,
                         finished,
                     );
@@ -324,6 +346,7 @@ impl MpvController {
         let mut session = self.inner.session.lock().expect("session mutex poisoned");
         if session.as_ref().is_some_and(|session| session.id == id) {
             session.take();
+            self.media().publish(MediaUpdate::Stopped);
             self.inner.session_finished.notify_all();
         }
         native_trace("playback finalized");

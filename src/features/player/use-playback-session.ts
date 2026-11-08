@@ -97,7 +97,7 @@ export interface PlaybackSessionOptions {
 // before leaving.
 export function usePlaybackSession(options: PlaybackSessionOptions) {
   const { gateway, player, item, mediaSourceId, startTicks } = options;
-  const { engine, watchWindowClose } = player;
+  const { engine, watchWindowClose, watchMediaControls } = player;
   const [state, dispatch] = useReducer(playbackSessionReducer, initialPlaybackSessionState);
   const [retrying, setRetrying] = useState(false);
   const [refusal, setRefusal] = useState<PlaybackRefusal>();
@@ -235,6 +235,16 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
   const back = useCallback(async () => {
     await stopAndLeave();
   }, [stopAndLeave]);
+
+  // A Stop from the system media controls is Back: it stops, reports
+  // Stopped, and leaves.
+  useEffect(() => watchMediaControls?.((action) => {
+    switch (action) {
+      case "stop":
+        void stopAndLeave();
+        break;
+    }
+  }), [watchMediaControls, stopAndLeave]);
 
   return { state, plan, retrying, refusal, retry, back, stopAndLeave };
 }

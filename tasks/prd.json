@@ -974,10 +974,10 @@
             "Built under src/features/ with a Playwright journey; no proof-of-concept screen is extended"
           ],
           "verify": "pnpm check && pnpm test:e2e",
-          "status": "in_progress",
+          "status": "done",
           "owner": "native-engineer",
-          "passes": false,
-          "evidence": ""
+          "passes": true,
+          "evidence": "pnpm check: boundaries clean, 642 Vitest tests, build, 92 Rust tests pass; pnpm test:e2e: 29 pass incl. e2e/keyboard.spec.ts (keyboard-only sign in, home, detail, play, pause, seek, Escape back). cargo fmt --check, clippy -D warnings, cargo test --release pass; Rust tests cover MPRIS state mapping, routing, D-Bus wiring, and metadata redaction. Ignored live tests pass on the local session bus: live_session_bus_mpris and playerctl_controls_the_service (status, title, position, play-pause, seek, stop). Unverified: MPRIS during real native playback, GNOME/KDE media widgets, macOS (no Now Playing), Windows."
         },
         {
           "id": "P3-15",
