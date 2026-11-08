@@ -867,10 +867,10 @@
             "Built under src/features/ with a Playwright journey; no proof-of-concept screen is extended"
           ],
           "verify": "pnpm check && pnpm test:e2e",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "src/features/player/auto-play-next.ts, use-auto-play-next.ts, next-episode-card.tsx: an Up next card with Play now and Cancel appears within 30 s of the end of an episode, counts down 10 s (held while paused), and hides if the viewer seeks out; the next episode comes from GET /Shows/{id}/Episodes?adjacentTo= via gateway.nextEpisode, and movies make no request.\nPlay now, the countdown, and a natural end stop the session (Stopped report) and open the next episode's player route, which negotiates a new PlaybackInfo and play session; Cancel stops and returns to #/next/series/<id>. Covered by gateway, countdown, and auto-play-next-view tests and e2e/next-episode.spec.ts.\npnpm check, pnpm test:e2e (25 passed), and pnpm lint:boundaries pass."
         },
         {
           "id": "P3-11",

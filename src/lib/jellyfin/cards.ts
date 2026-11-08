@@ -1,4 +1,4 @@
-import type { BrowseCard, CardImageType, EpisodeCard, ImageRef, LibraryView, MediaCard, SearchCard, SearchHint, SearchKind, Season } from "../../domain/catalog";
+import type { BrowseCard, CardImageType, EpisodeCard, ImageRef, LibraryView, MediaCard, NextEpisode, SearchCard, SearchHint, SearchKind, Season } from "../../domain/catalog";
 import type { BaseItemDto, SearchHintDto } from "./types";
 
 const POSTER_ASPECT_RATIO = 2 / 3;
@@ -160,4 +160,13 @@ export function toSearchCards(items: BaseItemDto[] | undefined): SearchCard[] {
     const kind = searchKind(item.Type);
     return card && kind ? [{ ...card, kind }] : [];
   });
+}
+
+// The episode a player offers next. An entry without an ID or name is not one.
+export function toNextEpisode(item: BaseItemDto | undefined): NextEpisode | undefined {
+  if (!item?.Id || !item.Name) return undefined;
+  const label = item.ParentIndexNumber != null && item.IndexNumber != null
+    ? `S${item.ParentIndexNumber}E${item.IndexNumber}`
+    : undefined;
+  return { id: item.Id, title: item.Name, ...(label ? { label } : {}) };
 }

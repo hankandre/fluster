@@ -1,6 +1,6 @@
 import { Jellyfin, type Api } from "@jellyfin/sdk";
 import axios from "axios";
-import type { BrowseCard, BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, LibraryItem, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season } from "../../domain/catalog";
+import type { BrowseCard, BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, LibraryItem, LibraryView, MediaCard, NextEpisode, SearchHint, SearchPage, SearchQuery, Season } from "../../domain/catalog";
 import { ItemNotFoundError } from "../../domain/catalog";
 import type { PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
 import { PlaybackRefusedError, secondsToTicks } from "../../domain/playback";
@@ -11,7 +11,7 @@ import { getInstallId } from "../install-id";
 import type { MediaSegment } from "../../domain/media-segments";
 import { lanHttpConfirmations, type LanHttpConfirmationStore } from "../lan-http-confirmations";
 import { redactError, redactText } from "../redact";
-import { toBrowseCards, toEpisodeCards, toHomeLibraries, toMediaCards, toSearchCards, toSearchHints, toSeasons } from "./cards";
+import { toBrowseCards, toEpisodeCards, toNextEpisode, toHomeLibraries, toMediaCards, toSearchCards, toSearchHints, toSeasons } from "./cards";
 import { deriveDeviceId } from "./device-id";
 import { FLUSTER_PROFILE, MAX_BITRATE } from "./device-profile";
 import { toItemDetail } from "./item-detail";
@@ -562,6 +562,23 @@ export class JellyfinGateway {
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
     return toEpisodeCards(data.Items);
+  }
+
+  // GET /Shows/{seriesId}/Episodes?adjacentTo={id} (@jellyfin/sdk 1.0.2
+  // show-api getEpisodes: "Return items that are siblings of a supplied item").
+  // The server keeps the previous, the current, and the next episode in series
+  // order (UserViewBuilder.FilterForAdjacency), so the next one is the entry
+  // after the current one. It does not depend on played state, unlike NextUp.
+  async nextEpisode(seriesId: string, episodeId: string, signal?: AbortSignal): Promise<NextEpisode | undefined> {
+    const { userId } = this.requireSession();
+    const { data } = await this.get<ItemsResult>(`/Shows/${encodeURIComponent(seriesId)}/Episodes`, {
+      params: { userId, adjacentTo: episodeId },
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    const items = data.Items ?? [];
+    const current = items.findIndex((item) => item.Id === episodeId);
+    return current === -1 ? undefined : toNextEpisode(items[current + 1]);
   }
 
   // GET /Items/{id} takes only a user id in @jellyfin/sdk 1.0.2 (library-api

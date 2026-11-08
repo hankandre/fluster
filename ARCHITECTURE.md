@@ -112,6 +112,7 @@ Keep the domain, Jellyfin gateway, playback policy, and coordinator **framework-
 | Next Up | `GET /Shows/NextUp?limit=&enableRewatching=false` |
 | Latest per library | `GET /Items/Latest?parentId=&limit=&groupItems=true` (returns an array, not a QueryResult) |
 | Series | `GET /Shows/{id}/Seasons`, `GET /Shows/{id}/Episodes?seasonId=` |
+| Next episode | `GET /Shows/{id}/Episodes?adjacentTo={episodeId}` (the entry after the current one) |
 | Detail | `GET /Items/{id}?userId=` with no `fields`: the SDK's `getItem` takes only a user id, and recordings on 10.11.7 and 12.4.0 (`item-detail-no-fields-*.json`) show the full item, including `MediaSources`, `MediaStreams`, `People`, `Genres`, and `UserData` (+ `/Similar`, `/SpecialFeatures`) |
 | Type-ahead | `GET /Search/Hints` (lighter DTO; use `/Items?searchTerm=` for result pages) |
 | Filters | `GET /Items/Filters2?parentId=`, `filters=IsUnplayed,IsResumable,IsFavorite` |

@@ -183,6 +183,7 @@ export function toItemDetail(item: BaseItemDto): ItemDetail | undefined {
     id: item.Id,
     type: item.Type ?? "",
     title: item.Name,
+    ...(item.SeriesId ? { seriesId: item.SeriesId } : {}),
     ...(item.SeriesName ? { seriesName: item.SeriesName } : {}),
     ...(episodeLabel ? { episodeLabel } : {}),
     ...(item.ProductionYear != null ? { year: item.ProductionYear } : {}),

@@ -10,6 +10,8 @@ import { itemRoute, leavePlayer, type PlayRoute } from "../routes";
 import { REFUSAL_COPY, type RefusalCopy } from "./refusal-copy";
 import { toPlayableItem } from "./playable-item";
 import { useMediaSegments } from "./use-media-segments";
+import { NextEpisodeCard } from "./next-episode-card";
+import { leaveToNext, useAutoPlayCountdown, useNextEpisode } from "./use-auto-play-next";
 import { usePlaybackSession } from "./use-playback-session";
 import { useSeekPreview } from "./use-seek-preview";
 
@@ -79,6 +81,7 @@ function PlaybackScreen({ gateway, player, route, detail }: {
   const [item] = useState(() => toPlayableItem(detail));
 
   const seekProps = useSeekPreview(gateway, detail, route.mediaSourceId);
+  const next = useNextEpisode(gateway, detail);
 
   const playback = usePlaybackSession({
     gateway,
@@ -90,7 +93,17 @@ function PlaybackScreen({ gateway, player, route, detail }: {
       void queryClient.invalidateQueries({ queryKey: detailKey(gateway, route.itemId) });
       void refreshHomeRows(queryClient);
     },
-    onLeave: () => leavePlayer(route.itemId),
+    // A file that plays to its end goes straight to the next episode.
+    onLeave: (reason) => {
+      if (reason === "eof" && next) leaveToNext(next);
+      else leavePlayer(route.itemId);
+    },
+  });
+  const upNext = useAutoPlayCountdown({
+    next,
+    seriesId: detail.seriesId,
+    snapshot: playback.state.snapshot,
+    stopAndLeave: playback.stopAndLeave,
   });
 
   const segments = useMediaSegments(gateway, route.itemId, playback.plan);
@@ -117,6 +130,14 @@ function PlaybackScreen({ gateway, player, route, detail }: {
         onBack={playback.back}
         {...seekProps}
       />
+      {next && upNext.secondsLeft !== undefined && !playback.state.error && (
+        <NextEpisodeCard
+          next={next}
+          secondsLeft={upNext.secondsLeft}
+          onPlayNow={upNext.playNow}
+          onCancel={upNext.cancel}
+        />
+      )}
     </main>
   );
 }

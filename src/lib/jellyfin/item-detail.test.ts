@@ -41,6 +41,12 @@ describe("toItemDetail with recorded items", () => {
     }
   });
 
+  it("keeps the series id of an episode", () => {
+    const detail = toItemDetail({ Id: "e1", Name: "Pilot", Type: "Episode", SeriesId: "s1" })!;
+    expect(detail.seriesId).toBe("s1");
+    expect(toItemDetail({ Id: "m1", Name: "Film", Type: "Movie" })!.seriesId).toBeUndefined();
+  });
+
   it("uses the primary image tag and its blurhash", () => {
     const detail = toItemDetail({
       Id: "m1",

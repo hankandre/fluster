@@ -203,11 +203,20 @@ export class ItemNotFoundError extends Error {
   }
 }
 
+// The episode that follows the one being played.
+export interface NextEpisode {
+  id: string;
+  title: string;
+  // For example "S1E2"; absent when the server sent no numbers.
+  label?: string;
+}
+
 export interface ItemDetail {
   id: string;
   type: string;
   title: string;
   // The show an episode belongs to, with its season and episode label.
+  seriesId?: string;
   seriesName?: string;
   episodeLabel?: string;
   year?: number;
