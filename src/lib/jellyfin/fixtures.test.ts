@@ -145,6 +145,23 @@ describe.each(versions)("PlaybackInfo fixtures from Jellyfin %s", (version) => {
     expect(multitrack.defaultSubtitleStreamIndex).toBeUndefined();
   });
 
+  it("carries the defaults the server computed from the user's configuration", async () => {
+    const spanish = await (await plan(version, "multitrack-prefer-spanish", "item-multitrack")).run();
+    expect(spanish.defaultAudioStreamIndex).toBe(2);
+    expect(spanish.defaultSubtitleStreamIndex).toBeUndefined();
+
+    const none = await (await plan(version, "sidecar-subtitles-none", "item-sidecar")).run();
+    expect(none.defaultAudioStreamIndex).toBe(2);
+    expect(none.defaultSubtitleStreamIndex).toBeUndefined();
+  });
+
+  it("sends the user id so the server applies the user's configuration", async () => {
+    const { transport, run } = await plan(version, "multitrack-prefer-spanish", "item-multitrack");
+    await run();
+    expect(transport.posts[0].data.UserId).toBe("user-test");
+    expect(transport.posts[0].params.UserId).toBe("user-test");
+  });
+
   it("strips the server ApiKey from the recorded subtitle DeliveryUrl", async () => {
     const response = fixture(version, "external-subtitle");
     const recorded = response.MediaSources![0].MediaStreams!.find((stream) => stream.IsExternal)!.DeliveryUrl!;

@@ -27,6 +27,9 @@ const cases = [
   { file: "playbackinfo-av1-profile", fakeId: "item-av1", path: "Synthetic AV1 (2024).mkv", profile: true },
   { file: "playbackinfo-ass-profile", fakeId: "item-ass", path: "Synthetic ASS (2024).mkv", profile: true },
   { file: "playbackinfo-multitrack-profile", fakeId: "item-multitrack", path: "Synthetic Multitrack (2024).mkv", profile: true },
+  // User-configuration cases (P3-13): the server computes the default indices from the user's settings.
+  { file: "playbackinfo-multitrack-prefer-spanish", fakeId: "item-multitrack", path: "Synthetic Multitrack (2024).mkv", profile: true, userConfig: { AudioLanguagePreference: "spa", PlayDefaultAudioTrack: false } },
+  { file: "playbackinfo-sidecar-subtitles-none", fakeId: "item-sidecar", path: "Synthetic Sidecar (2024).mkv", profile: true, userConfig: { SubtitleMode: "None" } },
 ];
 const only = new Set(process.argv.slice(2));
 const wanted = (file) => only.size === 0 || only.has(file);
@@ -182,10 +185,18 @@ for (const server of servers) {
     console.log(`  wrote ${server.folder}/${file}.json`);
   };
 
+  // userConfig cases change the user's configuration, then restore it.
+  const originalConfig = (await call(base, token, "GET", `/Users/${userId}`)).Configuration;
+  const setConfig = (config) => call(base, token, "POST", "/Users/Configuration", { query: { userId }, body: config });
   for (const target of targets.filter((t) => wanted(t.file))) {
     const { body, query } = requestFor(userId, target.profile);
-    const response = await call(base, token, "POST", `/Items/${target.item.Id}/PlaybackInfo`, { query, body });
-    save(target.file, response);
+    if (target.userConfig) await setConfig({ ...originalConfig, ...target.userConfig });
+    try {
+      const response = await call(base, token, "POST", `/Items/${target.item.Id}/PlaybackInfo`, { query, body });
+      save(target.file, response);
+    } finally {
+      if (target.userConfig) await setConfig(originalConfig);
+    }
   }
   // The detail view's request: userId only, no fields parameter.
   for (const [file, fakeId] of [["item-detail-no-fields-multi-version", "item-versions"], ["item-detail-no-fields-hevc-hdr10", "item-hevc"]]) {

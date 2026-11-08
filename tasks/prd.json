@@ -930,10 +930,10 @@
             "Initial tracks follow the Jellyfin user configuration and stream defaults"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "Server already applies user config: MediaSourceManager.SetDefaultAudioAndSubtitleStreamIndices (v10.11.7) runs when PlaybackInfo has UserId, which the gateway sends in body and query. Live on 10.11.7 and 12.4.0 (identical): spa + PlayDefaultAudioTrack=false -> audio 2, true -> audio 1; sidecar eng sub: Default/Always -> 0, None/OnlyForced/Smart -> none. Fixtures multitrack-prefer-spanish and sidecar-subtitles-none for both servers; fixtures.test.ts asserts the plan carries the defaults and UserId. pnpm check, test:e2e, lint:boundaries green."
         },
         {
           "id": "P3-14",
