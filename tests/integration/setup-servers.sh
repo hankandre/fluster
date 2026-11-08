@@ -116,23 +116,30 @@ ensure_library() {
 # disabled. Field names: UserPolicy in the servers' /api-docs/openapi.json (10.11.7, 12.4)
 # and @jellyfin/sdk 1.0.2 user-policy.d.ts. Uses the admin header file.
 ensure_restricted_user() {
-  local url="$1" name="$2" existing password id policy
-  existing="$(curl -fsS -H @"$header_file" "$url/Users" | jq -r --arg n "$restricted_user_name" '.[] | select(.Name == $n) | .Id')"
-  if [ -n "$existing" ]; then
-    log "  user $restricted_user_name already exists"
-    return 0
-  fi
+  local url="$1" name="$2" password id policy
+  # Idempotent: an existing user gets a fresh password and the policy again, so a rerun
+  # after a partial failure (user created, credentials not saved) recovers.
   password="$(openssl rand -hex 16)"
-  id="$(printf '{"Name":"%s","Password":"%s"}' "$restricted_user_name" "$password" |
-    curl -fsS -X POST -H @"$header_file" -H "Content-Type: application/json" -d @- "$url/Users/New" | jq -r '.Id')"
+  id="$(curl -fsS -H @"$header_file" "$url/Users" | jq -r --arg n "$restricted_user_name" '.[] | select(.Name == $n) | .Id')"
+  if [ -z "$id" ]; then
+    id="$(printf '{"Name":"%s","Password":"%s"}' "$restricted_user_name" "$password" |
+      curl -fsS -X POST -H @"$header_file" -H "Content-Type: application/json" -d @- "$url/Users/New" | jq -r '.Id')"
+  else
+    # An admin may set another user's password without the current one.
+    printf '{"NewPw":"%s"}' "$password" |
+      curl -fsS -o /dev/null -X POST -H @"$header_file" -H "Content-Type: application/json" -d @- "$url/Users/$id/Password"
+  fi
   policy="$(curl -fsS -H @"$header_file" "$url/Users/$id" |
     jq -c '.Policy | .EnableVideoPlaybackTranscoding = false | .EnableAudioPlaybackTranscoding = false | .EnablePlaybackRemuxing = false')"
   printf '%s' "$policy" | curl -fsS -o /dev/null -X POST -H @"$header_file" -H "Content-Type: application/json" -d @- "$url/Users/$id/Policy"
+  grep -v "^${name}_restricted_" "$credentials_file" > "$credentials_file.tmp" || true
   {
     echo "${name}_restricted_username=${restricted_user_name}"
     echo "${name}_restricted_password=${password}"
-  } >> "$credentials_file"
-  log "  user $restricted_user_name created (transcoding and remuxing disabled)"
+  } >> "$credentials_file.tmp"
+  mv "$credentials_file.tmp" "$credentials_file"
+  chmod 600 "$credentials_file"
+  log "  user $restricted_user_name ready (transcoding and remuxing disabled)"
 }
 
 for server in "${servers[@]}"; do

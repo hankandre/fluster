@@ -195,9 +195,17 @@ make_iso() {
   elif command -v mkisofs > /dev/null; then
     mkisofs -quiet -V SYNTHETIC_ISO -o "$out" "$tree"
   elif command -v docker > /dev/null; then
-    docker run --rm -v "$work_dir:/work:ro" -v "$(dirname "$out"):/out" alpine:3 sh -c \
-      'apk add -q --no-cache xorriso > /dev/null && xorriso -as mkisofs -quiet -V SYNTHETIC_ISO -o "/out/$1" /work/iso-tree && chown "$2" "/out/$1"' \
-      _ "$(basename "$out")" "$(id -u):$(id -g)"
+    # The image is built once with network access (apk install, pinned) and then run
+    # with no network, no capabilities, and the caller's uid. Needs network on first use.
+    # Base: alpine 3.24.4, digest from `docker buildx imagetools inspect alpine:3.24.4`.
+    printf '%s\n' \
+      'FROM alpine:3.24.4@sha256:93b41ef40b1677fce8fcc64ff4af09daddfacf5040afde618bc46c1e2d1cc7d4' \
+      'RUN apk add --no-cache xorriso=1.5.8-r0' \
+      | docker build -q -t fluster-samples-xorriso - > /dev/null
+    docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
+      --user "$(id -u):$(id -g)" -v "$work_dir:/work:ro" -v "$(dirname "$out"):/out" \
+      fluster-samples-xorriso xorriso -as mkisofs -quiet -V SYNTHETIC_ISO \
+      -o "/out/$(basename "$out")" /work/iso-tree
   else
     return 1
   fi
