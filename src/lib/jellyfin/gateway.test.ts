@@ -1022,6 +1022,7 @@ describe("JellyfinGateway plain-HTTP policy (docs/decisions/0001)", () => {
     const gateway = new JellyfinGateway(LAN_URL, transport, "install-1", new MemoryConfirmations());
     await expect(gateway.connect()).resolves.toEqual({
       name: "Living Room",
+      id: "server-1",
       version: "10.11.7",
       hostClass: "private-lan",
       needsUnencryptedConfirmation: true,

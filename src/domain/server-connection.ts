@@ -3,6 +3,8 @@ import type { HostClass } from "./host-class";
 // What the unauthenticated probe (`GET /System/Info/Public`) learned.
 export interface ServerConnection {
   name: string;
+  // The server Id the probe reported, when it reported one.
+  id?: string;
   version: string;
   hostClass: HostClass;
   // True for a private-LAN HTTP server the user has not yet confirmed at this

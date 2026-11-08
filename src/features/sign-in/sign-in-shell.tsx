@@ -21,3 +21,13 @@ export function Shell({ kicker, title, titleId, children }: { kicker: string; ti
     </main>
   );
 }
+
+// Every sign-in step names the exact origin the password or Quick Connect
+// approval goes to, whether the address was typed or discovered.
+export function ServerOrigin({ origin }: { origin: string }) {
+  return (
+    <p className="server-origin" data-testid="sign-in-origin">
+      Signing in to <code>{origin}</code>
+    </p>
+  );
+}

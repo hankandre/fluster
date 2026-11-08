@@ -234,6 +234,7 @@ export class JellyfinGateway {
     this.serverId = data.Id;
     return {
       name: data.ServerName ?? "Jellyfin",
+      id: typeof data.Id === "string" ? data.Id : undefined,
       version,
       hostClass: this.hostClass,
       needsUnencryptedConfirmation: this.needsConsentForPlainHttp() && !this.hasUnencryptedConsent(),

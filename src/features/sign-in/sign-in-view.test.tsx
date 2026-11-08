@@ -184,6 +184,22 @@ describe("SignInView with Quick Connect", () => {
   });
 });
 
+describe("SignInView shows the server origin", () => {
+  it("names the origin on the Quick Connect step", async () => {
+    vi.useFakeTimers();
+    renderView(fakeGateway({ origin: "https://typed.test" }));
+    await connect("https://typed.test");
+    expect(screen.getByTestId("sign-in-origin")).toHaveTextContent("Signing in to https://typed.test");
+  });
+
+  it("names the origin on the password step", async () => {
+    renderView(fakeGateway({ origin: "https://typed.test", quickConnectEnabled: vi.fn().mockResolvedValue(false) }));
+    await connect("https://typed.test");
+    expect(screen.getByLabelText("Username")).toBeInTheDocument();
+    expect(screen.getByTestId("sign-in-origin")).toHaveTextContent("Signing in to https://typed.test");
+  });
+});
+
 describe("SignInView with password", () => {
   it("goes straight to the password form when Quick Connect is disabled", async () => {
     const gateway = fakeGateway({ quickConnectEnabled: vi.fn().mockResolvedValue(false) });

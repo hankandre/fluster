@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useSession, type SessionGateway } from "../../app/session";
-import type { ServerDiscovery } from "../../domain/server-discovery";
+import { DISCOVERED_ID_MISMATCH_MESSAGE, sameServerId, type DiscoveredServer, type ServerDiscovery } from "../../domain/server-discovery";
 import { PasswordStep } from "./password-step";
 import { ServerDiscoveryPanel } from "./server-discovery";
-import { errorMessage, isAbort, Shell } from "./sign-in-shell";
+import { errorMessage, isAbort, ServerOrigin, Shell } from "./sign-in-shell";
 
 export const QUICK_CONNECT_POLL_MS = 2_000;
 const HOME_ROUTE = "#/next/home";
@@ -83,13 +83,14 @@ function ServerStep({ discovery, onConnected }: { discovery?: ServerDiscovery; o
     void connectTo(serverUrl);
   }
 
-  // A discovered address goes through the same probe and confirmation.
-  function choose(address: string) {
-    setServerUrl(address);
-    void connectTo(address);
+  // A discovered address goes through the same probe and confirmation, and
+  // the probe must report the Id that answered discovery.
+  function choose(server: DiscoveredServer) {
+    setServerUrl(server.address);
+    void connectTo(server.address, server.id);
   }
 
-  async function connectTo(url: string) {
+  async function connectTo(url: string, discoveredId?: string) {
     setError("");
     setBusy(true);
     const abort = new AbortController();
@@ -98,6 +99,11 @@ function ServerStep({ discovery, onConnected }: { discovery?: ServerDiscovery; o
       // A public http:// address throws here, before any request is sent.
       const gateway = session.createGateway(url);
       const server = await gateway.connect(abort.signal);
+      if (discoveredId !== undefined && !sameServerId(discoveredId, server.id)) {
+        setError(DISCOVERED_ID_MISMATCH_MESSAGE);
+        setBusy(false);
+        return;
+      }
       if (server.needsUnencryptedConfirmation) {
         onConnected({ name: "confirm-unencrypted", gateway, serverName: server.name });
         return;
@@ -300,6 +306,7 @@ function QuickConnectStep({
 
   return (
     <Shell kicker="STEP 02 / QUICK CONNECT" title="Approve on another device">
+      <ServerOrigin origin={gateway.origin} />
       <p className="lede">
         In Jellyfin on a signed-in device, open Quick Connect and enter this code.
       </p>

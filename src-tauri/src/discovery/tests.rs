@@ -15,6 +15,21 @@ fn reply(address: &str, id: &str, name: &str) -> Vec<u8> {
     .expect("json")
 }
 
+fn sender(ip: &str) -> SocketAddr {
+    SocketAddr::new(ip.parse().expect("ip"), DISCOVERY_PORT)
+}
+
+fn lan() -> SocketAddr {
+    sender("192.168.1.5")
+}
+
+fn server(datagram: &[u8], from: SocketAddr) -> DiscoveredServer {
+    match parse_reply(datagram, from) {
+        ParsedReply::Server(server) => server,
+        other => panic!("expected a server, got {other:?}"),
+    }
+}
+
 #[test]
 fn the_payload_is_jellyfins_discovery_message_on_port_7359() {
     assert_eq!(DISCOVERY_MESSAGE, b"who is JellyfinServer?");
@@ -22,32 +37,51 @@ fn the_payload_is_jellyfins_discovery_message_on_port_7359() {
 }
 
 #[test]
-fn parses_a_jellyfin_reply() {
-    let server = parse_reply(&reply("http://192.168.1.5:8096", SERVER_ID, "Living room"))
-        .expect("valid reply");
+fn parses_a_jellyfin_reply_with_its_sender() {
+    let found = server(
+        &reply("http://192.168.1.5:8096", SERVER_ID, "Living room"),
+        lan(),
+    );
     assert_eq!(
-        server,
+        found,
         DiscoveredServer {
             name: "Living room".into(),
             id: SERVER_ID.into(),
             address: "http://192.168.1.5:8096".into(),
+            advertised_by: "192.168.1.5".into(),
+            address_is_sender: true,
+            conflicting: false,
         }
     );
 }
 
 #[test]
-fn keeps_a_base_path_and_https_addresses() {
-    let server = parse_reply(&reply(
-        "https://media.example/jellyfin/",
-        SERVER_ID,
-        "Remote",
-    ))
-    .expect("https is allowed for every host");
-    assert_eq!(server.address, "https://media.example/jellyfin");
+fn marks_an_address_that_is_not_the_sender() {
+    let other_host = server(&reply("http://192.168.1.9:8096", SERVER_ID, "Den"), lan());
+    assert_eq!(other_host.advertised_by, "192.168.1.5");
+    assert!(!other_host.address_is_sender);
+
+    let name = server(&reply("http://nas.local:8096", SERVER_ID, "Den"), lan());
+    assert!(!name.address_is_sender);
+
+    let mapped = server(
+        &reply("http://[::ffff:192.168.1.5]:8096", SERVER_ID, "Den"),
+        lan(),
+    );
+    assert!(mapped.address_is_sender);
 }
 
 #[test]
-fn malformed_replies_are_dropped_without_panicking() {
+fn keeps_a_base_path_and_https_addresses() {
+    let found = server(
+        &reply("https://media.example/jellyfin/", SERVER_ID, "Remote"),
+        lan(),
+    );
+    assert_eq!(found.address, "https://media.example/jellyfin");
+}
+
+#[test]
+fn malformed_replies_are_invalid_without_panicking() {
     for datagram in [
         b"".to_vec(),
         b"who is JellyfinServer?".to_vec(),
@@ -59,48 +93,77 @@ fn malformed_replies_are_dropped_without_panicking() {
         b"{\"Address\":\"http://192.168.1.5:8096\",\"Id\":null,\"Name\":\"b\"}".to_vec(),
         vec![0xff, 0xfe, 0x00, 0x7b],
         "[".repeat(4000).into_bytes(),
-        reply("not a url", SERVER_ID, "Bad"),
         reply("http://192.168.1.5:8096", "", "Empty id"),
         reply("http://192.168.1.5:8096", "../../etc", "Odd id"),
         reply("http://192.168.1.5:8096", &"a".repeat(65), "Long id"),
     ] {
-        assert!(parse_reply(&datagram).is_none(), "{datagram:?}");
+        assert_eq!(
+            parse_reply(&datagram, lan()),
+            ParsedReply::Invalid,
+            "{datagram:?}"
+        );
     }
 }
 
 #[test]
-fn oversized_replies_are_dropped() {
+fn oversized_replies_are_invalid() {
     let padding = "x".repeat(MAX_REPLY_BYTES);
     let datagram = reply("http://192.168.1.5:8096", SERVER_ID, &padding);
     assert!(datagram.len() > MAX_REPLY_BYTES);
-    assert!(parse_reply(&datagram).is_none());
+    assert_eq!(parse_reply(&datagram, lan()), ParsedReply::Invalid);
 }
 
 #[test]
 fn names_are_cleaned_and_bounded() {
-    let server = parse_reply(&reply(
-        "http://192.168.1.5:8096",
-        SERVER_ID,
-        "  Den\u{0007}\nServer  ",
-    ))
-    .expect("valid reply");
-    assert_eq!(server.name, "DenServer");
+    let found = server(
+        &reply(
+            "http://192.168.1.5:8096",
+            SERVER_ID,
+            "  Den\u{0007}\nServer  ",
+        ),
+        lan(),
+    );
+    assert_eq!(found.name, "DenServer");
 
-    let long = parse_reply(&reply(
-        "http://192.168.1.5:8096",
-        SERVER_ID,
-        &"n".repeat(500),
-    ))
-    .expect("valid reply");
+    let long = server(
+        &reply("http://192.168.1.5:8096", SERVER_ID, &"n".repeat(500)),
+        lan(),
+    );
     assert_eq!(long.name.chars().count(), MAX_NAME_CHARS);
 
-    let unnamed =
-        parse_reply(&reply("http://192.168.1.5:8096", SERVER_ID, " \t")).expect("valid reply");
+    let unnamed = server(&reply("http://192.168.1.5:8096", SERVER_ID, " \t"), lan());
     assert_eq!(unnamed.name, UNNAMED_SERVER);
 }
 
 #[test]
-fn addresses_the_url_policy_refuses_are_dropped() {
+fn invisible_and_bidi_characters_are_stripped_from_names() {
+    let found = server(
+        &reply(
+            "http://192.168.1.5:8096",
+            SERVER_ID,
+            "n\u{202e}xilfknaH\u{200b}",
+        ),
+        lan(),
+    );
+    assert_eq!(found.name, "nxilfknaH");
+    let every_hidden: String = ('\u{200B}'..='\u{200F}')
+        .chain('\u{202A}'..='\u{202E}')
+        .chain('\u{2060}'..='\u{2069}')
+        .chain(['\u{FEFF}', '\u{0000}', '\u{001B}', '\u{0085}'])
+        .collect();
+    let hidden = server(
+        &reply(
+            "http://192.168.1.5:8096",
+            SERVER_ID,
+            &format!("A{every_hidden}B"),
+        ),
+        lan(),
+    );
+    assert_eq!(hidden.name, "AB");
+}
+
+#[test]
+fn addresses_the_url_policy_refuses_are_counted_as_refused() {
     for address in [
         // Public plain HTTP, including CGNAT (ADR 0001 edge case 3).
         "http://8.8.8.8:8096",
@@ -116,14 +179,44 @@ fn addresses_the_url_policy_refuses_are_dropped() {
         "ws://192.168.1.5:8096",
         "file:///etc/passwd",
         "javascript:alert(1)",
+        "not a url",
     ] {
-        assert!(
-            parse_reply(&reply(address, SERVER_ID, "Server")).is_none(),
+        assert_eq!(
+            parse_reply(&reply(address, SERVER_ID, "Server"), lan()),
+            ParsedReply::Refused,
             "{address}"
         );
     }
     let long = format!("http://192.168.1.5:8096/{}", "a".repeat(MAX_ADDRESS_BYTES));
-    assert!(parse_reply(&reply(&long, SERVER_ID, "Server")).is_none());
+    assert_eq!(
+        parse_reply(&reply(&long, SERVER_ID, "Server"), lan()),
+        ParsedReply::Refused
+    );
+}
+
+#[test]
+fn loopback_addresses_are_kept_only_from_a_loopback_sender() {
+    for address in [
+        "http://127.0.0.1:8096",
+        "http://127.12.34.56:8096",
+        "http://localhost:8096",
+        "http://[::1]:8096",
+        "https://localhost/",
+        "http://[::ffff:127.0.0.1]/",
+    ] {
+        assert_eq!(
+            parse_reply(&reply(address, SERVER_ID, "Server"), lan()),
+            ParsedReply::Refused,
+            "{address} from the LAN"
+        );
+        assert!(
+            matches!(
+                parse_reply(&reply(address, SERVER_ID, "Server"), sender("127.0.0.1")),
+                ParsedReply::Server(_)
+            ),
+            "{address} from loopback"
+        );
+    }
 }
 
 #[derive(serde::Deserialize)]
@@ -138,8 +231,9 @@ struct Vector {
 }
 
 /// Every address in the shared host-class table is kept exactly when the
-/// URL policy allows it: loopback and private LAN (including link-local
-/// 169.254/16 and fe80::/10) over plain HTTP, never public.
+/// URL policy allows it: loopback (from a loopback sender) and private LAN
+/// (including link-local 169.254/16 and fe80::/10) over plain HTTP, never
+/// public.
 #[test]
 fn plain_http_follows_the_shared_host_class_table() {
     let table: Table =
@@ -147,41 +241,110 @@ fn plain_http_follows_the_shared_host_class_table() {
             .expect("valid host-classes.json");
     assert!(!table.vectors.is_empty());
     for vector in table.vectors {
-        let kept = parse_reply(&reply(&vector.url, SERVER_ID, "Server")).is_some();
+        let from = if vector.class == "loopback" {
+            sender("127.0.0.1")
+        } else {
+            lan()
+        };
+        let kept = matches!(
+            parse_reply(&reply(&vector.url, SERVER_ID, "Server"), from),
+            ParsedReply::Server(_)
+        );
         assert_eq!(kept, vector.class != "public", "{}", vector.url);
     }
 }
 
 #[test]
-fn duplicate_ids_keep_the_first_reply() {
+fn a_repeated_reply_is_kept_once() {
     let mut collector = Collector::default();
-    collector.accept(&reply("http://192.168.1.5:8096", SERVER_ID, "First"));
-    collector.accept(&reply("http://10.0.0.5:8096", SERVER_ID, "Second"));
-    collector.accept(&reply(
-        "http://10.0.0.5:8096",
-        &SERVER_ID.to_ascii_uppercase(),
-        "Upper",
-    ));
-    assert_eq!(collector.servers.len(), 1);
-    assert_eq!(collector.servers[0].name, "First");
+    collector.accept(&reply("http://192.168.1.5:8096", SERVER_ID, "First"), lan());
+    collector.accept(&reply("http://192.168.1.5:8096", SERVER_ID, "Again"), lan());
+    collector.accept(
+        &reply(
+            "http://192.168.1.5:8096",
+            &SERVER_ID.to_ascii_uppercase(),
+            "Upper",
+        ),
+        lan(),
+    );
+    let result = collector.finish();
+    assert_eq!(result.servers.len(), 1);
+    assert_eq!(result.servers[0].name, "First");
+    assert!(!result.servers[0].conflicting);
+}
+
+/// A spoofed reply cannot hide the real server: both are listed, both are
+/// marked, and each shows its sender.
+#[test]
+fn the_same_id_at_different_addresses_is_kept_and_marked_conflicting() {
+    let mut collector = Collector::default();
+    collector.accept(
+        &reply("http://192.168.1.66:8096", SERVER_ID, "Living room"),
+        sender("192.168.1.66"),
+    );
+    collector.accept(
+        &reply("http://192.168.1.5:8096", SERVER_ID, "Living room"),
+        lan(),
+    );
+    collector.accept(
+        &reply("http://192.168.1.7:8096", "otherserver", "Den"),
+        sender("192.168.1.7"),
+    );
+    let result = collector.finish();
+    assert_eq!(result.servers.len(), 3);
+    assert!(result.servers[0].conflicting);
+    assert!(result.servers[1].conflicting);
+    assert!(!result.servers[2].conflicting);
+    assert_eq!(result.servers[0].advertised_by, "192.168.1.66");
+    assert_eq!(result.servers[1].advertised_by, "192.168.1.5");
+}
+
+#[test]
+fn refused_replies_are_counted() {
+    let mut collector = Collector::default();
+    collector.accept(&reply("http://8.8.8.8:8096", SERVER_ID, "Public"), lan());
+    collector.accept(&reply("http://127.0.0.1:8096", SERVER_ID, "Loop"), lan());
+    collector.accept(b"junk", lan());
+    let result = collector.finish();
+    assert!(result.servers.is_empty());
+    assert_eq!(result.refused, 2);
 }
 
 #[test]
 fn at_most_max_servers_are_kept() {
     let mut collector = Collector::default();
     for index in 0..(MAX_SERVERS + 5) {
-        collector.accept(&reply(
-            "http://192.168.1.5:8096",
-            &format!("server{index}"),
-            "Server",
-        ));
+        collector.accept(
+            &reply(
+                "http://192.168.1.5:8096",
+                &format!("server{index}"),
+                "Server",
+            ),
+            lan(),
+        );
     }
-    assert_eq!(collector.servers.len(), MAX_SERVERS);
     assert!(collector.is_full());
+    assert_eq!(collector.finish().servers.len(), MAX_SERVERS);
 }
 
-/// A fake Jellyfin on 127.0.0.1 that checks the request and answers with
-/// `replies`. Sends the received request back on `seen`.
+#[test]
+fn only_one_search_runs_at_a_time() {
+    let flag = AtomicBool::new(false);
+    let first = SearchGuard::acquire(&flag).expect("first search");
+    assert_eq!(
+        SearchGuard::acquire(&flag).err(),
+        Some(DiscoveryError::Busy)
+    );
+    assert_eq!(
+        DiscoveryError::Busy.to_string(),
+        "Fluster is already searching this network for servers."
+    );
+    drop(first);
+    assert!(SearchGuard::acquire(&flag).is_ok());
+}
+
+/// A fake Jellyfin on 127.0.0.1 that answers with `replies`. Sends the
+/// received request back on `seen`.
 fn fake_responder(replies: Vec<Vec<u8>>) -> (SocketAddr, mpsc::Receiver<Vec<u8>>) {
     let socket = UdpSocket::bind("127.0.0.1:0").expect("bind responder");
     socket
@@ -214,43 +377,64 @@ fn round_trip_with_a_loopback_responder() {
             &"f".repeat(32),
             &"y".repeat(MAX_REPLY_BYTES),
         ),
-        reply("https://media.example", "otherserver", "Remote"),
+        reply("http://127.0.0.1:8096", "loopserver", "Local"),
     ]);
 
     let started = Instant::now();
-    let servers = discover(target, Duration::from_millis(500)).expect("discover");
+    let result = discover(target, Duration::from_millis(500)).expect("discover");
     assert!(started.elapsed() < Duration::from_secs(2));
 
     assert_eq!(
         seen.recv_timeout(Duration::from_secs(1)).expect("request"),
         DISCOVERY_MESSAGE
     );
+    assert_eq!(result.refused, 1);
     assert_eq!(
-        servers,
+        result.servers,
         vec![
             DiscoveredServer {
                 name: "Living room".into(),
                 id: SERVER_ID.into(),
                 address: "http://192.168.1.5:8096".into(),
+                advertised_by: "127.0.0.1".into(),
+                address_is_sender: false,
+                conflicting: false,
             },
             DiscoveredServer {
-                name: "Remote".into(),
-                id: "otherserver".into(),
-                address: "https://media.example".into(),
+                name: "Local".into(),
+                id: "loopserver".into(),
+                address: "http://127.0.0.1:8096".into(),
+                advertised_by: "127.0.0.1".into(),
+                address_is_sender: true,
+                conflicting: false,
             },
         ]
     );
 }
 
 #[test]
-fn no_reply_returns_an_empty_list_after_the_deadline() {
+fn junk_datagrams_do_not_end_the_search() {
+    let mut replies: Vec<Vec<u8>> = (0..100)
+        .map(|index| format!("junk {index}").into_bytes())
+        .collect();
+    replies.extend((0..10).map(|_| vec![b'x'; MAX_REPLY_BYTES + 100]));
+    replies.push(reply("http://192.168.1.5:8096", SERVER_ID, "Living room"));
+    let (target, _seen) = fake_responder(replies);
+    let result = discover(target, Duration::from_millis(700)).expect("discover");
+    assert_eq!(result.servers.len(), 1);
+    assert_eq!(result.servers[0].name, "Living room");
+}
+
+#[test]
+fn no_reply_returns_an_empty_result_after_the_deadline() {
     // Bound but never answers.
     let silent = UdpSocket::bind("127.0.0.1:0").expect("bind");
     let target = silent.local_addr().expect("address");
     let started = Instant::now();
-    let servers = discover(target, Duration::from_millis(300)).expect("discover");
+    let result = discover(target, Duration::from_millis(300)).expect("discover");
     let elapsed = started.elapsed();
-    assert!(servers.is_empty());
+    assert!(result.servers.is_empty());
+    assert_eq!(result.refused, 0);
     assert!(elapsed >= Duration::from_millis(250), "{elapsed:?}");
     assert!(elapsed < Duration::from_secs(2), "{elapsed:?}");
 }
@@ -279,7 +463,7 @@ fn yes_no(value: bool) -> &'static str {
 #[test]
 #[ignore = "needs the real LAN and the dogfood server"]
 fn discovers_the_dogfood_server_on_the_lan() {
-    let broadcast = discover_on_lan().expect("discover");
+    let broadcast = discover_on_lan().expect("discover").servers;
     let dogfood_host = std::env::var("FLUSTER_DOGFOOD_SERVER")
         .ok()
         .and_then(|value| url::Url::parse(&value).ok())
@@ -289,7 +473,7 @@ fn discovers_the_dogfood_server_on_the_lan() {
             .ok()
             .and_then(|mut addresses| addresses.next())
             .expect("dogfood host resolves");
-        discover(target, LISTEN_TIME).expect("discover")
+        discover(target, LISTEN_TIME).expect("discover").servers
     });
     println!(
         "broadcast: {} servers, Hankflix discovered: {}",
