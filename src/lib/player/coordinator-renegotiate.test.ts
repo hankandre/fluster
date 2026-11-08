@@ -171,4 +171,53 @@ describe("PlaybackCoordinator.renegotiate", () => {
     await expect(renegotiation).rejects.toBeInstanceOf(PlaybackCancelledError);
     expect(player.launch).toHaveBeenCalledTimes(1);
   });
+
+  // The file ends while the viewer changes a track: the end handler is still
+  // waiting for the engine to stop when the renegotiation starts.
+  for (const [name, restart] of [
+    ["a renegotiation", (coordinator: PlaybackCoordinator) => coordinator.renegotiate(1_190_000_000, { audioStreamIndex: 2 })],
+    ["Play original's retry", (coordinator: PlaybackCoordinator) => coordinator.retry(1_190_000_000)],
+  ] as const) {
+    it(`never launches ${name} after the file ended on its own`, async () => {
+      const order: string[] = [];
+      const gateway = orderedGateway(order, [hlsPlan("play-1"), hlsPlan("play-2")]);
+      const player = new FakePlayer(order);
+      let release = () => undefined as void;
+      const stopped = new Promise<void>((resolve) => { release = resolve; });
+      const onSessionEnded = vi.fn();
+      const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn(), onSessionEnded });
+      await playing(coordinator, player, gateway);
+      player.stop.mockImplementation(() => stopped);
+
+      player.listener?.({ kind: "ended", reason: "eof", snapshot });
+      await vi.waitFor(() => expect(player.stop).toHaveBeenCalledTimes(1));
+      const attempt = restart(coordinator);
+      release();
+
+      await expect(attempt).rejects.toBeInstanceOf(PlaybackCancelledError);
+      expect(onSessionEnded.mock.calls).toEqual([["eof"]]);
+      expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1);
+      expect(player.launch).toHaveBeenCalledTimes(1);
+    });
+  }
+
+  it("goes back to the streams that played when a track change fails", async () => {
+    const order: string[] = [];
+    // The first two answers are overridden; the queue serves the third.
+    const gateway = orderedGateway(order, [hlsPlan("play-3")]);
+    gateway.createPlaybackPlan
+      .mockImplementationOnce(async () => hlsPlan("play-1"))
+      .mockImplementationOnce(async () => { throw new Error("The server refused."); });
+    const player = new FakePlayer(order);
+    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
+    await playing(coordinator, player, gateway);
+
+    await expect(coordinator.renegotiate(50, { subtitleStreamIndex: 4 }, { audioStreamIndex: 1, subtitleStreamIndex: -1 }))
+      .rejects.toThrow("The server refused.");
+    await coordinator.retry();
+
+    expect(gateway.createPlaybackPlan.mock.calls[1][3]).toEqual({ subtitleStreamIndex: 4, mediaSourceId: "source-a" });
+    expect(gateway.createPlaybackPlan.mock.calls[2][3]).toEqual({ audioStreamIndex: 1, subtitleStreamIndex: -1, mediaSourceId: "source-a" });
+    expect(gateway.createPlaybackPlan.mock.calls[2][1]).toBe(50);
+  });
 });

@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import type { LibraryItem } from "../domain/catalog";
 import type { PlayerEngine, PlayerTrack } from "../domain/playback";
-import type { TrackKind } from "../domain/track-choice";
+import { nextSourceSubtitle, type TrackKind } from "../domain/track-choice";
 import { TrackMenus, type ConvertedTracks } from "../features/player/track-menus";
 import { playerKeyAction } from "./player-keymap";
 import type { PlaybackSessionState } from "../lib/player/session-state";
@@ -67,6 +67,7 @@ export function PlayerView({
   chapters,
   convertedTracks,
   onChangeConvertedTrack,
+  retryLabel = "Retry",
 }: {
   item: LibraryItem;
   player: PlayerEngine;
@@ -86,6 +87,8 @@ export function PlayerView({
   // which may start a new conversion. Absent, they list mpv's tracks.
   convertedTracks?: ConvertedTracks;
   onChangeConvertedTrack?(kind: TrackKind, jellyfinIndex: number | undefined): Promise<void>;
+  // The error panel's Retry text ("Back to previous tracks" after a failed track change).
+  retryLabel?: string;
 }) {
   const [commandError, setCommandError] = useState<string>();
   const [fullscreen, setFullscreenState] = useState(false);
@@ -101,11 +104,13 @@ export function PlayerView({
   const snapshotRef = useRef(snapshot);
   const fullscreenRef = useRef(fullscreen);
   const onBackRef = useRef(onBack);
+  const convertedRef = useRef({ tracks: convertedTracks, onChange: onChangeConvertedTrack });
 
   useEffect(() => {
     snapshotRef.current = snapshot;
     fullscreenRef.current = fullscreen;
     onBackRef.current = onBack;
+    convertedRef.current = { tracks: convertedTracks, onChange: onChangeConvertedTrack };
   }, [fullscreen, onBack, snapshot]);
 
   useEffect(() => {
@@ -213,6 +218,15 @@ export function PlayerView({
           void changeFullscreen(!fullscreenRef.current);
           break;
         case "cycle-subtitles": {
+          // A converted session cycles the source's subtitles through the
+          // same rules as its menu (burned-in subtitles need a new conversion).
+          const converted = convertedRef.current;
+          if (converted.tracks && converted.onChange) {
+            const onChange = converted.onChange;
+            const next = current ? nextSourceSubtitle(converted.tracks.subtitle) : null;
+            if (next !== null) void execute(() => onChange("subtitle", next));
+            break;
+          }
           const next = current ? nextSubtitle(current.tracks) : null;
           if (next !== null) void execute(() => player.selectTrack("subtitle", next));
           break;
@@ -311,7 +325,7 @@ export function PlayerView({
           <div className="player-error-actions">
             <button onClick={() => void onRetry()} disabled={retrying}>
               {retrying ? <LoaderCircle className="spin" size={17} /> : null}
-              Retry
+              {retryLabel}
             </button>
             <button onClick={() => void onBack()}>Back to library</button>
           </div>

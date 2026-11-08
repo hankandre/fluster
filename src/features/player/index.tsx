@@ -24,6 +24,8 @@ import { PlayerInfoPanel } from "./player-info-panel";
 import { usePlayerStatus, type ReadyPlayerStatus } from "./player-status";
 
 const SIGN_IN_ROUTE = "#/next/sign-in";
+// Retry after a failed track change asks for the tracks that were playing.
+const PREVIOUS_TRACKS = "Back to previous tracks";
 
 export function PlayerFeatureView() {
   return (
@@ -180,6 +182,7 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
       <RefusalScreen
         copy={REFUSAL_COPY[playback.refusal.reason]}
         onRetry={() => void playback.retry()}
+        retryLabel={playback.previousTracksOffered ? PREVIOUS_TRACKS : undefined}
         onBack={() => void playback.back()}
       />
     );
@@ -195,6 +198,7 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
         retrying={playback.retrying}
         onRetry={playback.retry}
         onBack={playback.back}
+        retryLabel={playback.previousTracksOffered ? PREVIOUS_TRACKS : undefined}
         convertedTracks={playback.convertedTracks}
         onChangeConvertedTrack={playback.changeTrack}
         {...seekProps}
@@ -228,9 +232,10 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
 
 // Explains why Fluster will not play this item. There is deliberately no
 // "play anyway": Retry asks the server again, Back leaves.
-function RefusalScreen({ copy, onRetry, onBack }: {
+function RefusalScreen({ copy, onRetry, retryLabel = "Retry", onBack }: {
   copy: RefusalCopy;
   onRetry?(): void;
+  retryLabel?: string;
   onBack(): void;
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
@@ -246,7 +251,7 @@ function RefusalScreen({ copy, onRetry, onBack }: {
         <p><strong>What you can do:</strong> {copy.whatYouCanDo}</p>
       </div>
       <div className="player-message-actions">
-        {onRetry && <button type="button" onClick={onRetry}>Retry</button>}
+        {onRetry && <button type="button" onClick={onRetry}>{retryLabel}</button>}
         <button type="button" onClick={onBack}>Back to details</button>
       </div>
     </PlayerMessage>

@@ -279,6 +279,177 @@ describe("track changes while converting", () => {
   });
 });
 
+describe("guardian review fixes", () => {
+  // The file ended and the engine is still stopping: no new session may start.
+  async function endingWhileStopping(engine: FakePlayerEngine) {
+    let release = () => undefined as void;
+    engine.stop.mockImplementation(() => new Promise<undefined>((resolve) => { release = () => resolve(undefined); }));
+    await act(async () => {
+      engine.emit({ kind: "ended", reason: "eof", snapshot: convertedSnapshot });
+    });
+    await waitFor(() => expect(engine.stop).toHaveBeenCalledTimes(1));
+    return () => release();
+  }
+
+  it("a track change after the file ended does nothing", async () => {
+    const gateway = orderedGateway([], [convertedPlan("play-1"), convertedPlan("play-2")]);
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await startPlaying(engine, convertedSnapshot);
+    const release = await endingWhileStopping(engine);
+
+    await choose("Audio track", "2");
+    await act(async () => release());
+
+    await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
+    expect(engine.stop).toHaveBeenCalledTimes(1);
+    expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1);
+    expect(engine.launch).toHaveBeenCalledTimes(1);
+  });
+
+  it("Play original after the file ended does nothing", async () => {
+    const gateway = orderedGateway([], [
+      convertedPlan("play-1", { conversionReasons: ["ContainerBitrateExceedsLimit"], playOriginalAvailable: true }),
+      directPlan("play-2"),
+    ]);
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await startPlaying(engine, convertedSnapshot);
+    const release = await endingWhileStopping(engine);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Play original" }));
+    });
+    await act(async () => release());
+
+    await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
+    expect(engine.stop).toHaveBeenCalledTimes(1);
+    expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1);
+  });
+
+  it("Play original reports the old session stopped, not failed, and keeps the chosen version", async () => {
+    const order: string[] = [];
+    const gateway = orderedGateway(order, [
+      convertedPlan("play-1", { conversionReasons: ["ContainerBitrateExceedsLimit"], playOriginalAvailable: true }),
+      directPlan("play-2"),
+    ]);
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await startPlaying(engine, convertedSnapshot);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Play original" }));
+    });
+
+    await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(directPlan("play-2")));
+    expect(order).toContain("stopped play-1 failed=false");
+    expect(negotiationOptions(gateway, 1)[3]).toBe("src-hd");
+    expect(negotiationOptions(gateway, 1)[4]).toEqual({ ignoreStreamingLimit: true });
+  });
+
+  it("the c key turns burned-in subtitles off with a new conversion, not in mpv", async () => {
+    const burned = convertedPlan("play-1", { subtitlesBurnedIn: true, defaultSubtitleStreamIndex: 4 });
+    const gateway = orderedGateway([], [burned, convertedPlan("play-2")]);
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    // mpv lists the SRT file too; "c" must not stack it on the burned PGS.
+    await startPlaying(engine, convertedSnapshot);
+
+    await act(async () => {
+      fireEvent.keyDown(document.body, { key: "c" });
+    });
+
+    await waitFor(() => expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(2));
+    expect(negotiationOptions(gateway, 1)[4]).toEqual({ ignoreStreamingLimit: false, audioStreamIndex: 1, subtitleStreamIndex: -1 });
+    expect(engine.selectTrack).not.toHaveBeenCalled();
+  });
+
+  it("the c key switches a carried subtitle in mpv on a conversion", async () => {
+    const gateway = orderedGateway([], [convertedPlan()]);
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await startPlaying(engine, convertedSnapshot);
+
+    await act(async () => {
+      fireEvent.keyDown(document.body, { key: "c" });
+    });
+
+    expect(engine.selectTrack).toHaveBeenCalledWith("subtitle", 1);
+    expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1);
+  });
+
+  it("a failed track change offers Back to previous tracks, which asks for the streams that played", async () => {
+    const gateway = orderedGateway([], [convertedPlan("play-1"), convertedPlan("play-3")]);
+    vi.mocked(gateway.createPlaybackPlan)
+      .mockImplementationOnce(async () => convertedPlan("play-1"))
+      .mockImplementationOnce(async () => { throw new Error("The server could not convert this subtitle."); });
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await startPlaying(engine, convertedSnapshot);
+
+    await choose("Subtitle track", "4");
+    await act(async () => {
+      fireEvent.click(await screen.findByRole("button", { name: "Back to previous tracks" }));
+    });
+
+    await waitFor(() => expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(3));
+    expect(negotiationOptions(gateway, 1)[4]).toEqual({ ignoreStreamingLimit: false, audioStreamIndex: 1, subtitleStreamIndex: 4 });
+    expect(negotiationOptions(gateway, 2)[4]).toEqual({ ignoreStreamingLimit: false, audioStreamIndex: 1, subtitleStreamIndex: -1 });
+    expect(negotiationOptions(gateway, 2)[1]).toBe(420_000_000);
+  });
+
+  it("a limit change during a negotiation applies once its plan arrives", async () => {
+    const limits = new MemoryStreamingLimits();
+    let answer = (_plan: PlaybackPlan) => undefined as void;
+    const gateway = orderedGateway([], [convertedPlan("play-2")]);
+    vi.mocked(gateway.createPlaybackPlan).mockImplementationOnce(() => new Promise<PlaybackPlan>((resolve) => { answer = resolve; }));
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine, limits);
+    await waitFor(() => expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      limits.set({ remoteMbps: 4 });
+    });
+    await act(async () => answer(convertedPlan("play-1")));
+
+    await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(convertedPlan("play-2")));
+    expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(2);
+  });
+
+  it("a limit set before the negotiation read it does not renegotiate again", async () => {
+    const limits = new MemoryStreamingLimits();
+    const gateway = orderedGateway([], [convertedPlan("play-1"), convertedPlan("play-2")]);
+    const engine = new FakePlayerEngine();
+    limits.set({ remoteMbps: 4 });
+    await renderPlayer(gateway, engine, limits);
+    await startPlaying(engine, convertedSnapshot);
+    await act(async () => {
+      limits.set({ remoteMbps: 4, localMbps: 2 });
+    });
+    expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns keyboard focus to the audio menu once the new conversion plays", async () => {
+    const gateway = orderedGateway([], [convertedPlan("play-1"), convertedPlan("play-2", { defaultAudioStreamIndex: 2 })]);
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await startPlaying(engine, convertedSnapshot);
+    screen.getByLabelText("Audio track").focus();
+
+    await choose("Audio track", "2");
+    await waitFor(() => expect(engine.launch).toHaveBeenCalledTimes(2));
+    // A browser drops focus from a select that becomes disabled; jsdom does
+    // not, so drop it the same way: focus an element, then remove it.
+    const elsewhere = document.body.appendChild(document.createElement("button"));
+    elsewhere.focus();
+    elsewhere.remove();
+    expect(document.activeElement).toBe(document.body);
+    await startPlaying(engine, snapshotWith([{ ...englishAudio, jellyfinIndex: 2, title: "French" }]), 2);
+
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText("Audio track")));
+  });
+});
+
 describe("track changes during direct play", () => {
   it("stay local in mpv and never ask the server", async () => {
     const gateway = orderedGateway([], [directPlan()]);
