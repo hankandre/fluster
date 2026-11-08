@@ -32,6 +32,13 @@ description: Open a pull request for a finished Fluster branch, wait for CI, mer
 - Never merge with a red or pending required check.
 - Never skip or disable a check to merge.
 
+## Keep the branch current
+
+- `main` requires branches to be up to date with it before merging.
+- Treat a `BEHIND` merge state as stale, not failed.
+- Run `gh pr update-branch <number> --rebase` and let CI re-run.
+- Never update a branch that is `DIRTY`; resolve conflicts instead.
+
 ## Resolve conflicts
 
 - Treat a `DIRTY` merge state as a conflict; CI does not run on it.
