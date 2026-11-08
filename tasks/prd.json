@@ -1349,7 +1349,7 @@
           "status": "done",
           "owner": "implementer",
           "passes": true,
-          "evidence": "refusal-copy.ts keeps copy only for no-sources, not-a-file, live-source, disc-source, iso-source, missing-source-data, conversion-not-allowed, unsafe-transcoding-url; no-direct-play and server-requires-transcoding removed (no longer produced). conversion-not-allowed names the jellyfin-web labels (OptionAllowVideoPlaybackTranscoding, OptionAllowAudioPlaybackTranscoding, OptionAllowVideoPlaybackRemuxing) under Dashboard > Users > Profile > Media playback.\nrefusal-copy.test.ts (945 unit tests), e2e conversion-not-allowed journey asserts the setting names and Back; pnpm check, e2e (45) and lint:boundaries green."
+          "evidence": "refusal-copy.ts keeps copy only for no-sources, not-a-file, live-source, disc-source, iso-source, missing-source-data, conversion-not-allowed, unsafe-transcoding-url; no-direct-play and server-requires-transcoding removed (no longer produced). conversion-not-allowed names the jellyfin-web labels (OptionAllowVideoPlaybackTranscoding, OptionAllowAudioPlaybackTranscoding, OptionAllowVideoPlaybackRemuxing) under Dashboard > Users > Profile > Media playback.\nrefusal-copy.test.ts; e2e conversion-not-allowed journey asserts the setting names and Back. pnpm check (961 unit tests), e2e (34, own server) and lint:boundaries green."
         },
         {
           "id": "P10-12",
