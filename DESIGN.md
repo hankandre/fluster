@@ -34,7 +34,7 @@ Warm neutrals, tuned so that text never sits on pure black and never on blue-bla
 | `--surface-2` | `#1b1c20` | Control fill, inputs, skeletons | n/a |
 | `--surface-3` | `#25262b` | Hovered control fill | n/a |
 | `--line` | `rgb(242 239 233 / .10)` | Hairlines, dividers | n/a |
-| `--line-strong` | `rgb(242 239 233 / .20)` | Input borders, secondary button border | 3.1:1 on surface-2 |
+| `--line-strong` | `rgb(242 239 233 / .37)` | Input borders, secondary button border | 3.06 to 3.17:1 on surface-0 to surface-3 |
 | `--text-1` | `#f2efe9` | Titles, body, primary labels | 17.0:1 |
 | `--text-2` | `#a9a59d` | Overview, secondary labels | 8.0:1 |
 | `--text-3` | `#8a867f` | Meta, placeholders, disabled hints | 5.1:1 on surface-1 |
@@ -43,6 +43,8 @@ Warm neutrals, tuned so that text never sits on pure black and never on blue-bla
 | `--danger` | `#ff8a6b` | Errors, destructive confirm | 8.5:1 |
 | `--notice` | `#f0b65a` | "Converting on server", warnings | 10.8:1 |
 | `--ok` | `#8fd1a8` | Success toasts, "Original file" | 11.1:1 |
+
+Correction 2026-11-08 (P13-02): `--line-strong` was first written as `/ .20` with a claimed 3.1:1. Measured, that is 1.8:1 on `--surface-2`. At `/ .37` it reaches 3:1 or more against every surface (3.11 / 3.17 / 3.16 / 3.06 on surface-0 to 3). `--line` stays a decorative divider and is exempt from 1.4.11.
 
 Rules:
 
@@ -340,7 +342,7 @@ A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings
   --surface-2: #1b1c20;
   --surface-3: #25262b;
   --line: rgb(242 239 233 / 0.10);
-  --line-strong: rgb(242 239 233 / 0.20);
+  --line-strong: rgb(242 239 233 / 0.37);
   --text-1: #f2efe9;
   --text-2: #a9a59d;
   --text-3: #8a867f;
