@@ -1,10 +1,9 @@
 //! The libmpv event loop and the player events it emits to the frontend.
 
+use super::media::LaunchMedia;
 use super::native_trace;
 use super::properties::{apply_property, PropertyUpdate, RuntimeState};
-use super::track_list::{
-    apply_initial_selection, load_external_subtitles, read_tracks, refresh_selected_streams,
-};
+use super::track_list::{apply_initial_selection, refresh_selected_streams};
 use crate::media_controls::{MediaControls, MediaUpdate};
 use crate::model::{PlaybackPlan, PlaybackSnapshot, PlayerEvent};
 use crate::redaction::safe_error;
@@ -21,11 +20,11 @@ pub(super) fn run_event_loop(
     app: &AppHandle,
     mpv: &mut Mpv,
     plan: &PlaybackPlan,
+    content: &LaunchMedia,
     media: &MediaControls,
     video_loaded: Arc<AtomicBool>,
     finished: Arc<AtomicBool>,
 ) {
-    let jellyfin_tracks = plan.tracks.as_slice();
     let start_position_ticks = plan.start_position_ticks;
     // Jellyfin indices of the external subtitles `sub-add` loaded, in order.
     let mut added_externals: Vec<i64> = Vec::new();
@@ -41,10 +40,10 @@ pub(super) fn run_event_loop(
                     let _ = mpv.command("seek", &[&seconds, "absolute+exact"]);
                     state.snapshot.position_seconds = start_position_ticks as f64 / 10_000_000.0;
                 }
-                added_externals = load_external_subtitles(mpv, jellyfin_tracks);
-                let tracks = read_tracks(mpv, jellyfin_tracks, &added_externals);
+                added_externals = content.load_subtitles(mpv);
+                let tracks = content.read_tracks(mpv, &added_externals);
                 apply_initial_selection(mpv, &tracks, plan);
-                state.snapshot.tracks = read_tracks(mpv, jellyfin_tracks, &added_externals);
+                state.snapshot.tracks = content.read_tracks(mpv, &added_externals);
                 refresh_selected_streams(&mut state.snapshot);
                 video_loaded.store(true, Ordering::Release);
                 let _ = app.emit(
@@ -83,7 +82,7 @@ pub(super) fn run_event_loop(
                 }
             }
             Some(Ok(Event::AudioReconfig | Event::VideoReconfig)) => {
-                let tracks = read_tracks(mpv, jellyfin_tracks, &added_externals);
+                let tracks = content.read_tracks(mpv, &added_externals);
                 if !tracks.is_empty() && tracks != state.snapshot.tracks {
                     state.snapshot.tracks = tracks;
                     refresh_selected_streams(&mut state.snapshot);
@@ -113,8 +112,7 @@ pub(super) fn run_event_loop(
                     let _ = app.emit(
                         "fluster://player-event",
                         PlayerEvent::Error {
-                            message: "libmpv could not play the original file. Server conversion remains disabled."
-                                .into(),
+                            message: content.playback_failure().into(),
                         },
                     );
                 }

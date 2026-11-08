@@ -68,6 +68,49 @@ pub(super) fn player_tracks(
         .collect()
 }
 
+/// Tracks of a converted (HLS) session. The server's output carries only the
+/// requested audio stream and none of the source's embedded subtitles (they
+/// are burned in or delivered as files), and its codecs and stream numbers
+/// need not match the source, so embedded tracks are never mapped by
+/// `ff-index`, ordinal, or codec. `subtitles` are the files Fluster added
+/// from loopback, mapped by add order as for the original file. The one
+/// embedded audio track maps to `audio` (the master URL's
+/// `AudioStreamIndex`) only when mpv lists exactly one. Everything else,
+/// video included, stays unmapped.
+pub(super) fn hls_player_tracks(
+    subtitles: &[MediaTrack],
+    added_externals: &[i64],
+    mpv_tracks: &[MpvTrack],
+    audio: Option<&MediaTrack>,
+) -> Vec<PlayerTrack> {
+    let externals_only: Vec<MediaTrack> = subtitles
+        .iter()
+        .filter(|track| track.external && track.kind == "Subtitle")
+        .cloned()
+        .collect();
+    let mut tracks = player_tracks(&externals_only, added_externals, mpv_tracks);
+    let Some(audio) = audio.filter(|audio| audio.kind == "Audio") else {
+        return tracks;
+    };
+    let embedded_audio: Vec<usize> = mpv_tracks
+        .iter()
+        .enumerate()
+        .filter(|(_, track)| track.kind == "Audio" && !track.external)
+        .map(|(position, _)| position)
+        .collect();
+    if let [position] = embedded_audio.as_slice() {
+        let track = &mut tracks[*position];
+        track.jellyfin_index = Some(audio.index);
+        if mpv_tracks[*position].title.is_none() {
+            track.title = audio.display_title.clone();
+        }
+        if track.language.is_none() {
+            track.language = audio.language.clone();
+        }
+    }
+    tracks
+}
+
 /// The Jellyfin index of each mpv track, in `track-list` order.
 fn jellyfin_indices(
     jellyfin_tracks: &[MediaTrack],
@@ -279,5 +322,7 @@ pub(super) fn initial_selection(
     InitialSelection { aid, sid }
 }
 
+#[cfg(test)]
+mod hls_tests;
 #[cfg(test)]
 mod tests;

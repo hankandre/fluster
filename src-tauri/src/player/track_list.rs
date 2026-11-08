@@ -48,11 +48,16 @@ pub(super) fn read_tracks(
     jellyfin_tracks: &[MediaTrack],
     added_externals: &[i64],
 ) -> Vec<PlayerTrack> {
+    tracks::player_tracks(jellyfin_tracks, added_externals, &read_mpv_tracks(mpv))
+}
+
+/// mpv's `track-list`, unmapped.
+pub(super) fn read_mpv_tracks(mpv: &Mpv) -> Vec<MpvTrack> {
     let count = mpv
         .get_property::<i64>("track-list/count")
         .unwrap_or(0)
         .max(0);
-    let listed: Vec<MpvTrack> = (0..count)
+    (0..count)
         .filter_map(|position| {
             let prefix = format!("track-list/{position}");
             let kind = match string_property(mpv, &format!("{prefix}/type"))?.as_str() {
@@ -76,8 +81,7 @@ pub(super) fn read_tracks(
                     .unwrap_or(false),
             })
         })
-        .collect();
-    tracks::player_tracks(jellyfin_tracks, added_externals, &listed)
+        .collect()
 }
 
 pub(super) fn update_selected_track(

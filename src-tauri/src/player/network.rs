@@ -24,7 +24,6 @@ pub(super) enum MediaDelivery {
     Static,
     /// A master playlist that Rust validated and serves from loopback
     /// (`player::hls`). FFmpeg must open its variants and segments.
-    #[cfg_attr(not(test), allow(dead_code))]
     ValidatedHls,
 }
 
@@ -55,9 +54,15 @@ pub(super) fn harden_network_options(
 // entries opened as top-level files with references on.
 const HLS_FILE_OPTIONS: &str = "demuxer=lavf,demuxer-lavf-format=hls";
 
+/// Loads a validated original-file URL on a `MediaDelivery::Static` handle.
+/// With `load_validated_hls`, the only `loadfile` in production code
+/// (`media_tests::loadfile_is_issued_only_by_the_two_typed_loaders`).
+pub(super) fn load_static(mpv: &Mpv, url: &str) -> libmpv2::Result<()> {
+    mpv.command("loadfile", &[url, "replace"])
+}
+
 /// Loads the loopback master of a validated session on a
 /// `MediaDelivery::ValidatedHls` handle.
-#[cfg_attr(not(test), allow(dead_code))]
 pub(super) fn load_validated_hls(mpv: &Mpv, session: &HlsSession) -> libmpv2::Result<()> {
     // loadfile <url> <flags> <index> <options> (mpv 0.38+; -1 means none).
     mpv.command(
@@ -69,7 +74,6 @@ pub(super) fn load_validated_hls(mpv: &Mpv, session: &HlsSession) -> libmpv2::Re
 /// Clears the per-file `hls` format once the master is open, so `sub-add`
 /// can open the loopback subtitle copies. Call it after `FileLoaded` and
 /// before `sub-add`; `demuxer=lavf` stays for the file.
-#[cfg_attr(not(test), allow(dead_code))]
 pub(super) fn allow_subtitle_formats(mpv: &Mpv) -> libmpv2::Result<()> {
     mpv.set_property("file-local-options/demuxer-lavf-format", "")
 }
@@ -244,6 +248,7 @@ mod tests {
             "playSessionId": "session",
             "startPositionTicks": 0,
             "tracks": [],
+            "delivery": "static",
         });
         let valid: LaunchRequest = serde_json::from_value(serde_json::json!({
             "plan": plan,

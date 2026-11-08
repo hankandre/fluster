@@ -148,11 +148,23 @@ export interface PlayerTrack {
   selected: boolean;
 }
 
+// `videos` for a source with video (or a VideoType), `audio` for an
+// audio-only source: the master playlist path Jellyfin uses.
+export type HlsMediaKind = "videos" | "audio";
+
 // A static plan plays the original file; an hls plan plays a server
-// conversion whose master playlist URL Playback Negotiation rebuilt.
+// conversion whose master playlist URL Playback Negotiation rebuilt. Rust
+// re-checks the master URL against `serverUrl` (the signed-in server, with
+// any base path) and `mediaKind`, and refuses it otherwise.
 export type PlaybackDelivery =
   | { delivery: "static"; playMethod: "DirectPlay"; conversionReasons: readonly [] }
-  | { delivery: "hls"; playMethod: "DirectStream" | "Transcode"; conversionReasons: readonly ConversionReason[] };
+  | {
+    delivery: "hls";
+    playMethod: "DirectStream" | "Transcode";
+    conversionReasons: readonly ConversionReason[];
+    serverUrl: string;
+    mediaKind: HlsMediaKind;
+  };
 
 export type PlaybackPlan = PlaybackPlanBase & PlaybackDelivery;
 

@@ -16,7 +16,6 @@ mod session;
 mod subtitle;
 mod uri;
 
-#[cfg_attr(not(test), allow(unused_imports))]
 pub(crate) use session::{HlsRequest, HlsSession};
 use thiserror::Error;
 
@@ -56,6 +55,8 @@ pub(crate) enum HlsError {
 mod attributes_tests;
 #[cfg(test)]
 mod loopback_tests;
+#[cfg(test)]
+mod master_url_tests;
 #[cfg(test)]
 mod playlist_tests;
 #[cfg(test)]

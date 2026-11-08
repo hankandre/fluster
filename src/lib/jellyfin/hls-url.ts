@@ -3,12 +3,14 @@
 // logged, or returned: only the rebuilt URL leaves this module.
 //
 // Rust re-checks the result (`validate_master_url`,
-// src-tauri/src/player/hls/master_url.rs), so the two must agree: the same
-// path shape, no credential parameter, exactly one `EnableTrickplay=false`,
-// no `EnableSubtitlesInManifest`, and no `SubtitleMethod=Hls`.
+// src-tauri/src/player/hls/master_url.rs), so the two must agree; the URLs
+// this rebuild produces from the recorded fixtures, on a server with and
+// without a base path, are in tests/fixtures/hls-master-urls.json, and both
+// sides test them (hls-rust-vectors.test.ts, master_url_tests.rs).
+import type { HlsMediaKind } from "../../domain/playback";
 import { isCredentialQueryName } from "./credential-query";
 
-export type HlsMediaKind = "videos" | "audio";
+export type { HlsMediaKind };
 
 export type HlsUrlResult =
   | { ok: true; url: string; kind: HlsMediaKind; params: URLSearchParams }

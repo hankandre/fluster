@@ -187,7 +187,7 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
         onBack={playback.back}
         {...seekProps}
       />
-      <PlayerInfoPanel status={status} snapshot={playback.state.snapshot} />
+      <PlayerInfoPanel status={status} snapshot={playback.state.snapshot} playMethod={playback.plan?.playMethod} />
       {playback.playOriginalRequested && playback.plan?.delivery === "hls" && !playback.retrying && (
         <p className="play-original-note" role="status">The server still converts this.</p>
       )}

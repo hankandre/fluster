@@ -4,12 +4,13 @@
 
 use super::fetch::{PlaylistFetcher, MAX_SUBTITLE_BYTES};
 use super::loopback::{BoundLoopback, LoopbackServer, Served};
-use super::master_url::validate_master_url;
+use super::master_url::{audio_stream_index, validate_master_url, MasterRules};
 use super::playlist::{Kind, Playlist};
 use super::subtitle::check_subtitle;
 use super::uri::contains_secret;
 use super::HlsError;
 use crate::auth_header::MediaBrowserAuthorization;
+use crate::model::HlsMediaKind;
 use crate::player::network::has_credential_query;
 use crate::url_policy::parse_allowed_url;
 use std::collections::HashMap;
@@ -19,11 +20,15 @@ const PLAYLIST_TYPE: &str = "application/vnd.apple.mpegurl";
 const SUBTITLE_TYPE: &str = "application/octet-stream";
 
 /// What a converted launch needs. `server_url` is the signed-in server;
-/// every other URL must share its origin.
+/// every other URL must share its origin, and the master must name the
+/// plan's item, media source, and play session (`master_url.rs`).
 pub(crate) struct HlsRequest<'a> {
     pub(crate) server_url: &'a str,
     pub(crate) master_url: &'a str,
     pub(crate) item_id: &'a str,
+    pub(crate) media_source_id: &'a str,
+    pub(crate) play_session_id: &'a str,
+    pub(crate) media_kind: HlsMediaKind,
     /// External subtitle delivery URLs, in the order the plan lists them.
     pub(crate) subtitle_urls: &'a [String],
     pub(crate) authorization: &'a MediaBrowserAuthorization,
@@ -32,6 +37,7 @@ pub(crate) struct HlsRequest<'a> {
 pub(crate) struct HlsSession {
     playlist_url: String,
     subtitle_urls: Vec<String>,
+    audio_stream_index: Option<i64>,
     _server: LoopbackServer,
 }
 
@@ -64,9 +70,7 @@ impl Checker<'_> {
     }
 
     fn subtitle(&self, raw: &str) -> Result<Vec<u8>, HlsError> {
-        let url = parse_allowed_url(raw)
-            .filter(|url| url.origin() == self.server && !has_credential_query(url))
-            .ok_or(HlsError::UnsafeSubtitleUrl)?;
+        let url = subtitle_url(raw, &self.server)?;
         let body = self
             .fetcher
             .fetch_bytes(&url, self.authorization, MAX_SUBTITLE_BYTES)?;
@@ -74,6 +78,14 @@ impl Checker<'_> {
         check_subtitle(&body)?;
         Ok(body)
     }
+}
+
+/// An external subtitle URL Rust may fetch: the URL policy, the server's
+/// origin, and no credential parameter.
+pub(super) fn subtitle_url(raw: &str, server: &Origin) -> Result<Url, HlsError> {
+    parse_allowed_url(raw)
+        .filter(|url| url.origin() == *server && !has_credential_query(url))
+        .ok_or(HlsError::UnsafeSubtitleUrl)
 }
 
 /// `sub{n}.{ext}`, keeping a short alphanumeric extension from the server
@@ -98,13 +110,18 @@ impl HlsSession {
     /// external subtitle with the header, and starts the loopback server.
     /// Any failure fails the whole session.
     pub(crate) fn open(request: &HlsRequest<'_>) -> Result<Self, HlsError> {
-        let server = parse_allowed_url(request.server_url)
-            .ok_or(HlsError::UnsafeMasterUrl)?
-            .origin();
-        let master_url = validate_master_url(request.master_url, request.item_id)?;
-        if master_url.origin() != server {
-            return Err(HlsError::UnsafeMasterUrl);
-        }
+        let server_url = parse_allowed_url(request.server_url).ok_or(HlsError::UnsafeMasterUrl)?;
+        let master_url = validate_master_url(
+            request.master_url,
+            &MasterRules {
+                server: &server_url,
+                item_id: request.item_id,
+                media_source_id: request.media_source_id,
+                play_session_id: request.play_session_id,
+                media_kind: request.media_kind,
+            },
+        )?;
+        let server = server_url.origin();
         let checker = Checker {
             fetcher: PlaylistFetcher::new(),
             authorization: request.authorization,
@@ -151,6 +168,7 @@ impl HlsSession {
         Ok(Self {
             playlist_url,
             subtitle_urls,
+            audio_stream_index: audio_stream_index(&master_url),
             _server: loopback.serve(bodies)?,
         })
     }
@@ -166,5 +184,10 @@ impl HlsSession {
     /// for `sub-add` on the HLS handle instead of the server URLs.
     pub(crate) fn subtitle_urls(&self) -> &[String] {
         &self.subtitle_urls
+    }
+
+    /// The master URL's `AudioStreamIndex`, when it names exactly one.
+    pub(crate) fn audio_stream_index(&self) -> Option<i64> {
+        self.audio_stream_index
     }
 }

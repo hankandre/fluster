@@ -8,7 +8,7 @@ fn default_codec(kind: &str) -> &'static str {
     }
 }
 
-fn jellyfin(index: i64, kind: &str, external: bool) -> MediaTrack {
+pub(super) fn jellyfin(index: i64, kind: &str, external: bool) -> MediaTrack {
     MediaTrack {
         index,
         kind: kind.into(),
@@ -20,7 +20,7 @@ fn jellyfin(index: i64, kind: &str, external: bool) -> MediaTrack {
     }
 }
 
-fn jellyfin_audio(index: i64, language: &str, codec: &str) -> MediaTrack {
+pub(super) fn jellyfin_audio(index: i64, language: &str, codec: &str) -> MediaTrack {
     MediaTrack {
         language: Some(language.into()),
         codec: Some(codec.into()),
@@ -28,7 +28,7 @@ fn jellyfin_audio(index: i64, language: &str, codec: &str) -> MediaTrack {
     }
 }
 
-fn mpv(id: i64, kind: &str, ff_index: i64, external: bool) -> MpvTrack {
+pub(super) fn mpv(id: i64, kind: &str, ff_index: i64, external: bool) -> MpvTrack {
     MpvTrack {
         id,
         kind: kind.into(),
@@ -41,7 +41,7 @@ fn mpv(id: i64, kind: &str, ff_index: i64, external: bool) -> MpvTrack {
     }
 }
 
-fn mpv_audio(id: i64, ff_index: i64, language: &str, codec: &str) -> MpvTrack {
+pub(super) fn mpv_audio(id: i64, ff_index: i64, language: &str, codec: &str) -> MpvTrack {
     MpvTrack {
         language: Some(language.into()),
         codec: Some(codec.into()),
@@ -49,7 +49,7 @@ fn mpv_audio(id: i64, ff_index: i64, language: &str, codec: &str) -> MpvTrack {
     }
 }
 
-fn indices(tracks: &[PlayerTrack]) -> Vec<(i64, &str, Option<i64>)> {
+pub(super) fn indices(tracks: &[PlayerTrack]) -> Vec<(i64, &str, Option<i64>)> {
     tracks
         .iter()
         .map(|track| (track.player_id, track.kind.as_str(), track.jellyfin_index))

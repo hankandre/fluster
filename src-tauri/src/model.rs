@@ -34,6 +34,36 @@ pub struct PlaybackPlan {
     /// Absent or -1 turns subtitles off.
     #[serde(default)]
     pub default_subtitle_stream_index: Option<i64>,
+    /// How `stream_url` is delivered. Required: a plan without it is refused.
+    #[serde(flatten)]
+    pub delivery: Delivery,
+}
+
+/// The typed `delivery` field of the load request (decision 0002). It
+/// selects the URL rules and the mpv handle options; there is no other way
+/// to ask for HLS.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(tag = "delivery", rename_all = "lowercase")]
+pub enum Delivery {
+    /// A `Static=true` original-file URL. `access-references` stays off.
+    Static,
+    /// A `master.m3u8` URL that Playback Negotiation rebuilt. Rust checks it
+    /// and every playlist (`player::hls`) before libmpv reads anything.
+    #[serde(rename_all = "camelCase")]
+    Hls {
+        /// The signed-in server URL, with any base path. The master,
+        /// every playlist URI, and every subtitle must share its origin.
+        server_url: String,
+        /// `videos` for a source with video, `audio` for audio only.
+        media_kind: HlsMediaKind,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum HlsMediaKind {
+    Videos,
+    Audio,
 }
 
 #[derive(Debug, Clone, Deserialize)]

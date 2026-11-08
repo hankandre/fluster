@@ -21,6 +21,7 @@ export type SourceDecision =
     source: IdentifiedSource;
     playMethod: "DirectStream" | "Transcode";
     masterUrl: string;
+    mediaKind: HlsMediaKind;
     conversionReasons: ConversionReason[];
   }
   // A disc folder or ISO the server offered for direct play: ask again for
@@ -102,6 +103,7 @@ function decideConversion(source: IdentifiedSource, transcodingUrl: string, cont
     source,
     playMethod: directStream ? "DirectStream" : "Transcode",
     masterUrl: rebuilt.url,
+    mediaKind: rebuilt.kind,
     conversionReasons,
   };
 }
