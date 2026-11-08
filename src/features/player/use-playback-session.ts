@@ -3,6 +3,7 @@ import type { LibraryItem } from "../../domain/catalog";
 import {
   PlaybackRefusedError,
   startOverChoice,
+  type PlaybackPlan,
   type PlaybackRefusal,
   type PlaybackEndReason,
   type PlaybackStartChoice,
@@ -75,6 +76,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
   const [state, dispatch] = useReducer(playbackSessionReducer, initialPlaybackSessionState);
   const [retrying, setRetrying] = useState(false);
   const [refusal, setRefusal] = useState<PlaybackRefusal>();
+  const [plan, setPlan] = useState<PlaybackPlan>();
   const session = useRef<ActiveSession | undefined>(undefined);
   const callbacks = useRef(options);
 
@@ -118,6 +120,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     session.current = active;
     dispatch({ type: "reset" });
     setRefusal(undefined);
+    setPlan(undefined);
 
     const choice: PlaybackStartChoice = startTicks > 0
       ? { kind: "resume", startPositionTicks: startTicks }
@@ -127,7 +130,9 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
       // Back or close may have come while the previous stop was running.
       if (!mounted || active.stopping || session.current !== active) return;
       active.started = true;
-      coordinator.start(item, choice).catch((error: unknown) => {
+      coordinator.start(item, choice).then((started) => {
+        if (mounted) setPlan(started);
+      }).catch((error: unknown) => {
         if (mounted) handleFailure(error);
       });
     });
@@ -155,9 +160,11 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     // The player view must be on screen before the engine launches, so the
     // refusal goes away now and comes back if the server refuses again.
     setRefusal(undefined);
+    setPlan(undefined);
     setRetrying(true);
     try {
-      await active.coordinator.retry();
+      const retried = await active.coordinator.retry();
+      if (session.current === active) setPlan(retried);
     } catch (error) {
       if (session.current === active) handleFailure(error);
     } finally {
@@ -178,5 +185,5 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     leave();
   }, [engine, leave]);
 
-  return { state, retrying, refusal, retry, back };
+  return { state, plan, retrying, refusal, retry, back };
 }

@@ -100,6 +100,8 @@ export interface PlaybackPlan {
   // initial selection. An absent or -1 subtitle index means subtitles off.
   defaultAudioStreamIndex?: number;
   defaultSubtitleStreamIndex?: number;
+  // The chosen version's MediaSourceInfo.HasSegments. Absent means false.
+  hasSegments?: boolean;
 }
 
 export interface PlayerCapabilities {

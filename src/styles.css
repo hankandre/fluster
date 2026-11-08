@@ -255,3 +255,6 @@ input:focus, select:focus { border-color: var(--acid); box-shadow: 0 0 0 1px var
 .media-info dt { color: var(--muted); }
 .media-info dd { margin: 0; }
 @media (max-width: 600px) { .detail-head { flex-direction: column; } }
+.skip-segment-button { position: absolute; z-index: 6; right: 3vw; bottom: 150px; height: 44px; padding: 0 18px; display: flex; align-items: center; gap: 8px; color: white; background: rgba(5,7,10,.78); border: 1px solid rgba(255,255,255,.4); backdrop-filter: blur(12px); font-size: 13px; font-weight: 600; }
+.skip-segment-button:hover { background: rgba(5,7,10,.92); border-color: var(--acid); }
+.skip-segment-button:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }

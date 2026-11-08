@@ -29,17 +29,21 @@ interface ServerOptions {
   noDirectPlayAnswers?: number;
   failPlayback?: boolean;
   playbackDelayMs?: number;
+  // The PlaybackInfo source reports HasSegments, and the segments endpoint answers with these items.
+  segments?: Array<Record<string, unknown>>;
+  hasSegments?: boolean;
 }
 
 interface ServerLog {
   playbackInfo: Array<Record<string, unknown>>;
   reports: Array<{ path: string; body: Record<string, unknown> }>;
+  segmentRequests: Array<{ search: string; authorization: string | undefined }>;
 }
 
 // Mocks a server with one movie and the original-file playback endpoints.
 async function mockPlayerServer(page: Page, options: ServerOptions = {}): Promise<ServerLog> {
-  const log: ServerLog = { playbackInfo: [], reports: [] };
-  const source = options.disc ? discSource : fileSource;
+  const log: ServerLog = { playbackInfo: [], reports: [], segmentRequests: [] };
+  const source = { ...(options.disc ? discSource : fileSource), HasSegments: options.hasSegments ?? false };
 
   await page.addInitScript(({ shouldFail }) => {
     Object.defineProperty(HTMLMediaElement.prototype, "duration", { configurable: true, get: () => 120 });
@@ -106,6 +110,9 @@ async function mockPlayerServer(page: Page, options: ServerOptions = {}): Promis
           return json({ PlaySessionId: `play-${log.playbackInfo.length}`, MediaSources: [{ ...source, SupportsDirectPlay: false }] });
         }
         return json({ PlaySessionId: `play-${log.playbackInfo.length}`, MediaSources: [source] });
+      case "/MediaSegments/movie-1":
+        log.segmentRequests.push({ search: url.search, authorization: request.headers()["authorization"] });
+        return json({ Items: options.segments ?? [], TotalRecordCount: (options.segments ?? []).length, StartIndex: 0 });
       case "/Videos/movie-1/stream":
         return route.fulfill({ status: 200, headers: cors, contentType: "video/mp4", body: "" });
       default:
@@ -252,4 +259,68 @@ test("Back cancels an in-flight playback negotiation", async ({ page }) => {
   await expect(page.locator("video")).toHaveCount(0);
   expect(log.playbackInfo).toHaveLength(1);
   expect(log.reports).toHaveLength(0);
+});
+
+const introAndOutro = [
+  { Id: "seg-1", Type: "Intro", StartTicks: 100_000_000, EndTicks: 700_000_000 },
+  { Id: "seg-2", Type: "Outro", StartTicks: 1_000_000_000, EndTicks: 1_190_000_000 },
+];
+
+async function moveTo(page: Page, seconds: number) {
+  await page.locator("video").evaluate((video: HTMLVideoElement, position) => {
+    video.currentTime = position;
+    video.dispatchEvent(new Event("timeupdate"));
+  }, seconds);
+}
+
+test("skip buttons appear inside the intro and the credits and seek to the segment end", async ({ page }) => {
+  const log = await mockPlayerServer(page, { hasSegments: true, segments: introAndOutro });
+  await openArrival(page);
+  await page.getByRole("link", { name: "Play" }).click();
+  await expect(page.locator("video")).toHaveCount(1);
+
+  await expect.poll(() => log.segmentRequests.length).toBe(1);
+  expect(log.segmentRequests[0].search).toBe("?includeSegmentTypes=Intro&includeSegmentTypes=Outro");
+  expect(log.segmentRequests[0].authorization).toMatch(/^MediaBrowser /);
+
+  await moveTo(page, 5);
+  await expect(page.getByRole("button", { name: /Skip/ })).toHaveCount(0);
+
+  await moveTo(page, 30);
+  const skipIntro = page.getByRole("button", { name: "Skip intro" });
+  await expect(skipIntro).toBeVisible();
+  await expect(skipIntro).not.toBeFocused();
+  await skipIntro.focus();
+  await page.keyboard.press("Enter");
+  await expect.poll(() => page.locator("video").evaluate((video: HTMLVideoElement) => video.currentTime)).toBe(70);
+  // A real media element reports the new position itself; the stub does not.
+  await page.locator("video").dispatchEvent("timeupdate");
+  await expect(page.getByRole("button", { name: /Skip/ })).toHaveCount(0);
+
+  await moveTo(page, 105);
+  await expect(page.getByRole("button", { name: "Skip credits" })).toBeVisible();
+  await moveTo(page, 118.5);
+  await expect(page.getByRole("button", { name: /Skip/ })).toHaveCount(0);
+});
+
+test("a version without segments never asks for them and shows no skip button", async ({ page }) => {
+  const log = await mockPlayerServer(page, { hasSegments: false, segments: introAndOutro });
+  await openArrival(page);
+  await page.getByRole("link", { name: "Play" }).click();
+  await expect(page.locator("video")).toHaveCount(1);
+  await expect.poll(() => reportPaths(log)).toContain("/Sessions/Playing");
+
+  await moveTo(page, 30);
+  await expect(page.getByRole("button", { name: /Skip/ })).toHaveCount(0);
+  expect(log.segmentRequests).toHaveLength(0);
+});
+
+test("empty segment data hides the skip feature", async ({ page }) => {
+  const log = await mockPlayerServer(page, { hasSegments: true, segments: [] });
+  await openArrival(page);
+  await page.getByRole("link", { name: "Play" }).click();
+  await expect.poll(() => log.segmentRequests.length).toBe(1);
+
+  await moveTo(page, 30);
+  await expect(page.getByRole("button", { name: /Skip/ })).toHaveCount(0);
 });

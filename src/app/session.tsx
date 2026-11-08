@@ -1,4 +1,5 @@
 import type { BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, LibraryItem, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season } from "../domain/catalog";
+import type { MediaSegment } from "../domain/media-segments";
 import type { PlaybackPlan, PlaybackSnapshot } from "../domain/playback";
 import type { RealtimeConnection, ServerEvent } from "../domain/realtime";
 import type { ServerConnection } from "../domain/server-connection";
@@ -33,6 +34,8 @@ export interface SessionGateway {
   setFavorite(itemId: string, favorite: boolean, signal?: AbortSignal): Promise<void>;
   imageUrl(itemId: string, type: CardImageType, tag: string, maxWidth: number): string;
   createPlaybackPlan(item: LibraryItem, startPositionTicks: number, signal?: AbortSignal, mediaSourceId?: string): Promise<PlaybackPlan>;
+  // Intro and outro segments of an item. Call only when the playing version has HasSegments.
+  mediaSegments(itemId: string, signal?: AbortSignal): Promise<MediaSegment[]>;
   reportStart(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal): Promise<void>;
   reportProgress(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal): Promise<void>;
   reportStopped(plan: PlaybackPlan, snapshot: PlaybackSnapshot, signal?: AbortSignal, failed?: boolean): Promise<void>;
