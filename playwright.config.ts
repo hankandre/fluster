@@ -9,6 +9,7 @@ const fakeHlsPort = port + 1;
 export default defineConfig({
   testDir: "./e2e",
   testIgnore: "visual/**",
+  globalSetup: "./e2e/global-setup.ts",
   fullyParallel: true,
   retries: process.env.CI ? 2 : 0,
   reporter: "list",
