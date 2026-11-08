@@ -30,6 +30,11 @@ struct RenderState {
     first_frame_sent: bool,
     render_error_sent: bool,
     video_loaded: Arc<AtomicBool>,
+    /// Keeps the mpv core alive until `context` is freed: fields drop in
+    /// declaration order, and libmpv requires the render context to be
+    /// freed before the core is destroyed (`render.h`). Without it, a late
+    /// attach could hold the last core reference.
+    _core: Arc<Mutex<Mpv>>,
 }
 
 thread_local! {
@@ -177,7 +182,13 @@ pub fn attach(
     video_loaded: Arc<AtomicBool>,
 ) -> Result<(), String> {
     let app_for_render = app.clone();
+    // Set when the caller gave up waiting; a late run installs nothing.
+    let abandoned = Arc::new(AtomicBool::new(false));
+    let abandoned_for_render = abandoned.clone();
     let result = run_on_main(app, move || {
+        if abandoned_for_render.load(Ordering::Acquire) {
+            return Err("The video surface attach was abandoned.".to_string());
+        }
         // One render context at a time: a session that has not been
         // detached yet keeps the surface.
         if RENDER_STATE.with(|state| state.borrow().is_some()) {
@@ -196,6 +207,7 @@ pub fn attach(
             }
             gl::load_with(|name| gl_proc_address(name) as *const c_void);
 
+            let core = mpv.clone();
             let mut mpv = mpv
                 .lock()
                 .map_err(|_| "The libmpv mutex is poisoned.".to_string())?;
@@ -240,6 +252,7 @@ pub fn attach(
                     first_frame_sent: false,
                     render_error_sent: false,
                     video_loaded,
+                    _core: core,
                 });
             });
             ui.gl_area.queue_render();
@@ -247,6 +260,7 @@ pub fn attach(
         })
     });
     if result.is_err() {
+        abandoned.store(true, Ordering::Release);
         let app_for_restore = app.clone();
         let _ = run_on_main(app, move || {
             set_composition_background(&app_for_restore, LIBRARY_BACKGROUND)
@@ -305,7 +319,12 @@ pub fn detach(app: &AppHandle, session_id: &str) {
                 }
             });
         }
-        let result = set_composition_background(&app_for_detach, LIBRARY_BACKGROUND);
+        // Another session's surface keeps its background.
+        let result = if matches {
+            set_composition_background(&app_for_detach, LIBRARY_BACKGROUND)
+        } else {
+            Ok(())
+        };
         #[cfg(debug_assertions)]
         eprintln!("[fluster native] GTK detach finished");
         result

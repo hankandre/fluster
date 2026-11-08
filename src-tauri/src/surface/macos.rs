@@ -32,6 +32,11 @@ struct RenderState {
     first_frame_sent: bool,
     render_error_sent: bool,
     video_loaded: Arc<AtomicBool>,
+    /// Keeps the mpv core alive until `context` is freed: fields drop in
+    /// declaration order, and libmpv requires the render context to be
+    /// freed before the core is destroyed (`render.h`). Without it, a late
+    /// attach could hold the last core reference.
+    _core: Arc<Mutex<Mpv>>,
 }
 
 thread_local! {
@@ -112,7 +117,13 @@ pub fn attach(
     video_loaded: Arc<AtomicBool>,
 ) -> Result<(), String> {
     let app_for_render = app.clone();
-    run_on_main(app, move || {
+    // Set when the caller gave up waiting; a late run installs nothing.
+    let abandoned = Arc::new(AtomicBool::new(false));
+    let abandoned_for_render = abandoned.clone();
+    let result = run_on_main(app, move || {
+        if abandoned_for_render.load(Ordering::Acquire) {
+            return Err("The video surface attach was abandoned.".to_string());
+        }
         // One render context at a time: a session that has not been
         // detached yet keeps the surface.
         if RENDER_STATE.with(|state| state.borrow().is_some()) {
@@ -133,6 +144,7 @@ pub fn attach(
                 NSOpenGLContext::makeCurrentContext(context);
                 let _: () = msg_send![view, setHidden: false];
             }
+            let core = mpv.clone();
             let mut mpv = mpv
                 .lock()
                 .map_err(|_| "The libmpv mutex is poisoned.".to_string())?;
@@ -162,12 +174,17 @@ pub fn attach(
                     first_frame_sent: false,
                     render_error_sent: false,
                     video_loaded,
+                    _core: core,
                 });
             });
             draw(&session_id);
             Ok(())
         })
-    })
+    });
+    if result.is_err() {
+        abandoned.store(true, Ordering::Release);
+    }
+    result
 }
 
 fn draw(session_id: &str) {

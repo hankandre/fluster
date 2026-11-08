@@ -44,6 +44,9 @@ export class PlaybackCoordinator {
   private previousPlaySessionId?: string;
   private attemptController?: AbortController;
   private attemptTask?: Promise<PlaybackPlan>;
+  // The stop that cancelled a pending launch. Every later stop waits for it,
+  // so it can never reach the engine after the next launch began.
+  private cancelStop?: Promise<void>;
   private finishTask?: Promise<void>;
   private requestedStopReason?: "retry" | "stopped";
   private eventQueue: Promise<void> = Promise.resolve();
@@ -163,7 +166,7 @@ export class PlaybackCoordinator {
     // resolves. Back, Stop, or a newer attempt asks the engine to stop at
     // once, which cancels a pending launch, instead of waiting it out.
     const cancelLaunch = () => {
-      void this.player.stop().catch(() => undefined);
+      this.cancelStop = this.player.stop().catch(() => undefined);
     };
     controller.signal.addEventListener("abort", cancelLaunch, { once: true });
     try {
@@ -202,6 +205,8 @@ export class PlaybackCoordinator {
     this.reporter.stopProgress();
     this.requestedStopReason = reason;
     try {
+      await this.cancelStop;
+      this.cancelStop = undefined;
       await this.player.stop();
       await this.eventQueue;
       await this.finish(reason, this.snapshot);
