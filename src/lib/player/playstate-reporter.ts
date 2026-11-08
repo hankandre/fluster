@@ -22,7 +22,7 @@ export class PlaystateReporter {
   private queue: Promise<void> = Promise.resolve();
   private controller = new AbortController();
   private drains: Promise<void> = Promise.resolve();
-  private progressTimer?: number;
+  private progressTimer?: ReturnType<typeof setInterval>;
   private started = false;
 
   constructor(
@@ -49,7 +49,7 @@ export class PlaystateReporter {
     if (this.started) return;
     this.started = true;
     this.queueReport((signal) => this.gateway.reportStart(plan, snapshot, signal));
-    this.progressTimer = window.setInterval(() => {
+    this.progressTimer = setInterval(() => {
       const latest = currentSnapshot();
       if (latest && this.started) {
         this.queueReport((signal) => this.gateway.reportProgress(plan, latest, signal));
@@ -64,7 +64,7 @@ export class PlaystateReporter {
   }
 
   stopProgress(): void {
-    if (this.progressTimer !== undefined) window.clearInterval(this.progressTimer);
+    if (this.progressTimer !== undefined) clearInterval(this.progressTimer);
     this.progressTimer = undefined;
   }
 
@@ -131,11 +131,11 @@ export class PlaystateReporter {
 
 /** Resolves true when `promise` settles first, or false after `timeoutMs`. */
 async function settlesWithin(promise: Promise<void>, timeoutMs: number): Promise<boolean> {
-  let timer: number | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   const deadline = new Promise<boolean>((resolve) => {
-    timer = window.setTimeout(() => resolve(false), timeoutMs);
+    timer = setTimeout(() => resolve(false), timeoutMs);
   });
   const settled = await Promise.race([promise.then(() => true), deadline]);
-  if (timer !== undefined) window.clearTimeout(timer);
+  if (timer !== undefined) clearTimeout(timer);
   return settled;
 }

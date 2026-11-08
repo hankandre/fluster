@@ -1,5 +1,7 @@
 import type { RealtimeConnection } from "../domain/realtime";
 import type { PlayerServices } from "./player-services";
+import { lanHttpConfirmations } from "../lib/browser-lan-http-confirmations";
+import { getInstallId } from "../lib/install-id";
 import { JellyfinGateway } from "../lib/jellyfin/gateway";
 import { BrowserPlayerEngine } from "../lib/player/browser-player";
 import { NativeRealtime } from "../lib/realtime/native-realtime";
@@ -23,7 +25,7 @@ export function createServices(): AppServices {
   const native = isTauriRuntime();
   return {
     native,
-    createGateway: (serverUrl) => new JellyfinGateway(serverUrl),
+    createGateway: (serverUrl) => new JellyfinGateway(serverUrl, undefined, getInstallId(), lanHttpConfirmations),
     createPlayerEngine: () => (native ? new NativePlayerEngine() : new BrowserPlayerEngine()),
     realtime: native ? new NativeRealtime() : new NoOpRealtime(),
     watchWindowClose: native ? watchNativeWindowClose : undefined,

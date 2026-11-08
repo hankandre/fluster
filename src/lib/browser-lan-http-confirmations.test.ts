@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { BrowserLanHttpConfirmations, LAN_HTTP_CONFIRMATIONS_STORAGE_KEY } from "./lan-http-confirmations";
+import { BrowserLanHttpConfirmations, LAN_HTTP_CONFIRMATIONS_STORAGE_KEY } from "./browser-lan-http-confirmations";
 
 const LIVING_ROOM = { serverId: "server-1", origin: "http://192.168.1.5:8096" };
 
