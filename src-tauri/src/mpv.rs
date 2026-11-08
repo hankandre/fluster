@@ -769,6 +769,7 @@ fn read_tracks(
                 external: mpv
                     .get_property::<bool>(&format!("{prefix}/external"))
                     .unwrap_or(false),
+                codec: string_property(mpv, &format!("{prefix}/codec")),
                 title: string_property(mpv, &format!("{prefix}/title")),
                 language: string_property(mpv, &format!("{prefix}/lang")),
                 selected: mpv
@@ -1019,6 +1020,7 @@ mod tests {
                 index: 4,
                 kind: "Subtitle".into(),
                 display_title: "English".into(),
+                codec: None,
                 language: Some("eng".into()),
                 external: true,
                 delivery_url: Some(delivery_url.into()),
@@ -1493,6 +1495,7 @@ mod media_auth_wire {
             index: 1,
             kind: "Subtitle".into(),
             display_title: "English".into(),
+            codec: None,
             language: Some("eng".into()),
             external: true,
             delivery_url: Some(format!("{origin}/sub.srt")),
@@ -1539,6 +1542,7 @@ mod media_auth_wire {
             index,
             kind: "Subtitle".into(),
             display_title: format!("Sidecar {index}"),
+            codec: Some("subrip".into()),
             language: Some("eng".into()),
             external: true,
             delivery_url: Some(format!("{origin}/sub.srt")),
@@ -1551,6 +1555,7 @@ mod media_auth_wire {
                 index: 2,
                 kind: "Audio".into(),
                 display_title: "PCM".into(),
+                codec: Some("pcm_s16le".into()),
                 language: None,
                 external: false,
                 delivery_url: None,
@@ -1737,6 +1742,7 @@ mod media_auth_wire {
                 index: 1,
                 kind: "Subtitle".into(),
                 display_title: "English".into(),
+                codec: None,
                 language: Some("eng".into()),
                 external: true,
                 delivery_url: Some(format!("{subtitle_origin}/sub.srt")),

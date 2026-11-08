@@ -67,6 +67,8 @@ export interface MediaTrack {
   index: number;
   type: "Audio" | "Subtitle" | "Video";
   displayTitle: string;
+  // ffprobe codec name; Rust uses it to verify a track mapping.
+  codec?: string;
   language?: string;
   external: boolean;
   deliveryUrl?: string;

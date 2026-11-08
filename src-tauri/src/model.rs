@@ -8,6 +8,9 @@ pub struct MediaTrack {
     #[serde(rename = "type")]
     pub kind: String,
     pub display_title: String,
+    /// ffprobe codec name, used only to verify a track mapping.
+    #[serde(default)]
+    pub codec: Option<String>,
     pub language: Option<String>,
     pub external: bool,
     pub delivery_url: Option<String>,

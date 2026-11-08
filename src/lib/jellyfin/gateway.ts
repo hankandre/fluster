@@ -672,6 +672,7 @@ export class JellyfinGateway {
           index: track.Index,
           type: track.Type as "Audio" | "Subtitle" | "Video",
           displayTitle: track.DisplayTitle ?? `${track.Type} ${track.Index}`,
+          codec: track.Codec,
           language: track.Language,
           external: Boolean(track.IsExternal),
           deliveryUrl: buildSubtitleUrl(this.serverUrl, track.DeliveryUrl),
