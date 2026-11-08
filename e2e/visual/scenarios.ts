@@ -7,6 +7,8 @@ export interface Scenario {
   fullPage?: boolean;
   // Defaults to the desktop viewports. Phone shots run at 390x844 only.
   phone?: boolean;
+  // Set when the scenario deliberately provokes a 404 from the mock server.
+  expect404?: boolean;
   run: (page: Page) => Promise<void>;
 }
 
@@ -116,7 +118,7 @@ export const scenarios: Scenario[] = [
   { name: "42-detail-resume", run: (page) => signedInAt(page, "#/next/item/m2", 1_000) },
   { name: "43-detail-played-favorite", run: (page) => signedInAt(page, "#/next/item/m3", 1_000) },
   { name: "44-detail-episode", fullPage: true, run: (page) => signedInAt(page, "#/next/item/ep-2", 1_000) },
-  { name: "45-detail-not-found", run: (page) => signedInAt(page, "#/next/item/nope", 1_000) },
+  { name: "45-detail-not-found", expect404: true, run: (page) => signedInAt(page, "#/next/item/nope", 1_000) },
 
   // Player
   { name: "50-player-controls", opts: { trickplay: true }, run: (page) => play(page, "#/next/item/m1") },

@@ -6,7 +6,7 @@ export default defineConfig({
   globalSetup: "./e2e/visual/global-setup.ts",
   outputDir: "./test-results/visual-run",
   fullyParallel: true,
-  workers: 4,
+  workers: process.env.CI ? 1 : 4,
   retries: 1,
   timeout: 60_000,
   reporter: "list",

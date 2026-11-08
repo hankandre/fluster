@@ -151,7 +151,9 @@ async function stubMediaElement(page: Page, opts: MockOptions): Promise<void> {
   }, { fail: Boolean(opts.fail), duration: opts.duration ?? 7380 });
 }
 
-export async function installMockServer(page: Page, opts: MockOptions = {}): Promise<void> {
+// Returns the mock's 404 log (method and path) so a capture run can fail on drift.
+export async function installMockServer(page: Page, opts: MockOptions = {}): Promise<string[]> {
+  const notFound: string[] = [];
   await stubMediaElement(page, opts);
   for (const origin of [SERVER, LAN]) {
     await page.route(`${origin}/**`, async (route) => {
@@ -159,6 +161,10 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
       const url = new URL(request.url());
       const p = url.pathname;
       const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" };
+      const missing = () => {
+        notFound.push(`${request.method()} ${p}`);
+        return route.fulfill({ status: 404, headers: cors });
+      };
       const json = (body: unknown) => route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify(body) });
       if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
       if (p.startsWith("/Sessions/Playing")) return route.fulfill({ status: 204, headers: cors });
@@ -185,7 +191,7 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
         if (movies[id]) return json(movieDto(id, opts));
         if (episodes[id]) return json(episodeDto(id, opts));
         if (series[id]) return json(seriesDto(id));
-        return route.fulfill({ status: 404, headers: cors });
+        return missing();
       }
       if (opts.rowDelayMs && ["/UserItems/Resume", "/Shows/NextUp", "/Items/Latest", "/UserViews"].includes(p)) await sleep(opts.rowDelayMs);
       switch (p) {
@@ -247,8 +253,9 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
           if (url.searchParams.get("adjacentTo")) return json({ Items: [episodeDto("ep-1", opts), episodeDto("ep-2", opts)] });
           return json({ Items: Object.keys(episodes).map((id) => episodeDto(id, opts)) });
         default:
-          return route.fulfill({ status: 404, headers: cors });
+          return missing();
       }
     });
   }
+  return notFound;
 }
