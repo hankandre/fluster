@@ -890,10 +890,10 @@
             "Built under src/features/ with a Playwright journey; no proof-of-concept screen is extended"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "mediaSegments in gateway.ts requests /MediaSegments/{id}?includeSegmentTypes=Intro&includeSegmentTypes=Outro only when the negotiated source has HasSegments (PlaybackPlan.hasSegments); ticks map to seconds in lib/jellyfin/media-segments.ts.\nsrc/components/SkipSegmentButton.tsx shows Skip intro / Skip credits inside a segment (hidden 1 s before its end, no auto-focus) and seeks to the segment end; empty or failed data renders nothing.\nUnit tests (gateway, mapping, button, feature) and e2e/player.spec.ts (HasSegments true, empty, and false with no request) added; pnpm check, pnpm test:e2e, and pnpm lint:boundaries pass."
         },
         {
           "id": "P3-12",

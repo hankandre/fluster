@@ -112,6 +112,7 @@ export interface MediaSourceDto {
   MediaStreams?: MediaStreamDto[];
   DefaultAudioStreamIndex?: number | null;
   DefaultSubtitleStreamIndex?: number | null;
+  HasSegments?: boolean;
 }
 
 export interface PlaybackInfoResponse {

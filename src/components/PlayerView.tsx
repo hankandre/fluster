@@ -17,7 +17,9 @@ import {
 import type { LibraryItem } from "../domain/catalog";
 import type { PlayerEngine } from "../domain/playback";
 import type { PlaybackSessionState } from "../lib/player/session-state";
+import type { MediaSegment } from "../domain/media-segments";
 import { NativeVideoSurface } from "./NativeVideoSurface";
+import { SkipSegmentButton } from "./SkipSegmentButton";
 
 function time(value: number | undefined): string {
   if (value == null || !Number.isFinite(value)) return "--:--";
@@ -44,10 +46,12 @@ function chapterAt(chapters: SeekChapter[], seconds: number): SeekChapter | unde
   return current;
 }
 
-export function PlayerView({ item, player, session, retrying, onRetry, onBack, seekPreview, chapters }: {
+export function PlayerView({ item, player, session, segments, retrying, onRetry, onBack, seekPreview, chapters }: {
   item: LibraryItem;
   player: PlayerEngine;
   session: PlaybackSessionState;
+  // Intro and outro segments to offer a skip button for. Empty or absent shows none.
+  segments?: MediaSegment[];
   retrying?: boolean;
   onRetry(): Promise<void> | void;
   onBack(): Promise<void> | void;
@@ -282,6 +286,14 @@ export function PlayerView({ item, player, session, retrying, onRetry, onBack, s
       )}
       {reportingWarning && !error && (
         <div className="player-reporting-warning"><AlertTriangle size={15} /> Jellyfin progress reporting failed: {reportingWarning}</div>
+      )}
+
+      {segments && snapshot && (
+        <SkipSegmentButton
+          segments={segments}
+          positionSeconds={snapshot.positionSeconds}
+          onSeek={(seconds) => void execute(() => player.seek(seconds))}
+        />
       )}
 
       <footer className={`player-controls ${controlsVisible || snapshot?.paused ? "is-visible" : ""}`}>
