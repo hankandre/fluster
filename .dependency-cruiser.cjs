@@ -17,6 +17,20 @@ module.exports = {
       },
     },
     {
+      name: "core-is-shell-neutral",
+      severity: "error",
+      comment:
+        "The shell-neutral core (src/domain, src/lib/jellyfin, the playback coordinator, the playstate reporter) is shared with future non-Tauri shells (docs/plans/active/002, P12-01). It must not import Tauri, React, react-query, or any browser or desktop adapter. Take what you need as a constructor argument or a port type and wire the adapter in src/app/compose.ts. DOM globals such as window or document are caught by `pnpm typecheck:core`.",
+      from: {
+        path: "^src/(domain/|lib/jellyfin/|lib/player/(coordinator|playstate-reporter|session-state)\\.ts$)",
+        pathNot: tests,
+      },
+      to: {
+        path:
+          "node_modules/(react|react-dom|@tanstack|@tauri-apps)/|^src/(components|features|app|poc)/|^src/lib/(player/(browser-player|native-player)|realtime/|install-id|browser-)",
+      },
+    },
+    {
       name: "views-use-composition-root",
       severity: "error",
       comment:

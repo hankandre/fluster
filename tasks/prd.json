@@ -1385,10 +1385,10 @@
             "pnpm check runs both checks"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "Rule core-is-shell-neutral in .dependency-cruiser.cjs and tsconfig.core.json (lib ES2022, types node, no DOM) run as pnpm lint:boundaries and pnpm typecheck:core, both inside pnpm check. Exceptions fixed in place: gateway default install id and LAN store (moved browser adapters to compose.ts) and window timers in playstate-reporter; none left to list. Checks bite: import react in src/domain/catalog.ts fails depcruise, document.title in coordinator.ts fails typecheck:core."
         },
         {
           "id": "P12-02",

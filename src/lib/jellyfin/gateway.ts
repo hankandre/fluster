@@ -7,9 +7,8 @@ import { PlaybackRefusedError, secondsToTicks } from "../../domain/playback";
 import { classifyHost, type HostClass } from "../../domain/host-class";
 import type { ServerConnection } from "../../domain/server-connection";
 import { isSupportedServerVersion, parseServerVersion } from "../../domain/server-version";
-import { getInstallId } from "../install-id";
 import type { MediaSegment } from "../../domain/media-segments";
-import { lanHttpConfirmations, type LanHttpConfirmationStore } from "../lan-http-confirmations";
+import { MemoryLanHttpConfirmations, type LanHttpConfirmationStore } from "../lan-http-confirmations";
 import { redactError, redactText } from "../redact";
 import { toBrowseCards, toEpisodeCards, toNextEpisode, toHomeLibraries, toMediaCards, toSearchCards, toSearchHints, toSeasons } from "./cards";
 import { deriveDeviceId } from "./device-id";
@@ -200,8 +199,8 @@ export class JellyfinGateway {
   constructor(
     serverUrl: string,
     transport?: HttpTransport,
-    private readonly installId: string = getInstallId(),
-    private readonly confirmations: LanHttpConfirmationStore = lanHttpConfirmations,
+    private readonly installId: string = crypto.randomUUID(),
+    private readonly confirmations: LanHttpConfirmationStore = new MemoryLanHttpConfirmations(),
   ) {
     const url = normalizeServerUrl(serverUrl);
     this.serverUrl = url.toString().replace(/\/$/, "");

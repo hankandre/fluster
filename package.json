@@ -20,7 +20,8 @@
     "samples:generate": "bash scripts/generate-samples.sh",
     "dogfood": "bash scripts/dogfood.sh",
     "typecheck:integration": "tsc -p tsconfig.integration.json",
-    "check": "pnpm lint:boundaries && pnpm test:dogfood-redaction && pnpm test && pnpm build && pnpm typecheck:integration && cargo test --manifest-path src-tauri/Cargo.toml"
+    "typecheck:core": "tsc -p tsconfig.core.json",
+    "check": "pnpm lint:boundaries && pnpm test:dogfood-redaction && pnpm test && pnpm build && pnpm typecheck:integration && pnpm typecheck:core && cargo test --manifest-path src-tauri/Cargo.toml"
   },
   "dependencies": {
     "@jellyfin/sdk": "1.0.2",
