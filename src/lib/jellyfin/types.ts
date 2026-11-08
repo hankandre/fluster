@@ -110,6 +110,8 @@ export interface MediaSourceDto {
   Container?: string;
   Size?: number | null;
   MediaStreams?: MediaStreamDto[];
+  DefaultAudioStreamIndex?: number | null;
+  DefaultSubtitleStreamIndex?: number | null;
 }
 
 export interface PlaybackInfoResponse {

@@ -8,6 +8,7 @@ mod mpv;
 mod realtime;
 mod redaction;
 mod surface;
+mod tracks;
 mod url_policy;
 
 use model::{LaunchRequest, PlayerCapabilities, PlayerSurfaceFrame};
