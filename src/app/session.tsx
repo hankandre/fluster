@@ -28,6 +28,7 @@ export interface SessionGateway {
   seasons(seriesId: string, signal?: AbortSignal): Promise<Season[]>;
   episodes(seriesId: string, seasonId: string, signal?: AbortSignal): Promise<EpisodeCard[]>;
   itemDetail(itemId: string, signal?: AbortSignal): Promise<ItemDetail>;
+  trickplayTile(itemId: string, mediaSourceId: string, width: number, index: number, signal?: AbortSignal): Promise<Blob>;
   setPlayed(itemId: string, played: boolean, signal?: AbortSignal): Promise<void>;
   setFavorite(itemId: string, favorite: boolean, signal?: AbortSignal): Promise<void>;
   imageUrl(itemId: string, type: CardImageType, tag: string, maxWidth: number): string;

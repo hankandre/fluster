@@ -1,13 +1,16 @@
 import type {
   AudioInfo,
+  Chapter,
   DynamicRange,
   ImageRef,
   ItemDetail,
   ItemVersion,
   SubtitleInfo,
+  TrickplayInfo,
   VideoInfo,
 } from "../../domain/catalog";
-import type { BaseItemDto, MediaSourceDto, MediaStreamDto } from "./types";
+import { ticksToSeconds } from "../../domain/playback";
+import type { BaseItemDto, MediaSourceDto, MediaStreamDto, TrickplayInfoDto } from "./types";
 
 const CAST_LIMIT = 8;
 
@@ -94,8 +97,55 @@ function toSubtitle(stream: MediaStreamDto): SubtitleInfo {
   };
 }
 
-function toVersion(source: MediaSourceDto, position: number): ItemVersion | undefined {
+const PREFERRED_TRICKPLAY_WIDTH = 320;
+
+// The widths of one version are keyed by pixel width. Use the one closest to
+// the preferred width; the smaller one wins a tie.
+export function pickTrickplay(widths: Record<string, TrickplayInfoDto> | null | undefined): TrickplayInfo | undefined {
+  let best: TrickplayInfo | undefined;
+  for (const dto of Object.values(widths ?? {})) {
+    const info = toTrickplayInfo(dto);
+    if (!info) continue;
+    if (!best || isCloser(info.width, best.width)) best = info;
+  }
+  return best;
+}
+
+function isCloser(width: number, than: number): boolean {
+  const distance = Math.abs(width - PREFERRED_TRICKPLAY_WIDTH);
+  const otherDistance = Math.abs(than - PREFERRED_TRICKPLAY_WIDTH);
+  return distance < otherDistance || (distance === otherDistance && width < than);
+}
+
+// A tile layout with a missing or non-positive field cannot be addressed.
+function toTrickplayInfo(dto: TrickplayInfoDto | undefined): TrickplayInfo | undefined {
+  if (!dto) return undefined;
+  const { Width, Height, TileWidth, TileHeight, ThumbnailCount, Interval } = dto;
+  const fields = [Width, Height, TileWidth, TileHeight, ThumbnailCount, Interval];
+  if (fields.some((field) => !Number.isInteger(field) || (field as number) <= 0)) return undefined;
+  return {
+    width: Width!,
+    height: Height!,
+    tileWidth: TileWidth!,
+    tileHeight: TileHeight!,
+    thumbnailCount: ThumbnailCount!,
+    intervalMs: Interval!,
+  };
+}
+
+export function toChapters(chapters: BaseItemDto["Chapters"]): Chapter[] {
+  const result: Chapter[] = [];
+  for (const chapter of chapters ?? []) {
+    const ticks = chapter.StartPositionTicks ?? 0;
+    if (ticks < 0) continue;
+    result.push({ startSeconds: ticksToSeconds(ticks), name: chapter.Name?.trim() || `Chapter ${result.length + 1}` });
+  }
+  return result.sort((a, b) => a.startSeconds - b.startSeconds);
+}
+
+function toVersion(source: MediaSourceDto, position: number, trickplay: BaseItemDto["Trickplay"]): ItemVersion | undefined {
   if (!source.Id) return undefined;
+  const preview = pickTrickplay(trickplay?.[source.Id]);
   const streams = source.MediaStreams ?? [];
   const video = streams.find((stream) => stream.Type === "Video");
   return {
@@ -106,6 +156,7 @@ function toVersion(source: MediaSourceDto, position: number): ItemVersion | unde
     ...(video ? { video: toVideo(video) } : {}),
     audio: streams.filter((stream) => stream.Type === "Audio").map(toAudio),
     subtitles: streams.filter((stream) => stream.Type === "Subtitle").map(toSubtitle),
+    ...(preview ? { trickplay: preview } : {}),
   };
 }
 
@@ -127,6 +178,7 @@ export function toItemDetail(item: BaseItemDto): ItemDetail | undefined {
     .filter((person) => person.Name && person.Type === "Actor")
     .slice(0, CAST_LIMIT)
     .map((person) => ({ name: person.Name!, ...(person.Role ? { role: person.Role } : {}) }));
+  const chapters = toChapters(item.Chapters);
   return {
     id: item.Id,
     type: item.Type ?? "",
@@ -143,7 +195,8 @@ export function toItemDetail(item: BaseItemDto): ItemDetail | undefined {
       favorite: Boolean(item.UserData?.IsFavorite),
       resumePositionTicks: Math.max(0, item.UserData?.PlaybackPositionTicks ?? 0),
     },
-    versions: (item.MediaSources ?? []).flatMap((source, position) => toVersion(source, position) ?? []),
+    versions: (item.MediaSources ?? []).flatMap((source, position) => toVersion(source, position, item.Trickplay) ?? []),
+    ...(chapters.length ? { chapters } : {}),
     ...(poster ? { poster } : {}),
     ...(backdrop ? { backdrop } : {}),
   };

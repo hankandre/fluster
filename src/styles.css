@@ -151,6 +151,13 @@ input:focus, select:focus { border-color: var(--acid); box-shadow: 0 0 0 1px var
 .seek-row { display: grid; grid-template-columns: 48px 1fr 48px; gap: 12px; align-items: center; margin-bottom: 17px; color: #d3d6da; font: 500 10px/1 var(--font-display); }
 .seek-row span:last-child { text-align: right; }
 .seek-row input, .volume-slider { accent-color: var(--acid); height: 4px; padding: 0; border: 0; box-shadow: none; }
+.seek-track { position: relative; display: grid; align-items: center; }
+.seek-track input { width: 100%; }
+.seek-chapter { position: absolute; top: 50%; width: 3px; height: 10px; margin: -5px 0 0 -1px; border-radius: 1px; background: rgba(255,255,255,.85); pointer-events: none; }
+.seek-preview { position: absolute; bottom: 22px; left: clamp(90px, var(--seek-x, 0%), calc(100% - 90px)); transform: translateX(-50%); display: grid; justify-items: center; gap: 4px; max-width: 220px; padding: 6px; border-radius: 6px; background: rgba(5,7,10,.88); border: 1px solid rgba(255,255,255,.18); color: white; pointer-events: none; }
+.seek-thumbnail { background-repeat: no-repeat; background-color: #0b0e14; border-radius: 3px; max-width: 100%; }
+.seek-preview strong { font: 600 11px/1 var(--font-display); }
+.seek-preview em { font: 500 11px/1.2 var(--font-display); font-style: normal; color: #d3d6da; text-align: center; }
 .control-row { display: flex; align-items: center; gap: 11px; }
 .primary-play-control { width: 50px; height: 50px; border: 0; border-radius: 50%; display: grid; place-items: center; color: #080a0f; background: var(--acid); }
 .player-control-button { width: 40px; height: 40px; }

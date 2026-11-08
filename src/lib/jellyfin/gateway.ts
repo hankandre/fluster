@@ -583,6 +583,25 @@ export class JellyfinGateway {
     return detail;
   }
 
+  // GET /Videos/{itemId}/Trickplay/{width}/{index}.jpg needs the Authorization
+  // header (trick-play-api.js getTrickplayTileImage, and [Authorize] on
+  // TrickplayController), which an <img> cannot send. Fetch the bytes here so
+  // no token is ever put in a URL.
+  async trickplayTile(
+    itemId: string,
+    mediaSourceId: string,
+    width: number,
+    index: number,
+    signal?: AbortSignal,
+  ): Promise<Blob> {
+    this.requireSession();
+    const { data } = await this.get<Blob>(
+      `/Videos/${encodeURIComponent(itemId)}/Trickplay/${width}/${index}.jpg`,
+      { params: { mediaSourceId }, responseType: "blob", signal, timeout: CONTROL_REQUEST_TIMEOUT_MS },
+    );
+    return data;
+  }
+
   // POST marks the item played and DELETE marks it unplayed (user-data-api
   // markPlayedItem and markUnplayedItem, /UserPlayedItems/{itemId}).
   async setPlayed(itemId: string, played: boolean, signal?: AbortSignal): Promise<void> {

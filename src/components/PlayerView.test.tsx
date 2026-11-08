@@ -1,5 +1,7 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, expect, it, vi } from "vitest";
+
+afterEach(cleanup);
 import type { PlaybackSnapshot, PlayerEngine } from "../domain/playback";
 import { PlayerView } from "./PlayerView";
 import type { PlaybackSessionState } from "../lib/player/session-state";
@@ -98,4 +100,74 @@ it("rolls fullscreen state back when the player rejects the change", async () =>
   fireEvent.click(screen.getByRole("button", { name: "Enter fullscreen" }));
   await waitFor(() => expect(screen.getByText("fullscreen unavailable")).toBeVisible());
   expect(screen.getByRole("button", { name: "Enter fullscreen" })).toBeVisible();
+});
+
+const movie = { id: "movie", name: "Original Movie", type: "Movie" as const, resumePositionTicks: 0, played: false };
+
+function seekTrack(container: HTMLElement): HTMLElement {
+  return container.querySelector(".seek-track") as HTMLElement;
+}
+
+it("renders the bare seek slider when no preview or chapters are passed", () => {
+  const { container } = render(
+    <PlayerView item={movie} player={fakePlayer()} session={{ snapshot, firstFrameReady: true }} onRetry={vi.fn()} onBack={vi.fn()} />,
+  );
+  const slider = screen.getByRole("slider", { name: "Playback position" });
+  expect(slider.parentElement).toHaveClass("seek-row");
+  expect(container.querySelector(".seek-track, .seek-preview, .seek-chapter")).toBeNull();
+  fireEvent.pointerMove(slider, { clientX: 100 });
+  expect(container.querySelector(".seek-preview")).toBeNull();
+});
+
+it("shows a preview with time and chapter name on hover, and chapter markers", () => {
+  const { container } = render(
+    <PlayerView
+      item={movie}
+      player={fakePlayer()}
+      session={{ snapshot, firstFrameReady: true }}
+      onRetry={vi.fn()}
+      onBack={vi.fn()}
+      seekPreview={(seconds) => <div data-testid="thumb">{seconds}</div>}
+      chapters={[{ startSeconds: 0, name: "Opening" }, { startSeconds: 900, name: "Contact" }, { startSeconds: 2700, name: "Ending" }]}
+    />,
+  );
+  // The opening chapter has no marker; the others sit at their share of 3600 s.
+  expect(screen.getAllByRole("img").map((marker) => marker.getAttribute("aria-label"))).toEqual([
+    "Chapter: Contact at 15:00",
+    "Chapter: Ending at 45:00",
+  ]);
+  expect(screen.getByRole("img", { name: "Chapter: Contact at 15:00" })).toHaveStyle({ left: "25%" });
+  expect(container.querySelector(".seek-preview")).toBeNull();
+
+  const track = seekTrack(container);
+  track.getBoundingClientRect = () => ({ left: 100, width: 400, top: 0, right: 500, bottom: 10, height: 10, x: 100, y: 0, toJSON: () => ({}) });
+  // jsdom has no PointerEvent, so send a mouse event of the pointer type.
+  fireEvent(track, new MouseEvent("pointermove", { bubbles: true, clientX: 300 }));
+  const preview = container.querySelector(".seek-preview") as HTMLElement;
+  expect(preview).toHaveTextContent("30:00");
+  expect(preview).toHaveTextContent("Contact");
+  expect(screen.getByTestId("thumb")).toHaveTextContent("1800");
+
+  fireEvent.pointerLeave(track);
+  expect(container.querySelector(".seek-preview")).toBeNull();
+});
+
+it("shows the preview at the keyboard position while the seek bar has focus", () => {
+  const { container } = render(
+    <PlayerView
+      item={movie}
+      player={fakePlayer()}
+      session={{ snapshot, firstFrameReady: true }}
+      onRetry={vi.fn()}
+      onBack={vi.fn()}
+      seekPreview={(seconds) => <div data-testid="thumb">{seconds}</div>}
+    />,
+  );
+  const slider = screen.getByRole("slider", { name: "Playback position" });
+  fireEvent.focus(slider);
+  expect(screen.getByTestId("thumb")).toHaveTextContent("42");
+  fireEvent.change(slider, { target: { value: "52" } });
+  expect(screen.getByTestId("thumb")).toHaveTextContent("52");
+  fireEvent.blur(slider);
+  expect(container.querySelector(".seek-preview")).toBeNull();
 });
