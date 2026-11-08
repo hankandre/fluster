@@ -2,6 +2,7 @@ import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import type { LibraryItem } from "../../domain/catalog";
 import {
   PlaybackRefusedError,
+  UnsupportedDeliveryError,
   secondsToTicks,
   startOverChoice,
   type PlaybackPlan,
@@ -109,6 +110,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
   const [state, dispatch] = useReducer(playbackSessionReducer, initialPlaybackSessionState);
   const [retrying, setRetrying] = useState(false);
   const [refusal, setRefusal] = useState<PlaybackRefusal>();
+  const [unsupported, setUnsupported] = useState(false);
   const [plan, setPlan] = useState<PlaybackPlan>();
   const session = useRef<ActiveSession | undefined>(undefined);
   const ignoreLimit = useRef(false);
@@ -140,6 +142,10 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
       setRefusal({ reason: error.reason, detail: error.detail });
       return;
     }
+    if (error instanceof UnsupportedDeliveryError) {
+      setUnsupported(true);
+      return;
+    }
     dispatch({ type: "failure", message: errorText(error) });
   }, []);
 
@@ -167,6 +173,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     session.current = active;
     dispatch({ type: "reset" });
     setRefusal(undefined);
+    setUnsupported(false);
     setPlan(undefined);
 
     const choice: PlaybackStartChoice = startTicks > 0
@@ -207,6 +214,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     // The player view must be on screen before the engine launches, so the
     // refusal goes away now and comes back if the server refuses again.
     setRefusal(undefined);
+    setUnsupported(false);
     setPlan(undefined);
     setRetrying(true);
     try {
@@ -269,5 +277,5 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     }
   }), [watchMediaControls, stopAndLeave]);
 
-  return { state, plan, retrying, refusal, retry, playOriginal, playOriginalRequested, back, stopAndLeave };
+  return { state, plan, retrying, refusal, unsupported, retry, playOriginal, playOriginalRequested, back, stopAndLeave };
 }

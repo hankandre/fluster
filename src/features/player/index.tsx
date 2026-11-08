@@ -7,7 +7,7 @@ import type { ItemDetail, NextEpisode } from "../../domain/catalog";
 import { detailKey } from "../detail/detail-key";
 import { refreshHomeRows } from "../home";
 import { itemRoute, leavePlayer, type PlayRoute } from "../routes";
-import { REFUSAL_COPY, type RefusalCopy } from "./refusal-copy";
+import { DESKTOP_ONLY_COPY, REFUSAL_COPY, type RefusalCopy } from "./refusal-copy";
 import { toPlayableItem } from "./playable-item";
 import { useMediaSegments } from "./use-media-segments";
 import { NextEpisodeCard } from "./next-episode-card";
@@ -168,6 +168,10 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
     stopAndLeave: playback.stopAndLeave,
   });
 
+  if (playback.unsupported) {
+    return <RefusalScreen copy={DESKTOP_ONLY_COPY} onBack={() => void playback.back()} />;
+  }
+
   if (playback.refusal) {
     return (
       <RefusalScreen
@@ -221,7 +225,7 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
 // "play anyway": Retry asks the server again, Back leaves.
 function RefusalScreen({ copy, onRetry, onBack }: {
   copy: RefusalCopy;
-  onRetry(): void;
+  onRetry?(): void;
   onBack(): void;
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
@@ -237,7 +241,7 @@ function RefusalScreen({ copy, onRetry, onBack }: {
         <p><strong>What you can do:</strong> {copy.whatYouCanDo}</p>
       </div>
       <div className="player-message-actions">
-        <button type="button" onClick={onRetry}>Retry</button>
+        {onRetry && <button type="button" onClick={onRetry}>Retry</button>}
         <button type="button" onClick={onBack}>Back to details</button>
       </div>
     </PlayerMessage>

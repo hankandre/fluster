@@ -58,7 +58,7 @@ Pilot: milestones 1 and 3 are the pilot for the conversion path. Review both (gu
 ## Progress
 
 - [x] Decision 0002, doc and rule rewrites, tasks added (this commit)
-- [x] 1 · [x] 2 (P10-02, `test: record conversion contract fixtures`) · [x] 3 (P10-03) · [x] 4 (P10-04) · [x] 5 (P10-05) · [x] 6 (P10-06) · [ ] 7 · [ ] 8 · [ ] 9 · [ ] 10 · [ ] 11 · [ ] 12
+- [x] 1 · [x] 2 (P10-02, `test: record conversion contract fixtures`) · [x] 3 (P10-03) · [x] 4 (P10-04) · [x] 5 (P10-05) · [x] 6 (P10-06) · [ ] 7 · [ ] 8 · [ ] 9 · [x] 10 (P10-10) · [ ] 11 · [ ] 12
 - [x] 13 (P12-01: rule `core-is-shell-neutral` plus `pnpm typecheck:core` with `tsconfig.core.json`, both in `pnpm check`; window timers and the gateway's browser-storage defaults fixed, no open exceptions; `@types/node` supplies URL, AbortSignal, TextEncoder, crypto, console, and a React Native shell needs polyfills for URL and crypto.subtle) · [ ] 14
 - [ ] 15 · [ ] 16 · [ ] 17 · [ ] 18 · [ ] 19
 

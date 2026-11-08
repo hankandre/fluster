@@ -1323,10 +1323,10 @@
             "A Playwright journey covers the refusal"
           ],
           "verify": "pnpm check && pnpm test:e2e",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "BrowserPlayerEngine throws UnsupportedDeliveryError for hls plans (browser-player.test.ts, incl. DirectStream and a no-HLS-dependency check); player shows This stream needs the desktop player with Back and no Retry (player-view.test.tsx).\ne2e/player.spec.ts converted-stream journey: heading focused, no video, no m3u8 requests, Back returns to details; pnpm check, 30 e2e, lint:boundaries green."
         },
         {
           "id": "P10-11",

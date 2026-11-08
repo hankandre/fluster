@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PlayerServicesProvider } from "../../app/player-services";
 import { SessionProvider, useSession, type SessionGateway } from "../../app/session";
 import type { ItemDetail } from "../../domain/catalog";
-import { PlaybackRefusedError, type PlaybackPlan, type PlaybackSnapshot } from "../../domain/playback";
+import { PlaybackRefusedError, UnsupportedDeliveryError, type PlaybackPlan, type PlaybackSnapshot } from "../../domain/playback";
 import { FakePlayerEngine } from "../../test/fake-player-engine";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
 import { PlayerRouteView } from "./index";
@@ -194,6 +194,23 @@ describe("Player feature", () => {
     const backButtons = screen.getAllByRole("button", { name: "Back to library" });
     await act(async () => {
       fireEvent.click(backButtons[backButtons.length - 1]);
+    });
+    await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
+  });
+
+  it("shows the desktop-only screen with Back and no Retry when the engine refuses a converted plan", async () => {
+    const gateway = fakeGateway();
+    const engine = new FakePlayerEngine();
+    engine.launch.mockRejectedValueOnce(new UnsupportedDeliveryError("browser", "hls", "unsupported"));
+    await renderPlayer(gateway, engine);
+
+    const heading = await screen.findByRole("heading", { name: "This stream needs the desktop player" });
+    await waitFor(() => expect(heading).toHaveFocus());
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/fallback|playback could not start/i)).not.toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Back to details" }));
     });
     await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
   });
