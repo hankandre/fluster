@@ -51,6 +51,7 @@ Fluster is a Jellyfin client that plays the original file whenever it can and sh
 - Never add codec or container conditions to the DeviceProfile.
 - Use a `TranscodingUrl` only after Playback Negotiation validates and rebuilds it.
 - Never let an HLS master playlist list subtitle or trickplay renditions.
+- Validate every HLS playlist in Rust before mpv reads it; reject any URI that is not same-origin and credential-free.
 - Refuse media sources that `ARCHITECTURE.md` §3 can neither play nor convert.
 - Never add a generic mpv command, property, or option bridge.
 - Treat every new Tauri command as an architecture change.

@@ -127,8 +127,8 @@
           ],
           "acceptance": [
             "A script plays each sample through the gateway against both servers",
-            "It fails if any active encoding job appears during playback",
-            "It fails if any media request lacks Static=true",
+            "It fails if any active encoding job appears while a sample that the server offers for direct play is playing",
+            "It fails if a direct-play sample makes any media request without Static=true, or a conversion sample makes any request that is not same-origin, credential-free HLS",
             "It writes a short summary to stdout and full logs to a file",
             "CI runs it against the docker fixture"
           ],
@@ -297,7 +297,7 @@
     {
       "id": "P1",
       "name": "Jellyfin API correctness",
-      "goal": "Fluster plays correctly on Jellyfin 10.11 and 12.x defaults, and the server provably never transcodes. Plan: docs/plans/active/001-jellyfin-api-correctness.md.",
+      "goal": "Fluster plays correctly on Jellyfin 10.11 and 12.x defaults, and the server provably never converts a file Fluster can play as stored. Plan: docs/plans/active/001-jellyfin-api-correctness.md.",
       "exit": [
         "All P1 tasks pass",
         "Tripwire passes on both servers",
@@ -355,7 +355,7 @@
           ],
           "acceptance": [
             "Every PlaybackInfo request carries FLUSTER_PROFILE",
-            "BluRay, Dvd, and Iso VideoType sources are refused",
+            "BluRay, Dvd, and Iso VideoType sources are never direct played",
             "No-source results return a typed refusal reason",
             "The empty-codec-matches-anything assumption is proven by a fixture or the profile is adjusted",
             "Tests assert body and query"
@@ -1044,7 +1044,7 @@
       "tasks": [
         {
           "id": "P10-01",
-          "title": "Spike HLS playback in libmpv with header authentication",
+          "title": "Spike Rust-validated HLS playback in libmpv with header authentication",
           "domain": "Player Engine",
           "model": "opus",
           "skill": "native-player",
@@ -1055,12 +1055,13 @@
             "P1-04"
           ],
           "acceptance": [
-            "A loopback Rust test plays an HLS master playlist, a variant playlist, and fMP4 segments through libmpv with access-references on for that handle only, and asserts the exact Authorization line on every request",
-            "Loopback tests record whether a 302 on a segment and a cross-origin URI inside a playlist reach a second origin, and with which headers",
-            "The spike records whether max_redirects from stream-lavf-o and a demuxer-lavf-o protocol_whitelist reach nested opens",
+            "Rust fetches the master and every variant playlist with the header and no redirects, and rejects the whole playlist unless every URI line and URI= attribute (stream, i-frame, media, map, key, session key, image) resolves to HTTP(S) on the server's origin with no user info and no credential parameter",
+            "Rust rejects a playlist body containing ApiKey, api_key, access_token, Token, or X-Emby-Token parameters in any case and fails closed",
+            "libmpv reads only Rust's validated playlists, served from a 127.0.0.1 loopback server on a random per-session path; access-references is on only for that handle",
+            "A loopback test with a cross-origin variant, segment, map, or key URI in a playlist shows the playlist is refused and the second origin receives nothing",
+            "Loopback tests assert the exact Authorization line on every server request, and record whether max_redirects from stream-lavf-o and a demuxer-lavf-o protocol_whitelist reach nested segment opens",
             "On both fixture servers, a master.m3u8 URL rebuilt from a recorded TranscodingUrl with every credential parameter removed and EnableTrickplay=false plays to first frame with header auth only",
-            "A prototype of E1-B (Rust validates each playlist before mpv reads it) is sized in the plan",
-            "The plan's decision log recommends E1 or E1-B with evidence, and records the user's approval before P10-04 starts"
+            "The plan's decision log records whether mpv fetches segments directly with the header or Rust proxies them, with evidence"
           ],
           "verify": "cargo test --manifest-path src-tauri/Cargo.toml hls",
           "status": "todo",
@@ -1132,8 +1133,10 @@
           "acceptance": [
             "The load request gains a typed delivery field (static or hls); no Tauri command is added and the command allowlist test is unchanged",
             "Rust validates HLS URLs (same origin as the server, master.m3u8 path, no credential query, EnableTrickplay=false) and refuses every other URL for hls delivery",
-            "Only hls sessions use the approved E1 or E1-B path; a test shows static sessions keep access-references off",
-            "Loopback tests prove the header on master, variant, segment, and sub-add requests, nothing sent to a second origin after a redirect or from a cross-origin playlist URI, and a canary ApiKey in a playlist body reaching no log, error, diagnostic, or event",
+            "Rust validates every master and variant playlist before mpv reads it (E1-B): every URI must be same-origin and credential-free, and a body containing a credential parameter is rejected; static sessions keep access-references off, checked by a test",
+            "A loopback test serves a playlist with a cross-origin URI and shows the launch is refused and the second origin receives nothing",
+            "Loopback tests prove the header on master, variant, segment, and sub-add requests and nothing sent to a second origin after a redirected segment",
+            "A canary test serves a token in a playlist body and shows the launch fails closed and the token never reaches logs, errors, diagnostics, events, or the UI",
             "Headless libmpv reaches playback-restart for a Transcode plan on both fixture servers",
             "docs/security.md replaces its planned HLS section with the tested boundary"
           ],
@@ -1155,7 +1158,7 @@
           ],
           "acceptance": [
             "A settings view under src/features/ holds a local and a remote maximum streaming bitrate; local applies to loopback and private-LAN host classes, remote to public hosts",
-            "Defaults follow the plan's answer to open question 3",
+            "Both the local and the remote limit default to no limit",
             "The value is sent as MaxStreamingBitrate in the PlaybackInfo body and query; tests assert both",
             "The setting is a non-secret preference and is never stored with or derived from a token",
             "When the user's limit is the only conversion reason, Play original renegotiates once without the client limit for this session only",
@@ -1397,7 +1400,7 @@
       "goal": "Use Fluster as the only Jellyfin client on this computer for seven days.",
       "exit": [
         "No fallback to the web UI was needed",
-        "Zero transcode jobs observed",
+        "Zero conversions of files Fluster could play as stored; every conversion showed its reason",
         "Every issue found is a task or fixed"
       ],
       "tasks": [
@@ -1420,11 +1423,12 @@
             "P3-14",
             "P1-08",
             "P1-09",
-            "P3-16"
+            "P3-16",
+            "P10-12"
           ],
           "acceptance": [
             "docs/dogfood/YYYY-MM-DD.md records each session, what was watched, and every problem",
-            "Hankflix shows no transcode or remux jobs for the week"
+            "Hankflix shows no transcode or remux job for an item Fluster could direct play, and every conversion showed its reason"
           ],
           "verify": "ls docs/dogfood/",
           "status": "todo",
@@ -1862,11 +1866,11 @@
           "human": true,
           "depends_on": [
             "P2-02",
-            "P4-02"
+            "P12-02"
           ],
           "acceptance": [
             "The shell imports the unchanged domain, gateway, and coordinator",
-            "Android TV plays a sample with direct play",
+            "Android TV plays a sample with direct play and a converted sample over HLS with header authentication",
             "A decision record chooses the TV and mobile shell"
           ],
           "verify": "pnpm check",
