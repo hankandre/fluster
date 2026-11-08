@@ -2,6 +2,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { PlayerServicesProvider } from "../../app/player-services";
+import { FakePlayerEngine } from "../../test/fake-player-engine";
 import { SessionProvider, useSession, type SessionGateway } from "../../app/session";
 import { ItemNotFoundError, type ItemDetail, type ItemVersion } from "../../domain/catalog";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
@@ -323,5 +325,41 @@ describe("play actions", () => {
     await renderDetail(fakeGateway({ itemDetail: vi.fn().mockResolvedValue(detail({ userData })) }));
     expect(await screen.findByRole("link", { name: "Play" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Resume/ })).not.toBeInTheDocument();
+  });
+});
+
+describe("player availability", () => {
+  async function renderWithEngine(engine: FakePlayerEngine) {
+    const gateway = fakeGateway();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <SessionProvider createGateway={() => gateway}>
+          <PlayerServicesProvider services={{ engine }}>
+            <SignIn gateway={gateway} />
+            <ItemDetailView itemId="m1" />
+          </PlayerServicesProvider>
+        </SessionProvider>
+      </QueryClientProvider>,
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "test sign in" }));
+    });
+  }
+
+  it("says why the native player cannot start before Play is pressed, without secrets", async () => {
+    const engine = new FakePlayerEngine();
+    engine.initialize.mockRejectedValue("libmpv 0.30 is too old; need 0.35 (token=SECRET-TOKEN)");
+    await renderWithEngine(engine);
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("libmpv 0.30 is too old; need 0.35");
+    expect(alert.textContent).not.toContain("SECRET-TOKEN");
+    expect(screen.getByRole("link", { name: /Play/ })).toBeInTheDocument();
+  });
+
+  it("shows no warning when the player starts", async () => {
+    await renderWithEngine(new FakePlayerEngine());
+    await screen.findByRole("link", { name: "Play" });
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });

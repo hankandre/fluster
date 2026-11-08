@@ -2,6 +2,7 @@ import type { MouseEvent, ReactNode } from "react";
 import type { ItemDetail } from "../../domain/catalog";
 import { resumeTicksOf } from "../player/playable-item";
 import { openPlayerFromDetail, playRoute, type PlayRoute } from "../routes";
+import { usePlayerStatus } from "../player/player-status";
 import { positionLabel } from "./format";
 
 // Play, or Resume and Start over when the server saved a position. Each opens
@@ -9,21 +10,34 @@ import { positionLabel } from "./format";
 export function PlayActions({ item, mediaSourceId }: { item: ItemDetail; mediaSourceId: string | undefined }) {
   const resumeTicks = resumeTicksOf(item);
   const startOver: PlayRoute = { itemId: item.id, mediaSourceId, startTicks: 0 };
+  const { status } = usePlayerStatus();
+  // Said before Play is pressed. The player route repeats the reason.
+  const warning = status.kind === "unavailable" ? (
+    <p className="detail-player-warning" role="alert">
+      The player cannot start, so Play will fail: {status.reason}
+    </p>
+  ) : null;
 
   if (resumeTicks === undefined) {
     return (
-      <div className="detail-play">
-        <PlayLink className="primary-button" route={startOver}>Play</PlayLink>
-      </div>
+      <>
+        <div className="detail-play">
+          <PlayLink className="primary-button" route={startOver}>Play</PlayLink>
+        </div>
+        {warning}
+      </>
     );
   }
   return (
-    <div className="detail-play">
-      <PlayLink className="primary-button" route={{ ...startOver, startTicks: resumeTicks }}>
-        Resume from {positionLabel(resumeTicks)}
-      </PlayLink>
-      <PlayLink className="text-button" route={startOver}>Start over</PlayLink>
-    </div>
+    <>
+      <div className="detail-play">
+        <PlayLink className="primary-button" route={{ ...startOver, startTicks: resumeTicks }}>
+          Resume from {positionLabel(resumeTicks)}
+        </PlayLink>
+        <PlayLink className="text-button" route={startOver}>Start over</PlayLink>
+      </div>
+      {warning}
+    </>
   );
 }
 

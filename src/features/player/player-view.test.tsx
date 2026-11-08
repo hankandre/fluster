@@ -634,4 +634,39 @@ describe("System media controls", () => {
     expect(engine.launch).not.toHaveBeenCalled();
     expect(gateway.reportStopped).not.toHaveBeenCalled();
   });
+  it("reports a player that cannot start instead of launching, with the redacted reason", async () => {
+    const gateway = fakeGateway();
+    const engine = new FakePlayerEngine();
+    engine.initialize.mockRejectedValue("libmpv is missing (api_key=SECRET-TOKEN)");
+    await renderPlayer(gateway, engine);
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("The player cannot start");
+    expect(alert).toHaveTextContent("libmpv is missing");
+    expect(alert.textContent).not.toContain("SECRET-TOKEN");
+    expect(engine.launch).not.toHaveBeenCalled();
+    expect(gateway.createPlaybackPlan).not.toHaveBeenCalled();
+    expect(screen.getByRole("link", { name: "Back to details" })).toBeInTheDocument();
+  });
+
+  it("shows player information while playing without the stream URL, session id, or token", async () => {
+    const engine = new FakePlayerEngine();
+    engine.initialize.mockResolvedValue({
+      mode: "native",
+      embedded: true,
+      renderer: "OpenGL",
+      nativeRenderer: "gl",
+      libmpvVersion: "mpv 0.38.0",
+    });
+    await renderPlayer(fakeGateway(), engine);
+    await startPlaying(engine);
+
+    fireEvent.click(screen.getByRole("button", { name: "Info" }));
+    const panel = screen.getByRole("region", { name: "Player information" });
+    expect(panel).toHaveTextContent("mpv 0.38.0");
+    expect(panel).toHaveTextContent("Hardware");
+    expect(panel).toHaveTextContent("Direct play");
+    const text = panel.textContent ?? "";
+    for (const secret of ["media.test", "play-1", "Token", "src-hd"]) expect(text).not.toContain(secret);
+  });
 });

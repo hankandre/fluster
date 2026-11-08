@@ -214,7 +214,7 @@ test("never puts a token in a request URL, including the stream", async ({ page 
   await openArrival(page);
   await page.getByRole("link", { name: "Play" }).click();
   await expect(page.locator("video")).toHaveCount(1);
-  await expect(page.getByText("Browser — unverified")).toBeVisible();
+  await expect(page.locator(".player-diagnostics").getByText("Browser — unverified")).toBeVisible();
   await expect.poll(() => log.requestUrls.some((url) => new URL(url).pathname === "/Videos/movie-1/stream")).toBe(true);
   expect(log.requestUrls.filter((url) => /api_?key|access_token|token/i.test(url))).toEqual([]);
 });
@@ -382,4 +382,28 @@ test("empty segment data hides the skip feature", async ({ page }) => {
 
   await moveTo(page, 30);
   await expect(page.getByRole("button", { name: /Skip/ })).toHaveCount(0);
+});
+
+test("the Info panel toggles with its button and the i key and shows no ids or URLs", async ({ page }) => {
+  await mockPlayerServer(page);
+  await openArrival(page);
+  await page.getByRole("link", { name: "Play" }).click();
+  await expect(page.locator("video")).toHaveCount(1);
+
+  const button = page.getByRole("button", { name: "Info" });
+  const panel = page.getByLabel("Player information");
+  await expect(panel).toBeHidden();
+  await button.click();
+  await expect(panel).toBeVisible();
+  await expect(panel).toContainText("Browser — unverified");
+  await expect(panel).toContainText("Direct play");
+  const text = (await panel.textContent()) ?? "";
+  expect(text).not.toContain("play-1");
+  expect(text).not.toContain("://");
+  expect(text).not.toContain("src-hd");
+
+  await page.locator("body").press("i");
+  await expect(panel).toBeHidden();
+  await page.locator("body").press("i");
+  await expect(panel).toBeVisible();
 });

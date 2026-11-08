@@ -16,6 +16,8 @@ import { usePlaybackSession, whenPlaybackStopped } from "./use-playback-session"
 import { useSeekPreview } from "./use-seek-preview";
 import { useIdleCursor } from "./use-idle-cursor";
 import { useEscapeKey } from "../use-escape-key";
+import { PlayerInfoPanel } from "./player-info-panel";
+import { usePlayerStatus, type PlayerStatus } from "./player-status";
 
 const SIGN_IN_ROUTE = "#/next/sign-in";
 
@@ -41,10 +43,45 @@ export function PlayerRouteView(route: PlayRoute) {
   }, [gateway]);
 
   if (!gateway) return null;
-  return <PlayerLoader gateway={gateway} player={player} route={route} />;
+  return <PlayerGate gateway={gateway} player={player} route={route} />;
 }
 
-function PlayerLoader({ gateway, player, route }: { gateway: SessionGateway; player: PlayerServices; route: PlayRoute }) {
+// A player that cannot start is reported here, with the reason, instead of
+// being launched. The browser player is never blocked.
+function PlayerGate({ gateway, player, route }: { gateway: SessionGateway; player: PlayerServices; route: PlayRoute }) {
+  const { status, recheck } = usePlayerStatus();
+  const backHref = itemRoute(route.itemId);
+
+  if (status.kind === "checking") {
+    return (
+      <PlayerMessage onEscape={() => leavePlayer(route.itemId)}>
+        <p aria-busy="true">Checking the player…</p>
+      </PlayerMessage>
+    );
+  }
+  if (status.kind === "unavailable") {
+    return (
+      <PlayerMessage onEscape={() => leavePlayer(route.itemId)}>
+        <div role="alert">
+          <h1>The player cannot start</h1>
+          <p>{status.reason}</p>
+        </div>
+        <div className="player-message-actions">
+          <button type="button" onClick={recheck}>Try again</button>
+          <a href={backHref}>Back to details</a>
+        </div>
+      </PlayerMessage>
+    );
+  }
+  return <PlayerLoader gateway={gateway} player={player} route={route} status={status} />;
+}
+
+function PlayerLoader({ gateway, player, route, status }: {
+  gateway: SessionGateway;
+  player: PlayerServices;
+  route: PlayRoute;
+  status: PlayerStatus;
+}) {
   const query = useQuery({
     queryKey: detailKey(gateway, route.itemId),
     queryFn: ({ signal }) => gateway.itemDetail(route.itemId, signal),
@@ -70,10 +107,11 @@ function PlayerLoader({ gateway, player, route }: { gateway: SessionGateway; pla
       </PlayerMessage>
     );
   }
-  return <PlaybackScreen gateway={gateway} player={player} route={route} detail={query.data} />;
+  return <PlaybackScreen gateway={gateway} player={player} route={route} detail={query.data} status={status} />;
 }
 
-function PlaybackScreen({ gateway, player, route, detail }: {
+function PlaybackScreen({ gateway, player, route, detail, status }: {
+  status: PlayerStatus;
   gateway: SessionGateway;
   player: PlayerServices;
   route: PlayRoute;
@@ -148,6 +186,7 @@ function PlaybackScreen({ gateway, player, route, detail }: {
         onBack={playback.back}
         {...seekProps}
       />
+      <PlayerInfoPanel status={status} snapshot={playback.state.snapshot} />
       {next && upNext.secondsLeft !== undefined && !playback.state.error && (
         <NextEpisodeCard
           next={next}

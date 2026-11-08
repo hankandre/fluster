@@ -1067,10 +1067,10 @@
             "Built under src/features/ with a test"
           ],
           "verify": "pnpm check && pnpm test:e2e",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "PlayerInfoPanel (src/features/player/player-info-panel.tsx) shows libmpv version, renderer, decode mode, hwdec, and play method from initialize() and snapshots; every field is redacted and URL-like text is hidden. initialize() is checked once per engine (player-status.ts); the detail view warns and the player route refuses to launch when it fails, with the redacted reason. pnpm check: 689 unit tests pass; pnpm test:e2e: 27 pass; lint:boundaries clean. Native libmpv failure path untested on real hardware."
         }
       ]
     },

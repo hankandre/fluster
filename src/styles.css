@@ -193,3 +193,11 @@ input:focus, select:focus { border-color: var(--acid); box-shadow: 0 0 0 1px var
 .player-header:focus-within, .player-controls:focus-within { opacity: 1; transform: none; pointer-events: auto; }
 /* The pointer hides over the player after it stops moving. */
 .cursor-idle, .cursor-idle * { cursor: none !important; }
+
+.detail-player-warning { margin-top: 12px; color: #ffb4a8; }
+.player-info { position: fixed; top: 76px; right: 16px; z-index: 5; display: grid; justify-items: end; gap: 8px; }
+.player-info section { min-width: 260px; padding: 12px 16px; border-radius: 8px; background: rgba(0, 0, 0, 0.8); color: #fff; }
+.player-info section[hidden] { display: none; }
+.player-info dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 0; }
+.player-info dt { opacity: 0.7; }
+.player-info dd { margin: 0; }
