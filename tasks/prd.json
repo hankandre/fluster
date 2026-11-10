@@ -1584,10 +1584,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "AppShell and AppNav under src/features/shared/ui/, connected by src/features/shell/signed-in-chrome.tsx and a chromeFor switch in App.tsx (no nav in the player, sign-in, or developer pages); Sign out moved to Settings; every #/next link removed from user flows (src/features/dev-links.test.ts). pnpm check, pnpm test:e2e (48 passed, incl. new e2e/nav.spec.ts), and pnpm test:visual (94 passed, new 15-nav-keyboard-focus and 16-nav-library-current) pass. Still open: before/after screenshots in the PR and the fresh-context design review."
+          "passes": true,
+          "evidence": "AppShell and AppNav under src/features/shared/ui/, connected by src/features/shell/signed-in-chrome.tsx and a chromeFor switch in App.tsx (no nav in the player, sign-in, or developer pages); Sign out moved to Settings; every #/next link removed from user flows (src/features/dev-links.test.ts). Merged as #107. Fresh-context design review (2026-11-10) failed on a clipped nav focus ring; fixed in the follow-up PR (ring room inside the scroll box, non-colour current-page underline, current entry scrolled into view, 92% nav fill via --surface-0-glass). Screenshots are in the visual-captures CI artifact on #107 and on the follow-up PR."
         },
         {
           "id": "P13-07",

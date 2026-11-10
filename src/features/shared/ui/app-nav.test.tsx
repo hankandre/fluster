@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppNav } from "./app-nav";
 
 afterEach(cleanup);
@@ -81,5 +81,50 @@ describe("AppNav", () => {
     screen.getByRole("link", { name: "Movies" }).focus();
     await user.keyboard("{Enter}");
     expect(window.location.hash).toBe("#/next/browse/lib-1");
+  });
+
+  describe("scrolling the current entry into view", () => {
+    const calls: Array<{ left?: number; behavior?: string }> = [];
+
+    function stubLayout() {
+      calls.length = 0;
+      Element.prototype.scrollTo = vi.fn((options: ScrollToOptions) => {
+        calls.push({ left: options.left, behavior: options.behavior });
+      }) as unknown as typeof Element.prototype.scrollTo;
+      // A 200px-wide list whose entries are 100px wide: the entry at index n starts at n * 100.
+      Object.defineProperty(HTMLElement.prototype, "offsetWidth", { configurable: true, get: () => 100 });
+      Object.defineProperty(HTMLElement.prototype, "clientWidth", { configurable: true, get: () => 200 });
+      Object.defineProperty(HTMLElement.prototype, "offsetLeft", {
+        configurable: true,
+        get(this: HTMLElement) {
+          return Array.from(this.parentElement?.children ?? []).indexOf(this) * 100;
+        },
+      });
+    }
+
+    afterEach(() => {
+      delete (Element.prototype as { scrollTo?: unknown }).scrollTo;
+      delete (HTMLElement.prototype as { offsetWidth?: unknown }).offsetWidth;
+      delete (HTMLElement.prototype as { clientWidth?: unknown }).clientWidth;
+      delete (HTMLElement.prototype as { offsetLeft?: unknown }).offsetLeft;
+      window.matchMedia = undefined as unknown as typeof window.matchMedia;
+    });
+
+    it("scrolls an off-screen current entry into view on mount and when the page changes", () => {
+      stubLayout();
+      const { rerender } = renderNav("#/next/search");
+      // Search is child index 4 (offsetLeft 400, width 100): its right edge 500 needs scrollLeft 300.
+      expect(calls).toEqual([{ left: 300, behavior: "smooth" }]);
+      rerender(<AppNav libraries={LIBRARIES} hash="#/next/home" />);
+      // Home (offsetLeft 100) is already in view at scrollLeft 0: no new scroll.
+      expect(calls).toHaveLength(1);
+    });
+
+    it("does not animate under reduced motion", () => {
+      stubLayout();
+      window.matchMedia = vi.fn().mockReturnValue({ matches: true }) as unknown as typeof window.matchMedia;
+      renderNav("#/next/search");
+      expect(calls).toEqual([{ left: 300, behavior: "auto" }]);
+    });
   });
 });

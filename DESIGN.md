@@ -122,6 +122,7 @@ Rules: sentence case everywhere (no uppercase-tracked labels, no eyebrow or kick
 | `--shadow-sheet` | `0 28px 72px -16px rgb(0 0 0 / .75)` | Sheets, dialogs, Up Next |
 | `--scrim-hero` | `linear-gradient(90deg, rgb(11 12 14 / .94) 0%, rgb(11 12 14 / .72) 38%, rgb(11 12 14 / 0) 72%)` | Text side of backdrops |
 | `--scrim-floor` | `linear-gradient(0deg, var(--surface-0) 0%, rgb(11 12 14 / 0) 40%)` | Backdrop fading into the page |
+| `--surface-0-glass` | `color-mix(in srgb, var(--surface-0) 92%, transparent)` | Nav bar fill (blur arrives with P13-08) |
 | `--scrim-player-top` | `linear-gradient(180deg, rgb(0 0 0 / .72), rgb(0 0 0 / 0))` (160 px) | Player title zone |
 | `--scrim-player-bottom` | `linear-gradient(0deg, rgb(0 0 0 / .85), rgb(0 0 0 / 0))` (240 px) | Player controls zone |
 
@@ -404,6 +405,7 @@ A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings
   --shadow-sheet: 0 28px 72px -16px rgb(0 0 0 / 0.75);
   --scrim-hero: linear-gradient(90deg, rgb(11 12 14 / 0.94) 0%, rgb(11 12 14 / 0.72) 38%, rgb(11 12 14 / 0) 72%);
   --scrim-floor: linear-gradient(0deg, var(--surface-0) 0%, rgb(11 12 14 / 0) 40%);
+  --surface-0-glass: color-mix(in srgb, var(--surface-0) 92%, transparent);
   --scrim-player-top: linear-gradient(180deg, rgb(0 0 0 / 0.72), rgb(0 0 0 / 0));
   --scrim-player-bottom: linear-gradient(0deg, rgb(0 0 0 / 0.85), rgb(0 0 0 / 0));
 
