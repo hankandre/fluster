@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import type { FocusEvent } from "react";
 import { Search, Settings } from "lucide-react";
 import { useRovingFocus } from "../../roving-focus";
@@ -48,6 +49,21 @@ export function AppNav({ libraries, hash }: { libraries: NavLibrary[] | undefine
   // Item 0 is the wordmark, so entry indexes shift by one. With no current entry the Tab stop is Home.
   const preferredIndex = (currentIndex < 0 ? 0 : currentIndex) + 1;
   const roving = useRovingFocus<HTMLElement>("row", { preferredIndex });
+
+  // Keep the current entry visible on narrow widths, on mount and when the page changes. Scroll the
+  // list itself: scrollIntoView would move the document's sequential focus starting point.
+  useEffect(() => {
+    const entry = roving.ref.current?.querySelector<HTMLElement>('[aria-current="page"]');
+    const list = entry?.parentElement;
+    if (!entry || !list || list.className !== "app-nav-list" || typeof list.scrollTo !== "function") return;
+    const reduced = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const pad = parseFloat(getComputedStyle(list).scrollPaddingLeft) || 0;
+    const behavior = reduced ? "auto" : "smooth";
+    if (entry.offsetLeft - pad < list.scrollLeft) list.scrollTo({ left: entry.offsetLeft - pad, behavior });
+    else if (entry.offsetLeft + entry.offsetWidth + pad > list.scrollLeft + list.clientWidth) {
+      list.scrollTo({ left: entry.offsetLeft + entry.offsetWidth + pad - list.clientWidth, behavior });
+    }
+  }, [current, roving.ref]);
 
   function onFocus(event: FocusEvent<HTMLElement>) {
     roving.onFocus(event);

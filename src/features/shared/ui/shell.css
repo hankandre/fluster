@@ -28,7 +28,7 @@
     block-size: var(--nav-h);
     box-sizing: border-box;
     padding-inline: var(--space-5);
-    background: var(--surface-0);
+    background: var(--surface-0-glass);
     border-block-end: 1px solid var(--line);
   }
 
@@ -41,15 +41,21 @@
   }
 
   .app-nav-list {
+    position: relative;
     display: flex;
     align-items: center;
     gap: var(--space-1);
     min-inline-size: 0;
     overflow-x: auto;
     scrollbar-width: none;
+    /* Room inside the scroll box for the 4px focus ring on every side. */
+    padding: var(--space-2);
+    margin-inline: calc(var(--space-2) * -1);
+    scroll-padding: var(--space-2);
   }
 
   .app-nav-entry {
+    position: relative;
     display: inline-flex;
     flex: none;
     align-items: center;
@@ -75,6 +81,16 @@
   .app-nav-entry[aria-current="page"] {
     color: var(--text-1);
     background: var(--surface-2);
+  }
+
+  .app-nav-entry[aria-current="page"]::after {
+    content: "";
+    position: absolute;
+    inset-inline: var(--space-4);
+    inset-block-end: var(--space-1);
+    block-size: 2px;
+    border-radius: var(--radius-pill);
+    background: var(--text-1);
   }
 
   .app-nav-wordmark {

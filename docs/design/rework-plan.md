@@ -138,4 +138,7 @@ Toasts never take focus, so a keyboard user can miss an action such as Undo. A l
 ## Follow-ups
 
 - Library overflow in the app nav (P13-06, Decision 4): the nav scrolls horizontally and arrow keys scroll the focused entry into view. A server with many libraries needs a "More" menu or a Libraries entry; decide it with P13-11 (Libraries page).
-- Nav background (P13-06, Decision 11): the bar is solid `--surface-0`, not 92%. `src/styles/css-rules.test.ts` forbids `color-mix` outside `src/styles/` and no token exists for a translucent surface. P13-08 adds the blur and translucency tokens together.
+- Nav background (P13-06, Decision 11): the bar uses `--surface-0-glass` (`--surface-0` at 92%, defined in `tokens.css` because `src/styles/css-rules.test.ts` forbids `color-mix` outside `src/styles/`). P13-08 adds the blur.
+- Nav scroll cue (P13-06, Decision 4 follow-up): nothing shows that the nav list scrolls on a phone. Add an edge fade or cue.
+- "Browser development mode" label overlaps content on phone captures (found in the P13-06 design review).
+- Native checkbox and select in the Browse toolbar (found in the P13-06 design review); replace them in P13-11.
