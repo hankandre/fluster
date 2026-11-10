@@ -5,6 +5,8 @@ import {
   Dialog,
   EmptyState,
   InlineError,
+  MediaCard,
+  MediaRow,
   Picker,
   SegmentedTabPanel,
   SegmentedTabs,
@@ -19,6 +21,15 @@ import "./gallery.css";
 
 // Browser development only (App.tsx). The marker below lets the build check prove it never ships.
 export const GALLERY_MARKER = "FLUSTER_UI_GALLERY";
+
+// BlurHash-only art, so the cards need no gateway or image files.
+const ART = [
+  { blurHash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" },
+  { blurHash: "L6PZfSi_.AyE_3t7t7R**0o#DgR4" },
+  { blurHash: "LKO2?U%2Tw=w]~RBVZRi};RPxuwH" },
+];
+const HOUR_AND_FOUR = 64 * 600_000_000;
+const THIRTY_EIGHT = 38 * 600_000_000;
 
 const LIMITS: PickerOption[] = [
   { value: "none", label: "No limit" },
@@ -135,6 +146,18 @@ function Gallery() {
           <Skeleton shape="line" width="8rem" />
         </div>
         <Skeleton shape="circle" width="var(--icon-button)" height="var(--icon-button)" />
+      </Section>
+
+      <Section title="Media cards">
+        <MediaCard variant="poster" title="Saltwater Hours" subtitle="2021" image={ART[0]} progress={0.4} remainingTicks={HOUR_AND_FOUR} />
+        <MediaCard variant="poster" title="The Long Quiet" subtitle="2023" image={ART[1]} played />
+        <MediaCard variant="poster" title="Harbor Lights" subtitle="2022" image={ART[2]} unplayedCount={3} />
+        <MediaCard variant="poster" title="No art here" subtitle="2019" />
+        <MediaCard variant="thumb" title="Harbor Lights" subtitle="S1E2 · Night Shift" image={ART[2]} progress={0.7} remainingTicks={THIRTY_EIGHT} />
+        <MediaCard variant="episode" title="Night Shift" subtitle="Episode 2" image={ART[0]} />
+        <MediaCard variant="library" title="Movies" image={ART[1]} />
+        <MediaRow label="Poster skeletons" variant="poster" status="pending" />
+        <MediaRow label="Thumb skeletons" variant="thumb" status="pending" />
       </Section>
     </main>
   );

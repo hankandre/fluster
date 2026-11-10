@@ -30,6 +30,16 @@
     width: 16rem;
   }
 
+  .gallery-row .media-row {
+    flex: 1 1 100%;
+    margin-bottom: 0;
+  }
+
+  .gallery-row .media-row-list {
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+
   .gallery-stack {
     display: grid;
     gap: var(--space-3);

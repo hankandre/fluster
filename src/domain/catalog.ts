@@ -40,14 +40,23 @@ export interface MediaCard {
   // the parent's (series logo, parent thumb).
   logo?: ImageRef;
   thumb?: ImageRef;
+  // The item's own backdrop, independent of `image`.
+  backdrop?: ImageRef;
   // Fraction watched, from 0 to 1. Present only for partly watched items.
   progress?: number;
+  // Ticks left to watch. Present whenever `progress` is.
+  remainingTicks?: number;
+  // Present (true) only when the item is fully watched.
+  played?: boolean;
+  // Unwatched episodes of a series. Present only when above zero.
+  unplayedCount?: number;
 }
 
 export interface LibraryView {
   id: string;
   name: string;
   collectionType: string;
+  image?: ImageRef;
 }
 
 // Browse types.

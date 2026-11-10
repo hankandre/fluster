@@ -40,6 +40,39 @@ export function nextRovingIndex(
   }
 }
 
+// The index of the box whose horizontal centre is nearest to `centreX`. Boxes are in left-to-right order,
+// so a tie goes to the left one. An empty list gives undefined.
+export function nearestByCentre(centreX: number, boxes: { left: number; width: number }[]): number | undefined {
+  let best: number | undefined;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  boxes.forEach((box, index) => {
+    const distance = Math.abs(box.left + box.width / 2 - centreX);
+    if (distance < bestDistance) {
+      best = index;
+      bestDistance = distance;
+    }
+  });
+  return best;
+}
+
+const SPATIAL_ROW_SELECTOR = "[data-spatial-row]";
+
+// Moves focus Up or Down to the nearest item (by horizontal centre) of the adjacent spatial row
+// in the same <main>. Returns true when it moved focus.
+function moveBetweenRows(container: HTMLElement, current: HTMLElement, direction: 1 | -1): boolean {
+  const scope: ParentNode = container.closest("main") ?? document;
+  const rows = Array.from(scope.querySelectorAll<HTMLElement>(SPATIAL_ROW_SELECTOR));
+  let index = rows.indexOf(container) + direction;
+  while (index >= 0 && index < rows.length && itemsIn(rows[index]).length === 0) index += direction;
+  if (index < 0 || index >= rows.length) return false;
+  const items = itemsIn(rows[index]);
+  const box = current.getBoundingClientRect();
+  const target = nearestByCentre(box.left + box.width / 2, items.map((item) => item.getBoundingClientRect()));
+  if (target === undefined) return false;
+  items[target].focus();
+  return true;
+}
+
 function itemsIn(container: HTMLElement): HTMLElement[] {
   return Array.from(container.querySelectorAll<HTMLElement>(ITEM_SELECTOR));
 }
@@ -56,10 +89,11 @@ function columnsOf(items: HTMLElement[]): number {
 // Items opt in with `data-roving-item`. The last focused item keeps the Tab
 // stop, so Tab back into the list returns to it.
 // `preferredIndex` moves the Tab stop (never focus) whenever its value changes between renders.
-export function useRovingFocus<T extends HTMLElement>(layout: RovingLayout, options?: { preferredIndex?: number }) {
+export function useRovingFocus<T extends HTMLElement>(layout: RovingLayout, options?: { preferredIndex?: number; spatial?: boolean }) {
   const ref = useRef<T>(null);
   const active = useRef(0);
   const preferred = options?.preferredIndex;
+  const spatial = options?.spatial === true;
   const lastPreferred = useRef<number | undefined>(undefined);
 
   const sync = useCallback(() => {
@@ -83,12 +117,17 @@ export function useRovingFocus<T extends HTMLElement>(layout: RovingLayout, opti
     const current = items.findIndex((item) => item === event.target || item.contains(event.target as Node));
     if (current < 0) return;
     const next = nextRovingIndex(event.key, current, items.length, layout, columnsOf(items));
-    if (next === undefined) return;
+    if (next === undefined) {
+      if (spatial && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
+        if (moveBetweenRows(event.currentTarget, items[current], event.key === "ArrowDown" ? 1 : -1)) event.preventDefault();
+      }
+      return;
+    }
     event.preventDefault();
     active.current = next;
     sync();
     items[next].focus();
-  }, [layout, sync]);
+  }, [layout, spatial, sync]);
 
   const onFocus = useCallback((event: FocusEvent<T>) => {
     const index = itemsIn(event.currentTarget).indexOf(event.target as HTMLElement);

@@ -1,9 +1,11 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import type { SearchCard, SearchKind } from "../../domain/catalog";
 import type { SessionGateway } from "../../app/session";
-import { Card, RowError } from "../home/media-row";
+import { imageUrlFor, toMediaCardProps } from "../card-view";
+import { RowError } from "../home/media-row";
 import { scopeFor } from "../query-scope";
 import { useRovingFocus } from "../roving-focus";
+import { MediaCard } from "../shared/ui";
 
 export const RESULT_PAGE_SIZE = 40;
 
@@ -53,13 +55,15 @@ export function SearchResults({ gateway, term }: { gateway: SessionGateway; term
 
 function ResultGroup({ kind, title, cards, gateway }: { kind: SearchKind; title: string; cards: SearchCard[]; gateway: SessionGateway }) {
   const roving = useRovingFocus<HTMLUListElement>("grid");
+  const variant = kind === "Episode" ? "thumb" : "poster";
+  const imageUrl = imageUrlFor(gateway);
   return (
     <section aria-labelledby={`results-${kind}`}>
       <h2 id={`results-${kind}`}>{title}</h2>
-      <ul className="card-grid" {...roving}>
+      <ul className="media-grid" data-variant={variant} {...roving}>
         {cards.map((card) => (
           <li key={card.id}>
-            <Card card={card} gateway={gateway} />
+            <MediaCard {...toMediaCardProps(card, variant, imageUrl)} />
           </li>
         ))}
       </ul>

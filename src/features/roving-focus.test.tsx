@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { nextRovingIndex, useRovingFocus, type RovingLayout } from "./roving-focus";
+import { nearestByCentre, nextRovingIndex, useRovingFocus, type RovingLayout } from "./roving-focus";
 
 afterEach(cleanup);
 
@@ -141,5 +141,84 @@ describe("useRovingFocus preferredIndex", () => {
     fireEvent.focus(screen.getByRole("link", { name: "Item 0" }));
     rerender(<Preferred preferredIndex={1} />);
     expect(tabStops()).toEqual(["Item 0"]);
+  });
+});
+
+describe("nearestByCentre", () => {
+  const boxes = [{ left: 0, width: 100 }, { left: 100, width: 100 }, { left: 200, width: 100 }];
+
+  it("picks the box with the nearest centre", () => {
+    expect(nearestByCentre(40, boxes)).toBe(0);
+    expect(nearestByCentre(160, boxes)).toBe(1);
+    expect(nearestByCentre(900, boxes)).toBe(2);
+  });
+
+  it("sends a tie to the left box", () => {
+    expect(nearestByCentre(100, boxes)).toBe(0);
+  });
+
+  it("gives undefined for no boxes", () => {
+    expect(nearestByCentre(10, [])).toBeUndefined();
+  });
+});
+
+function SpatialRow({ name, count, empty }: { name: string; count: number; empty?: boolean }) {
+  const roving = useRovingFocus<HTMLUListElement>("row", { spatial: true });
+  return (
+    <ul data-spatial-row="" aria-label={name} {...roving}>
+      {Array.from({ length: empty ? 0 : count }, (_, index) => (
+        <li key={index}><a href={`#/${name}/${index}`} data-roving-item="">{name}{index}</a></li>
+      ))}
+    </ul>
+  );
+}
+
+// Each item is 100 wide, laid out left to right.
+function stubBoxes() {
+  const original = HTMLElement.prototype.getBoundingClientRect;
+  HTMLElement.prototype.getBoundingClientRect = function box() {
+    const index = Number(this.textContent?.replace(/\D+/g, "") ?? 0);
+    return { left: index * 100, width: 100, top: 0, right: 0, bottom: 0, height: 0, x: 0, y: 0, toJSON: () => ({}) };
+  };
+  return () => {
+    HTMLElement.prototype.getBoundingClientRect = original;
+  };
+}
+
+describe("useRovingFocus spatial", () => {
+  it("moves Up and Down to the nearest centre, skipping empty rows", () => {
+    const restore = stubBoxes();
+    render(
+      <main>
+        <SpatialRow name="a" count={5} />
+        <SpatialRow name="b" count={0} empty />
+        <SpatialRow name="c" count={2} />
+      </main>,
+    );
+    screen.getByText("a3").focus();
+    expect(fireEvent.keyDown(screen.getByText("a3"), { key: "ArrowDown" })).toBe(false);
+    expect(document.activeElement?.textContent).toBe("c1");
+    expect(screen.getByText("c1").getAttribute("tabindex")).toBe("0");
+    expect(screen.getByText("c0").getAttribute("tabindex")).toBe("-1");
+    expect(fireEvent.keyDown(screen.getByText("c1"), { key: "ArrowUp" })).toBe(false);
+    expect(document.activeElement?.textContent).toBe("a1");
+    restore();
+  });
+
+  it("does nothing, and keeps the default, at the first row Up and the last row Down", () => {
+    const restore = stubBoxes();
+    render(
+      <main>
+        <SpatialRow name="a" count={3} />
+        <SpatialRow name="c" count={3} />
+      </main>,
+    );
+    screen.getByText("a1").focus();
+    expect(fireEvent.keyDown(screen.getByText("a1"), { key: "ArrowUp" })).toBe(true);
+    expect(document.activeElement?.textContent).toBe("a1");
+    screen.getByText("c1").focus();
+    expect(fireEvent.keyDown(screen.getByText("c1"), { key: "ArrowDown" })).toBe(true);
+    expect(document.activeElement?.textContent).toBe("c1");
+    restore();
   });
 });

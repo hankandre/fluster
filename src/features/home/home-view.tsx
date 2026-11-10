@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSession, type SessionGateway } from "../../app/session";
 import { scopeFor } from "../query-scope";
-import { MediaRow, RowError, SkeletonStrip } from "./media-row";
+import { MediaRow } from "../shared/ui";
+import { HomeRow } from "./media-row";
 
 const SIGN_IN_ROUTE = "#/next/sign-in";
 
@@ -26,14 +27,16 @@ function HomeRows({ gateway }: { gateway: SessionGateway }) {
 
   return (
     <>
-      <MediaRow
+      <HomeRow
         title="Continue Watching"
+        variant="thumb"
         queryKey={["home", scope, "resume"]}
         load={(signal) => gateway.resumeItems(signal)}
         gateway={gateway}
       />
-      <MediaRow
+      <HomeRow
         title="Next Up"
+        variant="thumb"
         queryKey={["home", scope, "next-up"]}
         load={(signal) => gateway.nextUp(signal)}
         gateway={gateway}
@@ -51,25 +54,18 @@ function LatestRows({ gateway, scope }: { gateway: SessionGateway; scope: number
   });
 
   if (views.isPending) {
-    return (
-      <section className="home-row" aria-busy="true" aria-label="Latest">
-        <SkeletonStrip />
-      </section>
-    );
+    return <MediaRow label="Latest" variant="poster" status="pending" />;
   }
   if (views.isError) {
-    return (
-      <section className="home-row">
-        <RowError title="your libraries" onRetry={() => void views.refetch()} />
-      </section>
-    );
+    return <MediaRow label="Latest" variant="poster" status="error" errorMessage="Couldn't load your libraries." onRetry={() => void views.refetch()} />;
   }
   return (
     <>
       {views.data.map((view) => (
-        <MediaRow
+        <HomeRow
           key={view.id}
           title={`Latest in ${view.name}`}
+          variant="poster"
           queryKey={["home", scope, "latest", view.id]}
           load={(signal) => gateway.latestInLibrary(view.id, signal)}
           gateway={gateway}

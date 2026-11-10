@@ -69,6 +69,32 @@ describe("library list", () => {
   });
 });
 
+describe("library cards", () => {
+  it("renders one library card per library in a single roving grid", async () => {
+    await renderView(fakeGateway(), <BrowseView />);
+    const movies = await screen.findByRole("link", { name: "Movies" });
+    expect(movies).toHaveAttribute("data-variant", "library");
+    const stops = screen.getAllByRole("link").filter((link) => link.closest(".media-grid") && link.getAttribute("tabindex") === "0");
+    expect(stops).toHaveLength(1);
+    movies.focus();
+    fireEvent.keyDown(movies, { key: "ArrowRight" });
+    expect(screen.getByRole("link", { name: "Sets" })).toHaveFocus();
+  });
+});
+
+describe("card variants", () => {
+  it("uses poster cards in the library grid", async () => {
+    await renderView(fakeGateway(), <BrowseView libraryId="lib-1" />);
+    expect(await screen.findByRole("link", { name: "Arrival" })).toHaveAttribute("data-variant", "poster");
+  });
+
+  it("uses episode cards in the series view and keeps their names", async () => {
+    await renderView(fakeGateway(), <SeriesView seriesId="series-1" />);
+    const link = await screen.findByRole("link", { name: "Opener of se1, Episode 1" });
+    expect(link).toHaveAttribute("data-variant", "episode");
+  });
+});
+
 describe("library grid", () => {
   it("renders cards as links to the item, series, or collection", async () => {
     const gateway = fakeGateway({
@@ -166,7 +192,7 @@ describe("keyboard", () => {
     expect(screen.getByRole("link", { name: "Blade Runner" })).toHaveFocus();
     fireEvent.keyDown(document.activeElement as HTMLElement, { key: "End" });
     expect(screen.getByRole("link", { name: "Contact" })).toHaveFocus();
-    expect(screen.getAllByRole("link").filter((link) => link.closest(".card-grid") && link.getAttribute("tabindex") === "0"))
+    expect(screen.getAllByRole("link").filter((link) => link.closest(".media-grid") && link.getAttribute("tabindex") === "0"))
       .toEqual([screen.getByRole("link", { name: "Contact" })]);
   });
 

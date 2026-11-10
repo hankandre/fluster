@@ -858,6 +858,7 @@ describe("JellyfinGateway home calls", () => {
       image: { itemId: "ep-1", type: "Primary", tag: "tag-1", blurHash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" },
       aspectRatio: 1.78,
       progress: 0.25,
+      remainingTicks: 750,
     }]);
     const request = transport.requests.at(-1);
     expect(request?.url).toBe("/UserItems/Resume");
@@ -904,6 +905,7 @@ describe("JellyfinGateway home calls", () => {
       title: "Arrival",
       subtitle: "2016",
       image: { itemId: "m1", type: "Backdrop", tag: "b1" },
+      backdrop: { itemId: "m1", type: "Backdrop", tag: "b1" },
       aspectRatio: 16 / 9,
     }]);
     const request = transport.requests.at(-1);

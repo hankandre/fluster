@@ -63,6 +63,7 @@ export interface BaseItemDto {
     PlaybackPositionTicks?: number;
     Played?: boolean;
     IsFavorite?: boolean;
+    UnplayedItemCount?: number;
   };
 }
 

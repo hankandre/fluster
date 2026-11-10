@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toMediaCard } from "./cards";
+import { toHomeLibraries, toMediaCard } from "./cards";
 
 describe("toMediaCard images and blurhashes", () => {
   it("looks up the blurhash by image type and tag", () => {
@@ -66,5 +66,53 @@ describe("toMediaCard logo and thumb", () => {
     const card = toMediaCard({ Id: "m1", Name: "Movie", ImageTags: { Primary: "p1" } });
     expect(card).not.toHaveProperty("logo");
     expect(card).not.toHaveProperty("thumb");
+  });
+});
+
+describe("toMediaCard display fields", () => {
+  it("sets remainingTicks only with progress", () => {
+    const watching = toMediaCard({ Id: "m1", Name: "Movie", RunTimeTicks: 1000, UserData: { PlaybackPositionTicks: 400 } });
+    expect(watching?.progress).toBe(0.4);
+    expect(watching?.remainingTicks).toBe(600);
+    const fresh = toMediaCard({ Id: "m2", Name: "Movie", RunTimeTicks: 1000, UserData: { PlaybackPositionTicks: 0 } });
+    expect(fresh).not.toHaveProperty("remainingTicks");
+    expect(fresh).not.toHaveProperty("progress");
+  });
+
+  it("maps the backdrop independently of the image", () => {
+    const card = toMediaCard({
+      Id: "m1",
+      Name: "Movie",
+      ImageTags: { Primary: "p1" },
+      BackdropImageTags: ["b1"],
+      ImageBlurHashes: { Backdrop: { b1: "HASH-B" } },
+    });
+    expect(card?.image?.type).toBe("Primary");
+    expect(card?.backdrop).toEqual({ itemId: "m1", type: "Backdrop", tag: "b1", blurHash: "HASH-B" });
+  });
+
+  it("sets played only when true", () => {
+    expect(toMediaCard({ Id: "m1", Name: "Movie", UserData: { Played: true } })?.played).toBe(true);
+    expect(toMediaCard({ Id: "m1", Name: "Movie", UserData: { Played: false } })).not.toHaveProperty("played");
+  });
+
+  it("sets unplayedCount for a series with unwatched episodes only", () => {
+    expect(toMediaCard({ Id: "s1", Name: "Show", Type: "Series", UserData: { UnplayedItemCount: 3 } })?.unplayedCount).toBe(3);
+    expect(toMediaCard({ Id: "s1", Name: "Show", Type: "Series", UserData: { UnplayedItemCount: 0 } })).not.toHaveProperty("unplayedCount");
+    expect(toMediaCard({ Id: "m1", Name: "Movie", Type: "Movie", UserData: { UnplayedItemCount: 3 } })).not.toHaveProperty("unplayedCount");
+  });
+});
+
+describe("toHomeLibraries", () => {
+  it("maps the Primary image with its blurhash", () => {
+    const [library] = toHomeLibraries([
+      { Id: "l1", Name: "Movies", CollectionType: "movies", ImageTags: { Primary: "p1" }, ImageBlurHashes: { Primary: { p1: "HASH-P" } } },
+    ]);
+    expect(library.image).toEqual({ itemId: "l1", type: "Primary", tag: "p1", blurHash: "HASH-P" });
+  });
+
+  it("omits the image when there is none", () => {
+    const [library] = toHomeLibraries([{ Id: "l1", Name: "Movies", CollectionType: "movies" }]);
+    expect(library).toEqual({ id: "l1", name: "Movies", collectionType: "movies" });
   });
 });

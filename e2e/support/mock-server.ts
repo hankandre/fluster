@@ -34,6 +34,8 @@ export interface MockOptions {
   segments?: Array<Record<string, unknown>>;
   playbackDelayMs?: number;
   rowDelayMs?: number;
+  // /Items/Latest for lib-movies returns 18 movies, so the row scrolls.
+  longRows?: boolean;
 }
 
 export const ticks = (seconds: number): number => Math.round(seconds * 1e7);
@@ -113,7 +115,10 @@ function movieDto(id: string, opts: MockOptions): Dto {
 }
 function seriesDto(id: string): Dto {
   const s = series[id];
-  return { Id: id, Name: s.Name, Type: "Series", ProductionYear: s.ProductionYear, ImageTags: { Primary: `tag-${id}` }, BackdropImageTags: [`bd-${id}`], PrimaryImageAspectRatio: 2 / 3 };
+  return {
+    Id: id, Name: s.Name, Type: "Series", ProductionYear: s.ProductionYear, ImageTags: { Primary: `tag-${id}` }, BackdropImageTags: [`bd-${id}`], PrimaryImageAspectRatio: 2 / 3,
+    ...(id === "s2" ? { UserData: { UnplayedItemCount: 3 } } : {}),
+  };
 }
 function episodeDto(id: string, opts: MockOptions = {}): Dto {
   const e = episodes[id];
@@ -223,7 +228,9 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
           if (opts.empty) return json([]);
           const parent = url.searchParams.get("parentId") ?? url.searchParams.get("ParentId");
           if (parent === "lib-shows") return json([seriesDto("s1"), seriesDto("s2")]);
-          return json(["m1", "m4", "m5", "m6", "m3", "m2"].map((id) => movieDto(id, opts)));
+          const latest = ["m1", "m4", "m5", "m6", "m3", "m2"].map((id) => movieDto(id, opts));
+          if (opts.longRows) return json([...latest, ...latest.map((m) => ({ ...m, Id: `${m.Id}-b` })), ...latest.map((m) => ({ ...m, Id: `${m.Id}-c` }))]);
+          return json(latest);
         }
         case "/Items": {
           const term = url.searchParams.get("searchTerm");

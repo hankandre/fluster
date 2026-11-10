@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ItemNotFoundError, type ImageRef, type ItemDetail } from "../../domain/catalog";
 import type { SessionGateway } from "../../app/session";
 import { BrowseFrame } from "../browse/browse-view";
-import { CardImage } from "../home/card-image";
+import { CardImage } from "../shared/ui";
 import { RowError } from "../home/media-row";
 import { detailKey } from "./detail-key";
 import { runtimeLabel } from "./format";
