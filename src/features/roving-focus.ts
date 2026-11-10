@@ -55,17 +55,24 @@ function columnsOf(items: HTMLElement[]): number {
 // Roving tabindex: the list is one Tab stop, and arrow keys move inside it.
 // Items opt in with `data-roving-item`. The last focused item keeps the Tab
 // stop, so Tab back into the list returns to it.
-export function useRovingFocus<T extends HTMLElement>(layout: RovingLayout) {
+// `preferredIndex` moves the Tab stop (never focus) whenever its value changes between renders.
+export function useRovingFocus<T extends HTMLElement>(layout: RovingLayout, options?: { preferredIndex?: number }) {
   const ref = useRef<T>(null);
   const active = useRef(0);
+  const preferred = options?.preferredIndex;
+  const lastPreferred = useRef<number | undefined>(undefined);
 
   const sync = useCallback(() => {
     const container = ref.current;
     if (!container) return;
     const items = itemsIn(container);
+    if (preferred !== undefined && preferred !== lastPreferred.current) {
+      active.current = Math.max(0, Math.min(preferred, items.length - 1));
+    }
+    lastPreferred.current = preferred;
     if (active.current >= items.length) active.current = 0;
     items.forEach((item, index) => item.setAttribute("tabindex", index === active.current ? "0" : "-1"));
-  }, []);
+  }, [preferred]);
 
   // Runs after every render, so new pages of items join the roving set.
   useLayoutEffect(sync);

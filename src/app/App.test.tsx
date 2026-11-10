@@ -24,7 +24,7 @@ describe("App routing", () => {
       </QueryClientProvider>,
     );
     expect(screen.getByRole("heading", { name: "Not found" })).toHaveFocus();
-    expect(screen.getByRole("link", { name: "Back to features" })).toHaveAttribute("href", "#/next");
+    expect(screen.getByRole("link", { name: "Go to Home" })).toHaveAttribute("href", "#/next/home");
   });
 });
 

@@ -90,10 +90,25 @@ export const scenarios: Scenario[] = [
   { name: "14-home-keyboard-focus", run: async (page) => {
     await signIn(page);
     await page.waitForTimeout(800);
+    // The skip link and the nav come first; press Tab until a card in main has focus.
+    let reachedCard = false;
+    for (let presses = 0; presses < 10 && !reachedCard; presses += 1) {
+      await page.keyboard.press("Tab");
+      reachedCard = await page.evaluate(() => document.activeElement?.matches("main [data-roving-item]") ?? false);
+    }
+    if (!reachedCard) throw new Error("Tab never reached a card in main");
+    await page.keyboard.press("ArrowRight");
+    await page.waitForTimeout(200);
+  } },
+  { name: "15-nav-keyboard-focus", run: async (page) => {
+    await signIn(page);
+    await page.waitForTimeout(800);
+    await page.keyboard.press("Tab");
     await page.keyboard.press("Tab");
     await page.keyboard.press("ArrowRight");
     await page.waitForTimeout(200);
   } },
+  { name: "16-nav-library-current", run: (page) => signedInAt(page, "#/next/browse/lib-movies", 1_000) },
 
   // Browse
   { name: "20-browse-libraries", run: (page) => signedInAt(page, "#/next/browse") },
@@ -171,7 +186,7 @@ export const scenarios: Scenario[] = [
   { name: "61-not-found", run: (page) => signedInAt(page, "#/next/nowhere") },
   { name: "70-settings", run: async (page) => {
     await signIn(page);
-    await page.getByRole("link", { name: "Settings" }).click();
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Settings" }).click();
     await page.getByLabel("Local network maximum bitrate").waitFor();
   } },
 
