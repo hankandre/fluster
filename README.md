@@ -1,6 +1,6 @@
 # Fluster
 
-Fluster is a Jellyfin 10.11 direct-play client. The current beta target is Linux x86_64 on Wayland. It asks Jellyfin for the untouched original file and decodes it locally with embedded libmpv. Video is drawn by a native OpenGL surface beneath a transparent Tauri WebView, while React renders the in-shell controls and overlays.
+Fluster is a Jellyfin 10.11 client that plays the original file whenever it can and shows every server conversion. The current beta target is Linux x86_64 on Wayland. Today it asks Jellyfin for the untouched original file and decodes it locally with embedded libmpv. Video is drawn by a native OpenGL surface beneath a transparent Tauri WebView, while React renders the in-shell controls and overlays.
 
 Today the server never transcodes or remuxes for Fluster. [Decision 0002](docs/decisions/0002-server-transcoding-fallback.md) changes that: Fluster will keep playing the original file whenever mpv can, and fall back to server repackaging or conversion only when it must, always showing it (in progress, `docs/plans/active/002-transcoding-fallback-and-parity.md`).
 

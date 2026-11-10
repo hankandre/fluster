@@ -9,8 +9,9 @@ description: Review a Fluster diff in a fresh context against its brief, invaria
 
 - Run in a fresh context.
 - Never review a change you implemented.
-- Use Opus when the diff touches playback negotiation, Tauri commands, tokens, redaction, or `src-tauri/`.
-- Use Sonnet otherwise.
+- Run one round only; log low findings in the plan instead of re-reviewing.
+- Use `guardian` (Opus) when the diff touches playback negotiation, Tauri commands, tokens, redaction, or `src-tauri/`.
+- Use `reviewer` (Sonnet) otherwise.
 - Read the brief or plan first.
 - Get the diff with `git diff <base>...HEAD`.
 - List affected symbols and callers with codebase-memory `detect_changes`.

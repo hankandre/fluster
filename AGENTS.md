@@ -22,6 +22,8 @@ Fluster is a Jellyfin client that plays the original file whenever it can and sh
 
 - `scout` (Haiku): read-only search.
 - `ci-triage` (Haiku): failing check output.
+- `refiner` (Opus; Fable for high-risk tasks): task refinement and `docs/specs/<TASK-ID>.md`.
+- `spec-checker` (Opus; Fable for high-risk tasks): fresh-context spec check.
 - `implementer` (Sonnet): one specified TypeScript milestone.
 - `reviewer` (Sonnet): routine diff review.
 - `native-engineer` (Opus): `src-tauri/` and player engine work.
@@ -135,10 +137,12 @@ Fluster is a Jellyfin client that plays the original file whenever it can and sh
 
 ## Models
 
-- Use Haiku for search, log triage, summaries, and commit messages.
-- Use Sonnet for specified TypeScript milestones, tests, and routine review.
-- Use Opus for plans, pilots, Rust native code, coordinator concurrency, and policy or security review.
-- Use Fable only after Opus fails twice on the same problem.
+- Run each task as: refine + spec, spec check, implement, verify, one review round, ship.
+- Use Haiku for search, log triage, commit messages, and watching PRs.
+- Use Sonnet for the coordinator, TypeScript implementation, tests, verify, and routine review.
+- Use Opus for specs and spec checks on routine tasks, native Rust, `guardian` review, and plans.
+- Use Fable for specs and spec checks on high-risk tasks (native, security, architecture, ADRs), and after Opus fails twice on the same problem.
+- Run one review round; fix critical, high, and medium findings; log lows in the plan.
 - Lower effort before choosing a weaker model.
 - Escalate one tier after two failed attempts.
 - Switch models only at task boundaries.
@@ -148,7 +152,7 @@ Fluster is a Jellyfin client that plays the original file whenever it can and sh
 - Ship every finished branch with the `ship` skill.
 - Never commit directly to `main`.
 - Merge only with green CI.
-- Ask before merging changes to invariants, `docs/security.md`, release signing, or CI.
+- Call out changes to invariants, `docs/security.md`, release signing, or CI in the PR; merge on green.
 - Explain user impact, testing performed, and direct-play, conversion, and security implications.
 - List every untested Wayland, GPU, Jellyfin, or AppImage gate.
 - Include screenshots for visible UI changes.

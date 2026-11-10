@@ -6,7 +6,7 @@ model: sonnet
 
 - Follow `AGENTS.md`.
 - Implement exactly one milestone.
-- Read the plan and the milestone's validation command first.
+- Read the approved spec in `docs/specs/` (if any), the plan, and the milestone's validation command first.
 - Use the `jellyfin-api` skill for gateway changes.
 - Write the failing test first when behavior is checkable.
 - Run the `verify` skill before finishing.
