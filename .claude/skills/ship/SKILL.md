@@ -8,7 +8,7 @@ description: Open a pull request for a finished Fluster branch, wait for CI, mer
 ## Before the PR
 
 - Run the `verify` skill.
-- Confirm the change review has no open findings.
+- Confirm the one review round has no open critical, high, or medium findings.
 - Confirm the branch is not `main`.
 - Rebase on `origin/main` before the first push and rerun failed checks.
 - Push the branch with `git push -u origin <branch>`.
@@ -25,7 +25,7 @@ description: Open a pull request for a finished Fluster branch, wait for CI, mer
 
 ## Wait for CI
 
-- Enable auto-merge with `gh pr merge <number> --auto --rebase --delete-branch` when the merge needs no human approval.
+- Enable auto-merge with `gh pr merge <number> --auto --rebase --delete-branch`.
 - Run `gh pr checks <number> --watch`.
 - Hand failing output to `ci-triage`.
 - Fix failures in new commits on the branch.
@@ -56,8 +56,8 @@ description: Open a pull request for a finished Fluster branch, wait for CI, mer
 
 ## Merge
 
-- Merge without asking when CI is green and review found nothing open.
-- Ask the human first when the diff changes an invariant, `docs/security.md`, release signing, or CI itself.
+- Merge without asking when CI is green and the one review round left no critical, high, or medium finding open.
+- Call out changes to an invariant, `docs/security.md`, release signing, or CI itself in the PR; merge on green.
 - Merge with `gh pr merge <number> --rebase --delete-branch` when auto-merge is off.
 - Never bypass or edit the `main` ruleset to merge.
 

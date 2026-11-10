@@ -29,6 +29,7 @@ Agents read the short map first and load detail only when needed.
 | `WORKFLOW.md` | This file | stable |
 | `docs/architecture.md`, `docs/security.md`, `docs/validation.md` | Deep detail for the playback core, security boundary, release gates | as needed |
 | `tasks/prd.json` | Phases and tasks with acceptance criteria and `passes` flags; agents may only flip status fields | living |
+| `docs/specs/<TASK-ID>.md` | Per-task spec written by `refiner`, with the `spec-checker` verdict appended | one per task |
 | `docs/plans/active/`, `docs/plans/completed/` | Execution plans for tasks that need more than one session | one per initiative |
 | `docs/decisions/NNNN-slug.md` | Short architecture decision records for choices that would otherwise be re-litigated | ~1 page each |
 
@@ -60,6 +61,15 @@ For work spanning more than one session or more than one domain, create `docs/pl
 
 The plan is a living document. An agent starting a fresh session reads the plan, the git log, and runs the smoke check before touching code. When the work merges, move the plan to `completed/`.
 
+### 2a. Refine and spec (per task)
+
+Each task runs: refine + spec → spec check → implement → verify → one review round → ship.
+
+- `refiner` reads the task in `tasks/prd.json`, its plan, and the relevant code and docs. It writes only `docs/specs/<TASK-ID>.md`: goal; acceptance items mapped to how each is met and tested; files to touch; approach; test plan; risks and out of scope; validation commands.
+- `spec-checker` runs in a fresh context. It checks the spec against the task acceptance, `AGENTS.md` hard rules, `ARCHITECTURE.md`, `DESIGN.md` (for UI), and the code. It appends a verdict: "Approved" or "Changes needed" with numbered issues.
+- Allow one revision round. If the spec is still not approved, stop and ask the human.
+- Implement from the approved spec.
+
 ### 3. Pilot before scale
 
 For any repeated or mechanical change (a new set of API endpoints, a refactor across modules, a new platform surface), do two or three units first, review them closely, and fix the plan or the docs. Then let agents do the rest. This is how Bun ported 1,448 files: three pilot files first, then a corrected porting guide.
@@ -87,7 +97,7 @@ The PR or plan records the commands run and their results. "Tests pass" without 
 
 ### 6. Independent review (fresh context)
 
-The implementer never reviews its own work. A separate agent with a fresh context reviews the diff against the brief and plan, looking for:
+The implementer never reviews its own work. Run one review round. Fix critical, high, and medium findings; log lows in the active plan instead of re-reviewing. A separate agent with a fresh context reviews the diff against the brief and plan, looking for:
 
 - correctness bugs and missed edge cases
 - violations of the invariants in `ARCHITECTURE.md` and dependency rules in `DOMAINS.md`
@@ -106,7 +116,7 @@ The human reviews **intent and design**, not every line:
 
 ### 8. Ship
 
-The agent opens the PR, waits for CI, and merges with the `ship` skill. Merges rebase onto `main` and delete the branch. The agent merges on its own when CI is green and review left nothing open. It asks the human first when the diff changes an invariant, `docs/security.md`, release signing, or CI itself.
+The agent opens the PR, waits for CI, and merges with the `ship` skill. Merges rebase onto `main` and delete the branch. The agent enables auto-merge and merges when CI is green. The PR calls out any change to an invariant, `docs/security.md`, release signing, or CI itself.
 
 ### 9. Retrospective
 
@@ -157,48 +167,53 @@ Relative API list prices (per million input/output tokens, as of 2026-10). Subsc
 
 ### Who does what
 
-| Work | Model | Why |
+| Stage / work | Model | Agent |
 |---|---|---|
-| Codebase search, "where is X", reading many files to return a conclusion | **Haiku** | Reading-heavy and easy to verify. The answer is a file path, which is cheap to check. |
-| Triage of CI / test / clippy output, log summarization | **Haiku** | Extraction, not judgment |
-| Doc-gardening *detection* (list where docs and code disagree) | **Haiku** | Produces a list a stronger model or human acts on |
-| Commit messages, PR descriptions from a finished diff, changelogs | **Haiku** | Summarization of known content |
-| Mechanical fixes with a compiler/lint oracle (formatting, renames, lint autofix follow-through, dependency bumps with green CI) | **Haiku → Sonnet** on failure | The checker decides; escalate only if the loop doesn't converge |
-| Implementing a well-specified milestone in React/TS, gateway endpoints, reducers, tests, Playwright journeys | **Sonnet** | The default implementer. Plan and oracle already exist. |
-| Scaling a piloted mechanical change after the pilot passed review | **Sonnet** | The pilot removed the ambiguity |
-| Routine fresh-context review (UI, catalog, copy, tests) | **Sonnet** | Bounded risk |
-| Writing briefs into execution plans, architecture decisions, `DOMAINS.md` / `ARCHITECTURE.md` changes | **Opus** | Mistakes here multiply across every later task |
-| **Pilot units** of any mechanical change | **Opus** | The pilot defines the pattern everyone copies |
-| Rust native code: `player/*`, `surface/*`, `unsafe`, FFI, threading, GTK/Cocoa main-thread rules | **Opus** | Hard to verify without hardware; bugs crash the process |
-| Concurrency in `PlaybackCoordinator` (attempts, cancellation, report queue) | **Opus** | Subtle ordering bugs that unit tests catch only if someone thinks to write them |
-| Review of anything touching playback policy (direct play or conversion), the Tauri command surface, tokens, or redaction | **Opus** | Security and core-invariant risk. The reviewer must be at least as capable as the implementer. |
-| Debugging after a Sonnet attempt failed twice | **Opus** | Escalation |
-| Spikes with no known answer (Wayland subsurface + `gpu-next` HDR, WebView2-over-D3D11 on Windows), or Opus stuck after two attempts | **Fable** | Rare. Reserve for genuinely novel, high-stakes design problems. |
+| Codebase search, CI log triage, commit messages, watching PRs, doc-gardening detection | **Haiku 5.5** | `scout`, `ci-triage` |
+| Refine + spec and spec check, routine tasks (screens, docs, tests) | **Opus 5.5** | `refiner`, `spec-checker` |
+| Refine + spec and spec check, high-risk tasks (native, security, architecture, ADRs: e.g. P11, P12-02, P2-06, #12) | **Fable 5.2** | `refiner`, `spec-checker` with a spawn-time `model: fable` override |
+| Native Rust implementation (`player/*`, `surface/*`, `unsafe`, FFI, threading) | **Opus 5.5** | `native-engineer` |
+| TypeScript implementation, tests, Playwright journeys | **Sonnet 5.5** | `implementer` |
+| Verify | **Sonnet 5.5** | coordinator or `implementer` |
+| Review, routine diffs | **Sonnet 5.5** | `reviewer` |
+| Review: native, Tauri command, token/redaction, or negotiation-security diffs | **Opus 5.5** | `guardian` |
+| Plans and decision records | **Opus 5.5** | `planner` |
+| Coordinator (one fresh session per task; specs and plans live in the repo) | **Sonnet 5.5** | main session |
+| Escalation after two failed attempts at the same problem | one tier up; **Fable 5.2** after Opus | any |
 
 ### Rules
 
 1. **Effort before model.** Try a stronger model at `low`/`medium` effort before reaching for a cheaper model at `high`. Raise effort only when a failure shows it is needed.
 2. **Escalate on evidence.** Two failed attempts at the same milestone means move up a tier (or fix the brief). Don't start high "just in case".
 3. **De-escalate once the pattern exists.** Opus pilots, Sonnet scales. Haiku maintains.
-4. **Don't switch models mid-session.** Prompt caches are per model, so ping-ponging throws away cached context. Switch at task boundaries (plan → implement → review), which are natural fresh-context points anyway.
-5. **Reviewer ≥ implementer on risky paths.** Sonnet may review Sonnet's UI work. Native, policy, and security diffs get an Opus reviewer.
+4. **Switch models only at task boundaries.** Prompt caches are per model. Start a fresh coordinator session per task.
+5. **Reviewer >= implementer on risky paths.** Sonnet may review Sonnet's UI work. Native, policy, and security diffs get `guardian`.
 6. **Measure.** Note the model and approximate cost on each completed plan's retrospective. Adjust this table when the data disagrees with it.
 
 ### Wiring it up in Claude Code
 
-Subagent definitions under `.claude/agents/*.md` set `model` in their frontmatter, so routing is configured once instead of remembered. Suggested roster:
+Subagent definitions under `.claude/agents/*.md` set `model` in their frontmatter, so routing is configured once instead of remembered.
 
 | Agent | Model | Role |
 |---|---|---|
 | `scout` | haiku | Read-only search and summarization |
 | `ci-triage` | haiku | Read failing check output, return the cause and the file:line |
-| `implementer` | sonnet | Execute one plan milestone in a worktree |
+| `refiner` | opus | Refine one task and write `docs/specs/<TASK-ID>.md` |
+| `spec-checker` | opus | Fresh-context spec check; appends the verdict |
+| `implementer` | sonnet | Execute one milestone from the approved spec |
 | `reviewer` | sonnet | Fresh-context review of routine diffs against the brief |
 | `native-engineer` | opus | Rust/mpv/surface/FFI work |
 | `guardian` | opus | Review of policy, command-surface, token, and redaction changes |
 | `planner` | opus | Draft execution plans and decision records |
 
-Run the main interactive session on Opus (for steering and planning) at modest effort, and delegate down.
+High-risk specs use Fable: the coordinator passes `model: fable` when spawning `refiner` and `spec-checker`.
+
+What the Claude Code docs say (https://code.claude.com/docs/en/sub-agents):
+
+- The frontmatter `model` field accepts the aliases `sonnet`, `opus`, `haiku`, `fable`; a full model ID such as `claude-opus-5-5`; or `inherit`.
+- Order of precedence: the spawn-time `model` parameter, then the frontmatter, then `CLAUDE_CODE_SUBAGENT_MODEL`, then the main session's model.
+- The spawn-time parameter takes only an alias, not a full ID or `inherit`.
+- Selecting a specific Fable version: unverified. The docs say an alias resolves to the version it points to and do not say which version `fable` points to. A full model ID in frontmatter is the only documented pin; the Fable 5.2 ID is not in the docs read.
 
 ## Code intelligence tools
 
