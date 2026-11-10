@@ -82,6 +82,22 @@ describe("MediaRow", () => {
     delete (HTMLElement.prototype as unknown as Record<string, unknown>).scrollIntoView;
   });
 
+  it("keeps the row heading in view when a card takes focus", () => {
+    const scrolled: Element[] = [];
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value(this: Element) {
+        scrolled.push(this);
+      },
+    });
+    render(<MediaRow title="Latest" variant="poster" status="ready" items={items} />);
+    screen.getByRole("link", { name: "Beta" }).focus();
+    const row = screen.getByRole("region", { name: "Latest" });
+    expect(scrolled).toContain(row);
+    expect(row).toContainElement(screen.getByRole("heading", { name: "Latest" }));
+    delete (HTMLElement.prototype as unknown as Record<string, unknown>).scrollIntoView;
+  });
+
   it("pages with hidden, untabbable buttons that scroll the list", () => {
     const widths = vi.spyOn(Element.prototype, "scrollWidth", "get").mockReturnValue(2000);
     const client = vi.spyOn(Element.prototype, "clientWidth", "get").mockReturnValue(500);

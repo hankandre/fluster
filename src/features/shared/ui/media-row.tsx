@@ -59,6 +59,9 @@ export function MediaRow({ title, label, variant, status, items = [], onRetry, e
     roving.onFocus(event);
     const card = (event.target as HTMLElement).closest<HTMLElement>("[data-media-card]");
     if (card && typeof card.scrollIntoView === "function") card.scrollIntoView({ block: "nearest", inline: "nearest" });
+    // The whole row is one box with its heading, so keeping it in view keeps the heading in view.
+    const section = event.currentTarget.closest<HTMLElement>(".media-row");
+    if (section && typeof section.scrollIntoView === "function") section.scrollIntoView({ block: "nearest", inline: "nearest" });
   }
 
   const name = title ?? label;
