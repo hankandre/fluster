@@ -192,6 +192,8 @@ Relative API list prices (per million input/output tokens, as of 2026-10). Subsc
 
 ### Wiring it up in Claude Code
 
+`.claude/workflows/task.js` runs one task through every stage: Spec, Check, Implement, Verify, Review, Ship. Start it with the Workflow tool (`name: task`, `args: {task: "P13-06", risk: "routine" | "high", native: false}`) and watch it in `/workflows`. The script moves between stages, so the coordinator spends no tokens on handoffs. It stops and returns to the human on open spec questions, a spec not approved after one revision, red checks after one fix, red CI after one fix, or a denied command.
+
 Subagent definitions under `.claude/agents/*.md` set `model` in their frontmatter, so routing is configured once instead of remembered.
 
 | Agent | Model | Role |
