@@ -7,7 +7,7 @@ export function SearchView({ term: routeTerm }: { term?: string }) {
   // A blank term is the empty search page, not a search for spaces.
   const term = routeTerm?.trim() || undefined;
   return (
-    <BrowseFrame title="Search" routeKey={`search/${term ?? ""}`} back={<a href="#/next">Back to features</a>}>
+    <BrowseFrame title="Search" routeKey={`search/${term ?? ""}`} back={null}>
       {(gateway) => (
         <>
           <SearchBox gateway={gateway} initialTerm={term ?? ""} />

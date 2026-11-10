@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSession, type SessionGateway } from "../../app/session";
 import { scopeFor } from "../query-scope";
-import { SignOutButton } from "../sign-out-button";
 import { MediaRow, RowError, SkeletonStrip } from "./media-row";
 
 const SIGN_IN_ROUTE = "#/next/sign-in";
@@ -18,10 +17,6 @@ export function HomeView() {
     <main className="home">
       <h1>Home</h1>
       {gateway ? <HomeRows gateway={gateway} /> : null}
-      <a href="#/next/search">Search</a>
-      <a href="#/next/settings">Settings</a>
-      <a href="#/next">Back to features</a>
-      <SignOutButton />
     </main>
   );
 }

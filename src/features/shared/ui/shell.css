@@ -1,0 +1,83 @@
+@layer reset, tokens, base, components, features, focus;
+
+@layer components {
+  .app-frame {
+    scroll-padding-top: var(--nav-h);
+  }
+
+  .skip-link {
+    position: absolute;
+    inset-block-start: calc(var(--nav-h) * -2);
+    inset-inline-start: var(--space-2);
+    z-index: calc(var(--z-nav) + 1);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-control);
+    background: var(--surface-2);
+    color: var(--text-1);
+    font: var(--type-label);
+  }
+
+  .skip-link:focus {
+    inset-block-start: var(--space-2);
+  }
+
+  .app-nav {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: var(--z-nav);
+    block-size: var(--nav-h);
+    box-sizing: border-box;
+    padding-inline: var(--space-5);
+    background: var(--surface-0);
+    border-block-end: 1px solid var(--line);
+  }
+
+  .app-nav-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    block-size: 100%;
+  }
+
+  .app-nav-list {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-inline-size: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .app-nav-entry {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    box-sizing: border-box;
+    min-block-size: var(--hit-min);
+    min-inline-size: var(--hit-min);
+    padding-inline: var(--space-4);
+    border-radius: var(--radius-control);
+    color: var(--text-2);
+    font: var(--type-label);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color var(--dur-quick) var(--ease-out), background-color var(--dur-quick) var(--ease-out);
+  }
+
+  .app-nav-entry:hover {
+    color: var(--text-1);
+    background: var(--surface-2);
+  }
+
+  .app-nav-entry[aria-current="page"] {
+    color: var(--text-1);
+    background: var(--surface-2);
+  }
+
+  .app-nav-wordmark {
+    color: var(--text-1);
+  }
+}

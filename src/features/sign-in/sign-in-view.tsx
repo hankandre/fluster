@@ -131,7 +131,7 @@ function ServerStep({ discovery, onConnected }: { discovery?: ServerDiscovery; o
         />
         {error && <p role="alert" className="form-error">{error}</p>}
         <div className="form-actions">
-          <a href="#/next">Back to features</a>
+          <span />
           <button type="submit" className="primary-button" disabled={busy}>
             {busy ? "Connecting…" : "Connect"}
           </button>

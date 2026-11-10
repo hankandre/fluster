@@ -101,7 +101,7 @@ test("streaming limits default to no limit, apply by host class, and persist", a
   const log = await mockServer(page);
   await signIn(page);
 
-  await page.getByRole("link", { name: "Settings" }).click();
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Settings" }).click();
   await expect(page).toHaveURL(/#\/next\/settings$/);
   const local = page.getByLabel("Local network maximum bitrate");
   const remote = page.getByLabel("Remote maximum bitrate");
@@ -110,22 +110,26 @@ test("streaming limits default to no limit, apply by host class, and persist", a
 
   // The remote limit does not apply to a loopback server.
   await remote.selectOption("4");
-  await page.getByRole("link", { name: "Home" }).click();
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Home" }).click();
   await playArrival(page);
   expect(log.playbackInfo[0].MaxStreamingBitrate).toBe(NO_LIMIT);
   expect(log.playbackInfoQueries[0].get("MaxStreamingBitrate")).toBe(String(NO_LIMIT));
 
   // The local limit does, in the body and the query, and survives a reload.
-  await page.goto("/#/next/settings");
+  // The player has no nav: leave it by its Back control, then use the nav.
+  await page.getByLabel("Back to library").click();
+  await expect(page).toHaveURL(/#\/next\/item\//);
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Settings" }).click();
+  await expect(page).toHaveURL(/#\/next\/settings$/);
   await local.focus();
   await local.selectOption("20");
   await page.reload();
   // The session is memory only, so sign in again; the limits come back.
   await signIn(page);
-  await page.getByRole("link", { name: "Settings" }).click();
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Settings" }).click();
   await expect(page.getByLabel("Local network maximum bitrate")).toHaveValue("20");
   await expect(page.getByLabel("Remote maximum bitrate")).toHaveValue("4");
-  await page.getByRole("link", { name: "Home" }).click();
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Home" }).click();
   await playArrival(page);
   const last = log.playbackInfo.length - 1;
   expect(last).toBeGreaterThan(0);

@@ -62,7 +62,7 @@ test("search with type-ahead, submit the term, and open a series result", async 
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { name: "Home" })).toBeVisible({ timeout: 8_000 });
 
-  await page.getByRole("link", { name: "Search" }).click();
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Search" }).click();
   await expect(page.getByRole("heading", { name: "Search" })).toBeVisible();
 
   await page.getByRole("combobox", { name: "Search movies, series, and episodes" }).fill("great");
