@@ -129,7 +129,7 @@ Resolve gaps yourself from the task, the code, and the docs; return as open ques
 phase('Implement');
 const impl = await agent(
   `${common}
-Implement the approved spec. Commit the spec with the work, one milestone per commit. When every acceptance item passes, set the task's status, owner, passes, and evidence in tasks/prd.json and tick its line in the active plan. Do not push or open a PR.
+Implement the approved spec. Commit the spec with the work, one milestone per commit. Set the task's status to in_progress with evidence in tasks/prd.json. The Review phase does the design review and the Ship phase links the screenshots; the task is marked done after those. Do not push or open a PR.
 Return done=false with blockers if you cannot finish.`,
   { agentType: implAgent, model: implModel, schema: WORK, label: `implement ${task}` },
 );
@@ -164,19 +164,20 @@ if (!verify.passed) {
 phase('Review');
 const review = await agent(
   `${common}
-Review git diff origin/main...${branch} against the spec, the task acceptance, and the hard rules. This is the only review round. Change no files. Return every finding with its severity, file:line, and a concrete failure scenario.`,
+Review git diff origin/main...${branch} against the spec, the task acceptance, and the hard rules. If the diff touches src/features/ or src/styles/, also do the design review: follow .claude/skills/change-review/references/design-checklist.md against DESIGN.md and look at the captures in visual-captures/ (run pnpm test:visual with FLUSTER_VISUAL_PORT set to a free port if they are missing). This is the only review round. Change no files. Return every finding with its severity, file:line, and a concrete failure scenario.`,
   { agentType: reviewAgent, model: reviewModel, schema: REVIEW, label: `review (${reviewAgent})` },
 );
 if (!review) return stop('review-failed', 'The reviewer returned nothing.');
 const describe = (finding) => `[${finding.severity}] ${finding.where}: ${finding.summary}`;
 const blocking = review.findings.filter((finding) => finding.severity !== 'low').map(describe);
 const lows = review.findings.filter((finding) => finding.severity === 'low').map(describe);
-if (review.findings.length) {
-  log(`Review: ${blocking.length} to fix, ${lows.length} low to log`);
+log(`Review: ${blocking.length} to fix, ${lows.length} low to log`);
+{
   const followUp = await agent(
     `${common}
 ${blocking.length ? `Fix these review findings and commit, with a test for each behavior change:\n${blocking.join('\n')}` : 'No findings need a fix.'}
 ${lows.length ? `Log these low findings as follow-ups in the active plan (docs/plans/active/) and commit; do not fix them:\n${lows.join('\n')}` : ''}
+Then, if every acceptance item is met (the design review above counts as the fresh-context design review; screenshots are linked by the Ship phase), set the task's status to done and passes to true in tasks/prd.json, update its evidence, tick its line in the active plan, and commit.
 Do not push.`,
     { agentType: implAgent, model: implModel, schema: WORK, label: 'review follow-ups' },
   );
@@ -191,7 +192,7 @@ Do not push.`,
 // 6. Ship (one CI fix round)
 phase('Ship');
 const shipPrompt = `${common}
-Ship with the ship skill: rebase onto origin/main if it moved (force-with-lease is allowed on this branch), push, open the PR if none exists, enable auto-merge with rebase, and wait for CI with gh pr checks --watch. The PR body must explain user impact, testing (use the evidence below), conversion and security implications, untested gates, and call out any change to invariants, docs/security.md, release signing, or CI. For a UI change, include the 1440x900 and 1920x1080 captures. Change no source files. If CI is red, return merged=false with each failing check and its cause. After a merge, run git -C /home/handre/Code/fluster pull --ff-only and remove the worktree and branch.
+Ship with the ship skill: rebase onto origin/main if it moved (force-with-lease is allowed on this branch), push, open the PR if none exists, enable auto-merge with rebase, and wait for CI with gh pr checks --watch. The PR body must explain user impact, testing (use the evidence below), conversion and security implications, untested gates, and call out any change to invariants, docs/security.md, release signing, or CI. For a UI change, add a Screenshots section that links the visual-captures artifact from the PR's CI run (gh api repos/hankandre/fluster/actions/runs/<run>/artifacts) and names the captures that changed, plus a Design review notes section from the review. Change no source files. If CI is red, return merged=false with each failing check and its cause. After a merge, run git -C /home/handre/Code/fluster pull --ff-only and remove the worktree and branch.
 Evidence: ${verify.evidence}
 Review: ${blocking.length} fixed, ${lows.length} low logged in the plan.`;
 let ship = await agent(shipPrompt, { model: 'sonnet', effort: 'low', schema: SHIP, label: 'ship' });
