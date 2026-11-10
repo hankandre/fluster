@@ -14,6 +14,7 @@ export const meta = {
 
 // args: "P13-06" or {task, risk, native, from}
 // from: "check" skips writing the spec (use after the human answers its questions)
+// from: "implement" skips spec and check; pass notes: [...] for the implementer
 const input = typeof args === 'string' ? { task: args } : args || {};
 const task = input.task;
 if (!task) {
@@ -21,7 +22,9 @@ if (!task) {
 }
 const highRisk = input.risk === 'high';
 const native = input.native === true;
-const skipSpec = input.from === 'check';
+const skipCheck = input.from === 'implement';
+const skipSpec = input.from === 'check' || skipCheck;
+let specNotes = Array.isArray(input.notes) ? input.notes : [];
 
 const specModel = highRisk ? 'fable' : 'opus';
 const implAgent = native ? 'native-engineer' : 'implementer';
@@ -106,8 +109,9 @@ if (specResult.openQuestions.length) return stop('open-questions', specResult.op
 
 // 2. Check (one revision round)
 phase('Check');
+if (!skipCheck) {
 const checkPrompt = `${common}
-Check the spec and append your "## Spec check" verdict to it. Treat decisions the spec marks as confirmed by the human as settled. Return approved and the numbered issues.`;
+Check the spec and append your "## Spec check" verdict to it. Set approved=true unless an issue is critical or high; list medium and low issues anyway, prefixed with their severity, and the implementer will resolve them. Treat decisions the spec marks as confirmed by the human as settled. Return approved and the numbered issues.`;
 let check = await agent(checkPrompt, { agentType: 'spec-checker', model: specModel, schema: CHECK, label: 'spec check' });
 if (!check) return stop('check-failed', 'The spec-checker returned nothing.');
 if (!check.approved) {
@@ -124,12 +128,14 @@ Resolve gaps yourself from the task, the code, and the docs; return as open ques
   check = await agent(checkPrompt, { agentType: 'spec-checker', model: specModel, schema: CHECK, label: 'spec re-check' });
   if (!check || !check.approved) return stop('spec-not-approved', check ? check.issues : 'The re-check returned nothing.');
 }
+  specNotes = specNotes.concat(check.issues);
+}
 
 // 3. Implement
 phase('Implement');
 const impl = await agent(
   `${common}
-Implement the approved spec. Commit the spec with the work, one milestone per commit. Set the task's status to in_progress with evidence in tasks/prd.json. The Review phase does the design review and the Ship phase links the screenshots; the task is marked done after those. Do not push or open a PR.
+Implement the approved spec.${specNotes.length ? `\nAlso resolve these spec-check notes, updating the spec where they change it:\n${specNotes.join('\n')}` : ''} Commit the spec with the work, one milestone per commit. Set the task's status to in_progress with evidence in tasks/prd.json. The Review phase does the design review and the Ship phase links the screenshots; the task is marked done after those. Do not push or open a PR.
 Return done=false with blockers if you cannot finish.`,
   { agentType: implAgent, model: implModel, schema: WORK, label: `implement ${task}` },
 );
