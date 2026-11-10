@@ -12,7 +12,8 @@ export const meta = {
   ],
 };
 
-// args: "P13-06" or {task, risk, native}
+// args: "P13-06" or {task, risk, native, from}
+// from: "check" skips writing the spec (use after the human answers its questions)
 const input = typeof args === 'string' ? { task: args } : args || {};
 const task = input.task;
 if (!task) {
@@ -20,6 +21,7 @@ if (!task) {
 }
 const highRisk = input.risk === 'high';
 const native = input.native === true;
+const skipSpec = input.from === 'check';
 
 const specModel = highRisk ? 'fable' : 'opus';
 const implAgent = native ? 'native-engineer' : 'implementer';
@@ -93,9 +95,11 @@ phase('Spec');
 const specPrompt = `${common}
 Create the worktree if it is missing: git -C /home/handre/Code/fluster fetch -q && git -C /home/handre/Code/fluster worktree add ${worktree} -b ${branch} origin/main.
 If ${spec} already exists with every section, keep it and report on it. Otherwise write it. Do not commit.
-Resolve gaps yourself from the task, the code, the docs, and any Decisions section in the spec, and write the answers into the spec. Return as open questions only product or design choices that the human must make.
+Resolve gaps yourself from the task, the code, the docs, and any Decisions section in the spec, and write the answers into the spec. Return as open questions only product or design choices that the human must make and has not already confirmed in the spec's Decisions section.
 Return a short summary and those open questions.`;
-const specResult = await agent(specPrompt, { agentType: 'refiner', model: specModel, schema: SPEC, label: `spec ${task}` });
+const specResult = skipSpec
+  ? { summary: `Existing spec ${spec}`, openQuestions: [] }
+  : await agent(specPrompt, { agentType: 'refiner', model: specModel, schema: SPEC, label: `spec ${task}` });
 if (!specResult) return stop('spec-failed', 'The refiner returned nothing.');
 if (denied(specResult)) return stop('denied-command', denied(specResult));
 if (specResult.openQuestions.length) return stop('open-questions', specResult.openQuestions);
@@ -103,7 +107,7 @@ if (specResult.openQuestions.length) return stop('open-questions', specResult.op
 // 2. Check (one revision round)
 phase('Check');
 const checkPrompt = `${common}
-Check the spec and append your "## Spec check" verdict to it. Return approved and the numbered issues.`;
+Check the spec and append your "## Spec check" verdict to it. Treat decisions the spec marks as confirmed by the human as settled. Return approved and the numbered issues.`;
 let check = await agent(checkPrompt, { agentType: 'spec-checker', model: specModel, schema: CHECK, label: 'spec check' });
 if (!check) return stop('check-failed', 'The spec-checker returned nothing.');
 if (!check.approved) {
