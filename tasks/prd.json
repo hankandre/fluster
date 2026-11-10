@@ -1610,10 +1610,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "MediaCard and MediaRow under src/features/shared/ui/ (media.css, card-image moved from home), pure adapter src/features/card-view.ts, time-left.ts, spatial Up/Down in roving-focus.ts, mapper fields remainingTicks/backdrop/played/unplayedCount in src/lib/jellyfin/cards.ts. Checks run on branch task/P13-07: pnpm check exit 0 (1301 unit tests); pnpm test:e2e 61 passed (new e2e/cards.spec.ts: overlap at five window classes, episode text, edge, TV ring, spatial, reduced motion); pnpm test:visual 100 passed (new 17, 18, 87). Awaiting fresh-context design review and PR screenshots."
+          "passes": true,
+          "evidence": "MediaCard and MediaRow under src/features/shared/ui/ (media.css, card-image moved from home), pure adapter src/features/card-view.ts, time-left.ts, spatial Up/Down in roving-focus.ts, mapper fields remainingTicks/backdrop/played/unplayedCount in src/lib/jellyfin/cards.ts. Checks run on branch task/P13-07: pnpm check exit 0 (1301 unit tests); pnpm test:e2e 61 passed (new e2e/cards.spec.ts: overlap at five window classes, episode text, edge, TV ring, spatial, reduced motion); pnpm test:visual 100 passed (new 17, 18, 87). Fresh-context design review passed; its medium finding (row heading kept in view on focus) fixed in media-row.tsx with a test, low findings logged under Follow-ups in docs/design/rework-plan.md. PR screenshots are linked by the Ship phase."
         },
         {
           "id": "P13-08",
