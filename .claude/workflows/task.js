@@ -93,7 +93,8 @@ phase('Spec');
 const specPrompt = `${common}
 Create the worktree if it is missing: git -C /home/handre/Code/fluster fetch -q && git -C /home/handre/Code/fluster worktree add ${worktree} -b ${branch} origin/main.
 If ${spec} already exists with every section, keep it and report on it. Otherwise write it. Do not commit.
-Return a short summary and every open question that needs the human.`;
+Resolve gaps yourself from the task, the code, the docs, and any Decisions section in the spec, and write the answers into the spec. Return as open questions only product or design choices that the human must make.
+Return a short summary and those open questions.`;
 const specResult = await agent(specPrompt, { agentType: 'refiner', model: specModel, schema: SPEC, label: `spec ${task}` });
 if (!specResult) return stop('spec-failed', 'The refiner returned nothing.');
 if (denied(specResult)) return stop('denied-command', denied(specResult));
@@ -111,7 +112,7 @@ if (!check.approved) {
     `${common}
 The spec check found these issues. Revise the spec to fix them and remove the old "## Spec check" section.
 ${check.issues.map((issue, i) => `${i + 1}. ${issue}`).join('\n')}
-Return a short summary and every open question that needs the human.`,
+Resolve gaps yourself from the task, the code, and the docs; return as open questions only product or design choices that the human must make.`,
     { agentType: 'refiner', model: specModel, schema: SPEC, label: 'spec revision' },
   );
   if (!revised) return stop('spec-failed', 'The spec revision returned nothing.');
