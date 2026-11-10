@@ -213,7 +213,7 @@ What the Claude Code docs say (https://code.claude.com/docs/en/sub-agents):
 - The frontmatter `model` field accepts the aliases `sonnet`, `opus`, `haiku`, `fable`; a full model ID such as `claude-opus-5-5`; or `inherit`.
 - Order of precedence: the spawn-time `model` parameter, then the frontmatter, then `CLAUDE_CODE_SUBAGENT_MODEL`, then the main session's model.
 - The spawn-time parameter takes only an alias, not a full ID or `inherit`.
-- Selecting a specific Fable version: unverified. The docs say an alias resolves to the version it points to and do not say which version `fable` points to. A full model ID in frontmatter is the only documented pin; the Fable 5.2 ID is not in the docs read.
+- Checked on 2026-11-10: a subagent spawned with `model: fable` reported `claude-fable-5-2` (Fable 5.2), so the alias already selects 5.2. To pin a version, set the full model ID in the agent's frontmatter.
 
 ## Code intelligence tools
 
