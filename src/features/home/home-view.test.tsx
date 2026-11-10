@@ -18,7 +18,7 @@ function card(id: string, title: string, overrides: Partial<MediaCard> = {}): Me
 function fakeGateway(overrides: Partial<SessionGateway> = {}): SessionGateway {
   return fakeSessionGateway({
     userViews: vi.fn().mockResolvedValue([{ id: "lib-1", name: "Movies", collectionType: "movies" }]),
-    resumeItems: vi.fn().mockResolvedValue([card("r1", "Resume me", { progress: 0.4 })]),
+    resumeItems: vi.fn().mockResolvedValue([card("r1", "Resume me", { progress: 0.4, remainingTicks: 22_800_000_000 })]),
     nextUp: vi.fn().mockResolvedValue([card("n1", "Up next")]),
     latestInLibrary: vi.fn().mockResolvedValue([card("l1", "Fresh movie")]),
     imageUrl: vi.fn((itemId: string, type: string, tag: string) => `https://media.test/${itemId}/${type}/${tag}.webp`),
@@ -83,7 +83,26 @@ describe("HomeView", () => {
     expect(await screen.findByRole("heading", { name: "Next Up" })).toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "Latest in Movies" })).toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "Latest in Shows" })).toBeInTheDocument();
-    expect(screen.getByRole("article", { name: "Resume me, 40% watched" })).toBeInTheDocument();
+    expect(screen.getByRole("article", { name: "Resume me, 38 minutes left" })).toBeInTheDocument();
+  });
+
+  it("shows thumb cards in Continue Watching and Next Up and poster cards in Latest", async () => {
+    await renderHome(fakeGateway());
+    expect(await screen.findByRole("article", { name: "Resume me, 38 minutes left" })).toHaveAttribute("data-variant", "thumb");
+    expect(screen.getByRole("article", { name: "Up next" })).toHaveAttribute("data-variant", "thumb");
+    expect(await screen.findByRole("article", { name: "Fresh movie" })).toHaveAttribute("data-variant", "poster");
+  });
+
+  it("shows skeletons of the row's variant while rows load", async () => {
+    const never = new Promise<MediaCard[]>(() => undefined);
+    await renderHome(fakeGateway({
+      resumeItems: vi.fn().mockReturnValue(never),
+      nextUp: vi.fn().mockReturnValue(never),
+      userViews: vi.fn().mockReturnValue(new Promise(() => undefined)),
+    }));
+    const variants = screen.getAllByTestId("card-skeleton").map((node) => node.getAttribute("data-variant"));
+    expect(variants).toContain("thumb");
+    expect(variants).toContain("poster");
   });
 
   it("starts every row query before any of them resolves", async () => {
@@ -123,8 +142,8 @@ describe("HomeView", () => {
     await renderHome(gateway);
 
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("Could not load Next Up.");
-    expect(await screen.findByRole("article", { name: "Resume me, 40% watched" })).toBeInTheDocument();
+    expect(alert).toHaveTextContent("Couldn't load Next Up.");
+    expect(await screen.findByRole("article", { name: "Resume me, 38 minutes left" })).toBeInTheDocument();
 
     await act(async () => {
       fireEvent.click(within(alert).getByRole("button", { name: "Retry" }));
@@ -189,7 +208,7 @@ describe("HomeView", () => {
 
   it("renders cards of unknown kind as non-interactive list items", async () => {
     await renderHome(fakeGateway());
-    const item = await screen.findByRole("article", { name: "Resume me, 40% watched" });
+    const item = await screen.findByRole("article", { name: "Resume me, 38 minutes left" });
     expect(item).not.toHaveAttribute("tabindex");
     expect(within(item).queryByRole("button")).not.toBeInTheDocument();
     expect(item.closest("li")).not.toBeNull();
@@ -198,7 +217,7 @@ describe("HomeView", () => {
   it("refetches watched state when another client changes it", async () => {
     const gateway = fakeGateway({
       resumeItems: vi.fn()
-        .mockResolvedValueOnce([card("r1", "Resume me", { progress: 0.4 })])
+        .mockResolvedValueOnce([card("r1", "Resume me", { progress: 0.4, remainingTicks: 22_800_000_000 })])
         .mockResolvedValue([]),
     });
     const realtime = new FakeRealtime();
@@ -218,14 +237,14 @@ describe("HomeView", () => {
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "test sign in" }));
     });
-    await screen.findByRole("article", { name: "Resume me, 40% watched" });
+    await screen.findByRole("article", { name: "Resume me, 38 minutes left" });
     expect(realtime.connect).toHaveBeenCalledWith("https://media.test", 'MediaBrowser Token="test-token"');
 
     await act(async () => {
       realtime.emit({ kind: "user-data-changed", itemIds: ["r1"] });
     });
 
-    await waitFor(() => expect(screen.queryByRole("article", { name: "Resume me, 40% watched" })).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole("article", { name: "Resume me, 38 minutes left" })).not.toBeInTheDocument());
     expect(gateway.resumeItems).toHaveBeenCalledTimes(2);
     expect(gateway.nextUp).toHaveBeenCalledTimes(2);
     expect(gateway.latestInLibrary).toHaveBeenCalledTimes(2);

@@ -205,6 +205,20 @@ describe("results", () => {
     expect(gateway.searchItems).toHaveBeenCalledWith("ar", { startIndex: 0, limit: 40 }, expect.any(AbortSignal));
   });
 
+  it("shows Movies and Series as poster cards and Episodes as thumb cards", async () => {
+    const gateway = fakeGateway({
+      searchItems: vi.fn().mockResolvedValue({
+        cards: [card("m1", "Arrival", "Movie"), card("s1", "Arrow", "Series"), card("e1", "Pilot", "Episode")],
+        hasMore: false,
+      } satisfies SearchPage),
+    });
+    await renderView(gateway, "ar");
+    await advance(0);
+    expect(screen.getByRole("link", { name: "Arrival" })).toHaveAttribute("data-variant", "poster");
+    expect(screen.getByRole("link", { name: "Arrow" })).toHaveAttribute("data-variant", "poster");
+    expect(screen.getByRole("link", { name: "Pilot" })).toHaveAttribute("data-variant", "thumb");
+  });
+
   it("moves through each result group with the arrow keys", async () => {
     const gateway = fakeGateway({
       searchItems: vi.fn().mockResolvedValue({

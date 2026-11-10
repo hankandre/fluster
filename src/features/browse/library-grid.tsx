@@ -7,9 +7,11 @@ import type {
   BrowseSortOrder,
 } from "../../domain/catalog";
 import type { SessionGateway } from "../../app/session";
-import { Card, RowError } from "../home/media-row";
+import { imageUrlFor, toMediaCardProps } from "../card-view";
+import { RowError } from "../home/media-row";
 import { scopeFor } from "../query-scope";
 import { useRovingFocus } from "../roving-focus";
+import { MediaCard } from "../shared/ui";
 
 export const PAGE_SIZE = 60;
 
@@ -66,6 +68,7 @@ export function LibraryGrid({ gateway, parentId, itemTypes, label }: LibraryGrid
   }
 
   const cards = query.data?.pages.flatMap((page) => page.cards) ?? [];
+  const imageUrl = imageUrlFor(gateway);
 
   return (
     <section className="browse-grid" aria-label={label} aria-busy={query.isPending}>
@@ -101,10 +104,10 @@ export function LibraryGrid({ gateway, parentId, itemTypes, label }: LibraryGrid
       {query.isError && cards.length === 0 ? <RowError title={label} onRetry={() => void query.refetch()} /> : null}
       {query.isSuccess && cards.length === 0 ? <p>Nothing here.</p> : null}
       {cards.length > 0 ? (
-        <ul className="card-grid" {...roving}>
+        <ul className="media-grid" data-variant="poster" {...roving}>
           {cards.map((card) => (
             <li key={card.id}>
-              <Card card={card} gateway={gateway} />
+              <MediaCard {...toMediaCardProps(card, "poster", imageUrl)} />
             </li>
           ))}
         </ul>

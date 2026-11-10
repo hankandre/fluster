@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { SessionGateway } from "../../app/session";
-import { Card, RowError } from "../home/media-row";
+import { imageUrlFor, toMediaCardProps } from "../card-view";
+import { RowError } from "../home/media-row";
 import { scopeFor } from "../query-scope";
 import { useRovingFocus } from "../roving-focus";
+import { MediaCard } from "../shared/ui";
+import { timeLeftLabel } from "../shared/time-left";
 import { BrowseFrame } from "./browse-view";
 
 export function SeriesView({ seriesId }: { seriesId: string }) {
@@ -60,6 +63,7 @@ function Episodes({ gateway, seriesId, seasonId, seasonName }: { gateway: Sessio
     gcTime: 0,
   });
   const roving = useRovingFocus<HTMLUListElement>("column");
+  const imageUrl = imageUrlFor(gateway);
 
   return (
     <section aria-label={`${seasonName} episodes`} aria-busy={episodes.isPending}>
@@ -71,8 +75,15 @@ function Episodes({ gateway, seriesId, seasonId, seasonName }: { gateway: Sessio
         <ul className="episode-list" {...roving}>
           {episodes.data.map((episode) => (
             <li key={episode.id}>
-              <Card card={episode} gateway={gateway} />
-              {episode.overview ? <p className="episode-overview">{episode.overview}</p> : null}
+              <MediaCard {...toMediaCardProps(episode, "episode", imageUrl)} />
+              <div className="episode-text">
+                <p className="episode-text-title" aria-hidden="true">{episode.title}</p>
+                {episode.subtitle ? <p className="episode-text-meta" aria-hidden="true">{episode.subtitle}</p> : null}
+                {episode.progress !== undefined && episode.remainingTicks !== undefined ? (
+                  <p className="episode-text-meta" aria-hidden="true">{timeLeftLabel(episode.remainingTicks)}</p>
+                ) : null}
+                {episode.overview ? <p className="episode-overview">{episode.overview}</p> : null}
+              </div>
             </li>
           ))}
         </ul>

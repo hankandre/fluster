@@ -64,6 +64,12 @@ function watchedFraction(item: BaseItemDto): number | undefined {
   return Math.min(1, position / length);
 }
 
+function remainingTicks(item: BaseItemDto): number {
+  const position = item.UserData?.PlaybackPositionTicks ?? 0;
+  const length = item.RunTimeTicks ?? 0;
+  return Math.max(0, length - position);
+}
+
 function episodeLabel(item: BaseItemDto): string {
   const numbers = item.ParentIndexNumber != null && item.IndexNumber != null
     ? `S${item.ParentIndexNumber}E${item.IndexNumber} · `
@@ -88,6 +94,9 @@ export function toMediaCard(item: BaseItemDto): MediaCard | undefined {
   const isEpisode = item.Type === "Episode";
   const found = itemImage(item, item.Id);
   const subtitle = isEpisode ? episodeLabel(item) : item.ProductionYear?.toString();
+  const fraction = watchedFraction(item);
+  const backdropTag = item.BackdropImageTags?.[0];
+  const unplayed = item.UserData?.UnplayedItemCount ?? 0;
   return {
     id: item.Id,
     kind: itemKind(item.Type),
@@ -96,7 +105,10 @@ export function toMediaCard(item: BaseItemDto): MediaCard | undefined {
     ...(found ? { image: found.image } : {}),
     aspectRatio: found?.aspectRatio ?? POSTER_ASPECT_RATIO,
     ...logoAndThumb(item, item.Id),
-    ...(watchedFraction(item) !== undefined ? { progress: watchedFraction(item) } : {}),
+    ...(backdropTag ? { backdrop: imageRef(item.Id, "Backdrop", backdropTag, item.ImageBlurHashes?.Backdrop?.[backdropTag]) } : {}),
+    ...(fraction !== undefined ? { progress: fraction, remainingTicks: remainingTicks(item) } : {}),
+    ...(item.UserData?.Played === true ? { played: true } : {}),
+    ...(item.Type === "Series" && unplayed > 0 ? { unplayedCount: unplayed } : {}),
   };
 }
 
@@ -109,7 +121,10 @@ const HOME_COLLECTION_TYPES = new Set(["movies", "tvshows", "boxsets"]);
 export function toHomeLibraries(items: BaseItemDto[] | undefined): LibraryView[] {
   return (items ?? []).flatMap((item) => {
     if (!item.Id || !item.Name || !item.CollectionType) return [];
-    return HOME_COLLECTION_TYPES.has(item.CollectionType) ? [{ id: item.Id, name: item.Name, collectionType: item.CollectionType }] : [];
+    if (!HOME_COLLECTION_TYPES.has(item.CollectionType)) return [];
+    const primaryTag = item.ImageTags?.Primary;
+    const image = primaryTag ? imageRef(item.Id, "Primary", primaryTag, item.ImageBlurHashes?.Primary?.[primaryTag]) : undefined;
+    return [{ id: item.Id, name: item.Name, collectionType: item.CollectionType, ...(image ? { image } : {}) }];
   });
 }
 

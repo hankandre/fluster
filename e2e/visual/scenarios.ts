@@ -108,6 +108,28 @@ export const scenarios: Scenario[] = [
     await page.keyboard.press("ArrowRight");
     await page.waitForTimeout(200);
   } },
+  { name: "17-home-row-focus-down", run: async (page) => {
+    await signIn(page);
+    await page.waitForTimeout(800);
+    let reachedCard = false;
+    for (let presses = 0; presses < 10 && !reachedCard; presses += 1) {
+      await page.keyboard.press("Tab");
+      reachedCard = await page.evaluate(() => document.activeElement?.matches("main [data-roving-item]") ?? false);
+    }
+    if (!reachedCard) throw new Error("Tab never reached a card in main");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowDown");
+    await page.waitForTimeout(300);
+  } },
+  { name: "18-home-row-paging", opts: { longRows: true }, run: async (page) => {
+    await signIn(page);
+    await page.waitForTimeout(800);
+    const row = page.getByRole("region", { name: "Latest in Movies" });
+    await row.scrollIntoViewIfNeeded();
+    await row.hover();
+    await row.locator(".media-row-page--next button").click();
+    await page.waitForTimeout(700);
+  } },
   { name: "16-nav-library-current", run: (page) => signedInAt(page, "#/next/browse/lib-movies", 1_000) },
 
   // Browse
@@ -192,6 +214,11 @@ export const scenarios: Scenario[] = [
 
   // UI gallery (browser development only)
   { name: "80-ui-gallery", fullPage: true, run: (page) => go(page, "#/next/gallery", 600) },
+  { name: "87-ui-gallery-media-cards", run: async (page) => {
+    await go(page, "#/next/gallery", 600);
+    await page.getByRole("region", { name: "Media cards" }).scrollIntoViewIfNeeded();
+    await page.waitForTimeout(500);
+  } },
   { name: "81-ui-gallery-picker-open", run: async (page) => {
     await go(page, "#/next/gallery", 400);
     await page.getByRole("button", { name: /^Streaming limit/ }).click();

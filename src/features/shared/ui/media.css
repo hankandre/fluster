@@ -1,0 +1,288 @@
+@layer reset, tokens, base, components, features, focus;
+
+@layer components {
+  /* Media card (DESIGN.md 7.5): a frame sized by --poster-w or --thumb-w, with the text clipped to its width. */
+  .media-card {
+    display: block;
+    box-sizing: border-box;
+    color: var(--text-1);
+    text-decoration: none;
+    text-align: start;
+  }
+
+  .media-card[data-variant="poster"] {
+    width: var(--poster-w);
+  }
+
+  .media-card[data-variant="thumb"],
+  .media-card[data-variant="episode"],
+  .media-card[data-variant="library"] {
+    width: var(--thumb-w);
+  }
+
+  .media-card-frame {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: var(--radius-art);
+    background: var(--surface-2);
+    transition:
+      transform var(--dur-quick) var(--ease-out),
+      box-shadow var(--dur-quick) var(--ease-out);
+  }
+
+  .media-card-frame[data-variant="poster"] {
+    aspect-ratio: 2 / 3;
+  }
+
+  .card-image {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background-color: var(--surface-2);
+    background-size: cover;
+  }
+
+  .card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity var(--dur-base) var(--ease-out);
+  }
+
+  .card-image[data-state="loaded"] img {
+    opacity: 1;
+  }
+
+  .card-image-fallback {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: var(--space-3);
+    background: var(--surface-2);
+    color: var(--text-2);
+    font: var(--type-label);
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+
+  .media-card-mark {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+    display: grid;
+    place-items: center;
+    min-width: var(--space-5);
+    height: var(--space-5);
+    padding: 0 var(--space-1);
+    box-sizing: border-box;
+    border-radius: var(--radius-pill);
+    background: var(--veil);
+    color: var(--text-1);
+    font: var(--type-meta);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .media-card-progress {
+    position: absolute;
+    inset: auto 0 0;
+    height: var(--space-1);
+    background: var(--track);
+  }
+
+  .media-card-progress > div {
+    height: 100%;
+    background: var(--art-accent);
+  }
+
+  .media-card-text {
+    display: grid;
+    gap: var(--space-1);
+    min-width: 0;
+    padding-top: var(--space-2);
+  }
+
+  .media-card-title {
+    overflow: hidden;
+    color: var(--text-2);
+    font: var(--type-label);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color var(--dur-quick) var(--ease-out);
+  }
+
+  .media-card-meta {
+    display: flex;
+    gap: var(--space-2);
+    min-width: 0;
+    color: var(--text-2);
+    font: var(--type-meta);
+  }
+
+  .media-card-subtitle {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .media-card-time {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  .media-card:hover .media-card-frame {
+    box-shadow: var(--shadow-lift);
+  }
+
+  .media-card:hover .media-card-title {
+    color: var(--text-1);
+  }
+
+  /* Media row (DESIGN.md 7.4): the list bleeds to the window edges and pads back in by the gutter. */
+  .media-row {
+    position: relative;
+    margin-bottom: var(--space-6);
+  }
+
+  .media-row-title {
+    margin: 0;
+    font: var(--type-heading);
+  }
+
+  .media-row-scroller {
+    position: relative;
+  }
+
+  .media-row-list {
+    display: flex;
+    gap: var(--space-5);
+    margin: 0 calc(-1 * var(--gutter));
+    padding: var(--space-5) var(--gutter);
+    overflow-x: auto;
+    scroll-padding-inline: var(--gutter);
+    list-style: none;
+  }
+
+  .media-row-list > li {
+    flex: none;
+  }
+
+  /* Pointer paging: shown on hover or focus-within for fine pointers; keys page for everyone else. */
+  .media-row-page {
+    display: none;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .media-row-page {
+      position: absolute;
+      top: 50%;
+      z-index: var(--z-content);
+      display: block;
+      opacity: 0;
+      transform: translateY(-50%);
+      transition: opacity var(--dur-quick) var(--ease-out);
+    }
+
+    .media-row-page--previous {
+      left: var(--space-2);
+    }
+
+    .media-row-page--next {
+      right: var(--space-2);
+    }
+
+    .media-row:hover .media-row-page,
+    .media-row:focus-within .media-row-page {
+      opacity: 1;
+    }
+  }
+
+  /* Grids: cards keep their width and the free space goes between columns (DESIGN.md 6). */
+  .media-grid {
+    display: grid;
+    justify-content: space-between;
+    column-gap: var(--space-5);
+    row-gap: var(--space-5);
+    margin: 0 0 var(--space-5);
+    padding: 0;
+    list-style: none;
+  }
+
+  .media-grid[data-variant="poster"] {
+    grid-template-columns: repeat(auto-fill, var(--poster-w));
+  }
+
+  .media-grid[data-variant="thumb"] {
+    grid-template-columns: repeat(auto-fill, var(--thumb-w));
+  }
+
+  /* Episode list: the card, then its text beside it (it wraps below the art in narrow windows). */
+  .episode-list {
+    display: grid;
+    gap: var(--space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .episode-list > li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--space-4);
+  }
+
+  .episode-text {
+    flex: 1 1 20ch;
+    min-inline-size: 0;
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .episode-text-title {
+    margin: 0;
+    font: var(--type-label);
+  }
+
+  .episode-text-meta {
+    margin: 0;
+    color: var(--text-2);
+    font: var(--type-meta);
+  }
+
+  .episode-overview {
+    margin: 0;
+    max-width: var(--measure);
+    color: var(--text-2);
+  }
+}
+
+/* Focus layer: one ring, drawn on the frame, so a card never shows two (DESIGN.md 7.5, 9). */
+@layer focus {
+  .media-card:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
+  .media-card:focus-visible .media-card-frame {
+    outline: 3px solid transparent;
+    box-shadow: var(--focus-ring), var(--shadow-lift);
+    transform: var(--lift);
+  }
+
+  .media-card:focus-visible .media-card-title {
+    color: var(--text-1);
+  }
+
+  @media (forced-colors: active) {
+    .media-card:focus-visible .media-card-frame {
+      outline-color: Highlight;
+    }
+  }
+}
