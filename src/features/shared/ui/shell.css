@@ -1,7 +1,7 @@
 @layer reset, tokens, base, components, features, focus;
 
 @layer components {
-  .app-frame {
+  :root {
     scroll-padding-top: var(--nav-h);
   }
 
