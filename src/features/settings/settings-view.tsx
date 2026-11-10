@@ -1,4 +1,5 @@
 import { useState, type ChangeEvent } from "react";
+import { SignOutButton } from "../sign-out-button";
 import { usePreferences } from "../../app/preferences";
 import { isLimitChoice, STREAMING_LIMIT_CHOICES_MBPS, type StreamingLimits } from "../../lib/streaming-limits";
 
@@ -39,8 +40,7 @@ export function SettingsView() {
           onChange={change("remoteMbps")}
         />
       </section>
-      <a href="#/next/home">Home</a>
-      <a href="#/next">Back to features</a>
+      <SignOutButton />
     </main>
   );
 }

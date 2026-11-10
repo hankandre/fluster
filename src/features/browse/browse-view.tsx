@@ -4,7 +4,6 @@ import type { LibraryView } from "../../domain/catalog";
 import { useSession, type SessionGateway } from "../../app/session";
 import { RowError } from "../home/media-row";
 import { scopeFor } from "../query-scope";
-import { SignOutButton } from "../sign-out-button";
 import { LibraryGrid } from "./library-grid";
 
 const SIGN_IN_ROUTE = "#/next/sign-in";
@@ -28,7 +27,6 @@ export function BrowseFrame({ title, routeKey, back, children }: { title: string
       <h1 ref={heading} tabIndex={-1}>{title}</h1>
       {gateway ? children(gateway) : null}
       {back}
-      <SignOutButton />
     </main>
   );
 }
@@ -38,7 +36,7 @@ export function BrowseView({ libraryId }: { libraryId?: string }) {
     <BrowseFrame
       title="Browse"
       routeKey={`browse/${libraryId ?? ""}`}
-      back={<a href={libraryId ? "#/next/browse" : "#/next"}>{libraryId ? "Back to libraries" : "Back to features"}</a>}
+      back={libraryId ? <a href="#/next/browse">Back to libraries</a> : null}
     >
       {(gateway) => <Libraries gateway={gateway} libraryId={libraryId} />}
     </BrowseFrame>

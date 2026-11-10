@@ -8,6 +8,7 @@ import { BrowseView, CollectionView, SeriesView } from "../features/browse";
 import { SearchView } from "../features/search";
 import { DetailView, ItemDetailView } from "../features/detail";
 import { SettingsView } from "../features/settings";
+import { SignedInChrome } from "../features/shell";
 import { PlayerFeatureView, PlayerRouteView } from "../features/player";
 import { parsePlayRoute } from "../features/routes";
 import { createServices, type AppServices } from "./compose";
@@ -59,7 +60,7 @@ export function App() {
       <PlayerServicesProvider services={player}>
         <PreferencesProvider preferences={preferences}>
           {!services.native && <BrowserModeLabel />}
-          {inApp ? renderRoute(hash, services) : null}
+          {inApp ? renderWithChrome(hash, services) : null}
         </PreferencesProvider>
       </PlayerServicesProvider>
     </SessionProvider>
@@ -76,10 +77,29 @@ function BrowserModeLabel() {
   return <p className="browser-mode-label" role="status">Browser development mode</p>;
 }
 
+// Which pages get the app nav. The player, sign-in, and developer pages do not.
+function chromeFor(hash: string): "nav" | "none" {
+  switch (hash) {
+    case "#/next":
+    case "#/next/sign-in":
+    case "#/next/gallery":
+      return "none";
+    default:
+      if (hash.startsWith("#/next/play/")) return "none";
+      return "nav";
+  }
+}
+
+function renderWithChrome(hash: string, services: AppServices) {
+  const route = renderRoute(hash, services);
+  if (chromeFor(hash) === "none") return route;
+  return <SignedInChrome hash={hash}>{route}</SignedInChrome>;
+}
+
 function renderRoute(hash: string, services: AppServices) {
   switch (hash) {
     case "#/next":
-      return <FeatureIndex />;
+      return services.native ? <NotFoundView /> : <FeatureIndex />;
     case "#/next/sign-in":
       return <SignInView discovery={services.discovery} />;
     case "#/next/home":

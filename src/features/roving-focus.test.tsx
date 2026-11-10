@@ -110,3 +110,36 @@ describe("useRovingFocus", () => {
     expect(second).toHaveFocus();
   });
 });
+
+function Preferred({ preferredIndex }: { preferredIndex?: number }) {
+  const roving = useRovingFocus<HTMLUListElement>("row", { preferredIndex });
+  return (
+    <ul {...roving}>
+      {[0, 1, 2].map((index) => (
+        <li key={index}><a href={`#/item/${index}`} data-roving-item="">Item {index}</a></li>
+      ))}
+    </ul>
+  );
+}
+
+describe("useRovingFocus preferredIndex", () => {
+  it("starts the Tab stop at preferredIndex", () => {
+    render(<Preferred preferredIndex={2} />);
+    expect(tabStops()).toEqual(["Item 2"]);
+  });
+
+  it("moves the Tab stop when preferredIndex changes, without moving focus", () => {
+    const { rerender } = render(<Preferred preferredIndex={1} />);
+    expect(tabStops()).toEqual(["Item 1"]);
+    rerender(<Preferred preferredIndex={2} />);
+    expect(tabStops()).toEqual(["Item 2"]);
+    expect(document.body).toHaveFocus();
+  });
+
+  it("keeps the Tab stop the user moved to when the value is unchanged", () => {
+    const { rerender } = render(<Preferred preferredIndex={1} />);
+    fireEvent.focus(screen.getByRole("link", { name: "Item 0" }));
+    rerender(<Preferred preferredIndex={1} />);
+    expect(tabStops()).toEqual(["Item 0"]);
+  });
+});

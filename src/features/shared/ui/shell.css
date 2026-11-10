@@ -1,0 +1,99 @@
+@layer reset, tokens, base, components, features, focus;
+
+@layer components {
+  :root {
+    scroll-padding-top: var(--nav-h);
+  }
+
+  .skip-link {
+    position: absolute;
+    inset-block-start: calc(var(--nav-h) * -2);
+    inset-inline-start: var(--space-2);
+    z-index: calc(var(--z-nav) + 1);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-control);
+    background: var(--surface-2);
+    color: var(--text-1);
+    font: var(--type-label);
+  }
+
+  .skip-link:focus {
+    inset-block-start: var(--space-2);
+  }
+
+  .app-nav {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: var(--z-nav);
+    block-size: var(--nav-h);
+    box-sizing: border-box;
+    padding-inline: var(--space-5);
+    background: var(--surface-0-glass);
+    border-block-end: 1px solid var(--line);
+  }
+
+  .app-nav-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    block-size: 100%;
+  }
+
+  .app-nav-list {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-inline-size: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    /* Room inside the scroll box for the 4px focus ring on every side. */
+    padding: var(--space-2);
+    margin-inline: calc(var(--space-2) * -1);
+    scroll-padding: var(--space-2);
+  }
+
+  .app-nav-entry {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    box-sizing: border-box;
+    min-block-size: var(--hit-min);
+    min-inline-size: var(--hit-min);
+    padding-inline: var(--space-4);
+    border-radius: var(--radius-control);
+    color: var(--text-2);
+    font: var(--type-label);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color var(--dur-quick) var(--ease-out), background-color var(--dur-quick) var(--ease-out);
+  }
+
+  .app-nav-entry:hover {
+    color: var(--text-1);
+    background: var(--surface-2);
+  }
+
+  .app-nav-entry[aria-current="page"] {
+    color: var(--text-1);
+    background: var(--surface-2);
+  }
+
+  .app-nav-entry[aria-current="page"]::after {
+    content: "";
+    position: absolute;
+    inset-inline: var(--space-4);
+    inset-block-end: var(--space-1);
+    block-size: 2px;
+    border-radius: var(--radius-pill);
+    background: var(--text-1);
+  }
+
+  .app-nav-wordmark {
+    color: var(--text-1);
+  }
+}

@@ -134,3 +134,11 @@ Read DESIGN.md and the PR's screenshots first. Answer each question with evidenc
 ## Idea: a keyboard shortcut for toasts (P13-03 review, not built)
 
 Toasts never take focus, so a keyboard user can miss an action such as Undo. A later task could add one key (for example `g`, "go to notification") that moves focus to the newest toast and returns it on Escape. It needs a keymap entry in DESIGN.md section 9 and a decision on TV, so it is parked here.
+
+## Follow-ups
+
+- Library overflow in the app nav (P13-06, Decision 4): the nav scrolls horizontally and arrow keys scroll the focused entry into view. A server with many libraries needs a "More" menu or a Libraries entry; decide it with P13-11 (Libraries page).
+- Nav background (P13-06, Decision 11): the bar uses `--surface-0-glass` (`--surface-0` at 92%, defined in `tokens.css` because `src/styles/css-rules.test.ts` forbids `color-mix` outside `src/styles/`). P13-08 adds the blur.
+- Nav scroll cue (P13-06, Decision 4 follow-up): nothing shows that the nav list scrolls on a phone. Add an edge fade or cue.
+- "Browser development mode" label overlaps content on phone captures (found in the P13-06 design review).
+- Native checkbox and select in the Browse toolbar (found in the P13-06 design review); replace them in P13-11.

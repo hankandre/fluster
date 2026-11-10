@@ -32,8 +32,6 @@ export function PlayerFeatureView() {
     <main>
       <h1>Player</h1>
       <p>Open a movie or episode and choose Play to start the player.</p>
-      <a href="#/next/home">Home</a>
-      <a href="#/next">Back to features</a>
     </main>
   );
 }

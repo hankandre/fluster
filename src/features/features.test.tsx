@@ -26,26 +26,6 @@ function SignedIn({ gateway, label = "test sign in" }: { gateway: SessionGateway
   return <button onClick={() => session.signIn(gateway)}>{label}</button>;
 }
 
-it("signs out from Home: revokes the server session and returns to sign-in", async () => {
-  const gateway = stubGateway();
-  render(
-    <QueryClientProvider client={new QueryClient()}>
-      <SessionProvider createGateway={() => gateway}>
-        <SignedIn gateway={gateway} />
-        <HomeView />
-      </SessionProvider>
-    </QueryClientProvider>,
-  );
-  expect(screen.queryByRole("button", { name: "Sign out" })).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "test sign in" }));
-  await act(async () => {
-    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
-  });
-  expect(gateway.logout).toHaveBeenCalledTimes(1);
-  expect(window.location.hash).toBe("#/next/sign-in");
-  expect(screen.queryByRole("button", { name: "Sign out" })).not.toBeInTheDocument();
-});
-
 it("logs out the previous gateway once when another one signs in", () => {
   const first = stubGateway();
   const second = stubGateway();
@@ -65,10 +45,10 @@ it.each([
   ["Browse", BrowseView],
   ["Detail", DetailView],
   ["Player", PlayerFeatureView],
-])("renders the %s placeholder with a link back", (name, View) => {
+])("renders the %s placeholder with no link to the feature index", (name, View) => {
   render(<SessionProvider createGateway={() => stubGateway()}><View /></SessionProvider>);
   expect(screen.getByRole("heading", { name })).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: "Back to features" })).toHaveAttribute("href", "#/next");
+  expect(screen.queryAllByRole("link").filter((link) => link.getAttribute("href") === "#/next")).toEqual([]);
 });
 
 it("lists every feature", () => {

@@ -74,6 +74,7 @@
   --shadow-sheet: 0 28px 72px -16px rgb(0 0 0 / 0.75);
   --scrim-hero: linear-gradient(90deg, rgb(11 12 14 / 0.94) 0%, rgb(11 12 14 / 0.72) 38%, rgb(11 12 14 / 0) 72%);
   --scrim-floor: linear-gradient(0deg, var(--surface-0) 0%, rgb(11 12 14 / 0) 40%);
+  --surface-0-glass: color-mix(in srgb, var(--surface-0) 92%, transparent);
   --scrim-player-top: linear-gradient(180deg, rgb(0 0 0 / 0.72), rgb(0 0 0 / 0));
   --scrim-player-bottom: linear-gradient(0deg, rgb(0 0 0 / 0.85), rgb(0 0 0 / 0));
 

@@ -56,6 +56,12 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("library list", () => {
+  it("has no Sign out button and no link to the feature index", async () => {
+    await renderView(fakeGateway(), <BrowseView />);
+    expect(screen.queryByRole("button", { name: "Sign out" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Back to features" })).not.toBeInTheDocument();
+  });
+
   it("links to each library grid", async () => {
     await renderView(fakeGateway(), <BrowseView />);
     expect(await screen.findByRole("link", { name: "Movies" })).toHaveAttribute("href", "#/next/browse/lib-1");

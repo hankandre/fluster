@@ -69,6 +69,12 @@ describe("HomeView", () => {
     expect(gateway.resumeItems).not.toHaveBeenCalled();
   });
 
+  it("has no Sign out button or developer links; the nav and Settings own them", async () => {
+    await renderHome(fakeGateway());
+    expect(screen.queryByRole("button", { name: "Sign out" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Back to features" })).not.toBeInTheDocument();
+  });
+
   it("renders Continue Watching, Next Up, and a Latest row per library", async () => {
     await renderHome(fakeGateway({
       userViews: vi.fn().mockResolvedValue([{ id: "lib-1", name: "Movies" }, { id: "lib-2", name: "Shows" }]),

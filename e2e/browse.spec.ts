@@ -70,8 +70,7 @@ test("browse a library, sort, open a series and season, and open a collection", 
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { name: "Home" })).toBeVisible({ timeout: 8_000 });
 
-  await page.goto("/#/next/browse");
-  await page.getByRole("link", { name: "Mixed Library" }).click();
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Mixed Library" }).click();
   await expect(page.getByRole("link", { name: "Plain Movie, 2016" })).toBeVisible();
 
   await page.getByLabel("Sort by").selectOption("DateCreated");
@@ -83,7 +82,7 @@ test("browse a library, sort, open a series and season, and open a collection", 
   await expect(page.getByRole("link", { name: "Second Season Opener, Episode 1" })).toBeVisible();
 
   await page.getByRole("link", { name: "Back to libraries" }).click();
-  await page.getByRole("link", { name: "Mixed Library" }).click();
+  await page.getByRole("main").getByRole("link", { name: "Mixed Library" }).click();
   await page.getByRole("link", { name: "Great Saga, 2016" }).click();
   await expect(page.getByRole("link", { name: "Boxed Movie, 2016" })).toBeVisible();
 });
