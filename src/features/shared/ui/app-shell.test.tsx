@@ -1,5 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AppNav } from "./app-nav";
 import { AppShell } from "./app-shell";
@@ -41,5 +42,11 @@ describe("AppShell", () => {
     await user.click(screen.getByRole("link", { name: "Skip to content" }));
     expect(screen.getByRole("main")).toHaveAttribute("tabindex", "0");
     expect(screen.getByRole("main")).toHaveFocus();
+  });
+
+  it("sets scroll-padding-top on the document scroller so the sticky nav never covers focus", () => {
+    const css = readFileSync("src/features/shared/ui/shell.css", "utf8");
+    expect(css).toMatch(/:root\s*\{[^}]*scroll-padding-top:\s*var\(--nav-h\)/);
+    expect(css).not.toMatch(/\.app-frame\s*\{[^}]*scroll-padding-top/);
   });
 });
