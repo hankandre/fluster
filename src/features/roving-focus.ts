@@ -112,7 +112,7 @@ export function useRovingFocus<T extends HTMLElement>(layout: RovingLayout, opti
   useLayoutEffect(sync);
 
   const onKeyDown = useCallback((event: KeyboardEvent<T>) => {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
     const items = itemsIn(event.currentTarget);
     const current = items.findIndex((item) => item === event.target || item.contains(event.target as Node));
     if (current < 0) return;

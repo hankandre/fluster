@@ -42,7 +42,7 @@ test("Play opens the player and Back returns to the detail view", async ({ page 
 
   await page.getByLabel("Back to library").click();
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
-  await expect(page.getByRole("heading", { name: "Arrival", level: 2 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Arrival", level: 1 })).toBeVisible();
   await expect(page.locator("video")).toHaveCount(0);
   // Back went back through history instead of adding a second detail entry.
   expect(await page.evaluate(() => history.length)).toBe(historyLength + 1);
@@ -61,7 +61,7 @@ test("Back does not wait for a slow Jellyfin progress report, and Stopped is sti
 
   await page.getByLabel("Back to library").click();
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/, { timeout: 1_000 });
-  await expect(page.getByRole("heading", { name: "Arrival", level: 2 })).toBeVisible({ timeout: 1_000 });
+  await expect(page.getByRole("heading", { name: "Arrival", level: 1 })).toBeVisible({ timeout: 1_000 });
   expect(reportPaths(log)).not.toContain("/Sessions/Playing/Stopped");
 
   log.releaseReports();
@@ -84,6 +84,7 @@ test("Resume starts at the saved position and the end of the file returns to the
 
   await expect(page.getByRole("link", { name: "Start over" })).toBeVisible();
   await page.getByRole("link", { name: "Resume from 12:34" }).click();
+  await expect(page).toHaveURL(/#\/next\/play\/movie-1/);
   await expect(page.getByRole("heading", { name: "Arrival", level: 1 })).toBeVisible();
   await expect.poll(() => log.playbackInfo.length).toBe(1);
   expect(log.playbackInfo[0]).toMatchObject({ StartTimeTicks: 7_540_000_000, MediaSourceId: "src-hd" });
@@ -93,7 +94,7 @@ test("Resume starts at the saved position and the end of the file returns to the
   await page.locator("video").evaluate((video) => video.dispatchEvent(new Event("ended")));
 
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
-  await expect(page.getByRole("heading", { name: "Arrival", level: 2 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Arrival", level: 1 })).toBeVisible();
   await expect.poll(() => reportPaths(log)).toContain("/Sessions/Playing/Stopped");
 });
 
@@ -116,7 +117,7 @@ test("Retry after a playback error renegotiates, and Back returns to the detail 
 
   await page.getByRole("button", { name: "Back to library" }).last().click();
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
-  await expect(page.getByRole("heading", { name: "Arrival", level: 2 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Arrival", level: 1 })).toBeVisible();
 });
 
 test("a Blu-ray folder offered for direct play is asked for once more without it, then explained", async ({ page }) => {
@@ -152,7 +153,7 @@ test("a Blu-ray folder offered for direct play is asked for once more without it
 
   await page.getByRole("button", { name: "Back to details" }).click();
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
-  await expect(page.getByRole("heading", { name: "Arrival", level: 2 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Arrival", level: 1 })).toBeVisible();
 });
 
 test("a server that won't convert for this account names the setting, and Retry plays once it is lifted", async ({ page }) => {
@@ -223,7 +224,9 @@ test("Back cancels an in-flight playback negotiation", async ({ page }) => {
 
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
   await page.waitForTimeout(450);
-  await expect(page.getByRole("heading", { name: "Arrival", level: 1 })).toHaveCount(0);
+  // The detail page has its own level 1 "Arrival", so assert directly that the player never mounted.
+  await expect(page.locator(".player-page")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Back to library" })).toHaveCount(0);
   await expect(page.locator("video")).toHaveCount(0);
   expect(log.playbackInfo).toHaveLength(1);
   expect(log.reports).toHaveLength(0);

@@ -93,3 +93,60 @@
     }
   }
 }
+
+@layer components {
+  /* Notice (DESIGN.md 7.16): left-aligned in five columns, centred below the nav. */
+  .ui-notice {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    min-block-size: calc(100vh - var(--nav-h));
+    padding-inline: var(--gutter);
+    padding-block: var(--space-7);
+  }
+
+  .ui-notice-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+    inline-size: calc((100% - 2 * var(--gutter)) * 5 / 12);
+    min-inline-size: 0;
+  }
+
+  @media (max-width: 719px) {
+    .ui-notice-text {
+      inline-size: 100%;
+    }
+  }
+
+  .ui-notice-context {
+    margin: 0;
+    color: var(--text-2);
+    font: var(--type-meta);
+  }
+
+  .ui-notice-title {
+    margin: 0;
+    font: var(--type-title);
+    color: var(--text-1);
+  }
+
+  .ui-notice-body {
+    margin: 0;
+    max-inline-size: var(--measure);
+    color: var(--text-1);
+    font: var(--type-body-lg);
+  }
+
+  .ui-notice-help {
+    color: var(--text-2);
+    font: var(--type-body);
+  }
+
+  .ui-notice-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+}

@@ -1,0 +1,11 @@
+@layer reset, tokens, base, components, features, focus;
+
+@layer components {
+  .ui-logo-title {
+    display: block;
+    max-inline-size: var(--hero-logo-max-w);
+    max-block-size: var(--hero-logo-max-h);
+    object-fit: contain;
+    object-position: left bottom;
+  }
+}

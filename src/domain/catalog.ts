@@ -235,10 +235,13 @@ export interface ItemDetail {
   id: string;
   type: string;
   title: string;
-  // The show an episode belongs to, with its season and episode label.
+  // The show an episode belongs to, with its season and episode numbers (episodes only).
   seriesId?: string;
   seriesName?: string;
-  episodeLabel?: string;
+  seasonId?: string;
+  seasonName?: string;
+  seasonNumber?: number;
+  episodeNumber?: number;
   year?: number;
   runTimeTicks?: number;
   overview?: string;

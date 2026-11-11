@@ -1681,10 +1681,10 @@
             "Uses only shared UI primitives; no native select, radio, or checkbox remains"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "Implemented per docs/specs/P13-09.md on branch task/P13-09: pnpm check, pnpm test:e2e (70 passed), pnpm test:visual (114 passed) green. Awaiting fresh-context review, PR screenshots at both sizes, and the Jellyfin 10.11 SeasonId check."
         },
         {
           "id": "P13-10",

@@ -25,6 +25,16 @@
     transition: background-color var(--dur-quick) var(--ease-out);
   }
 
+  .ui-picker--pill {
+    min-width: 0;
+  }
+
+  .ui-picker--pill .ui-picker-trigger {
+    border-color: transparent;
+    border-radius: var(--radius-pill);
+    background: var(--fill-secondary);
+  }
+
   .ui-picker-trigger:hover:not(:disabled) {
     background: var(--surface-3);
   }

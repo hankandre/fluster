@@ -81,6 +81,21 @@
     background: var(--surface-3);
   }
 
+  /* Toggle button (DESIGN.md 11.4): the icon and aria-pressed carry the state; the fill steps up one level. */
+  .ui-toggle[aria-pressed="true"] {
+    background: var(--surface-3);
+    border-color: var(--text-1);
+  }
+
+  .ui-toggle[aria-disabled="true"] {
+    opacity: 0.6;
+  }
+
+  /* The resume ring sits in front of the label of a primary button. */
+  .ui-button--primary .ui-progress-ring {
+    color: var(--on-light);
+  }
+
   /* Toggle chip (DESIGN.md 7.12) */
   .ui-chip {
     display: inline-flex;

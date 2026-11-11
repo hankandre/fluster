@@ -121,6 +121,8 @@ describe("toItemDetail", () => {
       Name: "Pilot",
       Type: "Episode",
       SeriesName: "Show",
+      SeasonId: "se1",
+      SeasonName: "Season 1",
       ParentIndexNumber: 1,
       IndexNumber: 2,
       Genres: ["Drama"],
@@ -133,12 +135,25 @@ describe("toItemDetail", () => {
     })!;
     expect(detail).toMatchObject({
       seriesName: "Show",
-      episodeLabel: "Season 1, Episode 2",
+      seasonId: "se1",
+      seasonName: "Season 1",
+      seasonNumber: 1,
+      episodeNumber: 2,
       genres: ["Drama"],
       cast: [{ name: "Ann", role: "Lead" }],
       userData: { played: true, favorite: true, resumePositionTicks: 50 },
       backdrop: { itemId: "e1", type: "Backdrop", tag: "bd" },
     });
+  });
+
+  it("sets the season and episode numbers only when both are present, and none for a movie", () => {
+    const half = toItemDetail({ Id: "e1", Name: "Pilot", Type: "Episode", IndexNumber: 2 })!;
+    expect(half).not.toHaveProperty("seasonNumber");
+    expect(half).not.toHaveProperty("episodeNumber");
+    expect(half).not.toHaveProperty("seasonId");
+    const movie = toItemDetail({ Id: "m1", Name: "Film", Type: "Movie", ParentIndexNumber: 1, IndexNumber: 2, SeasonId: "x" })!;
+    expect(movie).not.toHaveProperty("seasonNumber");
+    expect(movie).not.toHaveProperty("seasonId");
   });
 
   it("returns undefined without an ID or name", () => {

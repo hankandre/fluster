@@ -1,25 +1,22 @@
+import { useId } from "react";
 import type { ItemVersion } from "../../domain/catalog";
 import { audioLabel, sizeLabel, subtitleLabel, videoLabel } from "./format";
 
-// Version names are the server's, such as "1080p" or "4K HDR". One radio group
-// keeps arrow-key selection native.
-export function VersionPicker({ versions, selectedId, onSelect }: { versions: ItemVersion[]; selectedId: string; onSelect: (id: string) => void }) {
+// The chosen version's file and streams (DESIGN.md 7.9). The version Picker lives in the action bar.
+export function FileAndStreams({ versions, selected }: { versions: ItemVersion[]; selected: ItemVersion | undefined }) {
+  const headingId = useId();
   return (
-    <fieldset className="version-picker">
-      <legend>Version</legend>
-      {versions.map((version) => (
-        <label key={version.id}>
-          <input
-            type="radio"
-            name="version"
-            value={version.id}
-            checked={version.id === selectedId}
-            onChange={() => onSelect(version.id)}
-          />
-          {version.name}
-        </label>
-      ))}
-    </fieldset>
+    <section aria-labelledby={headingId} className="file-and-streams">
+      <h2 id={headingId} className="ui-section-title">File and streams</h2>
+      {selected ? (
+        <>
+          {versions.length > 1 ? <p className="file-and-streams-version">Version: {selected.name}</p> : null}
+          <MediaInfo version={selected} />
+        </>
+      ) : (
+        <p>No media information for this item.</p>
+      )}
+    </section>
   );
 }
 

@@ -165,7 +165,7 @@ test("signs in, opens an item, plays, pauses, seeks, and leaves with the keyboar
 
   await page.keyboard.press("Escape");
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
-  await expect(page.getByRole("heading", { name: "Arrival", level: 2 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Arrival", level: 1 })).toBeVisible();
   await expect(video(page)).toHaveCount(0);
   await expect.poll(() => reports).toContain("/Sessions/Playing/Stopped");
 });

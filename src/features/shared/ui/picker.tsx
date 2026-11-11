@@ -21,6 +21,10 @@ interface PickerProps {
   onChange(value: string): void;
   placeholder?: string;
   disabled?: boolean;
+  // "pill" is the compact trigger used in an action bar.
+  appearance?: "field" | "pill";
+  // Makes the trigger an item of the surrounding roving row.
+  rovingItem?: boolean;
 }
 
 const TYPEAHEAD_RESET_MS = 700;
@@ -49,7 +53,7 @@ export function typeaheadIndex(options: PickerOption[], current: number, typed: 
 
 // A menu button that opens a listbox (ARIA APG). Focus moves onto the options while open;
 // Escape closes and returns focus to the trigger. It never renders a native select.
-export function Picker({ label, hideLabel, options, value, onChange, placeholder = "Choose", disabled, }: PickerProps) {
+export function Picker({ label, hideLabel, options, value, onChange, placeholder = "Choose", disabled, appearance = "field", rovingItem }: PickerProps) {
   const id = useId();
   const labelId = `${id}-label`;
   const triggerId = `${id}-trigger`;
@@ -185,7 +189,7 @@ export function Picker({ label, hideLabel, options, value, onChange, placeholder
   const current = selected >= 0 ? options[selected] : undefined;
 
   return (
-    <div className="ui-picker" ref={root} onBlur={onBlur}>
+    <div className={appearance === "pill" ? "ui-picker ui-picker--pill" : "ui-picker"} ref={root} onBlur={onBlur}>
       <span className={hideLabel ? "visually-hidden" : "ui-field-label"} id={labelId}>{label}</span>
       <button
         ref={trigger}
@@ -196,6 +200,7 @@ export function Picker({ label, hideLabel, options, value, onChange, placeholder
         aria-expanded={open}
         aria-labelledby={`${labelId} ${triggerId}`}
         disabled={disabled}
+        {...(rovingItem ? { "data-roving-item": "" } : {})}
         onClick={() => (open ? close(false) : openAt(undefined))}
         onKeyDown={onTriggerKeyDown}
       >

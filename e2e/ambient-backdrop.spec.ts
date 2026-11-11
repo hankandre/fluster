@@ -22,15 +22,16 @@ test("the detail frame and content paint above the ambient backdrop", async ({ p
   await installMockServer(page);
   await signIn(page);
   await page.goto("/#/next/item/m1");
-  const heading = page.getByRole("heading", { name: "Details" });
+  const heading = page.getByRole("heading", { level: 1, name: "The Long Quiet" });
   await heading.waitFor();
-  await page.getByRole("heading", { name: "The Long Quiet" }).waitFor();
   await expect(page.getByTestId("ambient-backdrop")).toBeAttached();
   // The layers ignore the pointer, so let them be hit to expose paint order.
   await page.addStyleTag({ content: ".ambient-layers, .ambient-layers * { pointer-events: auto !important; }" });
   expect(await paintsOnTop(heading)).toBe(true);
-  expect(await paintsOnTop(page.getByRole("heading", { name: "The Long Quiet" }))).toBe(true);
-  expect(await paintsOnTop(page.getByRole("link", { name: "Back to home" }))).toBe(true);
+  expect(await paintsOnTop(page.getByRole("link", { name: /^(Play|Resume)/ }))).toBe(true);
+  const fileHeading = page.getByRole("heading", { name: "File and streams" });
+  await fileHeading.scrollIntoViewIfNeeded();
+  expect(await paintsOnTop(fileHeading)).toBe(true);
 });
 
 test("the Home ambient backdrop is visible, follows the focused card after 300 ms, and the rows paint above it", async ({ page }) => {

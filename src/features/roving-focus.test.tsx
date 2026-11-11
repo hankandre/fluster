@@ -222,3 +222,28 @@ describe("useRovingFocus spatial", () => {
     restore();
   });
 });
+
+function GuardedRow() {
+  const roving = useRovingFocus<HTMLUListElement>("row", { spatial: true });
+  return (
+    <ul data-spatial-row="" aria-label="guarded" {...roving}>
+      <li><a href="#/g" data-roving-item="" onKeyDown={(event) => { if (event.key === "ArrowDown") event.preventDefault(); }}>g0</a></li>
+    </ul>
+  );
+}
+
+describe("useRovingFocus with a child that handles the key", () => {
+  it("does not move focus when a child handler already called preventDefault", () => {
+    const restore = stubBoxes();
+    render(
+      <main>
+        <GuardedRow />
+        <SpatialRow name="c" count={2} />
+      </main>,
+    );
+    screen.getByText("g0").focus();
+    fireEvent.keyDown(screen.getByText("g0"), { key: "ArrowDown" });
+    expect(document.activeElement?.textContent).toBe("g0");
+    restore();
+  });
+});

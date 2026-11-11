@@ -1,17 +1,25 @@
 // Shared UI primitives (DESIGN.md 7). Features build from these; none renders a native select, radio, or checkbox.
 export { AppNav, type NavLibrary } from "./app-nav";
 export { AppShell, useNavOverHero } from "./app-shell";
+export { ActionBar } from "./action-bar";
 export { Button, ButtonLink, buttonClass, type ButtonProps, type ButtonVariant } from "./button";
 export { Dialog } from "./dialog";
 export { EmptyState } from "./empty-state";
 export { CardImage } from "./card-image";
+export { DetailHeader, type DetailHeaderProps } from "./detail-header";
 export { Hero, type HeroProps } from "./hero";
 export { InlineError } from "./inline-error";
+export { LogoTitle } from "./logo-title";
+export { MediaBadges } from "./media-badges";
 export { MediaCard, type MediaCardProps, type MediaCardVariant } from "./media-card";
 export { MediaRow, type MediaRowProps } from "./media-row";
+export { Notice } from "./notice";
+export { initials, PersonRow, type Person } from "./person-row";
 export { Picker, type PickerOption } from "./picker";
 export { SegmentedTabPanel, SegmentedTabs, type TabItem } from "./segmented-tabs";
+export { ProgressRing } from "./progress-ring";
 export { Skeleton } from "./skeleton";
 export { TextField, type TextFieldType } from "./text-field";
 export { ToastProvider, useToast, type ToastInput, type ToastTone } from "./toast";
+export { ToggleButton } from "./toggle-button";
 export { ToggleChip } from "./toggle-chip";

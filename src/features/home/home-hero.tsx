@@ -50,7 +50,12 @@ export function HomeHero({ card, gateway, scope }: { card: MediaCard; gateway: S
       facts={heroFacts(card, detail.data)}
       overview={detail.data?.overview}
       detailPending={detail.isPending}
-      primary={action ? { label: action.label, href: playRoute(action.route), onActivate: playActivation(action.route) } : undefined}
+      primary={action ? {
+        label: action.label,
+        href: playRoute(action.route),
+        onActivate: playActivation(action.route),
+        ...(action.route.startTicks > 0 && card.progress !== undefined ? { progress: card.progress } : {}),
+      } : undefined}
       primaryPending={isSeries && episode.isPending}
       moreInfoHref={cardRoute(card)}
     />
