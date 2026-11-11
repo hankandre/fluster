@@ -1443,7 +1443,8 @@
             "P12-01"
           ],
           "acceptance": [
-            "A decision record compares React Native (react-native-tvos) with libmpv on Android against at least one alternative, using current sources",
+            "A decision record compares React Native (react-native-tvos), Kotlin Multiplatform with Compose, and native Kotlin, each with libmpv on Android, using current sources",
+            "For each option it shows, with current sources, that the shell can direct play and direct stream original files with hardware decoding (MediaCodec on Android, VideoToolbox on Apple), and rules out any option that cannot",
             "It states how the TV engine sends the Authorization header on static and HLS requests and refuses redirects, matching decision 0002",
             "It lists what P9-01 must prove, including a converted sample over HLS",
             "The user approves it"
@@ -2455,6 +2456,7 @@
           "acceptance": [
             "The shell imports the unchanged domain, gateway, and coordinator",
             "Android TV plays a sample with direct play and a converted sample over HLS with header authentication",
+            "The prototype shows hardware decoding is active during direct play and direct stream (for example mpv reports a MediaCodec hwdec)",
             "A decision record chooses the TV and mobile shell"
           ],
           "verify": "pnpm check",
