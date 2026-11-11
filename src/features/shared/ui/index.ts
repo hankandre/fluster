@@ -26,3 +26,5 @@ export { ToggleButton } from "./toggle-button";
 export { ToggleChip } from "./toggle-chip";
 export { EpisodeList, EpisodeRow, type EpisodeRowProps } from "./episode-row";
 export { MediaFrame } from "./media-frame";
+export { SearchField, type SearchFieldProps } from "./search-field";
+export { SearchSuggestion, type SearchSuggestionProps } from "./search-suggestion";

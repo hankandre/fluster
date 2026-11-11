@@ -196,6 +196,11 @@ export function toSearchHints(hints: SearchHintDto[] | undefined): SearchHint[] 
       kind,
       ...(hint.ProductionYear != null ? { year: hint.ProductionYear } : {}),
       ...(hint.Series ? { seriesName: hint.Series } : {}),
+      ...(typeof hint.PrimaryImageTag === "string" && hint.PrimaryImageTag.length > 0
+        ? { image: { itemId: hint.Id, type: "Primary" as const, tag: hint.PrimaryImageTag } }
+        : {}),
+      ...(kind === "Episode" && hint.ParentIndexNumber != null ? { seasonNumber: hint.ParentIndexNumber } : {}),
+      ...(kind === "Episode" && hint.IndexNumber != null ? { episodeNumber: hint.IndexNumber } : {}),
     }];
   });
 }

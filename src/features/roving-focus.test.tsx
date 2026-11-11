@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { nearestByCentre, nextRovingIndex, useRovingFocus, type RovingLayout } from "./roving-focus";
+import { moveToAdjacentRow, nearestByCentre, nextRovingIndex, useRovingFocus, type RovingLayout } from "./roving-focus";
 
 afterEach(cleanup);
 
@@ -255,5 +255,28 @@ describe("useRovingFocus with a child that handles the key", () => {
     fireEvent.keyDown(screen.getByText("g0"), { key: "ArrowDown" });
     expect(document.activeElement?.textContent).toBe("g0");
     restore();
+  });
+});
+
+describe("moveToAdjacentRow", () => {
+  function Rows() {
+    return (
+      <main>
+        <div data-spatial-row="" data-testid="row-a"><a href="#/a" data-roving-item="">A1</a><a href="#/b" data-roving-item="">A2</a></div>
+        <div data-spatial-row="" data-testid="row-b"><a href="#/c" data-roving-item="">B1</a></div>
+      </main>
+    );
+  }
+
+  it("moves to the nearest item of the next row and returns false past the ends", () => {
+    render(<Rows />);
+    const rowA = screen.getByTestId("row-a");
+    const rowB = screen.getByTestId("row-b");
+    expect(moveToAdjacentRow(rowA, screen.getByRole("link", { name: "A1" }), 1)).toBe(true);
+    expect(screen.getByRole("link", { name: "B1" })).toHaveFocus();
+    expect(moveToAdjacentRow(rowB, screen.getByRole("link", { name: "B1" }), 1)).toBe(false);
+    expect(moveToAdjacentRow(rowB, screen.getByRole("link", { name: "B1" }), -1)).toBe(true);
+    expect(screen.getByRole("link", { name: "A1" })).toHaveFocus();
+    expect(moveToAdjacentRow(rowA, screen.getByRole("link", { name: "A1" }), -1)).toBe(false);
   });
 });

@@ -131,6 +131,11 @@ export interface SearchHint {
   year?: number;
   // The show an episode belongs to.
   seriesName?: string;
+  // The Primary image, when the server sent a tag.
+  image?: ImageRef;
+  // Episode numbers, for episode hints only.
+  seasonNumber?: number;
+  episodeNumber?: number;
 }
 
 export interface SearchQuery {

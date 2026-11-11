@@ -56,6 +56,12 @@ export interface MockOptions {
   libraryItemsError?: boolean;
   // /UserViews returns twelve libraries, so the nav overflows on a phone.
   manyLibraries?: boolean;
+  // /Items?searchTerm answers after this delay (the search loading state).
+  searchDelayMs?: number;
+  // /Items?searchTerm answers 500 (the search error state).
+  searchError?: boolean;
+  // /Items?searchTerm matches 60 copies of a movie and honours startIndex and limit, so "o" has more than one page.
+  longSearch?: boolean;
 }
 
 export const ticks = (seconds: number): number => Math.round(seconds * 1e7);
@@ -170,6 +176,7 @@ function imageFor(id: string, type: string): string {
   return "p6";
 }
 
+const LONG_SEARCH_COUNT = 60;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Stubs the media element so the browser player reaches "playing" without media.
@@ -279,6 +286,15 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
         case "/Items": {
           const term = url.searchParams.get("searchTerm");
           if (term) {
+            if (opts.searchDelayMs) await sleep(opts.searchDelayMs);
+            if (opts.searchError) return route.fulfill({ status: 500, headers: cors });
+            if (opts.longSearch) {
+              const many = Array.from({ length: LONG_SEARCH_COUNT }, (_, index) => ({ ...movieDto("m1", opts), Id: `m1-${index + 1}`, Name: `The Long Quiet ${index + 1}` }));
+              const matching = many.filter((i) => i.Name.toLowerCase().includes(term.toLowerCase()));
+              const startIndex = Number(url.searchParams.get("startIndex") ?? 0);
+              const limit = Number(url.searchParams.get("limit") ?? matching.length);
+              return json({ Items: matching.slice(startIndex, startIndex + limit), TotalRecordCount: matching.length, StartIndex: startIndex });
+            }
             const all = [...Object.keys(movies).map((id) => movieDto(id, opts)), seriesDto("s1"), seriesDto("s2"), ...Object.keys(episodes).map((id) => episodeDto(id))];
             const found = all.filter((i) => i.Name.toLowerCase().includes(term.toLowerCase()));
             return json({ Items: found, TotalRecordCount: found.length });
@@ -307,8 +323,11 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
         case "/Search/Hints": {
           const term = (url.searchParams.get("searchTerm") ?? "").toLowerCase();
           const hints = [
-            ...Object.entries(movies).map(([Id, m]) => ({ Id, Name: m.Name, Type: "Movie", ProductionYear: m.ProductionYear })),
-            ...Object.entries(series).map(([Id, s]) => ({ Id, Name: s.Name, Type: "Series", ProductionYear: s.ProductionYear })),
+            ...Object.entries(movies).map(([Id, m]) => ({ Id, Name: m.Name, Type: "Movie", ProductionYear: m.ProductionYear, PrimaryImageTag: `tag-${Id}` })),
+            ...Object.entries(series).map(([Id, s]) => ({ Id, Name: s.Name, Type: "Series", ProductionYear: s.ProductionYear, PrimaryImageTag: `tag-${Id}` })),
+            ...Object.entries(episodes).map(([Id, e]) => ({
+              Id, Name: e.Name, Type: "Episode", Series: "Harbor Lights", ParentIndexNumber: 1, IndexNumber: e.IndexNumber, ProductionYear: 2022, PrimaryImageTag: `tag-${Id}`,
+            })),
           ];
           const found = hints.filter((h) => h.Name.toLowerCase().includes(term));
           return json({ SearchHints: found, TotalRecordCount: found.length });

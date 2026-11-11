@@ -1,0 +1,142 @@
+@layer reset, tokens, base, components, features, focus;
+
+@layer features {
+  /* Search field (DESIGN.md 7.13) */
+  .ui-search-field {
+    display: grid;
+    gap: var(--space-2);
+    max-width: var(--measure);
+  }
+
+  .ui-search-field-label {
+    color: var(--text-2);
+    font: var(--type-label);
+  }
+
+  .ui-search-field-control {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    box-sizing: border-box;
+    min-height: var(--search-field-h);
+    padding-inline: var(--space-4);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-control);
+    background: var(--surface-2);
+  }
+
+  .ui-search-field-icon {
+    flex: none;
+    width: var(--space-5);
+    height: var(--space-5);
+    color: var(--text-3);
+  }
+
+  .ui-search-field-input {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text-1);
+    font: var(--type-title);
+  }
+
+  /* Suggestion list (DESIGN.md 7.13) */
+  .ui-suggestions {
+    position: absolute;
+    top: 100%;
+    inset-inline: var(--gutter);
+    z-index: var(--z-nav);
+    box-sizing: border-box;
+    max-width: var(--measure);
+    margin: 0;
+    padding: var(--space-1) 0;
+    list-style: none;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-control);
+    background: var(--surface-1);
+    box-shadow: var(--shadow-sheet);
+  }
+
+  .ui-suggestions[hidden] {
+    display: none;
+  }
+
+  .ui-suggestion {
+    display: grid;
+    grid-template-columns: var(--suggestion-art-w) minmax(0, 1fr);
+    gap: var(--space-3);
+    align-items: center;
+    min-height: var(--hit-min);
+    padding: var(--space-2) var(--space-3);
+    cursor: pointer;
+  }
+
+  .ui-suggestion:hover {
+    background: var(--surface-3);
+  }
+
+  /* The active option is marked by a bar as well as the fill, so colour is not the only cue. */
+  .ui-suggestion[aria-selected="true"] {
+    background: var(--surface-3);
+    box-shadow: inset 3px 0 0 var(--focus);
+  }
+
+  .ui-suggestion-art {
+    position: relative;
+    display: block;
+    width: var(--suggestion-art-w);
+    overflow: hidden;
+    border-radius: var(--radius-xs);
+    background: var(--surface-2);
+  }
+
+  .ui-suggestion-art[data-variant="poster"] {
+    aspect-ratio: 2 / 3;
+  }
+
+  .ui-suggestion-art[data-variant="still"] {
+    aspect-ratio: 16 / 9;
+  }
+
+  .ui-suggestion-text {
+    display: grid;
+    min-width: 0;
+  }
+
+  .ui-suggestion-title {
+    overflow: hidden;
+    color: var(--text-1);
+    font: var(--type-label);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ui-suggestion-meta {
+    overflow: hidden;
+    color: var(--text-2);
+    font: var(--type-meta);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* The ring sits on the whole control, not the bare input. */
+@layer focus {
+  .ui-search-field-input:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
+  .ui-search-field-control:has(.ui-search-field-input:focus-visible) {
+    outline: 3px solid transparent;
+    box-shadow: var(--focus-ring);
+  }
+
+  @media (forced-colors: active) {
+    .ui-search-field-control:has(.ui-search-field-input:focus-visible) {
+      outline-color: Highlight;
+    }
+  }
+}

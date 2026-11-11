@@ -1051,15 +1051,15 @@ describe("JellyfinGateway home calls", () => {
     const { gateway, transport } = await authenticatedGateway();
     transport.responses.set("GET /Search/Hints", {
       SearchHints: [
-        { Id: "s1", Name: "Show", Type: "Series", ProductionYear: 2020 },
-        { Id: "e1", Name: "Pilot", Type: "Episode", Series: "Show" },
+        { Id: "s1", Name: "Show", Type: "Series", ProductionYear: 2020, PrimaryImageTag: "tag-s1" },
+        { Id: "e1", Name: "Pilot", Type: "Episode", Series: "Show", ParentIndexNumber: 1, IndexNumber: 2 },
         { Id: "p1", Name: "Person", Type: "Person" },
         { Name: "No id", Type: "Movie" },
       ],
     });
     await expect(gateway.searchHints("sho")).resolves.toEqual([
-      { id: "s1", name: "Show", kind: "Series", year: 2020 },
-      { id: "e1", name: "Pilot", kind: "Episode", seriesName: "Show" },
+      { id: "s1", name: "Show", kind: "Series", year: 2020, image: { itemId: "s1", type: "Primary", tag: "tag-s1" } },
+      { id: "e1", name: "Pilot", kind: "Episode", seriesName: "Show", seasonNumber: 1, episodeNumber: 2 },
     ]);
     const request = transport.requests.at(-1);
     expect(request?.url).toBe("/Search/Hints");

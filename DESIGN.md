@@ -266,9 +266,11 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 
 ### 7.13 Search (`SearchField`, `SearchSuggestion`)
 
-- A large field (`--type-title` text, 64 px tall, search icon, clear button), autofocused. The suggestions list sits under it with a 40 px poster, title, year, and type.
-- Choosing a suggestion opens the item or series directly.
-- Results are grouped rows (Movies, Shows, Episodes) using the same `MediaRow` and `MediaCard` variants.
+- A large field (`--type-title` text, 64 px tall, search icon, clear button). It takes focus when the page opens (the §9 rule to focus the `h1` does not apply on Search). The label sits above the field (§7.19 `TextField`). The suggestions list sits under it with a 40 px poster, title, and a meta line, "{year} · {type}" with the types "Movie", "Show", and "Episode". An episode shows "{series} · S1 · E2 · Episode" instead of the year, and its 16:9 still takes the same 40 px column.
+- Choosing a suggestion opens the item or series directly. Results appear on Enter (Q13 A), not while typing.
+- Escape closes the list; with the list closed it clears the text, and the clear button does the same without changing the route.
+- Down from the field moves into the first result row only when no suggestion list is available (`hints.length === 0`). With hints loaded but the list closed by Escape or blur, Down reopens the list instead. Up from the first row returns to the field.
+- Results are grouped rows (Movies, Shows, Episodes) using the same `MediaRow` and `MediaCard` variants. Episode results open the episode's detail (Q9 A). "Load more" sits at the end of the results (Q14 A) and moves focus to the first new card.
 
 ### 7.14 Player chrome
 
@@ -406,6 +408,8 @@ A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings
   --control-h: 48px;
   --icon-button: 44px;
   --hit-min: 44px;
+  --search-field-h: 64px;
+  --suggestion-art-w: 40px;
 
   /* Shape */
   --radius-xs: 4px;
@@ -460,6 +464,8 @@ A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings
   --control-h: 72px;
   --icon-button: 64px;
   --hit-min: 64px;
+  --search-field-h: 96px;
+  --suggestion-art-w: 60px;
   --type-meta: 500 0.9375rem / 1.35 var(--font-ui);
   --lift: scale(1.08);
 }
@@ -491,7 +497,7 @@ A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings
 | Where | Key | Action | Today |
 |---|---|---|---|
 | Anywhere | Arrows, Enter, Escape | Move, activate, back | Exists (partly) |
-| Anywhere | `/` | Focus search | New in P13 |
+| Anywhere | `/` | Focus search; opens Search from other signed-in screens. Not in the player or sign-in. | P13-12 |
 | Anywhere outside fields | Backspace | Back | New in P13 |
 | Card | `i` or Menu | Open details (when Enter resumes) | New in P13 |
 | Player | Space or `k` | Play or pause | Exists |
@@ -530,6 +536,8 @@ Fluster talks like a knowledgeable friend running the projector: calm, brief, pl
 | Libraries, error | n/a | Couldn't load your libraries. | Retry |
 | Library, later page error | n/a | Couldn't load more items. | Retry |
 | Row error | n/a | Couldn't load {row}. | Retry |
+| Search, error | n/a | Couldn't load search results. | Retry |
+| Search, more results error | n/a | Couldn't load more results. | Retry |
 | Sign-in, 401 | n/a | That username and password didn't work. | n/a |
 | Sign-in, unreachable | n/a | Couldn't reach {address}. Check the address and that the server is running. | n/a |
 | Series, no episodes | n/a | This series has no episodes yet. | n/a |
