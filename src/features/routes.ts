@@ -1,4 +1,5 @@
 import type { MediaCard } from "../domain/catalog";
+import { parseLibrarySort, type LibrarySortId } from "./browse/library-sort";
 
 export function itemRoute(id: string): string {
   return `#/next/item/${encodeURIComponent(id)}`;
@@ -6,6 +7,38 @@ export function itemRoute(id: string): string {
 
 export function seriesRoute(id: string): string {
   return `#/next/series/${encodeURIComponent(id)}`;
+}
+
+const LIBRARY_PREFIX = "#/next/browse/";
+
+// #/next/browse/<libraryId>, optionally with ?sort=<sortId> to open the library in that order.
+export function libraryRoute(id: string, sort?: LibrarySortId): string {
+  const base = `${LIBRARY_PREFIX}${encodeURIComponent(id)}`;
+  return sort ? `${base}?sort=${encodeURIComponent(sort)}` : base;
+}
+
+export interface LibraryRoute {
+  libraryId: string;
+  // Absent when the route has no sort or names an unknown one.
+  sort?: LibrarySortId;
+}
+
+// Reads a library route. A missing or malformed id is not a route.
+export function parseLibraryRoute(hash: string): LibraryRoute | undefined {
+  if (!hash.startsWith(LIBRARY_PREFIX)) return undefined;
+  const rest = hash.slice(LIBRARY_PREFIX.length);
+  const queryStart = rest.indexOf("?");
+  const encodedId = queryStart === -1 ? rest : rest.slice(0, queryStart);
+  if (!encodedId || encodedId.includes("/")) return undefined;
+  let libraryId: string;
+  try {
+    libraryId = decodeURIComponent(encodedId);
+  } catch {
+    return undefined;
+  }
+  const params = new URLSearchParams(queryStart === -1 ? "" : rest.slice(queryStart + 1));
+  const sort = parseLibrarySort(params.get("sort") ?? "");
+  return sort ? { libraryId, sort } : { libraryId };
 }
 
 export function collectionRoute(id: string): string {

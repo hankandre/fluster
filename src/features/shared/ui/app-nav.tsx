@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import type { FocusEvent } from "react";
 import { Search, Settings } from "lucide-react";
 import { useRovingFocus } from "../../roving-focus";
+import { libraryRoute, parseLibraryRoute } from "../../routes";
 import "./shell.css";
 
 export interface NavLibrary {
@@ -13,26 +14,14 @@ const HOME_HASH = "#/next/home";
 const SEARCH_HASH = "#/next/search";
 const SETTINGS_HASH = "#/next/settings";
 
-function libraryHash(id: string): string {
-  return `#/next/browse/${encodeURIComponent(id)}`;
-}
 
 // Which entry the hash marks as current: "home", "search", "settings", "library:<id>", or undefined.
 export function currentNavEntry(hash: string): string | undefined {
   if (hash === HOME_HASH) return "home";
   if (hash === SEARCH_HASH || hash.startsWith(`${SEARCH_HASH}/`)) return "search";
   if (hash === SETTINGS_HASH) return "settings";
-  const prefix = "#/next/browse/";
-  if (hash.startsWith(prefix)) {
-    const rest = hash.slice(prefix.length);
-    if (rest === "" || rest.includes("/")) return undefined;
-    try {
-      return `library:${decodeURIComponent(rest)}`;
-    } catch {
-      return undefined;
-    }
-  }
-  return undefined;
+  const library = parseLibraryRoute(hash);
+  return library ? `library:${library.libraryId}` : undefined;
 }
 
 type Overflow = "none" | "start" | "end" | "both";
@@ -51,7 +40,7 @@ export function AppNav({ libraries, hash }: { libraries: NavLibrary[] | undefine
   const current = currentNavEntry(hash);
   const entries = [
     { key: "home", href: HOME_HASH },
-    ...(libraries ?? []).map((library) => ({ key: `library:${library.id}`, href: libraryHash(library.id) })),
+    ...(libraries ?? []).map((library) => ({ key: `library:${library.id}`, href: libraryRoute(library.id) })),
     { key: "search", href: SEARCH_HASH },
     { key: "settings", href: SETTINGS_HASH },
   ];
@@ -107,7 +96,7 @@ export function AppNav({ libraries, hash }: { libraries: NavLibrary[] | undefine
           <a
             key={library.id}
             className="app-nav-entry"
-            href={libraryHash(library.id)}
+            href={libraryRoute(library.id)}
             data-roving-item=""
             {...aria(`library:${library.id}`)}
           >

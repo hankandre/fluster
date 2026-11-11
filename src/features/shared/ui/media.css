@@ -173,6 +173,34 @@
     flex: none;
   }
 
+  /* The "See all" tile ends a row (DESIGN.md 7.4). It is not a card: no art, sized like the row's cards. */
+  .ui-see-all {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    inline-size: var(--poster-w);
+    aspect-ratio: 2 / 3;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-art);
+    color: var(--text-2);
+    font: var(--type-label);
+    text-decoration: none;
+    transition:
+      background-color var(--dur-quick) var(--ease-out),
+      color var(--dur-quick) var(--ease-out);
+  }
+
+  .media-row-see-all[data-variant="thumb"] .ui-see-all {
+    inline-size: var(--thumb-w);
+    aspect-ratio: 16 / 9;
+  }
+
+  .ui-see-all:hover {
+    background: var(--fill-icon);
+    color: var(--text-1);
+  }
+
   /* Pointer paging: shown on hover or focus-within for fine pointers; keys page for everyone else. */
   .media-row-page {
     display: none;

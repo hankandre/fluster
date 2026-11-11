@@ -13,10 +13,12 @@ interface HomeRowProps {
   // The id of the hidden sentence that explains `i`.
   hintId?: string;
   onItemFocus?(id: string): void;
+  // The end-of-row "See all" tile (Latest rows only).
+  seeAll?: { label: string; href: string };
 }
 
 // One home row, read from a query that useHomeData owns.
-export function HomeRow({ title, query, gateway, playable = false, hintId, onItemFocus }: HomeRowProps) {
+export function HomeRow({ title, query, gateway, playable = false, hintId, onItemFocus, seeAll }: HomeRowProps) {
   const status = query.isPending ? "pending" : query.isError ? "error" : "ready";
   const imageUrl = imageUrlFor(gateway);
   const variant = playable ? "thumb" : "poster";
@@ -32,6 +34,7 @@ export function HomeRow({ title, query, gateway, playable = false, hintId, onIte
       items={items}
       onRetry={() => void query.refetch()}
       onItemFocus={onItemFocus}
+      seeAll={seeAll}
     />
   );
 }

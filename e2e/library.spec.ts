@@ -178,3 +178,23 @@ test("the removed Libraries page is Not found, and a collection is titled by its
   await expect(page.getByRole("heading", { level: 1, name: "Harbor Collection" })).toBeVisible();
   await expect(cards(page).first()).toBeVisible();
 });
+
+test("See all ends a Latest row and opens the library by date added", async ({ page }) => {
+  const requests = libraryRequests(page);
+  await signIn(page);
+  const latest = page.getByRole("region", { name: "Latest in Movies" });
+  const last = latest.locator("a.media-card").last();
+  await expect(last).toBeVisible();
+  await last.focus();
+  await page.keyboard.press("ArrowRight");
+  const tile = latest.getByRole("link", { name: "See all in Movies" });
+  await expect(tile).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/#\/next\/browse\/lib-movies\?sort=added-desc$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Movies" })).toBeFocused();
+  await expect(page.getByRole("button", { name: "Sort Newest added first" })).toBeVisible();
+  await expect.poll(() => requests.some((url) => url.searchParams.get("sortBy") === "DateCreated"
+    && url.searchParams.get("sortOrder") === "Descending")).toBe(true);
+  await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Movies" })).toHaveAttribute("aria-current", "page");
+});
+

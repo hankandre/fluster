@@ -73,6 +73,47 @@ describe("MediaRow", () => {
     expect(first).toHaveFocus();
   });
 
+  describe("See all tile", () => {
+    const seeAll = { label: "See all in Movies", href: "#/next/browse/lib-1?sort=added-desc" };
+
+    it("is present only when passed", () => {
+      const { rerender } = render(<MediaRow title="Latest" variant="poster" status="ready" items={items} />);
+      expect(screen.queryByRole("link", { name: /See all/ })).toBeNull();
+      rerender(<MediaRow title="Latest" variant="poster" status="ready" items={items} seeAll={seeAll} />);
+      const tile = screen.getByRole("link", { name: "See all in Movies" });
+      expect(tile).toHaveTextContent("See all");
+      expect(tile).toHaveAttribute("href", seeAll.href);
+      expect(tile.closest("[data-media-card]")).toBeNull();
+    });
+
+    it("is the last item: Right from the last card reaches it, and End does too", () => {
+      render(<MediaRow title="Latest" variant="poster" status="ready" items={items} seeAll={seeAll} />);
+      const last = screen.getByRole("link", { name: "Gamma" });
+      last.focus();
+      fireEvent.keyDown(last, { key: "ArrowRight" });
+      expect(screen.getByRole("link", { name: "See all in Movies" })).toHaveFocus();
+      screen.getByRole("link", { name: "Alpha" }).focus();
+      fireEvent.keyDown(document.activeElement as HTMLElement, { key: "End" });
+      expect(screen.getByRole("link", { name: "See all in Movies" })).toHaveFocus();
+      expect(screen.getAllByRole("link").filter((link) => link.getAttribute("tabindex") === "0")).toHaveLength(1);
+    });
+
+    it("does not tell the caller a card took focus", () => {
+      const onItemFocus = vi.fn();
+      render(<MediaRow title="Latest" variant="poster" status="ready" items={items} onItemFocus={onItemFocus} seeAll={seeAll} />);
+      onItemFocus.mockClear();
+      screen.getByRole("link", { name: "See all in Movies" }).focus();
+      expect(onItemFocus).not.toHaveBeenCalled();
+    });
+
+    it("is not shown while pending or on error", () => {
+      const { rerender } = render(<MediaRow title="Latest" variant="poster" status="pending" seeAll={seeAll} />);
+      expect(screen.queryByRole("link", { name: /See all/ })).toBeNull();
+      rerender(<MediaRow title="Latest" variant="poster" status="error" seeAll={seeAll} />);
+      expect(screen.queryByRole("link", { name: /See all/ })).toBeNull();
+    });
+  });
+
   it("tells the caller which card took focus", () => {
     const onItemFocus = vi.fn();
     render(<MediaRow title="Latest" variant="poster" status="ready" items={items} onItemFocus={onItemFocus} />);
