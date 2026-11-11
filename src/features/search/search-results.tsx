@@ -61,9 +61,9 @@ export function SearchResults({ gateway, term }: { gateway: SessionGateway; term
     const link = route
       ? Array.from(sectionRef.current?.querySelectorAll<HTMLElement>("[data-media-card]") ?? []).find((node) => node.getAttribute("href") === route)
       : undefined;
-    if (link) link.focus();
-    else if (loadMoreRef.current) loadMoreRef.current.focus();
-    else document.querySelector<HTMLElement>("[data-search-field]")?.focus();
+    const retry = sectionRef.current?.querySelector<HTMLElement>(".ui-inline-error button");
+    const target = link ?? loadMoreRef.current ?? retry ?? document.querySelector<HTMLElement>("[data-search-field]");
+    target?.focus();
   });
 
   function loadMore() {
