@@ -58,6 +58,7 @@
   --poster-w: 112px;
   --thumb-w: 240px;
   --nav-h: 64px;
+  --nav-fade-w: var(--space-7);
   --hero-h: min(78vh, 56.25vw);
   --hero-logo-max-w: min(480px, 32vw);
   --hero-logo-max-h: 160px;

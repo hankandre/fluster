@@ -75,6 +75,41 @@ describe("AppNav", () => {
     expect(screen.getByRole("link", { name: "Fluster" })).toHaveFocus();
   });
 
+  describe("overflow fade", () => {
+    function stubMetrics(list: HTMLElement, metrics: { scrollLeft: number; clientWidth: number; scrollWidth: number }) {
+      for (const [key, value] of Object.entries(metrics)) Object.defineProperty(list, key, { configurable: true, value });
+    }
+    const list = () => document.querySelector<HTMLElement>(".app-nav-list")!;
+
+    it("is none when everything fits", () => {
+      renderNav("#/next/home");
+      expect(list()).toHaveAttribute("data-overflow", "none");
+    });
+
+    it("marks the hidden edges after a scroll", () => {
+      renderNav("#/next/home");
+      stubMetrics(list(), { scrollLeft: 0, clientWidth: 300, scrollWidth: 600 });
+      fireEvent.scroll(list());
+      expect(list()).toHaveAttribute("data-overflow", "end");
+      stubMetrics(list(), { scrollLeft: 100, clientWidth: 300, scrollWidth: 600 });
+      fireEvent.scroll(list());
+      expect(list()).toHaveAttribute("data-overflow", "both");
+      stubMetrics(list(), { scrollLeft: 300, clientWidth: 300, scrollWidth: 600 });
+      fireEvent.scroll(list());
+      expect(list()).toHaveAttribute("data-overflow", "start");
+      stubMetrics(list(), { scrollLeft: 0, clientWidth: 600, scrollWidth: 600.5 });
+      fireEvent.scroll(list());
+      expect(list()).toHaveAttribute("data-overflow", "none");
+    });
+
+    it("measures again when the libraries arrive", () => {
+      const { rerender } = render(<AppNav libraries={undefined} hash="#/next/home" />);
+      stubMetrics(list(), { scrollLeft: 0, clientWidth: 100, scrollWidth: 400 });
+      rerender(<AppNav libraries={LIBRARIES} hash="#/next/home" />);
+      expect(list()).toHaveAttribute("data-overflow", "end");
+    });
+  });
+
   it("follows the link with Enter", async () => {
     const user = userEvent.setup();
     renderNav("#/next/home");

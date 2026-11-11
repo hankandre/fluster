@@ -94,6 +94,28 @@ test("the nav is clear over the hero and turns to glass with a blur once the pag
   await expect.poll(() => header.evaluate((element) => getComputedStyle(element).backdropFilter)).toContain("blur");
 });
 
+// P13-11 (Q11 A): the nav scrolls where it overflows and fades the clipped edge.
+test("the nav list fades its overflowing edges on a phone", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await installMockServer(page, { manyLibraries: true });
+  await page.goto("/#/next/sign-in");
+  await page.getByLabel("Server URL").fill(SERVER);
+  await page.keyboard.press("Enter");
+  await page.getByRole("heading", { name: "Home" }).waitFor({ timeout: 10_000 });
+  const list = page.locator(".app-nav-list");
+  await expect(list).toHaveAttribute("data-overflow", "end");
+  await expect.poll(() => list.evaluate((element) => getComputedStyle(element).maskImage)).not.toBe("none");
+  await list.evaluate((element) => { element.scrollLeft = element.scrollWidth; });
+  await expect(list).toHaveAttribute("data-overflow", "start");
+});
+
+test("the nav list has no fade when everything fits", async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await signIn(page);
+  await expect(page.locator(".app-nav-list")).toHaveAttribute("data-overflow", "none");
+  await expect.poll(() => page.locator(".app-nav-list").evaluate((element) => getComputedStyle(element).maskImage)).toBe("none");
+});
+
 test("the nav hides on scroll down, returns on scroll up, and shows when Tab reaches it", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 600 });
   await signIn(page);

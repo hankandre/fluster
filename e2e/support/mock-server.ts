@@ -158,7 +158,7 @@ function episodeDto(id: string, opts: MockOptions = {}): Dto {
 function boxSetDto(): Dto {
   return { Id: "box-1", Name: "Harbor Collection", Type: "BoxSet", ImageTags: { Primary: "tag-box-1" }, PrimaryImageAspectRatio: 2 / 3 };
 }
-const MORE_LIBRARIES = ["Documentaries", "Anime", "Concerts", "Classics", "Kids", "Shorts", "Foreign", "Specials", "Home Videos", "Archive"];
+const MORE_LIBRARIES = ["Documentaries", "Anime", "Concerts", "Classics", "Kids", "Shorts", "Foreign", "Specials", "Family", "Archive"];
 function bigMovie(index: number, opts: MockOptions): Dto {
   return { ...movieDto("m1", opts), Id: `big-${index}`, Name: `Big Movie ${String(index).padStart(3, "0")}` };
 }
