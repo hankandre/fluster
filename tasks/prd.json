@@ -1748,6 +1748,7 @@
             "Choosing a movie or episode suggestion opens its detail, and a series suggestion opens the series",
             "Suggestions show art, title, year, and type, with combobox semantics unchanged",
             "Results are grouped rows with designed start and no-results states",
+            "Pressing / outside a text field focuses the search field (DESIGN.md §9)",
             "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
             "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
             "No e2e journey is skipped, deleted, or weakened"
@@ -1775,6 +1776,7 @@
             "Key actions show OSD feedback, and existing player key bindings are unchanged",
             "Play original moves into the Info sheet and conversion chip without changing its behaviour",
             "The PR lists the native Wayland check of the chrome over real video as an untested gate",
+            "In the player, Home and End jump to the start and end, and 0–9 jump to 0–90% (DESIGN.md §9)",
             "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
             "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
             "No e2e journey is skipped, deleted, or weakened"
@@ -1907,6 +1909,8 @@
             "A data-form=\"tv\" mode, togglable by a browser development flag, applies the DESIGN.md TV tokens and title-safe insets",
             "Playwright keyboard-only journeys in the TV form cover every screen with arrows, Enter, and Escape",
             "No rendered text is under 22 px and no control depends on hover",
+            "Backspace acts as Back outside text fields (DESIGN.md §9)",
+            "The TV form raises --type-mono so monospace text renders at 22 px or more",
             "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
             "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
             "No e2e journey is skipped, deleted, or weakened"
@@ -1930,6 +1934,7 @@
           "acceptance": [
             "Every finding in docs/design/audit.md is closed or carried into a new task",
             "DESIGN.md matches what shipped and the impeccable detector findings are resolved or justified",
+            "The screenshot harness runs as a gating visual diff in CI",
             "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
             "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
             "No e2e journey is skipped, deleted, or weakened"
