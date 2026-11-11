@@ -226,3 +226,13 @@ Answer: A (human, 2026-11-10)
 - Unowned keys assigned as acceptance items: `/` to P13-12, Home/End and 0–9 to P13-13, Backspace to P13-18.
 - P13-18 raises `--type-mono` in the TV form to meet the 22 px floor.
 - P13-19 makes the screenshot harness a gating visual diff in CI.
+
+## Questions raised during specs (human, 2026-11-11)
+
+### Q26 (P13-11): How arrow keys reach "See all" on Home's Latest rows
+- A: Title-line link, Tab only. B: Title-line link as its own arrow stop. C: A "See all" tile as the last item in the row, reached with Right; no title-line link; amend DESIGN.md §7.4.
+Answer: C (human, 2026-11-11)
+
+### Q27 (P13-12): Episode art in search suggestions
+- A: 40 px art column for every row; episodes show the whole 16:9 still, centred. B: Crop the still to 2:3. C: Widen the art column to the still's poster-height width.
+Answer: A (human, 2026-11-11)
