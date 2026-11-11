@@ -54,11 +54,14 @@ impl SurfaceTeardown for LinuxTeardown<'_> {
     }
 
     fn make_current(&mut self) -> Result<(), String> {
+        // GDK skips the switch when its per-thread record already names this
+        // context, even if another EGL context was made current behind it.
+        gtk::gdk::GLContext::clear_current();
         self.ui.gl_area.make_current();
-        match self.ui.gl_area.error() {
-            Some(error) => Err(error.to_string()),
-            None => Ok(()),
+        if let Some(error) = self.ui.gl_area.error() {
+            return Err(error.to_string());
         }
+        check_current(self.ui.gl_area.context(), gtk::gdk::GLContext::current())
     }
 
     fn free_render_context(&mut self) {
@@ -133,4 +136,49 @@ fn trace_next_paint(window: &gtk::Widget) {
         }
     });
     handler.set(Some(id));
+}
+
+/// Ok only when the GLArea has a context and GDK reports that same context
+/// as current on this thread.
+fn check_current<C: PartialEq>(area: Option<C>, current: Option<C>) -> Result<(), String> {
+    match (area, current) {
+        (None, _) => Err("video GL area has no context".to_string()),
+        (Some(area), Some(current)) if area == current => Ok(()),
+        (Some(_), _) => Err("video GL context is not current".to_string()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::check_current;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn area_context_current_is_ok() {
+        assert_eq!(check_current(Some(1), Some(1)), Ok(()));
+    }
+
+    #[test]
+    fn another_context_current_is_an_error() {
+        assert_eq!(
+            check_current(Some(1), Some(2)),
+            Err("video GL context is not current".to_string())
+        );
+    }
+
+    #[test]
+    fn no_context_current_is_an_error() {
+        assert_eq!(
+            check_current(Some(1), None),
+            Err("video GL context is not current".to_string())
+        );
+    }
+
+    #[test]
+    fn area_without_context_is_an_error() {
+        assert_eq!(
+            check_current(None::<i32>, Some(1)),
+            Err("video GL area has no context".to_string())
+        );
+    }
 }
