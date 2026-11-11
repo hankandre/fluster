@@ -60,6 +60,11 @@
       ui-skeleton-sweep 1.6s linear infinite;
   }
 
+  /* A set height beats aspect-ratio, so a ratio-shaped block must let the height follow the width. */
+  .ui-skeleton[data-ratio] {
+    height: auto;
+  }
+
   .ui-skeleton[data-shape="line"] {
     height: var(--space-3);
     border-radius: var(--radius-xs);
