@@ -81,6 +81,26 @@
     scroll-padding: var(--space-2);
   }
 
+  /* Where the list overflows, the clipped edge fades (alpha only; --surface-0 is opaque). */
+  .app-nav-list[data-overflow="start"] {
+    mask-image: linear-gradient(to right, transparent, var(--surface-0) var(--nav-fade-w));
+    -webkit-mask-image: linear-gradient(to right, transparent, var(--surface-0) var(--nav-fade-w));
+  }
+
+  .app-nav-list[data-overflow="end"] {
+    mask-image: linear-gradient(to right, var(--surface-0) calc(100% - var(--nav-fade-w)), transparent);
+    -webkit-mask-image: linear-gradient(to right, var(--surface-0) calc(100% - var(--nav-fade-w)), transparent);
+  }
+
+  .app-nav-list[data-overflow="both"] {
+    mask-image: linear-gradient(to right, transparent, var(--surface-0) var(--nav-fade-w), var(--surface-0) calc(100% - var(--nav-fade-w)), transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, var(--surface-0) var(--nav-fade-w), var(--surface-0) calc(100% - var(--nav-fade-w)), transparent);
+  }
+
+  .app-nav-list:not([data-overflow="none"]) {
+    scroll-padding-inline: var(--nav-fade-w);
+  }
+
   .app-nav-entry {
     position: relative;
     display: inline-flex;
