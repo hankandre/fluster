@@ -1656,10 +1656,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "Implemented per docs/specs/P13-08.md: pnpm check, pnpm test:e2e (68 passed), pnpm test:visual (106 passed) green on branch task/P13-08. Design review, screenshots, and the Jellyfin 10.11 checks in the spec Risks are still open."
+          "passes": true,
+          "evidence": "Implemented per docs/specs/P13-08.md: pnpm check, pnpm test:e2e, pnpm test:visual green on branch task/P13-08. Fresh-context review found no fix-required findings; lows logged in docs/design/rework-plan.md Follow-ups. PR screenshots (1440x900, 1920x1080) and Jellyfin 10.11 checks are recorded in the Ship phase."
         },
         {
           "id": "P13-09",
