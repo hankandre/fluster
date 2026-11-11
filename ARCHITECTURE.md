@@ -108,7 +108,7 @@ Keep the domain, Jellyfin gateway, playback policy, and coordinator **framework-
 | Need | Endpoint |
 |---|---|
 | Libraries | `GET /UserViews` (filter by `CollectionType`) |
-| Browse / search | `GET /Items?parentId=&includeItemTypes=&recursive=true&sortBy=&sortOrder=&startIndex=&limit=&fields=&searchTerm=&enableImageTypes=Primary,Backdrop,Thumb,Logo&imageTypeLimit=1&enableTotalRecordCount=false` |
+| Browse / search | `GET /Items?parentId=&includeItemTypes=&recursive=true&sortBy=&sortOrder=&startIndex=&limit=&fields=&searchTerm=&enableImageTypes=Primary,Backdrop,Thumb,Logo&imageTypeLimit=1&enableTotalRecordCount=false` (`true` on the first library page only, `startIndex=0`, for the toolbar count) |
 | Continue Watching | `GET /UserItems/Resume?mediaTypes=Video&limit=` |
 | Next Up | `GET /Shows/NextUp?limit=&enableRewatching=false`; series form (series page): `GET /Shows/NextUp?seriesId=&limit=1&enableUserData=true&enableResumable=true&enableRewatching=false&enableImages=false&enableTotalRecordCount=false` |
 | Latest per library | `GET /Items/Latest?parentId=&limit=&groupItems=true` (returns an array, not a QueryResult) |
