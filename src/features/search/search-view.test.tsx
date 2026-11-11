@@ -425,6 +425,21 @@ describe("result states", () => {
     expect(screen.getByRole("link", { name: "Arrow Movie" })).toBeInTheDocument();
   });
 
+  it("focuses Retry when the next page fails after Load more", async () => {
+    const searchItems = vi.fn()
+      .mockResolvedValueOnce({ cards: [card("m1", "Arrival", "Movie")], hasMore: true } satisfies SearchPage)
+      .mockRejectedValueOnce(new Error("down"));
+    await renderView(fakeGateway({ searchItems }), "ar");
+    await advance(0);
+    const button = screen.getByRole("button", { name: "Load more" });
+    button.focus();
+    await act(async () => {
+      fireEvent.click(button);
+    });
+    await advance(0);
+    expect(screen.getByRole("button", { name: "Retry" })).toHaveFocus();
+  });
+
   it("focuses the first new card after Load more", async () => {
     const searchItems = vi.fn()
       .mockResolvedValueOnce({ cards: [card("m1", "Arrival", "Movie")], hasMore: true } satisfies SearchPage)
