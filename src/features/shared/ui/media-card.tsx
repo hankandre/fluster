@@ -1,11 +1,10 @@
-import { Check } from "lucide-react";
 import type { CSSProperties, KeyboardEvent, MouseEvent } from "react";
 import { artTint } from "../art-tint";
 import { timeLeftLabel, timeLeftSpoken } from "../time-left";
-import { CardImage } from "./card-image";
+import { MediaFrame, type MediaCardVariant } from "./media-frame";
 import "./media.css";
 
-export type MediaCardVariant = "poster" | "thumb" | "episode" | "library";
+export type { MediaCardVariant };
 
 export interface MediaCardProps {
   variant: MediaCardVariant;
@@ -30,9 +29,8 @@ export interface MediaCardProps {
   describedBy?: string;
 }
 
-const COUNT_CAP = 99;
-
-function accessibleName(props: MediaCardProps): string {
+// The name a card exposes: title, subtitle, time left, watched, and unwatched count, joined by commas.
+export function cardAccessibleName(props: Pick<MediaCardProps, "title" | "subtitle" | "progress" | "remainingTicks" | "played" | "unplayedCount">): string {
   const { title, subtitle, progress, remainingTicks, played, unplayedCount } = props;
   const parts = [title, subtitle];
   if (progress !== undefined && remainingTicks !== undefined) parts.push(timeLeftSpoken(remainingTicks));
@@ -47,27 +45,13 @@ function accessibleName(props: MediaCardProps): string {
 // technology because the accessible name carries them all.
 export function MediaCard(props: MediaCardProps) {
   const { variant, title, subtitle, href, image, remainingTicks, progress, played, unplayedCount, onActivate, detailsHref, describedBy } = props;
-  const label = accessibleName(props);
+  const label = cardAccessibleName(props);
   const style = { "--art-accent": artTint(image?.blurHash).accent } as CSSProperties;
-  const showCount = !played && unplayedCount !== undefined && unplayedCount > 0;
   const timeLeft = progress !== undefined && remainingTicks !== undefined ? timeLeftLabel(remainingTicks) : undefined;
 
   const body = (
     <>
-      <div className="media-card-frame" data-variant={variant}>
-        <CardImage image={image} src={image?.src} fallbackTitle={title} />
-        {played ? (
-          <span className="media-card-mark" aria-hidden="true"><Check size={14} strokeWidth={3} /></span>
-        ) : null}
-        {showCount ? (
-          <span className="media-card-mark" aria-hidden="true">{unplayedCount > COUNT_CAP ? `${COUNT_CAP}+` : unplayedCount}</span>
-        ) : null}
-        {progress !== undefined ? (
-          <div className="media-card-progress" data-testid="card-progress" aria-hidden="true">
-            <div style={{ width: `${Math.min(1, Math.max(0, progress)) * 100}%` }} />
-          </div>
-        ) : null}
-      </div>
+      <MediaFrame variant={variant} title={title} image={image} progress={progress} played={played} unplayedCount={unplayedCount} />
       {variant !== "episode" ? (
         <div className="media-card-text" aria-hidden="true">
           <span className="media-card-title">{title}</span>

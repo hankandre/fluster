@@ -47,6 +47,8 @@ async function mockBrowseServer(page: Page) {
             item("m1", "Plain Movie", "Movie"),
           ],
         });
+      case "/Items/series-1":
+        return json(item("series-1", "Great Show", "Series"));
       case "/Shows/series-1/Seasons":
         return json({ Items: [item("se1", "Season 1", "Season"), item("se2", "Season 2", "Season")] });
       case "/Shows/series-1/Episodes":
@@ -78,10 +80,13 @@ test("browse a library, sort, open a series and season, and open a collection", 
 
   await page.getByRole("link", { name: "Great Show, 2016" }).click();
   await expect(page.getByRole("link", { name: "First Season Opener, Episode 1" })).toBeVisible();
-  await page.getByRole("button", { name: "Season 2" }).click();
+  await page.getByRole("tab", { name: "Season 2" }).click();
+  await expect(page.getByRole("tab", { name: "Season 2" })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("link", { name: "Second Season Opener, Episode 1" })).toBeVisible();
 
-  await page.getByRole("link", { name: "Back to libraries" }).click();
+  await page.goBack();
+  await expect(page).toHaveURL(/#\/next\/browse\/lib-1$/);
+  await page.goto("/#/next/browse");
   await page.getByRole("main").getByRole("link", { name: "Mixed Library" }).click();
   await page.getByRole("link", { name: "Great Saga, 2016" }).click();
   await expect(page.getByRole("link", { name: "Boxed Movie, 2016" })).toBeVisible();

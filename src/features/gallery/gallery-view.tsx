@@ -153,7 +153,7 @@ function Gallery() {
         <MediaCard variant="poster" title="The Long Quiet" subtitle="2023" image={ART[1]} played />
         <MediaCard variant="poster" title="Harbor Lights" subtitle="2022" image={ART[2]} unplayedCount={3} />
         <MediaCard variant="poster" title="No art here" subtitle="2019" />
-        <MediaCard variant="thumb" title="Harbor Lights" subtitle="S1E2 · Night Shift" image={ART[2]} progress={0.7} remainingTicks={THIRTY_EIGHT} />
+        <MediaCard variant="thumb" title="Harbor Lights" subtitle="S1 · E2 · Night Shift" image={ART[2]} progress={0.7} remainingTicks={THIRTY_EIGHT} />
         <MediaCard variant="episode" title="Night Shift" subtitle="Episode 2" image={ART[0]} />
         <MediaCard variant="library" title="Movies" image={ART[1]} />
         <MediaRow label="Poster skeletons" variant="poster" status="pending" />

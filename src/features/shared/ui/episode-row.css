@@ -1,0 +1,72 @@
+@layer reset, tokens, base, components, features, focus;
+
+@layer components {
+  /* Episode list (DESIGN.md 7.6): each row is the art, then its text beside it, then a Details icon link. */
+  .episode-list {
+    display: grid;
+    gap: var(--space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ui-episode-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: var(--space-3);
+  }
+
+  .ui-episode-row-link {
+    display: grid;
+    grid-template-columns: var(--thumb-w) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-4);
+    color: var(--text-1);
+    text-decoration: none;
+    text-align: start;
+  }
+
+  .episode-text {
+    min-inline-size: 0;
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .ui-episode-row-title {
+    margin: 0;
+    overflow: hidden;
+    color: var(--text-1);
+    font: var(--type-label);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ui-episode-row-meta {
+    margin: 0;
+    color: var(--text-2);
+    font: var(--type-meta);
+  }
+
+  .ui-episode-row-overview {
+    margin: 0;
+    max-inline-size: var(--measure);
+    color: var(--text-2);
+    font: var(--type-body);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .ui-episode-row-link:hover .media-card-frame {
+    box-shadow: var(--shadow-lift);
+  }
+
+  /* Narrow windows: the text stacks under the art. */
+  @media (max-width: 719px) {
+    .ui-episode-row-link {
+      grid-template-columns: minmax(0, var(--thumb-w));
+    }
+  }
+}

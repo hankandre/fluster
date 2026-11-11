@@ -1,4 +1,4 @@
-import type { BrowseCard, CardImageType, EpisodeCard, ImageRef, LibraryView, MediaCard, NextEpisode, SearchCard, SearchHint, SearchKind, Season } from "../../domain/catalog";
+import type { BrowseCard, CardImageType, EpisodeCard, ImageRef, LibraryView, MediaCard, NextEpisode, SearchCard, SeriesNextUp, SearchHint, SearchKind, Season } from "../../domain/catalog";
 import type { BaseItemDto, SearchHintDto } from "./types";
 
 const POSTER_ASPECT_RATIO = 2 / 3;
@@ -72,7 +72,7 @@ function remainingTicks(item: BaseItemDto): number {
 
 function episodeLabel(item: BaseItemDto): string {
   const numbers = item.ParentIndexNumber != null && item.IndexNumber != null
-    ? `S${item.ParentIndexNumber}E${item.IndexNumber} · `
+    ? `S${item.ParentIndexNumber} · E${item.IndexNumber} · `
     : "";
   return `${numbers}${item.Name ?? ""}`;
 }
@@ -168,7 +168,8 @@ export function toEpisodeCards(items: BaseItemDto[] | undefined): EpisodeCard[] 
     return [{
       ...rest,
       title: item.Name,
-      ...(item.IndexNumber != null ? { subtitle: `Episode ${item.IndexNumber}` } : {}),
+      ...(item.IndexNumber != null ? { subtitle: `Episode ${item.IndexNumber}`, episodeNumber: item.IndexNumber } : {}),
+      ...(item.RunTimeTicks && item.RunTimeTicks > 0 ? { runTimeTicks: item.RunTimeTicks } : {}),
       ...(item.Overview ? { overview: item.Overview } : {}),
     }];
   });
@@ -214,4 +215,21 @@ export function toNextEpisode(item: BaseItemDto | undefined): NextEpisode | unde
     ? `S${item.ParentIndexNumber}E${item.IndexNumber}`
     : undefined;
   return { id: item.Id, title: item.Name, ...(label ? { label } : {}) };
+}
+
+// The next episode of one series. An entry that is not an episode with an ID and name is not one.
+export function toSeriesNextUp(item: BaseItemDto | undefined): SeriesNextUp | undefined {
+  if (!item?.Id || !item.Name || item.Type !== "Episode") return undefined;
+  const position = item.UserData?.PlaybackPositionTicks ?? 0;
+  const length = item.RunTimeTicks ?? 0;
+  const resumes = item.UserData?.Played !== true && position > 0;
+  const numbered = item.ParentIndexNumber != null && item.IndexNumber != null;
+  return {
+    id: item.Id,
+    title: item.Name,
+    ...(item.SeasonId ? { seasonId: item.SeasonId } : {}),
+    ...(numbered ? { seasonNumber: item.ParentIndexNumber!, episodeNumber: item.IndexNumber! } : {}),
+    ...(resumes ? { resumePositionTicks: position } : {}),
+    ...(resumes && length > 0 ? { progress: Math.min(1, position / length) } : {}),
+  };
 }

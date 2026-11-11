@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toEpisodeCards, toHomeLibraries, toMediaCard } from "./cards";
+import { toEpisodeCards, toHomeLibraries, toMediaCard, toSeriesNextUp } from "./cards";
 
 describe("toMediaCard images and blurhashes", () => {
   it("looks up the blurhash by image type and tag", () => {
@@ -133,6 +133,48 @@ describe("toMediaCard hero fields", () => {
     const [episode] = toEpisodeCards([{ Id: "e1", Name: "Pilot", Type: "Episode", ParentIndexNumber: 1, IndexNumber: 2 }]);
     expect(episode.seasonNumber).toBe(1);
     expect(episode.episodeNumber).toBe(2);
+  });
+});
+
+describe("episode labels and episode cards", () => {
+  it("labels an episode card S1 · E2 · Name, and the name alone without both numbers", () => {
+    const numbered = { Id: "e1", Name: "Pilot", Type: "Episode", ParentIndexNumber: 1, IndexNumber: 2 };
+    expect(toMediaCard(numbered)?.subtitle).toBe("S1 · E2 · Pilot");
+    expect(toMediaCard({ ...numbered, ParentIndexNumber: undefined })?.subtitle).toBe("Pilot");
+  });
+
+  it("sets the runtime, and the episode number from the index alone, and keeps the Episode n subtitle", () => {
+    const [episode] = toEpisodeCards([{ Id: "e1", Name: "Pilot", Type: "Episode", IndexNumber: 3, RunTimeTicks: 900 }]);
+    expect(episode).toMatchObject({ runTimeTicks: 900, episodeNumber: 3, subtitle: "Episode 3", title: "Pilot" });
+    const [bare] = toEpisodeCards([{ Id: "e2", Name: "Bare", Type: "Episode", RunTimeTicks: 0 }]);
+    expect(bare).not.toHaveProperty("runTimeTicks");
+    expect(bare).not.toHaveProperty("episodeNumber");
+  });
+});
+
+describe("toSeriesNextUp", () => {
+  const base = { Id: "e2", Name: "Second", Type: "Episode", SeasonId: "se1", ParentIndexNumber: 1, IndexNumber: 2, RunTimeTicks: 1000 };
+
+  it("maps a part-watched episode with its position and progress", () => {
+    expect(toSeriesNextUp({ ...base, UserData: { PlaybackPositionTicks: 400 } })).toEqual({
+      id: "e2", title: "Second", seasonId: "se1", seasonNumber: 1, episodeNumber: 2, resumePositionTicks: 400, progress: 0.4,
+    });
+  });
+
+  it("has no resume for a played or unstarted episode", () => {
+    expect(toSeriesNextUp({ ...base, UserData: { Played: true, PlaybackPositionTicks: 400 } })).not.toHaveProperty("resumePositionTicks");
+    expect(toSeriesNextUp(base)).not.toHaveProperty("progress");
+  });
+
+  it("returns undefined for a non-episode or an entry without an id", () => {
+    expect(toSeriesNextUp({ ...base, Type: "Movie" })).toBeUndefined();
+    expect(toSeriesNextUp({ ...base, Id: undefined })).toBeUndefined();
+    expect(toSeriesNextUp(undefined)).toBeUndefined();
+  });
+
+  it("leaves out the numbers unless both are present, and the season id when missing", () => {
+    const result = toSeriesNextUp({ ...base, SeasonId: null, ParentIndexNumber: undefined });
+    expect(result).toEqual({ id: "e2", title: "Second" });
   });
 });
 

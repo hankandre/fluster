@@ -151,6 +151,30 @@ export const scenarios: Scenario[] = [
   { name: "21-library-grid", run: (page) => signedInAt(page, "#/next/browse/lib-movies", 1_000) },
   { name: "22-series-episodes", run: (page) => signedInAt(page, "#/next/series/s1", 1_000) },
   { name: "23-series-episodes-fullpage", fullPage: true, run: (page) => signedInAt(page, "#/next/series/s1", 1_000) },
+  { name: "24-series-play-next", opts: { seriesNextUp: "next" }, run: (page) => signedInAt(page, "#/next/series/s1", 1_000) },
+  { name: "25-series-watched", opts: { seriesNextUp: "none" }, run: (page) => signedInAt(page, "#/next/series/s1", 1_000) },
+  { name: "26-series-specials", run: async (page) => {
+    await signedInAt(page, "#/next/series/s1", 1_000);
+    await page.getByRole("tab", { name: "Specials" }).click();
+    await page.waitForTimeout(500);
+  } },
+  { name: "27-series-loading", opts: { detailDelayMs: 6_000 }, run: async (page) => {
+    await signIn(page);
+    await page.evaluate(() => { window.location.hash = "#/next/series/s1"; });
+    await page.waitForTimeout(400);
+  } },
+  { name: "28-series-error", opts: { detailError: true }, run: async (page) => {
+    await signedInAt(page, "#/next/series/s1", 800);
+    await page.getByRole("button", { name: "Retry" }).waitFor();
+  } },
+  { name: "29-series-not-found", expect404: true, run: (page) => signedInAt(page, "#/next/series/nope", 1_000) },
+  { name: "29a-series-row-focus", run: async (page) => {
+    await signedInAt(page, "#/next/series/s1", 1_000);
+    await page.getByRole("tab", { name: "Season 1" }).focus();
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowDown");
+    await page.waitForTimeout(300);
+  } },
 
   // Search
   { name: "30-search-start", run: (page) => signedInAt(page, "#/next/search") },
@@ -293,4 +317,5 @@ export const scenarios: Scenario[] = [
   // Phone
   { name: "62-phone-home", phone: true, run: async (page) => { await signIn(page); await page.waitForTimeout(900); } },
   { name: "63-phone-detail", phone: true, fullPage: true, run: (page) => signedInAt(page, "#/next/item/m1", 1_000) },
+  { name: "64-phone-series", phone: true, fullPage: true, run: (page) => signedInAt(page, "#/next/series/s1", 1_000) },
 ];

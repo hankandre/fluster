@@ -39,8 +39,8 @@ describe("nextRovingIndex", () => {
   });
 });
 
-function List({ layout, count }: { layout: RovingLayout; count: number }) {
-  const roving = useRovingFocus<HTMLUListElement>(layout);
+function List({ layout, count, columns }: { layout: RovingLayout; count: number; columns?: number }) {
+  const roving = useRovingFocus<HTMLUListElement>(layout, columns === undefined ? undefined : { columns });
   return (
     <ul {...roving}>
       {Array.from({ length: count }, (_, index) => (
@@ -94,6 +94,16 @@ describe("useRovingFocus", () => {
     first.focus();
     fireEvent.keyDown(first, { key: "ArrowRight", shiftKey: true });
     expect(first).toHaveFocus();
+  });
+
+  it("uses the fixed column count instead of the laid-out one", () => {
+    render(<List layout="grid" count={6} columns={2} />);
+    const first = screen.getByRole("link", { name: "Item 0" });
+    first.focus();
+    fireEvent.keyDown(first, { key: "ArrowDown" });
+    expect(screen.getByRole("link", { name: "Item 2" })).toHaveFocus();
+    fireEvent.keyDown(document.activeElement as HTMLElement, { key: "ArrowRight" });
+    expect(screen.getByRole("link", { name: "Item 3" })).toHaveFocus();
   });
 
   it("moves by the laid-out row in a grid", () => {

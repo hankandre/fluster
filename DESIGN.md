@@ -220,7 +220,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 ### 7.6 Episode row (`EpisodeRow`)
 
 - Grid columns are `var(--thumb-w)` and `minmax(0, 1fr)`. The thumb has progress and a played check. Text: "2 · The Keeper's Log" (`--type-label`), the runtime or "22 min left" (`--type-meta`), and a two-line overview (`--type-body`, `--text-2`).
-- Enter plays. A trailing "Details" icon button opens the episode detail.
+- The row is one link that plays: click or Enter anywhere on the art, title, or overview. Its accessible name is the card rule's ("The Keeper's Log, Episode 2, 23 minutes left"); the runtime and overview are its description. A trailing "Details" icon link and the `i` key open the episode detail. On compact windows the text stacks under the art.
 - On TV, the season's episodes become a horizontal row of `thumb` cards with the overview under the focused one.
 
 ### 7.7 Detail header (`DetailHeader`)
@@ -229,7 +229,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 - `PersonRow` cards show initials, the name, and the role. They are not interactive and carry no rating or person image (Q8 A).
 - Variants:
   - **movie**
-  - **series**: facts are year range, seasons, and rating. The primary action is "Resume S1 · E2" or "Play S1 · E3". Season tabs and the episode list sit below.
+  - **series**: facts are the year range, the season count, and genres (no rating). The primary action is "Resume S1 · E2" or "Play S1 · E3". Season tabs and the episode list sit below.
   - **episode**: the series name is a link above the title. Facts read "S1 · E2 · 45 min". The episode still replaces the backdrop when the episode has no backdrop. A "More from Season 1" episode strip sits below.
 - Compact windows stack poster (or still), then title, then actions, then overview.
 
@@ -252,7 +252,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 
 ### 7.11 Segmented tabs (`SegmentedTabs`)
 
-- Used for seasons and for Settings sections on wide screens. `role="tablist"`. The selected tab is `--text-1` with a 2 px `--art-accent` bar under it. The others are `--text-2`. Left and Right move and select (automatic activation, since season lists are cheap). Specials go last.
+- Used for seasons and for Settings sections on wide screens. `role="tablist"`. The selected tab is `--text-1` with a 2 px `--art-accent` bar under it. The others are `--text-2`. Left and Right move and select (automatic activation, since season lists are cheap). Specials go last. The tab bar scrolls sideways when the tabs overflow, with room inside the scroll box for the focus ring.
 
 ### 7.12 Toolbar (`BrowseToolbar`)
 
@@ -395,6 +395,7 @@ A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings
   --hero-logo-max-w: min(480px, 32vw);
   --hero-logo-max-h: 160px;
   --detail-header-h: min(82vh, 60vw);
+  --skeleton-title-w: min(360px, 100%); --skeleton-line-w: min(240px, 100%); --skeleton-action-w: 160px;
   --control-h: 48px;
   --icon-button: 44px;
   --hit-min: 44px;
@@ -520,6 +521,8 @@ Fluster talks like a knowledgeable friend running the projector: calm, brief, pl
 | Row error | n/a | Couldn't load {row}. | Retry |
 | Sign-in, 401 | n/a | That username and password didn't work. | n/a |
 | Sign-in, unreachable | n/a | Couldn't reach {address}. Check the address and that the server is running. | n/a |
+| Series, no episodes | n/a | This series has no episodes yet. | n/a |
+| Next episode error | n/a | Couldn't load your next episode. | Retry |
 | Item gone | This item is no longer on the server | It may have been removed or renamed. | Go home |
 | Player loading | n/a | Opening the original file… | Back |
 

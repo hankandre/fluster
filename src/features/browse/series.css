@@ -1,0 +1,23 @@
+@layer features {
+  .series-seasons {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .series-empty {
+    margin: 0;
+    color: var(--text-2);
+    font: var(--type-body);
+  }
+
+  .series-skeleton,
+  .series-skeleton-rows {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .series-skeleton-tabs {
+    display: flex;
+    gap: var(--space-3);
+  }
+}

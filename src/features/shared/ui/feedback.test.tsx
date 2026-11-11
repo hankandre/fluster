@@ -1,9 +1,10 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Inbox } from "lucide-react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Button } from "./button";
 import { EmptyState } from "./empty-state";
+import { useRovingFocus } from "../../roving-focus";
 import { InlineError } from "./inline-error";
 import { Skeleton } from "./skeleton";
 
@@ -65,5 +66,37 @@ describe("Skeleton", () => {
     expect(screen.getByRole("button", { name: "After" })).toHaveFocus();
     await user.keyboard("{ArrowDown}{Escape}");
     expect(screen.getByRole("button", { name: "After" })).toHaveFocus();
+  });
+});
+
+function PrimaryRow() {
+  const roving = useRovingFocus<HTMLDivElement>("row", { spatial: true });
+  return (
+    <div data-spatial-row="" ref={roving.ref} onKeyDown={roving.onKeyDown} onFocus={roving.onFocus}>
+      <button type="button" data-roving-item="">Primary</button>
+    </div>
+  );
+}
+
+describe("InlineError spatial", () => {
+  it("makes Retry a spatial row of its own that Down and Up reach", () => {
+    render(
+      <main>
+        <PrimaryRow />
+        <InlineError spatial message="Couldn't load your next episode." onRetry={vi.fn()} />
+      </main>,
+    );
+    const primary = screen.getByRole("button", { name: "Primary" });
+    primary.focus();
+    fireEvent.keyDown(primary, { key: "ArrowDown" });
+    const retry = screen.getByRole("button", { name: "Retry" });
+    expect(retry).toHaveFocus();
+    fireEvent.keyDown(retry, { key: "ArrowUp" });
+    expect(primary).toHaveFocus();
+  });
+
+  it("leaves Retry out of the spatial rows by default", () => {
+    render(<InlineError message="Couldn't load." onRetry={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Retry" })).not.toHaveAttribute("data-roving-item");
   });
 });

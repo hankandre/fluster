@@ -167,6 +167,12 @@ function image(itemId: string, type: "Primary" | "Backdrop", tag: string | null 
   return blurHash ? { itemId, type, tag, blurHash } : { itemId, type, tag };
 }
 
+function yearOf(date: string | null | undefined): number | undefined {
+  if (!date) return undefined;
+  const time = new Date(date).getTime();
+  return Number.isFinite(time) ? new Date(time).getUTCFullYear() : undefined;
+}
+
 export function toItemDetail(item: BaseItemDto): ItemDetail | undefined {
   if (!item.Id || !item.Name) return undefined;
   const isEpisode = item.Type === "Episode";
@@ -178,6 +184,7 @@ export function toItemDetail(item: BaseItemDto): ItemDetail | undefined {
     .slice(0, CAST_LIMIT)
     .map((person) => ({ name: person.Name!, ...(person.Role ? { role: person.Role } : {}) }));
   const chapters = toChapters(item.Chapters);
+  const endYear = item.Type === "Series" ? yearOf(item.EndDate) : undefined;
   return {
     id: item.Id,
     type: item.Type ?? "",
@@ -188,6 +195,7 @@ export function toItemDetail(item: BaseItemDto): ItemDetail | undefined {
     ...(isEpisode && item.SeasonName ? { seasonName: item.SeasonName } : {}),
     ...(numbered ? { seasonNumber: item.ParentIndexNumber!, episodeNumber: item.IndexNumber! } : {}),
     ...(item.ProductionYear != null ? { year: item.ProductionYear } : {}),
+    ...(endYear !== undefined ? { endYear } : {}),
     ...(item.RunTimeTicks ? { runTimeTicks: item.RunTimeTicks } : {}),
     ...(item.Overview ? { overview: item.Overview } : {}),
     genres: item.Genres ?? [],

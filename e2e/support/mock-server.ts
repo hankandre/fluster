@@ -42,6 +42,8 @@ export interface MockOptions {
   detailDelayMs?: number;
   // /Items/{id} answers 500 (the detail error state).
   detailError?: boolean;
+  // /Shows/NextUp?seriesId=s1: the part-watched episode (default), the unstarted one after it, or nothing.
+  seriesNextUp?: "resume" | "next" | "none";
   // Movies have a poster but no backdrop (the poster-beside-text detail layout).
   noBackdrop?: boolean;
 }
@@ -128,6 +130,7 @@ function seriesDto(id: string): Dto {
   const s = series[id];
   return {
     Id: id, Name: s.Name, Type: "Series", ProductionYear: s.ProductionYear, ImageTags: { Primary: `tag-${id}` }, BackdropImageTags: [`bd-${id}`], PrimaryImageAspectRatio: 2 / 3,
+    ...(id === "s1" ? { Overview: "A lighthouse keeper's daughter uncovers the harbor's oldest secret.", Genres: ["Drama", "Mystery"], EndDate: "2024-11-01T00:00:00.0000000Z" } : {}),
     ...(id === "s2" ? { UserData: { UnplayedItemCount: 3 } } : {}),
   };
 }
@@ -236,8 +239,15 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
           ] });
         case "/UserItems/Resume":
           return json({ Items: opts.empty || opts.homeLatestOnly ? [] : [movieDto("m2", opts), episodeDto("ep-2")] });
-        case "/Shows/NextUp":
+        case "/Shows/NextUp": {
+          const seriesId = url.searchParams.get("seriesId") ?? url.searchParams.get("SeriesId");
+          if (seriesId) {
+            const mode = opts.seriesNextUp ?? "resume";
+            if (seriesId !== "s1" || mode === "none") return json({ Items: [] });
+            return json({ Items: [episodeDto(mode === "next" ? "ep-3" : "ep-2", opts)] });
+          }
           return json({ Items: opts.empty || opts.homeLatestOnly ? [] : [episodeDto("ep-3"), { ...episodeDto("ep-1"), SeriesId: "s2", SeriesName: "Quiet Orbit", Name: "Perigee" }] });
+        }
         case "/Items/Latest": {
           if (opts.empty) return json([]);
           const parent = url.searchParams.get("parentId") ?? url.searchParams.get("ParentId");

@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionProvider, useSession, type SessionGateway } from "../../app/session";
 import type { BrowseCard, BrowsePage } from "../../domain/catalog";
-import { BrowseView, CollectionView, SeriesView } from "./index";
+import { BrowseView, CollectionView } from "./index";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
 
 vi.mock("../home/blurhash", () => ({
@@ -23,9 +23,6 @@ function fakeGateway(overrides: Partial<SessionGateway> = {}): SessionGateway {
       { id: "lib-2", name: "Sets", collectionType: "boxsets" },
     ]),
     libraryItems: vi.fn().mockResolvedValue({ cards: [card("m1", "Arrival")], hasMore: false } satisfies BrowsePage),
-    seasons: vi.fn().mockResolvedValue([{ id: "se1", name: "Season 1" }, { id: "se2", name: "Season 2" }]),
-    episodes: vi.fn().mockImplementation((_series: string, seasonId: string) =>
-      Promise.resolve([{ id: `${seasonId}-e1`, kind: "Episode", title: `Opener of ${seasonId}`, subtitle: "Episode 1", aspectRatio: 1.78, overview: "Plot." }])),
     ...overrides,
   });
 }
@@ -86,12 +83,6 @@ describe("card variants", () => {
   it("uses poster cards in the library grid", async () => {
     await renderView(fakeGateway(), <BrowseView libraryId="lib-1" />);
     expect(await screen.findByRole("link", { name: "Arrival" })).toHaveAttribute("data-variant", "poster");
-  });
-
-  it("uses episode cards in the series view and keeps their names", async () => {
-    await renderView(fakeGateway(), <SeriesView seriesId="series-1" />);
-    const link = await screen.findByRole("link", { name: "Opener of se1, Episode 1" });
-    expect(link).toHaveAttribute("data-variant", "episode");
   });
 });
 
@@ -162,21 +153,6 @@ describe("library grid", () => {
   });
 });
 
-describe("series", () => {
-  it("shows the first season's episodes and loads another when switched", async () => {
-    const gateway = fakeGateway();
-    await renderView(gateway, <SeriesView seriesId="series-1" />);
-    expect(await screen.findByRole("link", { name: "Opener of se1, Episode 1" })).toBeInTheDocument();
-    expect(gateway.episodes).toHaveBeenCalledWith("series-1", "se1", expect.any(AbortSignal));
-
-    fireEvent.click(screen.getByRole("button", { name: "Season 2" }));
-
-    expect(await screen.findByRole("link", { name: "Opener of se2, Episode 1" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Season 2" })).toHaveAttribute("aria-pressed", "true");
-    expect(gateway.episodes).toHaveBeenCalledWith("series-1", "se2", expect.any(AbortSignal));
-  });
-});
-
 describe("keyboard", () => {
   it("moves through the library grid with the arrow keys", async () => {
     const gateway = fakeGateway({
@@ -194,42 +170,6 @@ describe("keyboard", () => {
     expect(screen.getByRole("link", { name: "Contact" })).toHaveFocus();
     expect(screen.getAllByRole("link").filter((link) => link.closest(".media-grid") && link.getAttribute("tabindex") === "0"))
       .toEqual([screen.getByRole("link", { name: "Contact" })]);
-  });
-
-  it("moves through episodes with Up and Down", async () => {
-    const gateway = fakeGateway({
-      episodes: vi.fn().mockResolvedValue([
-        { id: "e1", kind: "Episode", title: "Pilot", aspectRatio: 1.78 },
-        { id: "e2", kind: "Episode", title: "Second", aspectRatio: 1.78 },
-      ]),
-    });
-    await renderView(gateway, <SeriesView seriesId="series-1" />);
-    const pilot = await screen.findByRole("link", { name: "Pilot" });
-    pilot.focus();
-    fireEvent.keyDown(pilot, { key: "ArrowDown" });
-    expect(screen.getByRole("link", { name: "Second" })).toHaveFocus();
-    fireEvent.keyDown(document.activeElement as HTMLElement, { key: "ArrowUp" });
-    expect(pilot).toHaveFocus();
-  });
-});
-
-describe("series defaults", () => {
-  it("opens the first regular season, not Specials", async () => {
-    const gateway = fakeGateway({
-      seasons: vi.fn().mockResolvedValue([
-        { id: "sp", name: "Specials", indexNumber: 0 },
-        { id: "se1", name: "Season 1", indexNumber: 1 },
-      ]),
-    });
-    await renderView(gateway, <SeriesView seriesId="series-1" />);
-    expect(await screen.findByRole("link", { name: "Opener of se1, Episode 1" })).toBeInTheDocument();
-    expect(gateway.episodes).not.toHaveBeenCalledWith("series-1", "sp", expect.anything());
-  });
-
-  it("falls back to Specials when it is the only season", async () => {
-    const gateway = fakeGateway({ seasons: vi.fn().mockResolvedValue([{ id: "sp", name: "Specials", indexNumber: 0 }]) });
-    await renderView(gateway, <SeriesView seriesId="series-1" />);
-    expect(await screen.findByRole("link", { name: "Opener of sp, Episode 1" })).toBeInTheDocument();
   });
 });
 

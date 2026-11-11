@@ -64,6 +64,20 @@ describe("toItemDetail with recorded items", () => {
   });
 });
 
+describe("endYear", () => {
+  const series: BaseItemDto = { Id: "s1", Name: "Show", Type: "Series", ProductionYear: 2022 };
+
+  it("maps the year of EndDate for a series", () => {
+    expect(toItemDetail({ ...series, EndDate: "2024-11-01T00:00:00.0000000Z" })?.endYear).toBe(2024);
+  });
+
+  it("is absent for a movie, an invalid date, or a missing date", () => {
+    expect(toItemDetail({ ...series, Type: "Movie", EndDate: "2024-11-01T00:00:00Z" })).not.toHaveProperty("endYear");
+    expect(toItemDetail({ ...series, EndDate: "not a date" })).not.toHaveProperty("endYear");
+    expect(toItemDetail(series)).not.toHaveProperty("endYear");
+  });
+});
+
 describe("dynamicRangeOf", () => {
   it.each([
     [{ VideoRangeType: "SDR" }, "SDR"],

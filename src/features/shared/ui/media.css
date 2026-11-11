@@ -221,67 +221,31 @@
   .media-grid[data-variant="thumb"] {
     grid-template-columns: repeat(auto-fill, var(--thumb-w));
   }
-
-  /* Episode list: the card, then its text beside it (it wraps below the art in narrow windows). */
-  .episode-list {
-    display: grid;
-    gap: var(--space-5);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .episode-list > li {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: var(--space-4);
-  }
-
-  .episode-text {
-    flex: 1 1 20ch;
-    min-inline-size: 0;
-    display: grid;
-    gap: var(--space-1);
-  }
-
-  .episode-text-title {
-    margin: 0;
-    font: var(--type-label);
-  }
-
-  .episode-text-meta {
-    margin: 0;
-    color: var(--text-2);
-    font: var(--type-meta);
-  }
-
-  .episode-overview {
-    margin: 0;
-    max-width: var(--measure);
-    color: var(--text-2);
-  }
 }
 
 /* Focus layer: one ring, drawn on the frame, so a card never shows two (DESIGN.md 7.5, 9). */
 @layer focus {
-  .media-card:focus-visible {
+  .media-card:focus-visible,
+  .ui-episode-row-link:focus-visible {
     outline: none;
     box-shadow: none;
   }
 
-  .media-card:focus-visible .media-card-frame {
+  .media-card:focus-visible .media-card-frame,
+  .ui-episode-row-link:focus-visible .media-card-frame {
     outline: 3px solid transparent;
     box-shadow: var(--focus-ring), var(--shadow-lift);
     transform: var(--lift);
   }
 
-  .media-card:focus-visible .media-card-title {
+  .media-card:focus-visible .media-card-title,
+  .ui-episode-row-link:focus-visible .ui-episode-row-title {
     color: var(--text-1);
   }
 
   @media (forced-colors: active) {
-    .media-card:focus-visible .media-card-frame {
+    .media-card:focus-visible .media-card-frame,
+    .ui-episode-row-link:focus-visible .media-card-frame {
       outline-color: Highlight;
     }
   }
