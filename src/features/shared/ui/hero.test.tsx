@@ -77,6 +77,17 @@ describe("Hero text and actions", () => {
     expect(onActivate).toHaveBeenCalledTimes(1);
   });
 
+  it("shows a progress ring on the primary action only when progress is set", () => {
+    const { container, rerender } = renderHero();
+    expect(container.querySelector(".ui-progress-ring")).toBeNull();
+    rerender(
+      <main>
+        <Hero title="Arrival" primary={{ label: "Resume from 12:34", href: "#/p", onActivate: vi.fn(), progress: 0.4 }} />
+      </main>,
+    );
+    expect(screen.getByRole("link", { name: "Resume from 12:34" }).querySelector(".ui-progress-ring")).not.toBeNull();
+  });
+
   it("makes More info the primary button when there is no primary action", () => {
     renderHero({ primary: undefined });
     expect(screen.queryByRole("link", { name: "Play" })).toBeNull();

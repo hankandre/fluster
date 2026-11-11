@@ -170,9 +170,7 @@ function image(itemId: string, type: "Primary" | "Backdrop", tag: string | null 
 export function toItemDetail(item: BaseItemDto): ItemDetail | undefined {
   if (!item.Id || !item.Name) return undefined;
   const isEpisode = item.Type === "Episode";
-  const episodeLabel = isEpisode && item.ParentIndexNumber != null && item.IndexNumber != null
-    ? `Season ${item.ParentIndexNumber}, Episode ${item.IndexNumber}`
-    : undefined;
+  const numbered = isEpisode && item.ParentIndexNumber != null && item.IndexNumber != null;
   const poster = image(item.Id, "Primary", item.ImageTags?.Primary, item.ImageBlurHashes);
   const backdrop = image(item.Id, "Backdrop", item.BackdropImageTags?.[0], item.ImageBlurHashes);
   const cast = (item.People ?? [])
@@ -186,7 +184,9 @@ export function toItemDetail(item: BaseItemDto): ItemDetail | undefined {
     title: item.Name,
     ...(item.SeriesId ? { seriesId: item.SeriesId } : {}),
     ...(item.SeriesName ? { seriesName: item.SeriesName } : {}),
-    ...(episodeLabel ? { episodeLabel } : {}),
+    ...(isEpisode && item.SeasonId ? { seasonId: item.SeasonId } : {}),
+    ...(isEpisode && item.SeasonName ? { seasonName: item.SeasonName } : {}),
+    ...(numbered ? { seasonNumber: item.ParentIndexNumber!, episodeNumber: item.IndexNumber! } : {}),
     ...(item.ProductionYear != null ? { year: item.ProductionYear } : {}),
     ...(item.RunTimeTicks ? { runTimeTicks: item.RunTimeTicks } : {}),
     ...(item.Overview ? { overview: item.Overview } : {}),

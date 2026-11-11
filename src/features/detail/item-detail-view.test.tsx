@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PlayerServicesProvider } from "../../app/player-services";
 import { FakePlayerEngine } from "../../test/fake-player-engine";
 import { SessionProvider, useSession, type SessionGateway } from "../../app/session";
-import { ItemNotFoundError, type ItemDetail, type ItemVersion } from "../../domain/catalog";
+import { ItemNotFoundError, type EpisodeCard, type ItemDetail, type ItemVersion } from "../../domain/catalog";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
 import { ItemDetailView } from "./index";
 
@@ -51,6 +51,7 @@ function detail(overrides: Partial<ItemDetail> = {}): ItemDetail {
     userData: { played: false, favorite: false, resumePositionTicks: 0 },
     versions: [hdrVersion, sdrVersion],
     poster: { itemId: "m1", type: "Primary", tag: "p1", blurHash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" },
+    backdrop: { itemId: "m1", type: "Backdrop", tag: "b1", blurHash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" },
     ...overrides,
   };
 }
@@ -93,7 +94,7 @@ describe("media info", () => {
   it("requests the item and shows codec, HDR, audio, and subtitles of the first version", async () => {
     const gateway = fakeGateway();
     await renderDetail(gateway);
-    expect(await screen.findByRole("heading", { name: "Arrival" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Arrival" })).toBeInTheDocument();
     expect(gateway.itemDetail).toHaveBeenCalledWith("m1", expect.any(AbortSignal));
 
     const info = screen.getByRole("region", { name: "Media info for 4K HDR" });
@@ -109,9 +110,11 @@ describe("media info", () => {
   it("shows overview, genres, year, runtime, and cast", async () => {
     await renderDetail(fakeGateway());
     expect(await screen.findByText("Linguist meets aliens.")).toBeInTheDocument();
-    expect(screen.getByText("2016 · 1 h 57 min")).toBeInTheDocument();
-    expect(screen.getByText("Sci-Fi")).toBeInTheDocument();
-    expect(screen.getByText("Amy Adams as Louise")).toBeInTheDocument();
+    expect(screen.getByText("2016 · 1 h 57 min · Sci-Fi")).toBeInTheDocument();
+    const cast = screen.getByRole("region", { name: "Cast" });
+    expect(within(cast).getByText("Amy Adams")).toBeInTheDocument();
+    expect(within(cast).getByText("Louise")).toBeInTheDocument();
+    expect(within(cast).getByText("AA")).toBeInTheDocument();
   });
 
   it("shows None when a version has no subtitles", async () => {
@@ -120,45 +123,65 @@ describe("media info", () => {
     expect(within(info).getByText("Subtitles").nextElementSibling).toHaveTextContent("None");
   });
 
-  it("renders the poster with its blurhash placeholder", async () => {
-    const gateway = fakeGateway();
+  it("shows the poster beside the text, with its blurhash placeholder, only when there is no backdrop", async () => {
+    const gateway = fakeGateway({ itemDetail: vi.fn().mockResolvedValue(detail({ backdrop: undefined })) });
     await renderDetail(gateway);
     const image = await screen.findByTestId("card-image");
     expect(image).toHaveAttribute("data-placeholder", "blurhash");
     expect(gateway.imageUrl).toHaveBeenCalledWith("m1", "Primary", "p1", 400);
   });
+
+  it("shows no poster when a backdrop exists", async () => {
+    const gateway = fakeGateway();
+    await renderDetail(gateway);
+    await screen.findByRole("heading", { level: 1, name: "Arrival" });
+    expect(gateway.imageUrl).not.toHaveBeenCalledWith("m1", "Primary", expect.anything(), expect.anything());
+  });
+
+  it("lists the badges of the chosen version", async () => {
+    await renderDetail(fakeGateway());
+    const badges = await screen.findByRole("list", { name: "Media badges" });
+    expect(within(badges).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["4K", "HDR10", "E-AC-3 5.1", "PGS"]);
+  });
 });
 
 describe("versions", () => {
-  it("lists versions by name and switches the media info", async () => {
-    await renderDetail(fakeGateway());
-    const group = await screen.findByRole("group", { name: "Version" });
-    const hdr = within(group).getByRole("radio", { name: "4K HDR" });
-    const hd = within(group).getByRole("radio", { name: "1080p" });
-    expect(hdr).toBeChecked();
+  const pickerTrigger = () => screen.getByRole("button", { name: /^Version/ });
 
-    fireEvent.click(hd);
-    expect(hd).toBeChecked();
+  it("lists versions by name in the Picker and switches the media info", async () => {
+    const user = userEvent.setup();
+    await renderDetail(fakeGateway());
+    await screen.findByRole("region", { name: "Media info for 4K HDR" });
+    expect(pickerTrigger()).toHaveTextContent("4K HDR");
+    await user.click(pickerTrigger());
+    const hd = screen.getByRole("option", { name: /^1080p/ });
+    expect(screen.getByRole("option", { name: /^4K HDR/ })).toHaveAttribute("aria-selected", "true");
+    await user.click(hd);
+
     const info = screen.getByRole("region", { name: "Media info for 1080p" });
     expect(within(info).getByText("H.264 · 1920×1080 · 8-bit")).toBeInTheDocument();
     expect(within(info).getByText("SDR")).toBeInTheDocument();
     expect(screen.queryByText("HDR10")).not.toBeInTheDocument();
+    expect(screen.getByText("Version: 1080p")).toBeInTheDocument();
   });
 
-  it("switches version with the arrow keys", async () => {
+  it("switches version with the arrow keys in the listbox", async () => {
     const user = userEvent.setup();
     await renderDetail(fakeGateway());
-    const hdr = await screen.findByRole("radio", { name: "4K HDR" });
-    hdr.focus();
+    await screen.findByRole("region", { name: "Media info for 4K HDR" });
+    pickerTrigger().focus();
     await user.keyboard("{ArrowDown}");
-    expect(screen.getByRole("radio", { name: "1080p" })).toBeChecked();
+    expect(screen.getByRole("option", { name: /^4K HDR/ })).toHaveFocus();
+    await user.keyboard("{ArrowDown}{Enter}");
     expect(screen.getByRole("region", { name: "Media info for 1080p" })).toBeInTheDocument();
+    expect(pickerTrigger()).toHaveFocus();
   });
 
   it("hides the picker for a single version", async () => {
     await renderDetail(fakeGateway({ itemDetail: vi.fn().mockResolvedValue(detail({ versions: [hdrVersion] })) }));
     await screen.findByRole("region", { name: "Media info for 4K HDR" });
-    expect(screen.queryByRole("group", { name: "Version" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Version/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Version:/)).not.toBeInTheDocument();
   });
 });
 
@@ -208,7 +231,7 @@ describe("watch state", () => {
     const gateway = fakeGateway({ setFavorite: vi.fn().mockRejectedValue(new Error("boom")) });
     await renderDetail(gateway);
     fireEvent.click(await screen.findByRole("button", { name: "Favorite" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Could not update favorite");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Couldn't update favorite");
     expect(screen.getByRole("button", { name: "Favorite" })).toHaveAttribute("aria-pressed", "false");
   });
 
@@ -257,26 +280,98 @@ describe("watch state", () => {
 });
 
 describe("route behavior", () => {
-  it("focuses the heading and links back to home", async () => {
+  it("focuses the title heading once the item loads, and has exactly one h1", async () => {
     await renderDetail(fakeGateway());
-    expect(screen.getByRole("heading", { name: "Details" })).toHaveFocus();
-    expect(await screen.findByRole("link", { name: "Back to home" })).toHaveAttribute("href", "#/next/home");
+    const heading = await screen.findByRole("heading", { level: 1, name: "Arrival" });
+    await waitFor(() => expect(heading).toHaveFocus());
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(screen.queryByRole("link", { name: "Back to home" })).not.toBeInTheDocument();
+  });
+
+  it("shows one h1 while loading and when the load fails", async () => {
+    let fail: (reason: Error) => void = () => undefined;
+    const itemDetail = vi.fn().mockReturnValue(new Promise((_resolve, reject) => { fail = reject; }));
+    await renderDetail(fakeGateway({ itemDetail }));
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(screen.getByRole("heading", { level: 1, name: "Loading details" })).toBeInTheDocument();
+    await act(async () => fail(new Error("down")));
+    const heading = await screen.findByRole("heading", { level: 1, name: "Couldn't load this item" });
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    await waitFor(() => expect(heading).toHaveFocus());
+  });
+
+  it("uses the Logo as the h1 for a movie, and text for an episode whose logo is the series'", async () => {
+    const logo = { itemId: "m1", type: "Logo" as const, tag: "lg" };
+    const gateway = fakeGateway({ itemDetail: vi.fn().mockResolvedValue(detail({ logo })) });
+    await renderDetail(gateway);
+    const heading = await screen.findByRole("heading", { level: 1, name: "Arrival" });
+    expect(within(heading).getByRole("img", { name: "Arrival" })).toBeInTheDocument();
+    expect(gateway.imageUrl).toHaveBeenCalledWith("m1", "Logo", "lg", 800);
+    cleanup();
+
+    const episode = detail({ id: "e2", type: "Episode", title: "The Keeper's Log", logo: { itemId: "s1", type: "Logo", tag: "slg" } });
+    await renderDetail(fakeGateway({ itemDetail: vi.fn().mockResolvedValue(episode) }), "e2");
+    const text = await screen.findByRole("heading", { level: 1, name: "The Keeper's Log" });
+    expect(within(text).queryByRole("img")).toBeNull();
   });
 
   it("offers a retry when the item fails to load", async () => {
     const itemDetail = vi.fn().mockRejectedValueOnce(new Error("down")).mockResolvedValue(detail());
     await renderDetail(fakeGateway({ itemDetail }));
     fireEvent.click(await screen.findByRole("button", { name: "Retry" }));
-    expect(await screen.findByRole("heading", { name: "Arrival" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Arrival" })).toBeInTheDocument();
   });
 
-  it("shows a dedicated state without retry when the item no longer exists", async () => {
+  it("shows a notice without retry when the item is no longer on the server", async () => {
     const itemDetail = vi.fn().mockRejectedValue(new ItemNotFoundError());
     await renderDetail(fakeGateway({ itemDetail }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("This item no longer exists.");
-    expect(screen.getByRole("link", { name: "Go to Home" })).toHaveAttribute("href", "#/next/home");
+    const heading = await screen.findByRole("heading", { level: 1, name: "This item is no longer on the server" });
+    await waitFor(() => expect(heading).toHaveFocus());
+    expect(screen.getByText("It may have been removed or renamed.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Go home" })).toHaveAttribute("href", "#/next/home");
     expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
     expect(itemDetail).toHaveBeenCalledTimes(1);
+  });
+
+  describe("an episode", () => {
+    const episodeCards = [
+      { id: "e1", title: "Landfall", aspectRatio: 16 / 9, kind: "Episode", seasonNumber: 1, episodeNumber: 1 },
+      { id: "e2", title: "The Keeper's Log", aspectRatio: 16 / 9, kind: "Episode", seasonNumber: 1, episodeNumber: 2 },
+      { id: "e3", title: "Fog Signal", aspectRatio: 16 / 9, kind: "Episode", seasonNumber: 1, episodeNumber: 3 },
+    ] as EpisodeCard[];
+    const episode = detail({
+      id: "e2",
+      type: "Episode",
+      title: "The Keeper's Log",
+      seriesId: "s1",
+      seriesName: "Harbor Lights",
+      seasonId: "se1",
+      seasonName: "Season 1",
+      seasonNumber: 1,
+      episodeNumber: 2,
+      runTimeTicks: 45 * 600_000_000,
+      genres: ["Drama"],
+    });
+
+    it("shows the series link, the facts, and the season's other episodes", async () => {
+      const episodes = vi.fn().mockResolvedValue(episodeCards);
+      await renderDetail(fakeGateway({ itemDetail: vi.fn().mockResolvedValue(episode), episodes }), "e2");
+      expect(await screen.findByRole("link", { name: "Harbor Lights" })).toHaveAttribute("href", "#/next/series/s1");
+      expect(screen.getByText("S1 · E2 · 45 min · Drama")).toBeInTheDocument();
+      const strip = await screen.findByRole("region", { name: "More from Season 1" });
+      expect(within(strip).getByRole("link", { name: /Landfall/ })).toHaveAttribute("href", "#/next/item/e1");
+      expect(within(strip).getByRole("link", { name: /Fog Signal/ })).toBeInTheDocument();
+      expect(within(strip).queryByRole("link", { name: /Keeper/ })).not.toBeInTheDocument();
+      expect(episodes).toHaveBeenCalledWith("s1", "se1", expect.any(AbortSignal));
+    });
+
+    it("shows the series name as plain text without a series id", async () => {
+      const { seriesId: _seriesId, ...withoutId } = episode;
+      await renderDetail(fakeGateway({ itemDetail: vi.fn().mockResolvedValue(withoutId), episodes: vi.fn().mockResolvedValue([]) }), "e2");
+      await screen.findByRole("heading", { level: 1, name: "The Keeper's Log" });
+      expect(screen.getByText("Harbor Lights")).toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: "Harbor Lights" })).not.toBeInTheDocument();
+    });
   });
 
   it("redirects to sign-in when signed out", () => {
@@ -298,7 +393,8 @@ describe("play actions", () => {
     expect(play).toHaveAttribute("href", "#/next/play/m1?source=src-4k");
     expect(screen.queryByRole("link", { name: /Resume/ })).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("radio", { name: "1080p" }));
+    await userEvent.click(screen.getByRole("button", { name: /^Version/ }));
+    await userEvent.click(screen.getByRole("option", { name: /^1080p/ }));
     expect(screen.getByRole("link", { name: "Play" })).toHaveAttribute("href", "#/next/play/m1?source=src-hd");
   });
 
@@ -311,6 +407,7 @@ describe("play actions", () => {
     );
     expect(screen.getByRole("link", { name: "Start over" })).toHaveAttribute("href", "#/next/play/m1?source=src-4k");
     expect(screen.queryByRole("link", { name: "Play" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Resume from 12:34" }).querySelector(".ui-progress-ring")).not.toBeNull();
   });
 
   it("opens the player and marks the entry as opened from this detail view", async () => {
@@ -366,8 +463,9 @@ describe("player availability", () => {
     const alert = await screen.findByRole("alert");
     for (const leak of ["libEGL", "/home/u", "ftp://", "x.dll", "SECRET-TOKEN"]) expect(alert.textContent).not.toContain(leak);
 
+    expect(screen.getByRole("button", { name: "Check again" }).closest("[data-spatial-row]")).not.toBeNull();
     await act(async () => {
-      fireEvent.click(within(alert).getByRole("button", { name: "Check again" }));
+      fireEvent.click(screen.getByRole("button", { name: "Check again" }));
     });
     await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
     expect(engine.initialize).toHaveBeenCalledTimes(2);

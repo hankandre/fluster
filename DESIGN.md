@@ -225,7 +225,8 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 
 ### 7.7 Detail header (`DetailHeader`)
 
-- A full-bleed `AmbientBackdrop` at full strength. Over it, in the left five columns: the Logo or title (`h1`), a facts line, `MediaBadges`, the `ActionBar`, and a three-line overview with a "More" disclosure.
+- A full-bleed `AmbientBackdrop` at full strength. Over it, in the left five columns: the Logo or title (`h1`), a facts line (genres join it; there is no rating), `MediaBadges`, the `ActionBar`, and a three-line overview with a "More" disclosure.
+- `PersonRow` cards show initials, the name, and the role. They are not interactive and carry no rating or person image (Q8 A).
 - Variants:
   - **movie**
   - **series**: facts are year range, seasons, and rating. The primary action is "Resume S1 · E2" or "Play S1 · E3". Season tabs and the episode list sit below.
@@ -234,14 +235,14 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 
 ### 7.8 Action bar (`ActionBar`)
 
-- Order: **Primary** (`Resume 41:00` with a small progress ring, or `Play`), then `Start over` (secondary, only when resuming), then icon toggles `Watched` and `Favorite` (each `aria-pressed`, label visible on desktop, tooltip plus accessible name on TV), then `More` (menu: Version, File and streams, Go to series, Mark season watched).
+- Order: **Primary** (`Resume 41:00` with a small progress ring, or `Play`), then the version `Picker` pill (only with two or more versions), then `Start over` (secondary, only when resuming), then icon toggles `Watched` and `Favorite` (each `aria-pressed`, label visible on desktop, tooltip plus accessible name on TV). There is no `More` menu (Q7 A).
 - The primary button gets initial focus when the screen opens (TV and keyboard). On desktop, focus goes to the `h1` first for screen readers (as today), and one Tab reaches Play.
 - When the player cannot start (`usePlayerStatus` unavailable), the primary button stays enabled. An `InlineNotice` under the bar explains, and "Check again" sits beside it (as today, restyled).
 
 ### 7.9 Media badges and file details (`MediaBadges`, `FileAndStreams`)
 
 - Badges are text-only tags on `--surface-2` at `--radius-xs` in `--type-meta`: `4K`, `Dolby Vision`, `HDR10`, `TrueHD 7.1`, `Atmos` (only when the stream title says so), and `PGS · ASS` when there are image or styled subtitles. At most five. No logos of third-party brands.
-- `FileAndStreams` is a section at the bottom of Detail: the version picker plus the current `MediaInfo` definition list in two columns, values in Mono.
+- `FileAndStreams` is a section at the bottom of Detail: the chosen version's `MediaInfo` definition list in two columns, values in Mono. The version picker lives in the action bar (Q6 A).
 
 ### 7.10 Pickers (`Picker`, used for Version, Audio, and Subtitles)
 
@@ -393,6 +394,7 @@ A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings
   --hero-h: min(78vh, 56.25vw);
   --hero-logo-max-w: min(480px, 32vw);
   --hero-logo-max-h: 160px;
+  --detail-header-h: min(82vh, 60vw);
   --control-h: 48px;
   --icon-button: 44px;
   --hit-min: 44px;

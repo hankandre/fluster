@@ -1,9 +1,11 @@
 import { useEffect, useId, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSession, type SessionGateway } from "../../app/session";
 import type { ImageRef, MediaCard } from "../../domain/catalog";
 import { backdropWidth, heroArtFor } from "../card-view";
 import { AmbientBackdrop } from "../shared/ambient-backdrop";
 import { Hero, MediaRow } from "../shared/ui";
+import { detailKey } from "../detail/detail-key";
 import { HomeEmpty } from "./home-empty";
 import { HomeHero } from "./home-hero";
 import { isHomeEmpty, useHomeData } from "./home-data";
@@ -15,6 +17,7 @@ import "./home.css";
 const SIGN_IN_ROUTE = "#/next/sign-in";
 const AMBIENT_DWELL_MS = 300;
 const AMBIENT_STRENGTH = 0.35;
+const PREFETCH_MS = 30_000;
 
 export function HomeView() {
   const { gateway } = useSession();
@@ -47,9 +50,23 @@ function HomeContent({ gateway }: { gateway: SessionGateway }) {
     for (const list of lists) for (const card of list ?? []) if (!byId.has(card.id)) byId.set(card.id, card);
     return byId;
   }, [resume.data, nextUp.data, latest]);
+  const queryClient = useQueryClient();
+  // After the same dwell, a Movie or Episode card's detail is fetched so opening it is instant (DESIGN.md 9).
+  // A Series card leads to the series page, so it is not prefetched.
   const onItemFocus = (id: string) => {
     const card = cards.get(id);
-    if (card) schedule(() => setFocused(card));
+    if (!card) return;
+    schedule(() => {
+      setFocused(card);
+      if (card.kind === "Movie" || card.kind === "Episode") {
+        void queryClient.prefetchQuery({
+          queryKey: detailKey(gateway, card.id),
+          queryFn: ({ signal }) => gateway.itemDetail(card.id, signal),
+          staleTime: PREFETCH_MS,
+          gcTime: PREFETCH_MS,
+        });
+      }
+    });
   };
 
   const ambientCard = focused ?? (hero.status === "ready" ? hero.card : undefined);

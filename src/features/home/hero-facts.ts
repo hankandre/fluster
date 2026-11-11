@@ -1,5 +1,6 @@
-import type { DynamicRange, ItemDetail, MediaCard } from "../../domain/catalog";
+import type { ItemDetail, MediaCard } from "../../domain/catalog";
 import { positionLabel, runtimeLabel } from "../detail/format";
+import { isFourK, rangeLabel } from "../detail/media-badges";
 import type { PlayRoute } from "../routes";
 import { timeLeftLabel } from "../shared/time-left";
 
@@ -14,7 +15,6 @@ export interface HeroAction {
   route: PlayRoute;
 }
 
-const FOUR_K_WIDTH = 3200;
 const MAX_GENRES = 2;
 
 function numbered(season: number | undefined, episode: number | undefined): string | undefined {
@@ -41,11 +41,6 @@ export function primaryAction(card: MediaCard, episode?: HeroEpisode): HeroActio
   }
 }
 
-function rangeLabel(range: DynamicRange | undefined): string | undefined {
-  if (!range || range === "SDR" || range === "Unknown") return undefined;
-  return range.startsWith("Dolby Vision") ? "Dolby Vision" : range;
-}
-
 function timeOrRuntime(card: MediaCard, detail: ItemDetail | undefined): string | undefined {
   if (card.progress !== undefined && card.remainingTicks !== undefined) return timeLeftLabel(card.remainingTicks);
   return runtimeLabel(detail?.runTimeTicks);
@@ -63,7 +58,7 @@ export function heroFacts(card: MediaCard, detail?: ItemDetail): string | undefi
       parts.push(
         detail?.year?.toString(),
         timeOrRuntime(card, detail),
-        video?.width !== undefined && video.width >= FOUR_K_WIDTH ? "4K" : undefined,
+        isFourK(video?.width) ? "4K" : undefined,
         rangeLabel(video?.hdr),
       );
       break;

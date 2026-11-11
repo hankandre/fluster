@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { installMockServer } from "./support/mock-server";
 
 const serverUrl = "http://127.0.0.1:8096";
 
@@ -32,6 +33,7 @@ const sdrSource = {
 async function mockDetailServer(page: Page) {
   const writes: string[] = [];
   let favorite = false;
+  let played = false;
   await page.route(`${serverUrl}/**`, (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -45,6 +47,11 @@ async function mockDetailServer(page: Page) {
     if (url.pathname.startsWith("/UserFavoriteItems/")) {
       writes.push(`${request.method()} ${url.pathname}`);
       favorite = request.method() === "POST";
+      return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: "{}" });
+    }
+    if (url.pathname.startsWith("/UserPlayedItems/")) {
+      writes.push(`${request.method()} ${url.pathname}`);
+      played = request.method() === "POST";
       return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: "{}" });
     }
     switch (url.pathname) {
@@ -74,7 +81,7 @@ async function mockDetailServer(page: Page) {
           Overview: "A linguist meets visitors.",
           Genres: ["Sci-Fi"],
           MediaSources: [hdrSource, sdrSource],
-          UserData: { Played: false, IsFavorite: favorite, PlaybackPositionTicks: 0 },
+          UserData: { Played: played, IsFavorite: favorite, PlaybackPositionTicks: 0 },
         });
       default:
         return route.fulfill({ status: 404, headers: cors });
@@ -93,7 +100,7 @@ test("open a movie, read its media info, switch version, and favorite it", async
 
   await page.getByRole("link", { name: "Arrival, 2016" }).click();
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
-  await expect(page.getByRole("heading", { name: "Arrival" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Arrival" })).toBeVisible();
 
   const hdrInfo = page.getByRole("region", { name: "Media info for 4K HDR" });
   await expect(hdrInfo.getByText("HEVC · Main 10 · 3840×2160 · 10-bit")).toBeVisible();
@@ -102,10 +109,22 @@ test("open a movie, read its media info, switch version, and favorite it", async
   await expect(hdrInfo.getByText("English · SRT · default")).toBeVisible();
   await expect(hdrInfo.getByText("French · PGS · external")).toBeVisible();
 
-  await page.getByRole("radio", { name: "1080p" }).check();
+  await page.getByRole("button", { name: /^Version/ }).click();
+  await page.getByRole("option", { name: /^1080p/ }).click();
   const sdrInfo = page.getByRole("region", { name: "Media info for 1080p" });
   await expect(sdrInfo.getByText("H.264 · 1920×1080 · 8-bit")).toBeVisible();
   await expect(sdrInfo.getByText("SDR", { exact: true })).toBeVisible();
+
+  await expect(page.getByRole("link", { name: "Play", exact: true })).toHaveAttribute("href", /\?source=src-hd$/);
+
+  const watched = page.getByRole("button", { name: "Watched" });
+  await watched.click();
+  await expect(watched).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(() => writes).toEqual(["POST /UserPlayedItems/movie-1"]);
+  await watched.click();
+  await expect(watched).toHaveAttribute("aria-pressed", "false");
+  await expect.poll(() => writes).toEqual(["POST /UserPlayedItems/movie-1", "DELETE /UserPlayedItems/movie-1"]);
+  writes.length = 0;
 
   const favorite = page.getByRole("button", { name: "Favorite" });
   await favorite.click();
@@ -115,4 +134,49 @@ test("open a movie, read its media info, switch version, and favorite it", async
   await favorite.click();
   await expect(favorite).toHaveAttribute("aria-pressed", "false");
   await expect.poll(() => writes).toEqual(["POST /UserFavoriteItems/movie-1", "DELETE /UserFavoriteItems/movie-1"]);
+});
+
+async function signIn(page: Page, hash: string) {
+  await page.goto("/#/next/sign-in");
+  await page.getByLabel("Server URL").fill(serverUrl);
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { name: "Home" })).toBeVisible({ timeout: 8_000 });
+  await page.evaluate((target) => { window.location.hash = target; }, hash);
+}
+
+test("an episode links to its series and lists the season's other episodes", async ({ page }) => {
+  await installMockServer(page);
+  await signIn(page, "#/next/item/ep-2");
+
+  await expect(page.getByRole("heading", { level: 1, name: "The Keeper's Log" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Harbor Lights" })).toHaveAttribute("href", "#/next/series/s1");
+
+  const strip = page.getByRole("region", { name: "More from Season 1" });
+  await expect(strip.getByRole("link", { name: /Landfall/ })).toBeVisible();
+  await expect(strip.getByRole("link", { name: /Fog Signal/ })).toBeVisible();
+  await expect(strip.getByRole("link", { name: /The Keeper's Log/ })).toHaveCount(0);
+
+  // Down from the action bar reaches the strip; the overview's "More" row may come first.
+  await page.getByRole("link", { name: /^Resume from/ }).focus();
+  for (let press = 0; press < 2; press += 1) {
+    await page.keyboard.press("ArrowDown");
+    const inStrip = await page.evaluate(() => Boolean(document.activeElement?.closest(".media-row")));
+    if (inStrip) break;
+  }
+  await expect(strip.locator(":focus")).toHaveCount(1);
+
+  await strip.getByRole("link", { name: /Fog Signal/ }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/#\/next\/item\/ep-3$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Fog Signal" })).toBeVisible();
+});
+
+test("a missing item shows a notice with Go home", async ({ page }) => {
+  await installMockServer(page);
+  await signIn(page, "#/next/item/nope");
+
+  const heading = page.getByRole("heading", { level: 1, name: "This item is no longer on the server" });
+  await expect(heading).toBeFocused();
+  await page.getByRole("link", { name: "Go home" }).click();
+  await expect(page).toHaveURL(/#\/next\/home$/);
 });

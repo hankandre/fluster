@@ -34,6 +34,8 @@ export interface BaseItemDto {
   Name?: string;
   Type?: string;
   SeriesName?: string;
+  SeasonId?: string | null;
+  SeasonName?: string | null;
   ParentIndexNumber?: number;
   IndexNumber?: number;
   ProductionYear?: number;

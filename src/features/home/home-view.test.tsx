@@ -392,6 +392,65 @@ describe("HomeView", () => {
     }
   });
 
+  describe("detail prefetch on dwell", () => {
+    const art = (id: string) => ({ itemId: id, type: "Backdrop" as const, tag: `bd-${id}` });
+
+    async function renderWithCards(cards: MediaCard[]) {
+      const itemDetail = vi.fn().mockRejectedValue(new Error("x"));
+      await renderHome(fakeGateway({
+        resumeItems: vi.fn().mockResolvedValue([]),
+        nextUp: vi.fn().mockResolvedValue([]),
+        latestInLibrary: vi.fn().mockResolvedValue(cards),
+        itemDetail,
+      }));
+      await screen.findByRole("link", { name: "Second" });
+      itemDetail.mockClear();
+      return itemDetail;
+    }
+
+    it("fetches a Movie card's detail once after the 300 ms dwell, not before", async () => {
+      const itemDetail = await renderWithCards([
+        card("m1", "First", { kind: "Movie", backdrop: art("m1") }),
+        card("m2", "Second", { kind: "Movie", backdrop: art("m2") }),
+      ]);
+      vi.useFakeTimers();
+      try {
+        act(() => screen.getByRole("link", { name: "Second" }).focus());
+        act(() => { vi.advanceTimersByTime(299); });
+        expect(itemDetail).not.toHaveBeenCalled();
+        act(() => { vi.advanceTimersByTime(1); });
+      } finally {
+        vi.useRealTimers();
+      }
+      expect(itemDetail).toHaveBeenCalledTimes(1);
+      expect(itemDetail).toHaveBeenCalledWith("m2", expect.any(AbortSignal));
+    });
+
+    it("does not fetch the detail of a Series card", async () => {
+      const itemDetail = await renderWithCards([
+        card("m1", "First", { kind: "Movie", backdrop: art("m1") }),
+        card("s2", "Second", { kind: "Series", backdrop: art("s2") }),
+      ]);
+      vi.useFakeTimers();
+      try {
+        act(() => screen.getByRole("link", { name: "Second" }).focus());
+        act(() => { vi.advanceTimersByTime(300); });
+      } finally {
+        vi.useRealTimers();
+      }
+      expect(itemDetail).not.toHaveBeenCalledWith("s2", expect.anything());
+    });
+  });
+
+  it("shows a progress ring on the hero's Resume button", async () => {
+    await renderHome(fakeGateway({
+      resumeItems: vi.fn().mockResolvedValue([card("r1", "Resume me", { kind: "Movie", progress: 0.4, remainingTicks: 22_800_000_000, resumePositionTicks: 15_000_000_000 })]),
+    }));
+    const hero = await screen.findByRole("region", { name: "Resume me" });
+    const resume = within(hero).getByRole("link", { name: /^Resume from/ });
+    expect(resume.querySelector(".ui-progress-ring")).not.toBeNull();
+  });
+
   it("shows the empty state with the server name and a link to settings", async () => {
     await renderHome(fakeGateway({
       resumeItems: vi.fn().mockResolvedValue([]),

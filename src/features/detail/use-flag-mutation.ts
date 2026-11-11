@@ -8,7 +8,7 @@ type Flag = "played" | "favorite";
 
 // Flips one flag at once, sends it to the server, and puts the old value back
 // if the server refuses. Afterwards the item and the home rows refetch.
-function useFlagMutation(gateway: SessionGateway, itemId: string, flag: Flag) {
+export function useFlagMutation(gateway: SessionGateway, itemId: string, flag: Flag) {
   const queryClient = useQueryClient();
   const key = detailKey(gateway, itemId);
 
@@ -38,36 +38,4 @@ function useFlagMutation(gateway: SessionGateway, itemId: string, flag: Flag) {
       void queryClient.invalidateQueries({ queryKey: key });
     },
   });
-}
-
-export function WatchState({ gateway, item }: { gateway: SessionGateway; item: ItemDetail }) {
-  const played = useFlagMutation(gateway, item.id, "played");
-  const favorite = useFlagMutation(gateway, item.id, "favorite");
-
-  return (
-    <div className="detail-actions">
-      <button
-        type="button"
-        aria-pressed={item.userData.played}
-        aria-disabled={played.isPending}
-        onClick={() => {
-          if (!played.isPending) played.mutate(!item.userData.played);
-        }}
-      >
-        Watched
-      </button>
-      <button
-        type="button"
-        aria-pressed={item.userData.favorite}
-        aria-disabled={favorite.isPending}
-        onClick={() => {
-          if (!favorite.isPending) favorite.mutate(!item.userData.favorite);
-        }}
-      >
-        Favorite
-      </button>
-      {played.isError ? <p role="alert">Could not update watched state. Try again.</p> : null}
-      {favorite.isError ? <p role="alert">Could not update favorite. Try again.</p> : null}
-    </div>
-  );
 }

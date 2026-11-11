@@ -38,6 +38,12 @@ export interface MockOptions {
   longRows?: boolean;
   // Continue watching and Next up are empty, so the Home hero is the newest item.
   homeLatestOnly?: boolean;
+  // /Items/{id} answers after this delay (the detail loading state).
+  detailDelayMs?: number;
+  // /Items/{id} answers 500 (the detail error state).
+  detailError?: boolean;
+  // Movies have a poster but no backdrop (the poster-beside-text detail layout).
+  noBackdrop?: boolean;
 }
 
 export const ticks = (seconds: number): number => Math.round(seconds * 1e7);
@@ -105,8 +111,11 @@ function movieDto(id: string, opts: MockOptions): Dto {
   return {
     Id: id, Name: m.Name, Type: "Movie", ProductionYear: m.ProductionYear, RunTimeTicks: m.RunTimeTicks, Overview: m.Overview, Genres: m.Genres,
     OfficialRating: m.OfficialRating, CommunityRating: m.CommunityRating, People: m.People ?? [],
-    ImageTags: { Primary: `tag-${id}`, Logo: `logo-${id}` }, BackdropImageTags: [`bd-${id}`], PrimaryImageAspectRatio: 2 / 3,
-    ImageBlurHashes: { Backdrop: { [`bd-${id}`]: backdropHashes[m.backdrop] ?? backdropHashes.b1 } },
+    ImageTags: { Primary: `tag-${id}`, Logo: `logo-${id}` }, PrimaryImageAspectRatio: 2 / 3,
+    ...(opts.noBackdrop ? {} : {
+      BackdropImageTags: [`bd-${id}`],
+      ImageBlurHashes: { Backdrop: { [`bd-${id}`]: backdropHashes[m.backdrop] ?? backdropHashes.b1 } },
+    }),
     MediaSources: opts.disc && id === "m1" ? [discSource] : (m.MediaSources ?? [simpleSource(id)]).map((s: Dto) => ({ ...s, HasSegments: Boolean(opts.segments) })),
     ...(m.Trickplay && opts.trickplay ? { Trickplay: { "src-4k": { 320: { Width: 320, Height: 180, TileWidth: 5, TileHeight: 2, ThumbnailCount: 10, Interval: 738000 } } } } : {}),
     ...(m.Chapters && opts.trickplay ? { Chapters: [
@@ -125,7 +134,7 @@ function seriesDto(id: string): Dto {
 function episodeDto(id: string, opts: MockOptions = {}): Dto {
   const e = episodes[id];
   return {
-    Id: id, Name: e.Name, Type: "Episode", SeriesId: "s1", SeriesName: "Harbor Lights", SeriesPrimaryImageTag: "tag-s1",
+    Id: id, Name: e.Name, Type: "Episode", SeriesId: "s1", SeriesName: "Harbor Lights", SeriesPrimaryImageTag: "tag-s1", SeasonId: "se1", SeasonName: "Season 1",
     ParentBackdropItemId: "s1", ParentBackdropImageTags: ["bd-s1"],
     ParentIndexNumber: 1, IndexNumber: e.IndexNumber, RunTimeTicks: opts.short ? ticks(25) : ticks(2700), Overview: e.Overview, Genres: ["Drama"],
     People: people.slice(0, 3), ImageTags: { Primary: `tag-${id}` }, PrimaryImageAspectRatio: 16 / 9, ProductionYear: 2022,
@@ -199,6 +208,8 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
       const detail = /^\/Items\/([^/]+)$/.exec(p);
       if (detail && p !== "/Items/Latest") {
         const id = detail[1];
+        if (opts.detailDelayMs) await sleep(opts.detailDelayMs);
+        if (opts.detailError) return route.fulfill({ status: 500, headers: cors });
         if (movies[id]) return json(movieDto(id, opts));
         if (episodes[id]) return json(episodeDto(id, opts));
         if (series[id]) return json(seriesDto(id));

@@ -69,14 +69,6 @@
     overflow: hidden;
   }
 
-  .hero-logo {
-    display: block;
-    max-inline-size: var(--hero-logo-max-w);
-    max-block-size: var(--hero-logo-max-h);
-    object-fit: contain;
-    object-position: left bottom;
-  }
-
   .hero-facts {
     margin: 0;
     font: var(--type-meta);

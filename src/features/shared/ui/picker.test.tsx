@@ -177,3 +177,19 @@ describe("typeaheadIndex", () => {
     expect(typeaheadIndex(options, 0, "z")).toBeUndefined();
   });
 });
+
+describe("Picker appearance and rovingItem", () => {
+  it("adds the pill class only for appearance pill", () => {
+    const { container, rerender } = render(<Picker label="Version" options={OPTIONS} value="20" onChange={vi.fn()} />);
+    expect(container.querySelector(".ui-picker")).not.toHaveClass("ui-picker--pill");
+    rerender(<Picker label="Version" appearance="pill" options={OPTIONS} value="20" onChange={vi.fn()} />);
+    expect(container.querySelector(".ui-picker")).toHaveClass("ui-picker--pill");
+  });
+
+  it("puts data-roving-item on the trigger only with rovingItem", () => {
+    const { rerender } = render(<Picker label="Version" options={OPTIONS} value="20" onChange={vi.fn()} />);
+    expect(screen.getByRole("button", { name: /Version/ })).not.toHaveAttribute("data-roving-item");
+    rerender(<Picker label="Version" rovingItem options={OPTIONS} value="20" onChange={vi.fn()} />);
+    expect(screen.getByRole("button", { name: /Version/ })).toHaveAttribute("data-roving-item");
+  });
+});

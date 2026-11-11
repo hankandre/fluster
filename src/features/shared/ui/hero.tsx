@@ -2,6 +2,8 @@ import { useId, useState, type CSSProperties, type MouseEvent } from "react";
 import { blurhashToDataUrl } from "../../home/blurhash";
 import { useRovingFocus } from "../../roving-focus";
 import { artTint } from "../art-tint";
+import { LogoTitle } from "./logo-title";
+import { ProgressRing } from "./progress-ring";
 import { useNavOverHero } from "./app-shell";
 import { ButtonLink } from "./button";
 import { Skeleton } from "./skeleton";
@@ -17,7 +19,7 @@ export interface HeroProps {
   overview?: string;
   // The facts and overview are still loading.
   detailPending?: boolean;
-  primary?: { label: string; href: string; onActivate(event: MouseEvent<HTMLAnchorElement>): void };
+  primary?: { label: string; href: string; onActivate(event: MouseEvent<HTMLAnchorElement>): void; progress?: number };
   moreInfoHref?: string;
   // The primary action is still being found (a series' first episode).
   primaryPending?: boolean;
@@ -60,7 +62,7 @@ export function Hero(props: HeroProps) {
       </div>
       <div className="hero-text">
         <h2 id={titleId} className="hero-title">
-          <TitleOrLogo key={logo?.src ?? "text"} title={title} logo={logo} />
+          <LogoTitle key={logo?.src ?? "text"} title={title} logo={logo} />
         </h2>
         {detailPending ? (
           <>
@@ -76,7 +78,13 @@ export function Hero(props: HeroProps) {
         <div className="hero-actions" data-spatial-row="" ref={roving.ref} onKeyDown={roving.onKeyDown} onFocus={roving.onFocus}>
           {primaryPending ? <Skeleton shape="block" width="160px" height="var(--control-h)" /> : null}
           {primary ? (
-            <ButtonLink variant="primary" href={primary.href} onClick={primary.onActivate} data-roving-item="">
+            <ButtonLink
+              variant="primary"
+              href={primary.href}
+              onClick={primary.onActivate}
+              data-roving-item=""
+              icon={primary.progress !== undefined ? <ProgressRing value={primary.progress} /> : undefined}
+            >
               {primary.label}
             </ButtonLink>
           ) : null}
@@ -95,13 +103,4 @@ function ArtImage({ src }: { src: string }) {
   const [failed, setFailed] = useState(false);
   if (failed) return null;
   return <img src={src} alt="" decoding="async" onError={() => setFailed(true)} />;
-}
-
-// The Logo when there is one and it loads, else the title as text.
-function TitleOrLogo({ title, logo }: { title: string; logo: { src: string } | undefined }) {
-  const [failed, setFailed] = useState(false);
-  if (logo && !failed) {
-    return <img className="hero-logo" src={logo.src} alt={title} decoding="async" onError={() => setFailed(true)} />;
-  }
-  return <>{title}</>;
 }

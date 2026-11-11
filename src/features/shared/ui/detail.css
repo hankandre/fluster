@@ -1,0 +1,176 @@
+@layer reset, tokens, base, components, features, focus;
+
+@layer components {
+  /* Detail header (DESIGN.md 7.7): the text sits in the left five columns, bottom-aligned over the ambient art. */
+  .detail-header {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    box-sizing: border-box;
+    min-block-size: var(--detail-header-h);
+    margin-block-start: calc(-1 * var(--nav-h));
+    padding-inline: var(--gutter);
+    padding-block: var(--nav-h) var(--space-8);
+    color: var(--text-1);
+  }
+
+  .detail-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+    inline-size: calc((100% - 2 * var(--gutter)) * 5 / 12);
+    min-inline-size: 0;
+  }
+
+  .detail-title {
+    margin: 0;
+    font: var(--type-hero);
+    letter-spacing: var(--tracking-hero);
+    color: var(--text-1);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .detail-title:has(.ui-logo-title) {
+    display: block;
+  }
+
+  .detail-series {
+    margin: 0;
+    font: var(--type-label);
+    color: var(--text-1);
+  }
+
+  .detail-series-link {
+    text-decoration: none;
+  }
+
+  .detail-series-link:hover,
+  .detail-series-link:focus-visible {
+    text-decoration: underline;
+  }
+
+  .detail-facts {
+    margin: 0;
+    font: var(--type-meta);
+    color: var(--text-1);
+  }
+
+  /* A poster beside the text for a movie without a backdrop; the wide frame only shows on compact windows. */
+  .detail-inline-art {
+    position: relative;
+    flex: none;
+    overflow: hidden;
+    border-radius: var(--radius-art);
+    background: var(--surface-2);
+  }
+
+  .detail-inline-art[data-ratio="poster"] {
+    inline-size: calc(var(--poster-w) * 1.5);
+    aspect-ratio: 2 / 3;
+    margin-inline-end: var(--space-6);
+  }
+
+  @media (max-width: 719px) {
+    .detail-header {
+      flex-direction: column;
+      align-items: stretch;
+      min-block-size: 0;
+      margin-block-start: 0;
+      padding-block: var(--space-5) var(--space-6);
+      gap: var(--space-5);
+    }
+
+    .detail-text {
+      inline-size: 100%;
+    }
+
+    .detail-inline-art[data-ratio="wide"] {
+      inline-size: 100%;
+      aspect-ratio: 16 / 9;
+    }
+
+    .detail-inline-art[data-ratio="poster"] {
+      margin-inline-end: 0;
+    }
+  }
+
+  /* Media badges: text on an opaque surface. */
+  .ui-media-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ui-media-badges li {
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-pill);
+    background: var(--surface-2);
+    color: var(--text-1);
+    font: var(--type-meta);
+  }
+
+  /* Action bar (DESIGN.md 7.8) */
+  .ui-action-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .ui-action-bar .ui-picker {
+    min-width: 0;
+  }
+
+  /* Person row (DESIGN.md 7.7): a wrapping grid, since the cards cannot take focus. */
+  .ui-section-title {
+    margin: 0 0 var(--space-4);
+    font: var(--type-heading);
+    color: var(--text-1);
+  }
+
+  .ui-person-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(var(--poster-w), 1fr));
+    gap: var(--space-5) var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ui-person {
+    display: grid;
+    justify-items: start;
+    align-content: start;
+    gap: var(--space-1);
+    min-inline-size: 0;
+  }
+
+  .ui-person-disc {
+    display: grid;
+    place-items: center;
+    inline-size: 64px;
+    block-size: 64px;
+    margin-block-end: var(--space-2);
+    border-radius: var(--radius-pill);
+    background: var(--surface-2);
+    color: var(--text-1);
+    font: var(--type-label);
+  }
+
+  .ui-person-name {
+    font: var(--type-label);
+    color: var(--text-1);
+  }
+
+  .ui-person-role {
+    font: var(--type-meta);
+    color: var(--text-2);
+  }
+}

@@ -170,6 +170,21 @@ export const scenarios: Scenario[] = [
   { name: "43-detail-played-favorite", run: (page) => signedInAt(page, "#/next/item/m3", 1_000) },
   { name: "44-detail-episode", fullPage: true, run: (page) => signedInAt(page, "#/next/item/ep-2", 1_000) },
   { name: "45-detail-not-found", expect404: true, run: (page) => signedInAt(page, "#/next/item/nope", 1_000) },
+  { name: "46-detail-version-picker", run: async (page) => {
+    await signedInAt(page, "#/next/item/m1", 1_000);
+    await page.getByRole("button", { name: /^Version/ }).click();
+    await page.waitForTimeout(300);
+  } },
+  { name: "47-detail-loading", opts: { detailDelayMs: 6_000 }, run: async (page) => {
+    await signIn(page);
+    await page.evaluate(() => { window.location.hash = "#/next/item/m1"; });
+    await page.waitForTimeout(400);
+  } },
+  { name: "48-detail-error", opts: { detailError: true }, run: async (page) => {
+    await signedInAt(page, "#/next/item/m1", 800);
+    await page.getByRole("button", { name: "Retry" }).waitFor();
+  } },
+  { name: "49-detail-no-backdrop", opts: { noBackdrop: true }, run: (page) => signedInAt(page, "#/next/item/m1", 1_000) },
 
   // Player
   { name: "50-player-controls", opts: { trickplay: true }, run: (page) => play(page, "#/next/item/m1") },

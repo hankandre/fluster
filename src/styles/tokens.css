@@ -61,6 +61,7 @@
   --hero-h: min(78vh, 56.25vw);
   --hero-logo-max-w: min(480px, 32vw);
   --hero-logo-max-h: 160px;
+  --detail-header-h: min(82vh, 60vw);
   --control-h: 48px;
   --icon-button: 44px;
   --hit-min: 44px;
