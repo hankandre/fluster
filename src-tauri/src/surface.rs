@@ -8,6 +8,8 @@ use tauri::AppHandle;
 mod linux;
 #[cfg(target_os = "macos")]
 mod macos;
+#[cfg(target_os = "linux")]
+mod teardown;
 
 #[cfg(target_os = "linux")]
 use linux as platform;

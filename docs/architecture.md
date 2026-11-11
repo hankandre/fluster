@@ -29,7 +29,7 @@ Tauri window
     └── React controls and diagnostics
 ```
 
-`NativeVideoSurface` measures its DOM rectangle with `ResizeObserver`, skips unchanged frames, and keeps only the newest geometry while one native update is in flight. The WebView remains interactive above the native surface. Linux reparents WebKitGTK into an overlay layer; macOS inserts the OpenGL view below the WKWebView. Renderer objects and libmpv render contexts stay on their platform UI thread.
+`NativeVideoSurface` measures its DOM rectangle with `ResizeObserver`, skips unchanged frames, and keeps only the newest geometry while one native update is in flight. The WebView remains interactive above the native surface. Linux reparents WebKitGTK into an overlay layer; macOS inserts the OpenGL view below the WKWebView. Renderer objects and libmpv render contexts stay on their platform UI thread. On Linux, a session's teardown makes the `GLArea` context current, frees the render context, clears the surface and collapses it to 1×1, restores the library background, and queues a redraw of the whole window, in that order (`surface/teardown.rs`).
 
 libmpv starts with configuration and normal mpv input disabled, `vo=libmpv`, and `hwdec=auto`. Startup queries and caches the loaded mpv version and rejects anything older than 0.41 with an AppImage/package hint. Runtime properties such as `hwdec-current`, `hwdec-interop`, hardware pixel format, codec, dimensions, bit depth, video output, GPU context, and dropped frames are authoritative. Ordinary snapshots are coalesced to five updates per second, while control and lifecycle changes remain immediate. A missing hardware decoder becomes `Software — CPU` with a warning and continues using the same original stream.
 
