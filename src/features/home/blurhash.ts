@@ -20,7 +20,7 @@ function decodeToDataUrl(hash: string): string | undefined {
     canvas.height = PLACEHOLDER_SIZE;
     const context = canvas.getContext("2d");
     if (!context) return undefined;
-    context.putImageData(new ImageData(pixels, PLACEHOLDER_SIZE, PLACEHOLDER_SIZE), 0, 0);
+    context.putImageData(new ImageData(new Uint8ClampedArray(pixels), PLACEHOLDER_SIZE, PLACEHOLDER_SIZE), 0, 0);
     return canvas.toDataURL();
   } catch {
     return undefined;
