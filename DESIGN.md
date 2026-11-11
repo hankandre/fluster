@@ -182,6 +182,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 - A top bar, 64 px desktop or 96 px TV. Left: the Fluster wordmark (text, `--type-label` 700), which goes to Home. Then: Home, one entry per library (from `UserViews`), and Search (icon plus label). Right: Settings (gear icon) with the user's initial.
 - It is transparent over a hero, then `--surface-0` at 92% with a `--blur-nav` blur once content scrolls under it (the only allowed blur). On desktop it hides on scroll down and returns on scroll up.
 - It is hidden in the player and in sign-in.
+- There is no Libraries page: each library is a nav entry (`#/next/browse` alone is Not found). Where the entries overflow, the list scrolls and the clipped edge fades over `--nav-fade-w` (a mask, no animation); a focused or current entry scrolls clear of the fade.
 - Accessibility: `<nav aria-label="Main">`, the current page marked `aria-current="page"`, and a skip link "Skip to content" as the first Tab stop.
 
 ### 7.2 Ambient backdrop (`AmbientBackdrop`)
@@ -256,7 +257,12 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 
 ### 7.12 Toolbar (`BrowseToolbar`)
 
-- Sticky under the nav: Sort (menu button "Name ↑"), filter chips (Unwatched, Favorites, In progress) as `aria-pressed` toggle chips with a check icon when on, and the item count on the right.
+- The page title is the library (or collection) name, an `h1` in `--type-title` that takes focus when the page opens. Under it, the toolbar sticks under the nav and follows it up when the nav hides.
+- Sort is one `Picker` (pill) with each field and direction spelled out: Name A to Z (default), Name Z to A, Newest added first, Oldest added first, Newest release first, Oldest release first, Highest rated first, Lowest rated first. The trigger reads "Sort Name A to Z".
+- Filter chips (Unwatched, Favorites, In progress) are `aria-pressed` toggle chips with a check icon when on. The item count sits on the right ("248 items"); it is plain text from the first page's total, not a live region. On compact windows Sort and the count share the first line and the chips wrap below.
+- The toolbar is one Tab stop (`role="toolbar"`); Left and Right move between controls, Down moves into the grid.
+- Paging: the next page loads when the end of the grid is within one viewport. A "Load more" button stays under the grid as the keyboard and screen-reader fallback; Down from the last row reaches it, and when a load finishes while it has focus, focus moves to the first new card. "{n} more items loaded" is announced. Sort and filters are not remembered between visits.
+- States: first-page skeleton (12 poster placeholders), empty library, filtered empty (below), first-page error, later-page error ("Couldn't load more items." with Retry, cards stay and automatic paging stops until Retry succeeds), and library not available.
 
 ### 7.13 Search (`SearchField`, `SearchSuggestion`)
 
@@ -391,6 +397,7 @@ A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings
   --poster-w: 112px;
   --thumb-w: 240px;
   --nav-h: 64px;
+  --nav-fade-w: var(--space-7);
   --hero-h: min(78vh, 56.25vw);
   --hero-logo-max-w: min(480px, 32vw);
   --hero-logo-max-h: 160px;
@@ -517,7 +524,11 @@ Fluster talks like a knowledgeable friend running the projector: calm, brief, pl
 | Home, empty | Nothing to watch yet | Your libraries on {server} don't have any movies or shows. Add media in Jellyfin, then come back. | Open settings |
 | Search, start | Search your libraries | Movies, shows, and episodes. | n/a |
 | Search, no results | No matches for "{term}" | Check the spelling, or try part of the title. | n/a |
+| Library, empty | Nothing in this library yet | Add media in Jellyfin, then come back. | n/a |
 | Library, filtered empty | Nothing matches these filters | n/a | Clear filters |
+| Library, not available | This library isn't available | It may have been removed, or this account can't see it. | Go home |
+| Libraries, error | n/a | Couldn't load your libraries. | Retry |
+| Library, later page error | n/a | Couldn't load more items. | Retry |
 | Row error | n/a | Couldn't load {row}. | Retry |
 | Sign-in, 401 | n/a | That username and password didn't work. | n/a |
 | Sign-in, unreachable | n/a | Couldn't reach {address}. Check the address and that the server is running. | n/a |

@@ -234,6 +234,7 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
         if (episodes[id]) return json(episodeDto(id, opts));
         if (series[id]) return json(seriesDto(id));
         if (id === "box-1") return json(boxSetDto());
+        if (/^big-\d+$/.test(id)) return json(bigMovie(Number(id.slice(4)), opts));
         return missing();
       }
       if (opts.rowDelayMs && ["/UserItems/Resume", "/Shows/NextUp", "/Items/Latest", "/UserViews"].includes(p)) await sleep(opts.rowDelayMs);

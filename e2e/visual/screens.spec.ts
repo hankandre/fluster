@@ -14,7 +14,9 @@ const phone = [{ width: 390, height: 844 }];
 async function settle(page: Page): Promise<void> {
   await page.evaluate(async () => {
     await document.fonts.ready;
-    await Promise.all([...document.images].map((image) => (image.complete ? undefined : image.decode().catch(() => undefined))));
+    // A lazy image far below the fold never loads, so each decode waits at most 1.5 s.
+    const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+    await Promise.all([...document.images].map((image) => (image.complete ? undefined : Promise.race([image.decode().catch(() => undefined), wait(1_500)]))));
   });
   await page.waitForTimeout(150);
 }

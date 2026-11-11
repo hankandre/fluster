@@ -147,8 +147,48 @@ export const scenarios: Scenario[] = [
   { name: "16-nav-library-current", run: (page) => signedInAt(page, "#/next/browse/lib-movies", 1_000) },
 
   // Browse
-  { name: "20-browse-libraries", run: (page) => signedInAt(page, "#/next/browse") },
+  { name: "20-library-loading", opts: { libraryItemsDelayMs: 4_000 }, run: (page) => signedInAt(page, "#/next/browse/lib-movies", 300) },
   { name: "21-library-grid", run: (page) => signedInAt(page, "#/next/browse/lib-movies", 1_000) },
+  { name: "21a-library-sort-open", run: async (page) => {
+    await signedInAt(page, "#/next/browse/lib-movies", 1_000);
+    await page.getByRole("button", { name: /^Sort/ }).click();
+    await page.getByRole("listbox").waitFor();
+    await page.waitForTimeout(300);
+  } },
+  { name: "21b-library-filtered", run: async (page) => {
+    await signedInAt(page, "#/next/browse/lib-movies", 1_000);
+    await page.getByRole("button", { name: "Unwatched" }).click();
+    await page.waitForTimeout(800);
+  } },
+  { name: "21c-library-filtered-empty", run: async (page) => {
+    await signedInAt(page, "#/next/browse/lib-movies", 1_000);
+    await page.getByRole("button", { name: "In progress" }).click();
+    await page.getByRole("button", { name: "Favorites" }).click();
+    await page.getByRole("heading", { name: "Nothing matches these filters" }).waitFor();
+    await page.waitForTimeout(300);
+  } },
+  { name: "21d-library-error", opts: { libraryItemsError: true }, run: async (page) => {
+    await signedInAt(page, "#/next/browse/lib-movies", 300);
+    await page.getByText("Couldn't load Movies.").waitFor({ timeout: 10_000 });
+    await page.waitForTimeout(300);
+  } },
+  { name: "21e-library-scrolled", opts: { bigLibrary: true }, run: async (page) => {
+    await signedInAt(page, "#/next/browse/lib-movies", 1_500);
+    await page.evaluate(() => window.scrollTo(0, 600));
+    await page.waitForTimeout(500);
+    await page.evaluate(() => window.scrollBy(0, -20));
+    await page.waitForTimeout(700);
+  } },
+  { name: "21f-library-load-more-focus", opts: { bigLibrary: true }, run: async (page) => {
+    await page.addInitScript(() => { (window as unknown as { IntersectionObserver: unknown }).IntersectionObserver = undefined; });
+    await signedInAt(page, "#/next/browse/lib-movies", 1_500);
+    await page.locator(".library-grid a.media-card").first().focus();
+    await page.keyboard.press("End");
+    await page.keyboard.press("ArrowDown");
+    await page.waitForTimeout(500);
+  } },
+  { name: "21g-collection", run: (page) => signedInAt(page, "#/next/collection/box-1", 1_000) },
+  { name: "21h-library-not-found", run: (page) => signedInAt(page, "#/next/browse/nope", 1_000) },
   { name: "22-series-episodes", run: (page) => signedInAt(page, "#/next/series/s1", 1_000) },
   { name: "23-series-episodes-fullpage", fullPage: true, run: (page) => signedInAt(page, "#/next/series/s1", 1_000) },
   { name: "24-series-play-next", opts: { seriesNextUp: "next" }, run: (page) => signedInAt(page, "#/next/series/s1", 1_000) },
@@ -318,4 +358,6 @@ export const scenarios: Scenario[] = [
   { name: "62-phone-home", phone: true, run: async (page) => { await signIn(page); await page.waitForTimeout(900); } },
   { name: "63-phone-detail", phone: true, fullPage: true, run: (page) => signedInAt(page, "#/next/item/m1", 1_000) },
   { name: "64-phone-series", phone: true, fullPage: true, run: (page) => signedInAt(page, "#/next/series/s1", 1_000) },
+  { name: "65-phone-library", phone: true, run: (page) => signedInAt(page, "#/next/browse/lib-movies", 1_000) },
+  { name: "66-phone-nav-fade", phone: true, opts: { manyLibraries: true }, run: (page) => signedInAt(page, "#/next/home", 1_000) },
 ];
