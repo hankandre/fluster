@@ -14,5 +14,5 @@ interface SkeletonProps {
 // the container sets aria-busy and offers one "Loading" text. It appears after 150 ms so fast loads do not flash.
 export function Skeleton({ shape = "block", width, height, aspectRatio }: SkeletonProps) {
   const style: CSSProperties = { width, height, aspectRatio };
-  return <div className="ui-skeleton" data-shape={shape} style={style} aria-hidden="true" />;
+  return <div className="ui-skeleton" data-shape={shape} data-ratio={aspectRatio && !height ? "" : undefined} style={style} aria-hidden="true" />;
 }

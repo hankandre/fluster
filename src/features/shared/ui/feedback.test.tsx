@@ -7,6 +7,7 @@ import { EmptyState } from "./empty-state";
 import { useRovingFocus } from "../../roving-focus";
 import { InlineError } from "./inline-error";
 import { Skeleton } from "./skeleton";
+import { readFileSync } from "node:fs";
 
 afterEach(cleanup);
 
@@ -66,6 +67,20 @@ describe("Skeleton", () => {
     expect(screen.getByRole("button", { name: "After" })).toHaveFocus();
     await user.keyboard("{ArrowDown}{Escape}");
     expect(screen.getByRole("button", { name: "After" })).toHaveFocus();
+  });
+});
+
+const feedbackCss = readFileSync("src/features/shared/ui/feedback.css", "utf8");
+
+describe("Skeleton shape", () => {
+  it("lets an aspect-ratio block take its height from the ratio, not the default bar height", () => {
+    const { container } = render(<><Skeleton aspectRatio="2 / 3" width="var(--poster-w)" /><Skeleton width="10rem" /><Skeleton aspectRatio="2 / 3" height="4rem" /></>);
+    const [poster, bar, fixed] = Array.from(container.querySelectorAll<HTMLElement>(".ui-skeleton"));
+    expect(poster).toHaveAttribute("data-ratio");
+    expect(poster.style.aspectRatio).toBe("2 / 3");
+    expect(bar).not.toHaveAttribute("data-ratio");
+    expect(fixed).not.toHaveAttribute("data-ratio");
+    expect(feedbackCss).toMatch(/\.ui-skeleton\[data-ratio\]\s*\{\s*height:\s*auto;/);
   });
 });
 
