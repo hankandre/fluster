@@ -2,6 +2,7 @@
 export { AppNav, type NavLibrary } from "./app-nav";
 export { AppShell, useNavOverHero } from "./app-shell";
 export { ActionBar } from "./action-bar";
+export { BrowseToolbar, type ToolbarFilter } from "./browse-toolbar";
 export { Button, ButtonLink, buttonClass, type ButtonProps, type ButtonVariant } from "./button";
 export { Dialog } from "./dialog";
 export { EmptyState } from "./empty-state";

@@ -1,91 +1,70 @@
-import { useEffect, useRef, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { LibraryView } from "../../domain/catalog";
-import { useSession, type SessionGateway } from "../../app/session";
-import { imageUrlFor, toLibraryCardProps } from "../card-view";
-import { RowError } from "../home/media-row";
+import type { SessionGateway } from "../../app/session";
+import { useHeadingFocus } from "../detail/use-heading-focus";
 import { scopeFor } from "../query-scope";
-import { useRovingFocus } from "../roving-focus";
-import { MediaCard } from "../shared/ui";
+import { ButtonLink, InlineError, Notice } from "../shared/ui";
 import { LibraryGrid } from "./library-grid";
+import { LibraryPage } from "./library-page";
+import { LibraryPagePending, PendingTitle } from "./library-states";
+import type { LibrarySortId } from "./library-sort";
 
-const SIGN_IN_ROUTE = "#/next/sign-in";
-
-// Shared page frame for browse routes. Signed-out visitors go to sign-in.
-export function BrowseFrame({ title, routeKey, back, children }: { title: string; routeKey: string; back: ReactNode; children: (gateway: SessionGateway) => ReactNode }) {
-  const { gateway } = useSession();
-  const heading = useRef<HTMLHeadingElement>(null);
-
-  // Move focus to the page heading when the route changes.
-  useEffect(() => {
-    heading.current?.focus();
-  }, [routeKey]);
-
-  useEffect(() => {
-    if (!gateway) window.location.hash = SIGN_IN_ROUTE;
-  }, [gateway]);
-
+// A library: its name as the page title, then the toolbar and the grid.
+export function BrowseView({ libraryId, initialSort }: { libraryId: string; initialSort?: LibrarySortId }) {
   return (
-    <main className="home">
-      <h1 ref={heading} tabIndex={-1}>{title}</h1>
-      {gateway ? children(gateway) : null}
-      {back}
-    </main>
+    <LibraryPage>
+      {(gateway) => <LibraryContent key={`${libraryId}/${initialSort ?? ""}`} gateway={gateway} libraryId={libraryId} initialSort={initialSort} />}
+    </LibraryPage>
   );
 }
 
-export function BrowseView({ libraryId }: { libraryId?: string }) {
-  return (
-    <BrowseFrame
-      title="Browse"
-      routeKey={`browse/${libraryId ?? ""}`}
-      back={libraryId ? <a href="#/next/browse">Back to libraries</a> : null}
-    >
-      {(gateway) => <Libraries gateway={gateway} libraryId={libraryId} />}
-    </BrowseFrame>
-  );
-}
-
-function Libraries({ gateway, libraryId }: { gateway: SessionGateway; libraryId?: string }) {
+function LibraryContent({ gateway, libraryId, initialSort }: { gateway: SessionGateway; libraryId: string; initialSort?: LibrarySortId }) {
   const views = useQuery({
     queryKey: ["browse", scopeFor(gateway), "views"],
     queryFn: ({ signal }) => gateway.userViews(signal),
     gcTime: 0,
   });
+  const library = views.data?.find((view) => view.id === libraryId);
+  const heading = useHeadingFocus(!views.isPending);
 
-  if (views.isPending) return <p aria-busy="true">Loading libraries…</p>;
-  if (views.isError) return <RowError title="your libraries" onRetry={() => void views.refetch()} />;
-
-  if (libraryId === undefined) {
-    return <LibraryCards gateway={gateway} views={views.data} />;
+  if (views.isPending) {
+    return (
+      <>
+        <PendingTitle headingRef={heading} name="Library" />
+        <LibraryPagePending />
+      </>
+    );
   }
-
-  const library = views.data.find((view) => view.id === libraryId);
-  if (!library) return <p role="alert">That library was not found.</p>;
+  if (views.isError) {
+    return (
+      <>
+        <h1 ref={heading} tabIndex={-1} className="visually-hidden">Library</h1>
+        <InlineError spatial message="Couldn't load your libraries." onRetry={() => void views.refetch()} />
+      </>
+    );
+  }
+  if (!library) {
+    return (
+      <Notice
+        title="This library isn't available"
+        headingRef={heading}
+        actions={<ButtonLink variant="primary" href="#/next/home">Go home</ButtonLink>}
+      >
+        It may have been removed, or this account can't see it.
+      </Notice>
+    );
+  }
   return (
     <>
-      <h2>{library.name}</h2>
+      <h1 ref={heading} tabIndex={-1} className="library-title">{library.name}</h1>
       <LibraryGrid
         gateway={gateway}
         parentId={library.id}
         itemTypes={itemTypesFor(library)}
         label={library.name}
+        initialSort={initialSort}
       />
     </>
-  );
-}
-
-function LibraryCards({ gateway, views }: { gateway: SessionGateway; views: LibraryView[] }) {
-  const roving = useRovingFocus<HTMLUListElement>("grid");
-  const imageUrl = imageUrlFor(gateway);
-  return (
-    <ul className="media-grid" data-variant="thumb" {...roving}>
-      {views.map((view) => (
-        <li key={view.id}>
-          <MediaCard {...toLibraryCardProps(view, imageUrl)} />
-        </li>
-      ))}
-    </ul>
   );
 }
 

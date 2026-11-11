@@ -50,6 +50,15 @@
     transform: translateY(-100%);
   }
 
+  /* Sticky page bars (the library toolbar) sit under the nav and move up with it when it hides. */
+  .app-content {
+    --sticky-top: var(--nav-h);
+  }
+
+  .app-nav[data-hidden="true"] ~ .app-content {
+    --sticky-top: 0;
+  }
+
   .app-nav-bar {
     display: flex;
     align-items: center;

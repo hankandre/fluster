@@ -91,6 +91,8 @@ export interface BrowseCard extends MediaCard {
 export interface BrowsePage {
   cards: BrowseCard[];
   hasMore: boolean;
+  // The number of items the query matches. Sent for the first page only; display only.
+  totalCount?: number;
 }
 
 export interface Season {

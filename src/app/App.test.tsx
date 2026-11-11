@@ -7,6 +7,7 @@ afterEach(cleanup);
 
 describe("App routing", () => {
   it.each([
+    "#/next/browse",
     "#/next/browse/",
     "#/next/series/%E0%A4%A",
     "#/next/item/%E0%A4%A",

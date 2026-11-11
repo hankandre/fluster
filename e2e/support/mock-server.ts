@@ -46,6 +46,16 @@ export interface MockOptions {
   seriesNextUp?: "resume" | "next" | "none";
   // Movies have a poster but no backdrop (the poster-beside-text detail layout).
   noBackdrop?: boolean;
+  // /Items?parentId=lib-movies answers 150 synthetic movies, honouring startIndex and limit.
+  bigLibrary?: boolean;
+  // Library pages after the first (startIndex > 0) answer 500.
+  libraryPageError?: boolean;
+  // Library /Items answers after this delay (the library loading state).
+  libraryItemsDelayMs?: number;
+  // Library /Items answers 500 (the library error state).
+  libraryItemsError?: boolean;
+  // /UserViews returns twelve libraries, so the nav overflows on a phone.
+  manyLibraries?: boolean;
 }
 
 export const ticks = (seconds: number): number => Math.round(seconds * 1e7);
@@ -145,6 +155,13 @@ function episodeDto(id: string, opts: MockOptions = {}): Dto {
     UserData: { Played: e.IndexNumber === 1, IsFavorite: false, PlaybackPositionTicks: opts.short ? 0 : e.resume },
   };
 }
+function boxSetDto(): Dto {
+  return { Id: "box-1", Name: "Harbor Collection", Type: "BoxSet", ImageTags: { Primary: "tag-box-1" }, PrimaryImageAspectRatio: 2 / 3 };
+}
+const MORE_LIBRARIES = ["Documentaries", "Anime", "Concerts", "Classics", "Kids", "Shorts", "Foreign", "Specials", "Home Videos", "Archive"];
+function bigMovie(index: number, opts: MockOptions): Dto {
+  return { ...movieDto("m1", opts), Id: `big-${index}`, Name: `Big Movie ${String(index).padStart(3, "0")}` };
+}
 function imageFor(id: string, type: string): string {
   if (type === "Logo") return "logo";
   if (movies[id]) return type === "Backdrop" ? movies[id].backdrop : type === "Thumb" ? movies[id].backdrop : movies[id].poster;
@@ -216,6 +233,7 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
         if (movies[id]) return json(movieDto(id, opts));
         if (episodes[id]) return json(episodeDto(id, opts));
         if (series[id]) return json(seriesDto(id));
+        if (id === "box-1") return json(boxSetDto());
         return missing();
       }
       if (opts.rowDelayMs && ["/UserItems/Resume", "/Shows/NextUp", "/Items/Latest", "/UserViews"].includes(p)) await sleep(opts.rowDelayMs);
@@ -236,6 +254,7 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
           return json({ Items: opts.empty ? [] : [
             { Id: "lib-movies", Name: "Movies", CollectionType: "movies", ImageTags: { Primary: "tag-lib1" } },
             { Id: "lib-shows", Name: "Shows", CollectionType: "tvshows", ImageTags: { Primary: "tag-lib2" } },
+            ...(opts.manyLibraries ? MORE_LIBRARIES.map((Name) => ({ Id: `lib-${Name.toLowerCase().replace(/ /g, "-")}`, Name, CollectionType: "movies", ImageTags: { Primary: "tag-lib1" } })) : []),
           ] });
         case "/UserItems/Resume":
           return json({ Items: opts.empty || opts.homeLatestOnly ? [] : [movieDto("m2", opts), episodeDto("ep-2")] });
@@ -263,9 +282,25 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
             const found = all.filter((i) => i.Name.toLowerCase().includes(term.toLowerCase()));
             return json({ Items: found, TotalRecordCount: found.length });
           }
-          if (url.searchParams.get("parentId") === "lib-shows") return json({ Items: [seriesDto("s1"), seriesDto("s2")], TotalRecordCount: 2 });
+          const parent = url.searchParams.get("parentId");
+          const start = Number(url.searchParams.get("startIndex") ?? 0);
+          if (parent) {
+            if (opts.libraryItemsDelayMs) await sleep(opts.libraryItemsDelayMs);
+            if (opts.libraryItemsError || (opts.libraryPageError && start > 0)) return route.fulfill({ status: 500, headers: cors });
+          }
+          if (parent === "box-1") return json({ Items: [movieDto("m1", opts), movieDto("m4", opts)], TotalRecordCount: 2 });
+          if (parent === "lib-shows") return json({ Items: [seriesDto("s1"), seriesDto("s2")], TotalRecordCount: 2 });
+          if (opts.bigLibrary && parent === "lib-movies") {
+            const limit = Number(url.searchParams.get("limit") ?? 60);
+            const page = Array.from({ length: Math.max(0, Math.min(limit, 150 - start)) }, (_, offset) => bigMovie(start + offset + 1, opts));
+            return json({ Items: page, TotalRecordCount: 150 });
+          }
           const list = Object.keys(movies).map((id) => movieDto(id, opts));
-          const all = [...list, ...list.map((m) => ({ ...m, Id: `${m.Id}-b` })), ...list.map((m) => ({ ...m, Id: `${m.Id}-c` }))];
+          let all = [...list, ...list.map((m) => ({ ...m, Id: `${m.Id}-b` })), ...list.map((m) => ({ ...m, Id: `${m.Id}-c` }))];
+          const filters = (url.searchParams.get("filters") ?? "").split(",");
+          if (filters.includes("IsFavorite")) all = all.filter((m) => m.UserData.IsFavorite);
+          if (filters.includes("IsResumable")) all = all.filter((m) => m.UserData.PlaybackPositionTicks > 0);
+          if (filters.includes("IsUnplayed")) all = all.filter((m) => !m.UserData.Played);
           return json({ Items: all, TotalRecordCount: all.length });
         }
         case "/Search/Hints": {

@@ -104,8 +104,6 @@ function renderRoute(hash: string, services: AppServices) {
       return <SignInView discovery={services.discovery} />;
     case "#/next/home":
       return <HomeView />;
-    case "#/next/browse":
-      return <BrowseView />;
     case "#/next/search":
       return <SearchView />;
     case "#/next/detail":

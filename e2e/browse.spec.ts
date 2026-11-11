@@ -47,6 +47,8 @@ async function mockBrowseServer(page: Page) {
             item("m1", "Plain Movie", "Movie"),
           ],
         });
+      case "/Items/box-1":
+        return json(item("box-1", "Great Saga", "BoxSet"));
       case "/Items/series-1":
         return json(item("series-1", "Great Show", "Series"));
       case "/Shows/series-1/Seasons":
@@ -73,10 +75,13 @@ test("browse a library, sort, open a series and season, and open a collection", 
   await expect(page.getByRole("heading", { name: "Home" })).toBeVisible({ timeout: 8_000 });
 
   await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Mixed Library" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Mixed Library" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Plain Movie, 2016" })).toBeVisible();
 
-  await page.getByLabel("Sort by").selectOption("DateCreated");
-  await expect.poll(() => requests.some((url) => url.pathname === "/Items" && url.searchParams.get("sortBy") === "DateCreated")).toBe(true);
+  await page.getByRole("button", { name: /^Sort/ }).click();
+  await page.getByRole("option", { name: "Newest added first" }).click();
+  await expect.poll(() => requests.some((url) => url.pathname === "/Items"
+    && url.searchParams.get("sortBy") === "DateCreated" && url.searchParams.get("sortOrder") === "Descending")).toBe(true);
 
   await page.getByRole("link", { name: "Great Show, 2016" }).click();
   await expect(page.getByRole("link", { name: "First Season Opener, Episode 1" })).toBeVisible();
@@ -86,8 +91,9 @@ test("browse a library, sort, open a series and season, and open a collection", 
 
   await page.goBack();
   await expect(page).toHaveURL(/#\/next\/browse\/lib-1$/);
-  await page.goto("/#/next/browse");
-  await page.getByRole("main").getByRole("link", { name: "Mixed Library" }).click();
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Mixed Library" }).click();
+  await expect(page).toHaveURL(/#\/next\/browse\/lib-1$/);
   await page.getByRole("link", { name: "Great Saga, 2016" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Great Saga" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Boxed Movie, 2016" })).toBeVisible();
 });

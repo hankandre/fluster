@@ -1,0 +1,38 @@
+@layer features {
+  .library-page {
+    position: relative;
+    z-index: var(--z-content);
+    padding-inline: var(--gutter);
+    padding-block: var(--space-6) var(--space-8);
+  }
+
+  .library-title {
+    margin: 0 0 var(--space-4);
+    color: var(--text-1);
+    font: var(--type-title);
+  }
+
+  /* The toolbar sticks under the nav, and follows it up when the nav hides (shell.css sets --sticky-top). */
+  .library-grid .ui-toolbar-wrap {
+    position: sticky;
+    inset-block-start: var(--sticky-top, var(--nav-h));
+    z-index: var(--z-content);
+    background: var(--surface-0);
+    transition: inset-block-start var(--dur-base) var(--ease-out);
+  }
+
+  /* A focused card scrolls clear of the nav and the toolbar. */
+  .library-grid .media-grid > li {
+    scroll-margin-block-start: calc(var(--toolbar-h, 0px) + var(--space-3));
+  }
+
+  .library-toolbar-skeleton {
+    padding-block: var(--space-3);
+  }
+
+  .library-load-more {
+    display: flex;
+    justify-content: center;
+    padding-block: var(--space-4);
+  }
+}
