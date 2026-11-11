@@ -2,7 +2,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { SessionProvider, useSession, type SessionGateway } from "../app/session";
-import { BrowseView } from "./browse";
 import { DetailView } from "./detail";
 import { FeatureIndex } from "./index";
 import { HomeView } from "./home";
@@ -42,7 +41,6 @@ it("logs out the previous gateway once when another one signs in", () => {
 });
 
 it.each([
-  ["Browse", BrowseView],
   ["Detail", DetailView],
   ["Player", PlayerFeatureView],
 ])("renders the %s placeholder with no link to the feature index", (name, View) => {
@@ -53,5 +51,5 @@ it.each([
 
 it("lists every feature", () => {
   render(<SessionProvider createGateway={() => stubGateway()}><FeatureIndex /></SessionProvider>);
-  expect(screen.getAllByRole("link")).toHaveLength(7);
+  expect(screen.getAllByRole("link")).toHaveLength(6);
 });

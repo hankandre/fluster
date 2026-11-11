@@ -46,8 +46,8 @@ const WINDOWS = [
 
 const ROUTES = [
   "#/next/home",
-  "#/next/browse",
   "#/next/browse/lib-movies",
+  "#/next/browse/lib-shows",
   "#/next/collection/box-1",
   "#/next/series/s1",
   "#/next/search/o",

@@ -7,7 +7,6 @@ import { describe, expect, it } from "vitest";
 // migrates the file and removes its entry. The user approved (2026-11-08) adding the acceptance line "Uses only
 // shared UI primitives; no native select, radio, or checkbox remains" to P13-09, P13-11, and P13-17. A new file must not be added to this list.
 const ALLOWLIST: Record<string, string> = {
-  "browse/library-grid.tsx": "P13-11 (library browsing: sort selects and filter checkboxes)",
   "settings/settings-view.tsx": "P13-17 (Settings: streaming-limit selects)",
   "player/track-menus.tsx": "P13-13 (player chrome: audio and subtitle selects moved here by P10-08)",
 };

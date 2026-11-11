@@ -1,0 +1,35 @@
+@layer reset, tokens, base, components, features, focus;
+
+@layer components {
+  /* Browse toolbar (DESIGN.md 7.12): one line, the count at the end; on compact windows the chips wrap below. */
+  .ui-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    padding-block: var(--space-3);
+  }
+
+  .ui-toolbar-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .ui-toolbar-count {
+    margin: 0;
+    margin-inline-start: auto;
+    color: var(--text-2);
+    font: var(--type-meta);
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 40rem) {
+    /* Sort and the count share the first line; the chips take the second. */
+    .ui-toolbar-filters {
+      order: 3;
+      inline-size: 100%;
+    }
+  }
+}

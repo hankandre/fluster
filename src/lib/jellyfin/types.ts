@@ -74,6 +74,7 @@ export interface BaseItemDto {
 
 export interface ItemsResult {
   Items?: BaseItemDto[];
+  TotalRecordCount?: number;
 }
 
 export interface SearchHintDto {

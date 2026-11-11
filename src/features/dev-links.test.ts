@@ -19,7 +19,7 @@ function sourceFiles(dir: string): string[] {
 describe("developer feature index links", () => {
   it("matches the string literals it must catch and not the Home route", () => {
     expect(DEV_LINK.test('href="#/next"')).toBe(true);
-    expect(DEV_LINK.test('libraryId ? "#/next/browse" : "#/next"')).toBe(true);
+    expect(DEV_LINK.test('libraryId ? "#/next/home" : "#/next"')).toBe(true);
     expect(DEV_LINK.test("`#/next`")).toBe(true);
     expect(DEV_LINK.test('"#/next/home"')).toBe(false);
   });

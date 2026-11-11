@@ -1002,6 +1002,26 @@ describe("JellyfinGateway home calls", () => {
     expect(JSON.stringify(request?.params)).not.toMatch(/top-secret|api_key|token/i);
   });
 
+  it("asks for the total count on the first page only and maps it", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("GET /Items", { Items: [{ Id: "m1", Name: "Movie", Type: "Movie" }], TotalRecordCount: 248 });
+    const first = { itemTypes: ["Movie" as const], startIndex: 0, limit: 60, sortBy: "SortName" as const, sortOrder: "Ascending" as const, filters: [] };
+
+    const page = await gateway.libraryItems("lib-1", first);
+    expect(page.totalCount).toBe(248);
+    expect(transport.requests.at(-1)?.params?.enableTotalRecordCount).toBe(true);
+
+    transport.responses.set("GET /Items", { Items: [{ Id: "m1", Name: "Movie", Type: "Movie" }], TotalRecordCount: -1 });
+    expect((await gateway.libraryItems("lib-1", first)).totalCount).toBeUndefined();
+    transport.responses.set("GET /Items", { Items: [{ Id: "m1", Name: "Movie", Type: "Movie" }] });
+    expect((await gateway.libraryItems("lib-1", first)).totalCount).toBeUndefined();
+
+    transport.responses.set("GET /Items", { Items: [{ Id: "m1", Name: "Movie", Type: "Movie" }], TotalRecordCount: 248 });
+    const later = await gateway.libraryItems("lib-1", { ...first, startIndex: 60 });
+    expect(later.totalCount).toBeUndefined();
+    expect(transport.requests.at(-1)?.params?.enableTotalRecordCount).toBe(false);
+  });
+
   it("omits filters when none are selected and reports the last page", async () => {
     const { gateway, transport } = await authenticatedGateway();
     transport.responses.set("GET /Items", { Items: [{ Id: "b1", Name: "Set", Type: "BoxSet" }] });

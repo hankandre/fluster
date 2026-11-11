@@ -472,8 +472,8 @@ export class JellyfinGateway {
     return toMediaCards(data);
   }
 
-  // Lists a library or collection page. Instead of asking the server for a
-  // total count, it fetches one extra item to learn whether more pages exist.
+  // Lists a library or collection page. It fetches one extra item to learn whether more pages
+  // exist. Only the first page asks for the total count, which the toolbar shows.
   async libraryItems(parentId: string, query: BrowseQuery, signal?: AbortSignal): Promise<BrowsePage> {
     const { userId } = this.requireSession();
     const params: Record<string, unknown> = {
@@ -486,7 +486,7 @@ export class JellyfinGateway {
       startIndex: query.startIndex,
       limit: query.limit + 1,
       enableUserData: true,
-      enableTotalRecordCount: false,
+      enableTotalRecordCount: query.startIndex === 0,
       ...CARD_IMAGE_PARAMS,
     };
     if (query.filters.length > 0) params.filters = query.filters.join(",");
@@ -499,7 +499,10 @@ export class JellyfinGateway {
     // later pages or repeat across a page boundary.
     const rawItems = data.Items ?? [];
     const cards: BrowseCard[] = toBrowseCards(rawItems.slice(0, query.limit));
-    return { cards, hasMore: rawItems.length > query.limit };
+    const page: BrowsePage = { cards, hasMore: rawItems.length > query.limit };
+    const total = data.TotalRecordCount;
+    if (query.startIndex === 0 && typeof total === "number" && Number.isFinite(total) && total >= 0) page.totalCount = total;
+    return page;
   }
 
   // Type-ahead suggestions. The hints DTO is lighter than a full item list.

@@ -105,10 +105,6 @@
 .home h1 { margin-bottom: var(--space-6); }
 .row-error { display: flex; align-items: center; gap: var(--space-4); color: var(--danger); }
 
-.browse-controls { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: end; margin-bottom: var(--space-5); }
-.browse-controls label { display: flex; flex-direction: column; gap: var(--space-1); }
-.browse-controls fieldset { display: flex; gap: var(--space-3); border: 0; padding: 0; margin: 0; }
-.browse-controls fieldset label { flex-direction: row; align-items: center; gap: 6px; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 .search-box { position: relative; display: grid; gap: var(--space-1); max-width: 32rem; }
