@@ -2,7 +2,7 @@ export const meta = {
   name: 'task',
   description: 'Run tasks/prd.json tasks in order: spec, check, implement, review, ship; park tasks with open design questions',
   whenToUse:
-    'Build Fluster tasks end to end. args: {tasks: ["P13-08", "P13-09"], risk: "routine" | "high", native: false} or {task: "P0-13", from: "check" | "implement", notes: [...]}',
+    'Build Fluster tasks end to end. args: {tasks: ["P13-08", "P13-09"], risk: "routine" | "high", native: false} or {task: "P0-13", from: "check" | "implement" | "review", notes: [...], evidence: "..."}',
   phases: [
     { title: 'Spec', detail: 'refiner writes docs/specs/<TASK>.md' },
     { title: 'Check', detail: 'fresh spec-checker; blocks only on critical or high' },
@@ -15,8 +15,9 @@ export const meta = {
 // args:
 //   {tasks: ["P13-08", ...], risk, native}  run tasks in order
 //   {task: "P0-13", risk, native}           run one task
-//   from: "check" | "implement"             skip finished phases (single task only)
+//   from: "check" | "implement" | "review"  skip finished phases (single task only)
 //   notes: [...]                            spec-check notes for the implementer (with from: "implement")
+//   evidence: "..."                         verify evidence from the finished implementation (with from: "review")
 // A task whose spec needs a new design call is parked, and the run moves on.
 // The run stops early only on a denied command.
 const input = typeof args === 'string' ? { task: args } : args || {};
@@ -79,7 +80,8 @@ const VERIFY_STEPS =
 async function runTask(task, opts) {
   const highRisk = opts.risk === 'high';
   const native = opts.native === true;
-  const skipCheck = opts.from === 'implement';
+  const skipImpl = opts.from === 'review';
+  const skipCheck = opts.from === 'implement' || skipImpl;
   const skipSpec = opts.from === 'check' || skipCheck;
   let specNotes = Array.isArray(opts.notes) ? opts.notes : [];
 
@@ -171,6 +173,8 @@ Return as open questions only product or design choices the human must make that
   }
 
   // 3. Implement (the implementer runs the checks itself)
+  let evidence = opts.evidence || `See the evidence field of ${task} in tasks/prd.json on ${branch}.`;
+  if (!skipImpl) {
   const impl = await work(
     `Implement the approved spec.${specNotes.length ? `\nAlso resolve these spec-check notes, updating the spec where they change it:\n${specNotes.join('\n')}` : ''}
 Commit the spec with the work, one milestone per commit. Set the task's status to in_progress with evidence in tasks/prd.json. Do not push or open a PR. Return done=false with blockers if you cannot finish.`,
@@ -180,7 +184,8 @@ Commit the spec with the work, one milestone per commit. Set the task's status t
   if (!impl) return result('failed', 'The implementer returned nothing.');
   if (denied(impl)) return result('denied', denied(impl));
   if (!impl.done || !impl.checksPassed) return result('blocked', (impl.blockers || []).concat(impl.failures || []));
-  let evidence = impl.evidence;
+  evidence = impl.evidence;
+  }
 
   // 4. Review (one round)
   const review = await agent(
