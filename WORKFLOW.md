@@ -192,7 +192,13 @@ Relative API list prices (per million input/output tokens, as of 2026-10). Subsc
 
 ### Wiring it up in Claude Code
 
-`.claude/workflows/task.js` runs one task through every stage: Spec, Check, Implement, Verify, Review, Ship. Start it with the Workflow tool (`name: task`, `args: {task: "P13-06", risk: "routine" | "high", native: false}`) and watch it in `/workflows`. The script moves between stages, so the coordinator spends no tokens on handoffs. It stops and returns to the human on open spec questions, a spec not approved after one revision, red checks after one fix, red CI after one fix, or a denied command.
+`.claude/workflows/task.js` runs tasks in order through Spec, Check, Implement, Review, and Ship. Start it with the Workflow tool (`args: {tasks: ["P13-08", "P13-09"], risk: "routine" | "high", native: false}`) and watch it in `/workflows`. The script moves between stages, so the coordinator spends no tokens on handoffs.
+
+- The human makes every design call. Before a batch, a Fable pass collects the batch's design questions into `docs/specs/decisions-<phase>.md` and the human answers them in one sitting; every spec treats those answers as settled.
+- A task whose spec still needs a new design call is parked with its questions, and the run moves on. Answer, then run it again with `{task, from: "check"}`.
+- The spec check blocks only on critical or high issues; medium and low issues go to the implementer.
+- The implementer runs the verify skill itself. A step that is not green gets one retry, then one attempt on Fable.
+- The run stops early only on a denied command. Red CI after the Fable attempt is returned for the human.
 
 Subagent definitions under `.claude/agents/*.md` set `model` in their frontmatter, so routing is configured once instead of remembered.
 
