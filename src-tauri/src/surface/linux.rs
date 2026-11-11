@@ -1,4 +1,9 @@
+mod detach;
+mod egl;
+
 use crate::model::{PlayerEvent, PlayerSurfaceFrame};
+use detach::{clear_surface, collapse_surface};
+use egl::{gl_proc_address, gl_proc_address_with_context};
 use gtk::glib;
 use gtk::prelude::*;
 use libmpv2::{
@@ -6,12 +11,14 @@ use libmpv2::{
     Mpv,
 };
 use raw_window_handle::{HasDisplayHandle, RawDisplayHandle};
-use std::cell::RefCell;
-use std::ffi::{c_char, c_void, CString};
+use std::cell::{Cell, RefCell};
+use std::ffi::c_void;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{mpsc, Arc, Mutex, OnceLock};
+use std::sync::{mpsc, Arc, Mutex};
 use std::time::Duration;
 use tauri::{window::Color, AppHandle, Emitter, Manager};
+
+pub use detach::detach;
 
 const LIBRARY_BACKGROUND: Color = Color(8, 10, 15, 255);
 const PLAYBACK_BACKGROUND: Color = Color(0, 0, 0, 0);
@@ -40,6 +47,9 @@ struct RenderState {
 thread_local! {
     static UI: RefCell<Option<LinuxUi>> = const { RefCell::new(None) };
     static RENDER_STATE: RefCell<Option<RenderState>> = const { RefCell::new(None) };
+    /// Set once `gl::load_with` has run on this thread; GL calls before then
+    /// would call null function pointers.
+    static GL_LOADED: Cell<bool> = const { Cell::new(false) };
 }
 
 pub fn initialize(app: &AppHandle) -> Result<String, String> {
@@ -98,6 +108,7 @@ pub fn initialize(app: &AppHandle) -> Result<String, String> {
                     RENDER_STATE.with(|state| {
                         let mut state = state.borrow_mut();
                         let Some(state) = state.as_mut() else {
+                            clear_surface();
                             return;
                         };
                         let scale = area.scale_factor().max(1);
@@ -206,6 +217,7 @@ pub fn attach(
                 return Err(format!("Could not create the GTK OpenGL context: {error}"));
             }
             gl::load_with(|name| gl_proc_address(name) as *const c_void);
+            GL_LOADED.with(|loaded| loaded.set(true));
 
             let core = mpv.clone();
             let mut mpv = mpv
@@ -282,53 +294,14 @@ pub fn set_frame(app: &AppHandle, frame: PlayerSurfaceFrame) -> Result<(), Strin
                 ui.gl_area
                     .set_size_request(frame.width.round() as i32, frame.height.round() as i32);
                 ui.gl_area.queue_render();
+            } else if RENDER_STATE.with(|state| state.borrow().is_none()) {
+                // A live session keeps its size: a late hidden frame from the
+                // previous view must not shrink a new session's surface.
+                collapse_surface(ui);
             }
             Ok(())
         })
     })
-}
-
-pub fn detach(app: &AppHandle, session_id: &str) {
-    #[cfg(debug_assertions)]
-    eprintln!("[fluster native] scheduling GTK detach");
-    let session_id = session_id.to_string();
-    let app_for_detach = app.clone();
-    let _ = run_on_main(app, move || {
-        #[cfg(debug_assertions)]
-        eprintln!("[fluster native] GTK detach started");
-        let matches = RENDER_STATE.with(|state| {
-            state
-                .borrow()
-                .as_ref()
-                .is_some_and(|state| state.session_id == session_id)
-        });
-        if matches {
-            #[cfg(debug_assertions)]
-            eprintln!("[fluster native] dropping render context");
-            RENDER_STATE.with(|state| drop(state.borrow_mut().take()));
-            #[cfg(debug_assertions)]
-            eprintln!("[fluster native] render context dropped");
-            UI.with(|slot| {
-                if let Some(ui) = slot.borrow().as_ref() {
-                    // Keep the GLArea mapped for the lifetime of the window.
-                    // Unmapping it invalidates GTK/WebKit damage tracking under
-                    // Wayland and can leave only pointer-damaged regions updating.
-                    ui.fixed.queue_resize();
-                    ui.webview.show();
-                    ui.webview.queue_draw();
-                }
-            });
-        }
-        // Another session's surface keeps its background.
-        let result = if matches {
-            set_composition_background(&app_for_detach, LIBRARY_BACKGROUND)
-        } else {
-            Ok(())
-        };
-        #[cfg(debug_assertions)]
-        eprintln!("[fluster native] GTK detach finished");
-        result
-    });
 }
 
 fn set_composition_background(app: &AppHandle, color: Color) -> Result<(), String> {
@@ -353,37 +326,4 @@ where
     receiver
         .recv_timeout(Duration::from_secs(5))
         .map_err(|_| "The GTK video surface did not respond in time.".to_string())?
-}
-
-fn gl_proc_address(name: &str) -> *mut c_void {
-    let Ok(name) = CString::new(name) else {
-        return std::ptr::null_mut();
-    };
-    egl_proc_address(name.as_ptr())
-}
-
-fn gl_proc_address_with_context(_: &(), name: &str) -> *mut c_void {
-    gl_proc_address(name)
-}
-
-fn egl_proc_address(name: *const c_char) -> *mut c_void {
-    type GetProcAddress = unsafe extern "C" fn(*const c_char) -> *mut c_void;
-    static EGL: OnceLock<Result<libloading::Library, String>> = OnceLock::new();
-    let library = match EGL.get_or_init(|| {
-        // SAFETY: libEGL initializers are trusted system code; the library is
-        // stored in a static and is never unloaded.
-        unsafe { libloading::Library::new("libEGL.so.1") }.map_err(|error| error.to_string())
-    }) {
-        Ok(library) => library,
-        Err(_) => return std::ptr::null_mut(),
-    };
-    // SAFETY: `eglGetProcAddress` has the declared C signature, `name` is a
-    // NUL-terminated string from the caller, and `library` lives in a static so
-    // the returned symbol never outlives it.
-    unsafe {
-        match library.get::<GetProcAddress>(b"eglGetProcAddress\0") {
-            Ok(get_proc_address) => get_proc_address(name),
-            Err(_) => std::ptr::null_mut(),
-        }
-    }
 }

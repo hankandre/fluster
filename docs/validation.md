@@ -23,6 +23,14 @@ The dvdsub and ISO samples run only with `FLUSTER_CONVERSION_SAMPLES=1` set for 
 4. On Wayland with supported NVIDIA and AMD hardware, verify automatic NVDEC, VA-API, or Vulkan decoding. Record observed libmpv properties; no user selection is available or required.
 5. Set the test-only `testForceSoftware` launch field in a native harness. Confirm `Software — CPU`, continued local playback, and no second PlaybackInfo or media request.
 6. Verify in-shell playback, surface resizing, fullscreen, natural end, and explicit stop restore the library and hide the native surface. Back during negotiation must never launch a hidden session. Load failures and recoverable libmpv errors must remain in the player with working Retry and Back to Library actions.
+
+   Surface teardown (P0-13). Run in `pnpm tauri dev` or `pnpm dogfood` and record the compositor, GPU, driver version, and the player's `hwdec-current` with each result. Acceptance is recorded from M1-M3 only.
+
+   - M1: play a direct-play item and press Back. The previous screen appears within a second; arrow keys move focus and a click opens a card. Repeat leaving with Escape, and with natural end.
+   - M2: after Back, resize the window by dragging, maximize, and restore; then start a second playback and enter and leave fullscreen, and press Back. No stale video frame and no see-through region remain anywhere in the window.
+   - M3: ten play-and-back cycles in a row, alternating a direct-play item and a converted (HLS) item. The window never freezes and playback starts each time.
+   - Log check (debug builds, after M3 in `pnpm dogfood`): `log=$(ls -t release-evidence/dogfood/*.log | head -1)`, then `grep -c "dropping render context" "$log"` and `grep -c "window painted after detach" "$log"`. The counts must be equal and at least ten. The paint trace shows only that GTK's frame clock ran a paint phase after each teardown; it cannot show that pixels reached the screen, so it supports M1-M3 and never replaces them.
+   - Not yet run: every compositor and GPU. The reporting machine (Wayland, NVIDIA) is the first to record.
 7. Inspect application output and crash diagnostics for known canary tokens and authenticated query strings; none may appear.
 8. On Apple Silicon, validate VideoToolbox, windowed/fullscreen geometry, Retina scaling, signed DMG startup, and normal teardown.
 9. Extract the release AppImage on a clean Linux x86_64 host with no system mpv or libmpv. Run `release/test-appimage.sh`, confirm exactly one pinned media closure under `usr/lib`, verify the checksum, SBOM, provenance, notices, and licenses, then confirm playback reaches the first frame and normal EOF returns to the library.
