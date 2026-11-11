@@ -148,6 +148,13 @@ export const scenarios: Scenario[] = [
 
   // Browse
   { name: "20-library-loading", opts: { libraryItemsDelayMs: 4_000 }, run: (page) => signedInAt(page, "#/next/browse/lib-movies", 300) },
+  { name: "19d-home-see-all", run: async (page) => {
+    await signIn(page);
+    await page.waitForTimeout(900);
+    await page.getByRole("region", { name: "Latest in Movies" }).locator("a.media-card").last().focus();
+    await page.keyboard.press("ArrowRight");
+    await page.waitForTimeout(500);
+  } },
   { name: "21-library-grid", run: (page) => signedInAt(page, "#/next/browse/lib-movies", 1_000) },
   { name: "21a-library-sort-open", run: async (page) => {
     await signedInAt(page, "#/next/browse/lib-movies", 1_000);

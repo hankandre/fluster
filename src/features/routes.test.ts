@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { waitFor } from "@testing-library/react";
-import { leavePlayer, openPlayer, parsePlayRoute, playRoute } from "./routes";
+import { leavePlayer, libraryRoute, openPlayer, parseLibraryRoute, parsePlayRoute, playRoute } from "./routes";
 
 describe("play route", () => {
   it("round-trips the item, version, and start position", () => {
@@ -62,4 +62,25 @@ describe("leaving the player", () => {
     expect(window.location.hash).toBe("#/next/item/m2");
     expect(window.history.length).toBe(length);
   });
+});
+
+describe("library route", () => {
+  it("builds the bare route and the sorted route", () => {
+    expect(libraryRoute("lib 1")).toBe("#/next/browse/lib%201");
+    expect(libraryRoute("lib-1", "added-desc")).toBe("#/next/browse/lib-1?sort=added-desc");
+  });
+
+  it("round-trips the id and a known sort", () => {
+    expect(parseLibraryRoute(libraryRoute("lib 1", "added-desc"))).toEqual({ libraryId: "lib 1", sort: "added-desc" });
+    expect(parseLibraryRoute("#/next/browse/lib-1")).toEqual({ libraryId: "lib-1" });
+  });
+
+  it("ignores an unknown sort", () => {
+    expect(parseLibraryRoute("#/next/browse/lib-1?sort=bogus")).toEqual({ libraryId: "lib-1" });
+  });
+
+  it.each(["#/next/browse", "#/next/browse/", "#/next/browse/?sort=added-desc", "#/next/browse/a/b", "#/next/browse/%E0%A4%A", "#/next/item/m1"])(
+    "rejects %s",
+    (hash) => expect(parseLibraryRoute(hash)).toBeUndefined(),
+  );
 });

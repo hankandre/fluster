@@ -188,6 +188,20 @@ describe("HomeView", () => {
     expect(await screen.findByRole("link", { name: "A series" })).toHaveAttribute("href", "#/next/series/s1");
   });
 
+  it("ends Latest rows with a See all tile that opens the library by date added, and no other row", async () => {
+    await renderHome(fakeGateway({ latestInLibrary: vi.fn().mockResolvedValue([card("l1", "Fresh movie", { kind: "Movie" })]) }));
+    const tile = await screen.findByRole("link", { name: "See all in Movies" });
+    expect(tile).toHaveAttribute("href", "#/next/browse/lib-1?sort=added-desc");
+    expect(screen.getAllByRole("link", { name: /^See all/ })).toHaveLength(1);
+    expect(within(screen.getByRole("region", { name: "Latest in Movies" })).getByRole("link", { name: /^See all/ })).toBe(tile);
+    expect(within(screen.getByRole("region", { name: "Continue watching" })).queryByRole("link", { name: /^See all/ })).toBeNull();
+    expect(within(screen.getByRole("region", { name: "Next up" })).queryByRole("link", { name: /^See all/ })).toBeNull();
+    const last = await screen.findByRole("link", { name: "Fresh movie" });
+    last.focus();
+    fireEvent.keyDown(last, { key: "ArrowRight" });
+    expect(tile).toHaveFocus();
+  });
+
   it("makes each row one Tab stop and moves between its cards with the arrow keys", async () => {
     await renderHome(fakeGateway({
       latestInLibrary: vi.fn().mockResolvedValue([

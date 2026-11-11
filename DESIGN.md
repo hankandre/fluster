@@ -199,7 +199,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 
 ### 7.4 Media row (`MediaRow`)
 
-- Title (`--type-heading`, sentence case) with an optional "See all" link to the library or filter. Below it, a horizontal list of `MediaCard`s.
+- Title (`--type-heading`, sentence case). Below it, a horizontal list of `MediaCard`s. A "Latest in {library}" row ends with a "See all" tile (not a card: bordered, no art, the size of the row's cards) that opens the library sorted "Newest added first". It is the last item of the row, reached with Right past the last card or End; its accessible name is "See all in {library}". Continue watching and Next up have none. There is no title-line link, so Up and Down between rows stay unchanged.
 - Desktop pointer: a previous or next arrow button appears on the row's edge on hover, and pages one viewport.
 - Keyboard: Left and Right move within the row (roving tabindex, as today). Up and Down move to the nearest card in the adjacent row by horizontal centre (spatial). The focused card scrolls so it keeps `--gutter` from the edge.
 - States: skeleton (cards of the right variant), error (`InlineError` in place of cards), and hidden when empty (as today).

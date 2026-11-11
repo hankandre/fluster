@@ -18,6 +18,9 @@ export interface MediaRowProps {
   errorMessage?: string;
   // Called with the id of the card that takes focus.
   onItemFocus?(id: string): void;
+  // A "See all" tile at the end of the row, the last item reached by Right (DESIGN.md 7.4). Its accessible
+  // name is `label` ("See all in Movies"); the visible text is "See all".
+  seeAll?: { label: string; href: string };
 }
 
 const POSTER_SKELETONS = 8;
@@ -25,7 +28,7 @@ const THUMB_SKELETONS = 5;
 
 // One horizontal row of cards (DESIGN.md 7.4). The list bleeds to the window edges, keeps the focused card
 // one gutter from them, and joins the spatial Up and Down focus between rows.
-export function MediaRow({ title, label, variant, status, items = [], onRetry, errorMessage, onItemFocus }: MediaRowProps) {
+export function MediaRow({ title, label, variant, status, items = [], onRetry, errorMessage, onItemFocus, seeAll }: MediaRowProps) {
   const headingId = useId();
   const roving = useRovingFocus<HTMLUListElement>("row", { spatial: true });
   const [canScroll, setCanScroll] = useState({ previous: false, next: false });
@@ -65,7 +68,8 @@ export function MediaRow({ title, label, variant, status, items = [], onRetry, e
       const focused = items[index];
       if (focused) onItemFocus(focused.id);
     }
-    if (card && typeof card.scrollIntoView === "function") card.scrollIntoView({ block: "nearest", inline: "nearest" });
+    const focusedBox = card ?? (event.target as HTMLElement).closest<HTMLElement>(".media-row-see-all");
+    if (focusedBox && typeof focusedBox.scrollIntoView === "function") focusedBox.scrollIntoView({ block: "nearest", inline: "nearest" });
     // The whole row is one box with its heading, so keeping it in view keeps the heading in view.
     const section = event.currentTarget.closest<HTMLElement>(".media-row");
     if (section && typeof section.scrollIntoView === "function") section.scrollIntoView({ block: "nearest", inline: "nearest" });
@@ -105,6 +109,11 @@ export function MediaRow({ title, label, variant, status, items = [], onRetry, e
                 <MediaCard {...card} />
               </li>
             ))}
+            {seeAll ? (
+              <li className="media-row-see-all" data-variant={variant}>
+                <a className="ui-see-all" href={seeAll.href} aria-label={seeAll.label} data-roving-item="">See all</a>
+              </li>
+            ) : null}
           </ul>
           {canScroll.previous ? (
             <div className="media-row-page media-row-page--previous">

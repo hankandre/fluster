@@ -29,6 +29,7 @@ describe("AppNav", () => {
     ["#/next/search", ["Search"]],
     ["#/next/search/arrival", ["Search"]],
     ["#/next/settings", ["Settings"]],
+    ["#/next/browse/lib-1?sort=added-desc", ["Movies"]],
     ["#/next/browse", []],
     ["#/next/browse/", []],
     ["#/next/item/m1", []],

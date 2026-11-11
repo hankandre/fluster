@@ -1730,10 +1730,10 @@
             "Uses only shared UI primitives; no native select, radio, or checkbox remains"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "Implemented per docs/specs/P13-11.md on branch task/P13-11 (P13-11): pnpm check green (112 test files, 1543 tests; cargo test ok), pnpm test:e2e 91 passed including the new e2e/library.spec.ts, pnpm test:visual 149 passed. Awaiting fresh-context design review and PR screenshots (Ship phase). Untested gates: Jellyfin TotalRecordCount on 10.11.7 and 12.4 (FLUSTER_DOGFOOD_SERVER), WebKitGTK mask-image, IntersectionObserver rootMargin, and sticky with the inset transition."
         },
         {
           "id": "P13-12",

@@ -10,7 +10,7 @@ import { DetailView, ItemDetailView } from "../features/detail";
 import { SettingsView } from "../features/settings";
 import { SignedInChrome } from "../features/shell";
 import { PlayerFeatureView, PlayerRouteView } from "../features/player";
-import { parsePlayRoute } from "../features/routes";
+import { parseLibraryRoute, parsePlayRoute } from "../features/routes";
 import { createServices, type AppServices } from "./compose";
 import { PlayerServicesProvider, type PlayerServices } from "./player-services";
 import { PreferencesProvider } from "./preferences";
@@ -131,6 +131,10 @@ function renderPlayRoute(hash: string) {
 // and #/next/search/<term>.
 // Anything else, including malformed ids, is not found.
 function renderBrowseRoute(hash: string) {
+  if (hash.startsWith("#/next/browse/")) {
+    const route = parseLibraryRoute(hash);
+    return route ? <BrowseView libraryId={route.libraryId} initialSort={route.sort} /> : undefined;
+  }
   const [, , section, id, ...extra] = hash.split("/");
   if (!id || extra.length > 0) return undefined;
   let itemId: string;
@@ -140,8 +144,6 @@ function renderBrowseRoute(hash: string) {
     return undefined;
   }
   switch (section) {
-    case "browse":
-      return <BrowseView libraryId={itemId} />;
     case "item":
       return <ItemDetailView itemId={itemId} />;
     case "series":

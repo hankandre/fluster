@@ -6,6 +6,7 @@ import { backdropWidth, heroArtFor } from "../card-view";
 import { AmbientBackdrop } from "../shared/ambient-backdrop";
 import { Hero, MediaRow } from "../shared/ui";
 import { detailKey } from "../detail/detail-key";
+import { libraryRoute } from "../routes";
 import { HomeEmpty } from "./home-empty";
 import { HomeHero } from "./home-hero";
 import { isHomeEmpty, useHomeData } from "./home-data";
@@ -94,7 +95,14 @@ function HomeContent({ gateway }: { gateway: SessionGateway }) {
               <MediaRow label="Latest" variant="poster" status="error" errorMessage="Couldn't load your libraries." onRetry={() => void views.refetch()} />
             ) : null}
             {latest.map(({ view, query }) => (
-              <HomeRow key={view.id} title={`Latest in ${view.name}`} query={query} gateway={gateway} onItemFocus={onItemFocus} />
+              <HomeRow
+                key={view.id}
+                title={`Latest in ${view.name}`}
+                query={query}
+                gateway={gateway}
+                onItemFocus={onItemFocus}
+                seeAll={{ label: `See all in ${view.name}`, href: libraryRoute(view.id, "added-desc") }}
+              />
             ))}
           </>
         )}
