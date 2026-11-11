@@ -69,7 +69,7 @@ test("signing in shows Continue watching, Next up, and Latest rows with cards", 
   await expect(main.getByRole("link", { name: "Half Watched, 2016, 1 minute left" })).toBeVisible();
 
   await expect(page.getByRole("heading", { name: "Next up" })).toBeVisible();
-  await expect(main.getByRole("link", { name: "Great Show, S1E2 · Pilot" })).toBeVisible();
+  await expect(main.getByRole("link", { name: "Great Show, S1 · E2 · Pilot" })).toBeVisible();
 
   await expect(page.getByRole("heading", { name: "Latest in Movies" })).toBeVisible();
   await expect(main.getByRole("link", { name: "Brand New, 2016" })).toBeVisible();

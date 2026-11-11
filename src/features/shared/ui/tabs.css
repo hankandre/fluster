@@ -1,10 +1,17 @@
 @layer reset, tokens, base, components, features, focus;
 
 @layer components {
+  /* Many tabs scroll sideways instead of wrapping. The padding keeps the 4px focus ring inside the scroll box
+     (the same pattern as the nav list in shell.css). */
   .ui-tabs {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: var(--space-1);
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: var(--space-2);
+    margin: calc(var(--space-2) * -1);
+    scroll-padding: var(--space-2);
   }
 
   .ui-tab {
@@ -17,6 +24,7 @@
     background: transparent;
     color: var(--text-2);
     font: var(--type-label);
+    flex: none;
     transition: color var(--dur-quick) var(--ease-out);
   }
 

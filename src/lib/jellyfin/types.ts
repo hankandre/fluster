@@ -39,6 +39,7 @@ export interface BaseItemDto {
   ParentIndexNumber?: number;
   IndexNumber?: number;
   ProductionYear?: number;
+  EndDate?: string | null;
   RunTimeTicks?: number;
   Overview?: string;
   CollectionType?: string;

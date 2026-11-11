@@ -102,6 +102,21 @@ export interface Season {
 
 export interface EpisodeCard extends MediaCard {
   overview?: string;
+  runTimeTicks?: number;
+  // Inside an episode list the season is known from context, so `episodeNumber` is set from the index alone.
+}
+
+// The episode the server offers next in one series (GET /Shows/NextUp?seriesId=).
+export interface SeriesNextUp {
+  id: string;
+  title: string;
+  seasonId?: string;
+  seasonNumber?: number;
+  episodeNumber?: number;
+  // Present only when the episode is part-watched.
+  resumePositionTicks?: number;
+  // Fraction watched, 0 to 1, present with `resumePositionTicks` when the length is known.
+  progress?: number;
 }
 
 export type SearchKind = "Movie" | "Series" | "Episode";
@@ -243,6 +258,8 @@ export interface ItemDetail {
   seasonNumber?: number;
   episodeNumber?: number;
   year?: number;
+  // Series only: the year it ended, when the server knows it.
+  endYear?: number;
   runTimeTicks?: number;
   overview?: string;
   genres: string[];

@@ -1,4 +1,4 @@
-import type { BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, NextEpisode, LibraryItem, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season } from "../domain/catalog";
+import type { BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, NextEpisode, LibraryItem, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season, SeriesNextUp } from "../domain/catalog";
 import type { MediaSegment } from "../domain/media-segments";
 import type { HostClass } from "../domain/host-class";
 import type { PlaybackPlan, PlaybackPlanOptions, PlaybackSnapshot, ServerPlayMethod } from "../domain/playback";
@@ -30,6 +30,8 @@ export interface SessionGateway {
   searchHints(term: string, signal?: AbortSignal): Promise<SearchHint[]>;
   searchItems(term: string, query: SearchQuery, signal?: AbortSignal): Promise<SearchPage>;
   seasons(seriesId: string, signal?: AbortSignal): Promise<Season[]>;
+  // The episode to play next in a series, or undefined when the server offers none.
+  seriesNextUp(seriesId: string, signal?: AbortSignal): Promise<SeriesNextUp | undefined>;
   episodes(seriesId: string, seasonId: string, signal?: AbortSignal): Promise<EpisodeCard[]>;
   itemDetail(itemId: string, signal?: AbortSignal): Promise<ItemDetail>;
   // The episode after this one in its series, or undefined for the last one.

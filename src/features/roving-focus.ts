@@ -88,12 +88,14 @@ function columnsOf(items: HTMLElement[]): number {
 // Roving tabindex: the list is one Tab stop, and arrow keys move inside it.
 // Items opt in with `data-roving-item`. The last focused item keeps the Tab
 // stop, so Tab back into the list returns to it.
+// `columns` fixes the grid width when the items sit at different heights, so it replaces the measured one.
 // `preferredIndex` moves the Tab stop (never focus) whenever its value changes between renders.
-export function useRovingFocus<T extends HTMLElement>(layout: RovingLayout, options?: { preferredIndex?: number; spatial?: boolean }) {
+export function useRovingFocus<T extends HTMLElement>(layout: RovingLayout, options?: { preferredIndex?: number; spatial?: boolean; columns?: number }) {
   const ref = useRef<T>(null);
   const active = useRef(0);
   const preferred = options?.preferredIndex;
   const spatial = options?.spatial === true;
+  const fixedColumns = options?.columns;
   const lastPreferred = useRef<number | undefined>(undefined);
 
   const sync = useCallback(() => {
@@ -116,7 +118,7 @@ export function useRovingFocus<T extends HTMLElement>(layout: RovingLayout, opti
     const items = itemsIn(event.currentTarget);
     const current = items.findIndex((item) => item === event.target || item.contains(event.target as Node));
     if (current < 0) return;
-    const next = nextRovingIndex(event.key, current, items.length, layout, columnsOf(items));
+    const next = nextRovingIndex(event.key, current, items.length, layout, fixedColumns ?? columnsOf(items));
     if (next === undefined) {
       if (spatial && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
         if (moveBetweenRows(event.currentTarget, items[current], event.key === "ArrowDown" ? 1 : -1)) event.preventDefault();
@@ -127,7 +129,7 @@ export function useRovingFocus<T extends HTMLElement>(layout: RovingLayout, opti
     active.current = next;
     sync();
     items[next].focus();
-  }, [layout, spatial, sync]);
+  }, [layout, spatial, fixedColumns, sync]);
 
   const onFocus = useCallback((event: FocusEvent<T>) => {
     const index = itemsIn(event.currentTarget).indexOf(event.target as HTMLElement);

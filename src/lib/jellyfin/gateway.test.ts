@@ -854,7 +854,7 @@ describe("JellyfinGateway home calls", () => {
       id: "ep-1",
       kind: "Episode",
       title: "Show",
-      subtitle: "S1E2 · Pilot",
+      subtitle: "S1 · E2 · Pilot",
       image: { itemId: "ep-1", type: "Primary", tag: "tag-1", blurHash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" },
       aspectRatio: 1.78,
       progress: 0.25,
@@ -894,6 +894,38 @@ describe("JellyfinGateway home calls", () => {
       enableTotalRecordCount: false,
       ...cardParams,
     });
+  });
+
+  it("requests the Next Up episode of one series with its resume position", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("GET /Shows/NextUp", {
+      Items: [{
+        Id: "ep-2", Name: "Second", Type: "Episode", SeasonId: "se1", ParentIndexNumber: 1, IndexNumber: 2,
+        RunTimeTicks: 1000, UserData: { PlaybackPositionTicks: 250 },
+      }],
+    });
+
+    await expect(gateway.seriesNextUp("s1")).resolves.toEqual({
+      id: "ep-2", title: "Second", seasonId: "se1", seasonNumber: 1, episodeNumber: 2, resumePositionTicks: 250, progress: 0.25,
+    });
+    const request = transport.requests.at(-1);
+    expect(request?.url).toBe("/Shows/NextUp");
+    expect(request?.params).toEqual({
+      userId: "user-1",
+      seriesId: "s1",
+      limit: 1,
+      enableUserData: true,
+      enableResumable: true,
+      enableRewatching: false,
+      enableImages: false,
+      enableTotalRecordCount: false,
+    });
+  });
+
+  it("returns undefined when the server offers no next episode", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("GET /Shows/NextUp", { Items: [] });
+    await expect(gateway.seriesNextUp("s1")).resolves.toBeUndefined();
   });
 
   it("reads the bare array from /Items/Latest for one library", async () => {
@@ -1062,7 +1094,7 @@ describe("JellyfinGateway home calls", () => {
       Items: [{ Id: "e1", Name: "Pilot", Type: "Episode", IndexNumber: 1, Overview: "It begins.", SeriesName: "Show" }],
     });
     await expect(gateway.episodes("series-1", "se1")).resolves.toEqual([
-      { id: "e1", kind: "Episode", title: "Pilot", subtitle: "Episode 1", overview: "It begins.", aspectRatio: 2 / 3 },
+      { id: "e1", kind: "Episode", title: "Pilot", subtitle: "Episode 1", episodeNumber: 1, overview: "It begins.", aspectRatio: 2 / 3 },
     ]);
     expect(transport.requests.at(-1)?.params).toEqual({
       userId: "user-1",

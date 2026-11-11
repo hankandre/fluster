@@ -43,6 +43,8 @@ async function mockSearchServer(page: Page) {
             { Id: "series-1", Name: "Great Show", Type: "Series", ProductionYear: 2016 },
           ],
         });
+      case "/Items/series-1":
+        return json({ Id: "series-1", Name: "Great Show", Type: "Series", ProductionYear: 2016 });
       case "/Shows/series-1/Seasons":
         return json({ Items: [{ Id: "se1", Name: "Season 1", Type: "Season" }] });
       case "/Shows/series-1/Episodes":

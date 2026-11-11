@@ -100,6 +100,8 @@ async function mockServer(page: Page): Promise<ServerLog> {
       case "/Shows/NextUp":
       case "/Items/Latest":
         return json(url.pathname === "/Items/Latest" ? [] : { Items: [] });
+      case "/Items/series-1":
+        return json({ Id: "series-1", Name: "Show", Type: "Series" });
       case "/Items/ep-1":
         return json(episode("ep-1", "Pilot", 1));
       case "/Items/ep-2":
@@ -155,7 +157,8 @@ test("Cancel stops the episode and returns to the series", async ({ page }) => {
   await page.getByLabel("Up next").getByRole("button", { name: "Cancel" }).click();
 
   await expect(page).toHaveURL(/#\/next\/series\/series-1$/);
-  await expect(page.getByRole("button", { name: "Season 1" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Season 1" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Season 1" })).toHaveAttribute("aria-selected", "true");
   await expect(page.locator("video")).toHaveCount(0);
   await expect.poll(() => log.stopped.length).toBe(1);
   expect(log.stopped[0]).toMatchObject({ PlaySessionId: "play-ep-1-1" });

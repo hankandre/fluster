@@ -1,4 +1,5 @@
 import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useRovingFocus } from "../../roving-focus";
 import "./tabs.css";
 
 export interface TabItem {
@@ -15,6 +16,8 @@ interface SegmentedTabsProps {
   activation?: "automatic" | "manual";
   // Prefix for tab and panel ids; pair it with SegmentedTabPanel.
   idBase?: string;
+  // Joins the page's spatial rows: only the selected tab is a target, so Up and Down land on it. Needs automatic activation.
+  spatial?: boolean;
 }
 
 function tabId(base: string, id: string): string {
@@ -26,11 +29,12 @@ function panelId(base: string, id: string): string {
 }
 
 // Tabs with a roving tabindex (ARIA APG). Left and Right wrap; Home and End jump.
-export function SegmentedTabs({ label, items, value, onChange, activation = "automatic", idBase }: SegmentedTabsProps) {
+export function SegmentedTabs({ label, items, value, onChange, activation = "automatic", idBase, spatial = false }: SegmentedTabsProps) {
   const generated = useId();
   const base = idBase ?? generated;
   const [focused, setFocused] = useState<string | undefined>(undefined);
   const refs = useRef(new Map<string, HTMLButtonElement>());
+  const roving = useRovingFocus<HTMLDivElement>("row", { spatial: true });
   const stop = items.some((item) => item.id === focused) ? focused : value;
 
   function move(event: KeyboardEvent<HTMLDivElement>) {
@@ -63,7 +67,16 @@ export function SegmentedTabs({ label, items, value, onChange, activation = "aut
   }
 
   return (
-    <div className="ui-tabs" role="tablist" aria-label={label} onKeyDown={move}>
+    <div
+      className="ui-tabs"
+      role="tablist"
+      aria-label={label}
+      onKeyDown={(event) => {
+        move(event);
+        if (spatial) roving.onKeyDown(event);
+      }}
+      {...(spatial ? { "data-spatial-row": "", ref: roving.ref, onFocus: roving.onFocus } : {})}
+    >
       {items.map((item) => {
         const selected = item.id === value;
         return (
@@ -77,6 +90,7 @@ export function SegmentedTabs({ label, items, value, onChange, activation = "aut
             type="button"
             role="tab"
             data-tab-id={item.id}
+            {...(spatial && selected ? { "data-roving-item": "" } : {})}
             className="ui-tab"
             aria-selected={selected}
             aria-controls={selected ? panelId(base, item.id) : undefined}

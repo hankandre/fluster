@@ -1,6 +1,6 @@
 import { Jellyfin, type Api } from "@jellyfin/sdk";
 import axios from "axios";
-import type { BrowseCard, BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, LibraryItem, LibraryView, MediaCard, NextEpisode, SearchHint, SearchPage, SearchQuery, Season } from "../../domain/catalog";
+import type { BrowseCard, BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, LibraryItem, LibraryView, MediaCard, NextEpisode, SearchHint, SearchPage, SearchQuery, Season, SeriesNextUp } from "../../domain/catalog";
 import { ItemNotFoundError } from "../../domain/catalog";
 import type { PlaybackDelivery, PlaybackPlan, PlaybackPlanOptions, PlaybackSnapshot, ServerPlayMethod } from "../../domain/playback";
 import { PlaybackRefusedError, secondsToTicks } from "../../domain/playback";
@@ -11,7 +11,7 @@ import type { MediaSegment } from "../../domain/media-segments";
 import { MemoryLanHttpConfirmations, type LanHttpConfirmationStore } from "../lan-http-confirmations";
 import { limitMbpsFor, mbpsToBitsPerSecond, MemoryStreamingLimits, type StreamingLimitStore } from "../streaming-limits";
 import { redactError, redactText } from "../redact";
-import { toBrowseCards, toEpisodeCards, toNextEpisode, toHomeLibraries, toMediaCards, toSearchCards, toSearchHints, toSeasons } from "./cards";
+import { toBrowseCards, toEpisodeCards, toNextEpisode, toHomeLibraries, toMediaCards, toSearchCards, toSearchHints, toSeasons, toSeriesNextUp } from "./cards";
 import { stripCredentialQuery } from "./credential-query";
 import { deriveDeviceId } from "./device-id";
 import { limitIsOnlyReason } from "./client-limit";
@@ -547,6 +547,25 @@ export class JellyfinGateway {
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
     return toSeasons(data.Items);
+  }
+
+  async seriesNextUp(seriesId: string, signal?: AbortSignal): Promise<SeriesNextUp | undefined> {
+    const { userId } = this.requireSession();
+    const { data } = await this.get<ItemsResult>("/Shows/NextUp", {
+      params: {
+        userId,
+        seriesId,
+        limit: 1,
+        enableUserData: true,
+        enableResumable: true,
+        enableRewatching: false,
+        enableImages: false,
+        enableTotalRecordCount: false,
+      },
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    return toSeriesNextUp(data.Items?.[0]);
   }
 
   async episodes(seriesId: string, seasonId: string, signal?: AbortSignal): Promise<EpisodeCard[]> {
