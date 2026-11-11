@@ -1,10 +1,11 @@
 // Shared UI primitives (DESIGN.md 7). Features build from these; none renders a native select, radio, or checkbox.
 export { AppNav, type NavLibrary } from "./app-nav";
-export { AppShell } from "./app-shell";
+export { AppShell, useNavOverHero } from "./app-shell";
 export { Button, ButtonLink, buttonClass, type ButtonProps, type ButtonVariant } from "./button";
 export { Dialog } from "./dialog";
 export { EmptyState } from "./empty-state";
 export { CardImage } from "./card-image";
+export { Hero, type HeroProps } from "./hero";
 export { InlineError } from "./inline-error";
 export { MediaCard, type MediaCardProps, type MediaCardVariant } from "./media-card";
 export { MediaRow, type MediaRowProps } from "./media-row";

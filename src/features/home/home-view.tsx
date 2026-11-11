@@ -1,11 +1,20 @@
-import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useId, useMemo, useState } from "react";
 import { useSession, type SessionGateway } from "../../app/session";
-import { scopeFor } from "../query-scope";
-import { MediaRow } from "../shared/ui";
+import type { ImageRef, MediaCard } from "../../domain/catalog";
+import { backdropWidth, heroArtFor } from "../card-view";
+import { AmbientBackdrop } from "../shared/ambient-backdrop";
+import { Hero, MediaRow } from "../shared/ui";
+import { HomeEmpty } from "./home-empty";
+import { HomeHero } from "./home-hero";
+import { isHomeEmpty, useHomeData } from "./home-data";
+import { pickHero } from "./hero-pick";
 import { HomeRow } from "./media-row";
+import { useFocusDwell } from "./use-focus-dwell";
+import "./home.css";
 
 const SIGN_IN_ROUTE = "#/next/sign-in";
+const AMBIENT_DWELL_MS = 300;
+const AMBIENT_STRENGTH = 0.35;
 
 export function HomeView() {
   const { gateway } = useSession();
@@ -15,62 +24,64 @@ export function HomeView() {
   }, [gateway]);
 
   return (
-    <main className="home">
-      <h1>Home</h1>
-      {gateway ? <HomeRows gateway={gateway} /> : null}
+    <main className="home-page">
+      <h1 className="visually-hidden">Home</h1>
+      {gateway ? <HomeContent gateway={gateway} /> : null}
     </main>
   );
 }
 
-function HomeRows({ gateway }: { gateway: SessionGateway }) {
-  const scope = scopeFor(gateway);
+function HomeContent({ gateway }: { gateway: SessionGateway }) {
+  const hintId = useId();
+  const data = useHomeData(gateway);
+  const { scope, resume, nextUp, views, latest } = data;
+  const hero = pickHero(resume, nextUp, views, latest.map(({ query }) => query));
+  const empty = isHomeEmpty(data);
+
+  // Focus rests on a card for 300 ms before the ambient art follows it (DESIGN.md 9).
+  const schedule = useFocusDwell(AMBIENT_DWELL_MS);
+  const [focused, setFocused] = useState<MediaCard | undefined>();
+  const cards = useMemo(() => {
+    const byId = new Map<string, MediaCard>();
+    const lists = [resume.data, nextUp.data, ...latest.map(({ query }) => query.data)];
+    for (const list of lists) for (const card of list ?? []) if (!byId.has(card.id)) byId.set(card.id, card);
+    return byId;
+  }, [resume.data, nextUp.data, latest]);
+  const onItemFocus = (id: string) => {
+    const card = cards.get(id);
+    if (card) schedule(() => setFocused(card));
+  };
+
+  const ambientCard = focused ?? (hero.status === "ready" ? hero.card : undefined);
+  const art: ImageRef | undefined = ambientCard ? heroArtFor(ambientCard) : undefined;
 
   return (
-    <>
-      <HomeRow
-        title="Continue Watching"
-        variant="thumb"
-        queryKey={["home", scope, "resume"]}
-        load={(signal) => gateway.resumeItems(signal)}
-        gateway={gateway}
-      />
-      <HomeRow
-        title="Next Up"
-        variant="thumb"
-        queryKey={["home", scope, "next-up"]}
-        load={(signal) => gateway.nextUp(signal)}
-        gateway={gateway}
-      />
-      <LatestRows gateway={gateway} scope={scope} />
-    </>
-  );
-}
-
-function LatestRows({ gateway, scope }: { gateway: SessionGateway; scope: number }) {
-  const views = useQuery({
-    queryKey: ["home", scope, "views"],
-    queryFn: ({ signal }) => gateway.userViews(signal),
-    gcTime: 0,
-  });
-
-  if (views.isPending) {
-    return <MediaRow label="Latest" variant="poster" status="pending" />;
-  }
-  if (views.isError) {
-    return <MediaRow label="Latest" variant="poster" status="error" errorMessage="Couldn't load your libraries." onRetry={() => void views.refetch()} />;
-  }
-  return (
-    <>
-      {views.data.map((view) => (
-        <HomeRow
-          key={view.id}
-          title={`Latest in ${view.name}`}
-          variant="poster"
-          queryKey={["home", scope, "latest", view.id]}
-          load={(signal) => gateway.latestInLibrary(view.id, signal)}
-          gateway={gateway}
-        />
-      ))}
-    </>
+    <AmbientBackdrop
+      imageKey={ambientCard ? `${ambientCard.id}/${art?.tag ?? "none"}` : "none"}
+      src={art ? gateway.imageUrl(art.itemId, art.type, art.tag, backdropWidth()) : undefined}
+      blurHash={art?.blurHash}
+      strength={AMBIENT_STRENGTH}
+    >
+      <p id={hintId} className="visually-hidden">Enter plays. Press i for details.</p>
+      {hero.status === "ready" ? <HomeHero key={hero.card.id} card={hero.card} gateway={gateway} scope={scope} /> : null}
+      {hero.status === "pending" ? <Hero title="" pending /> : null}
+      <div className="home-rows" data-hero={hero.status === "ready" || hero.status === "pending" ? "true" : "false"}>
+        {empty ? (
+          <HomeEmpty gateway={gateway} scope={scope} />
+        ) : (
+          <>
+            <HomeRow title="Continue watching" query={resume} gateway={gateway} playable hintId={hintId} onItemFocus={onItemFocus} />
+            <HomeRow title="Next up" query={nextUp} gateway={gateway} playable hintId={hintId} onItemFocus={onItemFocus} />
+            {views.isPending ? <MediaRow label="Latest" variant="poster" status="pending" /> : null}
+            {views.isError ? (
+              <MediaRow label="Latest" variant="poster" status="error" errorMessage="Couldn't load your libraries." onRetry={() => void views.refetch()} />
+            ) : null}
+            {latest.map(({ view, query }) => (
+              <HomeRow key={view.id} title={`Latest in ${view.name}`} query={query} gateway={gateway} onItemFocus={onItemFocus} />
+            ))}
+          </>
+        )}
+      </div>
+    </AmbientBackdrop>
   );
 }

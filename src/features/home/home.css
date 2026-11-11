@@ -1,0 +1,19 @@
+@layer features {
+  /* The page makes its own stacking context so the ambient layers (z-index -1) paint above the shell background. */
+  .home-page {
+    position: relative;
+    z-index: var(--z-content);
+    padding-block-end: var(--space-8);
+  }
+
+  .home-rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-7);
+    padding-inline: var(--gutter);
+  }
+
+  .home-rows[data-hero="false"] {
+    padding-block-start: var(--space-6);
+  }
+}

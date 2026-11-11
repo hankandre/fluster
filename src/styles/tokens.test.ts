@@ -75,3 +75,40 @@ describe("DESIGN.md §3.1 token contrast", () => {
     expect(token("--focus")).toBe("#fff4dc");
   });
 });
+
+describe("hero contrast proofs (DESIGN.md §11.1)", () => {
+  it("--text-2 on the nav band over white art meets 4.5:1", () => {
+    const nav = token("--scrim-nav");
+    const match = /rgb\(11 12 14 \/ ([\d.]+)\) 50%/.exec(nav);
+    expect(match).not.toBeNull();
+    const alpha = Number(match?.[1]);
+    const bg = composite(solid("--surface-0"), alpha, [255, 255, 255]);
+    expect(contrastRatio(solid("--text-2"), bg)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("paints --scrim-nav above the glow, so the proof holds over the glow too", () => {
+    const css = readFileSync(join(__dirname, "../features/shared/ui/hero.css"), "utf8");
+    const layer = (selector: string) => {
+      const block = new RegExp(`\\.hero-art::${selector}\\s*\\{([^}]*)\\}`).exec(css)?.[1] ?? "";
+      return { z: Number(/z-index:\s*(\d+)/.exec(block)?.[1]), background: /background:([^;]*);/.exec(block)?.[1] ?? "" };
+    };
+    const glow = layer("before");
+    const nav = layer("after");
+    expect(glow.background).toContain("var(--art-glow)");
+    expect(nav.background).toContain("var(--scrim-nav)");
+    expect(nav.z).toBeGreaterThan(glow.z);
+  });
+
+  it("--text-1 on white art at the text column edge (42.5% of the width) meets 4.5:1", () => {
+    const scrim = token("--scrim-hero");
+    const stops = [...scrim.matchAll(/rgb\(11 12 14 \/ ([\d.]+)\) ([\d.]+)%/g)].map((m) => ({ alpha: Number(m[1]), at: Number(m[2]) }));
+    const before = stops.filter((stop) => stop.at <= 42.5).at(-1);
+    const after = stops.find((stop) => stop.at > 42.5);
+    expect(before).toBeDefined();
+    expect(after).toBeDefined();
+    if (!before || !after) return;
+    const alpha = before.alpha + ((after.alpha - before.alpha) * (42.5 - before.at)) / (after.at - before.at);
+    const bg = composite(solid("--surface-0"), alpha, [255, 255, 255]);
+    expect(contrastRatio(solid("--text-1"), bg)).toBeGreaterThanOrEqual(4.5);
+  });
+});

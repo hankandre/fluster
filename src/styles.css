@@ -103,8 +103,6 @@
 
 .home { position: relative; z-index: var(--z-content); padding: var(--space-6) var(--gutter) var(--space-8); }
 .home h1 { margin-bottom: var(--space-6); }
-.home-row { margin-bottom: var(--space-6); }
-.home-row h2 { margin: 0 0 var(--space-4); }
 .row-error { display: flex; align-items: center; gap: var(--space-4); color: var(--danger); }
 
 .browse-controls { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: end; margin-bottom: var(--space-5); }

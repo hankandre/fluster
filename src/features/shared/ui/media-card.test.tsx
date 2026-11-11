@@ -1,5 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
+import type { MouseEvent } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { artTint } from "../art-tint";
 import { MediaCard } from "./media-card";
 
@@ -115,5 +117,56 @@ describe("MediaCard image", () => {
     const { container } = render(<MediaCard variant="poster" title="Art" image={{ src: "https://x/a.webp" }} />);
     fireEvent.load(container.querySelector("img") as HTMLImageElement);
     expect(screen.getByTestId("card-image")).toHaveAttribute("data-state", "loaded");
+  });
+});
+
+describe("MediaCard one-press actions", () => {
+  beforeEach(() => {
+    window.location.hash = "#/next/home";
+  });
+
+  it("calls onActivate on click and on Enter", async () => {
+    const onActivate = vi.fn((event: MouseEvent<HTMLAnchorElement>) => event.preventDefault());
+    const user = userEvent.setup();
+    render(<MediaCard variant="thumb" title="Arrival" href="#/next/play/m1" onActivate={onActivate} />);
+    const link = screen.getByRole("link", { name: "Arrival" });
+    await user.click(link);
+    expect(onActivate).toHaveBeenCalledTimes(1);
+    link.focus();
+    await user.keyboard("{Enter}");
+    expect(onActivate).toHaveBeenCalledTimes(2);
+  });
+
+  it("goes to details on i, ContextMenu, and right-click", () => {
+    render(<MediaCard variant="thumb" title="Arrival" href="#/next/play/m1" detailsHref="#/next/item/m1" />);
+    const link = screen.getByRole("link", { name: "Arrival" });
+    fireEvent.keyDown(link, { key: "i" });
+    expect(window.location.hash).toBe("#/next/item/m1");
+    window.location.hash = "#/next/home";
+    fireEvent.keyDown(link, { key: "ContextMenu" });
+    expect(window.location.hash).toBe("#/next/item/m1");
+    window.location.hash = "#/next/home";
+    fireEvent.contextMenu(link);
+    expect(window.location.hash).toBe("#/next/item/m1");
+  });
+
+  it("ignores i with Ctrl, Meta, or Alt", () => {
+    render(<MediaCard variant="thumb" title="Arrival" href="#/next/play/m1" detailsHref="#/next/item/m1" />);
+    const link = screen.getByRole("link", { name: "Arrival" });
+    fireEvent.keyDown(link, { key: "i", ctrlKey: true });
+    fireEvent.keyDown(link, { key: "i", metaKey: true });
+    fireEvent.keyDown(link, { key: "i", altKey: true });
+    expect(window.location.hash).toBe("#/next/home");
+  });
+
+  it("sets aria-keyshortcuts and aria-describedby only when detailsHref is set", () => {
+    const { rerender } = render(<MediaCard variant="thumb" title="Arrival" href="#/x" describedBy="hint" />);
+    const bare = screen.getByRole("link", { name: "Arrival" });
+    expect(bare).not.toHaveAttribute("aria-keyshortcuts");
+    expect(bare).not.toHaveAttribute("aria-describedby");
+    rerender(<MediaCard variant="thumb" title="Arrival" href="#/x" detailsHref="#/y" describedBy="hint" />);
+    const link = screen.getByRole("link", { name: "Arrival" });
+    expect(link).toHaveAttribute("aria-keyshortcuts", "i");
+    expect(link).toHaveAttribute("aria-describedby", "hint");
   });
 });

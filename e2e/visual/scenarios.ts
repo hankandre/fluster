@@ -94,7 +94,7 @@ export const scenarios: Scenario[] = [
     let reachedCard = false;
     for (let presses = 0; presses < 10 && !reachedCard; presses += 1) {
       await page.keyboard.press("Tab");
-      reachedCard = await page.evaluate(() => document.activeElement?.matches("main [data-roving-item]") ?? false);
+      reachedCard = await page.evaluate(() => document.activeElement?.matches("main [data-media-card]") ?? false);
     }
     if (!reachedCard) throw new Error("Tab never reached a card in main");
     await page.keyboard.press("ArrowRight");
@@ -114,7 +114,7 @@ export const scenarios: Scenario[] = [
     let reachedCard = false;
     for (let presses = 0; presses < 10 && !reachedCard; presses += 1) {
       await page.keyboard.press("Tab");
-      reachedCard = await page.evaluate(() => document.activeElement?.matches("main [data-roving-item]") ?? false);
+      reachedCard = await page.evaluate(() => document.activeElement?.matches("main [data-media-card]") ?? false);
     }
     if (!reachedCard) throw new Error("Tab never reached a card in main");
     await page.keyboard.press("ArrowDown");
@@ -129,6 +129,20 @@ export const scenarios: Scenario[] = [
     await row.hover();
     await row.locator(".media-row-page--next button").click();
     await page.waitForTimeout(700);
+  } },
+  { name: "19a-home-hero-newest", opts: { homeLatestOnly: true }, run: async (page) => { await signIn(page); await page.waitForTimeout(1_200); } },
+  { name: "19b-home-ambient-follow", run: async (page) => {
+    await signIn(page);
+    await page.waitForTimeout(800);
+    const card = page.getByRole("region", { name: "Latest in Movies" }).locator("a.media-card").nth(1);
+    await card.focus();
+    await page.waitForTimeout(700);
+  } },
+  { name: "19c-home-scrolled-nav", run: async (page) => {
+    await signIn(page);
+    await page.waitForTimeout(800);
+    await page.evaluate(() => window.scrollTo(0, 300));
+    await page.waitForTimeout(300);
   } },
   { name: "16-nav-library-current", run: (page) => signedInAt(page, "#/next/browse/lib-movies", 1_000) },
 

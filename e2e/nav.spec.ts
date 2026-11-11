@@ -78,4 +78,33 @@ test("reduced motion removes nav transforms and transitions", async ({ page }) =
   });
   expect(style.transform).toBe("none");
   for (const duration of style.duration.split(",")) expect(Number.parseFloat(duration)).toBeLessThanOrEqual(0.00001 + 0.01 / 1000);
+  const header = await page.getByRole("banner").evaluate((element) => getComputedStyle(element).transitionDuration);
+  for (const duration of header.split(",")) expect(Number.parseFloat(duration)).toBeLessThanOrEqual(0.00001 + 0.01 / 1000);
+});
+
+// P13-08: clear over the hero, glass once content scrolls under it, hidden on scroll down (DESIGN.md 7.1).
+test("the nav is clear over the hero and turns to glass with a blur once the page scrolls", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 600 });
+  await signIn(page);
+  const header = page.getByRole("banner");
+  await expect(header).toHaveAttribute("data-surface", "clear");
+  await expect(header).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await page.evaluate(() => window.scrollTo(0, 400));
+  await expect(header).toHaveAttribute("data-surface", "glass");
+  await expect.poll(() => header.evaluate((element) => getComputedStyle(element).backdropFilter)).toContain("blur");
+});
+
+test("the nav hides on scroll down, returns on scroll up, and shows when Tab reaches it", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 600 });
+  await signIn(page);
+  const header = page.getByRole("banner");
+  await page.evaluate(() => window.scrollTo(0, 800));
+  await expect(header).toHaveAttribute("data-hidden", "true");
+  await page.evaluate(() => window.scrollBy(0, -100));
+  await expect(header).toHaveAttribute("data-hidden", "false");
+
+  await page.evaluate(() => window.scrollTo(0, 800));
+  await expect(header).toHaveAttribute("data-hidden", "true");
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Home" }).focus();
+  await expect(header).toHaveAttribute("data-hidden", "false");
 });

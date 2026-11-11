@@ -52,6 +52,8 @@ export interface BaseItemDto {
   ParentLogoImageTag?: string | null;
   ParentThumbItemId?: string | null;
   ParentThumbImageTag?: string | null;
+  ParentBackdropItemId?: string | null;
+  ParentBackdropImageTags?: string[] | null;
   ImageBlurHashes?: Record<string, Record<string, string | null> | undefined> | null;
   Genres?: string[] | null;
   People?: { Name?: string | null; Role?: string | null; Type?: string }[] | null;

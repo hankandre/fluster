@@ -163,7 +163,7 @@ test("the lifted focus ring is not clipped by the row at the TV form", async ({ 
   await page.setViewportSize({ width: 1920, height: 1080 });
   await signIn(page);
   await page.evaluate(() => document.documentElement.setAttribute("data-form", "tv"));
-  const regions = ["Continue Watching", "Latest in Movies"];
+  const regions = ["Continue watching", "Latest in Movies"];
   for (const name of regions) {
     const region = page.getByRole("region", { name });
     const card = region.locator("a.media-card").first();
@@ -202,21 +202,26 @@ test("Up and Down move between rows to the nearest card", async ({ page }) => {
     }, x);
   }
 
-  const second = row("Continue Watching").nth(1);
+  const second = row("Continue watching").nth(1);
   await focusByKeyboard(page, second);
   await page.keyboard.press("ArrowDown");
-  const nextUp = await nearest("Next Up", await centre(second));
-  await expect(row("Next Up").nth(nextUp)).toBeFocused();
+  const nextUp = await nearest("Next up", await centre(second));
+  await expect(row("Next up").nth(nextUp)).toBeFocused();
 
-  const fromNextUp = await centre(row("Next Up").nth(nextUp));
+  const fromNextUp = await centre(row("Next up").nth(nextUp));
   await page.keyboard.press("ArrowDown");
   const latest = await nearest("Latest in Movies", fromNextUp);
   await expect(row("Latest in Movies").nth(latest)).toBeFocused();
 
   const fromLatest = await centre(row("Latest in Movies").nth(latest));
   await page.keyboard.press("ArrowUp");
-  const back = await nearest("Next Up", fromLatest);
-  await expect(row("Next Up").nth(back)).toBeFocused();
+  const back = await nearest("Next up", fromLatest);
+  await expect(row("Next up").nth(back)).toBeFocused();
+
+  // Up from the first row reaches a hero action, with arrow keys alone.
+  await focusByKeyboard(page, second);
+  await page.keyboard.press("ArrowUp");
+  await expect(page.getByRole("region", { name: "Saltwater Hours" }).locator("a:focus")).toHaveCount(1);
 });
 
 test("reduced motion removes the focus lift", async ({ page }) => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { waitFor } from "@testing-library/react";
-import { leavePlayer, openPlayerFromDetail, parsePlayRoute, playRoute } from "./routes";
+import { leavePlayer, openPlayer, parsePlayRoute, playRoute } from "./routes";
 
 describe("play route", () => {
   it("round-trips the item, version, and start position", () => {
@@ -31,13 +31,25 @@ describe("leaving the player", () => {
   it("goes back to the detail entry it was opened from, adding no history", async () => {
     window.location.hash = "#/next/item/m1";
     const length = window.history.length;
-    openPlayerFromDetail({ itemId: "m1", startTicks: 0 });
+    openPlayer({ itemId: "m1", startTicks: 0 });
     expect(window.location.hash).toBe("#/next/play/m1");
     expect(window.history.length).toBe(length + 1);
 
     leavePlayer("m1");
 
     await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
+    expect(window.history.length).toBe(length + 1);
+  });
+
+  it("goes back to Home when opened from Home", async () => {
+    window.location.hash = "#/next/home";
+    const length = window.history.length;
+    openPlayer({ itemId: "m1", startTicks: 600 });
+    expect(window.location.hash).toBe("#/next/play/m1?start=600");
+
+    leavePlayer("m1");
+
+    await waitFor(() => expect(window.location.hash).toBe("#/next/home"));
     expect(window.history.length).toBe(length + 1);
   });
 

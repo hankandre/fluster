@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import type { ImageRef, MediaCard } from "../domain/catalog";
-import { cardImageFor, toLibraryCardProps, toMediaCardProps, toMediaRowItems } from "./card-view";
+import { backdropWidth, cardImageFor, heroArtFor, toLibraryCardProps, toMediaCardProps, toMediaRowItems, toPlayCardProps } from "./card-view";
 
 const ref = (itemId: string, type: ImageRef["type"], blurHash?: string): ImageRef => ({ itemId, type, tag: `${type}-tag`, ...(blurHash ? { blurHash } : {}) });
 const url = (image: ImageRef, width: number) => `https://x/${image.itemId}/${image.type}/${width}`;
@@ -79,5 +79,55 @@ describe("toLibraryCardProps", () => {
 
   it("has no image without one", () => {
     expect(toLibraryCardProps({ id: "l", name: "Movies", collectionType: "movies" }, url)).not.toHaveProperty("image");
+  });
+});
+
+describe("toPlayCardProps", () => {
+  it("plays from the start without a resume position, and from it with one", () => {
+    const plain = toPlayCardProps(card({ kind: "Movie" }), url);
+    expect(plain.href).toBe("#/next/play/c1");
+    expect(plain.detailsHref).toBe("#/next/item/c1");
+    expect(plain.onActivate).toBeTypeOf("function");
+    expect(toPlayCardProps(card({ kind: "Episode", resumePositionTicks: 600 }), url).href).toBe("#/next/play/c1?start=600");
+  });
+
+  it("points details at the series for a series and passes the describing id", () => {
+    const props = toPlayCardProps(card({ kind: "Series" }), url, "hint");
+    expect(props.detailsHref).toBe("#/next/series/c1");
+    expect(props.describedBy).toBe("hint");
+    expect(props.variant).toBe("thumb");
+  });
+
+  it("stays a plain article for an unknown kind", () => {
+    const props = toPlayCardProps(card(), url, "hint");
+    expect(props.href).toBeUndefined();
+    expect(props.onActivate).toBeUndefined();
+    expect(props.detailsHref).toBeUndefined();
+  });
+});
+
+describe("heroArtFor", () => {
+  it("prefers the backdrop, then the parent backdrop, then the thumb", () => {
+    const backdrop = ref("c1", "Backdrop");
+    const parentBackdrop = ref("s1", "Backdrop");
+    const thumb = ref("c1", "Thumb");
+    expect(heroArtFor(card({ backdrop, parentBackdrop, thumb }))).toEqual(backdrop);
+    expect(heroArtFor(card({ parentBackdrop, thumb }))).toEqual(parentBackdrop);
+    expect(heroArtFor(card({ thumb }))).toEqual(thumb);
+    expect(heroArtFor(card())).toBeUndefined();
+  });
+});
+
+describe("backdropWidth", () => {
+  const original = window.innerWidth;
+  afterEach(() => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: original });
+  });
+
+  it("uses 1280 up to a 1280 px window and 1920 above it", () => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 1280 });
+    expect(backdropWidth()).toBe(1280);
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 1281 });
+    expect(backdropWidth()).toBe(1920);
   });
 });

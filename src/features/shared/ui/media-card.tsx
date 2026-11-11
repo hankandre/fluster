@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import type { CSSProperties } from "react";
+import type { CSSProperties, KeyboardEvent, MouseEvent } from "react";
 import { artTint } from "../art-tint";
 import { timeLeftLabel, timeLeftSpoken } from "../time-left";
 import { CardImage } from "./card-image";
@@ -22,6 +22,12 @@ export interface MediaCardProps {
   progress?: number;
   played?: boolean;
   unplayedCount?: number;
+  // Called on a click (and so on Enter) in place of following the link; the handler decides whether to navigate.
+  onActivate?(event: MouseEvent<HTMLAnchorElement>): void;
+  // Where `i`, the Menu key, and right-click go (DESIGN.md 13.1).
+  detailsHref?: string;
+  // The id of the element that explains the `i` shortcut.
+  describedBy?: string;
 }
 
 const COUNT_CAP = 99;
@@ -40,7 +46,7 @@ function accessibleName(props: MediaCardProps): string {
 // A presentational card (DESIGN.md 7.5). Its visible text, marks, and progress are hidden from assistive
 // technology because the accessible name carries them all.
 export function MediaCard(props: MediaCardProps) {
-  const { variant, title, subtitle, href, image, remainingTicks, progress, played, unplayedCount } = props;
+  const { variant, title, subtitle, href, image, remainingTicks, progress, played, unplayedCount, onActivate, detailsHref, describedBy } = props;
   const label = accessibleName(props);
   const style = { "--art-accent": artTint(image?.blurHash).accent } as CSSProperties;
   const showCount = !played && unplayedCount !== undefined && unplayedCount > 0;
@@ -77,6 +83,24 @@ export function MediaCard(props: MediaCardProps) {
   );
 
   const common = { className: "media-card", "data-media-card": "", "data-variant": variant, "aria-label": label, style };
-  if (href) return <a {...common} href={href} data-roving-item="">{body}</a>;
+  if (href) {
+    const details = detailsHref
+      ? {
+          onKeyDown(event: KeyboardEvent<HTMLAnchorElement>) {
+            const isInfo = event.key === "i" && !event.ctrlKey && !event.metaKey && !event.altKey;
+            if (!isInfo && event.key !== "ContextMenu") return;
+            event.preventDefault();
+            window.location.hash = detailsHref;
+          },
+          onContextMenu(event: MouseEvent<HTMLAnchorElement>) {
+            event.preventDefault();
+            window.location.hash = detailsHref;
+          },
+          "aria-keyshortcuts": "i",
+          "aria-describedby": describedBy,
+        }
+      : {};
+    return <a {...common} {...details} href={href} onClick={onActivate} data-roving-item="">{body}</a>;
+  }
   return <article {...common}>{body}</article>;
 }

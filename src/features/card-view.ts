@@ -1,7 +1,8 @@
+import type { MouseEvent } from "react";
 import type { ImageRef, LibraryView, MediaCard as CatalogCard } from "../domain/catalog";
 import type { SessionGateway } from "../app/session";
 import type { MediaCardProps, MediaCardVariant } from "./shared/ui";
-import { cardRoute } from "./routes";
+import { cardRoute, openPlayer, playRoute, type PlayRoute } from "./routes";
 
 // Widths are twice the wide-window token sizes (200 px poster, 384 px thumb).
 export const POSTER_IMAGE_WIDTH = 400;
@@ -59,4 +60,46 @@ export function toLibraryCardProps(view: LibraryView, imageUrl: ImageUrl): Media
 
 export function toMediaRowItems(cards: CatalogCard[], variant: MediaCardVariant, imageUrl: ImageUrl) {
   return cards.map((card) => ({ id: card.id, ...toMediaCardProps(card, variant, imageUrl) }));
+}
+
+export function toPlayRowItems(cards: CatalogCard[], imageUrl: ImageUrl, describedBy?: string) {
+  return cards.map((card) => ({ id: card.id, ...toPlayCardProps(card, imageUrl, describedBy) }));
+}
+
+// A plain primary click opens the player in-app so Back returns here. A modified click keeps the browser default.
+export function playActivation(route: PlayRoute): (event: MouseEvent<HTMLAnchorElement>) => void {
+  return (event) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    openPlayer(route);
+  };
+}
+
+export function cardPlayRoute(card: CatalogCard): PlayRoute {
+  return { itemId: card.id, startTicks: card.resumePositionTicks ?? 0 };
+}
+
+// A thumb card that plays on Enter or click and opens details on `i`. A card of an unknown kind stays plain.
+export function toPlayCardProps(card: CatalogCard, imageUrl: ImageUrl, describedBy?: string): MediaCardProps {
+  const props = toMediaCardProps(card, "thumb", imageUrl);
+  const detailsHref = cardRoute(card);
+  if (!detailsHref) return props;
+  const route = cardPlayRoute(card);
+  return {
+    ...props,
+    href: playRoute(route),
+    onActivate: playActivation(route),
+    detailsHref,
+    ...(describedBy ? { describedBy } : {}),
+  };
+}
+
+// The art behind a hero or the ambient layer: a wide image of the item, else its parent's.
+export function heroArtFor(card: CatalogCard): ImageRef | undefined {
+  return card.backdrop ?? card.parentBackdrop ?? card.thumb;
+}
+
+// Two buckets keep image cache hits (DESIGN.md 7.2).
+export function backdropWidth(): number {
+  return window.innerWidth <= 1280 ? 1280 : 1920;
 }
