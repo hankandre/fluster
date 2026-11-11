@@ -1681,10 +1681,10 @@
             "Uses only shared UI primitives; no native select, radio, or checkbox remains"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "Implemented per docs/specs/P13-09.md on branch task/P13-09: pnpm check, pnpm test:e2e (70 passed), pnpm test:visual (114 passed) green. Awaiting fresh-context review, PR screenshots at both sizes, and the Jellyfin 10.11 SeasonId check."
+          "passes": true,
+          "evidence": "Implemented per docs/specs/P13-09.md on branch task/P13-09: pnpm check, pnpm test:e2e, pnpm test:visual green. Fresh-context review fixes: action bar spans 8/12 columns and stays on one row for a resuming two-version item at 1440 and 1920 (e2e/detail.spec.ts); episode strip resolves the season from the series seasons when SeasonId is missing (episode-strip.test.tsx). Lows logged in docs/design/rework-plan.md Follow-ups. PR screenshots and the live Jellyfin 10.11 SeasonId check (FLUSTER_DOGFOOD_SERVER unset here) are recorded in the Ship phase."
         },
         {
           "id": "P13-10",
