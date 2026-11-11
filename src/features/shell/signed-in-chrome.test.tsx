@@ -50,4 +50,11 @@ describe("SignedInChrome", () => {
     expect(screen.queryByText(/boom/)).not.toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
+
+  it("opens Search when / is pressed on a signed-in page", async () => {
+    window.location.hash = "#/next/home";
+    await renderChrome(fakeSessionGateway(), true);
+    fireEvent.keyDown(screen.getByRole("heading", { name: "Page" }), { key: "/" });
+    expect(window.location.hash).toBe("#/next/search");
+  });
 });

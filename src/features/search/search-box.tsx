@@ -1,17 +1,19 @@
-import { useEffect, useId, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { SearchHint } from "../../domain/catalog";
 import type { SessionGateway } from "../../app/session";
+import { imageUrlFor } from "../card-view";
 import { scopeFor } from "../query-scope";
-import { searchResultsRoute, seriesRoute } from "./search-route";
+import { moveToAdjacentRow } from "../roving-focus";
+import { itemRoute, seriesRoute } from "../routes";
+import { SearchField, SearchSuggestion } from "../shared/ui";
+import { suggestionLabel, suggestionMeta } from "./search-hint-label";
+import { searchResultsRoute } from "./search-route";
 
 export const DEBOUNCE_MS = 250;
 export const MIN_TERM_LENGTH = 2;
-
-function hintLabel(hint: SearchHint): string {
-  const detail = hint.kind === "Episode" ? hint.seriesName : hint.year?.toString();
-  return detail ? `${hint.name} (${detail})` : hint.name;
-}
+// Three times the desktop art width of 40 px.
+export const SUGGESTION_IMAGE_WIDTH = 120;
 
 function goTo(hash: string) {
   window.location.hash = hash;
@@ -27,6 +29,12 @@ export function SearchBox({ gateway, initialTerm }: { gateway: SessionGateway; i
   const [edited, setEdited] = useState(false);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // The field takes focus when the page opens and when the route term changes from outside.
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, [initialTerm]);
 
   useEffect(() => {
     setText(initialTerm);
@@ -60,26 +68,43 @@ export function SearchBox({ gateway, initialTerm }: { gateway: SessionGateway; i
     goTo(searchResultsRoute(trimmed));
   }
 
-  // Series hints open the series; movies and episodes search for their name
-  // until the detail view exists (P3-08).
+  // A hint opens what it names; there is no intermediate search.
   function choose(hint: SearchHint) {
-    if (hint.kind === "Series") {
-      setOpen(false);
-      goTo(seriesRoute(hint.id));
-      return;
+    setOpen(false);
+    setActive(-1);
+    switch (hint.kind) {
+      case "Movie":
+      case "Episode":
+        goTo(itemRoute(hint.id));
+        return;
+      case "Series":
+        goTo(seriesRoute(hint.id));
+        return;
     }
-    setText(hint.name);
-    submit(hint.name);
+  }
+
+  function clear() {
+    setText("");
+    setEdited(true);
+    setOpen(false);
+    setActive(-1);
+    inputRef.current?.focus();
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     switch (event.key) {
-      case "ArrowDown":
-        if (hints.length === 0) return;
+      case "ArrowDown": {
+        if (hints.length === 0) {
+          // No suggestion list: Down leaves the field for the first result row.
+          const row = event.currentTarget.closest<HTMLElement>("[data-spatial-row]");
+          if (row && moveToAdjacentRow(row, event.currentTarget, 1)) event.preventDefault();
+          return;
+        }
         event.preventDefault();
         setOpen(true);
         setActive((active + 1) % hints.length);
         return;
+      }
       case "ArrowUp":
         if (hints.length === 0) return;
         event.preventDefault();
@@ -87,8 +112,14 @@ export function SearchBox({ gateway, initialTerm }: { gateway: SessionGateway; i
         setActive(active <= 0 ? hints.length - 1 : active - 1);
         return;
       case "Escape":
-        setOpen(false);
-        setActive(-1);
+        if (expanded) {
+          setOpen(false);
+          setActive(-1);
+        } else if (text !== "") {
+          // With the list closed, Escape clears the text (ARIA combobox pattern).
+          event.preventDefault();
+          clear();
+        }
         return;
       case "Enter": {
         event.preventDefault();
@@ -100,36 +131,36 @@ export function SearchBox({ gateway, initialTerm }: { gateway: SessionGateway; i
     }
   }
 
+  const imageUrl = imageUrlFor(gateway);
+
   return (
-    <form role="search" className="search-box" onSubmit={(event) => { event.preventDefault(); submit(text); }}>
-      <label htmlFor={`${listId}-input`}>Search movies, series, and episodes</label>
-      <input
+    <form role="search" className="search-form" onSubmit={(event) => { event.preventDefault(); submit(text); }}>
+      <SearchField
         id={`${listId}-input`}
-        type="text"
-        role="combobox"
-        autoComplete="off"
-        aria-autocomplete="list"
-        aria-expanded={expanded}
-        aria-controls={listId}
-        aria-activedescendant={expanded && active >= 0 ? `${listId}-${active}` : undefined}
+        label="Search movies, series, and episodes"
         value={text}
-        onChange={(event) => { setText(event.target.value); setEdited(true); setOpen(true); setActive(-1); }}
+        listId={listId}
+        expanded={expanded}
+        activeDescendant={expanded && active >= 0 ? `${listId}-${active}` : undefined}
+        inputRef={inputRef}
+        onChange={(value) => { setText(value); setEdited(true); setOpen(true); setActive(-1); }}
         onKeyDown={onKeyDown}
         onBlur={() => setOpen(false)}
+        onClear={clear}
       />
-      <ul id={listId} role="listbox" aria-label="Suggestions" className="search-hints" hidden={!expanded}>
+      <ul id={listId} role="listbox" aria-label="Suggestions" className="ui-suggestions" hidden={!expanded}>
         {expanded ? hints.map((hint, index) => (
-          <li
+          <SearchSuggestion
             key={hint.id}
             id={`${listId}-${index}`}
-            role="option"
-            aria-selected={index === active}
-            // Keep focus in the input so the click is not lost to a blur.
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => choose(hint)}
-          >
-            <span>{hintLabel(hint)}</span> <small>{hint.kind}</small>
-          </li>
+            title={hint.name}
+            meta={suggestionMeta(hint)}
+            label={suggestionLabel(hint)}
+            image={hint.image ? imageUrl(hint.image, SUGGESTION_IMAGE_WIDTH) : undefined}
+            variant={hint.kind === "Episode" ? "still" : "poster"}
+            selected={index === active}
+            onChoose={() => choose(hint)}
+          />
         )) : null}
       </ul>
       <p role="status" className="visually-hidden">

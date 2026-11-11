@@ -49,6 +49,14 @@ async function play(page: Page, itemHash: string): Promise<void> {
   await page.waitForTimeout(300);
 }
 
+// The search page with suggestions for "the" showing.
+async function searchHints(page: Page): Promise<void> {
+  await signedInAt(page, "#/next/search");
+  await page.getByRole("combobox").fill("the");
+  await page.getByRole("listbox").waitFor();
+  await page.waitForTimeout(300);
+}
+
 export const scenarios: Scenario[] = [
   // Sign-in
   { name: "01-signin-server", run: (page) => go(page, "#/next/sign-in") },
@@ -225,14 +233,34 @@ export const scenarios: Scenario[] = [
 
   // Search
   { name: "30-search-start", run: (page) => signedInAt(page, "#/next/search") },
-  { name: "31-search-hints", run: async (page) => {
-    await signedInAt(page, "#/next/search");
-    await page.getByRole("combobox").fill("the");
-    await page.getByRole("listbox").waitFor();
-    await page.waitForTimeout(300);
+  { name: "31-search-hints", run: searchHints },
+  { name: "31a-search-hints-active", run: async (page) => {
+    await searchHints(page);
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowDown");
+    await page.waitForTimeout(200);
   } },
   { name: "32-search-results", run: (page) => signedInAt(page, "#/next/search/o", 1_000) },
+  { name: "32a-search-results-fullpage", fullPage: true, run: (page) => signedInAt(page, "#/next/search/o", 1_000) },
+  { name: "32b-search-results-focus", run: async (page) => {
+    await signedInAt(page, "#/next/search/o", 1_000);
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowDown");
+    await page.waitForTimeout(300);
+  } },
   { name: "33-search-no-results", run: (page) => signedInAt(page, "#/next/search/zzzz", 800) },
+  { name: "34-search-loading", opts: { searchDelayMs: 6_000 }, run: (page) => signedInAt(page, "#/next/search/o", 400) },
+  { name: "35-search-error", opts: { searchError: true }, run: async (page) => {
+    await signedInAt(page, "#/next/search/o", 400);
+    await page.getByRole("button", { name: "Retry" }).waitFor();
+  } },
+  { name: "36-search-load-more", opts: { longSearch: true }, run: async (page) => {
+    await signedInAt(page, "#/next/search/o", 1_000);
+    await page.getByRole("button", { name: "Load more" }).scrollIntoViewIfNeeded();
+    // Forty cards sit in one row; lazy images far off screen would never finish loading for the capture.
+    await page.evaluate(() => document.querySelectorAll("img").forEach((image) => { image.loading = "eager"; }));
+    await page.waitForTimeout(800);
+  } },
 
   // Item detail
   { name: "40-detail-movie", run: (page) => signedInAt(page, "#/next/item/m1", 1_000) },
@@ -367,4 +395,6 @@ export const scenarios: Scenario[] = [
   { name: "64-phone-series", phone: true, fullPage: true, run: (page) => signedInAt(page, "#/next/series/s1", 1_000) },
   { name: "65-phone-library", phone: true, run: (page) => signedInAt(page, "#/next/browse/lib-movies", 1_000) },
   { name: "66-phone-nav-fade", phone: true, opts: { manyLibraries: true }, run: (page) => signedInAt(page, "#/next/home", 1_000) },
+  { name: "67-phone-search-hints", phone: true, run: searchHints },
+  { name: "68-phone-search-results", phone: true, fullPage: true, run: (page) => signedInAt(page, "#/next/search/o", 1_000) },
 ];

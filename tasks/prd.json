@@ -1755,10 +1755,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "Implemented on task/P13-12. pnpm check exit 0 (112 files, 1537 tests); pnpm test:e2e 89 passed; pnpm test:visual all scenarios captured (36-search-load-more re-run passed after eager-image fix). Design review and PR screenshots pending."
         },
         {
           "id": "P13-13",

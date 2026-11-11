@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toEpisodeCards, toHomeLibraries, toMediaCard, toSeriesNextUp } from "./cards";
+import { toEpisodeCards, toHomeLibraries, toMediaCard, toSearchHints, toSeriesNextUp } from "./cards";
 
 describe("toMediaCard images and blurhashes", () => {
   it("looks up the blurhash by image type and tag", () => {
@@ -189,5 +189,36 @@ describe("toHomeLibraries", () => {
   it("omits the image when there is none", () => {
     const [library] = toHomeLibraries([{ Id: "l1", Name: "Movies", CollectionType: "movies" }]);
     expect(library).toEqual({ id: "l1", name: "Movies", collectionType: "movies" });
+  });
+});
+
+describe("toSearchHints", () => {
+  it("maps the primary image tag to an image of the hint", () => {
+    expect(toSearchHints([{ Id: "m1", Name: "Movie", Type: "Movie", PrimaryImageTag: "t1" }])).toEqual([
+      { id: "m1", name: "Movie", kind: "Movie", image: { itemId: "m1", type: "Primary", tag: "t1" } },
+    ]);
+  });
+
+  it("leaves out the image for a missing, null, or empty tag", () => {
+    const hints = toSearchHints([
+      { Id: "a", Name: "A", Type: "Movie" },
+      { Id: "b", Name: "B", Type: "Movie", PrimaryImageTag: null },
+      { Id: "c", Name: "C", Type: "Movie", PrimaryImageTag: "" },
+    ]);
+    expect(hints.every((hint) => hint.image === undefined)).toBe(true);
+  });
+
+  it("maps season and episode numbers for episodes only", () => {
+    const [episode, movie] = toSearchHints([
+      { Id: "e1", Name: "Pilot", Type: "Episode", ParentIndexNumber: 1, IndexNumber: 2 },
+      { Id: "m1", Name: "Movie", Type: "Movie", ParentIndexNumber: 1, IndexNumber: 2 },
+    ]);
+    expect(episode).toMatchObject({ seasonNumber: 1, episodeNumber: 2 });
+    expect(movie).not.toHaveProperty("seasonNumber");
+    expect(movie).not.toHaveProperty("episodeNumber");
+  });
+
+  it("still drops hints without an id, a name, or a known kind", () => {
+    expect(toSearchHints([{ Name: "x", Type: "Movie" }, { Id: "p", Name: "P", Type: "Person" }, { Id: "n", Type: "Movie" }])).toEqual([]);
   });
 });

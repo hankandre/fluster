@@ -59,7 +59,7 @@ const SPATIAL_ROW_SELECTOR = "[data-spatial-row]";
 
 // Moves focus Up or Down to the nearest item (by horizontal centre) of the adjacent spatial row
 // in the same <main>. Returns true when it moved focus.
-function moveBetweenRows(container: HTMLElement, current: HTMLElement, direction: 1 | -1): boolean {
+export function moveToAdjacentRow(container: HTMLElement, current: HTMLElement, direction: 1 | -1): boolean {
   const scope: ParentNode = container.closest("main") ?? document;
   const rows = Array.from(scope.querySelectorAll<HTMLElement>(SPATIAL_ROW_SELECTOR));
   let index = rows.indexOf(container) + direction;
@@ -121,7 +121,7 @@ export function useRovingFocus<T extends HTMLElement>(layout: RovingLayout, opti
     const next = nextRovingIndex(event.key, current, items.length, layout, fixedColumns ?? columnsOf(items));
     if (next === undefined) {
       if (spatial && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
-        if (moveBetweenRows(event.currentTarget, items[current], event.key === "ArrowDown" ? 1 : -1)) event.preventDefault();
+        if (moveToAdjacentRow(event.currentTarget, items[current], event.key === "ArrowDown" ? 1 : -1)) event.preventDefault();
       }
       return;
     }

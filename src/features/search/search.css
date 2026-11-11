@@ -1,0 +1,25 @@
+@layer features {
+  .search-page {
+    position: relative;
+    z-index: var(--z-content);
+    padding-block: var(--space-6) var(--space-8);
+  }
+
+  .search-form {
+    position: relative;
+    padding-inline: var(--gutter);
+  }
+
+  .search-results {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-7);
+    padding-inline: var(--gutter);
+    padding-block-start: var(--space-6);
+  }
+
+  .search-load-more {
+    display: flex;
+    justify-content: center;
+  }
+}

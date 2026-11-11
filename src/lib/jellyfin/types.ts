@@ -83,6 +83,9 @@ export interface SearchHintDto {
   Type?: string;
   ProductionYear?: number | null;
   Series?: string | null;
+  PrimaryImageTag?: string | null;
+  ParentIndexNumber?: number | null;
+  IndexNumber?: number | null;
 }
 
 export interface SearchHintResult {
