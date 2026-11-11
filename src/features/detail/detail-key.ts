@@ -8,3 +8,7 @@ export function detailKey(gateway: SessionGateway, itemId: string) {
 export function seasonEpisodesKey(gateway: SessionGateway, seriesId: string, seasonId: string) {
   return ["detail", scopeFor(gateway), "season-episodes", seriesId, seasonId] as const;
 }
+
+export function seriesSeasonsKey(gateway: SessionGateway, seriesId: string) {
+  return ["detail", scopeFor(gateway), "series-seasons", seriesId] as const;
+}

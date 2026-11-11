@@ -87,7 +87,7 @@ const movies: Record<string, Dto> = {
   m1: { Name: "The Long Quiet", ProductionYear: 2023, poster: "p1", backdrop: "b1", RunTimeTicks: ticks(7380), Genres: ["Drama", "Science Fiction"], OfficialRating: "PG-13", CommunityRating: 7.8,
     Overview: "A radio astronomer on a remote island station picks up a signal that repeats every nineteen minutes, and has one winter to decide who to tell.",
     People: people, MediaSources: [hdrSource, sdrSource], Trickplay: true, Chapters: true },
-  m2: { Name: "Saltwater Hours", ProductionYear: 2021, poster: "p2", backdrop: "b2", RunTimeTicks: ticks(6300), Genres: ["Drama"], Overview: "Two sisters reopen their late father's ferry for one last summer.", People: people.slice(1, 4), resume: ticks(2460) },
+  m2: { Name: "Saltwater Hours", ProductionYear: 2021, poster: "p2", backdrop: "b2", RunTimeTicks: ticks(6300), Genres: ["Drama"], Overview: "Two sisters reopen their late father's ferry for one last summer.", People: people.slice(1, 4), resume: ticks(2460), MediaSources: [hdrSource, sdrSource] },
   m3: { Name: "Northern Line", ProductionYear: 2019, poster: "p3", backdrop: "b3", RunTimeTicks: ticks(5940), Genres: ["Thriller"], Overview: "A night-shift signaller notices a train that is not on any timetable.", People: people.slice(0, 3), played: true, favorite: true },
   m4: { Name: "Paper Moons", ProductionYear: 2024, poster: "p4", backdrop: "b1", RunTimeTicks: ticks(6120), Genres: ["Comedy"], Overview: "A failing theatre troupe stages a moon landing." },
   m5: { Name: "Glass Orchard", ProductionYear: 2022, poster: "p5", backdrop: "b2", RunTimeTicks: ticks(6600), Genres: ["Mystery"], Overview: "An heir inherits a greenhouse that grows only in the dark." },

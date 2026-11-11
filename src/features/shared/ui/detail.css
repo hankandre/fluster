@@ -19,8 +19,13 @@
     flex-direction: column;
     align-items: flex-start;
     gap: var(--space-4);
-    inline-size: calc((100% - 2 * var(--gutter)) * 5 / 12);
+    inline-size: calc((100% - 2 * var(--gutter)) * 8 / 12);
     min-inline-size: 0;
+  }
+
+  /* The text keeps the left five columns; only the action bar may run wider so it stays on one row. */
+  .detail-text > :not(.ui-action-bar) {
+    max-inline-size: calc(100% * 5 / 8);
   }
 
   .detail-title {

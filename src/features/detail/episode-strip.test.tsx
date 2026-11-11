@@ -66,13 +66,45 @@ describe("EpisodeStrip", () => {
     await vi.waitFor(() => expect(screen.queryByRole("region")).toBeNull());
   });
 
-  it("makes no request for a movie or an unknown season", () => {
+  it("makes no request for a movie", () => {
     const movie = renderStrip(episode({ type: "Movie" }));
-    cleanup();
-    const noSeason = renderStrip(episode({ seasonId: undefined }));
     expect(movie).not.toHaveBeenCalled();
-    expect(noSeason).not.toHaveBeenCalled();
     expect(screen.queryByRole("region")).toBeNull();
+  });
+
+  describe("when the server omits SeasonId", () => {
+    const seasons = [
+      { id: "se0", name: "Specials", indexNumber: 0 },
+      { id: "se1", name: "Season 1", indexNumber: 1 },
+    ];
+
+    function renderWithSeasons(item: ItemDetail, list = seasons) {
+      const episodes = vi.fn().mockResolvedValue(cards);
+      const seasonsFn = vi.fn().mockResolvedValue(list);
+      render(
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <EpisodeStrip gateway={fakeSessionGateway({ episodes, seasons: seasonsFn })} item={item} />
+        </QueryClientProvider>,
+      );
+      return { episodes, seasonsFn };
+    }
+
+    it("finds the season by number among the series' seasons", async () => {
+      const { episodes, seasonsFn } = renderWithSeasons(episode({ seasonId: undefined }));
+      await screen.findAllByRole("link");
+      expect(seasonsFn).toHaveBeenCalledWith("s1", expect.any(AbortSignal));
+      expect(episodes).toHaveBeenCalledWith("s1", "se1", expect.any(AbortSignal));
+    });
+
+    it("falls back to the season name, then hides the strip when none matches", async () => {
+      const { episodes } = renderWithSeasons(episode({ seasonId: undefined, seasonNumber: undefined }));
+      await vi.waitFor(() => expect(episodes).toHaveBeenCalledWith("s1", "se1", expect.any(AbortSignal)));
+      cleanup();
+      const none = renderWithSeasons(episode({ seasonId: undefined, seasonNumber: 9, seasonName: "Season 9" }));
+      await vi.waitFor(() => expect(none.seasonsFn).toHaveBeenCalled());
+      await vi.waitFor(() => expect(screen.queryByRole("region")).toBeNull());
+      expect(none.episodes).not.toHaveBeenCalled();
+    });
   });
 
   it("shows an error with Retry that asks again", async () => {

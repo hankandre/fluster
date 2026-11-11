@@ -180,3 +180,18 @@ test("a missing item shows a notice with Go home", async ({ page }) => {
   await page.getByRole("link", { name: "Go home" }).click();
   await expect(page).toHaveURL(/#\/next\/home$/);
 });
+
+for (const viewport of [{ width: 1440, height: 900 }, { width: 1920, height: 1080 }]) {
+  test(`a resuming item with two versions keeps its action bar on one row at ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await installMockServer(page);
+    await signIn(page, "#/next/item/m2");
+
+    const bar = page.locator(".ui-action-bar");
+    await expect(page.getByRole("link", { name: /^Resume from/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Version/ })).toBeVisible();
+    const tops = await bar.locator("a, button").evaluateAll((nodes) => nodes.map((node) => Math.round(node.getBoundingClientRect().top)));
+    expect(tops.length).toBe(5);
+    expect(new Set(tops).size).toBe(1);
+  });
+}
