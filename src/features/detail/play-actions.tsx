@@ -1,7 +1,7 @@
 import type { MouseEvent, ReactNode } from "react";
 import type { ItemDetail } from "../../domain/catalog";
 import { resumeTicksOf } from "../player/playable-item";
-import { openPlayerFromDetail, playRoute, type PlayRoute } from "../routes";
+import { openPlayer, playRoute, type PlayRoute } from "../routes";
 import { safeReason } from "../player/safe-reason";
 import { usePlayerStatus } from "../player/player-status";
 import { positionLabel } from "./format";
@@ -49,7 +49,7 @@ function PlayLink({ route, className, children }: { route: PlayRoute; className:
   const onClick = (event: MouseEvent<HTMLAnchorElement>) => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
-    openPlayerFromDetail(route);
+    openPlayer(route);
   };
   return <a className={className} href={playRoute(route)} onClick={onClick}>{children}</a>;
 }

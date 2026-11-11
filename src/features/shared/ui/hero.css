@@ -1,0 +1,123 @@
+@layer components {
+  .hero {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    box-sizing: border-box;
+    block-size: var(--hero-h);
+    margin-block-start: calc(-1 * var(--nav-h));
+    padding-inline: var(--gutter);
+    padding-block-end: var(--space-8);
+    overflow: hidden;
+  }
+
+  .hero-art {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: var(--surface-1) center / cover no-repeat;
+  }
+
+  .hero-art img {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  /* Scrims, then the glow. The nav scrim (::after) is the top layer so the nav text keeps its contrast. */
+  .hero-art::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background:
+      var(--scrim-floor),
+      var(--scrim-hero),
+      radial-gradient(70% 90% at 75% 20%, var(--art-glow), transparent 70%);
+  }
+
+  .hero-art::after {
+    content: "";
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    z-index: 2;
+    block-size: calc(var(--nav-h) * 2);
+    background: var(--scrim-nav);
+  }
+
+  .hero-text {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+    inline-size: calc((100% - 2 * var(--gutter)) * 5 / 12);
+    min-inline-size: 0;
+    color: var(--text-1);
+  }
+
+  .hero-title {
+    margin: 0;
+    font: var(--type-hero);
+    letter-spacing: var(--tracking-hero);
+    color: var(--text-1);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .hero-logo {
+    display: block;
+    max-inline-size: var(--hero-logo-max-w);
+    max-block-size: var(--hero-logo-max-h);
+    object-fit: contain;
+    object-position: left bottom;
+  }
+
+  .hero-facts {
+    margin: 0;
+    font: var(--type-meta);
+    color: var(--text-1);
+  }
+
+  .hero-overview {
+    margin: 0;
+    max-inline-size: var(--measure);
+    font: var(--type-body-lg);
+    color: var(--text-1);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-block-start: var(--space-2);
+  }
+
+  /* Compact: the art keeps a 16:9 box and the text follows below it. */
+  @media (max-width: 719px) {
+    .hero {
+      flex-direction: column;
+      align-items: stretch;
+      block-size: auto;
+      padding-block: calc(var(--nav-h) + 56.25vw + var(--space-4)) var(--space-6);
+      background: var(--surface-0);
+    }
+
+    .hero-art {
+      inset-block-end: auto;
+      block-size: calc(56.25vw + var(--nav-h));
+    }
+
+    .hero-text {
+      inline-size: 100%;
+    }
+  }
+}

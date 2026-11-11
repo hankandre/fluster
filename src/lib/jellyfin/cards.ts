@@ -97,6 +97,13 @@ export function toMediaCard(item: BaseItemDto): MediaCard | undefined {
   const fraction = watchedFraction(item);
   const backdropTag = item.BackdropImageTags?.[0];
   const unplayed = item.UserData?.UnplayedItemCount ?? 0;
+  const position = item.UserData?.PlaybackPositionTicks ?? 0;
+  const parentBackdropTag = item.ParentBackdropImageTags?.[0];
+  const parentBackdrop = !backdropTag && item.ParentBackdropItemId && parentBackdropTag
+    ? imageRef(item.ParentBackdropItemId, "Backdrop", parentBackdropTag, item.ImageBlurHashes?.Backdrop?.[parentBackdropTag])
+    : undefined;
+  const seasonNumber = item.ParentIndexNumber;
+  const episodeNumber = item.IndexNumber;
   return {
     id: item.Id,
     kind: itemKind(item.Type),
@@ -106,6 +113,9 @@ export function toMediaCard(item: BaseItemDto): MediaCard | undefined {
     aspectRatio: found?.aspectRatio ?? POSTER_ASPECT_RATIO,
     ...logoAndThumb(item, item.Id),
     ...(backdropTag ? { backdrop: imageRef(item.Id, "Backdrop", backdropTag, item.ImageBlurHashes?.Backdrop?.[backdropTag]) } : {}),
+    ...(parentBackdrop ? { parentBackdrop } : {}),
+    ...(item.UserData?.Played !== true && position > 0 ? { resumePositionTicks: position } : {}),
+    ...(isEpisode && seasonNumber != null && episodeNumber != null ? { seasonNumber, episodeNumber } : {}),
     ...(fraction !== undefined ? { progress: fraction, remainingTicks: remainingTicks(item) } : {}),
     ...(item.UserData?.Played === true ? { played: true } : {}),
     ...(item.Type === "Series" && unplayed > 0 ? { unplayedCount: unplayed } : {}),

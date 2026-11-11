@@ -58,6 +58,9 @@
   --poster-w: 112px;
   --thumb-w: 240px;
   --nav-h: 64px;
+  --hero-h: min(78vh, 56.25vw);
+  --hero-logo-max-w: min(480px, 32vw);
+  --hero-logo-max-h: 160px;
   --control-h: 48px;
   --icon-button: 44px;
   --hit-min: 44px;
@@ -75,6 +78,8 @@
   --scrim-hero: linear-gradient(90deg, rgb(11 12 14 / 0.94) 0%, rgb(11 12 14 / 0.72) 38%, rgb(11 12 14 / 0) 72%);
   --scrim-floor: linear-gradient(0deg, var(--surface-0) 0%, rgb(11 12 14 / 0) 40%);
   --surface-0-glass: color-mix(in srgb, var(--surface-0) 92%, transparent);
+  --scrim-nav: linear-gradient(180deg, rgb(11 12 14 / 0.85) 0%, rgb(11 12 14 / 0.85) 50%, rgb(11 12 14 / 0) 100%);
+  --blur-nav: 16px;
   --scrim-player-top: linear-gradient(180deg, rgb(0 0 0 / 0.72), rgb(0 0 0 / 0));
   --scrim-player-bottom: linear-gradient(0deg, rgb(0 0 0 / 0.85), rgb(0 0 0 / 0));
 

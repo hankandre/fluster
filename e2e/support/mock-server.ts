@@ -36,6 +36,8 @@ export interface MockOptions {
   rowDelayMs?: number;
   // /Items/Latest for lib-movies returns 18 movies, so the row scrolls.
   longRows?: boolean;
+  // Continue watching and Next up are empty, so the Home hero is the newest item.
+  homeLatestOnly?: boolean;
 }
 
 export const ticks = (seconds: number): number => Math.round(seconds * 1e7);
@@ -124,6 +126,7 @@ function episodeDto(id: string, opts: MockOptions = {}): Dto {
   const e = episodes[id];
   return {
     Id: id, Name: e.Name, Type: "Episode", SeriesId: "s1", SeriesName: "Harbor Lights", SeriesPrimaryImageTag: "tag-s1",
+    ParentBackdropItemId: "s1", ParentBackdropImageTags: ["bd-s1"],
     ParentIndexNumber: 1, IndexNumber: e.IndexNumber, RunTimeTicks: opts.short ? ticks(25) : ticks(2700), Overview: e.Overview, Genres: ["Drama"],
     People: people.slice(0, 3), ImageTags: { Primary: `tag-${id}` }, PrimaryImageAspectRatio: 16 / 9, ProductionYear: 2022,
     MediaSources: [simpleSource(id)],
@@ -221,9 +224,9 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
             { Id: "lib-shows", Name: "Shows", CollectionType: "tvshows", ImageTags: { Primary: "tag-lib2" } },
           ] });
         case "/UserItems/Resume":
-          return json({ Items: opts.empty ? [] : [movieDto("m2", opts), episodeDto("ep-2")] });
+          return json({ Items: opts.empty || opts.homeLatestOnly ? [] : [movieDto("m2", opts), episodeDto("ep-2")] });
         case "/Shows/NextUp":
-          return json({ Items: opts.empty ? [] : [episodeDto("ep-3"), { ...episodeDto("ep-1"), SeriesId: "s2", SeriesName: "Quiet Orbit", Name: "Perigee" }] });
+          return json({ Items: opts.empty || opts.homeLatestOnly ? [] : [episodeDto("ep-3"), { ...episodeDto("ep-1"), SeriesId: "s2", SeriesName: "Quiet Orbit", Name: "Perigee" }] });
         case "/Items/Latest": {
           if (opts.empty) return json([]);
           const parent = url.searchParams.get("parentId") ?? url.searchParams.get("ParentId");

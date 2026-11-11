@@ -73,6 +73,15 @@ describe("MediaRow", () => {
     expect(first).toHaveFocus();
   });
 
+  it("tells the caller which card took focus", () => {
+    const onItemFocus = vi.fn();
+    render(<MediaRow title="Latest" variant="poster" status="ready" items={items} onItemFocus={onItemFocus} />);
+    screen.getByRole("link", { name: "Beta" }).focus();
+    expect(onItemFocus).toHaveBeenLastCalledWith("b");
+    screen.getByRole("link", { name: "Gamma" }).focus();
+    expect(onItemFocus).toHaveBeenLastCalledWith("c");
+  });
+
   it("scrolls a focused card into view without centring it", () => {
     const scrollIntoView = vi.fn();
     Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, value: scrollIntoView });

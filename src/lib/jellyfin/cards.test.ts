@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toHomeLibraries, toMediaCard } from "./cards";
+import { toEpisodeCards, toHomeLibraries, toMediaCard } from "./cards";
 
 describe("toMediaCard images and blurhashes", () => {
   it("looks up the blurhash by image type and tag", () => {
@@ -100,6 +100,39 @@ describe("toMediaCard display fields", () => {
     expect(toMediaCard({ Id: "s1", Name: "Show", Type: "Series", UserData: { UnplayedItemCount: 3 } })?.unplayedCount).toBe(3);
     expect(toMediaCard({ Id: "s1", Name: "Show", Type: "Series", UserData: { UnplayedItemCount: 0 } })).not.toHaveProperty("unplayedCount");
     expect(toMediaCard({ Id: "m1", Name: "Movie", Type: "Movie", UserData: { UnplayedItemCount: 3 } })).not.toHaveProperty("unplayedCount");
+  });
+});
+
+describe("toMediaCard hero fields", () => {
+  it("sets resumePositionTicks only when not played and the position is above zero", () => {
+    expect(toMediaCard({ Id: "m1", Name: "M", UserData: { PlaybackPositionTicks: 600 } })?.resumePositionTicks).toBe(600);
+    expect(toMediaCard({ Id: "m1", Name: "M", UserData: { PlaybackPositionTicks: 0 } })).not.toHaveProperty("resumePositionTicks");
+    expect(toMediaCard({ Id: "m1", Name: "M", UserData: { Played: true, PlaybackPositionTicks: 600 } })).not.toHaveProperty("resumePositionTicks");
+    expect(toMediaCard({ Id: "m1", Name: "M" })).not.toHaveProperty("resumePositionTicks");
+  });
+
+  it("sets season and episode numbers only for episodes that have both", () => {
+    const base = { Id: "e1", Name: "Pilot", Type: "Episode" };
+    const card = toMediaCard({ ...base, ParentIndexNumber: 2, IndexNumber: 4 });
+    expect(card?.seasonNumber).toBe(2);
+    expect(card?.episodeNumber).toBe(4);
+    expect(toMediaCard({ ...base, IndexNumber: 4 })).not.toHaveProperty("seasonNumber");
+    expect(toMediaCard({ ...base, ParentIndexNumber: 2 })).not.toHaveProperty("episodeNumber");
+    expect(toMediaCard({ Id: "m1", Name: "M", Type: "Movie", ParentIndexNumber: 2, IndexNumber: 4 })).not.toHaveProperty("seasonNumber");
+  });
+
+  it("maps the parent backdrop with its blurhash, and skips it when the item has its own backdrop", () => {
+    const parent = { ParentBackdropItemId: "s1", ParentBackdropImageTags: ["pb"], ImageBlurHashes: { Backdrop: { pb: "HASH-PB", own: "HASH-OWN" } } };
+    expect(toMediaCard({ Id: "e1", Name: "Pilot", Type: "Episode", ...parent })?.parentBackdrop)
+      .toEqual({ itemId: "s1", type: "Backdrop", tag: "pb", blurHash: "HASH-PB" });
+    expect(toMediaCard({ Id: "e1", Name: "Pilot", Type: "Episode", BackdropImageTags: ["own"], ...parent })).not.toHaveProperty("parentBackdrop");
+    expect(toMediaCard({ Id: "e1", Name: "Pilot", Type: "Episode", ParentBackdropItemId: "s1" })).not.toHaveProperty("parentBackdrop");
+  });
+
+  it("carries the numbers onto episode cards", () => {
+    const [episode] = toEpisodeCards([{ Id: "e1", Name: "Pilot", Type: "Episode", ParentIndexNumber: 1, IndexNumber: 2 }]);
+    expect(episode.seasonNumber).toBe(1);
+    expect(episode.episodeNumber).toBe(2);
   });
 });
 

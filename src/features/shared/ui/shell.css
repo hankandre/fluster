@@ -28,8 +28,26 @@
     block-size: var(--nav-h);
     box-sizing: border-box;
     padding-inline: var(--space-5);
+    border-block-end: 1px solid transparent;
+    transition:
+      transform var(--dur-base) var(--ease-out),
+      background-color var(--dur-base) var(--ease-out),
+      border-color var(--dur-base) var(--ease-out);
+  }
+
+  .app-nav[data-surface="glass"] {
     background: var(--surface-0-glass);
-    border-block-end: 1px solid var(--line);
+    backdrop-filter: blur(var(--blur-nav));
+    border-block-end-color: var(--line);
+  }
+
+  .app-nav[data-surface="clear"] {
+    background: transparent;
+    border-block-end-color: transparent;
+  }
+
+  .app-nav[data-hidden="true"] {
+    transform: translateY(-100%);
   }
 
   .app-nav-bar {

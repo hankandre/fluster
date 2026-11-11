@@ -138,7 +138,7 @@ Toasts never take focus, so a keyboard user can miss an action such as Undo. A l
 ## Follow-ups
 
 - Library overflow in the app nav (P13-06, Decision 4): the nav scrolls horizontally and arrow keys scroll the focused entry into view. A server with many libraries needs a "More" menu or a Libraries entry; decide it with P13-11 (Libraries page).
-- Nav background (P13-06, Decision 11): the bar uses `--surface-0-glass` (`--surface-0` at 92%, defined in `tokens.css` because `src/styles/css-rules.test.ts` forbids `color-mix` outside `src/styles/`). P13-08 adds the blur.
+- Nav background (P13-06, Decision 11): the bar uses `--surface-0-glass` (`--surface-0` at 92%, defined in `tokens.css` because `src/styles/css-rules.test.ts` forbids `color-mix` outside `src/styles/`). P13-08 added the blur (`--blur-nav`), the clear surface over a hero, and hide on scroll.
 - Nav scroll cue (P13-06, Decision 4 follow-up): nothing shows that the nav list scrolls on a phone. Add an edge fade or cue.
 - "Browser development mode" label overlaps content on phone captures (found in the P13-06 design review).
 - Native checkbox and select in the Browse toolbar (found in the P13-06 design review); replace them in P13-11.
@@ -149,3 +149,10 @@ Toasts never take focus, so a keyboard user can miss an action such as Undo. A l
 - Media mark RTL (P13-07 review, low): `.media-card-mark` in `src/features/shared/ui/media.css` uses physical top/right, so it does not flip in RTL, and gives no contrast guarantee over light art beyond the `--veil` pill.
 - Row scroll e2e (P13-07 review): no e2e checks the vertical position after spatial Down; add an assertion that the row heading stays on screen.
 - Unverified (P13-07): `/Shows/NextUp`, `/Items/Latest`, and `/UserViews` send no `enableUserData` or image parameters; check on the dogfood server that marks and library art appear, and record the result in the PR. Also untested: WebKitGTK `scroll-padding` on focus-driven scrolling in the desktop build.
+- Deferred from P13-08 (Home hero): the DESIGN.md §9 300 ms detail prefetch (dwell on a card prefetches its detail query; P13-07 deferred it to P13-08, and P13-08 deferred it again because it adds one detail request per dwell). Owner: P13-09, which rewrites the detail query and its key. The backdrop half is already covered, because the Home ambient layer loads that art on dwell.
+- "See all" on Latest rows (P13-08, Q5 A): it needs a sort parameter in the library route. Owner: P13-11, which rewrites that route's toolbar and sort model (Q12 B). P13-11's acceptance does not mention it, so add it there when the task is refined. The "3 new" subtitle is not built (Q5 A).
+- Progress ring on the hero's Resume button and the full `ActionBar` (DESIGN.md §7.8): P13-09.
+- Restoring focus to the previously focused card after Back from the player (DESIGN.md §9): Home remounts and refetches with `gcTime: 0`. Unowned; fold into P13-18.
+- Card subtitle format "S1E2 · Pilot" to "S1 · E2" (P13-09 or P13-10). The hero already uses "S1 · E2".
+- TV form for Home (P13-18): Menu key mapping, hero sizes, the tab-row nav, initial focus on the primary action, and TV screenshots.
+- Unverified on Jellyfin 10.11 (record on the dogfood server before release): `ParentBackdropItemId` and `ParentBackdropImageTags` on `/UserItems/Resume` and `/Shows/NextUp` items (the hero falls back to `thumb` without them); a Next up episode with a saved position may start at 0 because `/Shows/NextUp` sends no `enableUserData`; `backdrop-filter` in the WebKitGTK desktop build (without it the nav is the same 92% glass as before).

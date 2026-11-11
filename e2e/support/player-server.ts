@@ -30,6 +30,8 @@ const discSource = {
 
 export interface ServerOptions {
   resumeTicks?: number;
+  // /UserItems/Resume lists Arrival (movie-1) at resumeTicks, so Home has a Continue watching card.
+  homeResume?: boolean;
   // The server offers the disc for direct play; the forced-fallback request
   // (EnableDirectPlay false) gets neither direct play nor a conversion.
   disc?: boolean;
@@ -132,6 +134,14 @@ export async function mockPlayerServer(page: Page, options: ServerOptions = {}):
       case "/UserViews":
         return json({ Items: [{ Id: "lib-1", Name: "Movies", CollectionType: "movies" }] });
       case "/UserItems/Resume":
+        return json({
+          Items: options.homeResume
+            ? [{
+              Id: "movie-1", Name: "Arrival", Type: "Movie", ProductionYear: 2016, RunTimeTicks: 1_200_000_000,
+              UserData: { Played: false, PlaybackPositionTicks: options.resumeTicks ?? 0 },
+            }]
+            : [],
+        });
       case "/Shows/NextUp":
         return json({ Items: [] });
       case "/Items/Latest":

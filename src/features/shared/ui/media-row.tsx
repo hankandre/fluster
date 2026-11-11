@@ -16,6 +16,8 @@ export interface MediaRowProps {
   items?: (MediaCardProps & { id: string })[];
   onRetry?(): void;
   errorMessage?: string;
+  // Called with the id of the card that takes focus.
+  onItemFocus?(id: string): void;
 }
 
 const POSTER_SKELETONS = 8;
@@ -23,7 +25,7 @@ const THUMB_SKELETONS = 5;
 
 // One horizontal row of cards (DESIGN.md 7.4). The list bleeds to the window edges, keeps the focused card
 // one gutter from them, and joins the spatial Up and Down focus between rows.
-export function MediaRow({ title, label, variant, status, items = [], onRetry, errorMessage }: MediaRowProps) {
+export function MediaRow({ title, label, variant, status, items = [], onRetry, errorMessage, onItemFocus }: MediaRowProps) {
   const headingId = useId();
   const roving = useRovingFocus<HTMLUListElement>("row", { spatial: true });
   const [canScroll, setCanScroll] = useState({ previous: false, next: false });
@@ -58,6 +60,11 @@ export function MediaRow({ title, label, variant, status, items = [], onRetry, e
   function onFocus(event: FocusEvent<HTMLUListElement>) {
     roving.onFocus(event);
     const card = (event.target as HTMLElement).closest<HTMLElement>("[data-media-card]");
+    if (card && onItemFocus) {
+      const index = Array.from(event.currentTarget.querySelectorAll("[data-media-card]")).indexOf(card);
+      const focused = items[index];
+      if (focused) onItemFocus(focused.id);
+    }
     if (card && typeof card.scrollIntoView === "function") card.scrollIntoView({ block: "nearest", inline: "nearest" });
     // The whole row is one box with its heading, so keeping it in view keeps the heading in view.
     const section = event.currentTarget.closest<HTMLElement>(".media-row");

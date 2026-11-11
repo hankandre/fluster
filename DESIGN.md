@@ -122,7 +122,7 @@ Rules: sentence case everywhere (no uppercase-tracked labels, no eyebrow or kick
 | `--shadow-sheet` | `0 28px 72px -16px rgb(0 0 0 / .75)` | Sheets, dialogs, Up Next |
 | `--scrim-hero` | `linear-gradient(90deg, rgb(11 12 14 / .94) 0%, rgb(11 12 14 / .72) 38%, rgb(11 12 14 / 0) 72%)` | Text side of backdrops |
 | `--scrim-floor` | `linear-gradient(0deg, var(--surface-0) 0%, rgb(11 12 14 / 0) 40%)` | Backdrop fading into the page |
-| `--surface-0-glass` | `color-mix(in srgb, var(--surface-0) 92%, transparent)` | Nav bar fill (blur arrives with P13-08) |
+| `--surface-0-glass` | `color-mix(in srgb, var(--surface-0) 92%, transparent)` | Nav bar fill (blur is `--blur-nav`, P13-08) |
 | `--scrim-player-top` | `linear-gradient(180deg, rgb(0 0 0 / .72), rgb(0 0 0 / 0))` (160 px) | Player title zone |
 | `--scrim-player-bottom` | `linear-gradient(0deg, rgb(0 0 0 / .85), rgb(0 0 0 / 0))` (240 px) | Player controls zone |
 
@@ -180,7 +180,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 ### 7.1 App shell and nav (`AppShell`, `AppNav`)
 
 - A top bar, 64 px desktop or 96 px TV. Left: the Fluster wordmark (text, `--type-label` 700), which goes to Home. Then: Home, one entry per library (from `UserViews`), and Search (icon plus label). Right: Settings (gear icon) with the user's initial.
-- It is transparent over a hero, then `--surface-0` at 92% with a blur once content scrolls under it (the only allowed blur). On desktop it hides on scroll down and returns on scroll up.
+- It is transparent over a hero, then `--surface-0` at 92% with a `--blur-nav` blur once content scrolls under it (the only allowed blur). On desktop it hides on scroll down and returns on scroll up.
 - It is hidden in the player and in sign-in.
 - Accessibility: `<nav aria-label="Main">`, the current page marked `aria-current="page"`, and a skip link "Skip to content" as the first Tab stop.
 
@@ -194,6 +194,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 - Home's first viewport. It shows the first Continue Watching item, or else Next Up, or else the newest item.
 - Contents: the Logo or title, one facts line (`S2 · E4 · 38 min left`, or `2023 · 2 h 3 min · 4K · Dolby Vision`), at most two lines of overview, and the `ActionBar` (compact: Resume or Play, plus "More info").
 - With no candidate (empty library), no hero is shown and the first row moves up.
+- On compact windows the hero's text sits below the art.
 
 ### 7.4 Media row (`MediaRow`)
 
@@ -389,6 +390,9 @@ A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings
   --poster-w: 112px;
   --thumb-w: 240px;
   --nav-h: 64px;
+  --hero-h: min(78vh, 56.25vw);
+  --hero-logo-max-w: min(480px, 32vw);
+  --hero-logo-max-h: 160px;
   --control-h: 48px;
   --icon-button: 44px;
   --hit-min: 44px;
@@ -406,6 +410,8 @@ A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings
   --scrim-hero: linear-gradient(90deg, rgb(11 12 14 / 0.94) 0%, rgb(11 12 14 / 0.72) 38%, rgb(11 12 14 / 0) 72%);
   --scrim-floor: linear-gradient(0deg, var(--surface-0) 0%, rgb(11 12 14 / 0) 40%);
   --surface-0-glass: color-mix(in srgb, var(--surface-0) 92%, transparent);
+  --scrim-nav: linear-gradient(180deg, rgb(11 12 14 / 0.85) 0%, rgb(11 12 14 / 0.85) 50%, rgb(11 12 14 / 0) 100%);
+  --blur-nav: 16px;
   --scrim-player-top: linear-gradient(180deg, rgb(0 0 0 / 0.72), rgb(0 0 0 / 0));
   --scrim-player-bottom: linear-gradient(0deg, rgb(0 0 0 / 0.85), rgb(0 0 0 / 0));
 

@@ -1,30 +1,37 @@
-import { useQuery } from "@tanstack/react-query";
+import type { UseQueryResult } from "@tanstack/react-query";
 import type { MediaCard } from "../../domain/catalog";
 import type { SessionGateway } from "../../app/session";
-import { imageUrlFor, toMediaRowItems } from "../card-view";
-import { MediaRow, type MediaCardVariant } from "../shared/ui";
+import { imageUrlFor, toMediaRowItems, toPlayRowItems } from "../card-view";
+import { MediaRow } from "../shared/ui";
 
 interface HomeRowProps {
   title: string;
-  variant: MediaCardVariant;
-  queryKey: readonly unknown[];
-  load: (signal: AbortSignal) => Promise<MediaCard[]>;
+  query: UseQueryResult<MediaCard[]>;
   gateway: SessionGateway;
+  // Continue watching and Next up: Enter plays and `i` opens details.
+  playable?: boolean;
+  // The id of the hidden sentence that explains `i`.
+  hintId?: string;
+  onItemFocus?(id: string): void;
 }
 
-// One home row. It owns its query so all rows start loading together and
-// fail on their own.
-export function HomeRow({ title, variant, queryKey, load, gateway }: HomeRowProps) {
-  const query = useQuery({ queryKey, queryFn: ({ signal }) => load(signal), gcTime: 0 });
+// One home row, read from a query that useHomeData owns.
+export function HomeRow({ title, query, gateway, playable = false, hintId, onItemFocus }: HomeRowProps) {
   const status = query.isPending ? "pending" : query.isError ? "error" : "ready";
+  const imageUrl = imageUrlFor(gateway);
+  const variant = playable ? "thumb" : "poster";
+  const items = query.isSuccess
+    ? playable ? toPlayRowItems(query.data, imageUrl, hintId) : toMediaRowItems(query.data, variant, imageUrl)
+    : undefined;
 
   return (
     <MediaRow
       title={title}
       variant={variant}
       status={status}
-      items={query.isSuccess ? toMediaRowItems(query.data, variant, imageUrlFor(gateway)) : undefined}
+      items={items}
       onRetry={() => void query.refetch()}
+      onItemFocus={onItemFocus}
     />
   );
 }

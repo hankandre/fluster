@@ -68,15 +68,15 @@ export function parsePlayRoute(hash: string): PlayRoute | undefined {
   return { itemId, mediaSourceId: source || undefined, startTicks: Number(start) };
 }
 
-// Opens the player from an item's detail view and marks the new history entry,
-// so leaving the player can go back to that detail entry instead of adding one.
-export function openPlayerFromDetail(route: PlayRoute): void {
+// Opens the player from a screen that links to it (an item's detail view or Home) and marks the new
+// history entry, so leaving the player can go back to the entry that opened it instead of adding one.
+export function openPlayer(route: PlayRoute): void {
   window.location.hash = playRoute(route);
   window.history.replaceState({ playerFromDetail: route.itemId }, "");
 }
 
-// Returns to the item's detail view: back through history when the player was
-// opened from it, otherwise by replacing the player entry.
+// Returns to the entry that opened the player: back through history when it was opened in-app,
+// otherwise by replacing the player entry with the item's detail view.
 export function leavePlayer(itemId: string): void {
   const state: unknown = window.history.state;
   const fromDetail = typeof state === "object" && state !== null

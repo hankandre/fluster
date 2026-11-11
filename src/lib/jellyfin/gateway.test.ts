@@ -859,6 +859,9 @@ describe("JellyfinGateway home calls", () => {
       aspectRatio: 1.78,
       progress: 0.25,
       remainingTicks: 750,
+      resumePositionTicks: 250,
+      seasonNumber: 1,
+      episodeNumber: 2,
     }]);
     const request = transport.requests.at(-1);
     expect(request?.url).toBe("/UserItems/Resume");

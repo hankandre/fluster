@@ -56,7 +56,7 @@ async function mockHomeServer(page: Page) {
   return requests;
 }
 
-test("signing in shows Continue Watching, Next Up, and Latest rows with cards", async ({ page }) => {
+test("signing in shows Continue watching, Next up, and Latest rows with cards", async ({ page }) => {
   const requests = await mockHomeServer(page);
 
   await page.goto("/#/next/sign-in");
@@ -64,14 +64,15 @@ test("signing in shows Continue Watching, Next Up, and Latest rows with cards", 
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { name: "Home" })).toBeVisible({ timeout: 8_000 });
 
-  await expect(page.getByRole("heading", { name: "Continue Watching" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Half Watched, 2016, 1 minute left" })).toBeVisible();
+  const main = page.getByRole("main");
+  await expect(page.getByRole("heading", { name: "Continue watching" })).toBeVisible();
+  await expect(main.getByRole("link", { name: "Half Watched, 2016, 1 minute left" })).toBeVisible();
 
-  await expect(page.getByRole("heading", { name: "Next Up" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Great Show, S1E2 · Pilot" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Next up" })).toBeVisible();
+  await expect(main.getByRole("link", { name: "Great Show, S1E2 · Pilot" })).toBeVisible();
 
   await expect(page.getByRole("heading", { name: "Latest in Movies" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Brand New, 2016" })).toBeVisible();
+  await expect(main.getByRole("link", { name: "Brand New, 2016" })).toBeVisible();
   await expect(page.getByRole("heading", { name: /Latest in Music/ })).toHaveCount(0);
 
   const firstImage = page.getByTestId("card-image").first();
@@ -81,6 +82,6 @@ test("signing in shows Continue Watching, Next Up, and Latest rows with cards", 
   expect(requests.some((path) => path.includes("/Images/Primary?tag=movie-2-tag"))).toBe(true);
   expect(requests.filter((path) => path.includes("/Images/")).every((path) => !/api_key|token/i.test(path))).toBe(true);
 
-  // Cards are not interactive until the detail view exists.
+  // Cards are links (Enter plays, i opens details), never buttons.
   await expect(page.getByRole("button", { name: /Half Watched/ })).toHaveCount(0);
 });

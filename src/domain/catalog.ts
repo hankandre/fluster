@@ -42,6 +42,13 @@ export interface MediaCard {
   thumb?: ImageRef;
   // The item's own backdrop, independent of `image`.
   backdrop?: ImageRef;
+  // The parent's backdrop, only when the item has none of its own.
+  parentBackdrop?: ImageRef;
+  // Ticks to resume from. Present only when not played and the position is above zero.
+  resumePositionTicks?: number;
+  // Episodes only, and only when the server sent both numbers.
+  seasonNumber?: number;
+  episodeNumber?: number;
   // Fraction watched, from 0 to 1. Present only for partly watched items.
   progress?: number;
   // Ticks left to watch. Present whenever `progress` is.
