@@ -6,6 +6,8 @@
     "Skip tasks with human set to true; set them to blocked and state in evidence what the person must do.",
     "Set status to in_progress and owner to your agent name before starting.",
     "Change only status, owner, passes, and evidence fields.",
+    "Append deferred or newly found work to tasks/backlog.md.",
+    "Only a Fable 5.2 product-review pass may add tasks, with a priority and a place, after triaging tasks/backlog.md.",
     "Set passes to true only after every acceptance item is verified.",
     "Put the verification command output summary in evidence.",
     "Never edit, remove, or weaken acceptance items without human approval.",
@@ -2305,7 +2307,7 @@
           "acceptance": [
             "The nav's account control (the user's initial) opens a menu of saved accounts shown as name · server, then Add account and Manage accounts (owner, Q3 A and Q4 A)",
             "Choosing an account switches to it and lands on Home in one activation",
-            "Launch opens the last account used; a setting, off by default, asks Who's watching? at every launch, in the desktop and TV forms (owner, Q5 A)",
+            "At launch, with one signed-in account Fluster opens it; with two or more signed-in accounts it shows Who's watching?, in the desktop and TV forms (owner, 2026-11-12, replaces Q5 A)",
             "Settings › Accounts lists every account with Sign out and Remove; Remove confirms in a Dialog with the safe action focused; Sign out keeps the tile marked Signed out and shows a toast (owner, Q6 A)",
             "Add account opens sign-in and never signs anyone out; Settings has no Change server control",
             "Empty Home offers Add account beside Open settings",

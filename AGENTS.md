@@ -13,6 +13,8 @@ Fluster is a Jellyfin client that plays the original file whenever it can and sh
 
 - Pick work from `tasks/prd.json` and follow its `rules`.
 - Change only a task's `status`, `owner`, `passes`, and `evidence` fields.
+- Append deferred or newly found work to `tasks/backlog.md`; any agent or pull request may.
+- Add tasks to `tasks/prd.json` only in a Fable 5.2 product-review pass that triages `tasks/backlog.md` and gives each new task a priority and a place.
 - Never edit acceptance items without human approval.
 - Link the task id in commits, plans, and PRs.
 - Read the dogfood server URL from `FLUSTER_DOGFOOD_SERVER`; never commit it.

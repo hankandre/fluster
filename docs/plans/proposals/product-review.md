@@ -48,7 +48,7 @@ Relayed by the coordinating agent. An answer marked **differs** is not the recom
 | Q2 | A: saved accounts, one active, stored by account id | P3-01, P3-02, P3-19, P3-20; `PRODUCT.md` M1 |
 | Q3 | A: people first, "name · server" | P13-21; `DESIGN.md` §7.21 |
 | Q4 | A: the nav initial becomes the account menu; the full list is also in Settings | P13-21; `DESIGN.md` §7.1, §7.18, §7.21 |
-| Q5 | **A (differs).** Open the last account used, with a setting to ask "Who's watching?" every time. The TV form does the same. | P13-21; `DESIGN.md` §7.21 |
+| Q5 | **Changed by the owner (2026-11-12, after the video-only pivot):** one signed-in account opens straight away; two or more signed-in accounts show "Who's watching?", on desktop and TV. No setting. | P13-21; `DESIGN.md` §7.21 |
 | Q6 | A: Switch, Sign out (revokes, keeps the tile), Remove | P3-01, P3-20, P13-21 |
 | Q7 | A: a visible switch, on by default when the keyring is available. **Changes `docs/security.md` through the P3-01 record.** | P3-01, P3-02 |
 | Q8 | B: a plain-HTTP sign-in is restored after one press. **Security decision for the P3-01 record.** | P3-01, P3-02 |
