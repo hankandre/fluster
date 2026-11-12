@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { usePlayerServices, type PlayerServices } from "../../app/player-services";
 import { useOptionalPreferences } from "../../app/preferences";
 import { useSession, type SessionGateway } from "../../app/session";
 import { PlayerView } from "../../components/PlayerView";
-import type { ItemDetail, NextEpisode } from "../../domain/catalog";
-import { backdropWidth, imageUrlFor, WIDE_IMAGE_WIDTH } from "../card-view";
+import { ItemNotFoundError, type ItemDetail, type NextEpisode } from "../../domain/catalog";
+import { imageUrlFor, WIDE_IMAGE_WIDTH } from "../card-view";
 import { detailKey } from "../detail/detail-key";
 import { refreshHomeRows } from "../home";
-import { itemRoute, leavePlayer, type PlayRoute } from "../routes";
-import { DESKTOP_ONLY_COPY, REFUSAL_COPY, type RefusalCopy } from "./refusal-copy";
+import { itemRoute, leavePlayer, leaveToDetails, type PlayRoute } from "../routes";
+import { REFUSAL_COPY } from "./refusal-copy";
+import { detailArt, noticeBackdrop } from "./playback-notice";
+import { DesktopOnlyNotice, ItemGoneScreen, ItemLoadNotice, NoticePage, PlayerUnavailableNotice, RefusalNotice } from "./playback-notices";
 import { toPlayableItem } from "./playable-item";
 import { useMediaSegments } from "./use-media-segments";
 import { UpNextCard } from "./chrome/up-next-card";
@@ -19,7 +21,6 @@ import { usePlaybackSession, whenPlaybackStopped } from "./use-playback-session"
 import { useSeekPreview } from "./use-seek-preview";
 import { useIdleCursor } from "./use-idle-cursor";
 import { useEscapeKey } from "../use-escape-key";
-import { safeReason } from "./safe-reason";
 import { conversionIndicator } from "./conversion-copy";
 import { usePlayerStatus, type ReadyPlayerStatus } from "./player-status";
 
@@ -54,7 +55,12 @@ export function PlayerRouteView(route: PlayRoute) {
 // being launched. The browser player is never blocked.
 function PlayerGate({ gateway, player, route }: { gateway: SessionGateway; player: PlayerServices; route: PlayRoute }) {
   const { status, recheck } = usePlayerStatus();
-  const backHref = itemRoute(route.itemId);
+  // Loaded beside the player check, so a notice can show the item once it arrives.
+  const query = useQuery({
+    queryKey: detailKey(gateway, route.itemId),
+    queryFn: ({ signal }) => gateway.itemDetail(route.itemId, signal),
+    gcTime: 0,
+  });
 
   if (status.kind === "checking") {
     return (
@@ -65,32 +71,26 @@ function PlayerGate({ gateway, player, route }: { gateway: SessionGateway; playe
   }
   if (status.kind === "unavailable") {
     return (
-      <PlayerMessage onEscape={() => leavePlayer(route.itemId)}>
-        <div role="alert">
-          <h1>The player cannot start</h1>
-          <p>{safeReason(status.reason)}</p>
-        </div>
-        <div className="player-message-actions">
-          <button type="button" onClick={recheck}>Try again</button>
-          <a href={backHref}>Back to details</a>
-        </div>
-      </PlayerMessage>
+      <NoticePage>
+        <PlayerUnavailableNotice
+          {...detailArt(gateway, query.data)}
+          reason={status.reason}
+          onRetry={recheck}
+          onBack={() => leaveToDetails(route.itemId)}
+        />
+      </NoticePage>
     );
   }
-  return <PlayerLoader gateway={gateway} player={player} route={route} status={status} />;
+  return <PlayerLoader gateway={gateway} player={player} route={route} status={status} query={query} />;
 }
 
-function PlayerLoader({ gateway, player, route, status }: {
+function PlayerLoader({ gateway, player, route, status, query }: {
   gateway: SessionGateway;
   player: PlayerServices;
   route: PlayRoute;
   status: ReadyPlayerStatus;
+  query: UseQueryResult<ItemDetail>;
 }) {
-  const query = useQuery({
-    queryKey: detailKey(gateway, route.itemId),
-    queryFn: ({ signal }) => gateway.itemDetail(route.itemId, signal),
-    gcTime: 0,
-  });
   const backHref = itemRoute(route.itemId);
   const leave = () => leavePlayer(route.itemId);
 
@@ -103,12 +103,21 @@ function PlayerLoader({ gateway, player, route, status }: {
     );
   }
   if (query.isError) {
+    if (query.error instanceof ItemNotFoundError) {
+      return (
+        <NoticePage>
+          <ItemGoneScreen onBack={() => leaveToDetails(route.itemId)} />
+        </NoticePage>
+      );
+    }
     return (
-      <PlayerMessage onEscape={leave}>
-        <p role="alert">Could not load this item.</p>
-        <button type="button" onClick={() => void query.refetch()}>Try again</button>
-        <a href={backHref}>Back to details</a>
-      </PlayerMessage>
+      <NoticePage>
+        <ItemLoadNotice
+          {...detailArt(gateway, query.data)}
+          onRetry={() => void query.refetch()}
+          onBack={() => leaveToDetails(route.itemId)}
+        />
+      </NoticePage>
     );
   }
   return <PlaybackScreen gateway={gateway} player={player} route={route} detail={query.data} status={status} />;
@@ -159,13 +168,15 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
     onLeave: (reason) => {
       if (reason === "eof" && next && upNext.dismissed && detail.seriesId) leaveToSeries(detail.seriesId);
       else if (reason === "eof" && next && !upNext.dismissed) advanceTo(next);
+      else if (leaveTarget.current === "details") leaveToDetails(route.itemId);
       else leavePlayer(route.itemId);
     },
   });
   const indicator = conversionIndicator(playback.plan);
-  const backdrop = detail.backdrop
-    ? { src: gateway.imageUrl(detail.backdrop.itemId, detail.backdrop.type, detail.backdrop.tag, backdropWidth()), blurHash: detail.backdrop.blurHash }
-    : undefined;
+  const backdrop = noticeBackdrop(gateway, detail);
+  // "Back to details" always lands on the item's detail view; Escape and the top bar's Back go
+  // back to wherever the player was opened from.
+  const leaveTarget = useRef<"opener" | "details">("opener");
   const segments = useMediaSegments(gateway, route.itemId, playback.plan);
   const cursor = useIdleCursor();
   const upNext = useAutoPlayCountdown({
@@ -181,18 +192,31 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
   const offeredSegments = next ? segments.filter((segment) => segment.kind !== "Outro") : segments;
   const showCard = Boolean(next) && upNext.secondsLeft !== undefined && !playback.state.error;
 
+  const backToDetails = () => {
+    leaveTarget.current = "details";
+    return playback.back();
+  };
+
   if (playback.unsupported) {
-    return <RefusalScreen copy={DESKTOP_ONLY_COPY} onBack={() => void playback.back()} />;
+    return (
+      <NoticePage>
+        <DesktopOnlyNotice item={item} backdrop={backdrop} onBack={() => void backToDetails()} />
+      </NoticePage>
+    );
   }
 
   if (playback.refusal) {
     return (
-      <RefusalScreen
-        copy={REFUSAL_COPY[playback.refusal.reason]}
-        onRetry={() => void playback.retry()}
-        retryLabel={playback.previousTracksOffered ? PREVIOUS_TRACKS : undefined}
-        onBack={() => void playback.back()}
-      />
+      <NoticePage>
+        <RefusalNotice
+          copy={REFUSAL_COPY[playback.refusal.reason]}
+          item={item}
+          backdrop={backdrop}
+          onRetry={() => void playback.retry()}
+          retryLabel={playback.previousTracksOffered ? PREVIOUS_TRACKS : undefined}
+          onBack={() => void backToDetails()}
+        />
+      </NoticePage>
     );
   }
 
@@ -207,6 +231,7 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
         retrying={playback.retrying}
         onRetry={playback.retry}
         onBack={playback.back}
+        onBackToDetails={backToDetails}
         retryLabel={playback.previousTracksOffered ? PREVIOUS_TRACKS : undefined}
         convertedTracks={playback.convertedTracks}
         onChangeConvertedTrack={playback.changeTrack}
@@ -233,34 +258,6 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
         {...seekProps}
       />
     </main>
-  );
-}
-
-// Explains why Fluster will not play this item. There is deliberately no
-// "play anyway": Retry asks the server again, Back leaves.
-function RefusalScreen({ copy, onRetry, retryLabel = "Retry", onBack }: {
-  copy: RefusalCopy;
-  onRetry?(): void;
-  retryLabel?: string;
-  onBack(): void;
-}) {
-  const heading = useRef<HTMLHeadingElement>(null);
-  useEffect(() => {
-    heading.current?.focus();
-  }, []);
-
-  return (
-    <PlayerMessage onEscape={onBack}>
-      <div role="alert">
-        <h1 ref={heading} tabIndex={-1}>{copy.title}</h1>
-        <p>{copy.explanation}</p>
-        <p><strong>What you can do:</strong> {copy.whatYouCanDo}</p>
-      </div>
-      <div className="player-message-actions">
-        {onRetry && <button type="button" onClick={onRetry}>{retryLabel}</button>}
-        <button type="button" onClick={onBack}>Back to details</button>
-      </div>
-    </PlayerMessage>
   );
 }
 

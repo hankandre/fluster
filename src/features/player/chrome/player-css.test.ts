@@ -30,4 +30,31 @@ describe("player CSS", () => {
     const css = readFileSync(join(__dirname, "player.css"), "utf8");
     expect(css).toMatch(/\.player-controls\[data-sheet-open\]\s*\{[^}]*padding-right:[^}]*var\(--player-sheet-w\)/);
   });
+
+  it("holds the status ring still under reduced motion", () => {
+    const css = readFileSync(join(__dirname, "player.css"), "utf8");
+    const blocks = reducedMotionBlocks(css);
+    expect(blocks.some((block) => /\.player-status-ring\s*\{[^}]*animation:\s*none/.test(block))).toBe(true);
+    for (const block of blocks) expect(block).not.toMatch(/infinite/);
+  });
 });
+
+// The bodies of every `@media (prefers-reduced-motion: reduce)` block, found by balancing braces.
+function reducedMotionBlocks(css: string): string[] {
+  const blocks: string[] = [];
+  const marker = "@media (prefers-reduced-motion: reduce)";
+  let from = css.indexOf(marker);
+  while (from !== -1) {
+    const open = css.indexOf("{", from);
+    let depth = 1;
+    let index = open + 1;
+    while (depth > 0 && index < css.length) {
+      if (css[index] === "{") depth += 1;
+      else if (css[index] === "}") depth -= 1;
+      index += 1;
+    }
+    blocks.push(css.slice(open + 1, index - 1));
+    from = css.indexOf(marker, index);
+  }
+  return blocks;
+}

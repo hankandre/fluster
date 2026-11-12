@@ -389,6 +389,22 @@ export const scenarios: Scenario[] = [
     await page.getByRole("alert").waitFor();
     await page.waitForTimeout(300);
   } },
+  { name: "58a-player-desktop-only", opts: { converted: true }, run: async (page) => {
+    await signedInAt(page, "#/next/item/m4");
+    await page.getByRole("link", { name: "Play" }).click();
+    await page.getByText("This stream needs the desktop player").waitFor();
+    await page.waitForTimeout(300);
+  } },
+  { name: "58b-player-load-error", opts: { detailError: true }, run: async (page) => {
+    await signedInAt(page, "#/next/play/m4");
+    await page.getByText("Couldn't load this item").waitFor();
+    await page.waitForTimeout(300);
+  } },
+  { name: "58c-player-item-gone", expect404: true, run: async (page) => {
+    await signedInAt(page, "#/next/play/nowhere");
+    await page.getByText("This item is no longer on the server").waitFor();
+    await page.waitForTimeout(300);
+  } },
 
   // Other routes
   { name: "60-features-index", run: (page) => signedInAt(page, "#/next") },
@@ -406,6 +422,12 @@ export const scenarios: Scenario[] = [
     await page.getByRole("button", { name: "Open Info sheet" }).click();
     await page.getByRole("region", { name: "Player information" }).waitFor();
     await page.getByRole("group", { name: "Conversion notice" }).scrollIntoViewIfNeeded();
+    await page.waitForTimeout(300);
+  } },
+  { name: "89-ui-gallery-player-cannot-start", run: async (page) => {
+    await go(page, "#/next/gallery", 600);
+    await page.getByRole("button", { name: "Show Player cannot start" }).click();
+    await page.getByRole("heading", { name: "The player cannot start" }).waitFor();
     await page.waitForTimeout(300);
   } },
   { name: "87-ui-gallery-media-cards", run: async (page) => {

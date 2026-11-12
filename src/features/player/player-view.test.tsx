@@ -8,6 +8,7 @@ import type { ItemDetail } from "../../domain/catalog";
 import { PlaybackRefusedError, UnsupportedDeliveryError, type PlaybackPlan, type PlaybackSnapshot } from "../../domain/playback";
 import { FakePlayerEngine } from "../../test/fake-player-engine";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
+import { ItemNotFoundError } from "../../domain/catalog";
 import { PlayerRouteView } from "./index";
 import { REFUSAL_COPY } from "./refusal-copy";
 
@@ -191,10 +192,11 @@ describe("Player feature", () => {
     expect(await screen.findByText("The video surface is not ready.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Retry" })).toBeEnabled();
 
-    // The top bar's Back and the error panel's "Back to library" are both there.
-    expect(screen.getByRole("button", { name: "Back" })).toBeInTheDocument();
+    // The notice replaces the chrome: its heading is the only h1 and the top bar's Back is gone.
+    expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { level: 1 }).map((heading) => heading.textContent)).toEqual(["Playback could not start"]);
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
+      fireEvent.click(screen.getByRole("button", { name: "Back to details" }));
     });
     await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
   });
@@ -656,6 +658,38 @@ describe("System media controls", () => {
     expect(engine.launch).not.toHaveBeenCalled();
     expect(gateway.reportStopped).not.toHaveBeenCalled();
   });
+  it("says the item is gone for a 404, with Go home and no Retry", async () => {
+    const gateway = fakeGateway({ itemDetail: vi.fn().mockRejectedValue(new ItemNotFoundError()) });
+    await renderPlayer(gateway, new FakePlayerEngine());
+    expect(await screen.findByRole("heading", { level: 1, name: "This item is no longer on the server" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Go home" })).toHaveAttribute("href", "#/next/home");
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+  });
+
+  it("offers Retry when the item fails to load, and Retry asks again", async () => {
+    const itemDetail = vi.fn().mockRejectedValueOnce(new Error("boom")).mockResolvedValue(detail);
+    await renderPlayer(fakeGateway({ itemDetail }), new FakePlayerEngine());
+    expect(await screen.findByRole("heading", { level: 1, name: "Couldn't load this item" })).toBeInTheDocument();
+    expect(screen.queryByText("boom")).not.toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    });
+    await waitFor(() => expect(itemDetail).toHaveBeenCalledTimes(2));
+  });
+
+  it("hides addresses in a playback error and ignores player keys while the notice shows", async () => {
+    const gateway = fakeGateway();
+    const engine = new FakePlayerEngine();
+    engine.launch.mockRejectedValueOnce(new Error("failed to open https://media.test/x"));
+    await renderPlayer(gateway, engine);
+    expect(await screen.findByText(/\[address\]/)).toBeInTheDocument();
+    expect(screen.queryByText(/media\.test/)).not.toBeInTheDocument();
+    fireEvent.keyDown(document.body, { key: "ArrowRight" });
+    expect(engine.seek).not.toHaveBeenCalled();
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
+  });
+
   it("reports a player that cannot start instead of launching, with the redacted reason", async () => {
     const gateway = fakeGateway();
     const engine = new FakePlayerEngine();
@@ -668,7 +702,13 @@ describe("System media controls", () => {
     for (const leak of ["SECRET-TOKEN", "libEGL", "/home/u"]) expect(alert.textContent).not.toContain(leak);
     expect(engine.launch).not.toHaveBeenCalled();
     expect(gateway.createPlaybackPlan).not.toHaveBeenCalled();
-    expect(screen.getByRole("link", { name: "Back to details" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Back to details" })).toBeInTheDocument();
+    expect(screen.getByText("Arrival")).toBeInTheDocument();
+    expect(document.querySelector(".ui-notice")).not.toBeNull();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    });
+    await waitFor(() => expect(engine.initialize).toHaveBeenCalledTimes(2));
   });
 
   it("shows player information while playing without the stream URL, session id, or token", async () => {

@@ -713,9 +713,9 @@ describe("Leaving does not wait for playstate reports", () => {
     expect(window.location.hash).toBe("#/next/play/e1");
     expect(engine.stop).toHaveBeenCalledTimes(1);
 
-    // The error panel repeats Back as "Back to library"; either one leaves.
-    const backButtons = screen.getAllByRole("button", { name: /^Back( to library)?$/ });
-    expect(backButtons.map((button) => button.getAttribute("aria-label") ?? button.textContent)).toEqual(["Back", "Back to library"]);
+    // The failed session shows the notice instead of the chrome, so there is one Back control.
+    const backButtons = screen.getAllByRole("button", { name: /^Back/ });
+    expect(backButtons.map((button) => button.getAttribute("aria-label") ?? button.textContent)).toEqual(["Back to details"]);
     await act(async () => {
       fireEvent.click(backButtons[0]);
     });

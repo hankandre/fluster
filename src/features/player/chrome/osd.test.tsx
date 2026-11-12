@@ -5,9 +5,9 @@ import { OSD_MS, OSD_NOTICE_MS } from "./timing";
 import { useOsd } from "./use-osd";
 
 function Harness({ onShow }: { onShow(show: ReturnType<typeof useOsd>["show"]): void }) {
-  const { message, show } = useOsd();
+  const { notice, keyMessage, show } = useOsd();
   onShow(show);
-  return <Osd message={message} />;
+  return <Osd notice={notice} keyMessage={keyMessage} />;
 }
 
 beforeEach(() => vi.useFakeTimers());
@@ -51,5 +51,21 @@ describe("Osd", () => {
     expect(screen.getByRole("status")).toHaveAttribute("data-kind", "notice");
     act(() => vi.advanceTimersByTime(OSD_NOTICE_MS));
     expect(screen.getByRole("status")).toBeEmptyDOMElement();
+  });
+
+  it("holds the conversion notice beside a key message, and ends it on its own clock", () => {
+    const { show } = setup();
+    show("Converting on server: x", "notice");
+    act(() => vi.advanceTimersByTime(1000));
+    show("Muted");
+    const status = screen.getByRole("status");
+    expect(status).toHaveTextContent("Converting on server: x");
+    expect(status).toHaveTextContent("Muted");
+    expect(screen.getByText("Muted").closest("p")).toHaveAttribute("data-kind", "key");
+    act(() => vi.advanceTimersByTime(OSD_MS + 100));
+    expect(status).toHaveTextContent("Converting on server: x");
+    expect(status).not.toHaveTextContent("Muted");
+    act(() => vi.advanceTimersByTime(OSD_NOTICE_MS - 1000 - OSD_MS - 100 + 50));
+    expect(status).toBeEmptyDOMElement();
   });
 });

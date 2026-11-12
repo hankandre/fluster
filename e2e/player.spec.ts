@@ -116,7 +116,7 @@ test("Retry after a playback error renegotiates, and Back returns to the detail 
     log.reports.filter((report) => report.path === "/Sessions/Playing/Stopped").map((report) => report.body.Failed)
   )).toContain(true);
 
-  await page.getByRole("button", { name: "Back to library" }).last().click();
+  await page.getByRole("button", { name: "Back to details" }).click();
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
   await expect(page.getByRole("heading", { name: "Arrival", level: 1 })).toBeVisible();
 });
@@ -126,7 +126,7 @@ test("a Blu-ray folder offered for direct play is asked for once more without it
   await openArrival(page);
 
   await page.getByRole("link", { name: "Play" }).click();
-  const heading = page.getByRole("heading", { name: "This file needs converting, and the server doesn’t allow that for your account" });
+  const heading = page.getByRole("heading", { name: "The server won’t convert this file for your account" });
   await expect(heading).toBeVisible();
   await expect(heading).toBeFocused();
   const alert = page.getByRole("alert");
@@ -162,7 +162,7 @@ test("a server that won't convert for this account names the setting, and Retry 
   await openArrival(page);
 
   await page.getByRole("link", { name: "Play" }).click();
-  await expect(page.getByRole("heading", { name: "This file needs converting, and the server doesn’t allow that for your account" })).toBeFocused();
+  await expect(page.getByRole("heading", { name: "The server won’t convert this file for your account" })).toBeFocused();
   await expect(page.getByRole("alert")).toContainText("Ask the server admin");
   await expect(page.getByRole("button", { name: /anyway/i })).toHaveCount(0);
   await expect(page.locator("video")).toHaveCount(0);

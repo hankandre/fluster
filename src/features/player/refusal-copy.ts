@@ -48,7 +48,7 @@ export const REFUSAL_COPY: Record<RefusalReason, RefusalCopy> = {
     whatYouCanDo: "Choose Retry. If it keeps happening, ask the server admin to rescan this item in the library.",
   },
   "conversion-not-allowed": {
-    title: "This file needs converting, and the server doesn’t allow that for your account",
+    title: "The server won’t convert this file for your account",
     explanation: "Jellyfin can’t send this file as it is stored, for example because of its format or a limit on your account, and your account isn’t allowed to have it converted.",
     whatYouCanDo: "Ask the server admin to turn on “Allow video playback that requires transcoding”, “Allow audio playback that requires transcoding”, and “Allow video playback that requires conversion without re-encoding” for your user (Dashboard, Users, your user, Profile, Media playback). Then choose Retry.",
   },

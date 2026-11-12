@@ -4,6 +4,7 @@ import type { PlaybackSnapshot } from "../../domain/playback";
 import { CONVERSION_REASON_COPY, type ConversionIndicator } from "../player/conversion-copy";
 import { InfoSheet } from "../player/chrome/info-sheet";
 import { Osd } from "../player/chrome/osd";
+import { CommandErrorPanel } from "../player/chrome/player-error";
 import { PlayerLoading } from "../player/chrome/player-loading";
 import { SkipButton } from "../player/chrome/skip-button";
 import { UpNextCard } from "../player/chrome/up-next-card";
@@ -82,7 +83,10 @@ export function PlayerChromeGallery() {
           )}
         </Frame>
         <Frame label="Conversion notice">
-          <Osd message={{ text: INDICATOR.chip, kind: "notice", serial: 1 }} />
+          <Osd notice={{ text: INDICATOR.chip, kind: "notice", serial: 1 }} keyMessage={{ text: "+10 s", kind: "key", serial: 2 }} />
+        </Frame>
+        <Frame label="Command error">
+          <CommandErrorPanel message="The player could not change the volume." retryLabel="Retry" onRetry={() => undefined} onBack={() => undefined} />
         </Frame>
         <Frame label="Skip intro">
           <div className="player-skip" data-chrome-visible="true">

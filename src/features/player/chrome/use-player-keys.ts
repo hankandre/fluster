@@ -21,6 +21,8 @@ interface Converted {
 }
 
 interface PlayerKeysInput {
+  // While true (an error notice is up) only Escape is handled, so Space, Enter, and the arrows reach the notice's buttons.
+  suspended: boolean;
   player: PlayerEngine;
   snapshot: PlaybackSnapshot | undefined;
   converted: Converted | undefined;
@@ -52,6 +54,7 @@ export function usePlayerKeys(input: PlayerKeysInput): void {
     const onKeyDown = (keyboardEvent: KeyboardEvent) => {
       const action = playerKeyAction(keyboardEvent);
       if (!action) return;
+      if (latest.current.suspended && action.kind !== "escape") return;
       keyboardEvent.preventDefault();
       const { player, snapshot, converted, sheet, execute, changeFullscreen, fullscreenRef, onBack, onToggleSheet, onCloseSheet, showOsd, skipTo, chromeVisible, onPlayNext } = latest.current;
       switch (action.kind) {
