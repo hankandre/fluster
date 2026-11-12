@@ -31,7 +31,7 @@ export function TextField({ label, hint, error, type = "text", ...rest }: TextFi
       />
       {hint ? <p className="ui-field-hint" id={hintId}>{hint}</p> : null}
       {error ? (
-        <p className="ui-field-error" id={errorId}>
+        <p className="ui-field-error" id={errorId} role="alert">
           <CircleAlert aria-hidden="true" size={16} />
           <span>{error}</span>
         </p>

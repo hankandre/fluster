@@ -1,0 +1,142 @@
+@layer features {
+  .sign-in {
+    display: grid;
+    place-items: center;
+    padding: 8vh 0 12vh;
+  }
+  .sign-in-card {
+    inline-size: var(--sign-in-w);
+    display: grid;
+    gap: var(--space-5);
+    padding: var(--space-7);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sheet);
+    background: var(--surface-1);
+    box-shadow: var(--shadow-sheet);
+  }
+  .sign-in-title {
+    margin: 0;
+    font: var(--type-title);
+  }
+  .sign-in-origin {
+    margin: 0;
+    justify-self: start;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-pill);
+    background: var(--surface-2);
+    color: var(--text-2);
+    font: var(--type-meta);
+    overflow-wrap: anywhere;
+  }
+  .sign-in-origin code,
+  .sign-in-mono {
+    color: var(--text-1);
+    font: var(--type-mono);
+  }
+  .sign-in-note {
+    margin: 0;
+    color: var(--text-2);
+    font: var(--type-body);
+  }
+  .sign-in-form {
+    display: grid;
+    gap: var(--space-4);
+  }
+  .sign-in-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+  .sign-in-discovery {
+    display: grid;
+    gap: var(--space-3);
+    justify-items: start;
+  }
+  .sign-in-discovery > * {
+    inline-size: 100%;
+  }
+  .sign-in-discovery > .ui-button {
+    inline-size: auto;
+  }
+  .sign-in-section-title {
+    margin: 0;
+    font: var(--type-heading);
+  }
+  .sign-in-servers {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .sign-in-server {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-1) var(--space-4);
+    inline-size: 100%;
+    min-block-size: var(--control-h);
+    padding: var(--space-3) var(--space-4);
+    border: 0;
+    border-radius: var(--radius-control);
+    background: var(--surface-2);
+    color: var(--text-1);
+    text-align: start;
+  }
+  .sign-in-server:hover {
+    background: var(--surface-3);
+  }
+  .sign-in-server[aria-disabled="true"] {
+    opacity: 0.55;
+    cursor: progress;
+  }
+  .sign-in-server-name {
+    font: var(--type-label);
+    overflow-wrap: anywhere;
+  }
+  .sign-in-server-address {
+    color: var(--text-2);
+    font: var(--type-mono);
+    overflow-wrap: anywhere;
+  }
+  .sign-in-server-sender {
+    flex-basis: 100%;
+    color: var(--text-2);
+    font: var(--type-meta);
+  }
+  .sign-in-server-conflict,
+  .sign-in-warning {
+    display: flex;
+    flex-basis: 100%;
+    align-items: flex-start;
+    gap: var(--space-2);
+    margin: 0;
+    color: var(--danger);
+    font: var(--type-meta);
+  }
+  .sign-in-server-conflict svg,
+  .sign-in-warning svg {
+    flex: none;
+    margin-block-start: var(--space-1);
+  }
+  .sign-in-code {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-self: start;
+    gap: var(--space-4);
+    color: var(--text-1);
+    font: var(--type-code);
+    font-variant-numeric: tabular-nums;
+    user-select: all;
+  }
+  .sign-in-code-group {
+    display: inline-block;
+  }
+  @media (max-width: 600px) {
+    .sign-in-card {
+      padding: var(--space-5);
+    }
+  }
+}

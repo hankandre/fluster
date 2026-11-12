@@ -72,13 +72,22 @@ export const scenarios: Scenario[] = [
     await startConnect(page, "http://media.example");
     await page.getByRole("alert").waitFor();
   } },
+  { name: "02a-signin-unreachable", run: async (page) => {
+    await page.route("https://nas.test/**", (route) => route.abort());
+    await startConnect(page, "https://nas.test");
+    await page.getByRole("alert").waitFor();
+  } },
   { name: "03-signin-unencrypted-confirm", run: async (page) => {
     await startConnect(page, LAN);
     await page.getByRole("button", { name: "Connect without encryption" }).waitFor();
   } },
   { name: "04-signin-quick-connect", opts: { holdQuickConnect: true }, run: async (page) => {
     await startConnect(page, SERVER);
-    await page.getByText("482913").waitFor();
+    await page.getByTestId("quick-connect-code").getByText("482").waitFor();
+  } },
+  { name: "04a-signin-quick-connect-expired", opts: { quickConnectExpired: true }, run: async (page) => {
+    await startConnect(page, SERVER);
+    await page.getByText("This code expired.").waitFor({ timeout: 6_000 });
   } },
   { name: "05-signin-password", opts: { noQuickConnect: true }, run: async (page) => {
     await startConnect(page, SERVER);
@@ -90,6 +99,17 @@ export const scenarios: Scenario[] = [
     await page.getByLabel("Password").fill("wrong");
     await page.keyboard.press("Enter");
     await page.getByRole("alert").waitFor();
+  } },
+
+  { name: "07-signin-discovery", fullPage: true, run: async (page) => {
+    await go(page, "#/next/gallery", 600);
+    await page.getByRole("region", { name: "Sign-in discovery found" }).scrollIntoViewIfNeeded();
+    await page.waitForTimeout(400);
+  } },
+  { name: "07a-signin-discovery-states", fullPage: true, run: async (page) => {
+    await go(page, "#/next/gallery", 600);
+    await page.getByRole("region", { name: "Sign-in discovery states" }).scrollIntoViewIfNeeded();
+    await page.waitForTimeout(400);
   } },
 
   // Home

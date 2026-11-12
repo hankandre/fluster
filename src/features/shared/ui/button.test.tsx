@@ -1,3 +1,4 @@
+import { createRef } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -7,6 +8,12 @@ import { Button, ButtonLink } from "./button";
 afterEach(cleanup);
 
 describe("Button", () => {
+  it("forwards a ref to the button element", () => {
+    const ref = createRef<HTMLButtonElement>();
+    render(<Button ref={ref}>Cancel</Button>);
+    expect(ref.current).toBe(screen.getByRole("button", { name: "Cancel" }));
+  });
+
   it("activates with Enter and Space and keeps focus", async () => {
     const onClick = vi.fn();
     const user = userEvent.setup();

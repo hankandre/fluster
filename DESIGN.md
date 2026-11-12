@@ -90,6 +90,7 @@ How:
 | Token | Size / line height | Weight | Tracking | Use |
 |---|---|---|---|---|
 | `--type-hero` | `clamp(2.5rem, 1.5rem + 2.6vw, 4.5rem)` / 1.02 | 700 | -0.02em | Hero and detail title without a logo |
+| `--type-code` | the `--type-hero` size / 1.02, in Mono | 700 | 0 | The Quick Connect code (`tnum`) |
 | `--type-title` | 2rem / 1.15 | 650 | -0.01em | Page titles (library, Settings), dialog titles at 1.5rem |
 | `--type-heading` | 1.375rem / 1.25 | 600 | 0 | Row and section titles, sentence case |
 | `--type-body-lg` | 1.125rem / 1.55 | 400 | 0 | Overview (max 62ch) |
@@ -339,6 +340,16 @@ A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings
 - All buttons have a `--dur-quick` hover fill change, `--dur-instant` press (scale .98, none with reduced motion), and the shared focus ring.
 - `TextField`: a 52 px `--surface-2` field with a `--line-strong` border and `--radius-control`, label above in `--type-label` and `--text-2` (never tiny tracked capitals), helper and error text below, with the error linked via `aria-describedby`.
 
+### 7.20 Sign-in
+
+Three steps in one centred `--surface-1` card (`--sign-in-w`, `--radius-sheet`). Each step has one `h1` in `--type-title` that asks one question, and no eyebrow.
+
+1. **Where is your Jellyfin server?** On desktop the search runs once when the screen opens, and "On this network" lists the servers found above the address field as large rows: name, address in `--type-mono`, "Advertised by {ip}", and the conflict warning in `--danger`. The list is one Tab stop with Up and Down between rows; "Search again" is a quiet button. Below it, a "Server URL" `TextField` and a primary "Connect". Browser mode has no list.
+2. **Approve this code in Jellyfin.** A chip under the heading shows the server origin in Mono. The code is the hero in `--type-code`, grouped ("482 913"). No primary button: "Use password" is secondary and "Change server" is quiet. The heading takes focus on arrival.
+3. **Who is signing in?** The same origin chip, "Username" and "Password" fields, "Change server" (quiet) and "Sign in" (primary).
+
+The unencrypted-connection warning is a `Dialog` with `role="alertdialog"` over step 1. Cancel is primary, last, and focused; Escape cancels; the veil does nothing.
+
 ## 8. Tokens (`src/styles/tokens.css`)
 
 ```css
@@ -388,6 +399,7 @@ A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings
   --type-label: 600 0.9375rem / 1.3 var(--font-ui);
   --type-meta: 500 0.8125rem / 1.35 var(--font-ui);
   --type-mono: 500 0.875rem / 1.3 var(--font-mono);
+  --type-code: 700 clamp(2.5rem, 1.5rem + 2.6vw, 4.5rem) / 1.02 var(--font-mono);
   --tracking-hero: -0.02em;
   --measure: 62ch;
 
@@ -399,6 +411,7 @@ A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings
   --safe-y: 0px;
 
   /* Sizes */
+  --sign-in-w: min(560px, 100%);
   --poster-w: 112px;
   --thumb-w: 240px;
   --nav-h: 64px;
@@ -554,6 +567,8 @@ Fluster talks like a knowledgeable friend running the projector: calm, brief, pl
 | Search, more results error | n/a | Couldn't load more results. | Retry |
 | Sign-in, 401 | n/a | That username and password didn't work. | n/a |
 | Sign-in, unreachable | n/a | Couldn't reach {address}. Check the address and that the server is running. | n/a |
+| Sign-in, refused plain HTTP | n/a | This address uses plain HTTP on the internet, so Fluster will not connect. Use HTTPS, or HTTP only for this device or a private home-network address such as 192.168.x.x, a name.local name, or a name.home.arpa name. | n/a |
+| Sign-in, anything else | n/a | Something went wrong. Try again. | n/a |
 | Series, no episodes | n/a | This series has no episodes yet. | n/a |
 | Next episode error | n/a | Couldn't load your next episode. | Retry |
 | Item gone | This item is no longer on the server | It may have been removed or renamed. | Go home |
@@ -591,6 +606,7 @@ Fluster talks like a knowledgeable friend running the projector: calm, brief, pl
 | Native selects, radios, and checkboxes | `Picker`, `SegmentedTabs`, filter chips |
 | Decode chip and floating "Info" in the player | Title-only top bar, `ConversionChip` only when converting, Info sheet |
 | Silent key actions in the player | OSD feedback |
+| STEP kickers, giant sign-in headings, and raw sign-in errors | One question per step in `--type-title`, copy table, `Dialog` for the unencrypted warning |
 | Raw errors; giant refusal headline | Copy table; `Notice` over the dimmed backdrop |
 | Settings with two native selects and developer links (P10-05) | Settings with Playback, Subtitles, Account, About, built from `SettingsRow` and `Picker` |
 

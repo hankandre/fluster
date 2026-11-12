@@ -14,6 +14,8 @@ interface DialogProps {
   initialFocus?: RefObject<HTMLElement | null>;
   // A press on the veil closes the dialog. Turn it off for a confirm that needs an answer.
   closeOnVeil?: boolean;
+  // A confirm that interrupts the user is an alertdialog.
+  role?: "dialog" | "alertdialog";
 }
 
 const TABBABLE = 'a[href], button:not(:disabled), input:not(:disabled):not([type="hidden"]), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
@@ -33,7 +35,7 @@ function isExempt(element: Element, veil: Element | null): boolean {
 // A modal dialog in a portal. Chosen over <dialog>.showModal(): jsdom does not implement it, so the
 // behaviour could not be tested here, and its WebKitGTK behaviour is unverified. The rest of the page
 // is made inert, Tab is trapped, Escape closes, and focus returns to the opener.
-export function Dialog({ open, onClose, title, icon, children, actions, initialFocus, closeOnVeil = true }: DialogProps) {
+export function Dialog({ open, onClose, title, icon, children, actions, initialFocus, closeOnVeil = true, role = "dialog" }: DialogProps) {
   const titleId = useId();
   const bodyId = useId();
   const veil = useRef<HTMLDivElement>(null);
@@ -132,7 +134,7 @@ export function Dialog({ open, onClose, title, icon, children, actions, initialF
       <div
         ref={panel}
         className="ui-dialog"
-        role="dialog"
+        role={role}
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={children ? bodyId : undefined}
