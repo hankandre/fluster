@@ -217,9 +217,10 @@ export function toSearchCards(items: BaseItemDto[] | undefined): SearchCard[] {
 export function toNextEpisode(item: BaseItemDto | undefined): NextEpisode | undefined {
   if (!item?.Id || !item.Name) return undefined;
   const label = item.ParentIndexNumber != null && item.IndexNumber != null
-    ? `S${item.ParentIndexNumber}E${item.IndexNumber}`
+    ? `S${item.ParentIndexNumber} · E${item.IndexNumber}`
     : undefined;
-  return { id: item.Id, title: item.Name, ...(label ? { label } : {}) };
+  const image = itemImage(item, item.Id)?.image;
+  return { id: item.Id, title: item.Name, ...(label ? { label } : {}), ...(image ? { image } : {}) };
 }
 
 // The next episode of one series. An entry that is not an episode with an ID and name is not one.

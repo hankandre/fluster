@@ -5,6 +5,8 @@ import { CONVERSION_REASON_COPY, type ConversionIndicator } from "../player/conv
 import { InfoSheet } from "../player/chrome/info-sheet";
 import { Osd } from "../player/chrome/osd";
 import { PlayerLoading } from "../player/chrome/player-loading";
+import { SkipButton } from "../player/chrome/skip-button";
+import { UpNextCard } from "../player/chrome/up-next-card";
 import { PlayerTopBar } from "../player/chrome/player-top-bar";
 import type { ReadyPlayerStatus } from "../player/player-status";
 import { Button } from "../shared/ui";
@@ -81,6 +83,23 @@ export function PlayerChromeGallery() {
         </Frame>
         <Frame label="Conversion notice">
           <Osd message={{ text: INDICATOR.chip, kind: "notice", serial: 1 }} />
+        </Frame>
+        <Frame label="Skip intro">
+          <div className="player-skip" data-chrome-visible="true">
+            <SkipButton segment={{ kind: "Intro", startSeconds: 10, endSeconds: 70 }} onSkip={() => undefined} />
+          </div>
+        </Frame>
+        <Frame label="Up next, paused with 7 seconds left">
+          <div className="player-prompt" data-chrome-visible="false">
+            <UpNextCard
+              next={{ id: "gallery-next", title: "The Lamp Room", label: "S1 · E3" }}
+              secondsLeft={7}
+              totalSeconds={10}
+              paused
+              onPlayNow={() => undefined}
+              onHide={() => undefined}
+            />
+          </div>
         </Frame>
         <Frame label="Loading a conversion">
           <PlayerLoading title="S1 · E2 The Keeper's Log" seriesLine="Harbor Lights" text={`${INDICATOR.chip}…`} onBack={() => undefined} />

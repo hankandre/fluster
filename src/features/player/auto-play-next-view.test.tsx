@@ -27,7 +27,7 @@ function episode(id: string, title: string): ItemDetail {
 }
 
 const movie: ItemDetail = { ...episode("m1", "Arrival"), type: "Movie", seriesId: undefined };
-const second: NextEpisode = { id: "e2", title: "Second", label: "S1E2" };
+const second: NextEpisode = { id: "e2", title: "Second", label: "S1 · E2" };
 
 function plan(itemId: string, playSessionId: string): PlaybackPlan {
   return {
@@ -149,8 +149,10 @@ describe("Auto-play the next episode", () => {
     expect(screen.queryByLabelText("Up next")).not.toBeInTheDocument();
 
     await moveTo(engine, 1175);
-    expect(await screen.findByLabelText("Up next")).toHaveTextContent("Up next S1E2 Second");
-    expect(within(screen.getByRole("complementary", { name: "Up next" })).getByRole("status")).toHaveTextContent("Playing in 10 s");
+    const card = await screen.findByLabelText("Up next");
+    expect(card).toHaveTextContent("Up next · S1 · E2");
+    expect(card).toHaveTextContent("Second");
+    expect(within(screen.getByRole("complementary", { name: "Up next" })).getByRole("status")).toHaveTextContent("Up next: Second, playing in 10 seconds");
 
     await moveTo(engine, 600);
     expect(screen.queryByLabelText("Up next")).not.toBeInTheDocument();
@@ -204,18 +206,31 @@ describe("Auto-play the next episode", () => {
     expect(reportStopped).toBeLessThan(secondNegotiation);
   });
 
-  it("Cancel stops playback and returns to the series", async () => {
-    const gateway = fakeGateway([episode("e1", "Pilot")], second);
+  it("Hide keeps playing, never advances, and the end of the file returns to the series", async () => {
+    const gateway = fakeGateway([episode("e1", "Pilot")], second, { setPlayed: vi.fn().mockResolvedValue(undefined) });
     const engine = new FakePlayerEngine();
     await renderPlayer(gateway, engine);
     await loadedAt(engine, 1175);
 
     await act(async () => {
-      fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+      fireEvent.click(await screen.findByRole("button", { name: "Hide" }));
+    });
+
+    expect(screen.queryByLabelText("Up next")).not.toBeInTheDocument();
+    expect(engine.stop).not.toHaveBeenCalled();
+    expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1);
+    expect(window.location.hash).toBe("#/next/play/e1");
+
+    // Seeking out of and back into the end window does not bring the card back.
+    await moveTo(engine, 600);
+    await moveTo(engine, 1180);
+    expect(screen.queryByLabelText("Up next")).not.toBeInTheDocument();
+
+    await act(async () => {
+      engine.emit({ kind: "ended", reason: "eof", snapshot: snapshotAt(1200) });
     });
 
     await waitFor(() => expect(window.location.hash).toBe("#/next/series/s1"));
-    expect(engine.stop).toHaveBeenCalledTimes(1);
     expect(gateway.reportStopped).toHaveBeenCalledWith(
       plan("e1", "play-e1-1"),
       expect.anything(),
@@ -223,6 +238,88 @@ describe("Auto-play the next episode", () => {
       false,
     );
     expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1);
+    expect(gateway.setPlayed).not.toHaveBeenCalled();
+  });
+
+  it("n plays the next episode like Play now", async () => {
+    const gateway = fakeGateway([episode("e1", "Pilot"), episode("e2", "Second")], second);
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await loadedAt(engine, 1175);
+    await screen.findByLabelText("Up next");
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "n" });
+    });
+
+    await waitFor(() => expect(window.location.hash).toBe("#/next/play/e2"));
+    expect(engine.stop).toHaveBeenCalledTimes(1);
+  });
+
+  it("n does nothing before the card shows", async () => {
+    const gateway = fakeGateway([episode("e1", "Pilot"), episode("e2", "Second")], second);
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await loadedAt(engine, 100);
+    await act(async () => undefined);
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "n" });
+    });
+
+    expect(window.location.hash).toBe("#/next/play/e1");
+    expect(engine.stop).not.toHaveBeenCalled();
+  });
+
+  it("speaks at most twice over a full countdown", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const gateway = fakeGateway([episode("e1", "Pilot"), episode("e2", "Second")], second);
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    await act(async () => {
+      engine.emit({ kind: "loaded", snapshot: snapshotAt(1175) });
+      engine.emit({ kind: "first-frame" });
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    const spoken = new Set<string>();
+    for (let tick = 0; tick < 10; tick += 1) {
+      const status = within(screen.getByRole("complementary", { name: "Up next" })).getByRole("status");
+      if (status.textContent) spoken.add(status.textContent);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+    }
+    expect([...spoken]).toEqual([
+      "Up next: Second, playing in 10 seconds",
+      "Up next: Second, playing in 5 seconds",
+    ]);
+  });
+
+  it("offers no Skip credits while a next episode exists, before or after Hide", async () => {
+    const gateway = fakeGateway([episode("e1", "Pilot")], second, {
+      createPlaybackPlan: vi.fn(async (item: LibraryItem) => ({ ...plan(item.id, "play-e1-1"), hasSegments: true })),
+      mediaSegments: vi.fn().mockResolvedValue([
+        { kind: "Intro", startSeconds: 10, endSeconds: 70 },
+        { kind: "Outro", startSeconds: 1000, endSeconds: 1200 },
+      ]),
+    });
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine);
+    await loadedAt(engine, 30);
+    await waitFor(() => expect(gateway.mediaSegments).toHaveBeenCalled());
+    expect(await screen.findByRole("button", { name: "Skip intro" })).toBeInTheDocument();
+
+    await moveTo(engine, 1010);
+    expect(await screen.findByLabelText("Up next")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Skip credits" })).not.toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Hide" }));
+    });
+    expect(screen.queryByRole("button", { name: "Skip credits" })).not.toBeInTheDocument();
   });
 
   it("goes straight to the next episode when the file ends", async () => {
@@ -281,14 +378,19 @@ describe("Auto-play the next episode", () => {
       engine.emit({ kind: "first-frame" });
       await vi.advanceTimersByTimeAsync(0);
     });
-    expect(within(screen.getByRole("complementary", { name: "Up next" })).getByRole("status")).toHaveTextContent("Playing in 10 s");
+    const status = () => within(screen.getByRole("complementary", { name: "Up next" })).getByRole("status");
+    const countdown = () => screen.getByLabelText("Up next").querySelector(".up-next-countdown");
+    expect(status()).toHaveTextContent("Up next: Second, playing in 10 seconds");
+    expect(countdown()).toHaveTextContent("Playing in 10 seconds");
 
     for (let second = 0; second < 4; second += 1) {
       await act(async () => {
         await vi.advanceTimersByTimeAsync(1000);
       });
     }
-    expect(within(screen.getByRole("complementary", { name: "Up next" })).getByRole("status")).toHaveTextContent("Playing in 6 s");
+    expect(countdown()).toHaveTextContent("Playing in 6 seconds");
+    // The spoken text did not change with the seconds.
+    expect(status()).toHaveTextContent("Up next: Second, playing in 10 seconds");
 
     await act(async () => {
       engine.emit({ kind: "state", snapshot: { ...snapshotAt(1179), paused: true }, cause: "pause" });
@@ -296,7 +398,7 @@ describe("Auto-play the next episode", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(20_000);
     });
-    expect(within(screen.getByRole("complementary", { name: "Up next" })).getByRole("status")).toHaveTextContent("Playing in 6 s");
+    expect(countdown()).toHaveTextContent("Playing in 6 seconds");
     expect(window.location.hash).toBe("#/next/play/e1");
 
     await act(async () => {
@@ -431,7 +533,7 @@ describe("Auto-play hardening", () => {
     expect(negotiatedAt).toBeGreaterThan(stoppedAt);
   });
 
-  it("marks the episode played when advancing, after its Stopped report, but not on Cancel", async () => {
+  it("marks the episode played when advancing, after its Stopped report, but not on Hide", async () => {
     const gateway = fakeGateway([episode("e1", "Pilot"), episode("e2", "Second")], second, {
       setPlayed: vi.fn().mockResolvedValue(undefined),
     });
@@ -452,7 +554,10 @@ describe("Auto-play hardening", () => {
     await renderPlayer(other, otherEngine);
     await loadedAt(otherEngine, 1175);
     await act(async () => {
-      fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+      fireEvent.click(await screen.findByRole("button", { name: "Hide" }));
+    });
+    await act(async () => {
+      otherEngine.emit({ kind: "ended", reason: "eof", snapshot: snapshotAt(1200) });
     });
     await waitFor(() => expect(window.location.hash).toBe("#/next/series/s1"));
     expect(other.setPlayed).not.toHaveBeenCalled();

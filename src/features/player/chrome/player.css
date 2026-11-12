@@ -340,7 +340,111 @@
   }
   .player-cpu-warning { top: calc(var(--space-5) + var(--icon-button) + var(--space-7)); }
   .player-reporting-warning { top: calc(var(--space-5) + var(--icon-button) + var(--space-7) + var(--space-7)); max-width: min(680px, calc(100vw - 36px)); }
-  .player-prompt { display: contents; }
+
+  /* Skip and Up Next: anchored bottom right, just above the scrubber while the
+     chrome shows and lower when it is hidden. Under a sheet they stop at its edge. */
+  .player-skip,
+  .player-prompt {
+    --prompt-lift: 0px;
+    position: absolute;
+    z-index: var(--z-prompt);
+    right: var(--gutter);
+    bottom: calc(var(--player-prompt-inset) + var(--prompt-lift));
+    transition: bottom var(--dur-base) var(--ease-out);
+  }
+  .player-skip[data-chrome-visible="true"],
+  .player-prompt[data-chrome-visible="true"] { bottom: calc(var(--player-prompt-inset-chrome) + var(--prompt-lift)); }
+  .player-skip[data-sheet-open],
+  .player-prompt[data-sheet-open] { right: calc(var(--player-sheet-w) + var(--space-5)); }
+  /* A card above a Skip that is showing too: it stacks, never overlaps. */
+  .player-prompt[data-with-skip] { --prompt-lift: calc(var(--hit-min) + var(--space-3)); }
+
+  .skip-button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--hit-min);
+    padding-inline: var(--space-5);
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--skip-fill);
+    color: var(--on-light);
+    font: var(--type-label);
+    animation: prompt-fade-in var(--dur-base) var(--ease-out);
+    transition: background var(--dur-quick) var(--ease-out);
+  }
+  .skip-button:hover { background: var(--text-1); }
+  .skip-button svg { width: 1.125rem; height: 1.125rem; flex: none; }
+
+  .up-next-card {
+    display: grid;
+    gap: var(--space-2);
+    box-sizing: border-box;
+    width: min(var(--up-next-w), calc(100vw - 2 * var(--gutter)));
+    padding: var(--space-4);
+    border-radius: var(--radius-sheet);
+    background: var(--up-next-surface);
+    box-shadow: var(--shadow-sheet);
+    color: var(--text-1);
+    animation: prompt-fade-in var(--dur-base) var(--ease-out);
+  }
+  .up-next-card p { margin: 0; }
+  .up-next-still {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: var(--radius-art);
+    background: var(--surface-2);
+  }
+  .up-next-still[data-fit="contain"] img { object-fit: contain; }
+  .up-next-meta { color: var(--text-2); font: var(--type-meta); }
+  .up-next-title {
+    font: var(--type-heading);
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .up-next-actions { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-2); }
+  .up-next-actions .ui-button--primary { position: relative; overflow: hidden; isolation: isolate; }
+  .up-next-fill {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--up-next-fill);
+    transform: scaleX(0);
+    transform-origin: left;
+    animation: up-next-fill var(--up-next-seconds) linear forwards;
+  }
+  .up-next-card[data-paused] .up-next-fill { animation-play-state: paused; }
+  @keyframes up-next-fill { to { transform: scaleX(1); } }
+  @keyframes prompt-fade-in { from { opacity: 0; } }
+
+  /* The countdown as text: read on demand by default, drawn with reduced
+     motion, where the fill is not. It is never a live region. */
+  .up-next-countdown {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .up-next-fill { display: none; }
+    .up-next-countdown {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      clip: auto;
+      white-space: normal;
+      color: var(--text-2);
+      font: var(--type-meta);
+    }
+    .skip-button,
+    .up-next-card { animation: none; }
+  }
 
   @media (max-width: 600px) {
     .player-top-bar { padding: var(--space-4); }

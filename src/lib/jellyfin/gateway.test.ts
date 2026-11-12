@@ -1136,12 +1136,49 @@ describe("JellyfinGateway home calls", () => {
           { Id: "e3", Name: "Third", Type: "Episode", ParentIndexNumber: 1, IndexNumber: 3 },
         ],
       });
-      await expect(gateway.nextEpisode("series-1", "e2")).resolves.toEqual({ id: "e3", title: "Third", label: "S1E3" });
+      await expect(gateway.nextEpisode("series-1", "e2")).resolves.toEqual({ id: "e3", title: "Third", label: "S1 · E3" });
       const request = transport.requests.at(-1);
-      expect(request?.params).toEqual({ userId: "user-1", adjacentTo: "e2", isMissing: false });
+      expect(request?.params).toEqual({
+        userId: "user-1",
+        adjacentTo: "e2",
+        isMissing: false,
+        imageTypeLimit: 1,
+        enableImageTypes: "Primary,Backdrop,Thumb,Logo",
+      });
       // Auth rides in the transport's Authorization header, never in the URL or params.
       expect(request?.url).toBe("/Shows/series-1/Episodes");
       expect(JSON.stringify(request?.params)).not.toMatch(/token|api_key|top-secret/i);
+    });
+
+    it("carries the episode's Primary still, else the series poster, else nothing", async () => {
+      const { gateway, transport } = await authenticatedGateway();
+      transport.responses.set("GET /Shows/series-1/Episodes", {
+        Items: [
+          { Id: "e1", Name: "Pilot" },
+          { Id: "e2", Name: "Second", ImageTags: { Primary: "t2" }, ImageBlurHashes: { Primary: { t2: "LEHV6nWB2yk8" } } },
+        ],
+      });
+      await expect(gateway.nextEpisode("series-1", "e1")).resolves.toEqual({
+        id: "e2",
+        title: "Second",
+        image: { itemId: "e2", type: "Primary", tag: "t2", blurHash: "LEHV6nWB2yk8" },
+      });
+      transport.responses.set("GET /Shows/series-1/Episodes", {
+        Items: [
+          { Id: "e1", Name: "Pilot" },
+          { Id: "e2", Name: "Second", SeriesId: "series-1", SeriesPrimaryImageTag: "sp" },
+        ],
+      });
+      await expect(gateway.nextEpisode("series-1", "e1")).resolves.toEqual({
+        id: "e2",
+        title: "Second",
+        image: { itemId: "series-1", type: "Primary", tag: "sp" },
+      });
+      transport.responses.set("GET /Shows/series-1/Episodes", {
+        Items: [{ Id: "e1", Name: "Pilot" }, { Id: "e2", Name: "Second" }],
+      });
+      const bare = await gateway.nextEpisode("series-1", "e1");
+      expect(bare?.image).toBeUndefined();
     });
 
     it("finds the next episode when the current one is first", async () => {

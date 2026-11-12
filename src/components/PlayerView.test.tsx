@@ -598,3 +598,113 @@ describe("sheets", () => {
     expect(vi.mocked(player.seek).mock.calls.map(([seconds]) => seconds)).toEqual([70, 50]);
   });
 });
+
+describe("skip and up next", () => {
+  const intro = [{ kind: "Intro" as const, startSeconds: 10, endSeconds: 70 }];
+  const region = () => screen.getByRole("region", { name: "Player" });
+  const hideChrome = () => {
+    vi.useFakeTimers();
+  };
+  const wakeThenHide = () => {
+    fireEvent.mouseMove(region(), { clientX: 6, clientY: 6 });
+    act(() => vi.advanceTimersByTime(CHROME_IDLE_MS + 100));
+  };
+
+  afterEach(() => {
+    delete document.documentElement.dataset.form;
+  });
+
+  it("s seeks to the end of the segment in progress, and does nothing outside one", () => {
+    const { player, unmount } = renderView({}, { segments: intro });
+    press("s");
+    press("S");
+    expect(vi.mocked(player.seek).mock.calls).toEqual([[70], [70]]);
+    unmount();
+    const outside = renderView({ positionSeconds: 500 }, { segments: intro });
+    press("s");
+    expect(outside.player.seek).not.toHaveBeenCalled();
+  });
+
+  it("never gives Skip focus when it appears", () => {
+    renderView({}, { segments: intro });
+    expect(screen.getByRole("button", { name: "Skip intro" })).not.toHaveFocus();
+  });
+
+  it("renders no Skip without a segment", () => {
+    renderView({ positionSeconds: 500 }, { segments: intro });
+    expect(document.querySelector(".player-skip")).toBeNull();
+  });
+
+  it("moves with the chrome", () => {
+    hideChrome();
+    renderView({}, { segments: intro });
+    const skip = () => document.querySelector(".player-skip");
+    expect(skip()).toHaveAttribute("data-chrome-visible", "true");
+    wakeThenHide();
+    expect(document.querySelector(".player-chrome")).toHaveAttribute("data-visible", "false");
+    expect(skip()).toHaveAttribute("data-chrome-visible", "false");
+  });
+
+  it("shifts left of an open sheet, for Skip and for the card", () => {
+    renderView({}, { segments: intro, prompt: <p>card</p> });
+    const skip = () => document.querySelector(".player-skip");
+    const prompt = () => document.querySelector(".player-prompt");
+    expect(skip()).not.toHaveAttribute("data-sheet-open");
+    expect(prompt()).not.toHaveAttribute("data-sheet-open");
+    expect(prompt()).toHaveAttribute("data-with-skip");
+    press("a");
+    expect(skip()).toHaveAttribute("data-sheet-open", "true");
+    expect(prompt()).toHaveAttribute("data-sheet-open", "true");
+  });
+
+  it("OK skips on the TV form while the chrome is hidden, and does nothing otherwise", () => {
+    hideChrome();
+    document.documentElement.dataset.form = "tv";
+    const { player } = renderView({}, { segments: intro });
+    // Chrome visible: OK does nothing.
+    press("Enter");
+    expect(player.seek).not.toHaveBeenCalled();
+    wakeThenHide();
+    press("Enter");
+    expect(player.seek).toHaveBeenCalledWith(70);
+  });
+
+  it("OK does nothing on the desktop form, with the chrome hidden or visible", () => {
+    hideChrome();
+    const { player } = renderView({}, { segments: intro });
+    wakeThenHide();
+    press("Enter");
+    expect(player.seek).not.toHaveBeenCalled();
+  });
+
+  it("OK does nothing from the scrubber on the desktop form", () => {
+    const onPlayNext = vi.fn();
+    const { player } = renderView({}, { segments: intro, onPlayNext });
+    fireEvent.keyDown(screen.getByRole("slider", { name: "Playback position" }), { key: "Enter" });
+    expect(player.seek).not.toHaveBeenCalled();
+    expect(onPlayNext).not.toHaveBeenCalled();
+  });
+
+  it("n plays the next episode, and does nothing without a card", () => {
+    const onPlayNext = vi.fn();
+    const first = renderView({}, { onPlayNext });
+    press("n");
+    expect(onPlayNext).toHaveBeenCalledTimes(1);
+    first.unmount();
+    const bare = renderView();
+    press("n");
+    expect(bare.player.seek).not.toHaveBeenCalled();
+  });
+
+  it("OK plays the next episode on the TV form while the chrome is hidden and no Skip shows", () => {
+    hideChrome();
+    document.documentElement.dataset.form = "tv";
+    const onPlayNext = vi.fn();
+    renderView({ positionSeconds: 500 }, { onPlayNext, segments: intro });
+    press("Enter");
+    expect(onPlayNext).not.toHaveBeenCalled();
+    wakeThenHide();
+    press("Enter");
+    expect(onPlayNext).toHaveBeenCalledTimes(1);
+  });
+});

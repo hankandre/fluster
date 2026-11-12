@@ -5,15 +5,16 @@ import { useOptionalPreferences } from "../../app/preferences";
 import { useSession, type SessionGateway } from "../../app/session";
 import { PlayerView } from "../../components/PlayerView";
 import type { ItemDetail, NextEpisode } from "../../domain/catalog";
-import { backdropWidth } from "../card-view";
+import { backdropWidth, imageUrlFor, WIDE_IMAGE_WIDTH } from "../card-view";
 import { detailKey } from "../detail/detail-key";
 import { refreshHomeRows } from "../home";
 import { itemRoute, leavePlayer, type PlayRoute } from "../routes";
 import { DESKTOP_ONLY_COPY, REFUSAL_COPY, type RefusalCopy } from "./refusal-copy";
 import { toPlayableItem } from "./playable-item";
 import { useMediaSegments } from "./use-media-segments";
-import { NextEpisodeCard } from "./next-episode-card";
-import { creditsStart, leaveToNext, useAutoPlayCountdown, useNextEpisode } from "./use-auto-play-next";
+import { UpNextCard } from "./chrome/up-next-card";
+import { AUTO_PLAY_SECONDS } from "./auto-play-next";
+import { creditsStart, leaveToNext, leaveToSeries, useAutoPlayCountdown, useNextEpisode } from "./use-auto-play-next";
 import { usePlaybackSession, whenPlaybackStopped } from "./use-playback-session";
 import { useSeekPreview } from "./use-seek-preview";
 import { useIdleCursor } from "./use-idle-cursor";
@@ -131,7 +132,7 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
   // Leaving at the credits stops short of the server's played threshold, so
   // finishing an episode into the next one marks it played. This runs after
   // the Stopped report, which may still be draining when the player leaves.
-  // Cancel and Back do not mark anything.
+  // Hide and Back do not mark anything.
   const advanceTo = (target: NextEpisode) => {
     leaveToNext(target);
     void whenPlaybackStopped(player.engine)
@@ -151,9 +152,13 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
       void queryClient.invalidateQueries({ queryKey: detailKey(gateway, route.itemId) });
       void refreshHomeRows(queryClient);
     },
-    // A file that plays to its end goes straight to the next episode.
+    // A file that plays to its end goes straight to the next episode, unless
+    // Hide dismissed the card: then it opens the series page. upNext is
+    // declared below; this runs after render and reads it through the closure
+    // (use-playback-session refreshes its callbacks on every render).
     onLeave: (reason) => {
-      if (reason === "eof" && next) advanceTo(next);
+      if (reason === "eof" && next && upNext.dismissed && detail.seriesId) leaveToSeries(detail.seriesId);
+      else if (reason === "eof" && next && !upNext.dismissed) advanceTo(next);
       else leavePlayer(route.itemId);
     },
   });
@@ -165,13 +170,16 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
   const cursor = useIdleCursor();
   const upNext = useAutoPlayCountdown({
     next,
-    seriesId: detail.seriesId,
     snapshot: playback.state.snapshot,
     outroStartSeconds: creditsStart(segments),
     failed: Boolean(playback.state.error),
     advance: advanceTo,
     stopAndLeave: playback.stopAndLeave,
   });
+
+  // Up Next takes the place of Skip credits when a next episode exists (Q19 A).
+  const offeredSegments = next ? segments.filter((segment) => segment.kind !== "Outro") : segments;
+  const showCard = Boolean(next) && upNext.secondsLeft !== undefined && !playback.state.error;
 
   if (playback.unsupported) {
     return <RefusalScreen copy={DESKTOP_ONLY_COPY} onBack={() => void playback.back()} />;
@@ -195,7 +203,7 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
         player={player.engine}
         session={playback.state}
         status={status}
-        segments={segments}
+        segments={offeredSegments}
         retrying={playback.retrying}
         onRetry={playback.retry}
         onBack={playback.back}
@@ -210,14 +218,18 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
           onPlay: () => void playback.playOriginal(),
         }}
         backdrop={backdrop}
-        prompt={next && upNext.secondsLeft !== undefined && !playback.state.error ? (
-          <NextEpisodeCard
+        prompt={showCard && next && upNext.secondsLeft !== undefined ? (
+          <UpNextCard
             next={next}
+            stillSrc={next.image ? imageUrlFor(gateway)(next.image, WIDE_IMAGE_WIDTH) : undefined}
             secondsLeft={upNext.secondsLeft}
+            totalSeconds={AUTO_PLAY_SECONDS}
+            paused={playback.state.snapshot?.paused ?? false}
             onPlayNow={upNext.playNow}
-            onCancel={upNext.cancel}
+            onHide={upNext.hide}
           />
         ) : undefined}
+        onPlayNext={showCard ? upNext.playNow : undefined}
         {...seekProps}
       />
     </main>

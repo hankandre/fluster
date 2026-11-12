@@ -3,6 +3,7 @@ import { playerKeyAction } from "../../../components/player-keymap";
 import type { PlaybackSnapshot, PlayerEngine } from "../../../domain/playback";
 import { nextSourceSubtitle, type TrackKind } from "../../../domain/track-choice";
 import { END_COPY, fractionCopy, MUTED_COPY, seekCopy, START_COPY, subtitleCopy, volumeCopy } from "./osd-copy";
+import { isTvForm } from "../../shared/tv-form";
 import { nextSubtitle, type ConvertedTracks } from "./track-options";
 import type { OsdKind } from "./use-osd";
 
@@ -31,6 +32,11 @@ interface PlayerKeysInput {
   onToggleSheet(sheet: SheetName): void;
   onCloseSheet(): void;
   showOsd(text: string, kind?: OsdKind): void;
+  // Where Skip seeks to, when a skip is on offer.
+  skipTo: number | undefined;
+  chromeVisible: boolean;
+  // Plays the next episode while the Up Next card is shown.
+  onPlayNext?(): void;
 }
 
 // The player's keyboard shortcuts. A key does its action and posts a message
@@ -47,7 +53,7 @@ export function usePlayerKeys(input: PlayerKeysInput): void {
       const action = playerKeyAction(keyboardEvent);
       if (!action) return;
       keyboardEvent.preventDefault();
-      const { player, snapshot, converted, sheet, execute, changeFullscreen, fullscreenRef, onBack, onToggleSheet, onCloseSheet, showOsd } = latest.current;
+      const { player, snapshot, converted, sheet, execute, changeFullscreen, fullscreenRef, onBack, onToggleSheet, onCloseSheet, showOsd, skipTo, chromeVisible, onPlayNext } = latest.current;
       switch (action.kind) {
         case "toggle-pause":
           if (snapshot) void execute(() => player.setPaused(!snapshot.paused));
@@ -112,6 +118,19 @@ export function usePlayerKeys(input: PlayerKeysInput): void {
           break;
         case "toggle-info":
           onToggleSheet("info");
+          break;
+        case "skip":
+          if (skipTo !== undefined) void execute(() => player.seek(skipTo));
+          break;
+        case "play-next":
+          onPlayNext?.();
+          break;
+        case "ok":
+          // OK is a remote's only key: it acts on the visible prompt while
+          // the chrome is hidden, and only in the TV form (DESIGN.md 7.15).
+          if (!isTvForm() || chromeVisible) break;
+          if (skipTo !== undefined) void execute(() => player.seek(skipTo));
+          else onPlayNext?.();
           break;
         case "escape":
           // Escape closes an open sheet, then leaves fullscreen, then the player.
