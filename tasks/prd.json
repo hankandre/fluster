@@ -1299,6 +1299,34 @@
           "owner": null,
           "passes": false,
           "evidence": ""
+        },
+        {
+          "id": "P3-27",
+          "title": "Play a series' next episode from the Home hero",
+          "domain": "Catalog",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P13-08",
+            "P13-10"
+          ],
+          "acceptance": [
+            "When the Home hero shows a series, its primary action starts the episode the series page's primary action would start, resuming it when that episode has a saved position",
+            "The hero's primary label and facts line name that episode in the same words the series page uses (DESIGN.md §7.7, series)",
+            "The hero uses the gateway's existing seriesNextUp; no new server route is called, and no playback request changes",
+            "Unit tests cover a series with an episode in progress, a series not started, and a series fully watched; in each the hero and the series page agree",
+            "A Playwright journey starts playback from the hero of a series and from its series page and asserts the same episode",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
         }
       ]
     },
@@ -2658,6 +2686,42 @@
             "The user approves or rejects it"
           ],
           "verify": "ls docs/decisions/",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "P16",
+      "name": "Discovery",
+      "goal": "Finishing something always leads to a good next thing to watch, from the library, without scrolling: improve on Netflix where a personal library can (docs/plans/proposals/discovery-and-profiles.md).",
+      "exit": [
+        "All P16 tasks pass"
+      ],
+      "tasks": [
+        {
+          "id": "P16-01",
+          "title": "Record discovery contract fixtures for 10.11 and 12.x",
+          "domain": "Catalog",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P0-02",
+            "P0-03"
+          ],
+          "acceptance": [
+            "Fixtures from Jellyfin 10.11.7 and 12.4.0 cover GET /Items/{itemId}/Similar, /Items/Suggestions, /Movies/Recommendations, /Genres, /Persons, /Items/{itemId}/LocalTrailers, /Items/{itemId}/SpecialFeatures, and /Items/Filters2, and /Items filtered by genreIds and by personIds",
+            "Fixtures for /UserItems/Resume and /Shows/NextUp, with and without enableResumable, show whether each item carries a last-played date a client can sort the two lists by",
+            "A recorded sequence shows what POST /UserItems/{itemId}/UserData with a zero position does on each version: whether the item leaves /UserItems/Resume, and what happens to Played, PlayCount, and LastPlayedDate",
+            "A fixture or a recorded 404 shows how each version reports the collections an item belongs to",
+            "The synthetic sample set gains what these need (genres, people, a collection, a local trailer, and an extra, as files beside the samples) without third-party media, and tests/samples/README.md lists them",
+            "docs/research/discovery-api.md states, per route and version, what the response holds, and beside it the route's status in Jellyscale's compat/endpoints.yaml; every unverified claim in docs/plans/proposals/discovery-and-profiles.md §2 that the fixtures settle is updated",
+            "Fixtures are scrubbed per the jellyfin-api contract-fixtures reference; no gateway method, playback request, or UI changes"
+          ],
+          "verify": "pnpm test -- fixtures && ls tests/fixtures/jellyfin/*/",
           "status": "todo",
           "owner": null,
           "passes": false,

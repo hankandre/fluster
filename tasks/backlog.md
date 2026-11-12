@@ -26,6 +26,7 @@ Jellyscale (direction update, 2026-11-12).
   - Routes a Netflix-like UI needs that are stubs there today: `/Items/{id}/Similar`, `/Genres`, `/Persons`, `/Items/{id}/LocalTrailers`, `/Items/Filters2`.
   - Quick Connect and user management are not built (`/QuickConnect/Enabled` is a stub; the README's Identity row says "not built"). Fluster's sign-in leads with Quick Connect.
   - Trickplay and library and metadata work are also listed as not built.
+  - Found on 2026-11-12 by the discovery pass (`docs/plans/proposals/discovery-and-profiles.md` §3.4), from `compat/endpoints.yaml` and `docs/status.md` at `93a0f3f`: `/Shows/NextUp` is a stub, so Fluster's Next up row is empty there; `/Search/Hints` answers 404 and Fluster's search suggestions call it; media segments are not built, so Skip intro has no data; likes and ratings answer 404; `/Items/Suggestions` is "implemented" in one file and "not built" in the other.
   - Size: M for the test pass; fixes are separate tasks.
 
 No decision yet.
@@ -38,12 +39,22 @@ No decision yet.
 - Playlists, extras and trailers, genre and people pages. M each.
 - Remember a library's sort and filters between visits; write the sort into the URL. S.
 - Hide filter chips a library cannot match (`/Items/Filters2`). S.
-- The Home hero for a series plays its first episode; use `seriesNextUp` so it agrees with the series page (P13-10 follow-up). S.
+- ~~The Home hero for a series plays its first episode; use `seriesNextUp` so it agrees with the series page (P13-10 follow-up). S.~~ Taken by P3-27.
 - Cast (`PersonRow`) on the series page (P13-10 follow-up). S.
 - A task that ships the Windows build after the P7-01 spike. L.
 - A task that builds the TV shell after the P9-01 spike. L.
 - Flatpak packaging and in-app updates. M each.
 - Translations. L.
+
+## Discovery (from the 2026-11-12 discovery pass)
+
+Triage and proposed tasks are in `docs/plans/proposals/discovery-and-profiles.md` §6. P3-27 and P16-01 are tasks. The entries above for trailers and extras, genre and people pages, removal from Continue Watching, a watchlist, cast on the series page, and a PIN per profile wait for the owner's answers to that document's §7 (proposed P16-02 to P16-08 and P13-27).
+
+- A "private session" that plays without reporting, for watching on someone else's account. Touches Playstate Reporting (§4.2). M.
+- An end-of-film card that offers "More like this" after the credits finish, never over them. Needs "More like this" (proposed P16-04). S.
+- Use the time of day and the runtime to rank suggestions (§2.3). Needs a viewer profile. M.
+- Let the viewer reorder or hide Home rows (Q1, option B). M.
+- A row for a collection on Home (`docs/research/streaming-ux-gripes.md` §3). S.
 
 ## Review lows carried from P13
 
