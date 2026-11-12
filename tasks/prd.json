@@ -1833,10 +1833,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "in_progress",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": "Implemented on task/P13-15 (spec docs/specs/P13-15.md). pnpm check exit 0 (133 files, 1760 tests). pnpm test:e2e 109 passed (keyboard.spec.ts:122 is a known flake: 2 of 5 fail on origin/main alone, 5 of 5 pass here). pnpm test:visual 181 passed. Design review (acceptance 5) and PR screenshots pending; no push."
+          "passes": true,
+          "evidence": "Implemented on task/P13-15 (spec docs/specs/P13-15.md). Review fix: failed stop on Back to details resets the leave target (test in player-view.test.tsx). pnpm check exit 0 (133 files, 1761 tests). pnpm test:e2e 109 passed. pnpm test:visual 181 passed. Fresh-context design review done (acceptance 5); low findings logged in docs/design/rework-plan.md; guardian pass owed before merge; PR screenshots attach in Ship; no push."
         },
         {
           "id": "P13-16",

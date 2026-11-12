@@ -192,9 +192,10 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
   const offeredSegments = next ? segments.filter((segment) => segment.kind !== "Outro") : segments;
   const showCard = Boolean(next) && upNext.secondsLeft !== undefined && !playback.state.error;
 
-  const backToDetails = () => {
+  const backToDetails = async () => {
     leaveTarget.current = "details";
-    return playback.back();
+    // A failed stop keeps the viewer here, so the next Back goes where it normally would.
+    if (!(await playback.stopAndLeave())) leaveTarget.current = "opener";
   };
 
   if (playback.unsupported) {

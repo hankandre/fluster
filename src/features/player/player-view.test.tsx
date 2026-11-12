@@ -201,6 +201,30 @@ describe("Player feature", () => {
     await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
   });
 
+  it("a failed stop on Back to details does not send a later Escape to the details view", async () => {
+    const gateway = fakeGateway();
+    const engine = new FakePlayerEngine();
+    engine.launch.mockRejectedValueOnce(new Error("The video surface is not ready."));
+    const back = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
+    await renderPlayer(gateway, engine);
+    await screen.findByRole("heading", { name: "Playback could not start" });
+    window.history.replaceState({ playerFromDetail: "m1", playerOpenedFromItem: false }, "");
+
+    engine.stop.mockRejectedValueOnce(new Error("stop failed"));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Back to details" }));
+    });
+    expect(engine.stop).toHaveBeenCalledTimes(1);
+    expect(back).not.toHaveBeenCalled();
+
+    await act(async () => {
+      fireEvent.keyDown(document, { key: "Escape" });
+    });
+    await waitFor(() => expect(back).toHaveBeenCalledTimes(1));
+    expect(window.location.hash).not.toBe("#/next/item/m1");
+    back.mockRestore();
+  });
+
   it("shows the desktop-only screen with Back and no Retry when the engine refuses a converted plan", async () => {
     const gateway = fakeGateway();
     const engine = new FakePlayerEngine();
