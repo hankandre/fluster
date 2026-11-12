@@ -117,21 +117,26 @@ test("open a movie, read its media info, switch version, and favorite it", async
 
   await expect(page.getByRole("link", { name: "Play", exact: true })).toHaveAttribute("href", /\?source=src-hd$/);
 
+  const toast = page.locator(".ui-toast-region").getByRole("status");
   const watched = page.getByRole("button", { name: "Watched" });
   await watched.click();
+  await expect(toast).toContainText("Marked as watched.");
   await expect(watched).toHaveAttribute("aria-pressed", "true");
   await expect.poll(() => writes).toEqual(["POST /UserPlayedItems/movie-1"]);
   await watched.click();
+  await expect(toast).toContainText("Marked as unwatched.");
   await expect(watched).toHaveAttribute("aria-pressed", "false");
   await expect.poll(() => writes).toEqual(["POST /UserPlayedItems/movie-1", "DELETE /UserPlayedItems/movie-1"]);
   writes.length = 0;
 
   const favorite = page.getByRole("button", { name: "Favorite" });
   await favorite.click();
+  await expect(toast).toContainText("Added to favorites.");
   await expect(favorite).toHaveAttribute("aria-pressed", "true");
   await expect.poll(() => writes).toEqual(["POST /UserFavoriteItems/movie-1"]);
 
   await favorite.click();
+  await expect(toast).toContainText("Removed from favorites.");
   await expect(favorite).toHaveAttribute("aria-pressed", "false");
   await expect.poll(() => writes).toEqual(["POST /UserFavoriteItems/movie-1", "DELETE /UserFavoriteItems/movie-1"]);
 });

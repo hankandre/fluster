@@ -41,7 +41,7 @@ export function DetailBody({ gateway, item, onArt, headingRef }: DetailBodyProps
         facts={detailFacts(item)}
         badges={selected ? <MediaBadges badges={mediaBadges(selected)} /> : undefined}
         actions={<DetailActions item={item} selected={selected} onVersion={setChosenId} played={played} favorite={favorite} />}
-        notice={<DetailMessages played={played} favorite={favorite} />}
+        notice={<DetailMessages />}
         overview={item.overview ? <Overview text={item.overview} /> : undefined}
         inlineArt={inlineArt}
         headingRef={headingRef}

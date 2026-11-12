@@ -12,7 +12,6 @@ import {
   SegmentedTabs,
   Skeleton,
   TextField,
-  ToastProvider,
   ToggleChip,
   useToast,
   type PickerOption,
@@ -114,8 +113,8 @@ function Gallery() {
 
       <Section title="Dialog and toasts">
         <Button variant="secondary" onClick={() => setConfirmOpen(true)}>Open dialog</Button>
-        <Button variant="secondary" onClick={() => toast.show({ message: "Marked as watched", tone: "ok", action: { label: "Undo", onAction: () => undefined } })}>Show toast</Button>
-        <Button variant="secondary" onClick={() => toast.show({ message: "Couldn't update watched state.", tone: "error" })}>Show error toast</Button>
+        <Button variant="secondary" onClick={() => toast.show({ message: "Marked as watched.", tone: "ok", action: { label: "Undo", onAction: () => undefined } })}>Show toast</Button>
+        <Button variant="secondary" onClick={() => toast.show({ message: "Couldn't update watched state. Try again.", tone: "error" })}>Show error toast</Button>
         <Dialog
           open={confirmOpen}
           onClose={() => setConfirmOpen(false)}
@@ -171,9 +170,5 @@ function Gallery() {
 }
 
 export function GalleryView() {
-  return (
-    <ToastProvider>
-      <Gallery />
-    </ToastProvider>
-  );
+  return <Gallery />;
 }

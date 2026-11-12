@@ -66,6 +66,8 @@ export interface MockOptions {
   searchError?: boolean;
   // /Items?searchTerm matches 60 copies of a movie and honours startIndex and limit, so "o" has more than one page.
   longSearch?: boolean;
+  // POST/DELETE on /UserPlayedItems/ and /UserFavoriteItems/ answer 500 (the Watched and Favorite failure toast).
+  flagError?: boolean;
 }
 
 export const ticks = (seconds: number): number => Math.round(seconds * 1e7);
@@ -259,6 +261,10 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
         return missing();
       }
       if (opts.rowDelayMs && ["/UserItems/Resume", "/Shows/NextUp", "/Items/Latest", "/UserViews"].includes(p)) await sleep(opts.rowDelayMs);
+      if (/^\/User(Played|Favorite)Items\//.test(p)) {
+        if (opts.flagError) return route.fulfill({ status: 500, headers: cors });
+        return json({});
+      }
       switch (p) {
         case "/System/Info/Public":
           return json({ ServerName: "Hearth", Version: "10.11.7", Id: "server-1" });

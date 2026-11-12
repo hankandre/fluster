@@ -83,8 +83,8 @@ export function DetailActions({ item, selected, onVersion, played, favorite }: D
   );
 }
 
-// Said before Play is pressed: the player cannot start, and a failed flag update. The player route repeats the reason.
-export function DetailMessages({ played, favorite }: { played: FlagMutation; favorite: FlagMutation }) {
+// Said before Play is pressed: the player cannot start. The player route repeats the reason.
+export function DetailMessages() {
   const { status, recheck } = usePlayerStatus();
   const roving = useRovingFocus<HTMLDivElement>("row", { spatial: true });
   return (
@@ -97,8 +97,6 @@ export function DetailMessages({ played, favorite }: { played: FlagMutation; fav
           </div>
         </div>
       ) : null}
-      {played.isError ? <p className="detail-message" role="alert">Couldn't update watched state. Try again.</p> : null}
-      {favorite.isError ? <p className="detail-message" role="alert">Couldn't update favorite. Try again.</p> : null}
     </>
   );
 }

@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { App } from "./App";
@@ -60,5 +60,32 @@ describe("App entry", () => {
     expect(await screen.findByRole("heading", { name: "UI gallery" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Streaming limit/ })).toBeInTheDocument();
     expect(window.location.hash).toBe("#/next/gallery");
+  });
+
+  it("mounts one toast region, on a normal route and in the gallery", async () => {
+    window.location.hash = "#/next/sign-in";
+    const { unmount } = renderApp();
+    expect(document.querySelectorAll(".ui-toast-region")).toHaveLength(1);
+    unmount();
+
+    window.location.hash = "#/next/gallery";
+    renderApp();
+    await screen.findByRole("heading", { name: "UI gallery" });
+    expect(document.querySelectorAll(".ui-toast-region")).toHaveLength(1);
+  });
+
+  it("raises gallery toasts through the root provider, and drops them on a player route", async () => {
+    window.location.hash = "#/next/gallery";
+    renderApp();
+    fireEvent.click(await screen.findByRole("button", { name: "Show error toast" }));
+    const region = document.querySelector<HTMLElement>(".ui-toast-region") as HTMLElement;
+    expect(region).toHaveTextContent("Couldn't update watched state. Try again.");
+
+    act(() => {
+      window.location.hash = "#/next/play/m1";
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    });
+    expect(document.querySelectorAll(".ui-toast-region")).toHaveLength(1);
+    expect(document.querySelector(".ui-toast-region")).not.toHaveTextContent("Couldn't update watched state");
   });
 });
