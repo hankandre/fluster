@@ -2,9 +2,15 @@
 
 ## What Fluster is
 
-Fluster is a native-quality Jellyfin client that plays your media **exactly as it is stored whenever it can**. The original file is streamed byte-for-byte and decoded locally with mpv, on the GPU when possible. When the original can't be played (a slow or limited connection, a disc folder, an admin policy), the server repackages or converts it, and Fluster always shows that it is doing so and why ([decision 0002](docs/decisions/0002-server-transcoding-fallback.md)).
+Fluster aims to be **the best experience of Jellyfin on each device it runs on** (the owner, 2026-11-12). Three pillars carry that:
 
-It is built for people who chose Jellyfin to own their media and expect the client to respect that: full-quality video, untouched audio tracks, correct subtitles, and a server that stays idle while you watch anything the client can play. It aims to replace the other Jellyfin clients, including the cross-platform Flutter ones, on every screen it supports: movies, shows, music, and later the living room and phone.
+1. **Native, not painted.** Fluster runs as a real application on each platform. It does not draw its interface on a canvas-like layer the way Flutter clients do, and it uses the device's own hardware and hardware acceleration wherever it can.
+2. **It just works.** Fluster supports as much of Jellyfin as each device allows, with the right defaults. Nobody should have to tune a client to make their library play correctly.
+3. **Honest about the file.** Fluster plays your media **exactly as it is stored whenever it can**. The original file is streamed byte-for-byte and decoded locally with mpv, on the GPU when possible. When the original can't be played (a slow or limited connection, a disc folder, an admin policy), the server repackages or converts it, and Fluster always shows that it is doing so and why ([decision 0002](docs/decisions/0002-server-transcoding-fallback.md)).
+
+It is built for people who chose Jellyfin to own their media and expect the client to respect that: full-quality video, untouched audio tracks, correct subtitles, and a server that stays idle while you watch anything the client can play. It starts on the desktop. The long-term aim is to replace the other Jellyfin clients, including the cross-platform Flutter ones, on every screen it supports: movies, shows, music, and later the living room and phone.
+
+Where Fluster leads other clients today, and where it does not yet, is recorded in [`docs/research/jellyfin-clients.md`](docs/research/jellyfin-clients.md).
 
 ## Principles
 
@@ -30,7 +36,7 @@ It is built for people who chose Jellyfin to own their media and expect the clie
 ## Not for
 
 - Server administration. Use Jellyfin's web dashboard.
-- Live TV/DVR, books, photos (not now; live TV needs its own decision record).
+- Live TV/DVR, books, photos. Live TV stays out until after M2 (the owner, 2026-11-12), although most other clients have it; it then needs its own decision record.
 
 ## Scope
 
@@ -71,13 +77,15 @@ Manual login, ten latest items, resume/start-over, direct play through embedded 
 
 The client someone could use every evening instead of the web UI.
 
-- **Sign-in:** server discovery on the LAN, Quick Connect, and a remembered server and user. Store the token in the OS keyring, behind an explicit "stay signed in" choice. This changes the current session-only rule, so it needs a decision record and an update to `docs/security.md`.
+- **Sign-in:** server discovery on the LAN, Quick Connect, and remembered servers and users. Store each account's token in the OS keyring, behind a visible "stay signed in" switch that is on by default when a keyring is available. This changes the current session-only rule, so it needs a decision record (P3-01) and an update to `docs/security.md`.
+- **Accounts:** any number of saved accounts, where an account is one user on one server. One is active at a time and each server's libraries stay separate. The account menu in the nav switches between them. Switch keeps the sign-in, Sign out revokes it on the server, and Remove also forgets the account.
 - **Home:** Continue Watching, Next Up, Latest per library.
 - **Browse:** libraries, movie grid, series → seasons → episodes, sort and filter, collections.
 - **Search** across movies, series, and episodes.
 - **Item detail:** artwork, overview, cast, media info (codec, HDR, audio format, subtitles) before you press play.
 - **Watch state:** mark played/unplayed, favorites. Changes from other clients appear without a restart.
 - **In the player:** auto-play next episode with a countdown, skip intro/credits from Jellyfin media segments, scrub previews from Jellyfin trickplay images, chapters.
+- **Settings:** auto-play next on or off and its countdown length; for intros and for credits, show a Skip button, skip automatically, or do nothing; streaming limits. One set of playback settings per computer.
 - **Track defaults:** respect the user's Jellyfin audio and subtitle language preferences.
 - **Input:** full keyboard navigation, media keys and MPRIS on Linux, mouse-idle hiding.
 
@@ -95,6 +103,7 @@ Done when: every sample mpv can play still direct plays (tripwire), disc folders
 - Audio passthrough/bitstreaming (AC3, E-AC3, TrueHD, DTS-HD) as an explicit setting.
 - Display refresh-rate matching where the platform allows.
 - Subtitle styling options that don't override ASS authoring.
+- Dolby Vision: what Fluster does with it is decided after the HDR spike (P5-01) reports on profiles 5 and 8.
 
 Done when: the `docs/validation.md` codec matrix passes, plus HDR and passthrough gates on reference hardware.
 
@@ -131,14 +140,16 @@ M0, M1, M1b, then M6's shell spike in parallel with M2, then M7, M3, M4, M5. Mil
 | Server transcode/remux jobs started by Fluster for a file it could play as stored | **0**, always. A failure here is a P0 bug. |
 | Server conversions shown to the user with a reason | **100%** |
 | Server jobs still running 10 s after Fluster stops | **0** |
-| Time from Play to first frame (LAN, H.264/HEVC) | < 1.5 s at p50 |
+| Time from Play to first frame (LAN, H.264/HEVC) | < 1.5 s at p50, recorded in the dogfood log (P4-01) |
 | Resume accuracy (position reported vs. resumed elsewhere) | within 10 s |
 | Hardware decode engaged on supported GPU | 100% of validation matrix |
-| Crash-free playback sessions | > 99.5% |
+| Crashes during the dogfood week | 0. Fluster has no analytics, so a percentage cannot be measured. |
 | Authenticated URLs or tokens in logs/diagnostics | 0 |
 
 ## Open product questions
 
-- **Persistent login.** Session-only tokens are safe but annoying daily. Proposal: opt-in keyring storage in M1. Needs a decision record.
-- **Multiple servers and users.** One server and one user per session is simpler. Do households need quick user switching in M1 or later?
-- **Live TV.** Still out of scope. Needs a decision record before `RequiresOpening` sources are played.
+- **One Home across servers.** Servers stay separate for now. A spike after the dogfood week (P15-08) decides whether to merge them.
+- **A PIN per profile.** Not now; revisit with the TV shell.
+- **Dolby Vision.** Decided after the P5-01 spike.
+
+Answered on 2026-11-12 (see `docs/plans/proposals/product-review.md`): persistent login (keyring, on by default, P3-01 and P3-02), multiple servers and users (saved accounts, one active), and Live TV (out until after M2).

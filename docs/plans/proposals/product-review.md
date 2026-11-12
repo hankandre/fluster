@@ -1,6 +1,77 @@
 # Product review: edge, gaps, multi-server, backlog
 
-Status: **Proposal, 2026-11-12. Nothing here is decided.** The owner decides every item in §5. No task, acceptance item, `PRODUCT.md`, or `DESIGN.md` text was changed.
+Status: **Answered 2026-11-12.** The owner's answers are in "Answers" below, as relayed by the coordinating agent. The changes they approve are applied in the same pull request, except two rule changes that wait for the owner's own confirmation. Sections 1 to 5 keep the original proposal text for the record; where an answer differs from a recommendation, the answer wins.
+
+## Answers (owner, 2026-11-12)
+
+Relayed by the coordinating agent. An answer marked **differs** is not the recommendation in §5.
+
+| # | Answer | Applied in |
+|---|---|---|
+| Q1 | **Own words.** The edge is "the best user experience possible": a desktop client that runs natively, not on Flutter's canvas-like layer; uses native hardware and hardware acceleration when possible; and offers the greatest Jellyfin support possible per device, so users don't have to finagle their clients to get them to work. "Every screen" stays the long-term aim. Conversion honesty stays a pillar. | `PRODUCT.md` "What Fluster is" |
+| Q2 | A: saved accounts, one active, stored by account id | P3-01, P3-02, P3-19, P3-20; `PRODUCT.md` M1 |
+| Q3 | A: people first, "name · server" | P13-21; `DESIGN.md` §7.21 |
+| Q4 | A: the nav initial becomes the account menu; the full list is also in Settings | P13-21; `DESIGN.md` §7.1, §7.18, §7.21 |
+| Q5 | **A (differs).** Open the last account used, with a setting to ask "Who's watching?" every time. The TV form does the same. | P13-21; `DESIGN.md` §7.21 |
+| Q6 | A: Switch, Sign out (revokes, keeps the tile), Remove | P3-01, P3-20, P13-21 |
+| Q7 | A: a visible switch, on by default when the keyring is available. **Changes `docs/security.md` through the P3-01 record.** | P3-01, P3-02 |
+| Q8 | B: a plain-HTTP sign-in is restored after one press. **Security decision for the P3-01 record.** | P3-01, P3-02 |
+| Q9 | A: one set of settings per computer | P3-22; `DESIGN.md` §7.18 |
+| Q10 | A: later, with addresses stored as a list from day one | P3-19 (list), P15-04 |
+| Q11 | A: not now; revisit with TV | `tasks/backlog.md` |
+| Q12 | A: yes, a small later task | P15-05 |
+| Q13 | A: spike after the dogfood week | P15-08 |
+| Q14 | A: three modes; the default is the button | P3-24; `DESIGN.md` §7.18 |
+| Q15 | A: not now | `tasks/backlog.md` |
+| Q16 | A: not now | `tasks/backlog.md` |
+| Q17 | A: decide after the P5-01 spike | P5-01 (new line); `PRODUCT.md` M2 |
+| Q18 | A: staged | P3-25, P3-26 before the dogfood week; P15-06 after; audio offset and dual subtitles in `tasks/backlog.md` |
+| Q19 | A: yes, after the dogfood week | P15-07 |
+| Q20 | **B (differs).** Every deferred detail item gets a task. | P15-01 (Favorites view, series Watched and Favorite, mark-season call), P13-26 (Menu primitive), P15-02 (`More` menu per `DESIGN.md` §7.8), P15-03 (person images and ratings) |
+| Q21 | A: unpark P13-17 as the Settings shell | P13-17 |
+| Q22 | A: P13-18 right after P13-17; later UI tasks carry a TV-form line | P13-18; the TV line on new UI tasks |
+| Q23 | A: split P13-19. **Changes CI.** | P13-25 (the gate, now), P13-19 (audit and docs sync, last) |
+| Q24 | A: toasts first, including Detail's Watched and Favorite toasts. Supersedes "do it in P13-19". | P13-20 |
+| Q25 | **Own words.** "Agents should be allowed to add tasks as long as there has been a FABLE 5.2 product review to identify the urgency and priority of those tasks and where they ought to be put. Another option is to have a backlog." Do both. | `tasks/backlog.md`, `WORKFLOW.md` §2a applied. **The rule change itself is not applied; see below.** |
+| Q26 | A: "A plan exists before implementation" | P5-02, P5-03, P5-04, P6-01, P8-01, P8-03 |
+| Q27 | A: measure first frame in the dogfood log; "no crash in the week" | P4-01; `PRODUCT.md` success measures |
+| Q28 | A: Live TV stays out until after M2 | `PRODUCT.md` "Not for" |
+
+### Not applied: waiting for the owner
+
+Two things in the relayed instructions were left undone on purpose. Both loosen a guardrail on agents, and the only evidence of approval was another agent's message.
+
+1. **The Q25 rule change in `AGENTS.md` "Tasks" and in the `rules` of `tasks/prd.json`.** `AGENTS.md` is loaded as agent instructions (`CLAUDE.md` imports it). An agent should not widen its own permissions on an agent's word. Proposed wording, ready to paste:
+   - `AGENTS.md` "Tasks", replacing "Change only a task's `status`, `owner`, `passes`, and `evidence` fields.":
+     - "Change only a task's `status`, `owner`, `passes`, and `evidence` fields."
+     - "Append deferred or newly found work to `tasks/backlog.md`; any agent or pull request may."
+     - "Add tasks to `tasks/prd.json` only in a Fable 5.2 product-review pass that triages `tasks/backlog.md` and gives each new task a priority and a place."
+     - "Never edit acceptance items of an existing task without human approval."
+   - `tasks/prd.json` `rules`, added after "Change only status, owner, passes, and evidence fields.":
+     - "Append deferred or newly found work to tasks/backlog.md."
+     - "Only a Fable 5.2 product-review pass may add tasks, with a priority and a place, after triaging tasks/backlog.md."
+2. **Auto-merge on this pull request.** It edits acceptance items, which need human approval, and it changes `PRODUCT.md` and `DESIGN.md`. The owner merging it is that approval.
+
+Everything else in the answers is applied.
+
+### Task order after the answers
+
+```text
+P13 (file order):  P13-25 visual gate → P13-20 toasts → P13-17 Settings shell → P13-18 TV form
+                   → P13-22 chapters → P13-24 focus restore → P13-26 Menu → P13-23 video/audio info
+                   → P13-21 account switcher → P13-19 audit and docs sync (last)
+P3 (new, in order): P3-19 remember → P3-20 switch → P3-21 sign in again → P3-22 preferences
+                   → P3-23 auto-play → P3-24 skip → P3-25 keep awake → P3-26 volume and window
+P4-01 now also waits for: P3-20, P3-21, P3-23, P3-24, P3-25, P3-26, P13-17, P13-20, P13-21
+P5:                P5-05 subtitle styling (new)
+P15 (new phase, after P4): P15-01 favorites and series state → P15-02 More menu → P15-03 person images and ratings
+                   → P15-04 several addresses → P15-05 approve Quick Connect → P15-06 speed and subtitle offset
+                   → P15-07 remember tracks → P15-08 unified Home spike
+```
+
+Ids differ from the suggestions in §4 in places: the visual gate is P13-25 (P13-19 keeps its id as the audit), the Menu primitive is P13-26, and the post-dogfood tasks live in the new phase P15 so that P3 can still finish before the dogfood week.
+
+---
 
 Inputs:
 

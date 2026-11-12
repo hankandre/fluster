@@ -69,6 +69,7 @@ Each task runs: refine + spec → spec check → implement → verify → one re
 - `spec-checker` runs in a fresh context. It checks the spec against the task acceptance, `AGENTS.md` hard rules, `ARCHITECTURE.md`, `DESIGN.md` (for UI), and the code. It appends a verdict: "Approved" or "Changes needed" with numbered issues.
 - Allow one revision round. If the spec is still not approved, stop and ask the human.
 - Implement from the approved spec.
+- Work a task defers goes to `tasks/backlog.md` in the same pull request: one line with what, why, where it came from, and a rough size. A deferral names a task or a backlog entry, or it is not a deferral.
 
 ### 3. Pilot before scale
 
