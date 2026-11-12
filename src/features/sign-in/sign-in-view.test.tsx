@@ -164,9 +164,12 @@ describe("SignInView with Quick Connect", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("This code expired.");
     expect(screen.getByRole("alert")).not.toHaveTextContent("404");
     expect(within(screen.getByRole("alert")).getByRole("button", { name: "Start again" })).toBeInTheDocument();
+    const again = screen.getByRole("button", { name: "Start again" });
+    again.focus();
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Start again" }));
+      fireEvent.click(again);
     });
+    expect(screen.getByRole("heading", { level: 1 })).toHaveFocus();
     expect(screen.getByLabelText("Quick Connect code")).toHaveTextContent("222222");
     expect(screen.getByText("Waiting for approval…")).toBeInTheDocument();
   });

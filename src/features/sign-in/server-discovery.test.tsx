@@ -163,6 +163,19 @@ describe("Servers on this network", () => {
     expect(discovery.discover).toHaveBeenCalledTimes(2);
   });
 
+  it("keeps focus in the section when a search starts from the retry button", async () => {
+    const discovery = fakeDiscovery(found([LAN_SERVER]));
+    renderView(discovery);
+    await findServers();
+    const button = screen.getByRole("button", { name: "Search again" });
+    button.focus();
+    await act(async () => {
+      fireEvent.click(button);
+    });
+    expect(document.body).not.toHaveFocus();
+    expect(screen.getByRole("heading", { name: "On this network" })).toHaveFocus();
+  });
+
   it("moves between rows with Down and Up", async () => {
     renderView(fakeDiscovery(found([LAN_SERVER, HTTPS_SERVER])));
     await findServers();

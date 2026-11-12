@@ -1,5 +1,5 @@
 import { TriangleAlert } from "lucide-react";
-import { useId } from "react";
+import { useId, useRef } from "react";
 import { DISCOVERY_FAILED_MESSAGE, type DiscoveredServer } from "../../domain/server-discovery";
 import { useRovingFocus } from "../roving-focus";
 import { Button, InlineError, Skeleton } from "../shared/ui";
@@ -21,6 +21,7 @@ export function ServerList({
   onChoose: (server: DiscoveredServer) => void;
 }) {
   const titleId = useId();
+  const title = useRef<HTMLHeadingElement>(null);
   const roving = useRovingFocus<HTMLUListElement>("column");
   const { state } = search;
   const searching = state.name === "searching";
@@ -28,9 +29,15 @@ export function ServerList({
   const refused = state.name === "found" ? state.result.refused : 0;
   const dropped = state.name === "found" ? state.result.dropped : 0;
 
+  // The retry buttons unmount when a search starts; keep focus in the section.
+  function searchAgain() {
+    title.current?.focus();
+    search.searchAgain();
+  }
+
   return (
     <section className="sign-in-discovery" aria-labelledby={titleId}>
-      <h2 id={titleId} className="sign-in-section-title">On this network</h2>
+      <h2 id={titleId} ref={title} tabIndex={-1} className="sign-in-section-title">On this network</h2>
       {searching && (
         <>
           <p role="status" className="sign-in-note">Looking for Jellyfin servers on this network…</p>
@@ -38,7 +45,7 @@ export function ServerList({
         </>
       )}
       {state.name === "failed" && (
-        <InlineError message={DISCOVERY_FAILED_MESSAGE} onRetry={search.searchAgain} retryLabel="Search again" />
+        <InlineError message={DISCOVERY_FAILED_MESSAGE} onRetry={searchAgain} retryLabel="Search again" />
       )}
       {state.name === "found" && servers.length === 0 && refused === 0 && (
         <p role="status" className="sign-in-note">
@@ -84,7 +91,7 @@ export function ServerList({
         </ul>
       )}
       {(state.name === "found") && (
-        <Button variant="quiet" onClick={search.searchAgain}>Search again</Button>
+        <Button variant="quiet" onClick={searchAgain}>Search again</Button>
       )}
       {searching && <Button variant="quiet" disabled>Searching…</Button>}
     </section>

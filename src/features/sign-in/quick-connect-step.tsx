@@ -97,6 +97,8 @@ export function QuickConnectStep({
   }, [gateway, attempt]);
 
   function restart() {
+    // The retry button unmounts with its error; keep focus on the title.
+    title.current?.focus();
     setCode("");
     setError("");
     setExpired(false);
