@@ -307,6 +307,7 @@ function renderView(overrides: Partial<PlaybackSnapshot> = {}, props: Partial<Pa
       item={movie}
       player={player}
       status={status}
+      serverName="Hearth"
       session={{ snapshot: { ...snapshot, paused: false, ...overrides }, firstFrameReady: true }}
       onRetry={vi.fn()}
       onBack={onBack}
@@ -315,6 +316,25 @@ function renderView(overrides: Partial<PlaybackSnapshot> = {}, props: Partial<Pa
   );
   return { player, onBack, ...view };
 }
+
+describe("failed requests", () => {
+  it.each([
+    ["server", "Hearth had a problem starting playback. Try again in a moment."],
+    ["network", "Couldn't reach Hearth. Check that the server is on, then try again."],
+  ] as const)("a %s failure shows plain copy and no transport text", (kind, copy) => {
+    const { container } = renderView({}, {
+      session: { error: "Request failed with status code 500", errorKind: kind, firstFrameReady: false },
+    });
+    expect(container).toHaveTextContent(copy);
+    for (const text of ["Request failed", "Network Error", "timeout of"]) expect(container).not.toHaveTextContent(text);
+  });
+
+  it("a failed progress report shows plain copy", () => {
+    const { container } = renderView({}, { session: { snapshot, firstFrameReady: true, reportingWarning: "report-failed" } });
+    expect(container).toHaveTextContent("Couldn't save your progress to Hearth. Playback continues.");
+    expect(container).not.toHaveTextContent("Network Error");
+  });
+});
 
 const osd = () => screen.getByRole("status", { name: "Player message" });
 const loadingStatus = () => screen.getByRole("status", { name: "Player status" });

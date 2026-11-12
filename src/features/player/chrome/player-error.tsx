@@ -1,6 +1,7 @@
 import { AlertTriangle, LoaderCircle } from "lucide-react";
 import { Button } from "../../shared/ui";
 import { safeReason } from "../safe-reason";
+import { reportingWarningCopy } from "../error-copy";
 
 // The card for a failed player command while playback goes on: what happened (filtered), Retry, and Back.
 export function CommandErrorPanel({ message, retrying, retryLabel, onRetry, onBack }: {
@@ -28,14 +29,14 @@ export function CommandErrorPanel({ message, retrying, retryLabel, onRetry, onBa
 
 // Two quiet warnings under the OSD slot: the CPU is decoding, or Jellyfin
 // progress reporting is failing.
-export function PlayerWarnings({ softwareDecoding, reportingWarning }: { softwareDecoding: boolean; reportingWarning?: string }) {
+export function PlayerWarnings({ softwareDecoding, reportingWarning, serverName }: { softwareDecoding: boolean; reportingWarning?: string; serverName: string }) {
   return (
     <>
       {softwareDecoding && (
         <div className="player-cpu-warning"><AlertTriangle size={15} /> Software decoding on this CPU.</div>
       )}
       {reportingWarning && (
-        <div className="player-reporting-warning"><AlertTriangle size={15} /> Jellyfin progress reporting failed: {reportingWarning}</div>
+        <div className="player-reporting-warning"><AlertTriangle size={15} /> {reportingWarningCopy(reportingWarning, serverName)}</div>
       )}
     </>
   );

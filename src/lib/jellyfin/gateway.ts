@@ -10,7 +10,8 @@ import { isSupportedServerVersion, parseServerVersion } from "../../domain/serve
 import type { MediaSegment } from "../../domain/media-segments";
 import { MemoryLanHttpConfirmations, type LanHttpConfirmationStore } from "../lan-http-confirmations";
 import { limitMbpsFor, mbpsToBitsPerSecond, MemoryStreamingLimits, type StreamingLimitStore } from "../streaming-limits";
-import { redactError, redactText } from "../redact";
+import { redactText } from "../redact";
+import { redactTransportError } from "../transport-error";
 import { toBrowseCards, toEpisodeCards, toNextEpisode, toHomeLibraries, toMediaCards, toSearchCards, toSearchHints, toSeasons, toSeriesNextUp } from "./cards";
 import { stripCredentialQuery } from "./credential-query";
 import { deriveDeviceId } from "./device-id";
@@ -885,7 +886,7 @@ export class JellyfinGateway {
       response = await this.transport.get<T>(url, config);
     } catch (error) {
       if (isRedirectError(error)) throw new Error(REDIRECT_REFUSED_MESSAGE);
-      throw redactError(error);
+      throw redactTransportError(error);
     }
     return refuseRedirect(response);
   }
@@ -896,7 +897,7 @@ export class JellyfinGateway {
       response = await this.transport.post<T>(url, data, config);
     } catch (error) {
       if (isRedirectError(error)) throw new Error(REDIRECT_REFUSED_MESSAGE);
-      throw redactError(error);
+      throw redactTransportError(error);
     }
     return refuseRedirect(response);
   }
@@ -907,7 +908,7 @@ export class JellyfinGateway {
       response = await this.transport.delete<T>(url, config);
     } catch (error) {
       if (isRedirectError(error)) throw new Error(REDIRECT_REFUSED_MESSAGE);
-      throw redactError(error);
+      throw redactTransportError(error);
     }
     return refuseRedirect(response);
   }

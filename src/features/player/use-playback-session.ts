@@ -17,8 +17,9 @@ import { currentSelection, sourceTrackOptions, trackChange, type TrackKind } fro
 import type { SessionGateway } from "../../app/session";
 import type { PlayerServices } from "../../app/player-services";
 import { PlaybackCancelledError, PlaybackCoordinator, type PlaybackGateway } from "../../lib/player/coordinator";
-import { initialPlaybackSessionState, playbackSessionReducer } from "../../lib/player/session-state";
+import { initialPlaybackSessionState, playbackSessionReducer, type PlaybackSessionAction } from "../../lib/player/session-state";
 import { redactText } from "../../lib/redact";
+import { classifyTransportError } from "../../lib/transport-error";
 import { limitChangeAffects, limitMbpsFor, mbpsToBitsPerSecond, type StreamingLimitStore } from "../../lib/streaming-limits";
 
 // The last session teardown on each engine: its stop and its playstate drain
@@ -78,6 +79,13 @@ function playbackGatewayFor(
 // the confirmed copy of the same play session wins.
 function keepConfirmed(current: PlaybackPlan | undefined, launched: PlaybackPlan): PlaybackPlan {
   return current?.playSessionId === launched.playSessionId ? current : launched;
+}
+
+// A failed Jellyfin request keeps only its kind: the view writes the copy, and
+// the transport message stays out of state.
+function failureAction(error: unknown): PlaybackSessionAction {
+  const kind = classifyTransportError(error);
+  return { type: "failure", message: kind ? "Jellyfin request failed." : errorText(error), kind };
 }
 
 function errorText(error: unknown): string {
@@ -183,7 +191,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
       setUnsupported(true);
       return;
     }
-    dispatch({ type: "failure", message: errorText(error) });
+    dispatch(failureAction(error));
   }, []);
 
   useEffect(() => {
@@ -386,7 +394,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
         active.stop = undefined;
         active.stopping = false;
         active.destination = undefined;
-        dispatch({ type: "failure", message: errorText(error) });
+        dispatch(failureAction(error));
       }
       return false;
     }

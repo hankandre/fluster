@@ -26,6 +26,7 @@ import { useOsd } from "../features/player/chrome/use-osd";
 import { seekTarget, usePlayerKeys, type SheetName } from "../features/player/chrome/use-player-keys";
 import "../features/player/chrome/player.css";
 import { PlaybackErrorNotice } from "../features/player/playback-notices";
+import { UNKNOWN_SERVER_NAME } from "../features/player/error-copy";
 import { NativeVideoSurface } from "./NativeVideoSurface";
 
 export type { SeekChapter };
@@ -42,6 +43,7 @@ export function PlayerView({
   session,
   status,
   segments,
+  serverName = UNKNOWN_SERVER_NAME,
   retrying,
   onRetry,
   onBack,
@@ -65,6 +67,8 @@ export function PlayerView({
   status: ReadyPlayerStatus;
   // Intro and outro segments to offer a skip button for. Empty or absent shows none.
   segments?: MediaSegment[];
+  // The server's display name for error copy.
+  serverName?: string;
   retrying?: boolean;
   onRetry(): Promise<void> | void;
   onBack(): Promise<void> | void;
@@ -186,6 +190,8 @@ export function PlayerView({
           item={item}
           backdrop={backdrop}
           message={sessionError}
+          kind={session.errorKind}
+          serverName={serverName}
           retryLabel={retryLabel}
           retrying={retrying}
           onRetry={() => void onRetry()}
@@ -252,7 +258,7 @@ export function PlayerView({
         />
       )}
       {!commandError && (
-        <PlayerWarnings softwareDecoding={snapshot?.diagnostics?.decodeMode === "software"} reportingWarning={session.reportingWarning} />
+        <PlayerWarnings softwareDecoding={snapshot?.diagnostics?.decodeMode === "software"} reportingWarning={session.reportingWarning} serverName={serverName} />
       )}
 
       {skip && (
