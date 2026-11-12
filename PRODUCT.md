@@ -2,13 +2,18 @@
 
 ## What Fluster is
 
-Fluster aims to be **the best experience of Jellyfin on each device it runs on** (the owner, 2026-11-12). Three pillars carry that:
+Fluster is a client for watching video from a Jellyfin or Jellyscale server. It aims to give **the best possible watching experience**: it should feel like a streaming service such as Netflix, on your own library, **without having to finagle with the client** (the owner, 2026-11-12).
 
-1. **Native, not painted.** Fluster runs as a real application on each platform. It does not draw its interface on a canvas-like layer the way Flutter clients do, and it uses the device's own hardware and hardware acceleration wherever it can.
-2. **It just works.** Fluster supports as much of Jellyfin as each device allows, with the right defaults. Nobody should have to tune a client to make their library play correctly.
-3. **Honest about the file.** Fluster plays your media **exactly as it is stored whenever it can**. The original file is streamed byte-for-byte and decoded locally with mpv, on the GPU when possible. When the original can't be played (a slow or limited connection, a disc folder, an admin policy), the server repackages or converts it, and Fluster always shows that it is doing so and why ([decision 0002](docs/decisions/0002-server-transcoding-fallback.md)).
+Fluster is for video only: movies and shows. It does not play music, audiobooks, or photos; better apps exist for those.
 
-It is built for people who chose Jellyfin to own their media and expect the client to respect that: full-quality video, untouched audio tracks, correct subtitles, and a server that stays idle while you watch anything the client can play. It starts on the desktop. The long-term aim is to replace the other Jellyfin clients, including the cross-platform Flutter ones, on every screen it supports: movies, shows, music, and later the living room and phone.
+Four pillars carry that:
+
+1. **It feels like a streaming service.** Open it and something to watch is in front of you. Resume takes one press. The next episode, the intro skip, and the artwork are where you expect them.
+2. **Native, not painted.** Fluster runs as a real application on each platform. It does not draw its interface on a canvas-like layer the way Flutter clients do, and it uses the device's own hardware and hardware acceleration wherever it can.
+3. **It just works.** Fluster supports as much of the server's video features as each device allows, with the right defaults. Nobody should have to tune a client to make their library play correctly.
+4. **Honest about the file.** Fluster plays your media **exactly as it is stored whenever it can**. The original file is streamed byte-for-byte and decoded locally with mpv, on the GPU when possible. When the original can't be played (a slow or limited connection, a disc folder, an admin policy), the server repackages or converts it, and Fluster always shows that it is doing so and why ([decision 0002](docs/decisions/0002-server-transcoding-fallback.md)).
+
+It is built for people who chose to own their media and expect the client to respect that: full-quality video, untouched audio tracks, correct subtitles, and a server that stays idle while you watch anything the client can play. It starts on the desktop. The long-term aim is to replace the other Jellyfin video clients, including the cross-platform Flutter ones, on every screen it supports: the desk first, and later the living room and phone.
 
 Where Fluster leads other clients today, and where it does not yet, is recorded in [`docs/research/jellyfin-clients.md`](docs/research/jellyfin-clients.md).
 
@@ -29,14 +34,15 @@ Where Fluster leads other clients today, and where it does not yet, is recorded 
 | **Home-theater enthusiast** | 4K HDR remuxes, lossless multichannel audio, ASS/PGS subtitles, good GPU | Bit-perfect playback, HDR, audio passthrough, correct subtitle styling, refresh-rate matching |
 | **Low-power self-hoster** | Jellyfin on a NAS or Pi that cannot transcode 4K | Assurance the server never converts what the client can play. Clear reasons when it must. |
 | **Remote viewer** | Watching away from home over a limited uplink, or on an account with a bitrate limit | Automatic conversion that fits the connection, a streaming-limit setting, and a visible "Converting on server" indicator |
-| **Music listener** | A Jellyfin music library | Albums and artists, a queue, gapless playback, and lossless files played as stored |
 | **Linux desktop user** | Wayland desktop, NVIDIA or AMD | A first-class client that isn't X11-only, isn't Electron-heavy, and uses VA-API/NVDEC properly |
 | **Household viewer** (later) | Living-room TV, phone, tablet | Resume where someone left off. Next episode. Skip intro. Simple navigation. |
 
 ## Not for
 
 - Server administration. Use Jellyfin's web dashboard.
-- Live TV/DVR, books, photos. Live TV stays out until after M2 (the owner, 2026-11-12), although most other clients have it; it then needs its own decision record.
+- Music, audiobooks, and photos. Fluster is a video client (the owner, 2026-11-12). Better apps exist for these, and Fluster will not grow them.
+- Live TV and DVR. Out of scope (the owner, 2026-11-12), although most other clients have it.
+- Books.
 
 ## Scope
 
@@ -54,7 +60,8 @@ X11, ARM64 Linux, and Flatpak are deferred, not rejected.
 
 ### Servers
 
-Jellyfin 10.11.x and 12.x with default settings. Jellyfin 12 disables legacy query-string authorization by default, so Fluster authenticates media requests with headers (see `ARCHITECTURE.md` §3).
+- **Jellyfin** 10.11.x and 12.x with default settings. Jellyfin 12 disables legacy query-string authorization by default, so Fluster authenticates media requests with headers (see `ARCHITECTURE.md` §3).
+- **Jellyscale**, a scale-out video server that speaks the Jellyfin client API and is meant as a drop-in replacement for a Jellyfin server. It is still being built. Fluster aims to be the first client to support it directly, and assumes Jellyscale will provide the APIs needed to stream. Fluster is tested against it when Jellyscale reaches its client-integration work (`tasks/backlog.md`); nothing is verified against it today.
 
 ### Original first: what users see
 
@@ -115,10 +122,6 @@ Signed and notarized DMG, VideoToolbox decoding, Now Playing and media-key integ
 
 Composition spike first: transparent WebView2 over an mpv D3D11 surface. Then D3D11VA/NVDEC decoding, SMTC media controls, and an installer.
 
-### M7 — Music
-
-Music libraries, album and artist views, a play queue, gapless audio in mpv, and playstate for audio. Lossless files play as stored; the same fallback applies when they can't.
-
 ### M5 — Connected
 
 - Act as a Jellyfin cast target: other clients can send play/pause/seek.
@@ -131,7 +134,7 @@ A TV/mobile shell that reuses Fluster's domain, gateway, and playback policy. An
 
 ### Order
 
-M0, M1, M1b, then M6's shell spike in parallel with M2, then M7, M3, M4, M5. Milestone numbers are names, not the order.
+M0, M1, M1b, then M6's shell spike in parallel with M2, then M3, M4, M5. Milestone numbers are names, not the order.
 
 ## Success measures
 
@@ -152,4 +155,4 @@ M0, M1, M1b, then M6's shell spike in parallel with M2, then M7, M3, M4, M5. Mil
 - **A PIN per profile.** Not now; revisit with the TV shell.
 - **Dolby Vision.** Decided after the P5-01 spike.
 
-Answered on 2026-11-12 (see `docs/plans/proposals/product-review.md`): persistent login (keyring, on by default, P3-01 and P3-02), multiple servers and users (saved accounts, one active), and Live TV (out until after M2).
+Answered on 2026-11-12 (see `docs/plans/proposals/product-review.md`): persistent login (keyring, on by default, P3-01 and P3-02), multiple servers and users (saved accounts, one active), Live TV (out of scope), and music, audiobooks, and photos (out of scope; the music milestone M7 was removed).

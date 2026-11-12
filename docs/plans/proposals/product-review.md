@@ -2,6 +2,42 @@
 
 Status: **Answered 2026-11-12.** The owner's answers are in "Answers" below, as relayed by the coordinating agent. The changes they approve are applied in the same pull request, except two rule changes that wait for the owner's own confirmation. Sections 1 to 5 keep the original proposal text for the record; where an answer differs from a recommendation, the answer wins.
 
+## Direction update (owner, 2026-11-12)
+
+Set by the owner after the answers below, and relayed by the coordinating agent. Where it differs from an answer or from §1 to §5, this section wins.
+
+**The direction**
+
+- Fluster is a **video** streaming client for Jellyfin, and nothing else. "We should not be worried about music, photos, or audiobooks." Better apps exist for those.
+- The goal is a Netflix-like, streaming-service feel: "the best possible watching experience", where people "feel like they are on Netflix without having to finagle with their client."
+- Fluster will be the first client to support **Jellyscale** directly. Jellyscale is a scale-out server that speaks the Jellyfin client API, video only, still being built, and meant as a drop-in replacement for a Jellyfin server.
+- "Go off of the assumption that Jellyscale will provide us the APIs needed to stream." Fluster is tested against it when Jellyscale reaches its client-integration work. No compatibility audit now.
+
+**What it changes**
+
+| Earlier text | Now |
+|---|---|
+| Q1: three pillars (native, it just works, honest about the file) | Reinforced. A fourth pillar leads: it feels like a streaming service. `PRODUCT.md` is rewritten around video only, with no finagling. |
+| Q28: Live TV out until after M2 | Reinforced and made firmer: Live TV is in "Not for", with no revisit date. |
+| `PRODUCT.md` M7 Music; the "Music listener" persona | Removed. |
+| Phase P11 in `tasks/prd.json` (P11-01 to P11-07) | Removed. The file has no status for dropped work (`status_values` are todo, in_progress, blocked, done), so the tasks are deleted and listed here and in the pull request. Nothing depended on them. |
+| Gap matrix row 74 (Music: covered by P11) | Void. Music is not a gap. |
+| Gap matrix row 79 (Live TV: none, by decision) | Stands; now permanent. |
+| §1 "Not breadth. No downloads, SyncPlay, Live TV, or music." | Music and Live TV are no longer counted against Fluster. Downloads and SyncPlay still are. |
+| Plan 002 milestones 15 to 19 (music) | Removed, with a decision-log entry. |
+| Servers: Jellyfin 10.11.x and 12.x | Jellyfin and Jellyscale. |
+
+No proposal in §4 served only music, so none is dropped. No other answer changes.
+
+**What it adds**
+
+- `tasks/backlog.md` has the entry "Test Fluster against Jellyscale when its client-integration work starts", with the routes that are stubs in Jellyscale today.
+- A Netflix-like feel implies rows this review did not plan: "More like this", genre rows, trailers, and people pages. They sit in `tasks/backlog.md` (playlists, extras and trailers, genre and people pages) and are not yet tasks. They are the first candidates for the next product-review pass.
+
+**Docs touched by this update:** `PRODUCT.md`, `README.md`, `DOMAINS.md`, `ARCHITECTURE.md` (one sentence), `WORKFLOW.md` (one example id), `docs/decisions/0002` (a scope note only), `docs/plans/active/002`, `tasks/prd.json`, `tasks/backlog.md`, and a scope note in the research doc. `DESIGN.md` had no music text.
+
+**Invariant call-out.** `ARCHITECTURE.md` §2 lists Rust's fixed command list, which backs invariant I3. Its last sentence, "Music queueing (P11) will need one, decided in its own task", is deleted. The list and the rule are unchanged. The `/audio/{itemId}/master.m3u8` path in the HLS URL rules (I2) is left as it is: it describes audio-only sources in shipped code, not a music feature.
+
 ## Answers (owner, 2026-11-12)
 
 Relayed by the coordinating agent. An answer marked **differs** is not the recommendation in §5.
@@ -64,6 +100,7 @@ P3 (new, in order): P3-19 remember → P3-20 switch → P3-21 sign in again → 
                    → P3-23 auto-play → P3-24 skip → P3-25 keep awake → P3-26 volume and window
 P4-01 now also waits for: P3-20, P3-21, P3-23, P3-24, P3-25, P3-26, P13-17, P13-20, P13-21
 P5:                P5-05 subtitle styling (new)
+P11 (music): removed by the direction update above.
 P15 (new phase, after P4): P15-01 favorites and series state → P15-02 More menu → P15-03 person images and ratings
                    → P15-04 several addresses → P15-05 approve Quick Connect → P15-06 speed and subtitle offset
                    → P15-07 remember tracks → P15-08 unified Home spike

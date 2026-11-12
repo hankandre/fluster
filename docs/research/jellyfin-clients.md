@@ -2,6 +2,8 @@
 
 Researched 2026-11-12 for the product review in [`docs/plans/proposals/product-review.md`](../plans/proposals/product-review.md).
 
+Scope note, 2026-11-12: after this research the owner made Fluster video only. Music, audiobooks, photos, and Live TV are out of scope (`PRODUCT.md` "Not for"). The music and Live TV rows below are kept as a record of what other clients do, not as gaps for Fluster to close.
+
 ## Method and limits
 
 - Sources are GitHub repositories at their release tags, release notes, project wikis, jellyfin.org, vendor sites, and vendor forums. Every claim has a URL beside it.
