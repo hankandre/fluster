@@ -83,7 +83,7 @@ function keepConfirmed(current: PlaybackPlan | undefined, launched: PlaybackPlan
 
 // A failed Jellyfin request keeps only its kind: the view writes the copy, and
 // the transport message stays out of state.
-function failureAction(error: unknown): PlaybackSessionAction {
+export function failureAction(error: unknown): PlaybackSessionAction {
   const kind = classifyTransportError(error);
   return { type: "failure", message: kind ? "Jellyfin request failed." : errorText(error), kind };
 }
