@@ -2,30 +2,30 @@
 
 ## Goal / Done when
 
-Make Fluster a full replacement for other Jellyfin clients: keep playing the original file whenever mpv can, fall back to server direct stream and then transcode only when it must, always show it, and add Music and an early Android TV shell. Policy: [decision 0002](../../decisions/0002-server-transcoding-fallback.md).
+Make Fluster a full replacement for other Jellyfin clients: keep playing the original file whenever mpv can, fall back to server direct stream and then transcode only when it must, always show it, and add an early Android TV shell. Music was part of this plan until 2026-11-12, when the owner made Fluster video only. Policy: [decision 0002](../../decisions/0002-server-transcoding-fallback.md).
 
-Tasks: P10-01 to P10-12 (playback parity), P11-01 to P11-07 (music), P12-01 and P12-02 (early TV/mobile shell) in `tasks/prd.json`.
+Tasks: P10-01 to P10-12 (playback parity), P12-01 and P12-02 (early TV/mobile shell) in `tasks/prd.json`.
 
 - [x] The user chose E1-B, accepted E2 with a canary test, set both streaming-limit defaults to no limit, and approved the order and acceptance changes (2026-11-07)
 - [ ] `pnpm test:tripwire` passes the decision 0002 rules on 10.11.7 and 12.4.0: every playable sample direct plays with no server job; the BluRay folder and a forced-limit sample convert over same-origin, credential-free HLS with the indicator reason; no job survives 10 s after stop; `/Sessions` play method matches the plan
 - [ ] Loopback Rust tests show the `Authorization` header on every HLS master, variant, segment, and subtitle request; a playlist with a cross-origin or credential-bearing URI, or a credential parameter anywhere in its body, is refused before mpv reads it; nothing reaches a second origin; and no token canary reaches logs, errors, events, or the UI
 - [ ] A Transcode plan plays, seeks, pauses, and stops in `pnpm tauri dev` on Hankflix with the indicator visible and no job left on the server (P10-12)
-- [ ] A music album plays as a gapless queue with playstate reported (P11-05, P11-06)
+- Removed 2026-11-12 (video only): a music album plays as a gapless queue (P11-05, P11-06).
 - [ ] The Android TV shell decision is recorded and P9-01 can start (P12-02)
 - [ ] `pnpm check`, `pnpm test:e2e`, clippy are green
 
 ## Context and domains touched
 
-- Product and policy: `PRODUCT.md` (principle 1, personas, M1b, M7, M6 order), decision 0002.
+- Product and policy: `PRODUCT.md` (principle 1, personas, M1b, M6 order), decision 0002.
 - `ARCHITECTURE.md` §3 (negotiation, profile, source decision, HLS URL rules, playstate, stopping conversions) and §4 invariants.
-- Domains (`DOMAINS.md`): Playback Negotiation (core), Player Engine (core), Playback Session, Playstate Reporting, Catalog (music), App Shell & Presentation (indicator, settings, music views), Security & Redaction.
-- Invariants: **I1** and **I2** are replaced (prefer original; transparent fallback; two URL shapes). **I3** (no new Tauri command for HLS; music queue commands are decided in P11-01). **I4** (HLS header auth, token canary). **I5** (redirects on HLS nested opens). **I6** (subtitles while converting). **I7** (browser engine does not play HLS).
+- Domains (`DOMAINS.md`): Playback Negotiation (core), Player Engine (core), Playback Session, Playstate Reporting, App Shell & Presentation (indicator, settings), Security & Redaction.
+- Invariants: **I1** and **I2** are replaced (prefer original; transparent fallback; two URL shapes). **I3** (no new Tauri command for HLS). **I4** (HLS header auth, token canary). **I5** (redirects on HLS nested opens). **I6** (subtitles while converting). **I7** (browser engine does not play HLS).
 
 Until P10-03 and P10-04 land, the code keeps enforcing the old direct-play-only rule. The docs say so where it matters.
 
 ## Milestones
 
-Phase P10, playback parity (M1b). Native and mpv work stays serial: P10-01, then P10-04, then P11-05.
+Phase P10, playback parity (M1b). Native and mpv work stays serial: P10-01, then P10-04.
 
 1. **HLS auth spike (P10-01).** Prototype E1-B: Rust fetches and validates the master and variant playlists (every URI same-origin and credential-free, fail closed on a credential parameter in the body) and serves validated copies to libmpv from a `127.0.0.1` loopback server. Loopback tests for the header on every server request, a cross-origin URI in a playlist being refused, redirect behavior, and whether `max_redirects` and `protocol_whitelist` reach nested opens; a rebuilt, key-free `master.m3u8` played to first frame on both fixtures. Decide whether mpv fetches segments directly with the header or Rust proxies them, and record the evidence. Validation: `cargo test --manifest-path src-tauri/Cargo.toml hls`. Model: Opus (`native-engineer`).
 2. **Conversion contract fixtures (P10-02).** Record PlaybackInfo with the fallback profile for every sample at no limit, one sample under a forced limit, the BluRay folder, a user with transcoding disabled, a dvdsub sample, and an ISO sample if one can be generated. Tokens are replaced before commit. Validation: `pnpm test -- fixtures`. Model: Sonnet (`implementer`).
@@ -45,13 +45,7 @@ Phase P12, early TV and mobile shell (runs beside P10 once P10-01 is done).
 13. **Shell-neutral core (P12-01).** A boundary rule and a DOM-free type-check for domain, gateway, coordinator, and reporter. Validation: `pnpm check`. Model: Sonnet. Can start now.
 14. **TV and mobile shell decision (P12-02).** Decision record: React Native (`react-native-tvos`) with libmpv on Android versus alternatives, how the engine sends the header on HLS, what P9-01 must prove. Validation: the record exists and the user approved it. Model: Opus (`planner`).
 
-Phase P11, music (M7), after P10-03.
-
-15. **Music playback decision (P11-01).** Queue transport to mpv (and any new typed Tauri commands), gapless approach, audio negotiation. Validation: decision record approved. Model: Opus.
-16. **Music libraries (P11-02)** and **album and artist views (P11-03).** Validation: `pnpm check && pnpm test:e2e`. Model: Sonnet.
-17. **Audio negotiation (P11-04).** Validation: `pnpm test -- source-acceptance device-profile gateway fixtures`. Model: Opus.
-18. **Gapless queue in mpv (P11-05, human listening check).** Validation: `cargo test --manifest-path src-tauri/Cargo.toml` and a listening check. Model: Opus (`native-engineer`).
-19. **Audio playstate (P11-06)** and **now-playing bar and queue view (P11-07).** Validation: `pnpm check && pnpm test:e2e`. Model: Sonnet.
+Milestones 15 to 19 (phase P11, music) were removed on 2026-11-12: Fluster is video only (the owner).
 
 Pilot: milestones 1 and 3 are the pilot for the conversion path. Review both (guardian) before 4 to 12 scale out.
 
@@ -71,7 +65,7 @@ Pilot: milestones 1 and 3 are the pilot for the conversion path. Review both (gu
 - [x] 11 (P10-11)
 - [ ] 12
 - [x] 13 (P12-01: rule `core-is-shell-neutral` plus `pnpm typecheck:core` with `tsconfig.core.json`, both in `pnpm check`; window timers and the gateway's browser-storage defaults fixed, no open exceptions; `@types/node` supplies URL, AbortSignal, TextEncoder, crypto, console, and a React Native shell needs polyfills for URL and crypto.subtle) · [ ] 14
-- [ ] 15 · [ ] 16 · [ ] 17 · [ ] 18 · [ ] 19
+- 15 to 19: removed 2026-11-12 (music; video only)
 
 ## Tripwire rules after P10-09 (specified, not implemented)
 
@@ -123,7 +117,7 @@ No other open task conflicts: P1-08, P1-09 ("The server dashboard shows Direct P
 ## Open questions for the human
 
 1. **PlayMethod for stream-copy HLS:** report `DirectStream` (accurate) or `Transcode` (what the server's own `StreamInfo` says, `MediaInfoHelper.cs` v10.11.7 line 312)? The plan assumes `DirectStream` and checks the dashboard in P10-12.
-2. **Live TV:** write its decision record after P10 (parity) or after Music?
+2. **Live TV:** answered 2026-11-12: out of scope.
 3. **Apple TV and iOS:** after Android TV and phones (proposed), or alongside?
 4. **ISO:** if the server cannot convert the ISO sample, keep `iso-source` as a refusal, or add an mpv-side ISO spike?
 
@@ -132,6 +126,7 @@ Answered on 2026-11-07: E1 versus E1-B, E2, the remote default limit, and the ph
 ## Decision log
 
 - 2026-11-07: Server conversion is allowed as a fallback, in the order direct play, direct stream, transcode, always shown with its reason (the user, decision 0002).
+- 2026-11-12: Fluster is video only (the owner). Music (M7, P11-01 to P11-07) leaves the roadmap and `tasks/prd.json`; milestones 15 to 19 are removed. Live TV is out of scope.
 - 2026-11-07: Music joins the roadmap as M7; the Android TV/mobile shell moves earlier (spike after the fallback core). No Flutter (the user).
 - 2026-11-07: No `TranscodingUrl` is used as given; Playback Negotiation rebuilds it, strips credentials, and sets `EnableTrickplay=false`. Header auth is enough for every HLS request (decision 0002 Q1).
 - 2026-11-07: No new Tauri command for HLS; a typed `delivery` field on the load request selects it.
@@ -249,8 +244,7 @@ Answered on 2026-11-07: E1 versus E1-B, E2, the remote default limit, and the ph
 | A conversion keeps running after the user leaves | Stopped report kills jobs; `DELETE /Videos/ActiveEncodings` on new sessions and failed stops; tripwire checks no job after 10 s |
 | A codec condition sneaks into the profile and transcodes playable files | Profile test fails on any `CodecProfiles` or `ContainerProfiles` entry; tripwire playable-sample rule |
 | Audio or subtitle change while converting needs a new stream | P10-08 renegotiates at the current position; direct play keeps local switching |
-| Music queue needs new Tauri commands (I3) | P11-01 decides them with `docs/security.md` and allowlist updates |
-| Scope growth slows the desktop daily driver | P10 first; P11 after P4; P12 is two small tasks until P9-01 |
+| Scope growth slows the desktop daily driver | P10 first; P12 is two small tasks until P9-01; music removed 2026-11-12 |
 
 ## Untested gates
 

@@ -172,7 +172,7 @@ Relative API list prices (per million input/output tokens, as of 2026-10). Subsc
 |---|---|---|
 | Codebase search, CI log triage, commit messages, watching PRs, doc-gardening detection | **Haiku 5.5** | `scout`, `ci-triage` |
 | Refine + spec and spec check, routine tasks (screens, docs, tests) | **Opus 5.5** | `refiner`, `spec-checker` |
-| Refine + spec and spec check, high-risk tasks (native, security, architecture, ADRs: e.g. P11, P12-02, P2-06, #12) | **Fable 5.2** | `refiner`, `spec-checker` with a spawn-time `model: fable` override |
+| Refine + spec and spec check, high-risk tasks (native, security, architecture, ADRs: e.g. P3-01, P12-02, P2-06, #12) | **Fable 5.2** | `refiner`, `spec-checker` with a spawn-time `model: fable` override |
 | Native Rust implementation (`player/*`, `surface/*`, `unsafe`, FFI, threading) | **Opus 5.5** | `native-engineer` |
 | TypeScript implementation, tests, Playwright journeys | **Sonnet 5.5** | `implementer` |
 | Verify | **Sonnet 5.5** | coordinator or `implementer` |

@@ -20,7 +20,7 @@ When mpv cannot play the original, Fluster falls back to server repackaging (dir
 
 GPU selection is automatic. There is no executable or GPU selector, and the desktop client never opens a separate player window.
 
-X11, Windows, ARM64 Linux, Flatpak, downloads, persistent login, live TV, and disc/ISO media are not in this slice. Server conversion fallback, music, and an Android TV shell are planned next. The macOS renderer remains experimental and is outside this beta's validation claim.
+X11, Windows, ARM64 Linux, Flatpak, downloads, persistent login, live TV, and disc/ISO media are not in this slice. Server conversion fallback and an Android TV shell are planned next. Fluster is a video client: music, audiobooks, and photos are out of scope. The macOS renderer remains experimental and is outside this beta's validation claim.
 
 ## Develop
 

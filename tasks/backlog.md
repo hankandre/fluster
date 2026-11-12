@@ -18,7 +18,15 @@ Decided "not now" by the owner. Revisit dates are in the review.
 - Recap, Preview, and Commercial segments with the same three skip modes (Q15). S.
 - A "Still watching?" prompt (Q16). S.
 - Audio sync offset and dual subtitles; each needs a typed player command (Q18). M.
-- Live TV. Out until after M2; needs a decision record (Q28). L.
+- ~~Live TV.~~ Out of scope since the direction update of 2026-11-12 (`PRODUCT.md` "Not for"). Not a backlog item any more.
+
+Jellyscale (direction update, 2026-11-12).
+
+- **Test Fluster against Jellyscale when its client-integration work starts.** Jellyscale is a scale-out video server that speaks the Jellyfin client API (`~/Code/jellyscale`). Fluster assumes it will provide the APIs needed to stream; no compatibility audit has been done. Notes for whoever runs the test, from Jellyscale's `compat/endpoints.yaml` and `README.md` on 2026-11-12:
+  - Routes a Netflix-like UI needs that are stubs there today: `/Items/{id}/Similar`, `/Genres`, `/Persons`, `/Items/{id}/LocalTrailers`, `/Items/Filters2`.
+  - Quick Connect and user management are not built (`/QuickConnect/Enabled` is a stub; the README's Identity row says "not built"). Fluster's sign-in leads with Quick Connect.
+  - Trickplay and library and metadata work are also listed as not built.
+  - Size: M for the test pass; fixes are separate tasks.
 
 No decision yet.
 

@@ -71,7 +71,6 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 - libraries (UserViews)
 - browse queries, sorting, filters, and search
 - home rows (Continue Watching, Next Up, Latest)
-- music libraries: artists, albums, and tracks (P11)
 - the series → season → episode hierarchy
 - item detail and multiple versions as *display* data
 - image URL construction and caching by tag
@@ -129,7 +128,6 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 - the UI-facing session state reducer
 - later: next-episode auto-play, intro/credits skip using media segments, trickplay scrubbing data
 - stopping server conversions (`DELETE /Videos/ActiveEncodings`) before a new play session for the same item
-- the play queue for music (P11)
 
 **Language.** Attempt, Operation, First frame, End reason (eof / stopped / quit / error), Retry, Up next, Segment (intro / outro / recap).
 

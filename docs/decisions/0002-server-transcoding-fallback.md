@@ -5,6 +5,7 @@
 - Decided by: the user. Plan: `docs/plans/active/002-transcoding-fallback-and-parity.md`. Tasks: P10, P11, P12 in `tasks/prd.json`.
 - Supersedes: invariants I1 and I2 and source acceptance (`ARCHITECTURE.md` §3, §4); PRODUCT principle 1 "Direct play or nothing"; the `AGENTS.md` hard rules on transcoding, direct-play flags, and `TranscodingUrl`.
 - Touches invariants: I1, I2 (replaced), I3, I4, I5, I6, I7.
+- Scope note (the owner, 2026-11-12): Fluster is video only. Music (phase P11, milestone M7) is removed from the roadmap, and Live TV is out of scope. Mentions of music and live TV below are history; the playback policy is unchanged.
 
 ## Context
 
