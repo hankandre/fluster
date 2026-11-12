@@ -18,6 +18,7 @@ import { UpNextCard } from "./chrome/up-next-card";
 import { AUTO_PLAY_SECONDS } from "./auto-play-next";
 import { creditsStart, leaveToNext, leaveToSeries, useAutoPlayCountdown, useNextEpisode } from "./use-auto-play-next";
 import { usePlaybackSession, whenPlaybackStopped } from "./use-playback-session";
+import { useServerName } from "./use-server-name";
 import { useSeekPreview } from "./use-seek-preview";
 import { useIdleCursor } from "./use-idle-cursor";
 import { useEscapeKey } from "../use-escape-key";
@@ -189,6 +190,10 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
   });
 
   // Up Next takes the place of Skip credits when a next episode exists (Q19 A).
+  // The server's name for error copy, asked (unauthenticated probe) only once a failure or warning shows.
+  const needsServerName = Boolean(playback.state.errorKind) || Boolean(playback.state.reportingWarning);
+  const serverName = useServerName(gateway, needsServerName);
+
   const offeredSegments = next ? segments.filter((segment) => segment.kind !== "Outro") : segments;
   const showCard = Boolean(next) && upNext.secondsLeft !== undefined && !playback.state.error;
 
@@ -225,6 +230,7 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
     <main className={`app-shell has-player${cursor.idle ? " cursor-idle" : ""}`} onPointerMove={cursor.onPointerMove}>
       <PlayerView
         item={item}
+        serverName={serverName}
         player={player.engine}
         session={playback.state}
         status={status}

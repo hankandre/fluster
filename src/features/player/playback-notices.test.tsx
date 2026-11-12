@@ -78,11 +78,24 @@ describe("playback notices", () => {
   });
 
   it("a playback error has Retry, busy while retrying, and Back to details", async () => {
-    const { rerender } = render(<PlaybackErrorNotice item={item} message="Decoder failed" retryLabel="Retry" onRetry={vi.fn()} onBack={vi.fn()} />);
+    const { rerender } = render(<PlaybackErrorNotice item={item} serverName="Hearth" message="Decoder failed" retryLabel="Retry" onRetry={vi.fn()} onBack={vi.fn()} />);
     expect(screen.getByRole("heading", { level: 1, name: "Playback could not start" })).toBeInTheDocument();
     expect(screen.getByText("Decoder failed")).toBeInTheDocument();
     await expectOrder(["Retry", "Back to details"]);
-    rerender(<PlaybackErrorNotice item={item} message="Decoder failed" retryLabel="Retry" retrying onRetry={vi.fn()} onBack={vi.fn()} />);
+    rerender(<PlaybackErrorNotice item={item} serverName="Hearth" message="Decoder failed" retryLabel="Retry" retrying onRetry={vi.fn()} onBack={vi.fn()} />);
     expect(screen.getByRole("button", { name: "Retry" })).toBeDisabled();
+  });
+
+  it.each([
+    ["network", "Couldn't reach Hearth. Check that the server is on, then try again."],
+    ["server", "Hearth had a problem starting playback. Try again in a moment."],
+    ["request", "Something went wrong starting playback. Try again."],
+  ] as const)("a %s failure shows plain copy, never the transport message, also while retrying", (kind, copy) => {
+    const raw = "Request failed with status code 500 / Network Error / timeout of 30000ms exceeded";
+    const { container, rerender } = render(<PlaybackErrorNotice item={item} serverName="Hearth" kind={kind} message={raw} retryLabel="Retry" onRetry={vi.fn()} onBack={vi.fn()} />);
+    expect(screen.getByText(copy)).toBeInTheDocument();
+    rerender(<PlaybackErrorNotice item={item} serverName="Hearth" kind={kind} message={raw} retryLabel="Retry" retrying onRetry={vi.fn()} onBack={vi.fn()} />);
+    expect(screen.getByText(copy)).toBeInTheDocument();
+    for (const text of ["Request failed", "Network Error", "timeout of"]) expect(container).not.toHaveTextContent(text);
   });
 });

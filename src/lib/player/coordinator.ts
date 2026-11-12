@@ -11,6 +11,7 @@ import type {
 } from "../../domain/playback";
 import { startOverChoice } from "../../domain/playback";
 import { redactError, redactText } from "../redact";
+import { redactTransportError } from "../transport-error";
 import { confirmedPlan } from "./confirm-play-method";
 import { PlaystateReporter, type PlaystateGateway } from "./playstate-reporter";
 
@@ -216,7 +217,7 @@ export class PlaybackCoordinator {
         : this.gateway.createPlaybackPlan(item, choice.startPositionTicks, controller.signal));
     } catch (error) {
       if (!this.isCurrentAttempt(attempt, controller)) throw new PlaybackCancelledError();
-      throw redactError(error);
+      throw redactTransportError(error);
     }
     this.assertCurrentAttempt(attempt, controller);
     if (isRetry && plan.playSessionId === this.previousPlan?.playSessionId) {

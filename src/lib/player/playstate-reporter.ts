@@ -1,6 +1,9 @@
 import type { PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
-import { redactText } from "../redact";
 import { reportedPlan } from "./confirm-play-method";
+
+// The warning for a failed progress or stopped report. The view turns it into
+// plain copy; no request error text is carried.
+export const REPORT_FAILED_WARNING = "report-failed";
 
 const PROGRESS_INTERVAL_MS = 10_000;
 const REPORT_FLUSH_TIMEOUT_MS = 5_000;
@@ -123,9 +126,9 @@ export class PlaystateReporter {
 
   private queueReport(operation: (signal: AbortSignal) => Promise<void>): void {
     const signal = this.controller.signal;
-    this.queue = this.queue.then(() => operation(signal)).catch((error: unknown) => {
+    this.queue = this.queue.then(() => operation(signal)).catch(() => {
       if (signal.aborted) return;
-      this.onWarning(error instanceof Error ? redactText(error.message) : "Playback reporting failed.");
+      this.onWarning(REPORT_FAILED_WARNING);
     });
   }
 
@@ -152,9 +155,9 @@ export class PlaystateReporter {
     let delivered = false;
     const report = sendStopped(controller.signal).then(() => {
       delivered = true;
-    }, (error: unknown) => {
+    }, () => {
       if (controller.signal.aborted) return;
-      this.onWarning(error instanceof Error ? redactText(error.message) : "Playback reporting failed.");
+      this.onWarning(REPORT_FAILED_WARNING);
     });
     const settled = await settlesWithin(report, STOPPED_REPORT_TIMEOUT_MS);
     if (settled) return delivered;
@@ -169,9 +172,9 @@ export class PlaystateReporter {
     if (plan.delivery !== "hls" || this.stoppedEncodings.has(plan.playSessionId)) return;
     this.stoppedEncodings.add(plan.playSessionId);
     const controller = new AbortController();
-    const request = this.gateway.stopActiveEncoding(plan.playSessionId, controller.signal).catch((error: unknown) => {
+    const request = this.gateway.stopActiveEncoding(plan.playSessionId, controller.signal).catch(() => {
       if (controller.signal.aborted) return;
-      this.onWarning(error instanceof Error ? redactText(error.message) : "Stopping the server conversion failed.");
+      this.onWarning("Stopping the server conversion failed.");
     });
     const settled = await settlesWithin(request, ENCODING_STOP_TIMEOUT_MS);
     if (settled) return;

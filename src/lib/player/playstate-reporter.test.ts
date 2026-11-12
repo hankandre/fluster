@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
-import { PlaystateReporter, type PlaystateGateway } from "./playstate-reporter";
+import { PlaystateReporter, REPORT_FAILED_WARNING, type PlaystateGateway } from "./playstate-reporter";
 
 const plan: PlaybackPlan = {
   itemId: "one",
@@ -106,7 +106,7 @@ describe("PlaystateReporter", () => {
 
     expect(calls).toEqual(["progress"]);
     expect(onWarning).toHaveBeenCalledTimes(1);
-    expect(onWarning.mock.calls[0][0]).not.toContain("secret");
+    expect(onWarning).toHaveBeenCalledWith(REPORT_FAILED_WARNING);
   });
 
   it("aborts reports that outlive the shutdown deadline without a second warning", async () => {
