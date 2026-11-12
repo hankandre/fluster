@@ -34,6 +34,13 @@ function Harness({ safeFirst = false, closeOnVeil = true }: { safeFirst?: boolea
 afterEach(cleanup);
 
 describe("Dialog", () => {
+  it("is a dialog by default and an alertdialog when asked", () => {
+    const { rerender } = render(<Dialog open onClose={() => undefined} title="Plain"><p>Body</p></Dialog>);
+    expect(screen.getByRole("dialog", { name: "Plain" })).toBeInTheDocument();
+    rerender(<Dialog open role="alertdialog" onClose={() => undefined} title="Alert"><p>Body</p></Dialog>);
+    expect(screen.getByRole("alertdialog", { name: "Alert" })).toHaveAttribute("aria-modal", "true");
+  });
+
   it("opens as a labelled modal and focuses its first control", async () => {
     const user = userEvent.setup();
     render(<Harness />);

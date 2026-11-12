@@ -20,6 +20,11 @@ describe("TextField", () => {
     expect(input).toHaveAccessibleDescription("That address didn't answer. Include http or https.");
   });
 
+  it("announces its error as an alert", () => {
+    render(<TextField label="Server URL" error="That address didn't answer." />);
+    expect(screen.getByRole("alert")).toHaveTextContent("That address didn't answer.");
+  });
+
   it("has no description or invalid flag without a hint or error", () => {
     render(<TextField label="Username" />);
     const input = screen.getByLabelText("Username");

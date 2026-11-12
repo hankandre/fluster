@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { SessionGateway } from "../../app/session";
-import { errorMessage, isAbort, ServerOrigin, Shell } from "./sign-in-shell";
+import { Button, InlineError, TextField } from "../shared/ui";
+import { isAbort, signInErrorCopy } from "./sign-in-errors";
+import { StepShell } from "./step-shell";
 
 export function PasswordStep({
   gateway,
@@ -16,11 +18,19 @@ export function PasswordStep({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const controller = useRef<AbortController | undefined>(undefined);
+  const usernameField = useRef<HTMLInputElement>(null);
 
   useEffect(() => () => controller.current?.abort(), []);
 
+  // A passive effect, not autoFocus: after "Connect without encryption" the
+  // dialog lifts its inert page in a passive cleanup, which runs before this.
+  useEffect(() => {
+    usernameField.current?.focus();
+  }, []);
+
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (busy) return;
     setError("");
     setBusy(true);
     const abort = new AbortController();
@@ -34,40 +44,35 @@ export function PasswordStep({
       onSignedIn();
     } catch (caught) {
       if (isAbort(caught)) return;
-      setError(errorMessage(caught));
+      setError(signInErrorCopy(caught, { address: gateway.origin, afterCredentials: true }));
       setBusy(false);
     }
   }
 
   return (
-    <Shell kicker="STEP 02 / SIGN IN" title="Sign in with your password">
-      <ServerOrigin origin={gateway.origin} />
-      <form className="login-form" onSubmit={submit}>
-        <label htmlFor="sign-in-username">Username</label>
-        <input
-          id="sign-in-username"
-          autoFocus
+    <StepShell title="Who is signing in?" origin={gateway.origin}>
+      <form className="sign-in-form" onSubmit={submit}>
+        <TextField
+          ref={usernameField}
+          label="Username"
           required
           autoComplete="username"
           value={username}
           onChange={(event) => setUsername(event.target.value)}
         />
-        <label htmlFor="sign-in-password">Password</label>
-        <input
-          id="sign-in-password"
+        <TextField
+          label="Password"
           type="password"
           autoComplete="current-password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
         />
-        {error && <p role="alert" className="form-error">{error}</p>}
-        <div className="form-actions">
-          <button type="button" className="text-button" onClick={onBack}>Change server</button>
-          <button type="submit" className="primary-button" disabled={busy}>
-            {busy ? "Signing in…" : "Sign in"}
-          </button>
+        {error && <InlineError message={error} />}
+        <div className="sign-in-actions">
+          <Button variant="quiet" onClick={onBack}>Change server</Button>
+          <Button variant="primary" type="submit" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</Button>
         </div>
       </form>
-    </Shell>
+    </StepShell>
   );
 }

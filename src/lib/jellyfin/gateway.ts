@@ -6,6 +6,7 @@ import type { PlaybackDelivery, PlaybackPlan, PlaybackPlanOptions, PlaybackSnaps
 import { PlaybackRefusedError, secondsToTicks } from "../../domain/playback";
 import { classifyHost, type HostClass } from "../../domain/host-class";
 import type { ServerConnection } from "../../domain/server-connection";
+import { SignInFailure } from "../../domain/sign-in-failure";
 import { isSupportedServerVersion, parseServerVersion } from "../../domain/server-version";
 import type { MediaSegment } from "../../domain/media-segments";
 import { MemoryLanHttpConfirmations, type LanHttpConfirmationStore } from "../lan-http-confirmations";
@@ -112,16 +113,16 @@ function normalizeServerUrl(input: string): URL {
   try {
     url = new URL(candidate);
   } catch {
-    throw new Error("Enter a valid Jellyfin server URL.");
+    throw new SignInFailure("invalid-address", "Enter a valid Jellyfin server URL.");
   }
   if (url.protocol !== "http:" && url.protocol !== "https:") {
-    throw new Error("The server URL must use http:// or https://.");
+    throw new SignInFailure("invalid-address", "The server URL must use http:// or https://.");
   }
   if (url.username || url.password) {
-    throw new Error("The server URL must not include a username or password.");
+    throw new SignInFailure("invalid-address", "The server URL must not include a username or password.");
   }
   if (url.protocol === "http:" && classifyHost(url) === "public") {
-    throw new Error(PUBLIC_HTTP_REFUSED_MESSAGE);
+    throw new SignInFailure("public-http", PUBLIC_HTTP_REFUSED_MESSAGE);
   }
   url.hash = "";
   url.search = "";
@@ -143,7 +144,7 @@ function isRedirectError(error: unknown): boolean {
 
 // Fake transports may omit `status`; Axios always sets it.
 function refuseRedirect<T>(response: HttpResponse<T>): HttpResponse<T> {
-  if (isRedirectStatus(response.status)) throw new Error(REDIRECT_REFUSED_MESSAGE);
+  if (isRedirectStatus(response.status)) throw new SignInFailure("redirect", REDIRECT_REFUSED_MESSAGE);
   return response;
 }
 
@@ -217,15 +218,15 @@ export class JellyfinGateway {
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
     if (!data || typeof data !== "object" || typeof data.Version !== "string") {
-      throw new Error("The server returned an unexpected public-info response. Check the URL and reverse-proxy routing.");
+      throw new SignInFailure("unexpected-response", "The server returned an unexpected public-info response. Check the URL and reverse-proxy routing.");
     }
     const version = data.Version;
     const parsed = parseServerVersion(version);
     if (!parsed || !isSupportedServerVersion(parsed)) {
-      throw new Error(`Fluster needs Jellyfin 10.11 or newer; this server reports ${version}.`);
+      throw new SignInFailure("unsupported-version", `Fluster needs Jellyfin 10.11 or newer; this server reports ${version}.`);
     }
     if (this.needsConsentForPlainHttp() && !data.Id) {
-      throw new Error("The server did not report its Id, so Fluster cannot remember an unencrypted connection to it.");
+      throw new SignInFailure("unexpected-response", "The server did not report its Id, so Fluster cannot remember an unencrypted connection to it.");
     }
     this.serverId = data.Id;
     return {
@@ -259,7 +260,7 @@ export class JellyfinGateway {
   // or token reaches a private-LAN HTTP server the user has not confirmed.
   private requireTransportConsent(): void {
     if (this.needsConsentForPlainHttp() && !this.hasUnencryptedConsent()) {
-      throw new Error(UNENCRYPTED_NOT_CONFIRMED_MESSAGE);
+      throw new SignInFailure("not-confirmed", UNENCRYPTED_NOT_CONFIRMED_MESSAGE);
     }
   }
 
@@ -295,7 +296,7 @@ export class JellyfinGateway {
       signal,
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
-    if (!data?.Secret || !data.Code) throw new Error("Jellyfin did not return a Quick Connect code.");
+    if (!data?.Secret || !data.Code) throw new SignInFailure("unexpected-response", "Jellyfin did not return a Quick Connect code.");
     return { secret: data.Secret, code: data.Code };
   }
 
@@ -338,7 +339,7 @@ export class JellyfinGateway {
     deviceId: string,
     fallbackName: string,
   ): { userId: string; username: string } {
-    if (!data.AccessToken || !data.User?.Id) throw new Error("Jellyfin did not return a valid user session.");
+    if (!data.AccessToken || !data.User?.Id) throw new SignInFailure("unexpected-response", "Jellyfin did not return a valid user session.");
     this.accessToken = data.AccessToken;
     this.userId = data.User.Id;
     this.deviceId = deviceId;
@@ -885,7 +886,7 @@ export class JellyfinGateway {
     try {
       response = await this.transport.get<T>(url, config);
     } catch (error) {
-      if (isRedirectError(error)) throw new Error(REDIRECT_REFUSED_MESSAGE);
+      if (isRedirectError(error)) throw new SignInFailure("redirect", REDIRECT_REFUSED_MESSAGE);
       throw redactTransportError(error);
     }
     return refuseRedirect(response);
@@ -896,7 +897,7 @@ export class JellyfinGateway {
     try {
       response = await this.transport.post<T>(url, data, config);
     } catch (error) {
-      if (isRedirectError(error)) throw new Error(REDIRECT_REFUSED_MESSAGE);
+      if (isRedirectError(error)) throw new SignInFailure("redirect", REDIRECT_REFUSED_MESSAGE);
       throw redactTransportError(error);
     }
     return refuseRedirect(response);
@@ -907,7 +908,7 @@ export class JellyfinGateway {
     try {
       response = await this.transport.delete<T>(url, config);
     } catch (error) {
-      if (isRedirectError(error)) throw new Error(REDIRECT_REFUSED_MESSAGE);
+      if (isRedirectError(error)) throw new SignInFailure("redirect", REDIRECT_REFUSED_MESSAGE);
       throw redactTransportError(error);
     }
     return refuseRedirect(response);

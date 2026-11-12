@@ -6,7 +6,9 @@ const lanServerUrl = "http://192.168.50.10:8096";
 
 // Mocks a Jellyfin server with Quick Connect. `approve()` flips the pending
 // request to approved, as if the user entered the code on another device.
-async function mockQuickConnectServer(page: Page, origin = serverUrl) {
+// `quickConnect: false` turns Quick Connect off, so sign-in goes to the password step; `loginStatus`
+// answers the password sign-in (with CORS headers, or the browser would report a network error).
+async function mockQuickConnectServer(page: Page, origin = serverUrl, options: { quickConnect?: boolean; loginStatus?: number } = {}) {
   const state = { approved: false, connectPolls: 0, authenticated: false, paths: [] as string[] };
   await page.route(`${origin}/**`, (route) => {
     const path = new URL(route.request().url()).pathname;
@@ -21,12 +23,17 @@ async function mockQuickConnectServer(page: Page, origin = serverUrl) {
       case "/System/Info/Public":
         return json({ ServerName: "Testfin", Version: "10.11.7", Id: "server-1" });
       case "/QuickConnect/Enabled":
-        return json(true);
+        return json(options.quickConnect ?? true);
       case "/QuickConnect/Initiate":
         return json({ Secret: "e2e-secret", Code: "482913", Authenticated: false });
       case "/QuickConnect/Connect":
         state.connectPolls += 1;
         return json({ Secret: "e2e-secret", Code: "482913", Authenticated: state.approved });
+      case "/Users/AuthenticateByName":
+        return route.fulfill({
+          status: options.loginStatus ?? 401,
+          headers: { "access-control-allow-origin": "*", "access-control-allow-headers": "*" },
+        });
       case "/Users/AuthenticateWithQuickConnect":
         state.authenticated = true;
         return json({ AccessToken: "test-token", User: { Id: "user-1", Name: "Tester" } });
@@ -60,7 +67,7 @@ test("Cancel stops Quick Connect polling", async ({ page }) => {
   const state = await mockQuickConnectServer(page);
   await startQuickConnect(page);
 
-  await page.getByRole("button", { name: "Cancel" }).click();
+  await page.getByRole("button", { name: "Change server" }).click();
   await expect(page.getByLabel("Server URL")).toBeVisible();
   const pollsAtCancel = state.connectPolls;
   await page.waitForTimeout(4_500);
@@ -87,11 +94,42 @@ test("a private-LAN HTTP server asks once before signing in", async ({ page }) =
   await expect(page.getByTestId("quick-connect-code")).toHaveText("482913");
 
   // The choice is remembered for this server Id and origin.
-  await page.getByRole("button", { name: "Cancel" }).click();
+  await page.getByRole("button", { name: "Change server" }).click();
   await page.getByLabel("Server URL").fill(lanServerUrl);
   await page.keyboard.press("Enter");
   await expect(page.getByTestId("quick-connect-code")).toHaveText("482913");
   await expect(warning).toHaveCount(0);
+});
+
+test("the password step takes focus after Connect without encryption", async ({ page }) => {
+  await mockQuickConnectServer(page, lanServerUrl, { quickConnect: false });
+  await page.goto("/#/next/sign-in");
+  await page.getByLabel("Server URL").fill(lanServerUrl);
+  await page.keyboard.press("Enter");
+  await page.getByRole("button", { name: "Connect without encryption" }).click();
+  await expect(page.getByRole("heading", { name: "Who is signing in?" })).toBeVisible();
+  await expect(page.getByLabel("Username")).toBeFocused();
+});
+
+test("a wrong password shows plain copy, not the status code", async ({ page }) => {
+  await mockQuickConnectServer(page, serverUrl, { quickConnect: false, loginStatus: 401 });
+  await page.goto("/#/next/sign-in");
+  await page.getByLabel("Server URL").fill(serverUrl);
+  await page.keyboard.press("Enter");
+  await page.getByLabel("Username").fill("Tester");
+  await page.getByLabel("Password").fill("wrong");
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("alert")).toHaveText("That username and password didn't work.");
+  await expect(page.getByText(/status code|Network Error/)).toHaveCount(0);
+});
+
+test("an unreachable server is named in plain copy", async ({ page }) => {
+  await page.route("https://nas.test/**", (route) => route.abort());
+  await page.goto("/#/next/sign-in");
+  await page.getByLabel("Server URL").fill("https://nas.test");
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("alert")).toContainText("Couldn't reach https://nas.test.");
+  await expect(page.getByText(/Network Error|status code/)).toHaveCount(0);
 });
 
 test("a public HTTP server is refused without any request", async ({ page }) => {
@@ -119,4 +157,6 @@ test("browser mode hides Find servers on this network", async ({ page }) => {
   await page.goto("/#/next/sign-in");
   await expect(page.getByLabel("Server URL")).toBeVisible();
   await expect(page.getByRole("button", { name: "Find servers on this network" })).toHaveCount(0);
+  await expect(page.getByText("On this network")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Search again" })).toHaveCount(0);
 });

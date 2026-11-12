@@ -137,6 +137,13 @@ Toasts never take focus, so a keyboard user can miss an action such as Undo. A l
 
 ## Decision log
 
+- P13-16: sign-in errors come from one mapper, `src/features/sign-in/sign-in-errors.ts`. The 401 row applies only from the password step (`afterCredentials`); a 401 from the probe or Quick Connect gives the generic sentence. Transport kinds come from `classifyTransportError`.
+- P13-16: the gateway throws `SignInFailure` (`src/domain/sign-in-failure.ts`, extends `Error`, messages unchanged) for fixed sentences. The `redirect` kind is also thrown from signed-in `get`, `post`, and `delete`, so the name misleads outside sign-in; no caller inspects the class.
+- P13-16: after "Connect without encryption" the next step focuses in a passive effect (Username field, Quick Connect h1) because `Dialog` removes `inert` in a passive cleanup that runs before the next step's passive effects. Covered by an e2e case; unverified in WebKitGTK.
+- P13-16: "Connect" uses `aria-disabled` while busy, not `disabled`, so the dialog can return focus to it.
+- P13-16: `useServerDiscovery` does nothing in its effect cleanup, so under StrictMode the one search's result still lands.
+- P13-16, low, deferred: gateway sentences shown verbatim (invalid address, redirect, unsupported version, unexpected response, not confirmed) have no DESIGN.md §10 row; only the public-HTTP sentence joined the table. The unsupported-version sentence shows the server-reported version string. The address in the unreachable sentence is plain text, not Mono.
+
 - P13-15, departure from DESIGN.md §9 ("Containers are one Tab stop with arrows inside"): the two actions of a playback notice (`.playback-notice-actions`) are separate Tab stops and also take Left and Right. Acceptance 3 of P13-15 asks for a Retry, then Back to details focus order, and a roving row would skip Back to details on Tab. Arrows still work, so the keyboard-only rule holds. The design reviewer should check against this entry, not the container rule.
 - P13-15: the OSD prop is `keyMessage`, not `key`, because `key` is reserved in JSX. `useOsd` returns `{ notice, keyMessage, show }` (Q3 A).
 - P13-15: route-level notices (cannot start, load failure, item gone, refusal) sit in `main.playback-notice-page`, keeping the landmark `PlayerMessage` gave them. `PlayerUnavailableNotice` takes `onRetry` and `onBack` as props; `PlayerGate` calls `leaveToDetails`, so the gallery overlay closes instead of leaving.

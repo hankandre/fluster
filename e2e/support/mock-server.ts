@@ -26,6 +26,8 @@ export interface MockOptions {
   empty?: boolean;
   noQuickConnect?: boolean;
   holdQuickConnect?: boolean;
+  // /QuickConnect/Connect answers 404, as Jellyfin does once the code has expired.
+  quickConnectExpired?: boolean;
   fail?: boolean;
   duration?: number;
   disc?: boolean;
@@ -265,6 +267,7 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
         case "/QuickConnect/Initiate":
           return json({ Secret: "s", Code: "482913", Authenticated: false });
         case "/QuickConnect/Connect":
+          if (opts.quickConnectExpired) return route.fulfill({ status: 404, headers: cors });
           return json({ Secret: "s", Code: "482913", Authenticated: !opts.holdQuickConnect });
         case "/Users/AuthenticateWithQuickConnect":
           return json({ AccessToken: "test-token", User: { Id: "user-1", Name: "Sam" } });

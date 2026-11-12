@@ -44,6 +44,7 @@
   --type-label: 600 0.9375rem / 1.3 var(--font-ui);
   --type-meta: 500 0.8125rem / 1.35 var(--font-ui);
   --type-mono: 500 0.875rem / 1.3 var(--font-mono);
+  --type-code: 700 clamp(2.5rem, 1.5rem + 2.6vw, 4.5rem) / 1.02 var(--font-mono);
   --tracking-hero: -0.02em;
   --measure: 62ch;
 
@@ -55,6 +56,7 @@
   --safe-y: 0px;
 
   /* Sizes */
+  --sign-in-w: min(560px, 100%);
   --poster-w: 112px;
   --thumb-w: 240px;
   --nav-h: 64px;

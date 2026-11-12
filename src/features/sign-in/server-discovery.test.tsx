@@ -1,3 +1,5 @@
+import { StrictMode } from "react";
+import userEvent from "@testing-library/user-event";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionProvider } from "../../app/session";
@@ -90,10 +92,9 @@ function renderView(discovery: ServerDiscovery | undefined) {
   return { requests, created };
 }
 
+// The search starts by itself when the screen opens; wait for it to settle.
 async function findServers() {
-  await act(async () => {
-    fireEvent.click(screen.getByRole("button", { name: "Find servers on this network" }));
-  });
+  await act(async () => undefined);
 }
 
 beforeEach(() => {
@@ -104,11 +105,100 @@ afterEach(() => {
   cleanup();
 });
 
-describe("Find servers on this network", () => {
+describe("Servers on this network", () => {
   it("is hidden when the shell has no discovery (browser mode)", () => {
     renderView(undefined);
     expect(screen.getByLabelText("Server URL")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Find servers on this network" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "On this network" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Search again" })).not.toBeInTheDocument();
+  });
+
+  it("searches once by itself and lists servers above the address field", async () => {
+    const discovery = fakeDiscovery(found([LAN_SERVER]));
+    renderView(discovery);
+    await findServers();
+    expect(discovery.discover).toHaveBeenCalledTimes(1);
+    const heading = screen.getByRole("heading", { name: "On this network" });
+    const field = screen.getByLabelText("Server URL");
+    expect(heading.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(field).toHaveFocus();
+  });
+
+  it("searches once under StrictMode and still shows the list", async () => {
+    const discovery = fakeDiscovery(found([LAN_SERVER]));
+    const { transport } = countingTransport();
+    render(
+      <StrictMode>
+        <SessionProvider createGateway={(serverUrl) => new JellyfinGateway(serverUrl, transport, "install-1", new MemoryConfirmations())}>
+          <SignInView discovery={discovery} />
+        </SessionProvider>
+      </StrictMode>,
+    );
+    await findServers();
+    expect(discovery.discover).toHaveBeenCalledTimes(1);
+    expect(within(screen.getByRole("list", { name: "Servers found on this network" })).getAllByRole("button")).toHaveLength(1);
+  });
+
+  it("does not search again after going to the password step and back", async () => {
+    const discovery = fakeDiscovery(found([HTTPS_SERVER]));
+    renderView(discovery);
+    await findServers();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Remote/ }));
+    });
+    expect(screen.getByLabelText("Username")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Change server" }));
+    await findServers();
+    expect(discovery.discover).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("list", { name: "Servers found on this network" })).toBeInTheDocument();
+  });
+
+  it("searches again on request", async () => {
+    const discovery = fakeDiscovery(found([LAN_SERVER]));
+    renderView(discovery);
+    await findServers();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Search again" }));
+    });
+    expect(discovery.discover).toHaveBeenCalledTimes(2);
+  });
+
+  it("moves between rows with Down and Up", async () => {
+    renderView(fakeDiscovery(found([LAN_SERVER, HTTPS_SERVER])));
+    await findServers();
+    const user = userEvent.setup();
+    const rows = within(screen.getByRole("list")).getAllByRole("button");
+    rows[0].focus();
+    await user.keyboard("{ArrowDown}");
+    expect(rows[1]).toHaveFocus();
+    await user.keyboard("{ArrowUp}");
+    expect(rows[0]).toHaveFocus();
+  });
+
+  it("marks rows aria-disabled and ignores them during a connect", async () => {
+    let finish: () => void = () => undefined;
+    const { transport } = countingTransport();
+    const slow: HttpTransport = {
+      ...transport,
+      get: () => new Promise((resolve) => {
+        finish = () => resolve({ data: { ServerName: "Living Room", Version: "10.11.7", Id: "server-1" } as never });
+      }),
+    };
+    const created: string[] = [];
+    render(
+      <SessionProvider createGateway={(url) => { created.push(url); return new JellyfinGateway(url, slow, "install-1", new MemoryConfirmations()); }}>
+        <SignInView discovery={fakeDiscovery(found([LAN_SERVER, HTTPS_SERVER]))} />
+      </SessionProvider>,
+    );
+    await findServers();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Living Room/ }));
+    });
+    const other = screen.getByRole("button", { name: /Remote/ });
+    expect(other).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(other);
+    expect(created).toEqual([LAN_SERVER.address]);
+    await act(async () => finish());
   });
 
   it("shows a loading state while searching", async () => {

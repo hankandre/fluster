@@ -1266,6 +1266,12 @@ describe("JellyfinGateway plain-HTTP policy (docs/decisions/0001)", () => {
     expect(transport.requests).toEqual([]);
   });
 
+  it("throws a SignInFailure of kind public-http for a public http:// server", () => {
+    expect(() => new JellyfinGateway("http://media.example:8096", new FakeTransport())).toThrow(
+      expect.objectContaining({ name: "SignInFailure", kind: "public-http" }),
+    );
+  });
+
   it("refuses a public http:// server without creating an HTTP client", () => {
     const create = vi.spyOn(axios, "create");
     try {
@@ -1372,6 +1378,15 @@ describe("JellyfinGateway resolved redirect responses", () => {
     transport.responses.set("GET /System/Info/Public", { ServerName: "Home", Version: "10.11.7", Id: "server-1" });
     transport.statuses.set("GET /System/Info/Public", status);
     await expect(new JellyfinGateway("https://media.test", transport).connect()).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
+  });
+
+  it("throws a SignInFailure of kind redirect on connect", async () => {
+    const transport = new FakeTransport();
+    transport.statuses.set("GET /System/Info/Public", 302);
+    await expect(new JellyfinGateway("https://media.test", transport).connect()).rejects.toMatchObject({
+      name: "SignInFailure",
+      kind: "redirect",
+    });
   });
 
   it("refuses a sign-in that resolves with status 0", async () => {

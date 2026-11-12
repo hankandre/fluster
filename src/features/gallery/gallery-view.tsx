@@ -19,6 +19,7 @@ import {
 } from "../shared/ui";
 import { PlayerChromeGallery } from "./player-chrome-gallery";
 import { PlaybackNoticeGallery } from "./playback-notice-gallery";
+import { SignInGallery } from "./sign-in-gallery";
 import "./gallery.css";
 
 // Browser development only (App.tsx). The marker below lets the build check prove it never ships.
@@ -164,6 +165,7 @@ function Gallery() {
 
       <PlayerChromeGallery />
       <PlaybackNoticeGallery />
+      <SignInGallery />
     </main>
   );
 }

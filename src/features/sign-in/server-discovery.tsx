@@ -1,93 +1,80 @@
-import { useEffect, useRef, useState } from "react";
-import {
-  DISCOVERY_FAILED_MESSAGE,
-  type DiscoveredServer,
-  type DiscoveryResult,
-  type ServerDiscovery,
-} from "../../domain/server-discovery";
+import { TriangleAlert } from "lucide-react";
+import { useId } from "react";
+import { DISCOVERY_FAILED_MESSAGE, type DiscoveredServer } from "../../domain/server-discovery";
+import { useRovingFocus } from "../roving-focus";
+import { Button, InlineError, Skeleton } from "../shared/ui";
+import type { ServerSearch } from "./use-server-discovery";
 
 export const REFUSED_REPLY_MESSAGE = "A server answered with an address Fluster won't use over plain HTTP.";
 export const DROPPED_REPLY_MESSAGE = "More servers answered than Fluster can list.";
 
-type DiscoveryState =
-  | { name: "idle" }
-  | { name: "searching" }
-  | { name: "found"; result: DiscoveryResult }
-  | { name: "failed" };
-
-// "Find servers on this network": asks the desktop shell to broadcast
-// Jellyfin's discovery datagram and lists the replies. Any device can
-// reply, so each entry shows the sender it claims (a hint, not proof) and
-// flags conflicts. Choosing one
+// Servers found on the local network. Any device can reply, so each row shows
+// the sender it claims (a hint, not proof) and flags conflicts. Choosing one
 // hands it to the normal connect flow, which checks the probed Id.
-export function ServerDiscoveryPanel({
-  discovery,
-  disabled,
+export function ServerList({
+  search,
+  busy,
   onChoose,
 }: {
-  discovery: ServerDiscovery;
-  disabled: boolean;
+  search: ServerSearch;
+  busy: boolean;
   onChoose: (server: DiscoveredServer) => void;
 }) {
-  const [state, setState] = useState<DiscoveryState>({ name: "idle" });
-  const mounted = useRef(true);
-
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
-
-  async function search() {
-    setState({ name: "searching" });
-    try {
-      const result = await discovery.discover();
-      if (mounted.current) setState({ name: "found", result });
-    } catch {
-      // The adapter already uses fixed text; never show anything else.
-      if (mounted.current) setState({ name: "failed" });
-    }
-  }
-
+  const titleId = useId();
+  const roving = useRovingFocus<HTMLUListElement>("column");
+  const { state } = search;
   const searching = state.name === "searching";
   const servers = state.name === "found" ? state.result.servers : [];
   const refused = state.name === "found" ? state.result.refused : 0;
   const dropped = state.name === "found" ? state.result.dropped : 0;
 
   return (
-    <section className="server-discovery" aria-labelledby="server-discovery-title">
-      <h2 id="server-discovery-title" className="kicker">On this network</h2>
-      <button type="button" className="text-button" disabled={searching || disabled} onClick={search}>
-        {searching ? "Searching…" : "Find servers on this network"}
-      </button>
-      {searching && <p role="status">Looking for Jellyfin servers on this network…</p>}
-      {state.name === "failed" && <p role="alert" className="form-error">{DISCOVERY_FAILED_MESSAGE}</p>}
+    <section className="sign-in-discovery" aria-labelledby={titleId}>
+      <h2 id={titleId} className="sign-in-section-title">On this network</h2>
+      {searching && (
+        <>
+          <p role="status" className="sign-in-note">Looking for Jellyfin servers on this network…</p>
+          <Skeleton height="var(--control-h)" />
+        </>
+      )}
+      {state.name === "failed" && (
+        <InlineError message={DISCOVERY_FAILED_MESSAGE} onRetry={search.searchAgain} retryLabel="Search again" />
+      )}
       {state.name === "found" && servers.length === 0 && refused === 0 && (
-        <p role="status">
-          No servers answered. The server may be on another network or have discovery turned off. Enter its address above.
+        <p role="status" className="sign-in-note">
+          No servers answered. The server may be on another network or have discovery turned off. Enter its address below.
         </p>
       )}
-      {refused > 0 && <p role="status" className="form-error">{REFUSED_REPLY_MESSAGE}</p>}
-      {dropped > 0 && <p role="status" className="form-error">{DROPPED_REPLY_MESSAGE}</p>}
+      {refused > 0 && <p role="status" className="sign-in-warning"><TriangleAlert aria-hidden="true" size={16} />{REFUSED_REPLY_MESSAGE}</p>}
+      {dropped > 0 && <p role="status" className="sign-in-warning"><TriangleAlert aria-hidden="true" size={16} />{DROPPED_REPLY_MESSAGE}</p>}
       {servers.length > 0 && (
-        <ul className="discovered-servers" aria-label="Servers found on this network">
+        <ul
+          className="sign-in-servers"
+          aria-label="Servers found on this network"
+          ref={roving.ref}
+          onKeyDown={roving.onKeyDown}
+          onFocus={roving.onFocus}
+        >
           {servers.map((server) => (
             <li key={`${server.id} ${server.address}`}>
               <button
                 type="button"
-                className="discovered-server"
-                disabled={disabled}
-                onClick={() => onChoose(server)}
+                className="sign-in-server"
+                data-roving-item=""
+                aria-disabled={busy ? true : undefined}
+                onClick={() => {
+                  if (!busy) onChoose(server);
+                }}
               >
-                <span className="discovered-server-name">{server.name}</span>
-                <span className="discovered-server-address">{server.address}</span>
-                <span className="discovered-server-sender">
+                <span className="sign-in-server-name">{server.name}</span>
+                <span className="sign-in-server-address">{server.address}</span>
+                <span className="sign-in-server-sender">
                   Advertised by {server.advertisedBy}
                   {!server.addressIsSender && " · address points to another device"}
                 </span>
                 {server.conflicting && (
-                  <span className="discovered-server-warning">
+                  <span className="sign-in-server-conflict">
+                    <TriangleAlert aria-hidden="true" size={16} />
                     Conflict: more than one device claims to be this server. Check the address before you connect.
                   </span>
                 )}
@@ -96,6 +83,10 @@ export function ServerDiscoveryPanel({
           ))}
         </ul>
       )}
+      {(state.name === "found") && (
+        <Button variant="quiet" onClick={search.searchAgain}>Search again</Button>
+      )}
+      {searching && <Button variant="quiet" disabled>Searching…</Button>}
     </section>
   );
 }
