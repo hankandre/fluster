@@ -14,7 +14,7 @@ Work that someone found and no task owns yet.
 
 Decided "not now" by the owner. Revisit dates are in the review.
 
-- A PIN per profile on this device. Four other clients have one. Revisit with the TV shell (Q11). M.
+- A PIN per profile on this device. Four other clients have one. Revisit with the TV shell (Q11). M. The owner decided on 2026-11-12 that it ships with the TV shell's account picker; until then "Stay signed in" off is the privacy control (P13-27). It needs a decision record, because it adds a Tauri command.
 - Recap, Preview, and Commercial segments with the same three skip modes (Q15). S.
 - A "Still watching?" prompt (Q16). S.
 - Audio sync offset and dual subtitles; each needs a typed player command (Q18). M.
@@ -31,16 +31,16 @@ Jellyscale (direction update, 2026-11-12).
 
 No decision yet.
 
-- Remove an item from Continue Watching, and a watchlist. Top-voted Jellyfin requests; whether a client can do either on 10.11 or 12.x is unverified. S to check.
+- Remove an item from Continue Watching, and a watchlist. Top-voted Jellyfin requests; whether a client can do either on 10.11 or 12.x is unverified. S to check. The owner chose on 2026-11-12 to age items out of the row instead of a remove button for now (proposed P16-02), and to let Favorites stand in for a watchlist (P15-01). Both remain here for later; P16-01 records what a position reset does.
 - New items appear without a restart (`LibraryChanged` on the server socket; P3-15 handles `UserDataChanged` only). S.
 - A designed "server unreachable" state while browsing, with a way back when the server returns. M.
 - A keyboard shortcut help sheet. S.
 - A key that moves focus to the newest toast (`docs/design/rework-plan.md`, "Idea: a keyboard shortcut for toasts"). S.
-- Playlists, extras and trailers, genre and people pages. M each.
+- Playlists, extras and trailers, genre and people pages. M each. Extras and trailers are taken by P16-08, genre pages by P16-06, and people pages by P16-07. Playlists remain here.
 - Remember a library's sort and filters between visits; write the sort into the URL. S.
 - Hide filter chips a library cannot match (`/Items/Filters2`). S.
 - ~~The Home hero for a series plays its first episode; use `seriesNextUp` so it agrees with the series page (P13-10 follow-up). S.~~ Taken by P3-27.
-- Cast (`PersonRow`) on the series page (P13-10 follow-up). S.
+- ~~Cast (`PersonRow`) on the series page (P13-10 follow-up). S.~~ Taken by P16-07.
 - A task that ships the Windows build after the P7-01 spike. L.
 - A task that builds the TV shell after the P9-01 spike. L.
 - Flatpak packaging and in-app updates. M each.
@@ -48,12 +48,19 @@ No decision yet.
 
 ## Discovery (from the 2026-11-12 discovery pass)
 
-Triage and proposed tasks are in `docs/plans/proposals/discovery-and-profiles.md` §6. P3-27 and P16-01 are tasks. The entries above for trailers and extras, genre and people pages, removal from Continue Watching, a watchlist, cast on the series page, and a PIN per profile wait for the owner's answers to that document's §7 (proposed P16-02 to P16-08 and P13-27).
+Triage, the owner's answers of 2026-11-12, and the open questions are in `docs/plans/proposals/discovery-and-profiles.md`.
+
+- Tasks now: P3-27, P16-01, P16-04 (More like this), P16-05 (Because you watched), P16-06 (genres), P16-07 (people pages and cast on the series page), P16-08 (local trailers and extras), P13-27 (private accounts).
+- Waiting for Q14 (the Continue watching window): proposed P16-02, the fixed Home order, the merged row, and ageing.
+- Waiting for Q13: previews while browsing.
 
 - A "private session" that plays without reporting, for watching on someone else's account. Touches Playstate Reporting (§4.2). M.
 - An end-of-film card that offers "More like this" after the credits finish, never over them. Needs "More like this" (proposed P16-04). S.
 - Use the time of day and the runtime to rank suggestions (§2.3). Needs a viewer profile. M.
-- Let the viewer reorder or hide Home rows (Q1, option B). M.
+- Let the viewer reorder or hide Home rows (Q1; the owner chose a fixed order for now). M.
+- Previews while browsing, if Q13 allows them: a local trailer, muted, opt-in. Needs P16-08. M.
+- A remove button for Continue watching, if ageing proves not enough (Q4). S.
+- Revisit genre rows on Home after the dogfood week; the case against them was an inference, not evidence. S.
 - A row for a collection on Home (`docs/research/streaming-ux-gripes.md` §3). S.
 
 ## Review lows carried from P13
