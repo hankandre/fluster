@@ -5,7 +5,7 @@ import { TileCache } from "./tile-cache";
 import { TrickplayThumbnail } from "./trickplay-thumbnail";
 
 export interface SeekPreviewProps {
-  seekPreview?: (seconds: number) => ReactNode;
+  seekPreview?: (seconds: number, frameWidth?: number) => ReactNode;
   chapters?: Chapter[];
 }
 
@@ -30,8 +30,8 @@ export function useSeekPreview(gateway: SessionGateway, detail: ItemDetail, medi
 
   const props: SeekPreviewProps = {};
   if (info && cache) {
-    props.seekPreview = (seconds) => (
-      <TrickplayThumbnail info={info} cache={cache} seconds={seconds} label={`Preview at ${clock(seconds)}`} />
+    props.seekPreview = (seconds, frameWidth) => (
+      <TrickplayThumbnail info={info} cache={cache} seconds={seconds} label={`Preview at ${clock(seconds)}`} frameWidth={frameWidth} />
     );
   }
   if (detail.chapters?.length) props.chapters = detail.chapters;

@@ -276,22 +276,22 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 
 Pure video by default. The chrome is three zones, shown together and hidden together:
 
-1. **Top bar** (`PlayerTopBar`, over `--scrim-player-top`): Back (icon button), then the title block. Episodes show the series name (`--type-meta`, `--text-2`) above the episode title ("S1 · E2 The Keeper's Log", `--type-heading`). On the right, a `ConversionChip` only when the play method is not direct play: "Converting on server · bitrate limit" in `--notice` with an icon. It opens the Info sheet. Nothing is shown for direct play (PRODUCT.md: "no indicator beyond the player information panel"). The **Play original** action that P10-05 added as a floating button moves into the Info sheet's Playback section. The chip also offers it when the user's own streaming limit is the only reason.
-2. **Scrubber** (`Scrubber`, full width inside the gutter): a 4 px track that grows to 8 px when hovered or focused. Elapsed time sits left and remaining time right ("−1:21:40"), in `--type-mono`. "Ends at 22:41" appears beside the remaining time when there is room. Chapters are 2 px gaps cut into the track, not ticks above it. The buffered range shows at 35% white. The fill is `--art-accent`. The thumb is a 16 px `--text-1` disc that appears on hover or focus.
-   - `ScrubPreview`: a frame sized to the trickplay tile (320×180 desktop, 384×216 TV) at `--radius-art`, with time and chapter name inside its lower edge on a scrim, clamped within the gutter. Keyboard focus on the scrubber shows the preview at the playhead, and Left and Right step 10 s with the preview following.
-3. **Control row** (`TransportControls`). Desktop: Play or Pause (56 px light disc, the only light-filled control), back 10, forward 10, then Volume (icon plus slider revealed on hover or focus), then a spacer. Right side: "Audio & Subtitles" (speech icon), Chapters (list icon, when there are chapters), Info (`i` icon), Fullscreen. TV: transport is centred (back 10, Play or Pause, forward 10) and the rest sits right. Volume is the TV's.
+1. **Top bar** (`PlayerTopBar`, over `--scrim-player-top`): Back (icon button), then the title block. Episodes show the series name (`--type-meta`, `--text-2`) above the episode title ("S1 · E2 The Keeper's Log", `--type-heading`). On the right, a `ConversionChip` only when the play method is not direct play: the PRODUCT.md sentence ("Converting on server: the file is over your streaming limit") in `--notice` with an icon. It hides with the chrome; the OSD line at the start of the session, the `PlayerLoading` text, and the Info sheet carry the invariant while it is hidden. It opens the Info sheet with focus on Play original. Nothing is shown for direct play (PRODUCT.md: "no indicator beyond the player information panel"). The **Play original** action that P10-05 added as a floating button moves into the Info sheet's Playback section. The chip also offers it when the user's own streaming limit is the only reason.
+2. **Scrubber** (`Scrubber`, full width inside the gutter): a 4 px track that grows to 8 px when hovered or focused. Elapsed time sits left and remaining time right ("−1:21:40"), in `--type-mono`. "Ends at 22:41" appears beside the remaining time when there is room. Chapters are 2 px gaps cut into the track, not ticks above it. The buffered range is deferred (the engine reports no buffered position). The fill is `--art-accent`. The thumb is a 16 px `--text-1` disc that appears on hover or focus.
+   - `ScrubPreview`: a frame sized to the trickplay tile (320×180 desktop, 384×216 TV) at `--radius-art`, with time and chapter name inside its lower edge on `--veil`, clamped within the gutter. Keyboard focus on the scrubber shows the preview at the playhead, and Left and Right step 10 s with the preview following.
+3. **Control row** (`TransportControls`). Desktop: Play or Pause (56 px light disc, the only light-filled control), back 10, forward 10, then Volume (icon plus slider revealed on hover or focus), then a spacer. Right side: "Audio & Subtitles" (speech icon), Info (`i` icon), Fullscreen. The Chapters button is deferred with `ChapterList`. TV: transport is centred (back 10, Play or Pause, forward 10) and the rest sits right. Volume is the TV's.
 
 Panels:
 
-- **`TrackPanel`**: a right side sheet (`--surface-1`, 420 px, or 33% on TV) with Audio and Subtitles lists (see `Picker`). Video keeps playing. It closes on Back or Escape, and focus returns to the trigger.
-- **`InfoSheet`** (restyles the existing P3-18 `PlayerInfoPanel` and keeps its redaction tests): a right side sheet with sections Playback (method, reason, "Original file" in `--ok`), Video, Audio, Decoder, and Renderer. Values are Mono. It never shows URLs, IDs, or tokens (existing redaction rules).
-- **`ChapterList`**: a right sheet of chapter thumbnails (trickplay at the chapter start) and names.
+- **`TrackPanel`**: a right side sheet (`--surface-1`, 420 px, or 33% on TV) with Audio and Subtitles lists (see `Picker`). Video keeps playing. It stays open after a choice and closes on Escape, Close, or `a`; focus returns to the trigger.
+- **`InfoSheet`** (restyles the existing P3-18 `PlayerInfoPanel` and keeps its redaction tests): a right side sheet with sections Playback (method, reason, "Original file" in `--ok` once the plan says direct play, Play original), Decoder, and Renderer. Video and Audio are deferred (they need new on-screen engine text). Values are Mono. It never shows URLs, IDs, or tokens (existing redaction rules).
+- **`ChapterList`**: deferred (Q18 A): a right sheet of chapter thumbnails (trickplay at the chapter start) and names.
 
-OSD (`Osd`): a transient pill at top centre, under the top bar's position, visible for 1.2 s, for actions taken by key while the chrome is hidden: "Subtitles: English (SDH)", "Volume 65%", "Muted", "+10 s". Today `c`, `m`, and the arrow keys give no visible feedback. `role="status"`, and reduced motion makes it appear without a fade.
+OSD (`Osd`): a transient pill at top centre, under the top bar's position, visible for 1.2 s, for actions taken by key, whether or not the chrome is visible: "Subtitles: English (SDH)", "Volume 65%", "Muted", "+10 s", "Start", "End", "30%". It also shows the conversion line for five seconds when a converted session starts. Today `c`, `m`, and the arrow keys give no visible feedback. `role="status"`, and reduced motion makes it appear without a fade.
 
-Status (`PlayerStatus`): loading, buffering, and seeking show a centred 64 px disc on `--scrim` with a ring and one line of text ("Opening the original file…", "Buffering…"). It is visible regardless of chrome. Before the first frame, `PlayerLoading` shows the item's backdrop at 40% with the title and the status, plus Back. Controls are not drawn until there is a snapshot.
+Status (`PlayerStatus`): loading, buffering, and seeking show a centred 64 px disc on `--veil` with a ring and one line of text ("Opening the original file…", "Buffering…"). It is visible regardless of chrome. Before the first frame, `PlayerLoading` shows the item's backdrop at 40% with the title and the status, plus Back. Controls are not drawn until there is a snapshot.
 
-Idle: the chrome hides 3 s after the last input while playing. It never hides while paused, while a panel or menu is open, while a chrome control has focus, or while a skip or Up Next prompt has focus. The cursor hides with it (as today).
+Idle: the chrome hides 3 s after the last input while playing. It never hides while paused, while a panel or menu is open, while a chrome control has focus, or while a skip or Up Next prompt has focus. The cursor keeps its own 3 s timer (as today): it hides when it stops moving unless it rests on a visible control, whether or not the chrome is pinned. The desktop player is the one screen where the arrow keys seek and change volume and Tab reaches the controls (Q17 A).
 
 ### 7.15 Skip and Up Next
 
@@ -410,6 +410,10 @@ A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings
   --hit-min: 44px;
   --search-field-h: 64px;
   --suggestion-art-w: 40px;
+  --player-sheet-w: 420px; --player-play-disc: 56px; --player-status-disc: 64px;
+  --scrub-track-h: 4px; --scrub-track-h-active: 8px; --scrub-thumb: 16px; --scrub-gap: 2px;
+  --scrub-preview-w: 320px; --volume-slider-w: 110px;
+  --scrim-player-top-h: 160px; --scrim-player-bottom-h: 240px;
 
   /* Shape */
   --radius-xs: 4px;
@@ -466,6 +470,8 @@ A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings
   --hit-min: 64px;
   --search-field-h: 96px;
   --suggestion-art-w: 60px;
+  --player-sheet-w: 33vw;
+  --scrub-preview-w: 384px;
   --type-meta: 500 0.9375rem / 1.35 var(--font-ui);
   --lift: scale(1.08);
 }
@@ -505,10 +511,10 @@ A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings
 | Player | Up / Down | Volume ±5 | Exists |
 | Player | `m` / `f` / `c` | Mute / fullscreen / cycle subtitles | Exists, gains OSD feedback |
 | Player | `i` | Info sheet | Exists, restyled |
-| Player | `a` | Audio & Subtitles panel | New in P13 |
+| Player | `a` | Audio & Subtitles panel | P13-13 |
 | Player | `s` | Activate the visible Skip | New in P13 |
 | Player | `n` | Play now on the Up Next card | New in P13 |
-| Player | Home / End, 0–9 | Start / end, jump to 0–90% | New in P13 |
+| Player | Home / End, 0–9 | Start / end, jump to 0–90% | P13-13 |
 
 **Idle hiding.** See §7.14. Home's ambient backdrop follows focus only after a 300 ms dwell, so fast scrolling doesn't flicker.
 
@@ -544,6 +550,8 @@ Fluster talks like a knowledgeable friend running the projector: calm, brief, pl
 | Next episode error | n/a | Couldn't load your next episode. | Retry |
 | Item gone | This item is no longer on the server | It may have been removed or renamed. | Go home |
 | Player loading | n/a | Opening the original file… | Back |
+| Player loading, converting | n/a | Converting on server: {reason}… | Back |
+| Player loading, before the server answers | n/a | Loading… | Back |
 
 ## 11. Accessibility rules (WCAG 2.2 AA)
 

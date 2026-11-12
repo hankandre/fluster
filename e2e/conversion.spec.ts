@@ -13,12 +13,14 @@ test("a direct stream shows the repackaging indicator and still reports Transcod
 
   await expect(page.locator(".conversion-chip")).toContainText("Repackaging on server, original quality: the file format is not supported here");
   await expect(page.locator(".conversion-chip")).not.toContainText("Subtitles are burned in");
+  // The same sentence is announced on screen at the start.
+  await expect(page.getByRole("status", { name: "Player message" })).toContainText("Repackaging on server, original quality: the file format is not supported here");
   await expect.poll(() => log.reports.map((report) => report.path)).toContain("/Sessions/Playing");
   expect(log.reports.find((report) => report.path === "/Sessions/Playing")?.body).toMatchObject({ PlayMethod: "Transcode" });
   await page.keyboard.press("i");
   await expect(page.getByRole("region", { name: "Player information" })).toContainText("Direct stream");
 
-  await page.getByLabel("Back to library").click();
+  await page.getByRole("button", { name: "Back", exact: true }).click();
   await expect.poll(() => log.reports.map((report) => report.path)).toContain("/Sessions/Playing/Stopped");
   expect(log.reports.find((report) => report.path === "/Sessions/Playing/Stopped")?.body).toMatchObject({ PlayMethod: "Transcode" });
 });
@@ -35,10 +37,11 @@ test("a transcode with burned-in subtitles says so and reports Transcode", async
   const chip = page.locator(".conversion-chip");
   await expect(chip).toContainText("Converting on server: the video format is not supported here");
   await expect(chip).toContainText("Subtitles are burned in");
+  await expect(page.getByRole("status", { name: "Player message" })).toContainText("Converting on server: the video format is not supported here");
   await expect.poll(() => log.reports.map((report) => report.path)).toContain("/Sessions/Playing");
   expect(log.reports.find((report) => report.path === "/Sessions/Playing")?.body).toMatchObject({ PlayMethod: "Transcode" });
 
-  await page.getByLabel("Back to library").click();
+  await page.getByRole("button", { name: "Back", exact: true }).click();
   await expect.poll(() => log.reports.map((report) => report.path)).toContain("/Sessions/Playing/Stopped");
   expect(log.reports.find((report) => report.path === "/Sessions/Playing/Stopped")?.body).toMatchObject({ PlayMethod: "Transcode" });
 });
@@ -50,16 +53,17 @@ test("choosing audio the conversion lacks renegotiates at the current position a
   await openArrival(page);
   await page.getByRole("link", { name: "Play" }).click();
 
-  const audio = page.getByLabel("Audio track");
-  await expect(audio).toHaveValue("1");
-  await expect(audio.locator("option")).toHaveText(["English AAC", "French AC3"]);
+  await page.getByRole("button", { name: "Audio & Subtitles" }).click();
+  const audio = page.getByRole("listbox", { name: "Audio track" });
+  await expect(audio.getByRole("option", { name: "English AAC" })).toHaveAttribute("aria-selected", "true");
+  await expect(audio.getByRole("option")).toHaveText(["English AAC", "French AC3"]);
   await expect.poll(() => log.sequence).toContain("/Sessions/Playing play-1");
   // Move to 0:10 so the new conversion has a position to continue from.
   await page.locator(".player-page").hover();
   await page.keyboard.press("ArrowRight");
   await expect(page.getByText("0:10", { exact: true })).toBeVisible();
 
-  await audio.selectOption("2");
+  await audio.getByRole("option", { name: "French AC3" }).click();
 
   await expect.poll(() => log.playbackInfo.length).toBe(2);
   const query = log.playbackInfoQueries[1];
@@ -76,6 +80,44 @@ test("choosing audio the conversion lacks renegotiates at the current position a
     "PlaybackInfo play-2",
   ]);
   expect(log.reports.find((report) => report.path === "/Sessions/Playing/Stopped")?.body).toMatchObject({ PlaySessionId: "play-1" });
-  await expect(page.getByLabel("Audio track")).toHaveValue("2");
+  await expect(page.getByRole("listbox", { name: "Audio track" }).getByRole("option", { name: "French AC3" })).toHaveAttribute("aria-selected", "true");
   await expect.poll(() => log.sequence).toContain("/Sessions/Playing play-2");
+});
+
+test("the track panel opens with a, moves with the arrows, and chooses with Enter", async ({ page }) => {
+  const log = await mockPlayerServer(page, { converted: true, conversionReasons: "VideoCodecNotSupported", audioStreams: true });
+  await openArrival(page);
+  await page.getByRole("link", { name: "Play" }).click();
+  await expect.poll(() => log.sequence).toContain("/Sessions/Playing play-1");
+
+  await page.keyboard.press("a");
+  const audio = page.getByRole("listbox", { name: "Audio track" });
+  await expect(audio.getByRole("option", { name: "English AAC" })).toBeFocused();
+  // Up and Down belong to the list here, not to the volume.
+  await page.keyboard.press("ArrowDown");
+  await expect(audio.getByRole("option", { name: "French AC3" })).toBeFocused();
+  await expect(page.getByRole("status", { name: "Player message" })).not.toContainText("Volume");
+  await page.keyboard.press("Enter");
+
+  await expect.poll(() => log.playbackInfo.length).toBe(2);
+  expect(log.playbackInfo[1]).toMatchObject({ AudioStreamIndex: 2 });
+});
+
+test("Escape closes the track panel and returns focus to the button that opened it", async ({ page }) => {
+  const log = await mockPlayerServer(page, { converted: true, conversionReasons: "VideoCodecNotSupported", audioStreams: true });
+  await openArrival(page);
+  await page.getByRole("link", { name: "Play" }).click();
+  await expect.poll(() => log.sequence).toContain("/Sessions/Playing play-1");
+
+  const trigger = page.getByRole("button", { name: "Audio & Subtitles" });
+  await trigger.focus();
+  await page.keyboard.press("Enter");
+  const panel = page.getByRole("region", { name: "Audio and subtitles" });
+  await expect(panel).toBeVisible();
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+
+  await page.keyboard.press("Escape");
+  await expect(panel).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+  await expect(page).toHaveURL(/#\/next\/play\//);
 });

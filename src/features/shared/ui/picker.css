@@ -112,3 +112,12 @@
     font: var(--type-meta);
   }
 }
+
+@layer components {
+  .ui-option-list {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+}

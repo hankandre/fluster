@@ -117,7 +117,7 @@ test("streaming limits default to no limit, apply by host class, and persist", a
 
   // The local limit does, in the body and the query, and survives a reload.
   // The player has no nav: leave it by its Back control, then use the nav.
-  await page.getByLabel("Back to library").click();
+  await page.getByRole("button", { name: "Back", exact: true }).click();
   await expect(page).toHaveURL(/#\/next\/item\//);
   await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Settings" }).click();
   await expect(page).toHaveURL(/#\/next\/settings$/);

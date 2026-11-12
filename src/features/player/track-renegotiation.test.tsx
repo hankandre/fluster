@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PlayerServicesProvider } from "../../app/player-services";
 import { PreferencesProvider } from "../../app/preferences";
@@ -132,9 +132,34 @@ async function startPlaying(engine: FakePlayerEngine, snapshot: PlaybackSnapshot
   });
 }
 
-async function choose(label: "Audio track" | "Subtitle track", value: string) {
+// The Audio & Subtitles panel stays open after a choice, so open it only when it is closed.
+function openTracks() {
+  if (!screen.queryByRole("region", { name: "Audio and subtitles" })) {
+    fireEvent.click(screen.getByRole("button", { name: "Audio & Subtitles" }));
+  }
+}
+
+// Play original lives in the Info sheet, opened by the Info button or by the conversion chip.
+async function playOriginalFromInfo() {
+  fireEvent.click(screen.getByRole("button", { name: "Info" }));
   await act(async () => {
-    fireEvent.change(screen.getByLabelText(label), { target: { value } });
+    fireEvent.click(screen.getByRole("button", { name: "Play original" }));
+  });
+}
+
+async function playOriginalFromChip() {
+  fireEvent.click(screen.getByRole("button", { name: /Converting on server/ }));
+  await act(async () => {
+    fireEvent.click(screen.getByRole("button", { name: "Play original" }));
+  });
+}
+
+const list = (label: "Audio track" | "Subtitle track") => screen.getByRole("listbox", { name: label });
+
+async function choose(label: "Audio track" | "Subtitle track", name: string) {
+  openTracks();
+  await act(async () => {
+    fireEvent.click(within(list(label)).getByRole("option", { name }));
   });
 }
 
@@ -154,11 +179,12 @@ describe("track changes while converting", () => {
     await renderPlayer(orderedGateway([], [convertedPlan()]), engine);
     await startPlaying(engine, convertedSnapshot);
 
-    const audio = screen.getByLabelText<HTMLSelectElement>("Audio track");
-    expect([...audio.options].map((option) => option.text)).toEqual(["English", "French"]);
-    expect(audio.value).toBe("1");
-    const subtitles = screen.getByLabelText<HTMLSelectElement>("Subtitle track");
-    expect([...subtitles.options].map((option) => option.text)).toEqual(["Subtitles off", "English SRT", "English PGS"]);
+    openTracks();
+    const audio = within(list("Audio track")).getAllByRole("option");
+    expect(audio.map((option) => option.textContent)).toEqual(["English", "French"]);
+    expect(audio.map((option) => option.getAttribute("aria-selected"))).toEqual(["true", "false"]);
+    const subtitles = within(list("Subtitle track")).getAllByRole("option");
+    expect(subtitles.map((option) => option.textContent)).toEqual(["Subtitles off", "English SRT", "English PGS"]);
   });
 
   it("renegotiates at the current position for audio the conversion lacks, after stopping the old session and its encode", async () => {
@@ -169,7 +195,7 @@ describe("track changes while converting", () => {
     await renderPlayer(gateway, engine);
     await startPlaying(engine, convertedSnapshot);
 
-    await choose("Audio track", "2");
+    await choose("Audio track", "French");
 
     await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(convertedPlan("play-2", { defaultAudioStreamIndex: 2 })));
     expect(order).toEqual([
@@ -196,7 +222,7 @@ describe("track changes while converting", () => {
     const french: PlayerTrack = { playerId: 2, jellyfinIndex: 2, type: "Audio", title: "French", external: false, selected: false };
     await startPlaying(engine, snapshotWith([englishAudio, french, srt]));
 
-    await choose("Audio track", "2");
+    await choose("Audio track", "French");
 
     expect(engine.selectTrack).toHaveBeenCalledWith("audio", 2);
     expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1);
@@ -208,12 +234,12 @@ describe("track changes while converting", () => {
     await renderPlayer(gateway, engine);
     await startPlaying(engine, convertedSnapshot);
 
-    await choose("Subtitle track", "3");
+    await choose("Subtitle track", "English SRT");
     expect(engine.selectTrack).toHaveBeenLastCalledWith("subtitle", 1);
     await act(async () => {
       engine.emit({ kind: "tracks-changed", snapshot: snapshotWith([englishAudio, { ...srt, selected: true }]) });
     });
-    await choose("Subtitle track", "off");
+    await choose("Subtitle track", "Subtitles off");
     expect(engine.selectTrack).toHaveBeenLastCalledWith("subtitle", undefined);
     expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1);
   });
@@ -225,7 +251,7 @@ describe("track changes while converting", () => {
     await renderPlayer(gateway, engine);
     await startPlaying(engine, convertedSnapshot);
 
-    await choose("Subtitle track", "4");
+    await choose("Subtitle track", "English PGS");
 
     await waitFor(() => expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(2));
     expect(negotiationOptions(gateway, 1)[4]).toEqual({ ignoreStreamingLimit: false, audioStreamIndex: 1, subtitleStreamIndex: 4 });
@@ -239,9 +265,10 @@ describe("track changes while converting", () => {
     const engine = new FakePlayerEngine();
     await renderPlayer(gateway, engine);
     await startPlaying(engine, snapshotWith([englishAudio]));
-    expect(screen.getByLabelText<HTMLSelectElement>("Subtitle track").value).toBe("4");
+    openTracks();
+    expect(within(list("Subtitle track")).getByRole("option", { name: "English PGS" })).toHaveAttribute("aria-selected", "true");
 
-    await choose("Subtitle track", "off");
+    await choose("Subtitle track", "Subtitles off");
 
     await waitFor(() => expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(2));
     expect(negotiationOptions(gateway, 1)[4]).toEqual({ ignoreStreamingLimit: false, audioStreamIndex: 1, subtitleStreamIndex: -1 });
@@ -267,10 +294,10 @@ describe("track changes while converting", () => {
     await renderPlayer(gateway, engine);
     await startPlaying(engine, convertedSnapshot);
 
-    await choose("Audio track", "2");
+    await choose("Audio track", "French");
     await waitFor(() => expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(2));
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
+      fireEvent.click(screen.getByRole("button", { name: "Back" }));
     });
 
     await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
@@ -298,7 +325,7 @@ describe("guardian review fixes", () => {
     await startPlaying(engine, convertedSnapshot);
     const release = await endingWhileStopping(engine);
 
-    await choose("Audio track", "2");
+    await choose("Audio track", "French");
     await act(async () => release());
 
     await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
@@ -319,7 +346,7 @@ describe("guardian review fixes", () => {
     let release = () => undefined as void;
     engine.stop.mockImplementationOnce(() => new Promise<undefined>((resolve) => { release = () => resolve(undefined); }));
 
-    await choose("Audio track", "2");
+    await choose("Audio track", "French");
     await waitFor(() => expect(engine.stop).toHaveBeenCalledTimes(1));
     // The file ends while the renegotiation is stopping it.
     await act(async () => {
@@ -328,7 +355,7 @@ describe("guardian review fixes", () => {
     await act(async () => release());
     await startPlaying(engine, snapshotWith([{ ...englishAudio, jellyfinIndex: 2, title: "French" }]), 2);
 
-    await choose("Audio track", "1");
+    await choose("Audio track", "English");
 
     await waitFor(() => expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(3));
     expect(negotiationOptions(gateway, 2)[4]).toEqual({ ignoreStreamingLimit: false, audioStreamIndex: 1, subtitleStreamIndex: -1 });
@@ -342,7 +369,7 @@ describe("guardian review fixes", () => {
     await startPlaying(engine, convertedSnapshot);
     let launched = () => undefined as void;
     engine.launch.mockImplementationOnce(() => new Promise<undefined>((resolve) => { launched = () => resolve(undefined); }));
-    await choose("Subtitle track", "4");
+    await choose("Subtitle track", "English PGS");
     await waitFor(() => expect(engine.launch).toHaveBeenCalledTimes(2));
     // The new session's snapshot arrives before its launch resolves, so its
     // plan reaches the view in a render where the snapshot did not change.
@@ -350,7 +377,7 @@ describe("guardian review fixes", () => {
       engine.emit({ kind: "loaded", snapshot: convertedSnapshot });
     });
     await act(async () => launched());
-    await waitFor(() => expect(screen.getByLabelText<HTMLSelectElement>("Subtitle track").value).toBe("4"));
+    await waitFor(() => expect(within(list("Subtitle track")).getByRole("option", { name: "English PGS" })).toHaveAttribute("aria-selected", "true"));
 
     await act(async () => {
       fireEvent.keyDown(document.body, { key: "c" });
@@ -371,9 +398,7 @@ describe("guardian review fixes", () => {
     await startPlaying(engine, convertedSnapshot);
     const release = await endingWhileStopping(engine);
 
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Play original" }));
-    });
+    await playOriginalFromChip();
     await act(async () => release());
 
     await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
@@ -391,9 +416,7 @@ describe("guardian review fixes", () => {
     await renderPlayer(gateway, engine);
     await startPlaying(engine, convertedSnapshot);
 
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Play original" }));
-    });
+    await playOriginalFromInfo();
 
     await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(directPlan("play-2")));
     expect(order).toContain("stopped play-1 failed=true");
@@ -441,7 +464,7 @@ describe("guardian review fixes", () => {
     await renderPlayer(gateway, engine);
     await startPlaying(engine, convertedSnapshot);
 
-    await choose("Subtitle track", "4");
+    await choose("Subtitle track", "English PGS");
     await act(async () => {
       fireEvent.click(await screen.findByRole("button", { name: "Back to previous tracks" }));
     });
@@ -488,9 +511,10 @@ describe("guardian review fixes", () => {
     const engine = new FakePlayerEngine();
     await renderPlayer(gateway, engine);
     await startPlaying(engine, convertedSnapshot);
-    screen.getByLabelText("Audio track").focus();
+    openTracks();
+    within(list("Audio track")).getByRole("option", { name: "English" }).focus();
 
-    await choose("Audio track", "2");
+    await choose("Audio track", "French");
     await waitFor(() => expect(engine.launch).toHaveBeenCalledTimes(2));
     // A browser drops focus from a select that becomes disabled; jsdom does
     // not, so drop it the same way: focus an element, then remove it.
@@ -500,7 +524,8 @@ describe("guardian review fixes", () => {
     expect(document.activeElement).toBe(document.body);
     await startPlaying(engine, snapshotWith([{ ...englishAudio, jellyfinIndex: 2, title: "French" }]), 2);
 
-    await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText("Audio track")));
+    await waitFor(() => expect(document.activeElement).toBe(within(list("Audio track")).getByRole("option", { name: "French" })));
+    expect(within(list("Audio track")).getByRole("option", { name: "French" })).toHaveAttribute("aria-selected", "true");
   });
 });
 
@@ -512,8 +537,8 @@ describe("track changes during direct play", () => {
     const french: PlayerTrack = { playerId: 2, jellyfinIndex: 2, type: "Audio", title: "French", external: false, selected: false };
     await startPlaying(engine, snapshotWith([englishAudio, french, srt]));
 
-    await choose("Audio track", "2");
-    await choose("Subtitle track", "1");
+    await choose("Audio track", "French");
+    await choose("Subtitle track", "English SRT");
 
     expect(engine.selectTrack).toHaveBeenNthCalledWith(1, "audio", 2);
     expect(engine.selectTrack).toHaveBeenNthCalledWith(2, "subtitle", 1);
@@ -572,9 +597,7 @@ describe("streaming limit changes during playback", () => {
     const engine = new FakePlayerEngine();
     await renderPlayer(gateway, engine, limits);
     await startPlaying(engine, convertedSnapshot);
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Play original" }));
-    });
+    await playOriginalFromInfo();
     await startPlaying(engine, convertedSnapshot, 2);
 
     await act(async () => {

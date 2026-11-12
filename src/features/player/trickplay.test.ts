@@ -46,6 +46,21 @@ describe("thumbnailStyle", () => {
     });
   });
 
+  it("scales the cell, the tile, and the offset to the frame width", () => {
+    const style = thumbnailStyle(info, { tileIndex: 0, column: 2, row: 1 }, "blob:x", 160);
+    expect(style).toEqual({
+      width: 160,
+      height: 90,
+      backgroundImage: 'url("blob:x")',
+      backgroundSize: "800px 180px",
+      backgroundPosition: "-320px -90px",
+    });
+  });
+
+  it("stays unscaled for a frame width of zero", () => {
+    expect(thumbnailStyle(info, { tileIndex: 0, column: 0, row: 0 }, "blob:x", 0).width).toBe(320);
+  });
+
   it("has no image before the tile loads", () => {
     expect(thumbnailStyle(info, { tileIndex: 0, column: 0, row: 0 }, undefined).backgroundImage).toBeUndefined();
   });

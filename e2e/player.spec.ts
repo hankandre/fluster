@@ -40,7 +40,7 @@ test("Play opens the player and Back returns to the detail view", async ({ page 
   await page.keyboard.press("i");
   await expect(page.getByRole("region", { name: "Player information" })).toContainText("Direct play");
 
-  await page.getByLabel("Back to library").click();
+  await page.getByRole("button", { name: "Back", exact: true }).click();
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
   await expect(page.getByRole("heading", { name: "Arrival", level: 1 })).toBeVisible();
   await expect(page.locator("video")).toHaveCount(0);
@@ -59,7 +59,7 @@ test("Back does not wait for a slow Jellyfin progress report, and Stopped is sti
   await expect(page.locator("video")).toHaveCount(1);
   await expect.poll(() => reportPaths(log)).toContain("/Sessions/Playing");
 
-  await page.getByLabel("Back to library").click();
+  await page.getByRole("button", { name: "Back", exact: true }).click();
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/, { timeout: 1_000 });
   await expect(page.getByRole("heading", { name: "Arrival", level: 1 })).toBeVisible({ timeout: 1_000 });
   expect(reportPaths(log)).not.toContain("/Sessions/Playing/Stopped");
@@ -73,7 +73,8 @@ test("never puts a token in a request URL, including the stream", async ({ page 
   await openArrival(page);
   await page.getByRole("link", { name: "Play" }).click();
   await expect(page.locator("video")).toHaveCount(1);
-  await expect(page.locator(".player-diagnostics").getByText("Browser — unverified")).toBeVisible();
+  await page.keyboard.press("i");
+  await expect(page.getByRole("region", { name: "Player information" }).getByText("Browser — unverified").first()).toBeVisible();
   await expect.poll(() => log.requestUrls.some((url) => new URL(url).pathname === "/Videos/movie-1/stream")).toBe(true);
   expect(log.requestUrls.filter((url) => /api_?key|access_token|token/i.test(url))).toEqual([]);
 });
@@ -220,13 +221,13 @@ test("Back cancels an in-flight playback negotiation", async ({ page }) => {
 
   await page.getByRole("link", { name: "Play" }).click();
   await expect.poll(() => log.playbackInfo.length).toBe(1);
-  await page.getByLabel("Back to library").click();
+  await page.getByRole("button", { name: "Back", exact: true }).click();
 
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
   await page.waitForTimeout(450);
   // The detail page has its own level 1 "Arrival", so assert directly that the player never mounted.
   await expect(page.locator(".player-page")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Back to library" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Back", exact: true })).toHaveCount(0);
   await expect(page.locator("video")).toHaveCount(0);
   expect(log.playbackInfo).toHaveLength(1);
   expect(log.reports).toHaveLength(0);
@@ -318,4 +319,109 @@ test("the Info panel toggles with its button and the i key and shows no ids or U
   await expect(panel).toBeHidden();
   await page.locator("body").press("i");
   await expect(panel).toBeVisible();
+});
+
+// trackPaused makes the file-less <video> remember pause and play, as keyboard.spec.ts does.
+async function startArrival(page: Page, trackPaused = false) {
+  await mockPlayerServer(page);
+  if (trackPaused) {
+    await page.addInitScript(() => {
+      const paused = new WeakMap<HTMLMediaElement, boolean>();
+      Object.defineProperty(HTMLMediaElement.prototype, "paused", {
+        configurable: true,
+        get(this: HTMLMediaElement) {
+          return paused.get(this) ?? true;
+        },
+      });
+      HTMLMediaElement.prototype.play = function play() {
+        paused.set(this, false);
+        queueMicrotask(() => {
+          this.dispatchEvent(new Event("loadedmetadata"));
+          this.dispatchEvent(new Event("play"));
+          this.dispatchEvent(new Event("playing"));
+        });
+        return Promise.resolve();
+      };
+      HTMLMediaElement.prototype.pause = function pause() {
+        paused.set(this, true);
+        this.dispatchEvent(new Event("pause"));
+      };
+      // The empty stream body cannot decode; keep that error from the engine.
+      window.addEventListener("error", (event) => {
+        if (event.target instanceof HTMLMediaElement) event.stopImmediatePropagation();
+      }, true);
+    });
+  }
+  await openArrival(page);
+  await page.getByRole("link", { name: "Play" }).click();
+  await expect(page.locator("video")).toHaveCount(1);
+}
+
+test("keys show on-screen feedback, and Home, End, and the digits jump", async ({ page }) => {
+  await startArrival(page);
+  const osd = page.getByRole("status", { name: "Player message" });
+  const currentTime = () => page.locator("video").evaluate((element: HTMLVideoElement) => element.currentTime);
+
+  await page.keyboard.press("m");
+  await expect(osd).toHaveText("Muted");
+  await page.keyboard.press("ArrowRight");
+  await expect(osd).toHaveText("+10 s");
+  await page.keyboard.press("5");
+  await expect(osd).toHaveText("50%");
+  await expect.poll(currentTime).toBe(60);
+  await page.keyboard.press("Home");
+  await expect(osd).toHaveText("Start");
+  await expect.poll(currentTime).toBe(0);
+});
+
+test("the chrome stays up while paused and while a sheet is open, and hides after the idle time", async ({ page }) => {
+  await startArrival(page, true);
+  const chrome = page.locator(".player-chrome");
+  const player = page.locator(".player-page");
+  const paused = () => page.locator("video").evaluate((element: HTMLVideoElement) => element.paused);
+  await expect.poll(paused).toBe(false);
+  await player.hover();
+
+  await page.keyboard.press("i");
+  await expect(page.getByRole("region", { name: "Player information" })).toBeVisible();
+  await page.waitForTimeout(3_500);
+  await expect(chrome).toHaveAttribute("data-visible", "true");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("region", { name: "Player information" })).toHaveCount(0);
+
+  await page.keyboard.press("k");
+  await expect.poll(paused).toBe(true);
+  await page.mouse.move(5, 5);
+  await page.mouse.move(8, 8);
+  await page.waitForTimeout(3_500);
+  await expect(chrome).toHaveAttribute("data-visible", "true");
+
+  await page.keyboard.press("k");
+  await expect.poll(paused).toBe(false);
+  await page.mouse.move(5, 5);
+  await page.mouse.move(8, 8);
+  await expect(chrome).toHaveAttribute("data-visible", "true");
+  await expect(chrome).toHaveAttribute("data-visible", "false", { timeout: 6_000 });
+});
+
+test("nothing in the player blurs the video, with the chrome and each sheet open", async ({ page }) => {
+  await startArrival(page);
+  const blurred = () => page.locator("main").evaluate((root) => (
+    [root, ...root.querySelectorAll("*")]
+      .filter((element) => {
+        const filter = getComputedStyle(element).getPropertyValue("backdrop-filter");
+        return filter !== "" && filter !== "none";
+      })
+      .map((element) => element.className)
+  ));
+
+  await page.mouse.move(5, 5);
+  await page.mouse.move(8, 8);
+  expect(await blurred()).toEqual([]);
+  await page.keyboard.press("i");
+  await expect(page.getByRole("region", { name: "Player information" })).toBeVisible();
+  expect(await blurred()).toEqual([]);
+  await page.keyboard.press("a");
+  await expect(page.getByRole("region", { name: "Audio and subtitles" })).toBeVisible();
+  expect(await blurred()).toEqual([]);
 });

@@ -36,67 +36,16 @@
 
 .browser-player { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: var(--void); }
 
-.app-shell.has-player { height: 100vh; min-height: 0; overflow: hidden; background: transparent; }
-.player-page { position: relative; flex: 1; min-height: 0; overflow: hidden; background: transparent; isolation: isolate; }
-.native-video-surface { position: absolute; inset: 0; z-index: 0; background: transparent; }
-.video-loading-cover { position: absolute; inset: 0; z-index: 1; background: var(--void); }
-.player-shade { position: absolute; inset: 0; z-index: 2; pointer-events: none; background: var(--scrim-player-top) top / 100% 160px no-repeat, var(--scrim-player-bottom) bottom / 100% 240px no-repeat; }
-.player-header { position: absolute; z-index: 4; inset: 0 0 auto; padding: var(--space-5) 3vw; display: grid; grid-template-columns: auto 1fr auto; gap: var(--space-4); align-items: center; opacity: 0; transform: translateY(-8px); transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out); pointer-events: none; }
-.player-header.is-visible { opacity: 1; transform: none; pointer-events: auto; }
-.player-header p { margin: 0 0 var(--space-1); color: var(--text-2); font: var(--type-meta); }
-.player-header h1 { font-size: clamp(1.25rem, 2.7vw, 2.125rem); line-height: 1.1; }
-.player-circle-button, .player-control-button { display: grid; place-items: center; color: var(--text-1); background: var(--veil); border: 1px solid var(--line-strong); }
-.player-circle-button { width: var(--icon-button); height: var(--icon-button); border-radius: var(--radius-pill); }
-.player-diagnostics { justify-self: end; display: grid; grid-template-columns: auto auto; column-gap: var(--space-2); row-gap: var(--space-1); align-items: center; color: var(--text-2); border: 1px solid var(--line-strong); border-radius: var(--radius-control); background: var(--surface-1); padding: var(--space-3); }
-.player-diagnostics span { color: var(--text-1); font: var(--type-meta); }
-.player-diagnostics small { grid-column: 2; color: var(--text-3); font: var(--type-meta); }
-.player-center-state { position: absolute; z-index: 3; inset: 50% auto auto 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: var(--space-3); padding: var(--space-5); border-radius: var(--radius-sheet); background: var(--surface-1); color: var(--text-1); font: var(--type-meta); pointer-events: none; }
 .next-episode-card { position: fixed; z-index: var(--z-prompt); right: var(--space-5); bottom: 120px; display: grid; gap: var(--space-2); width: min(320px, calc(100vw - 48px)); padding: var(--space-4); border-radius: var(--radius-sheet); background: var(--surface-1); border: 1px solid var(--line-strong); color: var(--text-1); box-shadow: var(--shadow-sheet); }
 .next-episode-card p { margin: 0; font: var(--type-label); }
 .next-episode-timer { color: var(--text-2); }
 .next-episode-actions { display: flex; gap: var(--space-3); }
-.player-error-panel { position: absolute; z-index: 5; inset: 50% auto auto 50%; transform: translate(-50%, -50%); width: min(500px, calc(100vw - 44px)); background: var(--surface-1); border: 1px solid var(--line-strong); border-radius: var(--radius-sheet); padding: var(--space-6); text-align: center; box-shadow: var(--shadow-sheet); }
-.player-error-panel > svg { color: var(--danger); }
-.player-error-panel h2 { margin: var(--space-4) 0 var(--space-3); font: var(--type-title); }
-.player-error-panel p { color: var(--text-2); line-height: 1.55; overflow-wrap: anywhere; }
-.player-error-actions { display: flex; justify-content: center; gap: var(--space-3); margin-top: var(--space-4); }
-.player-error-panel button { border: 0; border-radius: var(--radius-control); background: var(--text-1); color: var(--on-light); min-height: var(--hit-min); padding: 0 var(--space-4); font: var(--type-label); display: inline-flex; align-items: center; gap: var(--space-2); }
-.player-error-panel button:last-child { background: transparent; color: var(--text-1); border: 1px solid var(--line-strong); }
-.player-cpu-warning { position: absolute; z-index: 3; top: 104px; left: 50%; transform: translateX(-50%); background: var(--surface-1); border: 1px solid var(--notice); border-radius: var(--radius-control); color: var(--notice); padding: var(--space-3) var(--space-4); display: flex; gap: var(--space-2); align-items: center; font: var(--type-meta); }
-.player-reporting-warning { position: absolute; z-index: 3; top: 150px; left: 50%; transform: translateX(-50%); max-width: min(680px, calc(100vw - 36px)); background: var(--surface-1); border: 1px solid var(--notice); border-radius: var(--radius-control); color: var(--notice); padding: var(--space-3) var(--space-4); display: flex; gap: var(--space-2); align-items: center; font: var(--type-meta); }
-.player-controls { position: absolute; z-index: 5; inset: auto 0 0; padding: var(--space-5) 3vw var(--space-5); opacity: 0; transform: translateY(10px); pointer-events: none; transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out); }
-.player-controls.is-visible { opacity: 1; transform: none; pointer-events: auto; }
-.seek-row { display: grid; grid-template-columns: 48px 1fr 48px; gap: var(--space-3); align-items: center; margin-bottom: var(--space-4); color: var(--text-2); font: var(--type-mono); }
-.seek-row span:last-child { text-align: right; }
-.seek-row input, .volume-slider { accent-color: var(--art-accent); height: 4px; padding: 0; border: 0; box-shadow: none; }
-.seek-track { position: relative; display: grid; align-items: center; }
-.seek-track input { width: 100%; }
-.seek-chapter { position: absolute; top: 50%; width: 3px; height: 10px; margin: -5px 0 0 -1px; border-radius: 1px; background: var(--text-1); pointer-events: none; }
-.seek-preview { position: absolute; bottom: 22px; left: clamp(90px, var(--seek-x, 0%), calc(100% - 90px)); transform: translateX(-50%); display: grid; justify-items: center; gap: var(--space-1); max-width: 220px; padding: var(--space-2); border-radius: var(--radius-control); background: var(--surface-1); border: 1px solid var(--line-strong); color: var(--text-1); pointer-events: none; }
-.seek-thumbnail { background-repeat: no-repeat; background-color: var(--surface-2); border-radius: var(--radius-xs); max-width: 100%; }
-.seek-preview strong { font: var(--type-mono); }
-.seek-preview em { font: var(--type-meta); font-style: normal; color: var(--text-2); text-align: center; }
-.control-row { display: flex; align-items: center; gap: var(--space-3); }
-.primary-play-control { width: 50px; height: 50px; border: 0; border-radius: var(--radius-pill); display: grid; place-items: center; color: var(--on-light); background: var(--text-1); }
-.player-control-button { width: 44px; height: 44px; border-radius: var(--radius-control); }
-.volume-slider { width: 110px; }
-.track-control { width: min(210px, 20vw); height: 44px; margin: 0; padding: 0 var(--space-2) 0 var(--space-3); display: flex; align-items: center; gap: var(--space-1); background: var(--veil); border: 1px solid var(--line-strong); border-radius: var(--radius-control); }
-.track-control svg { flex: none; color: var(--text-2); }
-.track-control select { min-height: 0; height: 40px; border: 0; background: transparent; padding: 0 var(--space-1); color: var(--text-1); font: var(--type-meta); box-shadow: none; min-width: 0; }
-.track-control select option { background: var(--surface-1); color: var(--text-1); }
-.control-spacer { flex: 1; }
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 600px) {
   .content { width: calc(100% - 36px); }
   .auth-card { padding: 34px 24px; }
-  .player-header { padding: var(--space-4); }
-  .player-diagnostics { display: none; }
-  .player-controls { padding: var(--space-4) var(--space-4) var(--space-5); }
-  .track-control { width: 44px; }
-  .track-control select { width: 1px; opacity: 0; position: absolute; }
-  .volume-slider { display: none; }
 }
 .browser-mode-label { position: fixed; z-index: var(--z-toast); right: var(--space-3); bottom: var(--space-3); margin: 0; padding: var(--space-2) var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--surface-1); color: var(--text-2); font: var(--type-meta); pointer-events: none; }
 .quick-connect-code { font: 700 clamp(2.5rem, 8vw, 4.5rem) / 1 var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: .24em; margin: var(--space-2) 0 var(--space-5); color: var(--text-1); user-select: all; }
@@ -112,32 +61,15 @@
 .skip-segment-button { position: absolute; z-index: 6; right: 3vw; bottom: 150px; height: var(--hit-min); padding: 0 var(--space-4); display: flex; align-items: center; gap: var(--space-2); color: var(--text-1); background: var(--surface-1); border: 1px solid var(--line-strong); border-radius: var(--radius-pill); font: var(--type-label); }
 .skip-segment-button:hover { background: var(--surface-3); }
 
-/* Player chrome hides while playing, but never while a control holds focus. */
-.player-header:focus-within, .player-controls:focus-within { opacity: 1; transform: none; pointer-events: auto; }
 /* The pointer hides over the player after it stops moving. */
 .cursor-idle, .cursor-idle * { cursor: none !important; }
-@media (prefers-reduced-motion: reduce) {
-  .player-header, .player-controls { transform: none; }
-}
 
 .detail-player-warning { margin-top: var(--space-3); color: var(--danger); }
-.player-info { position: fixed; top: 76px; right: var(--space-4); z-index: var(--z-player-chrome); display: grid; justify-items: end; gap: var(--space-2); }
-.player-info section { min-width: 260px; padding: var(--space-3) var(--space-4); border-radius: var(--radius-control); background: var(--surface-1); border: 1px solid var(--line-strong); color: var(--text-1); }
-.player-info section[hidden] { display: none; }
-.player-info dl { display: grid; grid-template-columns: auto 1fr; gap: var(--space-1) var(--space-4); margin: 0; }
-.player-info dt { color: var(--text-2); }
-.player-info dd { margin: 0; }
-.player-info button { transition: opacity var(--dur-base) var(--ease-out); }
-.cursor-idle .player-info[data-open="false"]:not(:focus-within) button { opacity: 0; pointer-events: none; }
 
 .settings { padding: var(--space-6) var(--gutter) var(--space-8); }
 .settings h1 { margin-bottom: var(--space-6); }
 .settings-field { margin: var(--space-4) 0; }
 .settings-field label { display: grid; gap: 6px; max-width: 24rem; }
-.conversion-chip { position: fixed; top: 76px; left: var(--space-4); z-index: var(--z-player-chrome); display: flex; align-items: flex-start; gap: var(--space-2); max-width: min(34rem, 60vw); margin: 0; padding: var(--space-2) var(--space-3); border-radius: var(--radius-control); background: var(--surface-1); border: 1px solid var(--line-strong); color: var(--notice); font: var(--type-meta); }
-.conversion-chip svg { flex: none; margin-top: 2px; }
-.conversion-chip small { display: block; margin-top: 2px; font: var(--type-meta); color: var(--text-2); }
-.play-original { position: fixed; right: var(--gutter); bottom: 96px; z-index: var(--z-player-chrome); }
 }
 
 /* Ambient backdrop (DESIGN.md §7.2). The layers sit at z-index -1 inside the frame's stacking context (.home), so the frame must create one. */

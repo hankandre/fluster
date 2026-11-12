@@ -16,6 +16,7 @@ export { MediaCard, type MediaCardProps, type MediaCardVariant } from "./media-c
 export { MediaRow, type MediaRowProps } from "./media-row";
 export { Notice } from "./notice";
 export { initials, PersonRow, type Person } from "./person-row";
+export { OptionList, type OptionListOption } from "./option-list";
 export { Picker, type PickerOption } from "./picker";
 export { SegmentedTabPanel, SegmentedTabs, type TabItem } from "./segmented-tabs";
 export { ProgressRing } from "./progress-ring";

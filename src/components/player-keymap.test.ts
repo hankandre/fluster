@@ -85,4 +85,46 @@ describe("playerKeyAction", () => {
       expect(press("k", { target })).toEqual({ kind: "toggle-pause" });
     }
   });
+
+  it("maps Home, End, and the digits to a share of the file, and a and i to the sheets", () => {
+    expect(press("Home")).toEqual({ kind: "seek-to", fraction: 0 });
+    expect(press("End")).toEqual({ kind: "seek-to", fraction: 1 });
+    expect(press("0")).toEqual({ kind: "seek-to", fraction: 0 });
+    expect(press("3")).toEqual({ kind: "seek-to", fraction: 0.3 });
+    expect(press("9")).toEqual({ kind: "seek-to", fraction: 0.9 });
+    expect(press("a")).toEqual({ kind: "open-tracks" });
+    expect(press("A")).toEqual({ kind: "open-tracks" });
+    expect(press("i")).toEqual({ kind: "toggle-info" });
+    expect(press("I")).toEqual({ kind: "toggle-info" });
+  });
+
+  it("never repeats the new actions and ignores them with a modifier", () => {
+    for (const key of ["Home", "End", "5", "a", "i"]) {
+      expect(press(key, { repeat: true })).toBeUndefined();
+      expect(press(key, { ctrlKey: true })).toBeUndefined();
+      expect(press(key, { metaKey: true })).toBeUndefined();
+      expect(press(key, { altKey: true })).toBeUndefined();
+    }
+  });
+
+  it("acts on digits and i from a slider, but not from a text field", () => {
+    const slider = element('<input type="range">');
+    expect(press("5", { target: slider })).toEqual({ kind: "seek-to", fraction: 0.5 });
+    expect(press("i", { target: slider })).toEqual({ kind: "toggle-info" });
+    expect(press("End", { target: slider })).toBeUndefined();
+    const field = element('<input type="text">');
+    for (const key of ["5", "a", "i", "Home", "End"]) expect(press(key, { target: field })).toBeUndefined();
+  });
+
+  it("lets a focused list option keep its own keys and yield the rest", () => {
+    const host = document.createElement("div");
+    host.innerHTML = '<ul role="listbox"><li role="option" tabindex="0">English</li></ul>';
+    const target = host.querySelector("li") as HTMLElement;
+    for (const key of ["ArrowUp", "ArrowDown", "Home", "End", "Enter", " "]) expect(press(key, { target })).toBeUndefined();
+    expect(press("c", { target })).toEqual({ kind: "cycle-subtitles" });
+    expect(press("m", { target })).toEqual({ kind: "toggle-mute" });
+    expect(press("ArrowLeft", { target })).toEqual({ kind: "seek-by", seconds: -10 });
+    expect(press("ArrowRight", { target })).toEqual({ kind: "seek-by", seconds: 10 });
+    expect(press("Escape", { target })).toEqual({ kind: "escape" });
+  });
 });

@@ -8,7 +8,6 @@ import { describe, expect, it } from "vitest";
 // shared UI primitives; no native select, radio, or checkbox remains" to P13-09, P13-11, and P13-17. A new file must not be added to this list.
 const ALLOWLIST: Record<string, string> = {
   "settings/settings-view.tsx": "P13-17 (Settings: streaming-limit selects)",
-  "player/track-menus.tsx": "P13-13 (player chrome: audio and subtitle selects moved here by P10-08)",
 };
 
 const featuresDir = __dirname;
