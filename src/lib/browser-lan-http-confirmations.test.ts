@@ -24,6 +24,27 @@ describe("BrowserLanHttpConfirmations", () => {
     expect(JSON.parse(window.localStorage.getItem(LAN_HTTP_CONFIRMATIONS_STORAGE_KEY)!)).toEqual([LIVING_ROOM]);
   });
 
+  it("forgets one pair and keeps the others", () => {
+    const other = { serverId: "server-2", origin: "http://192.168.1.6:8096" };
+    const store = new BrowserLanHttpConfirmations();
+    store.remember(LIVING_ROOM);
+    store.remember(other);
+    store.forget(LIVING_ROOM);
+    expect(store.has(LIVING_ROOM)).toBe(false);
+    expect(new BrowserLanHttpConfirmations().has(LIVING_ROOM)).toBe(false);
+    expect(store.has(other)).toBe(true);
+  });
+
+  it("forgets an in-memory record when storage is blocked", () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    const store = new BrowserLanHttpConfirmations();
+    store.remember(LIVING_ROOM);
+    store.forget(LIVING_ROOM);
+    expect(store.has(LIVING_ROOM)).toBe(false);
+  });
+
   it("ignores corrupt or foreign stored values", () => {
     window.localStorage.setItem(LAN_HTTP_CONFIRMATIONS_STORAGE_KEY, "not json");
     expect(new BrowserLanHttpConfirmations().has(LIVING_ROOM)).toBe(false);

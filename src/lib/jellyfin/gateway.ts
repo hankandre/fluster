@@ -247,6 +247,13 @@ export class JellyfinGateway {
     this.confirmations.remember({ serverId: this.serverId, origin: this.origin });
   }
 
+  // Withdraws a choice recorded by confirmUnencryptedConnection, for a user
+  // who cancels before the connection proceeds.
+  forgetUnencryptedConnection(): void {
+    if (!this.serverId) return;
+    this.confirmations.forget({ serverId: this.serverId, origin: this.origin });
+  }
+
   private needsConsentForPlainHttp(): boolean {
     return this.plainHttp && this.hostClass === "private-lan";
   }

@@ -46,6 +46,9 @@ class MemoryConfirmations implements LanHttpConfirmationStore {
   remember(confirmation: LanHttpConfirmation): void {
     this.records.push(confirmation);
   }
+  forget(confirmation: LanHttpConfirmation): void {
+    this.records = this.records.filter((record) => !(record.serverId === confirmation.serverId && record.origin === confirmation.origin));
+  }
 }
 
 // Records every request with its origin, so tests prove what was probed.

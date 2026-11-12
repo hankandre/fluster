@@ -11,6 +11,8 @@ export interface LanHttpConfirmation {
 export interface LanHttpConfirmationStore {
   has(confirmation: LanHttpConfirmation): boolean;
   remember(confirmation: LanHttpConfirmation): void;
+  // Removes the record, for a choice the user withdrew before it took effect.
+  forget(confirmation: LanHttpConfirmation): void;
 }
 
 export function isConfirmation(value: unknown): value is LanHttpConfirmation {
@@ -35,5 +37,10 @@ export class MemoryLanHttpConfirmations implements LanHttpConfirmationStore {
   remember(confirmation: LanHttpConfirmation): void {
     if (this.has(confirmation)) return;
     this.records.push({ serverId: confirmation.serverId, origin: confirmation.origin });
+  }
+
+  forget(confirmation: LanHttpConfirmation): void {
+    const kept = this.records.filter((stored) => !sameConfirmation(stored, confirmation));
+    this.records.splice(0, this.records.length, ...kept);
   }
 }

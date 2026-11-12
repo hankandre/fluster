@@ -22,7 +22,14 @@ export function ServerStep({ search, onConnected }: { search?: ServerSearch; onC
   const [pending, setPending] = useState<Pending | undefined>(undefined);
   const controller = useRef<AbortController | undefined>(undefined);
 
-  useEffect(() => () => controller.current?.abort(), []);
+  // The gateway whose consent the open dialog recorded and not yet released
+  // to the next step; cancelling or leaving takes it back.
+  const consented = useRef<SessionGateway | undefined>(undefined);
+
+  useEffect(() => () => {
+    controller.current?.abort();
+    consented.current?.forgetUnencryptedConnection();
+  }, []);
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -67,6 +74,9 @@ export function ServerStep({ search, onConnected }: { search?: ServerSearch; onC
 
   function cancel() {
     controller.current?.abort();
+    // Synchronous, so a retry during the in-flight request sees no consent.
+    consented.current?.forgetUnencryptedConnection();
+    consented.current = undefined;
     setPending(undefined);
     setBusy(false);
   }
@@ -100,6 +110,7 @@ export function ServerStep({ search, onConnected }: { search?: ServerSearch; onC
           onConfirmed={onConnected}
           onCancel={cancel}
           controller={controller}
+          consented={consented}
         />
       )}
     </StepShell>
@@ -114,11 +125,13 @@ function UnencryptedDialog({
   onConfirmed,
   onCancel,
   controller,
+  consented,
 }: {
   pending: Pending;
   onConfirmed: (stage: Stage) => void;
   onCancel: () => void;
   controller: { current: AbortController | undefined };
+  consented: { current: SessionGateway | undefined };
 }) {
   const { gateway, serverName } = pending;
   const [confirming, setConfirming] = useState(false);
@@ -131,12 +144,15 @@ function UnencryptedDialog({
     const abort = new AbortController();
     controller.current = abort;
     try {
-      // chooseSignInStage swallows an abort, so check the signal. Consent is
-      // stored only once the choice proceeds, and before any sign-in request
-      // (the Quick Connect check sends no credential).
-      const stage = await chooseSignInStage(gateway, abort.signal);
-      if (abort.signal.aborted) return;
+      // Consent comes first: the gateway refuses sign-in calls without it.
+      // Cancel takes it back through `consented`.
       gateway.confirmUnencryptedConnection();
+      consented.current = gateway;
+      const stage = await chooseSignInStage(gateway, abort.signal);
+      // chooseSignInStage swallows an abort. Nothing async may sit between
+      // this check and onConfirmed.
+      if (abort.signal.aborted) return;
+      consented.current = undefined;
       onConfirmed(stage);
     } catch (caught) {
       if (isAbort(caught)) return;
