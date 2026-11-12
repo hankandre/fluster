@@ -13,28 +13,29 @@ Researched 2026-11-12 for [`docs/plans/proposals/discovery-and-profiles.md`](../
   - *Widespread*: mainstream coverage in several outlets, a survey, or the vendor shipped a fix.
   - *Common*: recurring articles or forum threads.
   - *Niche*: a few sources, sometimes intense.
+- **Complaints are weighed against use (§5).** The owner asked on 2026-11-12 that Fluster "shouldn't just follow the loudest malcontents" and should ask "is this actually something that is widely used despite the fact that it is also something widely complained about". Every gripe has a verdict in §5, with whatever usage or adoption evidence exists. Vendors publish almost none, and §5 says "no usage data" where that is so.
 - Nothing here was observed in a running app. Netflix, Prime Video, Disney+, Max, and Plex were not installed or used for this document.
 - "Applies to a personal library?" asks whether Fluster could fall into the same trap, not whether the business reason exists there.
 
 ## 1. Summary
 
-| # | Gripe | How often | Why the service does it | Applies to a personal library? |
-|---|---|---|---|---|
-| 1 | Previews that play by themselves while browsing | Widespread | Capture attention inside about 90 seconds | Only if Fluster chooses to. No incentive. |
-| 2 | Too much to scroll; minutes lost choosing | Widespread (survey) | A large catalogue is the product; abandonment is churn | Yes. A big library has the same problem. |
-| 3 | Rows and artwork that change between visits | Common | Per-visit ranking and per-viewer artwork raise plays | Only if Fluster chooses to. |
-| 4 | Continue Watching fills with things you gave up on | Common | The row competes with discovery rows; removal came late | Yes, and Jellyfin has no removal today. |
-| 5 | Other people see or alter your profile | Common | Profiles are a convenience, not a boundary; social features drive engagement | Yes. This is the owner's "Who's watching?" concern. |
-| 6 | "Are you still watching?" | Common, low intensity | Saves the viewer's place and data (Netflix's words) | Partly. A conversion left running costs the user's own server. |
-| 7 | The catalogue can't be browsed in full; titles leave | Common | Licensing; "a few compelling choices" beats full navigation | No licensing churn. Full browse is the default. |
-| 8 | Recommendations favour what keeps you watching | Common | Retention; the recommender drives about 80% of hours | The incentive is absent. The owner wants to do better here. |
-| 9 | Auto-play of the next episode, and credits cut short | Common; credits niche but intense | More viewing per session | Auto-play is wanted for series; the abuses are optional. |
-| 10 | Skip intro missing or inconsistent | Widespread demand | Lowers friction in a binge; Plex sells it | Yes. It depends on server data. |
-| 11 | Audio and subtitle choices not remembered; short language lists | Common | Licensing per title; the short list is unexplained | Track memory yes. Short lists no. |
-| 12 | Search answers with something else | Common (Netflix), widespread (Prime) | Keep the session alive; sell rentals | No. Search can be exact. |
-| 13 | Kids leave the kids' profile; previews ignore ratings | Common | Soft controls are cheaper than real ones | Yes, through server parental controls. |
-| 14 | Remote navigation gets slower after a redesign | Widespread (2025) | Bigger tiles promote featured titles | Yes, when the TV shell arrives. |
-| 15 | Ads and outside content pushed into the home screen | Widespread (Plex, Prime) | Ad revenue from users who never pay | No incentive. This is why people leave Plex. |
+| # | Gripe | How often | Why the service does it | Applies to a personal library? | Verdict (§5) |
+|---|---|---|---|---|---|
+| 1 | Previews that play by themselves while browsing | Widespread | Capture attention inside about 90 seconds | Only if Fluster chooses to. No incentive. | Used despite complaints; size of the unhappy group unknown |
+| 2 | Too much to scroll; minutes lost choosing | Widespread (survey) | A large catalogue is the product; abandonment is churn | Yes. A big library has the same problem. | Real friction; the remedy is unproven |
+| 3 | Rows and artwork that change between visits | Common | Per-visit ranking and per-viewer artwork raise plays | Only if Fluster chooses to. | Mixed: moving the viewer's own row is real friction; "reshuffling" in general is loud, unmeasured |
+| 4 | Continue Watching fills with things you gave up on | Common | The row competes with discovery rows; removal came late | Yes, and Jellyfin has no removal today. | Real friction, on a heavily used row |
+| 5 | Other people see or alter your profile | Common | Profiles are a convenience, not a boundary; social features drive engagement | Yes. This is the owner's "Who's watching?" concern. | Real for those affected; how many is unknown |
+| 6 | "Are you still watching?" | Common, low intensity | Saves the viewer's place and data (Netflix's words) | Partly. A conversion left running costs the user's own server. | Loud; no data either way |
+| 7 | The catalogue can't be browsed in full; titles leave | Common | Licensing; "a few compelling choices" beats full navigation | No licensing churn. Full browse is the default. | Loud minority, by Netflix's own tests |
+| 8 | Recommendations favour what keeps you watching | Common | Retention; the recommender drives about 80% of hours | The incentive is absent. The owner wants to do better here. | Used despite complaints; "promotes its own titles" is real |
+| 9 | Auto-play of the next episode, and credits cut short | Common; credits niche but intense | More viewing per session | Auto-play is wanted for series; the abuses are optional. | Used despite complaints; the friction is control. Credits: niche |
+| 10 | Skip intro missing or inconsistent | Widespread demand | Lowers friction in a binge; Plex sells it | Yes. It depends on server data. | Not a complaint about the feature: heavily used |
+| 11 | Audio and subtitle choices not remembered; short language lists | Common | Licensing per title; the short list is unexplained | Track memory yes. Short lists no. | Real friction (track memory); subtitles heavily used |
+| 12 | Search answers with something else | Common (Netflix), widespread (Prime) | Keep the session alive; sell rentals | No. Search can be exact. | Real for Prime Video; unmeasured for Netflix |
+| 13 | Kids leave the kids' profile; previews ignore ratings | Common | Soft controls are cheaper than real ones | Yes, through server parental controls. | Unknown size |
+| 14 | Remote navigation gets slower after a redesign | Widespread (2025) | Bigger tiles promote featured titles | Yes, when the TV shell arrives. | Used despite complaints; partly conceded by Netflix |
+| 15 | Ads and outside content pushed into the home screen | Widespread (Plex, Prime) | Ad revenue from users who never pay | No incentive. This is why people leave Plex. | Real among Plex users; size unknown |
 
 ## 2. The gripes
 
@@ -224,3 +225,42 @@ Where a personal library is weaker, to be honest about it:
 - **Metadata is as good as the owner made it.** Genres, people, and collections may be missing. Jellyscale reads metadata only from files beside the film (`~/Code/jellyscale/PRODUCT.md`, "Non-goals").
 - **The server decides what exists.** Skip intro, trickplay, and similar items appear only if the server provides them (§2.10).
 - **No editorial voice.** Nobody curates a "new this week" list. Recently added is the only "new".
+
+## 5. Complaints weighed against use
+
+Added 2026-11-12 after the owner's answer to Q3 of the proposal: "we shouldn't just follow the loudest malcontents, but we should also evaluate whether these are actual friction points, whether this is just because people are loudest about this, is this actually something that is widely used despite the fact that it is also something widely complained about."
+
+Three verdicts:
+
+- **Real friction**: a representative survey, a measured effect, or the vendor changing course shows that many people are held up.
+- **Used despite complaints**: the feature is kept on, or measurably helps, while a visible group objects.
+- **Loud minority**: the complaint is visible but nothing shows it is widely felt, or the vendor's tests point the other way.
+
+"Unknown" is added wherever no usage data exists. That is most places: no service publishes how many people turn a feature off. A vendor's "our tests showed" is a claim with no number behind it, and its tests measure the vendor's goal (plays, retention), which is not always the viewer's.
+
+| # | Gripe | Evidence of use or benefit | Evidence of friction beyond noise | Verdict |
+|---|---|---|---|---|
+| 1 | Previews that play by themselves | Netflix, 2016: "our testing showed that people watched more of a story, demonstrating these previews helped them browse less and watch more", with no numbers (https://www.advanced-television.com/2016/12/06/netflix-video-previews-speed-content-selection/). Kept for nine years and enlarged in 2025; the redesign reached "85% of TV devices" and "has outperformed expectations", again with no numbers (https://www.csimagazine.com/csi/netflix-q325-results.php). | Netflix added an off switch in 2020. A November 2026 test plays trailers large at the top of the screen instead of inside the tile and returns to six tiles a row (https://www.whats-on-netflix.com/news/netflix-tv-app-redesign-test-sidebar-menu/). **How many people turned previews off: no usage data. No representative survey of annoyance was found.** | **Used despite complaints.** The size of the unhappy group is unknown. The vendor's measure is "watched more", which is its goal, but "browse less" is also the viewer's. |
+| 2 | Too much to scroll | Netflix's own figure: interest is lost after 60 to 90 seconds and 10 to 20 titles (Gomez-Uribe and Hunt, 2015). | Nielsen 2025: 14 minutes a session, 19% give up (§2.2). | **Real friction.** The remedy is unproven: Netflix's "Play Something" button was removed in January 2023 because it was not used much, and members tend to arrive with something in mind (https://comicbook.com/tv-shows/news/netflix-quietly-removes-surprise-me-feature-barely-used; snippet: https://www.t3.com/news/netflix-surprise-me-feature-removed). Whether fewer rows help: no usage data. |
+| 3 | Rows and artwork that change | Artwork chosen by test raised one title's take rate by about 14% (snippet) (https://netflixtechblog.com/selecting-the-best-artwork-for-videos-through-a-b-testing-f6155c4595f6); per-viewer artwork gave a "significant lift in our core metrics" (snippet) (https://netflixtechblog.com/artwork-personalization-c589f074ad76). | Netflix's paper notes that changing what members are used to "often measures negatively" (Gomez-Uribe and Hunt, 2015). A Hub/CTAM survey of 3,000 US consumers found a buried Continue Watching row the most damaging interface problem (https://www.thewrap.com/industry-news/business/frustrating-app-experience-subscription-canceled-hub-ctam-survey/). An A+E Networks test that moved the row down cut clicks by 16% (snippet) (https://amplitude.com/blog/ae-networks-amplitude-viewer-engagement). No survey on stable against personalised layouts was found. | **Mixed.** Moving the viewer's own row is **real friction**. "The rows reshuffle" in general is a **loud minority** complaint with no measurement. Personalised artwork works for the vendor and its critics are few. |
+| 4 | Continue Watching clutter | "A large portion of watching hours are spent in continue watching mode"; testing the row "showed significant boost in user engagement"; how recently a title was played was an important input to its order (Netflix, RecSysTV 2016: https://www.slideshare.net/MohammadHosseinTagha/balancing-discovery-and-continuation-in-recommendations). In the Hub/CTAM survey 63% would "absolutely" use a pinned row. | Netflix brought removal to every device in January 2022: "We heard you" (http://about.netflix.com/en/news/now-you-can-easily-tidy-up-your-continue-watching-row-on-all-devices). 1,740 votes on Jellyfin's tracker. **How likely an item is to be resumed as it ages: no usage data.** | **Real friction, on a heavily used row.** That Netflix ranks by recency supports ageing items out; no data says where the cut should be. |
+| 5 | Other people in your profile | Profile PIN adoption, the share of accounts with several profiles, and use of each other's profiles: no usage data. | Netflix built a lock; Plex apologised for an incident (§2.5). | **Real for those affected; how many is unknown.** |
+| 6 | "Are you still watching?" | No data on how often it fires or how people feel. | None beyond how-to articles. | **Loud; no data either way.** |
+| 7 | A catalogue you can't browse in full | Netflix's paper: what customers ask for ("comprehensive search and navigation tools") differs from "what actually works (a few compelling choices simply presented)". Search is about 20% of hours (2015). | The sort removal of 2026 drew complaints (§2.3). | **Loud minority**, by Netflix's own tests. Those tests measure plays on a licensed catalogue, not a library the viewer chose. |
+| 8 | Recommendations that serve the service | About 80% of hours come through the recommender, and the home page is where "2 of every 3 hours streamed" are found (2015; no newer primary figure). 71% were satisfied with Netflix's recommendations in a 2023 Whip Media study (snippet) (https://whipmedia.com/wp-content/uploads/2023/09/2023-US-Streaming-Satisfaction-Study.pdf). 46% say recommendations offer shows they like (Hub, November 2025: https://thestreamable.com/hub-research-choice-content-discovery-youtube). | In the same Hub study 54% say recommendations mainly promote the streamer's new titles. Hub/CTAM 2026: 59% of those aged 13 to 24 and 45% of older viewers say recommendations do not feel designed for them. | **Used despite complaints.** The specific complaint, that they promote the service's own titles, is **real** and held by a majority in one survey. It cannot arise in a personal library. |
+| 9 | Auto-play of the next thing; credits | YouGov, 1,000 US adults, April 2022: 42% binge at least half the time and 14% never do (https://yougov.com/en-us/articles/42726-american-tv-preferences-yougov-poll). In the Chicago experiment about half of the participants planned to turn auto-play back on afterwards (https://arxiv.org/html/2412.16040v1). The share who leave it on: no vendor data. | The same experiment (76 people, with those who had already turned auto-play off screened out): 62% disagreed beforehand that they liked content continuing by itself, and about a third planned to keep it off. Credits: a petition and creators' remarks; no survey. | **Used despite complaints.** The friction is about control, not about the feature existing. The credits complaint is **niche**. |
+| 10 | Skip intro | Pressed 136 million times a day (§2.10). | A counter-signal: 45% of Americans enjoy title sequences and 27% do not (YouGov 2022, above). The share of intros skipped: no data. | **Heavily used.** The complaint is its absence. The YouGov figure supports a button over skipping automatically. |
+| 11 | Audio and subtitles | "Nearly half of all viewing hours on Netflix in the US happen with subtitles or captions on" (24 April 2025: http://about.netflix.com/en/news/introducing-a-new-way-to-experience-subtitles). The often-quoted "40% always on, 80% monthly" has no primary source: unverified. | Track-memory requests recur on the Plex, Emby, and Jellyfin forums (§2.11). | **Real friction** for track memory; subtitles themselves are **heavily used**. |
+| 12 | Search that answers with something else | Netflix describes substituting but gives no measure of whether it satisfies. | Prime Video: an analyst study, and Amazon redesigned (§2.12). | **Real for Prime Video; unmeasured for Netflix.** |
+| 13 | Kids | Share of viewing on kids' profiles: no usage data. | A review and vendor changes (§2.13). | **Unknown size.** |
+| 14 | The remote after a redesign | Netflix: the 2025 interface "has outperformed expectations". | The November 2026 test walks part of it back: six tiles a row, the menu on the left again. | **Used despite complaints; partly conceded.** |
+| 15 | Ads and outside content | Whether home-screen promotions drive viewing on Plex or Prime Video: no usage data. | Very long Plex forum threads and press (§2.15). | **Real among Plex users; size unknown.** |
+
+One survey puts the whole subject in proportion. Hub/CTAM (2026) found 90% of viewers satisfied with their apps overall, 72% with at least one "extremely" frustrating problem, and 36% who had cancelled a service over a bad app experience (https://www.thewrap.com/industry-news/business/frustrating-app-experience-subscription-canceled-hub-ctam-survey/). Most people are content most of the time, and a single bad point still costs subscribers.
+
+What the weighing changes:
+
+1. **The best-supported complaints are about the viewer's own things**: where Continue Watching sits, what clutters it, and track choices that are forgotten. These rank first.
+2. **Three of the loudest complaints are about features people keep using**: previews, next-episode auto-play, and recommendations. The evidence supports giving control over them. It does not support removing them.
+3. **Several complaints have no measurement at all**: reshuffling rows, "Are you still watching?", cut credits, and the wish to browse everything. Fluster should not build its identity on them. Where the fix costs nothing, it can still take it.
+

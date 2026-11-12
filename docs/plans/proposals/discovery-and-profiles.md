@@ -1,8 +1,101 @@
 # Discovery and profiles: improving on Netflix in a personal library
 
-Status: **Proposal, 2026-11-12. Waiting for the owner's answers to §7.** Nothing here is decided except the two tasks in §6.2, which needed no design choice and were added to `tasks/prd.json` under the `AGENTS.md` "Tasks" rule.
+Status: **Q1 to Q12 answered 2026-11-12; Q13 to Q16 are open.** The owner's answers are in "Answers" below, as relayed by the coordinating agent. The tasks they settle are in `tasks/prd.json`. Sections 1 to 7 keep the original proposal text for the record; where an answer differs from a recommendation, the answer wins. The pull request that carries this is not set to merge by itself: the owner merging it is the approval of the relayed answers.
 
 This is the Fable 5.2 product-review pass that the rule names. It triages the discovery entries in `tasks/backlog.md` and the proposals below.
+
+## Answers (owner, 2026-11-12)
+
+Relayed by the coordinating agent. An answer marked **own words** is not one of the options offered in §7.
+
+| # | Answer | Applied in |
+|---|---|---|
+| Q1 | A: one fixed Home order for everyone. Reorder and hide stay in the backlog. | P16-05 (the row's place); proposed P16-02 |
+| Q2 | B: one merged row, most recent first. Two rows if P16-01 shows the lists can't be ordered by last play. | Proposed P16-02 (waits for Q14) |
+| Q3 | **Own words.** "We shouldn't just follow the loudest malcontents, but we should also evaluate whether these are actual friction points, whether this is just because people are loudest about this, is this actually something that is widely used despite the fact that it is also something widely complained about." A method for the whole research, not an answer about previews alone. | Gripes §5 (a verdict per gripe); "The principles after weighing" below; previews become **Q13** |
+| Q4 | **Own words.** "We should probably not populate the continue watching row with anything beyond a certain threshold ... oftentimes if people watch something like two weeks ago, they don't want to continue watching it now." Items age out of the row after a time since they were last played. No remove button for now. | "Ageing out of Continue watching" below; the window is **Q14**; proposed P16-03 is withdrawn; P16-01 gains a check |
+| Q5 | A: "More like this" on movie and series pages | P16-04 |
+| Q6 | A: one "Because you watched" row, with an off switch | P16-05 |
+| Q7 | A: a genre opens the filtered library, and the toolbar gains a genre filter. No genre rows on Home. | P16-06 |
+| Q8 | A: cast cards open a person's titles; the series page gains the cast row. After P15-03. | P16-07 |
+| Q9 | A: local trailers and extras only, never automatic, low priority | P16-08 |
+| Q10 | A: Favorites stands in for a watchlist | No task (P15-01) |
+| Q11 | D: turning "Stay signed in" off is the privacy control now; a PIN comes with the TV shell | P13-27; `DESIGN.md` §7.21; `PRODUCT.md` "Open product questions" |
+| Q12 | B: rules in the client now, the profile on the server starting with Jellyscale. §3.4 stays the owner's carry-over proposal. | P16-05 is stage 0; §3.4 unchanged |
+
+### Tasks added after the answers
+
+In `tasks/prd.json`, under the `AGENTS.md` "Tasks" rule. Full acceptance is in the file; §6.3 has the reasoning.
+
+| Id | Title | Place | Priority |
+|---|---|---|---|
+| P16-04 | Show More like this on movies and series | P16, after P16-01 | Medium |
+| P16-05 | Suggest one row after you finish something | P16, after P16-04 | Medium |
+| P16-06 | Browse by genre | P16, after P16-05 | Medium |
+| P16-07 | Open a person's titles and show cast on the series page | P16, after P16-06 | Low to medium |
+| P16-08 | Play local trailers and extras | P16, last | Low |
+| P13-27 | Keep an account private on this computer | P13, after P13-21 and before P13-19 | Medium |
+
+Not added:
+
+- **P16-02** (stable Home and the merged row) uses the ageing window, which is Q14. It stays proposed in §6.3, updated.
+- **P16-03** (a remove button) is withdrawn by the Q4 answer. The backlog entry stays.
+
+Changed from §6.3 as first written:
+
+- P16-05 no longer depends on P16-02. Its place on Home comes from Q1 A. It depends on P3-22 for its off switch. Its anchor is the last title the server marks played, so a title stopped early is never the anchor and no threshold is invented.
+- P16-07 asks that the spec show the owner where the cast row sits on the series page before implementation.
+- P16-08's model is Opus, with a high-risk spec check and a `guardian` review, because it hands new kinds of item to Playback Negotiation.
+- P13-27 gains a line: a signed-out tile on "Who's watching?" says it needs the password.
+- P16-01, added earlier in this same pull request, gains one acceptance item for Q4: whether Resume or Next Up can leave out items last played before a date, and what `nextUpDateCutoff` does to a series that gains a new episode.
+
+No existing task's acceptance is edited. Q11 D needed no such edit: P13-21 and P3-02 already say "Signed out" tiles don't count and that "Stay signed in" is per account, and P13-27 carries the new behaviour. One edit to an existing task is proposed, as Q16.
+
+### The principles after weighing (Q3)
+
+Gripes §5 gives each gripe a verdict: real friction, used despite complaints, or loud minority. Vendors publish almost no usage data, so several verdicts carry "unknown". Read against those verdicts, the ten principles in §1 do not all stand equally.
+
+| # | Principle | Verdict behind it | After weighing |
+|---|---|---|---|
+| N3 | Your next episode comes first | Real friction, on a heavily used row | **Strongest.** A survey of 3,000 found a buried Continue Watching row the most damaging interface problem, and a test that moved it down cut clicks by 16% (Gripes §5, rows 3 and 4). |
+| N2 | Home stays where you left it | Mixed | **Stands for the viewer's own rows.** Netflix's paper says changing what members are used to "often measures negatively". The wider claim, that people are bothered by rows reshuffling, is unmeasured. A fixed order costs Fluster nothing, so it stays; it is not evidence-led beyond the first rows. |
+| N6 | You can clear what you gave up on | Real friction | **Changed by the Q4 answer.** It becomes "the first row holds what you are watching now": old items age out, with no button. Netflix ranks the row by recency, which supports this; no data says where the cut should be (Q14). |
+| N7 | The end of a film is the end | Used despite complaints; credits niche | **Half stands.** Next-episode auto-play is widely used and should stay on by default with a countdown, Hide, and an off switch. The evidence is about control. "Credits at full size" rests on a petition and has no survey behind it: keep it because it is free, and don't present it as a selling point. |
+| N8 | Your account is yours | Real for those affected; size unknown | **Stands on the owner's judgement, not on data.** No figure exists for how often people use each other's profiles. |
+| N10 | Nothing from outside | Real among Plex users; size unknown | **Stands.** It costs nothing and is already `PRODUCT.md` principle 6. |
+| N1 | Nothing plays until you ask | Used despite complaints | **Weakened.** Netflix says its tests showed previews "helped them browse less and watch more", has kept them for nine years, and nobody knows how many people turned them off. As an absolute rule N1 follows the loudest voices. The parts that hold are narrower: nothing with sound, nothing by surprise, and an off switch. Q13 asks the owner. |
+| N4 | A few good suggestions, with the reason shown | Used despite complaints | **Weakened in "a few".** Recommendations are how most viewing is found on Netflix, and about half of viewers say they suit them. The complaint a majority shares is that they promote the service's own titles, which cannot happen here. Nothing shows that fewer rows work better. "One row" (Q6 A) is a cautious start to be judged in use, not a finding. |
+| N5 | The whole library is one step away | Loud minority | **Weakened as a selling point.** Netflix's tests say most people do not use full navigation, and search is about a fifth of hours. Fluster already has it and it is cheap, so it stays. It should not lead. |
+| N9 | The profile is visible and yours to reset | No data | **Unsupported either way.** No evidence was found that viewers want explanations or a reset. It stays as a privacy rule (§3.3), not as a feature to promote. |
+
+What this changes in the recommendations:
+
+- **Q2 B** (the merged row first) is the best-supported recommendation in this document.
+- **Q7 A** kept genre rows off Home on the argument that rows cause endless scrolling. That was an inference. Netflix's home rows are where "2 of every 3 hours streamed" are found. The owner chose A; the reason to hold it is restraint, not evidence, and it is worth revisiting after the dogfood week.
+- **Q3**'s original recommendation, "never", is withdrawn. Q13 replaces it.
+- **"Are you still watching?"** stays deferred: loud, with no data either way.
+- **Track memory** (P15-07) is real friction and already a task. Nothing changes.
+
+### Ageing out of Continue watching (Q4)
+
+What the routes can do, from the SDK Fluster pins and the server source:
+
+| Route | Filter by last played? | Source |
+|---|---|---|
+| `GET /Shows/NextUp` | **Yes.** `nextUpDateCutoff`: "Starting date of shows to show in Next Up section." | `@jellyfin/sdk` 1.0.2, `show-api.d.ts` |
+| `GET /UserItems/Resume` | **No.** It takes no date parameter. The server orders by date played, newest first, and applies no cutoff. | SDK `library-api.d.ts`; https://raw.githubusercontent.com/jellyfin/jellyfin/master/Jellyfin.Api/Controllers/ItemsController.cs |
+| `GET /Items` | **No** last-played filter. It can sort by `DatePlayed`. | Same source |
+
+So:
+
+- For in-progress items Fluster filters in the client on `UserData.LastPlayedDate`. Because the server returns them newest first, Fluster can stop at the first item older than the window.
+- For next episodes Fluster can send `nextUpDateCutoff`, or filter in the client the same way. What the parameter does on 10.11.7 and 12.4.0 is **unverified** until P16-01.
+- jellyfin-web is reported to have a "Max days in Next Up" display setting with a default of one year. This comes from a search summary of forum.jellyfin.org that did not identify the thread: **unverified**. If it holds, a window is familiar to Jellyfin users, at a far longer length than the owner has in mind.
+- Nothing is lost when an item ages out. Its position stays on the server, its page still offers Resume, and other clients still list it.
+
+One case needs care. A viewer who is caught up on a series stops playing it because there is nothing left. When a new episode arrives a month later, a window measured only from the last play would hide it. A forum user is reported to say that Jellyfin does not bring a series back into Next Up when seasons are added later (the same search summary: **unverified**; P16-01 checks it). Whether a new episode should bring a series back is part of Q14.
+
+No data was found on how the chance of resuming falls with time (Gripes §5, row 4). The length of the window is a judgement, and the owner's "like two weeks" is the only input.
 
 ## The owner's direction (2026-11-12)
 
@@ -353,31 +446,29 @@ Two tasks. Neither needs a design choice. Both follow existing tasks' shape.
   5. The synthetic sample set gains what these need (genres, people, a collection, a local trailer, and an extra, as files beside the samples) without third-party media, and `tests/samples/README.md` lists them.
   6. `docs/research/discovery-api.md` states, per route and version, what the response holds, and beside it the route's status in Jellyscale's `compat/endpoints.yaml`; every "unverified" in `docs/plans/proposals/discovery-and-profiles.md` §2 that the fixtures settle is updated.
   7. Fixtures are scrubbed per the `jellyfin-api` contract-fixtures reference; no gateway method, playback request, or UI changes.
+  8. Added after the Q4 answer: fixtures show whether `/UserItems/Resume` or `/Shows/NextUp` (`nextUpDateCutoff`) can leave out items last played before a given date on each version, and what `nextUpDateCutoff` does to a series that gains a new episode after the cutoff.
 - Verify: `pnpm test -- fixtures && ls tests/fixtures/jellyfin/*/`
 
 ### 6.3 Tasks proposed, waiting for answers
 
-Not in `tasks/prd.json`. Ids are provisional. Each is written so that it can be added as it stands once its question is answered with the recommended option; a different answer changes the acceptance.
+**After the answers:** P16-04 to P16-08 and P13-27 are now in `tasks/prd.json`, with the changes listed under "Answers". Their text below is the first proposal, kept for the record; the file is the source of truth. P16-02 is rewritten below and stays proposed until Q14 is answered. P16-03 is withdrawn.
+
+As first written: not in `tasks/prd.json`. Ids are provisional. Each is written so that it can be added as it stands once its question is answered with the recommended option; a different answer changes the acceptance.
 
 Every UI task also carries the four standard lines (TV form; screenshots at 1440×900 and 1920×1080; fresh-context design review; no journey skipped, deleted, or weakened) and "`DESIGN.md` matches what ships". They are not repeated below. Verify for each UI task: `pnpm check && pnpm test:e2e && pnpm test:visual`.
 
-**P16-02. Keep Home stable and lead with what's next** (Q1, Q2). Priority: high. Size M. Sonnet. Depends on P16-01, P3-27.
+**P16-02. Keep Home stable and lead with what's next** (Q1 A, Q2 B; waits for Q14). Priority: high. Size M. Sonnet. Depends on P16-01, P3-27.
 
-1. Home's rows appear in one fixed order, documented in `DESIGN.md` §7.4, on every visit and for every account.
-2. A pure function in `src/domain/` picks "Up next" by the rules in §2.2 as answered in Q2; unit tests cover each rule and each tie.
-3. The hero and the first row use that function, so they never disagree.
-4. The viewer's in-progress and next-episode items are shown as answered in Q2 (one row or two), ordered by last play.
-5. A row with nothing to show is hidden and the others keep their order; a unit test loads Home twice with the same fixtures and asserts the same row order and card order.
-6. A Playwright journey finishes an episode and finds the next episode first on Home.
+1. Home's rows appear in one fixed order, documented in `DESIGN.md` §7.4, on every visit and for every account (owner, Q1 A).
+2. One "Continue watching" row holds in-progress items and next episodes together, most recently played first (owner, Q2 B). If P16-01 shows the two lists can't be ordered by last play, they stay two rows and the hero follows the most recent activity across both.
+3. An item last played longer ago than the window in Q14 is left out of the row and is never the hero (owner, Q4). Its saved position is untouched and its own page still offers Resume.
+4. The window is applied as P16-01 verified: `nextUpDateCutoff` where the server honours it, and otherwise a filter on the last-played date in a pure function with unit tests at the boundary.
+5. A pure function in `src/domain/` picks "Up next" by the rules in §2.2; the hero and the row both use it, so they never disagree.
+6. A row with nothing to show is hidden and the others keep their order; a unit test loads Home twice with the same fixtures and asserts the same rows and cards in the same order.
+7. A Playwright journey finishes an episode and finds the next episode first on Home, and a second shows an old item absent from the row and still resumable from its page.
+8. What Q14 decides about a setting and about new episodes is added here when it is answered.
 
-**P16-03. Remove a title from Continue Watching** (Q4). Priority: high. Size S. Sonnet, `jellyfin-api`. Depends on P16-01, P13-26, P13-20.
-
-1. A card in the in-progress row offers "Remove from Continue watching" from its menu (`i`, Menu on TV, or right-click), without changing what Enter does.
-2. The gateway call is the one P16-01 verified on 10.11.7 and 12.4.0; a gateway test asserts the request.
-3. Before removing, Fluster says what will be lost (the saved position) in the words the owner approves; after, a toast offers Undo, which restores the position.
-4. The row and the hero update without a reload.
-5. When the server offers a flag that hides an item without clearing its position, Fluster uses it; until then that path is absent, not stubbed.
-6. A Playwright journey removes a title, undoes it, and removes it again.
+**P16-03. Remove a title from Continue Watching.** **Withdrawn** by the Q4 answer: items age out, and there is no remove button for now. The backlog entry stays, and P16-01 still records what a position reset does, in case the owner returns to it.
 
 **P16-04. Show "More like this" on movies and series** (Q5). Priority: medium. Size S. Sonnet, `jellyfin-api`. Depends on P16-01.
 
@@ -438,16 +529,16 @@ A local PIN (option C) is not written up as a task. It needs a decision record f
 ### 6.4 Proposed order
 
 ```text
-Now:                P3-27 hero plays the next episode (added)
-                    P16-01 discovery fixtures (added)
-After the answers:  P16-02 stable Home and Up next → P16-03 remove from Continue watching
-                    → P16-04 More like this → P16-05 Because you watched
+In tasks/prd.json:  P3-27 hero plays the next episode
+                    P16-01 discovery fixtures → P16-04 More like this → P16-05 Because you watched
                     → P16-06 genres → P16-07 people → P16-08 trailers and extras
-With accounts:      P13-27 private accounts, after P13-21
+                    P13-27 private accounts, after P13-21
+Waits for Q14:      P16-02 stable Home, the merged row, and ageing (goes after P16-01)
+Withdrawn:          P16-03 remove from Continue watching
 Carried to Jellyscale by the owner: §3.4 A, then C
 ```
 
-P16-02 and P16-03 are the two with the clearest evidence behind them (Gripes §2.3 and §2.4) and are small. They would be worth having before the dogfood week; adding them to P4-01's dependencies is the owner's call, because P4-01 is an existing task.
+P16-02 has the clearest evidence behind it (Gripes §5, rows 3 and 4). It would be worth having before the dogfood week; adding it to P4-01's dependencies is the owner's call, because P4-01 is an existing task (Q16).
 
 ### 6.5 Added to the backlog by this pass
 
@@ -461,7 +552,7 @@ P16-02 and P16-03 are the two with the clearest evidence behind them (Gripes §2
 
 ## 7. Decision list
 
-Twelve questions, in three batches of four. Each stands alone. "Rec" is a recommendation; the owner decides.
+Q1 to Q12 were answered on 2026-11-12; see "Answers" at the top. Their text is kept as asked. **Batch 4 (Q13 to Q16) is open.** Each question stands alone. "Rec" is a recommendation; the owner decides.
 
 ### Batch 1: Home
 
@@ -548,3 +639,36 @@ Cast cards are not interactive today, and the series page has no cast row.
 - B: Rules in the client now; the profile on the server, starting with Jellyscale. Fluster asks the server when it can and falls back to its own rules.
 - C: A Jellyfin plugin.
 - **Rec: B,** with the privacy rules in §3.3 and AI last (§3.1). This also asks the owner to carry §3.4 into Jellyscale's own backlog.
+
+### Batch 4: open after the answers
+
+**Q13. Previews while browsing.**
+This replaces Q3. The complaint is loud, but Netflix says its tests showed previews "helped them browse less and watch more", has kept them for nine years, and gave an off switch in 2020. Nobody outside Netflix knows how many people use that switch (Gripes §5, row 1). Three things differ in a personal library. A preview needs a trailer file, and most libraries have few. Each preview is a real playback request to the user's own server. And Fluster gains nothing from attention.
+- A: Never. Fluster plays nothing until asked.
+- B: Off by default, with a setting that turns previews on. A preview is the title's local trailer, muted, started after focus rests on the hero or a detail page, never with reduced motion, and never when the server would have to convert it.
+- C: On by default with the same limits, and a setting that turns them off.
+- D: Decide after the dogfood week, once local trailers (P16-08) exist to try it with.
+- **Rec: B, built after P16-08 at low priority.** The evidence says previews help some people choose, which is a reason not to rule them out. It does not show that most people want them, and the documented harm (sound and unwanted content by surprise) comes from having them on by default. B lets the owner try it in the dogfood week without committing every viewer to it. If the owner would sooner not spend the work yet, D costs nothing.
+
+**Q14. How long does a title stay in Continue watching?**
+The owner's answer to Q4: items age out by time since they were last played, about two weeks, with no remove button. No data was found on how the chance of resuming falls with time, so the length is a judgement.
+- A: 14 days, fixed. No setting.
+- B: 14 days by default, with a setting: 7, 14, or 30 days, or "Keep everything".
+- C: 30 days by default, with the same setting.
+- D: Two lengths: 14 days for a film or episode in progress, longer (for example 60 days) for the next episode of a series.
+- Also to decide, with any option: when a new episode arrives for a series the viewer was caught up on, does the series come back to the row even though its last play is older than the window?
+- **Rec: B, and yes to new episodes.** Two weeks is the owner's own figure. A setting is cheap once P3-22 exists, and "Keep everything" protects people who watch a long series slowly. A new episode is the library changing, not the viewer drifting away, so it should bring the series back. D is more exact but harder to explain in one line of Settings.
+
+**Q15. Which principles go into `PRODUCT.md`?**
+§1 proposed ten. After weighing, six stand and four are weakened or unsupported ("The principles after weighing").
+- A: Add the six that stand (N2, N3, N6 as reworded, N7, N8, N10) as a short "Better than a streaming service" list. Hold N1 until Q13, and leave N4, N5, and N9 in this proposal as working rules.
+- B: Add all ten as written.
+- C: Add none until after the dogfood week.
+- **Rec: A.** `PRODUCT.md` should state what the evidence or the owner's own judgement supports, and no more.
+
+**Q16. Should the merged row be in place before the dogfood week?**
+P4-01 (the dogfood log) is an existing task, so adding a dependency to it needs the owner. P16-02 is the best-supported change here and alters what Home shows first every evening.
+- A: Yes. Add P16-02 to P4-01's `depends_on` once Q14 is answered and P16-02 is a task.
+- B: No. Dogfood today's Home and judge the change afterwards.
+- **Rec: A.** A week of use is the only test of the two-week window that Fluster can run, since it has no analytics.
+
