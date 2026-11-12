@@ -1783,10 +1783,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "pnpm check exit 0 (vitest 131 files, 1721 tests passed; build, typecheck, cargo test 183 passed); pnpm test:e2e 106 passed; pnpm test:visual 173 passed (incl. new 59, 59a, 59b, 59c, 88). No e2e test removed or skipped. Untested gates: Wayland/hwdec/macOS/AppImage chrome over real video; fresh-context design review pending. Open design calls for the human are listed in docs/specs/P13-13.md."
+          "passes": true,
+          "evidence": "task/P13-13. pnpm check, pnpm test:e2e and pnpm test:visual green after review fixes (see commit). Fresh-context design review done; two medium findings fixed (sheet no longer covers the control row; Escape after a mouse-opened sheet no longer pins the chrome); lows logged in docs/design/rework-plan.md. No e2e test removed or skipped. Untested gates: Wayland/hwdec/macOS/AppImage chrome over real video. Design calls still open for the human are listed in docs/specs/P13-13.md. PR screenshots linked in Ship."
         },
         {
           "id": "P13-14",

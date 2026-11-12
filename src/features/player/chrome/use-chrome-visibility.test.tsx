@@ -111,4 +111,30 @@ describe("useChromeVisibility", () => {
     act(() => vi.advanceTimersByTime(CHROME_IDLE_MS + 100));
     expect(stage()).toHaveAttribute("data-visible", "false");
   });
+
+  it("does not hold the chrome up when Escape closes a mouse-opened sheet and focus is restored", () => {
+    const { rerender } = render(<Harness playing />);
+    fireEvent.mouseMove(stage(), { clientX: 30, clientY: 30 });
+    const control = screen.getByRole("button", { name: "Control" });
+    fireEvent.pointerDown(control);
+    act(() => control.focus());
+    rerender(<Harness playing pinned />);
+    act(() => screen.getByRole("button", { name: "Plain" }).focus());
+    fireEvent.keyDown(window, { key: "Escape" });
+    rerender(<Harness playing />);
+    act(() => control.focus());
+    act(() => vi.advanceTimersByTime(CHROME_IDLE_MS + 100));
+    expect(stage()).toHaveAttribute("data-visible", "false");
+  });
+
+  it("still treats focus after another key as keyboard focus", () => {
+    render(<Harness playing />);
+    fireEvent.mouseMove(stage(), { clientX: 33, clientY: 33 });
+    const control = screen.getByRole("button", { name: "Control" });
+    fireEvent.pointerDown(control);
+    fireEvent.keyDown(window, { key: "Tab" });
+    act(() => control.focus());
+    act(() => vi.advanceTimersByTime(CHROME_IDLE_MS + 100));
+    expect(stage()).toHaveAttribute("data-visible", "true");
+  });
 });

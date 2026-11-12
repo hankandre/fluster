@@ -45,8 +45,11 @@ export function useChromeVisibility({ playing, pinned }: { playing: boolean; pin
   }, [pinned]);
 
   // Any key press, from anywhere, makes the next focus a keyboard focus.
+  // Escape is the exception: it closes a sheet a click opened, and the focus
+  // that code then restores is still the click's.
   useEffect(() => {
-    const onKey = () => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") return;
       byPointer.current = false;
     };
     window.addEventListener("keydown", onKey, true);
