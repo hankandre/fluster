@@ -277,7 +277,7 @@ describe("SignInView with a private-LAN HTTP server", () => {
     expect(gateway.confirmUnencryptedConnection).not.toHaveBeenCalled();
   });
 
-  it("records the confirmation before any credential request, then continues", async () => {
+  it("records the confirmation before any sign-in request, then continues", async () => {
     const order: string[] = [];
     const gateway = lanGateway({
       confirmUnencryptedConnection: vi.fn(() => { order.push("confirm"); }),
@@ -291,7 +291,7 @@ describe("SignInView with a private-LAN HTTP server", () => {
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Connect without encryption" }));
     });
-    expect(order).toEqual(["quick-connect-enabled", "confirm"]);
+    expect(order).toEqual(["confirm", "quick-connect-enabled"]);
     expect(screen.getByLabelText("Username")).toHaveFocus();
   });
 
@@ -339,7 +339,7 @@ describe("SignInView with a private-LAN HTTP server", () => {
       await act(async () => { release(); });
       expect(screen.getByLabelText("Server URL")).toBeInTheDocument();
       expect(screen.queryByLabelText("Quick Connect code")).not.toBeInTheDocument();
-      expect(gateway.confirmUnencryptedConnection).not.toHaveBeenCalled();
+      expect(gateway.forgetUnencryptedConnection).toHaveBeenCalledTimes(1);
       expect(gateway.login).not.toHaveBeenCalled();
     });
 
@@ -350,7 +350,7 @@ describe("SignInView with a private-LAN HTTP server", () => {
       await act(async () => { release(); });
       expect(screen.getByLabelText("Server URL")).toBeInTheDocument();
       expect(screen.queryByLabelText("Quick Connect code")).not.toBeInTheDocument();
-      expect(gateway.confirmUnencryptedConnection).not.toHaveBeenCalled();
+      expect(gateway.forgetUnencryptedConnection).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -377,6 +377,9 @@ class MemoryConfirmations implements LanHttpConfirmationStore {
   }
   remember(confirmation: LanHttpConfirmation): void {
     this.records.push(confirmation);
+  }
+  forget(confirmation: LanHttpConfirmation): void {
+    this.records = this.records.filter((record) => !(record.serverId === confirmation.serverId && record.origin === confirmation.origin));
   }
 }
 
@@ -416,6 +419,34 @@ describe("SignInView with the real gateway", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(PUBLIC_HTTP_REFUSED_MESSAGE);
     expect(screen.getByLabelText("Server URL")).toBeInTheDocument();
     expect(requests).toEqual([]);
+  });
+
+  it("removes consent on Cancel and asks again when the same URL is re-submitted during the request", async () => {
+    let release: (value: unknown) => void = () => {};
+    const requests: string[] = [];
+    const transport: HttpTransport = {
+      async get<T>(url: string) {
+        requests.push(`GET ${url}`);
+        if (url === "/QuickConnect/Enabled") return { data: await new Promise((resolve) => { release = resolve; }) as T };
+        return { data: { ServerName: "Living Room", Version: "10.11.7", Id: "server-1" } as T };
+      },
+      async post<T>() { return { data: undefined as T }; },
+      async delete<T>() { return { data: undefined as T }; },
+    };
+    const confirmations = new MemoryConfirmations();
+    renderWithRealGateway(transport, confirmations);
+    await connect(LAN_ORIGIN);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Connect without encryption" }));
+    });
+    expect(confirmations.records).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(confirmations.records).toEqual([]);
+    await connect(LAN_ORIGIN);
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+    await act(async () => { release(true); });
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+    expect(confirmations.records).toEqual([]);
   });
 
   it("probes a private-LAN server, then sends nothing else until the user confirms", async () => {

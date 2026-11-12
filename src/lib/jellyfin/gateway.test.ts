@@ -1244,6 +1244,9 @@ class MemoryConfirmations implements LanHttpConfirmationStore {
   remember(confirmation: LanHttpConfirmation): void {
     this.records.push({ ...confirmation });
   }
+  forget(confirmation: LanHttpConfirmation): void {
+    this.records = this.records.filter((record) => !(record.serverId === confirmation.serverId && record.origin === confirmation.origin));
+  }
 }
 
 describe("JellyfinGateway plain-HTTP policy (docs/decisions/0001)", () => {
@@ -1329,6 +1332,19 @@ describe("JellyfinGateway plain-HTTP policy (docs/decisions/0001)", () => {
     const again = new JellyfinGateway(`${LAN_URL}/`, lanTransport(), "install-1", confirmations);
     await expect(again.connect()).resolves.toMatchObject({ needsUnencryptedConfirmation: false });
     await expect(again.login("Louise", "hunter2")).resolves.toMatchObject({ userId: "user-1" });
+  });
+
+  it("forgets a confirmation it recorded, so the next connect asks again", async () => {
+    const confirmations = new MemoryConfirmations();
+    const gateway = new JellyfinGateway(LAN_URL, lanTransport(), "install-1", confirmations);
+    await gateway.connect();
+    gateway.confirmUnencryptedConnection();
+    expect(confirmations.records).toHaveLength(1);
+    gateway.forgetUnencryptedConnection();
+    expect(confirmations.records).toEqual([]);
+    await expect(gateway.login("Louise", "hunter2")).rejects.toMatchObject({ kind: "not-confirmed" });
+    await expect(new JellyfinGateway(LAN_URL, lanTransport(), "install-1", confirmations).connect())
+      .resolves.toMatchObject({ needsUnencryptedConfirmation: true });
   });
 
   it("asks again for a different server Id at a confirmed origin", async () => {

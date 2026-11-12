@@ -11,6 +11,7 @@ export function fakeSessionGateway(overrides: Partial<SessionGateway> = {}): Ses
     hostClass: "public",
     connect: vi.fn(),
     confirmUnencryptedConnection: vi.fn(),
+    forgetUnencryptedConnection: vi.fn(),
     login: vi.fn(),
     quickConnectEnabled: vi.fn(),
     initiateQuickConnect: vi.fn(),

@@ -31,6 +31,17 @@ export class BrowserLanHttpConfirmations implements LanHttpConfirmationStore {
     }
   }
 
+  forget(confirmation: LanHttpConfirmation): void {
+    const kept = this.memory.filter((stored) => !sameConfirmation(stored, confirmation));
+    this.memory.splice(0, this.memory.length, ...kept);
+    try {
+      const remaining = this.readStorage().filter((stored) => !sameConfirmation(stored, confirmation));
+      window.localStorage.setItem(LAN_HTTP_CONFIRMATIONS_STORAGE_KEY, JSON.stringify(remaining));
+    } catch {
+      // Storage is unavailable, so only the in-memory record existed.
+    }
+  }
+
   private read(): LanHttpConfirmation[] {
     try {
       return [...this.readStorage(), ...this.memory];

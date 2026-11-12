@@ -16,6 +16,7 @@ export interface SessionGateway {
   readonly hostClass: HostClass;
   connect(signal?: AbortSignal): Promise<ServerConnection>;
   confirmUnencryptedConnection(): void;
+  forgetUnencryptedConnection(): void;
   login(username: string, password: string, signal?: AbortSignal): Promise<{ userId: string; username: string }>;
   quickConnectEnabled(signal?: AbortSignal): Promise<boolean>;
   initiateQuickConnect(signal?: AbortSignal): Promise<{ secret: string; code: string }>;
