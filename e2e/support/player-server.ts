@@ -153,6 +153,8 @@ export async function mockPlayerServer(page: Page, options: ServerOptions = {}):
           Type: "Movie",
           ProductionYear: 2016,
           RunTimeTicks: 1_200_000_000,
+          // A backdrop tag, so the playback notices draw art (the image request itself is not answered).
+          BackdropImageTags: ["bd-movie-1"],
           MediaSources: [source],
           UserData: { Played: false, IsFavorite: false, PlaybackPositionTicks: options.resumeTicks ?? 0 },
         });
@@ -188,7 +190,10 @@ export async function mockPlayerServer(page: Page, options: ServerOptions = {}):
         log.segmentRequests.push({ search: url.search, authorization: request.headers()["authorization"] });
         return json({ Items: options.segments ?? [], TotalRecordCount: (options.segments ?? []).length, StartIndex: 0 });
       case "/Videos/movie-1/stream":
-        return route.fulfill({ status: 200, headers: cors, contentType: "video/mp4", body: "" });
+        // The stubbed play() above stands in for the media. An answered request would make the real element
+        // fail on an empty body after the first frame, and a failed session now replaces the whole chrome.
+        // The request is logged and then left open until the page closes.
+        return new Promise<void>(() => undefined);
       default:
         return route.fulfill({ status: 404, headers: cors });
     }

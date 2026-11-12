@@ -1,0 +1,31 @@
+@layer features {
+  /* The playback notice: opaque layer, the item's backdrop at 30%, the hero and floor scrims, then Notice. */
+  .playback-notice {
+    position: absolute;
+    inset: 0;
+    z-index: var(--z-dialog);
+    min-block-size: 100vh;
+    overflow: hidden;
+    background: var(--surface-0);
+  }
+  .playback-notice-art {
+    position: absolute;
+    inset: 0;
+    opacity: 0.3;
+    background: center / cover no-repeat;
+  }
+  .playback-notice-art img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+  .playback-notice-scrim {
+    position: absolute;
+    inset: 0;
+    background: var(--scrim-floor), var(--scrim-hero);
+  }
+  .playback-notice-layer { position: relative; }
+  /* The player route has no nav to make room for. */
+  .playback-notice .ui-notice { min-block-size: 100vh; }
+  .playback-notice-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+  /* A route-level notice keeps a main landmark and fills the window. */
+  .playback-notice-page { position: relative; min-block-size: 100vh; }
+  /* The gallery shows a route-level notice over the page; Back closes it. */
+  .playback-notice-overlay { position: fixed; inset: 0; z-index: var(--z-dialog); }
+}

@@ -10,4 +10,10 @@ describe("PlayerStatus", () => {
     expect(screen.getByRole("status", { name: "Player status" })).toHaveTextContent("Buffering…");
     expect(container.querySelector(".player-status-disc")).toHaveAttribute("aria-hidden", "true");
   });
+
+  it("is a mounted, empty status without text", () => {
+    const { container } = render(<PlayerStatus />);
+    expect(screen.getByRole("status", { name: "Player status" })).toBeEmptyDOMElement();
+    expect(container.querySelector(".player-status-disc")).toBeNull();
+  });
 });

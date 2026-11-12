@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { waitFor } from "@testing-library/react";
-import { leavePlayer, libraryRoute, openPlayer, parseLibraryRoute, parsePlayRoute, playRoute } from "./routes";
+import { itemRoute, leavePlayer, leaveToDetails, libraryRoute, openPlayer, parseItemRoute, parseLibraryRoute, parsePlayRoute, playRoute } from "./routes";
 
 describe("play route", () => {
   it("round-trips the item, version, and start position", () => {
@@ -61,6 +61,64 @@ describe("leaving the player", () => {
 
     expect(window.location.hash).toBe("#/next/item/m2");
     expect(window.history.length).toBe(length);
+  });
+});
+
+describe("item route", () => {
+  it("reads a plain id, an encoded id, and an id with a query", () => {
+    expect(parseItemRoute("#/next/item/m1")).toBe("m1");
+    expect(parseItemRoute(itemRoute("m 1/ü"))).toBe("m 1/ü");
+    expect(parseItemRoute("#/next/item/m1?x=1")).toBe("m1");
+  });
+
+  it.each(["#/next/play/m1", "#/next/item/", "#/next/item/a/b", "#/next/item/%E0%A4%A"])("rejects %s", (hash) => {
+    expect(parseItemRoute(hash)).toBeUndefined();
+  });
+});
+
+describe("leaving to the detail view", () => {
+  it("records whether the player was opened from the item's detail view", () => {
+    window.location.hash = "#/next/item/m1";
+    openPlayer({ itemId: "m1", startTicks: 0 });
+    expect(window.history.state).toMatchObject({ playerFromDetail: "m1", playerOpenedFromItem: true });
+
+    window.location.hash = "#/next/home";
+    openPlayer({ itemId: "m1", startTicks: 0 });
+    expect(window.history.state).toMatchObject({ playerFromDetail: "m1", playerOpenedFromItem: false });
+  });
+
+  it("goes back when the detail view opened the player", async () => {
+    window.location.hash = "#/next/item/m1";
+    const length = window.history.length;
+    openPlayer({ itemId: "m1", startTicks: 0 });
+
+    leaveToDetails("m1");
+
+    await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
+    expect(window.history.length).toBe(length + 1);
+  });
+
+  it("replaces the player entry with the detail view when Home opened it", () => {
+    window.location.hash = "#/next/home";
+    openPlayer({ itemId: "m1", startTicks: 0 });
+    const length = window.history.length;
+
+    leaveToDetails("m1");
+
+    expect(window.location.hash).toBe("#/next/item/m1");
+    expect(window.history.length).toBe(length);
+  });
+
+  it("compares decoded ids, so an id that needs encoding still goes back", async () => {
+    const id = "m 1/ü";
+    window.location.hash = itemRoute(id);
+    const length = window.history.length;
+    openPlayer({ itemId: id, startTicks: 0 });
+
+    leaveToDetails(id);
+
+    await waitFor(() => expect(window.location.hash).toBe(itemRoute(id)));
+    expect(window.history.length).toBe(length + 1);
   });
 });
 

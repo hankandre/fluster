@@ -29,6 +29,8 @@ export interface MockOptions {
   fail?: boolean;
   duration?: number;
   disc?: boolean;
+  // PlaybackInfo offers an HLS conversion instead of the file (the browser engine refuses it as desktop-only).
+  converted?: boolean;
   short?: boolean;
   trickplay?: boolean;
   segments?: Array<Record<string, unknown>>;
@@ -223,6 +225,8 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
         const items = opts.segments ?? [];
         return json({ Items: items, TotalRecordCount: items.length, StartIndex: 0 });
       }
+      // The server stops the conversion it started (the desktop-only refusal cleans up).
+      if (p === "/Videos/ActiveEncodings") return route.fulfill({ status: 204, headers: cors });
       const info = /^\/Items\/([^/]+)\/PlaybackInfo$/.exec(p);
       if (info) {
         if (opts.playbackDelayMs) await sleep(opts.playbackDelayMs);
@@ -230,6 +234,14 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
         const dto = movies[id] ? movieDto(id, opts) : episodeDto(id, opts);
         let sources: Dto[] = dto.MediaSources;
         if (opts.disc && url.searchParams.get("EnableDirectPlay") === "false") sources = sources.map((s) => ({ ...s, SupportsDirectPlay: false }));
+        if (opts.converted) {
+          sources = sources.map((s) => ({
+            ...s,
+            SupportsDirectPlay: false,
+            TranscodingSubProtocol: "hls",
+            TranscodingUrl: `/videos/${id}/master.m3u8?MediaSourceId=${s.Id}&VideoCodec=h264&AudioCodec=aac&PlaySessionId=play-1&TranscodeReasons=ContainerBitrateExceedsLimit`,
+          }));
+        }
         return json({ PlaySessionId: "play-1", MediaSources: sources.slice(0, 1) });
       }
       const detail = /^\/Items\/([^/]+)$/.exec(p);

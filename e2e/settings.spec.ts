@@ -76,7 +76,8 @@ async function mockServer(page: Page): Promise<Log> {
       case "/MediaSegments/movie-1":
         return json({ Items: [], TotalRecordCount: 0, StartIndex: 0 });
       case "/Videos/movie-1/stream":
-        return route.fulfill({ status: 200, headers: cors, contentType: "video/mp4", body: "" });
+        // Left open: an empty answer would fail the real element after the stubbed first frame and replace the chrome.
+        return new Promise<void>(() => undefined);
       default:
         return route.fulfill({ status: 404, headers: cors });
     }

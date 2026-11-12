@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PlaybackSnapshot, PlayerEngine } from "../domain/playback";
 import { conversionIndicator } from "../features/player/conversion-copy";
 import type { ReadyPlayerStatus } from "../features/player/player-status";
-import { CHROME_IDLE_MS } from "../features/player/chrome/timing";
+import { CHROME_IDLE_MS, OSD_MS, OSD_NOTICE_MS } from "../features/player/chrome/timing";
 import type { PlaybackSessionState } from "../lib/player/session-state";
 import { PlayerView } from "./PlayerView";
 
@@ -485,6 +485,21 @@ describe("conversion notice", () => {
     expect(osd()).toHaveTextContent(line);
   });
 
+  it("holds the conversion line beside key feedback for its full time", () => {
+    vi.useFakeTimers();
+    const line = "Converting on server: the file is over your streaming limit · Subtitles are burned in";
+    renderView({}, { indicator: converted, playMethod: "Transcode" });
+    act(() => void vi.advanceTimersByTime(500));
+    press("ArrowRight");
+    expect(osd()).toHaveTextContent(line);
+    expect(osd()).toHaveTextContent("+10 s");
+    act(() => void vi.advanceTimersByTime(OSD_MS + 100));
+    expect(osd()).toHaveTextContent(line);
+    expect(osd()).not.toHaveTextContent("+10 s");
+    act(() => void vi.advanceTimersByTime(OSD_NOTICE_MS));
+    expect(osd()).toBeEmptyDOMElement();
+  });
+
   it("shows nothing for direct play", () => {
     renderView({}, { playMethod: "DirectPlay" });
     expect(screen.queryByRole("button", { name: /Converting|Repackaging/ })).not.toBeInTheDocument();
@@ -706,5 +721,66 @@ describe("skip and up next", () => {
     wakeThenHide();
     press("Enter");
     expect(onPlayNext).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("buffering status", () => {
+  it("keeps the live region mounted and empty between spells", () => {
+    const player = fakePlayer();
+    const ui = (buffering: boolean) => (
+      <PlayerView item={movie} player={player} status={status} session={{ snapshot: { ...snapshot, buffering }, firstFrameReady: true }} onRetry={vi.fn()} onBack={vi.fn()} />
+    );
+    const { rerender } = render(ui(false));
+    const region = loadingStatus();
+    expect(region).toBeEmptyDOMElement();
+    rerender(ui(true));
+    expect(loadingStatus()).toHaveTextContent("Buffering…");
+    rerender(ui(false));
+    expect(loadingStatus()).toBe(region);
+    expect(region).toBeEmptyDOMElement();
+  });
+});
+
+describe("errors", () => {
+  it("a failed command keeps the chrome and the keys", async () => {
+    const { player, container } = renderView({ paused: false, positionSeconds: 100 });
+    vi.mocked(player.seek).mockRejectedValueOnce(new Error("Seek failed"));
+    press("ArrowRight");
+    expect(await screen.findByText("Seek failed")).toBeInTheDocument();
+    expect(container.querySelector(".playback-notice")).toBeNull();
+    expect(screen.getByRole("slider", { name: "Playback position" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Back" })).toBeInTheDocument();
+    const card = container.querySelector(".player-error-panel") as HTMLElement;
+    expect(within(card).getByRole("button", { name: "Retry" })).toHaveClass("ui-button");
+    expect(within(card).getByRole("button", { name: "Back to details" })).toHaveClass("ui-button");
+
+    press("ArrowRight");
+    expect(player.seek).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(screen.queryByText("Seek failed")).not.toBeInTheDocument());
+  });
+
+  it("a failed session replaces the chrome with the notice", async () => {
+    const onBack = vi.fn();
+    const onBackToDetails = vi.fn();
+    const { player, container } = renderView({}, {
+      session: { snapshot, firstFrameReady: true, error: "Decoder failed" },
+      onBack,
+      onBackToDetails,
+    });
+    expect(container.querySelector(".playback-notice")).not.toBeNull();
+    expect(screen.getAllByRole("heading", { level: 1 }).map((heading) => heading.textContent)).toEqual(["Playback could not start"]);
+    expect(screen.queryByRole("slider")).not.toBeInTheDocument();
+    press("ArrowRight");
+    expect(player.seek).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Back to details" }));
+    expect(onBackToDetails).toHaveBeenCalledTimes(1);
+    press("Escape");
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it("Back to details uses onBack when no destination is given", () => {
+    const { onBack } = renderView({}, { session: { snapshot, firstFrameReady: true, error: "Decoder failed" } });
+    fireEvent.click(screen.getByRole("button", { name: "Back to details" }));
+    expect(onBack).toHaveBeenCalledTimes(1);
   });
 });

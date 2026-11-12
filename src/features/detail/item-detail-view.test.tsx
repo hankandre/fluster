@@ -414,7 +414,7 @@ describe("play actions", () => {
     await renderDetail(fakeGateway());
     await userEvent.click(await screen.findByRole("link", { name: "Play" }));
     expect(window.location.hash).toBe("#/next/play/m1?source=src-4k");
-    expect(window.history.state).toEqual({ playerFromDetail: "m1" });
+    expect(window.history.state).toMatchObject({ playerFromDetail: "m1" });
   });
 
   it("does not offer Resume for a played item", async () => {

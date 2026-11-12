@@ -10,20 +10,30 @@ export interface OsdMessage {
   serial: number;
 }
 
-// One message at a time: a new one replaces the old and restarts the timer.
+// Two slots, each with its own timer. A key message replaces the last key
+// message and restarts its timer. The conversion notice holds for its full
+// time: a key never cuts it short, and it never cuts a key short.
 export function useOsd() {
-  const [message, setMessage] = useState<OsdMessage>();
-  const timer = useRef<number | undefined>(undefined);
+  const [notice, setNotice] = useState<OsdMessage>();
+  const [keyMessage, setKeyMessage] = useState<OsdMessage>();
+  const timers = useRef<Record<OsdKind, number | undefined>>({ key: undefined, notice: undefined });
   const serial = useRef(0);
 
-  useEffect(() => () => window.clearTimeout(timer.current), []);
-
-  const show = useCallback((text: string, kind: OsdKind = "key") => {
-    window.clearTimeout(timer.current);
-    serial.current += 1;
-    setMessage({ text, kind, serial: serial.current });
-    timer.current = window.setTimeout(() => setMessage(undefined), kind === "notice" ? OSD_NOTICE_MS : OSD_MS);
+  useEffect(() => {
+    const held = timers.current;
+    return () => {
+      window.clearTimeout(held.key);
+      window.clearTimeout(held.notice);
+    };
   }, []);
 
-  return { message, show };
+  const show = useCallback((text: string, kind: OsdKind = "key") => {
+    window.clearTimeout(timers.current[kind]);
+    serial.current += 1;
+    const set = kind === "notice" ? setNotice : setKeyMessage;
+    set({ text, kind, serial: serial.current });
+    timers.current[kind] = window.setTimeout(() => set(undefined), kind === "notice" ? OSD_NOTICE_MS : OSD_MS);
+  }, []);
+
+  return { notice, keyMessage, show };
 }

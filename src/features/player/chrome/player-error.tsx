@@ -1,7 +1,9 @@
 import { AlertTriangle, LoaderCircle } from "lucide-react";
+import { Button } from "../../shared/ui";
+import { safeReason } from "../safe-reason";
 
-// The panel for a playback error: what happened (already redacted), Retry, and Back.
-export function PlayerErrorPanel({ message, retrying, retryLabel, onRetry, onBack }: {
+// The card for a failed player command while playback goes on: what happened (filtered), Retry, and Back.
+export function CommandErrorPanel({ message, retrying, retryLabel, onRetry, onBack }: {
   message: string;
   retrying?: boolean;
   retryLabel: string;
@@ -12,13 +14,13 @@ export function PlayerErrorPanel({ message, retrying, retryLabel, onRetry, onBac
     <div className="player-error-panel">
       <AlertTriangle size={26} />
       <h2>Playback could not start</h2>
-      <p>{message}</p>
+      <p>{safeReason(message)}</p>
       <div className="player-error-actions">
-        <button onClick={onRetry} disabled={retrying}>
-          {retrying ? <LoaderCircle className="spin" size={17} /> : null}
+        <Button variant="primary" onClick={onRetry} disabled={retrying}>
+          {retrying ? <LoaderCircle className="spin" size={17} aria-hidden="true" /> : null}
           {retryLabel}
-        </button>
-        <button onClick={onBack}>Back to library</button>
+        </Button>
+        <Button variant="secondary" onClick={onBack}>Back to details</Button>
       </div>
     </div>
   );

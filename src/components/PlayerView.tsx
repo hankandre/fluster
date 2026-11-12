@@ -10,7 +10,7 @@ import type { ReadyPlayerStatus } from "../features/player/player-status";
 import { InfoSheet, type PlayOriginalState } from "../features/player/chrome/info-sheet";
 import { conversionCopy } from "../features/player/chrome/osd-copy";
 import { Osd } from "../features/player/chrome/osd";
-import { PlayerErrorPanel, PlayerWarnings } from "../features/player/chrome/player-error";
+import { CommandErrorPanel, PlayerWarnings } from "../features/player/chrome/player-error";
 import { PlayerLoading, type LoadingBackdrop } from "../features/player/chrome/player-loading";
 import { PlayerStatus } from "../features/player/chrome/player-status";
 import { PlayerTopBar, titleLine } from "../features/player/chrome/player-top-bar";
@@ -25,6 +25,7 @@ import { useFullscreen } from "../features/player/chrome/use-fullscreen";
 import { useOsd } from "../features/player/chrome/use-osd";
 import { seekTarget, usePlayerKeys, type SheetName } from "../features/player/chrome/use-player-keys";
 import "../features/player/chrome/player.css";
+import { PlaybackErrorNotice } from "../features/player/playback-notices";
 import { NativeVideoSurface } from "./NativeVideoSurface";
 
 export type { SeekChapter };
@@ -44,6 +45,7 @@ export function PlayerView({
   retrying,
   onRetry,
   onBack,
+  onBackToDetails,
   seekPreview,
   chapters,
   convertedTracks,
@@ -66,6 +68,8 @@ export function PlayerView({
   retrying?: boolean;
   onRetry(): Promise<void> | void;
   onBack(): Promise<void> | void;
+  // Where "Back to details" goes on an error notice; absent, it uses onBack.
+  onBackToDetails?(): Promise<void> | void;
   // Both are optional and off by default: without them the seek bar is a bare
   // slider. seekPreview draws the picture shown above the time under the
   // pointer (or the keyboard position); chapters adds markers and names.
@@ -94,7 +98,7 @@ export function PlayerView({
   // Counts chip presses: a new press remounts the open Info sheet so focus can move to Play original.
   const [chipPresses, setChipPresses] = useState(0);
   const snapshot = session.snapshot;
-  const error = commandError ?? session.error;
+  const sessionError = session.error;
   const osd = useOsd();
   const tracksId = useId();
   const infoId = useId();
@@ -137,10 +141,16 @@ export function PlayerView({
   };
 
   const playing = Boolean(snapshot && !snapshot.paused);
-  const visibility = useChromeVisibility({ playing, pinned: Boolean(error) || sheet !== undefined });
+  const visibility = useChromeVisibility({ playing, pinned: Boolean(commandError) || sheet !== undefined });
   const skip = segments && snapshot ? activeSegment(segments, snapshot.positionSeconds) : undefined;
 
+  // A failed session replaces the chrome with a notice, so any open sheet closes.
+  useEffect(() => {
+    if (sessionError) setSheet(undefined);
+  }, [sessionError]);
+
   usePlayerKeys({
+    suspended: Boolean(sessionError),
     player,
     snapshot,
     converted,
@@ -165,7 +175,25 @@ export function PlayerView({
     if (session.firstFrameReady && noticeText) showOsd(noticeText, "notice");
   }, [session.firstFrameReady, noticeText, showOsd]);
 
-  const chromeShown = session.firstFrameReady || Boolean(error);
+  const chromeShown = session.firstFrameReady || Boolean(commandError);
+  const backToDetails = () => void (onBackToDetails ?? onBack)();
+
+  if (sessionError) {
+    return (
+      <section className="player-page" aria-label="Player" {...visibility.sectionProps}>
+        <NativeVideoSurface player={player} onError={setCommandError} />
+        <PlaybackErrorNotice
+          item={item}
+          backdrop={backdrop}
+          message={sessionError}
+          retryLabel={retryLabel}
+          retrying={retrying}
+          onRetry={() => void onRetry()}
+          onBack={backToDetails}
+        />
+      </section>
+    );
+  }
 
   return (
     <section className="player-page" aria-label="Player" {...visibility.sectionProps}>
@@ -180,7 +208,7 @@ export function PlayerView({
           onBack={() => void onBack()}
         />
       )}
-      {error && !session.firstFrameReady && <div className="player-cover" />}
+      {commandError && !session.firstFrameReady && <div className="player-cover" />}
 
       {chromeShown && (
         <div className="player-chrome" data-visible={visibility.visible}>
@@ -212,18 +240,18 @@ export function PlayerView({
         </div>
       )}
 
-      {chromeShown && snapshot?.buffering && <PlayerStatus text="Buffering…" />}
-      <Osd message={osd.message} />
-      {error && (
-        <PlayerErrorPanel
-          message={error}
+      {chromeShown && <PlayerStatus text={snapshot?.buffering ? "Buffering…" : undefined} />}
+      <Osd notice={osd.notice} keyMessage={osd.keyMessage} />
+      {commandError && (
+        <CommandErrorPanel
+          message={commandError}
           retrying={retrying}
           retryLabel={retryLabel}
           onRetry={() => void onRetry()}
-          onBack={() => void onBack()}
+          onBack={backToDetails}
         />
       )}
-      {!error && (
+      {!commandError && (
         <PlayerWarnings softwareDecoding={snapshot?.diagnostics?.decodeMode === "software"} reportingWarning={session.reportingWarning} />
       )}
 
