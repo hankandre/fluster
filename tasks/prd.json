@@ -1857,10 +1857,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "in_progress",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": "Implemented on task/P13-16 (spec docs/specs/P13-16.md). pnpm check exit 0 (143 files, 1859 tests). pnpm test:e2e 118 passed. pnpm test:visual 197 passed. Fresh-context design review (acceptance 5) and PR screenshots still to do; no push."
+          "passes": true,
+          "evidence": "Implemented on task/P13-16 (spec docs/specs/P13-16.md). Review focus fix (retry buttons keep focus) plus tests. Fresh-context design review passed (review round); PR screenshots are linked in the Ship phase. See verify output in the final report."
         },
         {
           "id": "P13-17",
