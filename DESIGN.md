@@ -174,7 +174,7 @@ Reduced motion (`prefers-reduced-motion: reduce`):
 - Logical canvas 1920×1080, which the shell scales to the panel. **Title-safe inset** is 5%: 96 px left and right, 54 px top and bottom. Nothing focusable or textual goes outside it, except artwork bleeding to the edges.
 - `--ui-scale: 1.5` (root 24 px). The type scale multiplies with it, and `--type-meta` is raised to `0.9375rem` (22.5 px rendered).
 - Posters are 248 px (6 visible). Thumbs are 416 px (4 visible). Row gap is 48 px. Focus lift is `scale(1.08)` with `--shadow-lift`.
-- **No hover and no pointer.** All functions work with D-pad, OK, Back, Play/Pause, and Menu or Info. Text entry happens only in search, through the shell's on-screen keyboard.
+- **No hover and no pointer.** All functions work with D-pad, OK, Back, Play/Pause, and Menu or Info. Text entry happens only in search and sign-in, through the shell's on-screen keyboard; sign-in leads with discovered servers and Quick Connect, so typing is the fallback (Q25 A).
 - Navigation is a top tab row that is hidden while a content row has focus and appears when focus moves up from the first row. Back from any root tab returns focus to the tab row, and Back on Home exits (after a confirmation in the shell).
 
 ## 7. Components
@@ -183,7 +183,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 
 ### 7.1 App shell and nav (`AppShell`, `AppNav`)
 
-- A top bar, 64 px desktop or 96 px TV. Left: the Fluster wordmark (text, `--type-label` 700), which goes to Home. Then: Home, one entry per library (from `UserViews`), and Search (icon plus label). Right: Settings (gear icon) with the user's initial.
+- A top bar, 64 px desktop or 96 px TV. Left: the Fluster wordmark (text, `--type-label` 700), which goes to Home. Then: Home, one entry per library (from `UserViews`), and Search (icon plus label). Right: Settings (gear icon), then the account control, the user's initial. Until P13-21 the initial is only a label. From P13-21 it opens the account menu (§7.21).
 - It is transparent over a hero, then `--surface-0` at 92% with a `--blur-nav` blur once content scrolls under it (the only allowed blur). On desktop it hides on scroll down and returns on scroll up.
 - It is hidden in the player and in sign-in.
 - There is no Libraries page: each library is a nav entry (`#/next/browse` alone is Not found). Where the entries overflow, the list scrolls and the clipped edge fades over `--nav-fade-w` (a mask, no animation); a focused or current entry scrolls clear of the fade.
@@ -212,7 +212,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 
 | Variant | Frame | Under the art | Primary action (Enter or click) |
 |---|---|---|---|
-| `poster` | 2:3, `--poster-w` | Title (1 line), year or "3 new" | Open detail or series |
+| `poster` | 2:3, `--poster-w` | Title (1 line), year | Open detail or series |
 | `thumb` (Continue Watching, Next Up) | 16:9, `--thumb-w`, Thumb, then Backdrop, then Primary | Series or title, then "S1 · E2 · 38 min left" | **Resume or play** (one activation). The `i` key, Menu on TV, or right-click opens details (decision 1) |
 | `episode` | 16:9 inside `EpisodeRow` | n/a | Play the episode |
 | `library` | 16:9, library image | Library name | Open the library |
@@ -230,8 +230,8 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 
 ### 7.7 Detail header (`DetailHeader`)
 
-- A full-bleed `AmbientBackdrop` at full strength. Over it, in the left five columns: the Logo or title (`h1`), a facts line (genres join it; there is no rating), `MediaBadges`, the `ActionBar`, and a three-line overview with a "More" disclosure.
-- `PersonRow` cards show initials, the name, and the role. They are not interactive and carry no rating or person image (Q8 A).
+- A full-bleed `AmbientBackdrop` at full strength. Over it, in the left five columns: the Logo or title (`h1`), a facts line (genres join it; the rating joins it when the server has one, from P15-03), `MediaBadges`, the `ActionBar`, and a three-line overview with a "More" disclosure.
+- `PersonRow` cards show the name and the role, with initials in place of a picture (Q8 A). From P15-03 they show the person's image, with initials as the fallback. They are not interactive.
 - Variants:
   - **movie**
   - **series**: facts are the year range, the season count, and genres (no rating). The primary action is "Resume S1 · E2" or "Play S1 · E3". Season tabs and the episode list sit below.
@@ -240,7 +240,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 
 ### 7.8 Action bar (`ActionBar`)
 
-- Order: **Primary** (`Resume 41:00` with a small progress ring, or `Play`), then the version `Picker` pill (only with two or more versions), then `Start over` (secondary, only when resuming), then icon toggles `Watched` and `Favorite` (each `aria-pressed`, label visible on desktop, tooltip plus accessible name on TV). There is no `More` menu (Q7 A).
+- Order: **Primary** (`Resume 41:00` with a small progress ring, or `Play`), then the version `Picker` pill (only with two or more versions), then `Start over` (secondary, only when resuming), then icon toggles `Watched` and `Favorite` (each `aria-pressed`, label visible on desktop, tooltip plus accessible name on TV). Last comes `More` (from P15-02; Q7 A left it out of P13-09): a `Menu` (§7.10) holding File and streams, Go to series (on episodes), and Mark season watched. The version picker is not in it (Q6 A).
 - The primary button gets initial focus when the screen opens (TV and keyboard). On desktop, focus goes to the `h1` first for screen readers (as today), and one Tab reaches Play.
 - When the player cannot start (`usePlayerStatus` unavailable), the primary button stays enabled. An `InlineNotice` under the bar explains, and "Check again" sits beside it (as today, restyled).
 
@@ -254,6 +254,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 - A trigger button shows the current value ("4K HDR ▾", "English · TrueHD 7.1 ▾"). It opens an anchored menu on desktop or a right-side sheet on TV and in the player.
 - The list is a `role="listbox"` (or `radiogroup`) of rows with a check on the selected row and a two-line label (name, then codec, channels, and default or external flags).
 - Arrow keys move, Enter selects and closes, Escape or Back closes without change. Never a native `<select>` (it opens an OS popup the TV shell cannot style or focus).
+- **`Menu`** (P13-26) is the same trigger and anchored list for actions instead of a value: `role="menu"` rows with no check, Enter activates and closes, Escape closes and returns focus to the trigger. It serves the `More` menu (§7.8) and the account menu (§7.21).
 
 ### 7.11 Segmented tabs (`SegmentedTabs`)
 
@@ -306,7 +307,7 @@ Idle: the chrome hides 3 s after the last input while playing. It never hides wh
 
 - **`Dialog`**: a centred `--surface-1` panel (max 560 px, `--radius-sheet`, `--shadow-sheet`) over a `rgb(0 0 0 / .6)` veil. Icon, title (`--type-title` at 1.5rem, at most two lines), body, and actions at the bottom right (primary last). It traps focus and restores it on close. The safe action gets initial focus for risky confirms (the unencrypted connection).
 - **`Notice`** (full-screen state: refusal, player cannot start, not found): the item's backdrop at 30% under scrims. Left-aligned at five columns: the item title (`--type-meta`), the notice title (`--type-title`), the explanation (`--type-body-lg`), "What you can do" as a separate paragraph led by a bold phrase, then actions. Refusal follows P10-11 copy.
-- **`Toast`**: bottom left, `--surface-1`, icon plus one sentence plus an optional action, 5 s (errors stay until dismissed). It is used for "Couldn't update watched state", "Marked as watched", and "Signed out". `role="status"` (`alert` for errors).
+- **`Toast`**: bottom left, `--surface-1`, icon plus one sentence plus an optional action, 5 s (errors stay until dismissed). It is used for "Couldn't update watched state", "Marked as watched", "Signed out", and settings changes whose effect is invisible. A `ToastProvider` at the app root shows them (P13-20). No toast is shown in the player; the `Osd` speaks there. `role="status"` (`alert` for errors).
 - **`InlineError`**: an icon, one sentence ("Couldn't load Latest in Movies."), and a secondary Retry. It replaces the content it failed to load.
 
 ### 7.17 Empty, loading, skeleton
@@ -316,15 +317,16 @@ Idle: the chrome hides 3 s after the last input while playing. It never hides wh
 
 ### 7.18 Settings (`SettingsPage`, `SettingsSection`, `SettingsRow`)
 
-A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings/settings-view.tsx`). It holds local and remote streaming limits as two native selects, with Home and "Back to features" links. P13-17 restyles it to this spec and extends it with the sections below.
+A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings/settings-view.tsx`). P13-17 rebuilds it as the shell below with the streaming limits, Account, and About. Each later row arrives with the task that builds its behaviour: the preferences store (P3-22), auto-play (P3-23), skip (P3-24), accounts (P13-21), subtitle styling (P5-05), and audio passthrough (P5-03). Settings are one set per computer, not per account.
 
 
 - Layout: section list on the left (desktop or TV) and section content on the right. Compact windows use a single list that drills in.
 - Sections:
-  - **Playback**: streaming limit, local and remote (exists since P10-05; same values and storage), shown as a choice row with "No limit" and presets plus custom Mbps; auto-play next episode (on or off, countdown 5, 10, or 15 s); skip intros (offer button or never). Audio passthrough (P5-03) joins later.
-  - **Subtitles**: read-only display of the Jellyfin language preferences with a link-out note. Styling comes in M2.
-  - **Account**: server name and address (Mono), user, stay signed in (P3-02), sign out, change server.
-  - **About & diagnostics**: version, player and libmpv version, renderer, and "Copy diagnostics" (redacted).
+  - **Playback**: streaming limit, local and remote (same values and storage as P10-05), each a `Picker` of "No limit" and presets (Q21 A; no custom value). Play next episode automatically (on by default) and its countdown (5, 10, or 15 s; default 10). Intros and Credits, each with three choices: "Show a Skip button" (default), "Skip automatically", or "Do nothing". Audio passthrough (P5-03) joins later.
+  - **Subtitles**: one sentence saying that languages follow the Jellyfin account (Q23 A; no link and no server read). Styling comes in M2 (P5-05).
+  - **Account** (P13-17): server name and address (Mono), user, and Sign out. From P13-21 it becomes **Accounts**: every saved account as "name · server" with its stay-signed-in state, Sign out, and Remove, then "Add account" and "Ask who's watching at launch" (off by default). There is no "Change server" in Settings; adding an account never signs anyone out.
+  - Rows for features that are not built yet show disabled with "Not available yet" (Q23 A).
+  - **About & diagnostics**: version, player and libmpv version, renderer, and "Copy diagnostics" (redacted). The copy holds the app version, OS, libmpv version, renderer, decode mode, Jellyfin server version, and host class, and nothing else (Q24 B).
 - `SettingsRow` is a 64 px row with a label and description on the left and a control on the right (switch, value plus chevron opening a `Picker`, or button). The whole row is the focus and hit target. Changes save immediately and confirm with a toast where the effect is invisible.
 
 ### 7.19 Buttons and fields
@@ -344,11 +346,22 @@ A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings
 
 Three steps in one centred `--surface-1` card (`--sign-in-w`, `--radius-sheet`). Each step has one `h1` in `--type-title` that asks one question, and no eyebrow.
 
-1. **Where is your Jellyfin server?** On desktop the search runs once when the screen opens, and "On this network" lists the servers found above the address field as large rows: name, address in `--type-mono`, "Advertised by {ip}", and the conflict warning in `--danger`. The list is one Tab stop with Up and Down between rows; "Search again" is a quiet button. Below it, a "Server URL" `TextField` and a primary "Connect". Browser mode has no list.
+1. **Where is your Jellyfin server?** From P3-19, "Your servers" lists remembered servers first, as the same large rows; choosing one skips the address. On desktop the search runs once when the screen opens, and "On this network" lists the servers found above the address field as large rows: name, address in `--type-mono`, "Advertised by {ip}", and the conflict warning in `--danger`. The list is one Tab stop with Up and Down between rows; "Search again" is a quiet button. Below it, a "Server URL" `TextField` and a primary "Connect". Browser mode has no list.
 2. **Approve this code in Jellyfin.** A chip under the heading shows the server origin in Mono. The code is the hero in `--type-code`, grouped ("482 913"). No primary button: "Use password" is secondary and "Change server" is quiet. The heading takes focus on arrival.
 3. **Who is signing in?** The same origin chip, "Username" and "Password" fields, "Change server" (quiet) and "Sign in" (primary).
 
 The unencrypted-connection warning is a `Dialog` with `role="alertdialog"` over step 1. Cancel is primary, last, and focused; Escape cancels; the veil does nothing.
+
+### 7.21 Accounts (`AccountMenu`, `AccountPicker`) (P13-21)
+
+Fluster remembers any number of accounts. An account is one user on one server. One account is active at a time, and each server's libraries stay separate.
+
+- **Account menu.** The nav's account control opens a `Menu` (§7.10): every saved account as "name · server" with a check on the active one, then "Add account" and "Manage accounts" (Settings › Accounts). Choosing an account switches to it and lands on Home in one activation.
+- **Launch.** Fluster opens the last account used, on desktop and on TV. With "Ask who's watching at launch" on, it shows the `AccountPicker` first.
+- **`AccountPicker`.** "Who's watching?" as the `h1`, then a grid of account tiles: the user's initial, the name, and the server name in `--type-meta`. A signed-out account is marked "Signed out" in words. The last tile is "Add account". On TV the account control opens this screen instead of a menu.
+- **Three actions, three labels.** *Switch* keeps the sign-in. *Sign out* revokes it on the server, keeps the tile, and shows the "Signed out" toast. *Remove* also forgets the account, after a `Dialog` with the safe action focused.
+- A plain-HTTP account says "unencrypted" on its tile, and resuming it takes one press that names the user and the server (P3-01).
+- Empty Home offers "Add account" beside "Open settings".
 
 ## 8. Tokens (`src/styles/tokens.css`)
 

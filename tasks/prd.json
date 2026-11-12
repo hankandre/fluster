@@ -1,6 +1,6 @@
 {
   "product": "Fluster",
-  "updated": "2026-11-07",
+  "updated": "2026-11-12",
   "rules": [
     "Pick the first task whose status is todo and whose depends_on tasks all pass.",
     "Skip tasks with human set to true; set them to blocked and state in evidence what the person must do.",
@@ -697,15 +697,20 @@
       "tasks": [
         {
           "id": "P3-01",
-          "title": "Decide persistent sign-in storage",
+          "title": "Decide persistent sign-in storage for any number of accounts",
           "domain": "Server Connection & Identity",
           "model": "opus",
           "skill": "exec-plan",
           "human": true,
           "depends_on": [],
           "acceptance": [
-            "A decision record covers opt-in keyring storage",
-            "docs/security.md reflects the decision"
+            "A decision record covers keyring storage for any number of accounts, one entry per ServerId and UserId, with only the active account's token in memory",
+            "It lists every new Tauri command with its typed arguments",
+            "It states the restore rule: no authenticated request until /System/Info/Public at the saved address returns the saved ServerId",
+            "Stay signed in is a visible switch at sign-in, on by default when the OS keyring is available (owner, Q7 A)",
+            "A stored sign-in to a plain-HTTP server is restored only after one press that names the user, the server, and that the connection is unencrypted (owner, Q8 B)",
+            "It defines Switch (keeps the sign-in), Sign out (revokes on the server, keeps the tile), and Remove (also forgets the account), and where the non-secret account list lives, with server addresses stored as a list",
+            "docs/security.md and ARCHITECTURE.md reflect the decision, and the user approves the record"
           ],
           "verify": "ls docs/decisions/",
           "status": "todo",
@@ -715,7 +720,7 @@
         },
         {
           "id": "P3-02",
-          "title": "Store credentials in the OS keyring",
+          "title": "Store credentials for every account in the OS keyring",
           "domain": "Server Connection & Identity",
           "model": "opus",
           "skill": "native-player",
@@ -725,10 +730,13 @@
             "P1-06"
           ],
           "acceptance": [
-            "Rust owns a credential vault backed by Secret Service on Linux",
-            "Opt-in stay-signed-in restores the session after restart via GET /Users/Me",
-            "A 401 returns to sign-in and clears the stored credential",
-            "The token never enters WebView storage"
+            "Rust owns a credential vault backed by Secret Service on Linux, holding one token per account (ServerId and UserId)",
+            "Stay signed in is chosen per account at sign-in and is on by default when the keyring is available; restoring checks the ServerId, then validates with GET /Users/Me",
+            "A plain-HTTP account is restored only after the one press the P3-01 record defines",
+            "A 401 clears that account's credential only and asks that account to sign in again",
+            "A token never enters WebView storage, a Query cache, or React state; a canary test proves it for the restore path",
+            "With no keyring available, Fluster says so and stays session-only",
+            "The command allowlist test, ARCHITECTURE.md, and docs/security.md change in the same pull request"
           ],
           "verify": "pnpm check && cargo test --manifest-path src-tauri/Cargo.toml vault",
           "status": "todo",
@@ -1091,6 +1099,204 @@
           "owner": "implementer",
           "passes": true,
           "evidence": "PlayerInfoPanel (src/features/player/player-info-panel.tsx) shows libmpv version, renderer, decode mode, hwdec, and play method from initialize() and snapshots; every field is redacted and URL-like text is hidden. initialize() is checked once per engine (player-status.ts); the detail view warns and the player route refuses to launch when it fails, with the redacted reason. pnpm check: 689 unit tests pass; pnpm test:e2e: 27 pass; lint:boundaries clean. Native libmpv failure path untested on real hardware."
+        },
+        {
+          "id": "P3-19",
+          "title": "Remember servers and accounts",
+          "domain": "Server Connection & Identity",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P3-01"
+          ],
+          "acceptance": [
+            "Fluster keeps a list of servers keyed by ServerId (name, a list of addresses) and of accounts (ServerId, UserId, user name); the list holds no token and nothing derived from one",
+            "The account store is a port in the shell-neutral core, and the P12-01 checks pass",
+            "Sign-in step 1 lists Your servers above On this network; choosing one skips typing the address",
+            "A server's entry shows its plain-HTTP confirmation and can revoke it",
+            "A corrupt or hand-edited list is ignored, never trusted",
+            "Unit tests cover the store, and a Playwright journey signs in twice and finds the server remembered",
+            "docs/security.md describes the list and the revoke path",
+            "A guardian review passes"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P3-20",
+          "title": "Switch accounts without signing out",
+          "domain": "Server Connection & Identity",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P3-02",
+            "P3-19"
+          ],
+          "acceptance": [
+            "The session can switch to a saved account, and switching does not call POST /Sessions/Logout",
+            "Sign out revokes on the server and deletes that account's credential; Remove does both and forgets the account, and the server with its plain-HTTP confirmation when its last account goes",
+            "A switch during playback first stops playback and sends the stopped report through the old account's gateway",
+            "After a switch the realtime socket reconnects for the new account, and a test shows no request carries the old token",
+            "After a switch no screen shows the previous account's data and the route resets to Home; a test covers it",
+            "Only the active account's token is in memory",
+            "Session and coordinator tests cover each case and fail without the change",
+            "A guardian review passes"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P3-21",
+          "title": "Sign in again when a sign-in ends",
+          "domain": "Server Connection & Identity",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P3-19"
+          ],
+          "acceptance": [
+            "A 401 from any signed-in request shows Your sign-in to {server} has ended. with Sign in again, which opens sign-in for that server and user",
+            "Playback in progress is stopped cleanly first",
+            "Other saved accounts are untouched",
+            "The copy joins the DESIGN.md §10 table, and tests cover catalog, playback info, and playstate calls"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P3-22",
+          "title": "Add a preferences store",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P13-17"
+          ],
+          "acceptance": [
+            "One versioned store holds non-secret preferences for this computer (owner, Q9 A), validated on read; an unknown value falls back to its default",
+            "The streaming limits move into it with stored values kept; a migration test covers it",
+            "The store is a port in the shell-neutral core, and the P12-01 checks pass",
+            "It never holds a token or anything derived from one",
+            "docs/security.md's sentence that no player preferences are persisted is updated"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P3-23",
+          "title": "Add auto-play next settings",
+          "domain": "Playback Session",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P3-22",
+            "P3-10"
+          ],
+          "acceptance": [
+            "Settings › Playback has Play next episode automatically (on by default) and Countdown (5, 10, or 15 s; default 10)",
+            "With auto-play off no countdown runs; the Up Next card still offers Play now at the end",
+            "The countdown length drives the card, the fill, and the announcements",
+            "Unit tests cover the timing, and the auto-play journey runs with each setting",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P3-24",
+          "title": "Add skip settings for intros and credits",
+          "domain": "Playback Session",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P3-22",
+            "P3-11"
+          ],
+          "acceptance": [
+            "Settings › Playback has Intros and Credits, each with Show a Skip button (default), Skip automatically, or Do nothing (owner, Q14 A)",
+            "Skip automatically seeks past the segment once and shows the OSD line Skipped intro or Skipped credits; seeking back into the segment does not skip again",
+            "Do nothing shows no button",
+            "With a next episode, Up Next still replaces Skip credits (decision Q19 A)",
+            "Unit tests cover each mode, and a Playwright journey covers automatic skip",
+            "DESIGN.md §7.18 lists the three modes",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P3-25",
+          "title": "Keep the screen awake while playing",
+          "domain": "Video Surface & Window",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "P2-04"
+          ],
+          "acceptance": [
+            "The spec first records whether embedded libmpv already stops the desktop blanking in Fluster's render path, with evidence",
+            "While video plays the desktop does not blank or lock from idleness; when paused, stopped, or closed, normal behaviour returns",
+            "Rust drives it from play state; no Tauri command is added and the command allowlist test is unchanged",
+            "A Rust test covers the state transitions, and the manual Wayland check is written down"
+          ],
+          "verify": "cargo test --manifest-path src-tauri/Cargo.toml && pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P3-26",
+          "title": "Remember volume, mute, and the window",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P3-22"
+          ],
+          "acceptance": [
+            "Volume and mute persist across sessions through the preferences store",
+            "The window reopens at its last size and maximised state",
+            "No Tauri command is added, or the spec stops and asks the human before adding one",
+            "Tests cover the store, and the window check is written down"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
         }
       ]
     },
@@ -1863,20 +2069,75 @@
           "evidence": "Implemented on task/P13-16 (spec docs/specs/P13-16.md). Review focus fix (retry buttons keep focus) plus tests. Fresh-context design review passed (review round); PR screenshots are linked in the Ship phase. See verify output in the final report."
         },
         {
+          "id": "P13-25",
+          "title": "Gate CI on visual diffs",
+          "domain": "Process",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P13-01"
+          ],
+          "acceptance": [
+            "The screenshot harness runs as a gating visual diff in CI",
+            "A changed screenshot fails the check until its baseline is updated in the same pull request",
+            "Baselines come from the synthetic art fixtures; no copyrighted image is committed",
+            "The pull request calls out the CI change",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P13-20",
+          "title": "Mount toasts app-wide",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P13-03"
+          ],
+          "acceptance": [
+            "A ToastProvider is mounted once at the app root, and features raise toasts through one hook",
+            "Marking watched or favourite on Detail shows a toast such as Marked as watched; a failure shows Couldn't update watched state and stays until dismissed",
+            "Detail's inline alert for that failure is removed",
+            "Toasts never take focus, use role status (alert for errors), and last 5 s (DESIGN.md §7.16)",
+            "No toast is shown in the player; the OSD speaks there",
+            "A Testing Library test covers the queue, the timeout, and dismissal",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "P13-17",
-          "title": "Restyle and extend the Settings screen",
+          "title": "Restyle the Settings screen as the Settings shell",
           "domain": "App Shell & Presentation",
           "model": "sonnet",
           "skill": "verify",
           "human": false,
           "depends_on": [
             "P13-03",
-            "P13-06"
+            "P13-06",
+            "P13-20"
           ],
           "acceptance": [
-            "The P10-05 Settings screen uses SettingsPage, SettingsSection, SettingsRow, and Picker, keeping the streaming-limit values and storage",
-            "Playback, Subtitles, Account (with sign out), and About & diagnostics sections exist, with labelled slots for P5-03 and P3-02",
-            "Sign out is reachable only from Settings, and diagnostics copy passes the redaction canary tests",
+            "The Settings screen uses SettingsPage, SettingsSection, SettingsRow, and Picker, with a section list on the left and content on the right; compact windows drill in (decision Q22 A)",
+            "Playback, Subtitles, Account, and About & diagnostics sections exist",
+            "Playback holds the local and remote streaming limits as preset pickers with the same values and storage (decision Q21 A); a changed limit confirms with a toast",
+            "Unbuilt rows (audio passthrough, stay signed in) show disabled with Not available yet, and Subtitles shows one sentence saying languages follow the Jellyfin account (decision Q23 A)",
+            "Account shows the server name, the address in Mono, the user, and Sign out; Sign out is reachable only from Settings and confirms with a Signed out toast",
+            "Copy diagnostics copies the app version, OS, libmpv version, renderer, decode mode, Jellyfin server version, and host class, and nothing else (decision Q24 B), and passes the redaction canary tests",
+            "DESIGN.md §7.18 matches what ships",
             "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
             "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
             "No e2e journey is skipped, deleted, or weakened",
@@ -1912,6 +2173,145 @@
             "No rendered text is under 22 px and no control depends on hover",
             "Backspace acts as Back outside text fields (DESIGN.md §9)",
             "The TV form raises --type-mono so monospace text renders at 22 px or more",
+            "Up from the first row reaches the nav, and the TV nav is the tab row of DESIGN.md §6",
+            "Menu opens details where Enter plays",
+            "Sign-in works with the on-screen keyboard, leading with discovered servers and Quick Connect (decision Q25 A), and DESIGN.md §6 says so",
+            "A season's episodes are a horizontal row with the overview under the focused card (DESIGN.md §7.6)",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P13-22",
+          "title": "Add the chapter list",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P13-13"
+          ],
+          "acceptance": [
+            "A Chapters button in the player opens a right sheet of chapter names and times; Enter seeks; Escape closes and returns focus to the button",
+            "The button is absent when the item has no chapters",
+            "Chapter thumbnails come from trickplay at the chapter start when available",
+            "No new Tauri command is added",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P13-24",
+          "title": "Restore focus after Back",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P13-08",
+            "P13-10",
+            "P13-11",
+            "P13-12"
+          ],
+          "acceptance": [
+            "Returning from the player or a detail page focuses the card or row that was left, on Home, Library, Search, and Series (DESIGN.md §9)",
+            "The episode strip opens at the current episode",
+            "Playwright journeys cover each screen",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P13-26",
+          "title": "Build the Menu primitive",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P13-03"
+          ],
+          "acceptance": [
+            "src/features/shared/ui/ provides a Menu: a trigger button and an anchored list of actions, a right-side sheet in the TV form",
+            "Arrows move, Enter activates and closes, Escape closes and returns focus to the trigger",
+            "A Testing Library test covers the keyboard, and the gallery shows its states",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P13-23",
+          "title": "Show video, audio, and buffering in the player",
+          "domain": "Player Engine",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "P13-13"
+          ],
+          "acceptance": [
+            "The player snapshot carries typed video and audio facts (codec, resolution, range, channels, output format) and a buffered position; no Tauri command is added and the command allowlist test is unchanged",
+            "The Info sheet shows Video and Audio sections in Mono with no URLs, ids, or tokens; the redaction tests cover the new fields",
+            "The scrubber shows the buffered range",
+            "Rust tests cover the new snapshot fields",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual && cargo test --manifest-path src-tauri/Cargo.toml",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P13-21",
+          "title": "Add the account switcher and Settings accounts",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P3-20",
+            "P13-17",
+            "P13-20",
+            "P13-26"
+          ],
+          "acceptance": [
+            "The nav's account control (the user's initial) opens a menu of saved accounts shown as name · server, then Add account and Manage accounts (owner, Q3 A and Q4 A)",
+            "Choosing an account switches to it and lands on Home in one activation",
+            "Launch opens the last account used; a setting, off by default, asks Who's watching? at every launch, in the desktop and TV forms (owner, Q5 A)",
+            "Settings › Accounts lists every account with Sign out and Remove; Remove confirms in a Dialog with the safe action focused; Sign out keeps the tile marked Signed out and shows a toast (owner, Q6 A)",
+            "Add account opens sign-in and never signs anyone out; Settings has no Change server control",
+            "Empty Home offers Add account beside Open settings",
+            "In the TV form the account control opens a full-screen grid of account tiles",
+            "A Playwright journey adds two accounts, switches, signs one out, and removes one",
+            "DESIGN.md §7.1, §7.18, and §7.20 match what ships",
             "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
             "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
             "No e2e journey is skipped, deleted, or weakened"
@@ -1924,18 +2324,25 @@
         },
         {
           "id": "P13-19",
-          "title": "Run design QA and sync the docs",
+          "title": "Run the design audit and sync the docs",
           "domain": "App Shell & Presentation",
           "model": "opus",
           "skill": "change-review",
           "human": false,
           "depends_on": [
-            "P13-18"
+            "P13-18",
+            "P13-20",
+            "P13-21",
+            "P13-22",
+            "P13-23",
+            "P13-24",
+            "P13-25",
+            "P13-26"
           ],
           "acceptance": [
-            "Every finding in docs/design/audit.md is closed or carried into a new task",
-            "DESIGN.md matches what shipped and the impeccable detector findings are resolved or justified",
-            "The screenshot harness runs as a gating visual diff in CI",
+            "Every finding in docs/design/audit.md is closed, a task, or an entry in tasks/backlog.md",
+            "DESIGN.md matches what shipped, including §6 text entry, §7.5, §7.8, §7.16, §7.18, and §7.20, and the impeccable detector findings are resolved or justified",
+            "Every sign-in gateway sentence and every failed player command has a DESIGN.md §10 copy-table row, and a failed command during playback is not titled Playback could not start",
             "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
             "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
             "No e2e journey is skipped, deleted, or weakened"
@@ -2009,11 +2416,22 @@
             "P1-08",
             "P1-09",
             "P3-16",
-            "P10-12"
+            "P10-12",
+            "P3-20",
+            "P3-21",
+            "P3-23",
+            "P3-24",
+            "P3-25",
+            "P3-26",
+            "P13-17",
+            "P13-20",
+            "P13-21"
           ],
           "acceptance": [
             "docs/dogfood/YYYY-MM-DD.md records each session, what was watched, and every problem",
-            "Hankflix shows no transcode or remux job for an item Fluster could direct play, and every conversion showed its reason"
+            "Hankflix shows no transcode or remux job for an item Fluster could direct play, and every conversion showed its reason",
+            "Each session records the time from Play to first frame",
+            "No crash happened during the week, or each crash is in the log with what was playing"
           ],
           "verify": "ls docs/dogfood/",
           "status": "todo",
@@ -2035,6 +2453,209 @@
             "Every problem in the log is fixed or added to this file as a task"
           ],
           "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "P15",
+      "name": "Parity follow-ups",
+      "goal": "The features people expect from a replacement client that the daily driver left out: the deferred detail items, more ways to reach a server, and the player comforts chosen after the dogfood week.",
+      "exit": [
+        "All P15 tasks pass"
+      ],
+      "tasks": [
+        {
+          "id": "P15-01",
+          "title": "Add a Favorites view and series-level watched state",
+          "domain": "Catalog",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P13-09",
+            "P13-10"
+          ],
+          "acceptance": [
+            "A Favorites entry in the nav lists favourite movies, shows, and episodes; cards there show the heart mark (DESIGN.md §7.5)",
+            "The series page has Watched and Favorite toggles for the whole series",
+            "The gateway can mark a season watched or unwatched",
+            "Contract fixtures on 10.11.7 and 12.4.0 back each new call; tests assert the requests",
+            "A Playwright journey covers the Favorites view and the series toggles",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P15-02",
+          "title": "Add the More menu to the action bar",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P13-26",
+            "P15-01"
+          ],
+          "acceptance": [
+            "The action bar ends with More, a Menu holding File and streams, Go to series (episodes), and Mark season watched (DESIGN.md §7.8); the version picker stays a pill beside Play (decision Q6 A)",
+            "Mark season watched updates the episode rows and confirms with a toast",
+            "DESIGN.md §7.8 matches what ships",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P15-03",
+          "title": "Show person images and ratings",
+          "domain": "Catalog",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P13-09"
+          ],
+          "acceptance": [
+            "The detail request returns person image tags and the item's community and critic ratings; gateway tests assert the query, and no playback request changes",
+            "PersonRow shows the person's image with initials as the fallback",
+            "The facts line shows the rating when the server has one",
+            "DESIGN.md §7.7 matches what ships",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P15-04",
+          "title": "Reach one server at several addresses",
+          "domain": "Server Connection & Identity",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P3-20"
+          ],
+          "acceptance": [
+            "A server can hold a LAN and a remote address; Fluster tries them in order and uses the first whose /System/Info/Public returns the saved ServerId",
+            "Each address is classified on its own, and each plain-HTTP address needs its own confirmation (decision 0001)",
+            "No token is sent to an address before its ServerId check",
+            "Settings › Accounts can add, reorder, and remove a server's addresses",
+            "Tests cover failover, a wrong ServerId, and an unconfirmed plain-HTTP address; docs/security.md describes the rule",
+            "A guardian review passes"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P15-05",
+          "title": "Approve another device's Quick Connect code",
+          "domain": "Server Connection & Identity",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P13-21"
+          ],
+          "acceptance": [
+            "Settings › Accounts has Approve a sign-in code; entering a code calls POST /QuickConnect/Authorize for the active account",
+            "Success and failure show plain copy from the DESIGN.md §10 table",
+            "Contract fixtures on 10.11.7 and 12.4.0 back the call",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P15-06",
+          "title": "Add playback speed and subtitle offset",
+          "domain": "Player Engine",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "P4-02"
+          ],
+          "acceptance": [
+            "A plan exists before implementation",
+            "The player offers playback speed and a subtitle timing offset, each with OSD feedback",
+            "Each is a typed command, not an mpv option bridge; the command allowlist test, ARCHITECTURE.md, and docs/security.md change in the same pull request",
+            "Rust tests cover both commands"
+          ],
+          "verify": "pnpm check && cargo test --manifest-path src-tauri/Cargo.toml",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P15-07",
+          "title": "Remember audio and subtitle choices per series",
+          "domain": "Playback Session",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P4-02",
+            "P3-22"
+          ],
+          "acceptance": [
+            "Choosing an audio or subtitle track on an episode applies the same language and kind to the series' next episodes on this computer",
+            "The Jellyfin account preferences still set the default for a series with no remembered choice",
+            "Tests cover the match rules, including an episode that lacks the remembered track"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P15-08",
+          "title": "Spike one Home across servers",
+          "domain": "Server Connection & Identity",
+          "model": "fable",
+          "skill": "exec-plan",
+          "human": true,
+          "depends_on": [
+            "P4-02",
+            "P3-20"
+          ],
+          "acceptance": [
+            "A decision record compares keeping servers separate with a merged Continue Watching, Next Up, and search",
+            "It covers item identity across servers, duplicates, a slow or offline server, the realtime socket per account, and tokens in memory",
+            "The user approves or rejects it"
+          ],
+          "verify": "ls docs/decisions/",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -2231,7 +2852,8 @@
           "acceptance": [
             "A prototype renders vo=gpu-next with Vulkan in a subsurface below the transparent WebView",
             "UI controls stay interactive above video",
-            "A decision record chooses subsurface, Render API, or CEF for HDR"
+            "A decision record chooses subsurface, Render API, or CEF for HDR",
+            "The spike reports what a Dolby Vision profile 5 file and a profile 8 file do on the chosen path"
           ],
           "verify": "pnpm tauri dev",
           "status": "todo",
@@ -2250,6 +2872,7 @@
             "P5-01"
           ],
           "acceptance": [
+            "A plan exists before implementation",
             "HDR10 sample shows HDR metadata passthrough on a supporting display",
             "Non-HDR displays tone-map correctly"
           ],
@@ -2270,6 +2893,7 @@
             "P2-04"
           ],
           "acceptance": [
+            "A plan exists before implementation",
             "AC3, E-AC3, TrueHD, and DTS-HD bitstream to a receiver when enabled",
             "The setting is a typed command, not an mpv option bridge"
           ],
@@ -2290,9 +2914,33 @@
             "P5-01"
           ],
           "acceptance": [
+            "A plan exists before implementation",
             "23.976 fps content plays without judder on a capable display"
           ],
           "verify": "pnpm tauri dev",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P5-05",
+          "title": "Add subtitle styling that leaves ASS alone",
+          "domain": "Player Engine",
+          "model": "opus",
+          "skill": "native-player",
+          "human": true,
+          "depends_on": [
+            "P2-04",
+            "P3-22"
+          ],
+          "acceptance": [
+            "A plan exists before implementation",
+            "Settings › Subtitles offers size, position, and colour for text subtitles",
+            "ASS and SSA authoring is never overridden, and image subtitles are unchanged; tests cover both",
+            "Each option is a typed command, not an mpv option bridge; the command allowlist test and docs/security.md change in the same pull request"
+          ],
+          "verify": "pnpm check && cargo test --manifest-path src-tauri/Cargo.toml",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -2319,6 +2967,7 @@
             "P4-02"
           ],
           "acceptance": [
+            "A plan exists before implementation",
             "Signed, notarized DMG",
             "VideoToolbox decode recorded",
             "Now Playing and media keys work"
@@ -2381,6 +3030,7 @@
             "P3-15"
           ],
           "acceptance": [
+            "A plan exists before implementation",
             "Capabilities are registered",
             "Remote Play routes through negotiation",
             "Remote Playstate commands control playback"
@@ -2422,6 +3072,7 @@
             "P4-02"
           ],
           "acceptance": [
+            "A plan exists before implementation",
             "Downloads use the original static file",
             "Offline progress syncs on reconnect"
           ],
