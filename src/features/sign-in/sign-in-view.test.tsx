@@ -422,12 +422,12 @@ describe("SignInView with the real gateway", () => {
   });
 
   it("removes consent on Cancel and asks again when the same URL is re-submitted during the request", async () => {
-    let release: (value: unknown) => void = () => {};
+    let release: (value: boolean) => void = () => {};
     const requests: string[] = [];
     const transport: HttpTransport = {
       async get<T>(url: string) {
         requests.push(`GET ${url}`);
-        if (url === "/QuickConnect/Enabled") return { data: await new Promise((resolve) => { release = resolve; }) as T };
+        if (url === "/QuickConnect/Enabled") return { data: await new Promise<boolean>((resolve) => { release = resolve; }) as unknown as T };
         return { data: { ServerName: "Living Room", Version: "10.11.7", Id: "server-1" } as T };
       },
       async post<T>() { return { data: undefined as T }; },
