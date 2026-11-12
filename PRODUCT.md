@@ -152,7 +152,7 @@ M0, M1, M1b, then M6's shell spike in parallel with M2, then M3, M4, M5. Milesto
 ## Open product questions
 
 - **One Home across servers.** Servers stay separate for now. A spike after the dogfood week (P15-08) decides whether to merge them.
-- **A PIN per profile.** Not now; revisit with the TV shell.
+- **A PIN per profile.** It ships with the TV shell's account picker. Until then, turning "Stay signed in" off for an account is the privacy control (owner, 2026-11-12; P13-27).
 - **Dolby Vision.** Decided after the P5-01 spike.
 
 Answered on 2026-11-12 (see `docs/plans/proposals/product-review.md`): persistent login (keyring, on by default, P3-01 and P3-02), multiple servers and users (saved accounts, one active), Live TV (out of scope), and music, audiobooks, and photos (out of scope; the music milestone M7 was removed).

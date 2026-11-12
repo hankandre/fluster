@@ -358,8 +358,9 @@ Fluster remembers any number of accounts. An account is one user on one server. 
 
 - **Account menu.** The nav's account control opens a `Menu` (§7.10): every saved account as "name · server" with a check on the active one, then "Add account" and "Manage accounts" (Settings › Accounts). Choosing an account switches to it and lands on Home in one activation.
 - **Launch.** With one signed-in account, Fluster opens it. With two or more signed-in accounts, it shows the `AccountPicker` first ("Who's watching?"), on desktop and on TV. Signed-out tiles do not count.
-- **`AccountPicker`.** "Who's watching?" as the `h1`, then a grid of account tiles: the user's initial, the name, and the server name in `--type-meta`. A signed-out account is marked "Signed out" in words. The last tile is "Add account". On TV the account control opens this screen instead of a menu.
+- **`AccountPicker`.** "Who's watching?" as the `h1`, then a grid of account tiles: the user's initial, the name, and the server name in `--type-meta`. A signed-out account is marked "Signed out" in words and says that it needs the password; choosing it opens sign-in for that user and server, by password or Quick Connect (P13-27). The last tile is "Add account". On TV the account control opens this screen instead of a menu.
 - **Three actions, three labels.** *Switch* keeps the sign-in. *Sign out* revokes it on the server, keeps the tile, and shows the "Signed out" toast. *Remove* also forgets the account, after a `Dialog` with the safe action focused.
+- **Privacy (owner, 2026-11-12).** "Stay signed in" is the privacy control. An account with it off is signed out whenever Fluster closes, shows as "Signed out", and does not count towards showing the picker, so nobody else at this computer can open it. Sign-in and Settings › Accounts say so in words, and Settings › Accounts can change it for a saved account (P13-27). A PIN per account comes with the TV shell's account picker, not before.
 - A plain-HTTP account says "unencrypted" on its tile, and resuming it takes one press that names the user and the server (P3-01).
 - Empty Home offers "Add account" beside "Open settings".
 
