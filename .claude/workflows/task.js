@@ -63,6 +63,7 @@ const REVIEW = {
         required: ['severity', 'where', 'summary'],
       },
     },
+    needsGuardian: { type: 'boolean' },
   },
   required: ['findings'],
 };
@@ -190,10 +191,19 @@ Commit the spec with the work, one milestone per commit. Set the task's status t
   // 4. Review (one round)
   const review = await agent(
     `${common}
-Review git diff origin/main...${branch} against the spec, the task acceptance, and the hard rules. If the diff touches src/features/ or src/styles/, also do the design review: follow .claude/skills/change-review/references/design-checklist.md against DESIGN.md and look at the captures in visual-captures/ (run pnpm test:visual with FLUSTER_VISUAL_PORT set to a free port if they are missing). This is the only review round. Change no files. Return every finding with its severity, file:line, and a concrete failure scenario.`,
+Review git diff origin/main...${branch} against the spec, the task acceptance, and the hard rules. If the diff touches src/features/ or src/styles/, also do the design review: follow .claude/skills/change-review/references/design-checklist.md against DESIGN.md and look at the captures in visual-captures/ (run pnpm test:visual with FLUSTER_VISUAL_PORT set to a free port if they are missing). This is the only review round. Change no files. Return every finding with its severity, file:line, and a concrete failure scenario. Set needsGuardian=true if the diff touches src/lib/jellyfin/, src/lib/player/, redaction, tokens, PlaybackInfo or negotiation, a Tauri command, or src-tauri/.`,
     { agentType: reviewAgent, model: reviewModel, schema: REVIEW, phase: 'Review', label: `review ${task}` },
   );
   if (!review) return result('failed', 'The reviewer returned nothing.');
+  if (review.needsGuardian && reviewAgent !== 'guardian') {
+    log(`${task}: the diff touches high-risk code; adding a guardian review`);
+    const guard = await agent(
+      `${common}
+Adversarially review git diff origin/main...${branch} for token, URL, or session-ID leaks, redaction coverage, direct-play and negotiation changes, and native safety. Change no files. Return every finding with its severity, file:line, and a concrete failure scenario.`,
+      { agentType: 'guardian', model: 'opus', schema: REVIEW, phase: 'Review', label: `guardian ${task}` },
+    );
+    if (guard) review.findings = review.findings.concat(guard.findings);
+  }
   const describe = (finding) => `[${finding.severity}] ${finding.where}: ${finding.summary}`;
   const blocking = review.findings.filter((finding) => finding.severity !== 'low').map(describe);
   const lows = review.findings.filter((finding) => finding.severity === 'low').map(describe);
