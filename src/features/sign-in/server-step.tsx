@@ -131,8 +131,13 @@ function UnencryptedDialog({
     const abort = new AbortController();
     controller.current = abort;
     try {
+      // chooseSignInStage swallows an abort, so check the signal. Consent is
+      // stored only once the choice proceeds, and before any sign-in request
+      // (the Quick Connect check sends no credential).
+      const stage = await chooseSignInStage(gateway, abort.signal);
+      if (abort.signal.aborted) return;
       gateway.confirmUnencryptedConnection();
-      onConfirmed(await chooseSignInStage(gateway, abort.signal));
+      onConfirmed(stage);
     } catch (caught) {
       if (isAbort(caught)) return;
       setError(signInErrorCopy(caught, { address: gateway.origin }));
