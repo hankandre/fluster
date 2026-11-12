@@ -277,7 +277,7 @@ describe("SignInView with a private-LAN HTTP server", () => {
     expect(gateway.confirmUnencryptedConnection).not.toHaveBeenCalled();
   });
 
-  it("records the confirmation before any sign-in request, then continues", async () => {
+  it("records the confirmation before any credential request, then continues", async () => {
     const order: string[] = [];
     const gateway = lanGateway({
       confirmUnencryptedConnection: vi.fn(() => { order.push("confirm"); }),
@@ -291,7 +291,7 @@ describe("SignInView with a private-LAN HTTP server", () => {
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Connect without encryption" }));
     });
-    expect(order).toEqual(["confirm", "quick-connect-enabled"]);
+    expect(order).toEqual(["quick-connect-enabled", "confirm"]);
     expect(screen.getByLabelText("Username")).toHaveFocus();
   });
 
@@ -312,6 +312,46 @@ describe("SignInView with a private-LAN HTTP server", () => {
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.getByLabelText("Server URL")).toBeInTheDocument();
     expect(gateway.confirmUnencryptedConnection).not.toHaveBeenCalled();
+  });
+
+  describe("when the user cancels while the connection is pending", () => {
+    function pendingGateway() {
+      let release: () => void = () => {};
+      const gateway = lanGateway({
+        quickConnectEnabled: vi.fn(() => new Promise<boolean>((resolve) => { release = () => resolve(true); })),
+      });
+      return { gateway, release: () => release() };
+    }
+
+    async function startConfirming(gateway: SessionGateway) {
+      renderView(gateway);
+      await connect(LAN_ORIGIN);
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Connect without encryption" }));
+      });
+      expect(gateway.quickConnectEnabled).toHaveBeenCalled();
+    }
+
+    it("stays on the server step and stores no consent after Cancel", async () => {
+      const { gateway, release } = pendingGateway();
+      await startConfirming(gateway);
+      fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+      await act(async () => { release(); });
+      expect(screen.getByLabelText("Server URL")).toBeInTheDocument();
+      expect(screen.queryByLabelText("Quick Connect code")).not.toBeInTheDocument();
+      expect(gateway.confirmUnencryptedConnection).not.toHaveBeenCalled();
+      expect(gateway.login).not.toHaveBeenCalled();
+    });
+
+    it("behaves the same on Escape", async () => {
+      const { gateway, release } = pendingGateway();
+      await startConfirming(gateway);
+      fireEvent.keyDown(document, { key: "Escape" });
+      await act(async () => { release(); });
+      expect(screen.getByLabelText("Server URL")).toBeInTheDocument();
+      expect(screen.queryByLabelText("Quick Connect code")).not.toBeInTheDocument();
+      expect(gateway.confirmUnencryptedConnection).not.toHaveBeenCalled();
+    });
   });
 
   it("skips the warning once the server is confirmed at this origin", async () => {
