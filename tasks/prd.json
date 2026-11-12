@@ -1807,10 +1807,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "in_progress",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": "Implemented on task/P13-14: pnpm check, pnpm test:e2e (112 passed), pnpm test:visual (180 passed) green; fresh-context design review and PR screenshots pending."
+          "passes": true,
+          "evidence": "Implemented on task/P13-14. pnpm check passes (1761 unit tests, 183 Rust tests). pnpm test:visual passes (180). pnpm test:e2e passes (112) twice in a row, after fixing three timing races that also fail on main: player.spec 'keys show on-screen feedback' now waits for the enabled position slider before pressing keys; keyboard.spec's full journey waits for the detail h1 before tabbing to Play; library.spec's sticky toolbar test waits for at least the first page. The fresh-context design review (workflow reviewer) found two lows and nothing to fix; both are logged in docs/design/rework-plan.md. The PR's Screenshots section links the visual-captures artifact."
         },
         {
           "id": "P13-15",

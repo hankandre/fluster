@@ -415,6 +415,8 @@ test("keys show on-screen feedback, and Home, End, and the digits jump", async (
   await startArrival(page);
   const osd = page.getByRole("status", { name: "Player message" });
   const currentTime = () => page.locator("video").evaluate((element: HTMLVideoElement) => element.currentTime);
+  // Keys act only once the player has a snapshot; the position slider is enabled from then on.
+  await expect(page.getByRole("slider", { name: "Playback position" })).toBeEnabled();
 
   await page.keyboard.press("m");
   await expect(osd).toHaveText("Muted");

@@ -152,7 +152,8 @@ test("a failed later page keeps the cards, stops auto loading, and recovers on R
 test("the toolbar sticks under the nav and follows it when it hides", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 700 });
   await openMovies(page, { bigLibrary: true });
-  await expect(cards(page)).toHaveCount(60);
+  // A sync point only: auto paging may already have added the second page on this short window.
+  await expect.poll(() => cards(page).count()).toBeGreaterThanOrEqual(60);
   const bar = page.locator(".ui-toolbar-wrap");
   const top = () => bar.evaluate((element) => element.getBoundingClientRect().top);
   const navBottom = () => page.getByRole("banner").evaluate((element) => element.getBoundingClientRect().bottom);

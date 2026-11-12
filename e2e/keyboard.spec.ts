@@ -136,6 +136,8 @@ test("signs in, opens an item, plays, pauses, seeks, and leaves with the keyboar
   await expect(arrival).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
+  // Wait for the detail page, so Home's hero Play link is gone before tabbing.
+  await expect(page.getByRole("heading", { name: "Arrival", level: 1 })).toBeVisible();
 
   const play = page.getByRole("link", { name: "Play" });
   await tabTo(page, play);
