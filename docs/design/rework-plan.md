@@ -137,6 +137,7 @@ Toasts never take focus, so a keyboard user can miss an action such as Undo. A l
 
 ## Follow-ups
 
+- Done in P13-13: the player chrome (`src/features/player/chrome/`). Deferred from it: the buffered range on the scrubber and a "seeking" status (`PlaybackSnapshot` has no buffered position, so both need Player Engine data); the Video and Audio sections of the Info sheet (they need new on-screen engine text); `ChapterList` and its button (Q18 A, new task); the TV form of the chrome (P13-18); and the Wayland, hwdec, macOS, and AppImage checks of the chrome over real video (untested gates). Design calls still open for the human are listed in `docs/specs/P13-13.md`.
 - Done in P13-11 (Q11 A): library overflow in the app nav. The Libraries page is removed; the nav keeps scrolling and fades the clipped edge. (P13-06, Decision 4.)
 - Nav background (P13-06, Decision 11): the bar uses `--surface-0-glass` (`--surface-0` at 92%, defined in `tokens.css` because `src/styles/css-rules.test.ts` forbids `color-mix` outside `src/styles/`). P13-08 added the blur (`--blur-nav`), the clear surface over a hero, and hide on scroll.
 - Done in P13-11: the nav scroll cue is an edge fade (`--nav-fade-w`).

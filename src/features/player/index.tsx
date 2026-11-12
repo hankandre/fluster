@@ -5,6 +5,7 @@ import { useOptionalPreferences } from "../../app/preferences";
 import { useSession, type SessionGateway } from "../../app/session";
 import { PlayerView } from "../../components/PlayerView";
 import type { ItemDetail, NextEpisode } from "../../domain/catalog";
+import { backdropWidth } from "../card-view";
 import { detailKey } from "../detail/detail-key";
 import { refreshHomeRows } from "../home";
 import { itemRoute, leavePlayer, type PlayRoute } from "../routes";
@@ -18,9 +19,7 @@ import { useSeekPreview } from "./use-seek-preview";
 import { useIdleCursor } from "./use-idle-cursor";
 import { useEscapeKey } from "../use-escape-key";
 import { safeReason } from "./safe-reason";
-import { ConversionChip } from "./conversion-chip";
 import { conversionIndicator } from "./conversion-copy";
-import { PlayerInfoPanel } from "./player-info-panel";
 import { usePlayerStatus, type ReadyPlayerStatus } from "./player-status";
 
 const SIGN_IN_ROUTE = "#/next/sign-in";
@@ -159,6 +158,9 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
     },
   });
   const indicator = conversionIndicator(playback.plan);
+  const backdrop = detail.backdrop
+    ? { src: gateway.imageUrl(detail.backdrop.itemId, detail.backdrop.type, detail.backdrop.tag, backdropWidth()), blurHash: detail.backdrop.blurHash }
+    : undefined;
   const segments = useMediaSegments(gateway, route.itemId, playback.plan);
   const cursor = useIdleCursor();
   const upNext = useAutoPlayCountdown({
@@ -192,6 +194,7 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
         item={item}
         player={player.engine}
         session={playback.state}
+        status={status}
         segments={segments}
         retrying={playback.retrying}
         onRetry={playback.retry}
@@ -199,31 +202,24 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
         retryLabel={playback.previousTracksOffered ? PREVIOUS_TRACKS : undefined}
         convertedTracks={playback.convertedTracks}
         onChangeConvertedTrack={playback.changeTrack}
-        {...seekProps}
-      />
-      {indicator && !playback.retrying && <ConversionChip indicator={indicator} />}
-      <PlayerInfoPanel
-        status={status}
-        snapshot={playback.state.snapshot}
         playMethod={playback.plan?.playMethod}
         indicator={indicator}
+        playOriginal={{
+          available: Boolean(playback.plan?.playOriginalAvailable) && !playback.retrying,
+          stillConverting: playback.playOriginalRequested && playback.plan?.delivery === "hls" && !playback.retrying,
+          onPlay: () => void playback.playOriginal(),
+        }}
+        backdrop={backdrop}
+        prompt={next && upNext.secondsLeft !== undefined && !playback.state.error ? (
+          <NextEpisodeCard
+            next={next}
+            secondsLeft={upNext.secondsLeft}
+            onPlayNow={upNext.playNow}
+            onCancel={upNext.cancel}
+          />
+        ) : undefined}
+        {...seekProps}
       />
-      {playback.playOriginalRequested && playback.plan?.delivery === "hls" && !playback.retrying && (
-        <p className="play-original-note" role="status">The server still converts this.</p>
-      )}
-      {playback.plan?.playOriginalAvailable && !playback.retrying && (
-        <button type="button" className="play-original" onClick={() => void playback.playOriginal()}>
-          Play original
-        </button>
-      )}
-      {next && upNext.secondsLeft !== undefined && !playback.state.error && (
-        <NextEpisodeCard
-          next={next}
-          secondsLeft={upNext.secondsLeft}
-          onPlayNow={upNext.playNow}
-          onCancel={upNext.cancel}
-        />
-      )}
     </main>
   );
 }

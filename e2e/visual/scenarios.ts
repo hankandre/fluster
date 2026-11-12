@@ -300,6 +300,28 @@ export const scenarios: Scenario[] = [
     await page.mouse.move(box.x + box.width * 0.42, box.y + box.height / 2);
     await page.waitForTimeout(700);
   } },
+  { name: "59-player-track-panel", run: async (page) => {
+    await play(page, "#/next/item/m1");
+    await page.getByRole("button", { name: "Audio & Subtitles" }).click();
+    await page.getByRole("region", { name: "Audio and subtitles" }).waitFor();
+    await page.waitForTimeout(300);
+  } },
+  { name: "59a-player-osd", run: async (page) => {
+    await play(page, "#/next/item/m1");
+    await page.keyboard.press("ArrowRight");
+    await page.getByRole("status", { name: "Player message" }).getByText("+10 s").waitFor();
+    await page.waitForTimeout(150);
+  } },
+  { name: "59b-player-paused", run: async (page) => {
+    await play(page, "#/next/item/m1");
+    await page.keyboard.press("k");
+    await page.waitForTimeout(3_400);
+  } },
+  { name: "59c-player-scrub-focus", opts: { trickplay: true }, run: async (page) => {
+    await play(page, "#/next/item/m1");
+    await page.getByRole("slider", { name: "Playback position" }).focus();
+    await page.waitForTimeout(500);
+  } },
   { name: "54-player-skip-intro", opts: { segments: intro }, run: async (page) => {
     await play(page, "#/next/item/m4");
     await page.locator("video").evaluate((video) => {
@@ -342,6 +364,13 @@ export const scenarios: Scenario[] = [
 
   // UI gallery (browser development only)
   { name: "80-ui-gallery", fullPage: true, run: (page) => go(page, "#/next/gallery", 600) },
+  { name: "88-ui-gallery-player", fullPage: true, run: async (page) => {
+    await go(page, "#/next/gallery", 600);
+    await page.getByRole("button", { name: "Open Info sheet" }).click();
+    await page.getByRole("region", { name: "Player information" }).waitFor();
+    await page.getByRole("group", { name: "Conversion notice" }).scrollIntoViewIfNeeded();
+    await page.waitForTimeout(300);
+  } },
   { name: "87-ui-gallery-media-cards", run: async (page) => {
     await go(page, "#/next/gallery", 600);
     await page.getByRole("region", { name: "Media cards" }).scrollIntoViewIfNeeded();

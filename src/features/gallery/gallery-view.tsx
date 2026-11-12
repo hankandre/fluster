@@ -17,6 +17,7 @@ import {
   useToast,
   type PickerOption,
 } from "../shared/ui";
+import { PlayerChromeGallery } from "./player-chrome-gallery";
 import "./gallery.css";
 
 // Browser development only (App.tsx). The marker below lets the build check prove it never ships.
@@ -159,6 +160,8 @@ function Gallery() {
         <MediaRow label="Poster skeletons" variant="poster" status="pending" />
         <MediaRow label="Thumb skeletons" variant="thumb" status="pending" />
       </Section>
+
+      <PlayerChromeGallery />
     </main>
   );
 }

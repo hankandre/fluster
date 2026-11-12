@@ -1,64 +1,45 @@
 import { redactText } from "../lib/redact";
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  Gauge,
-  LoaderCircle,
-  Maximize,
-  Minimize,
-  Pause,
-  Play,
-  Volume2,
-  VolumeX,
-} from "lucide-react";
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { LibraryItem } from "../domain/catalog";
-import type { PlayerEngine, PlayerTrack } from "../domain/playback";
-import { nextSourceSubtitle, type TrackKind } from "../domain/track-choice";
-import { TrackMenus, type ConvertedTracks } from "../features/player/track-menus";
-import { playerKeyAction } from "./player-keymap";
-import type { PlaybackSessionState } from "../lib/player/session-state";
+import type { PlayerEngine, PlayMethod } from "../domain/playback";
+import type { TrackKind } from "../domain/track-choice";
 import type { MediaSegment } from "../domain/media-segments";
+import type { PlaybackSessionState } from "../lib/player/session-state";
+import { type ConversionIndicator } from "../features/player/conversion-copy";
+import type { ReadyPlayerStatus } from "../features/player/player-status";
+import { InfoSheet, type PlayOriginalState } from "../features/player/chrome/info-sheet";
+import { conversionCopy } from "../features/player/chrome/osd-copy";
+import { Osd } from "../features/player/chrome/osd";
+import { PlayerErrorPanel, PlayerWarnings } from "../features/player/chrome/player-error";
+import { PlayerLoading, type LoadingBackdrop } from "../features/player/chrome/player-loading";
+import { PlayerStatus } from "../features/player/chrome/player-status";
+import { PlayerTopBar, titleLine } from "../features/player/chrome/player-top-bar";
+import type { SeekChapter } from "../features/player/chrome/player-time";
+import { Scrubber } from "../features/player/chrome/scrubber";
+import { TrackPanel } from "../features/player/chrome/track-panel";
+import type { ConvertedTracks } from "../features/player/chrome/track-options";
+import { TransportControls } from "../features/player/chrome/transport-controls";
+import { CHROME_ZONE_ATTRIBUTE, useChromeVisibility } from "../features/player/chrome/use-chrome-visibility";
+import { useFullscreen } from "../features/player/chrome/use-fullscreen";
+import { useOsd } from "../features/player/chrome/use-osd";
+import { seekTarget, usePlayerKeys, type SheetName } from "../features/player/chrome/use-player-keys";
+import "../features/player/chrome/player.css";
 import { NativeVideoSurface } from "./NativeVideoSurface";
 import { SkipSegmentButton } from "./SkipSegmentButton";
 
-function time(value: number | undefined): string {
-  if (value == null || !Number.isFinite(value)) return "--:--";
-  const seconds = Math.max(0, Math.floor(value));
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const remainder = seconds % 60;
-  return hours > 0
-    ? `${hours}:${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`
-    : `${minutes}:${String(remainder).padStart(2, "0")}`;
-}
+export type { SeekChapter };
 
-// A named point on the seek bar.
-export interface SeekChapter {
-  startSeconds: number;
-  name: string;
-}
-
-// The subtitle after the selected one, then off. Null when there are none.
-function nextSubtitle(tracks: PlayerTrack[]): number | undefined | null {
-  const subtitles = tracks.filter((track) => track.type === "Subtitle");
-  if (subtitles.length === 0) return null;
-  const selected = subtitles.findIndex((track) => track.selected);
-  return subtitles[selected + 1]?.playerId;
-}
-
-function chapterAt(chapters: SeekChapter[], seconds: number): SeekChapter | undefined {
-  let current: SeekChapter | undefined;
-  for (const chapter of chapters) {
-    if (chapter.startSeconds <= seconds) current = chapter;
-  }
-  return current;
+// What PlayerLoading says before the first frame (DESIGN.md 10).
+function loadingText(playMethod: PlayMethod | undefined, indicator: ConversionIndicator | undefined): string {
+  if (!playMethod) return "Loading…";
+  return indicator ? `${indicator.chip}…` : "Opening the original file…";
 }
 
 export function PlayerView({
   item,
   player,
   session,
+  status,
   segments,
   retrying,
   onRetry,
@@ -68,10 +49,17 @@ export function PlayerView({
   convertedTracks,
   onChangeConvertedTrack,
   retryLabel = "Retry",
+  playMethod,
+  indicator,
+  playOriginal,
+  backdrop,
+  prompt,
 }: {
   item: LibraryItem;
   player: PlayerEngine;
   session: PlaybackSessionState;
+  // What the app knows about the player, for the Info sheet.
+  status: ReadyPlayerStatus;
   // Intro and outro segments to offer a skip button for. Empty or absent shows none.
   segments?: MediaSegment[];
   retrying?: boolean;
@@ -80,38 +68,33 @@ export function PlayerView({
   // Both are optional and off by default: without them the seek bar is a bare
   // slider. seekPreview draws the picture shown above the time under the
   // pointer (or the keyboard position); chapters adds markers and names.
-  seekPreview?: (seconds: number) => ReactNode;
+  seekPreview?: (seconds: number, frameWidth?: number) => ReactNode;
   chapters?: SeekChapter[];
-  // Set for a converted session: the track menus list the source's streams
+  // Set for a converted session: the track panel lists the source's streams
   // and a choice goes to onChangeConvertedTrack (undefined: subtitles off),
-  // which may start a new conversion. Absent, they list mpv's tracks.
+  // which may start a new conversion. Absent, it lists mpv's tracks.
   convertedTracks?: ConvertedTracks;
   onChangeConvertedTrack?(kind: TrackKind, jellyfinIndex: number | undefined): Promise<void>;
   // The error panel's Retry text ("Back to previous tracks" after a failed track change).
   retryLabel?: string;
+  // From the plan; absent until the server has answered.
+  playMethod?: PlayMethod;
+  indicator?: ConversionIndicator;
+  playOriginal?: PlayOriginalState;
+  // The art shown while loading.
+  backdrop?: LoadingBackdrop;
+  // The Up Next card. It sits inside the player so focus in it keeps the chrome up.
+  prompt?: ReactNode;
 }) {
   const [commandError, setCommandError] = useState<string>();
-  const [fullscreen, setFullscreenState] = useState(false);
-  const [controlsVisible, setControlsVisible] = useState(true);
-  const [seekValue, setSeekValue] = useState<number>();
-  const [volumeValue, setVolumeValue] = useState<number>();
-  const [hoverSeconds, setHoverSeconds] = useState<number>();
-  const [seekFocused, setSeekFocused] = useState(false);
-  const hideTimer = useRef<number | undefined>(undefined);
+  const [sheet, setSheet] = useState<SheetName>();
+  // Counts chip presses: a new press remounts the open Info sheet so focus can move to Play original.
+  const [chipPresses, setChipPresses] = useState(0);
   const snapshot = session.snapshot;
   const error = commandError ?? session.error;
-  const reportingWarning = session.reportingWarning;
-  const snapshotRef = useRef(snapshot);
-  const fullscreenRef = useRef(fullscreen);
-  const onBackRef = useRef(onBack);
-  const convertedRef = useRef({ tracks: convertedTracks, onChange: onChangeConvertedTrack });
-
-  useEffect(() => {
-    snapshotRef.current = snapshot;
-    fullscreenRef.current = fullscreen;
-    onBackRef.current = onBack;
-    convertedRef.current = { tracks: convertedTracks, onChange: onChangeConvertedTrack };
-  }, [fullscreen, onBack, snapshot, convertedTracks, onChangeConvertedTrack]);
+  const osd = useOsd();
+  const tracksId = useId();
+  const infoId = useId();
 
   useEffect(() => {
     document.documentElement.classList.add("native-playing");
@@ -137,206 +120,103 @@ export function PlayerView({
     if (retrying) setCommandError(undefined);
   }, [retrying]);
 
-  const changeFullscreen = useCallback(async (next: boolean) => {
-    const previous = fullscreenRef.current;
-    fullscreenRef.current = next;
-    setFullscreenState(next);
-    const changed = await execute(() => player.setFullscreen(next));
-    if (!changed) {
-      fullscreenRef.current = previous;
-      setFullscreenState(previous);
-    }
-  }, [execute, player]);
+  const { fullscreen, fullscreenRef, changeFullscreen } = useFullscreen(player, execute);
+  const converted = convertedTracks && onChangeConvertedTrack ? { tracks: convertedTracks, onChange: onChangeConvertedTrack } : undefined;
 
+  const toggleSheet = useCallback((name: SheetName) => {
+    setSheet((current) => (current === name ? undefined : name));
+    setChipPresses(0);
+  }, []);
+  const closeSheet = useCallback(() => setSheet(undefined), []);
+  const openInfoFromChip = () => {
+    setChipPresses((count) => count + 1);
+    setSheet("info");
+  };
+
+  usePlayerKeys({
+    player,
+    snapshot,
+    converted,
+    sheet,
+    execute,
+    changeFullscreen,
+    fullscreenRef,
+    onBack,
+    onToggleSheet: toggleSheet,
+    onCloseSheet: closeSheet,
+    showOsd: osd.show,
+  });
+
+  // The conversion is announced at the start of every converted session, and
+  // again when its text changes (the server confirming it only repackages).
+  const noticeText = indicator ? conversionCopy(indicator.chip, indicator.subtitlesBurnedIn) : undefined;
+  const showOsd = osd.show;
   useEffect(() => {
-    const updateFullscreen = (value: boolean) => {
-      fullscreenRef.current = value;
-      setFullscreenState(value);
-    };
-    if (player.mode === "browser") {
-      const onFullscreenChange = () => updateFullscreen(Boolean(document.fullscreenElement));
-      document.addEventListener("fullscreenchange", onFullscreenChange);
-      return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
-    }
+    if (session.firstFrameReady && noticeText) showOsd(noticeText, "notice");
+  }, [session.firstFrameReady, noticeText, showOsd]);
 
-    let cancelled = false;
-    let removeListener: (() => void) | undefined;
-    void import("@tauri-apps/api/window").then(async ({ getCurrentWindow }) => {
-      const appWindow = getCurrentWindow();
-      const syncFullscreen = async () => {
-        const value = await appWindow.isFullscreen();
-        if (!cancelled) updateFullscreen(value);
-      };
-      await syncFullscreen();
-      const unlisten = await appWindow.onResized(() => void syncFullscreen());
-      if (cancelled) unlisten();
-      else removeListener = unlisten;
-    });
-    return () => {
-      cancelled = true;
-      removeListener?.();
-    };
-  }, [player.mode]);
-
-  const showControls = () => {
-    setControlsVisible(true);
-    window.clearTimeout(hideTimer.current);
-    if (!snapshot?.paused && !error) {
-      hideTimer.current = window.setTimeout(() => setControlsVisible(false), 2600);
-    }
-  };
-
-  useEffect(() => () => window.clearTimeout(hideTimer.current), []);
-
-  useEffect(() => {
-    const onKeyDown = (keyboardEvent: KeyboardEvent) => {
-      const action = playerKeyAction(keyboardEvent);
-      if (!action) return;
-      keyboardEvent.preventDefault();
-      const current = snapshotRef.current;
-      switch (action.kind) {
-        case "toggle-pause":
-          if (current) void execute(() => player.setPaused(!current.paused));
-          break;
-        case "seek-by": {
-          if (!current) break;
-          const end = current.durationSeconds ?? Number.POSITIVE_INFINITY;
-          const target = Math.min(Math.max(0, current.positionSeconds + action.seconds), end);
-          void execute(() => player.seek(target));
-          break;
-        }
-        case "volume-by": {
-          if (!current) break;
-          const volume = Math.min(100, Math.max(0, current.volume + action.amount));
-          void execute(() => player.setVolume(volume));
-          break;
-        }
-        case "toggle-mute":
-          if (current) void execute(() => player.setMuted(!current.muted));
-          break;
-        case "toggle-fullscreen":
-          void changeFullscreen(!fullscreenRef.current);
-          break;
-        case "cycle-subtitles": {
-          // A converted session cycles the source's subtitles through the
-          // same rules as its menu (burned-in subtitles need a new conversion).
-          const converted = convertedRef.current;
-          if (converted.tracks && converted.onChange) {
-            const onChange = converted.onChange;
-            const next = current ? nextSourceSubtitle(converted.tracks.subtitle) : null;
-            if (next !== null) void execute(() => onChange("subtitle", next));
-            break;
-          }
-          const next = current ? nextSubtitle(current.tracks) : null;
-          if (next !== null) void execute(() => player.selectTrack("subtitle", next));
-          break;
-        }
-        case "escape":
-          // Escape leaves fullscreen first, then the player.
-          if (fullscreenRef.current) void changeFullscreen(false);
-          else void onBackRef.current();
-          break;
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [changeFullscreen, execute, player]);
-
-  const commitVolume = () => {
-    if (volumeValue == null) return;
-    const nextVolume = volumeValue;
-    setVolumeValue(undefined);
-    void execute(() => player.setVolume(nextVolume));
-  };
-
-  const duration = snapshot?.durationSeconds ?? 0;
-  const position = seekValue ?? snapshot?.positionSeconds ?? 0;
-  const diagnostics = snapshot?.diagnostics;
-  const seekEnhanced = Boolean(seekPreview) || Boolean(chapters?.length);
-  const previewSeconds = hoverSeconds ?? (seekFocused ? position : undefined);
-  const chapterName = previewSeconds != null && chapters ? chapterAt(chapters, previewSeconds)?.name : undefined;
-
-  const seekControl = (
-    <input
-      aria-label="Playback position"
-      type="range"
-      min={0}
-      max={Math.max(duration, 1)}
-      step={0.25}
-      value={Math.min(position, Math.max(duration, 1))}
-      onChange={(changeEvent) => setSeekValue(Number(changeEvent.target.value))}
-      onPointerUp={() => {
-        if (seekValue != null) void execute(() => player.seek(seekValue));
-        setSeekValue(undefined);
-      }}
-      onKeyUp={() => {
-        if (seekValue != null) void execute(() => player.seek(seekValue));
-        setSeekValue(undefined);
-      }}
-      onFocus={() => setSeekFocused(true)}
-      onBlur={() => setSeekFocused(false)}
-      disabled={!snapshot || !duration}
-    />
-  );
-
-  const moveSeekPreview = (pointerEvent: ReactPointerEvent<HTMLDivElement>) => {
-    if (!duration) return;
-    const box = pointerEvent.currentTarget.getBoundingClientRect();
-    if (box.width <= 0) return;
-    const fraction = (pointerEvent.clientX - box.left) / box.width;
-    if (!Number.isFinite(fraction)) return;
-    setHoverSeconds(Math.min(Math.max(fraction, 0), 1) * duration);
-  };
+  const playing = Boolean(snapshot && !snapshot.paused);
+  const visibility = useChromeVisibility({ playing, pinned: Boolean(error) || sheet !== undefined });
+  const chromeShown = session.firstFrameReady || Boolean(error);
 
   return (
-    <section className="player-page" onMouseMove={showControls} onMouseLeave={() => !snapshot?.paused && setControlsVisible(false)}>
+    <section className="player-page" aria-label="Player" {...visibility.sectionProps}>
       <NativeVideoSurface player={player} onError={setCommandError} />
-      {!session.firstFrameReady && <div className="video-loading-cover" />}
-      <div className="player-shade" />
 
-      <header className={`player-header ${controlsVisible ? "is-visible" : ""}`}>
-        <button className="player-circle-button" aria-label="Back to library" onClick={() => void onBack()}>
-          <ArrowLeft size={21} />
-        </button>
-        <div>
-          <p>{item.type === "Episode" ? item.seriesName ?? "EPISODE" : "NOW PLAYING"}</p>
-          <h1>{item.name}</h1>
+      {!chromeShown && (
+        <PlayerLoading
+          title={titleLine(item)}
+          seriesLine={item.type === "Episode" ? item.seriesName : undefined}
+          backdrop={backdrop}
+          text={loadingText(playMethod, indicator)}
+          onBack={() => void onBack()}
+        />
+      )}
+      {error && !session.firstFrameReady && <div className="player-cover" />}
+
+      {chromeShown && (
+        <div className="player-chrome" data-visible={visibility.visible}>
+          <div className="player-shade" />
+          <PlayerTopBar item={item} indicator={retrying ? undefined : indicator} onBack={() => void onBack()} onOpenInfo={openInfoFromChip} />
+          <footer className="player-controls" {...{ [CHROME_ZONE_ATTRIBUTE]: "" }}>
+            <Scrubber
+              snapshot={snapshot}
+              onSeek={(seconds) => void execute(() => player.seek(seconds))}
+              seekPreview={seekPreview}
+              chapters={chapters}
+            />
+            <TransportControls
+              snapshot={snapshot}
+              fullscreen={fullscreen}
+              tracksOpen={sheet === "tracks"}
+              infoOpen={sheet === "info"}
+              tracksId={tracksId}
+              infoId={infoId}
+              onTogglePause={() => snapshot && void execute(() => player.setPaused(!snapshot.paused))}
+              onSeekBy={(seconds) => snapshot && void execute(() => player.seek(seekTarget(snapshot, seconds)))}
+              onToggleMute={() => snapshot && void execute(() => player.setMuted(!snapshot.muted))}
+              onVolume={(volume) => void execute(() => player.setVolume(volume))}
+              onToggleTracks={() => toggleSheet("tracks")}
+              onToggleInfo={() => toggleSheet("info")}
+              onToggleFullscreen={() => void changeFullscreen(!fullscreen)}
+            />
+          </footer>
         </div>
-        {diagnostics && (
-          <div className="player-diagnostics">
-            <Gauge size={15} />
-            <span>{diagnostics.decodeLabel}</span>
-            <small>{diagnostics.videoCodec ?? "loading"}{diagnostics.width ? ` · ${diagnostics.width}×${diagnostics.height}` : ""}</small>
-          </div>
-        )}
-      </header>
+      )}
 
-      {!snapshot && !error && (
-        <div className="player-center-state"><LoaderCircle className="spin" /><span>Preparing original file…</span></div>
-      )}
-      {snapshot?.buffering && (
-        <div className="player-center-state"><LoaderCircle className="spin" /><span>Buffering…</span></div>
-      )}
+      {chromeShown && snapshot?.buffering && <PlayerStatus text="Buffering…" />}
+      <Osd message={osd.message} />
       {error && (
-        <div className="player-error-panel">
-          <AlertTriangle size={26} />
-          <h2>Playback could not start</h2>
-          <p>{error}</p>
-          <div className="player-error-actions">
-            <button onClick={() => void onRetry()} disabled={retrying}>
-              {retrying ? <LoaderCircle className="spin" size={17} /> : null}
-              {retryLabel}
-            </button>
-            <button onClick={() => void onBack()}>Back to library</button>
-          </div>
-        </div>
+        <PlayerErrorPanel
+          message={error}
+          retrying={retrying}
+          retryLabel={retryLabel}
+          onRetry={() => void onRetry()}
+          onBack={() => void onBack()}
+        />
       )}
-
-      {diagnostics?.decodeMode === "software" && !error && (
-        <div className="player-cpu-warning"><AlertTriangle size={15} /> Software decoding on this CPU.</div>
-      )}
-      {reportingWarning && !error && (
-        <div className="player-reporting-warning"><AlertTriangle size={15} /> Jellyfin progress reporting failed: {reportingWarning}</div>
+      {!error && (
+        <PlayerWarnings softwareDecoding={snapshot?.diagnostics?.decodeMode === "software"} reportingWarning={session.reportingWarning} />
       )}
 
       {segments && snapshot && (
@@ -346,86 +226,31 @@ export function PlayerView({
           onSeek={(seconds) => void execute(() => player.seek(seconds))}
         />
       )}
+      {prompt && <div className="player-prompt" {...{ [CHROME_ZONE_ATTRIBUTE]: "" }}>{prompt}</div>}
 
-      <footer className={`player-controls ${controlsVisible || snapshot?.paused ? "is-visible" : ""}`}>
-        <div className="seek-row">
-          <span>{time(position)}</span>
-          {seekEnhanced ? (
-            <div
-              className="seek-track"
-              onPointerMove={moveSeekPreview}
-              onPointerLeave={() => setHoverSeconds(undefined)}
-            >
-              {seekControl}
-              {duration > 0 && chapters?.map((chapter) => {
-                if (chapter.startSeconds <= 0 || chapter.startSeconds >= duration) return null;
-                return (
-                  <span
-                    key={`${chapter.startSeconds}-${chapter.name}`}
-                    className="seek-chapter"
-                    role="img"
-                    aria-label={`Chapter: ${chapter.name} at ${time(chapter.startSeconds)}`}
-                    style={{ left: `${(chapter.startSeconds / duration) * 100}%` }}
-                  />
-                );
-              })}
-              {previewSeconds != null && duration > 0 && (
-                <div className="seek-preview" style={{ "--seek-x": `${(previewSeconds / duration) * 100}%` } as CSSProperties}>
-                  {seekPreview?.(previewSeconds)}
-                  <strong>{time(previewSeconds)}</strong>
-                  {chapterName && <em>{chapterName}</em>}
-                </div>
-              )}
-            </div>
-          ) : seekControl}
-          <span>{time(snapshot?.durationSeconds)}</span>
-        </div>
-        <div className="control-row">
-          <button
-            className="primary-play-control"
-            aria-label={snapshot?.paused ? "Play" : "Pause"}
-            onClick={() => snapshot && void execute(() => player.setPaused(!snapshot.paused))}
-            disabled={!snapshot}
-          >
-            {snapshot?.paused ? <Play size={23} fill="currentColor" /> : <Pause size={23} fill="currentColor" />}
-          </button>
-          <button
-            className="player-control-button"
-            aria-label={snapshot?.muted ? "Unmute" : "Mute"}
-            onClick={() => snapshot && void execute(() => player.setMuted(!snapshot.muted))}
-            disabled={!snapshot}
-          >
-            {snapshot?.muted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-          </button>
-          <input
-            className="volume-slider"
-            aria-label="Volume"
-            type="range"
-            min={0}
-            max={100}
-            value={volumeValue ?? snapshot?.volume ?? 100}
-            onChange={(changeEvent) => setVolumeValue(Number(changeEvent.target.value))}
-            onPointerUp={commitVolume}
-            onKeyUp={commitVolume}
-            onBlur={commitVolume}
-            disabled={!snapshot}
-          />
-          <TrackMenus
-            snapshot={snapshot}
-            converted={convertedTracks && onChangeConvertedTrack ? { tracks: convertedTracks, onChange: onChangeConvertedTrack } : undefined}
-            onSelect={(kind, id) => void execute(() => player.selectTrack(kind, id))}
-            onChangeConverted={(change) => void execute(change)}
-          />
-          <span className="control-spacer" />
-          <button
-            className="player-control-button"
-            aria-label={fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-            onClick={() => void changeFullscreen(!fullscreen)}
-          >
-            {fullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
-          </button>
-        </div>
-      </footer>
+      {sheet === "tracks" && (
+        <TrackPanel
+          id={tracksId}
+          snapshot={snapshot}
+          converted={converted}
+          onSelect={(kind, id) => void execute(() => player.selectTrack(kind, id))}
+          onChangeConverted={(change) => void execute(change)}
+          onClose={closeSheet}
+        />
+      )}
+      {sheet === "info" && (
+        <InfoSheet
+          key={chipPresses}
+          id={infoId}
+          status={status}
+          snapshot={snapshot}
+          playMethod={playMethod}
+          indicator={indicator}
+          playOriginal={playOriginal}
+          focusPlayOriginal={chipPresses > 0}
+          onClose={closeSheet}
+        />
+      )}
     </section>
   );
 }

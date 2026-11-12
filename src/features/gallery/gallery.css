@@ -44,4 +44,18 @@
     display: grid;
     gap: var(--space-3);
   }
+
+  .gallery-player-frame {
+    position: relative;
+    isolation: isolate;
+    flex: 1 1 36rem;
+    max-width: 48rem;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sheet);
+    background: var(--surface-2);
+  }
+
+  .gallery-player-frame .conversion-chip { max-width: 55%; }
 }

@@ -159,7 +159,7 @@ test("signs in, opens an item, plays, pauses, seeks, and leaves with the keyboar
   await expect.poll(() => video(page).evaluate((element: HTMLVideoElement) => element.muted)).toBe(true);
 
   // Tabbing into the player reaches its controls.
-  const back = page.getByRole("button", { name: "Back to library" });
+  const back = page.getByRole("button", { name: "Back", exact: true });
   await tabTo(page, back);
   await expect(back).toBeVisible();
 

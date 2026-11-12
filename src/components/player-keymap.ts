@@ -8,6 +8,9 @@ export type PlayerKeyAction =
   | { kind: "toggle-mute" }
   | { kind: "toggle-fullscreen" }
   | { kind: "cycle-subtitles" }
+  | { kind: "seek-to"; fraction: number }
+  | { kind: "open-tracks" }
+  | { kind: "toggle-info" }
   | { kind: "escape" };
 
 export interface PlayerKeyInput {
@@ -24,10 +27,12 @@ export const VOLUME_STEP = 5;
 
 // What the focused element does with keys of its own. A select keeps every
 // key, Escape included: Escape closes its list instead of leaving the player.
-type TargetKind = "text" | "slider" | "activator" | "other";
+// A list keeps the keys that move through and choose its rows.
+type TargetKind = "text" | "slider" | "list" | "activator" | "other";
 
 const ACTIVATOR_INPUTS = new Set(["checkbox", "radio", "button", "submit", "reset"]);
 const SLIDER_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"]);
+const LIST_KEYS = new Set(["ArrowUp", "ArrowDown", "Home", "End", "Enter", " "]);
 
 function targetKind(target: EventTarget | null): TargetKind {
   if (!(target instanceof HTMLElement)) return "other";
@@ -37,6 +42,7 @@ function targetKind(target: EventTarget | null): TargetKind {
     if (target.type === "range") return "slider";
     return ACTIVATOR_INPUTS.has(target.type) ? "activator" : "text";
   }
+  if (target.closest('[role="listbox"]')) return "list";
   if (target.closest("button, a[href], summary")) return "activator";
   return "other";
 }
@@ -62,9 +68,18 @@ function actionFor(key: string): PlayerKeyAction | undefined {
       return { kind: "toggle-fullscreen" };
     case "c":
       return { kind: "cycle-subtitles" };
+    case "Home":
+      return { kind: "seek-to", fraction: 0 };
+    case "End":
+      return { kind: "seek-to", fraction: 1 };
+    case "a":
+      return { kind: "open-tracks" };
+    case "i":
+      return { kind: "toggle-info" };
     case "Escape":
       return { kind: "escape" };
     default:
+      if (/^[0-9]$/.test(key)) return { kind: "seek-to", fraction: Number(key) / 10 };
       return undefined;
   }
 }
@@ -85,6 +100,8 @@ export function playerKeyAction(input: PlayerKeyInput): PlayerKeyAction | undefi
       return undefined;
     case "slider":
       return SLIDER_KEYS.has(key) ? undefined : action;
+    case "list":
+      return LIST_KEYS.has(key) ? undefined : action;
     case "activator":
       return key === " " || key === "Enter" ? undefined : action;
     case "other":

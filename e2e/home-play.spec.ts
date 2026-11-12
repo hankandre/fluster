@@ -77,7 +77,7 @@ test("Back from the player returns to Home", async ({ page }) => {
   await resumeCard(page).focus();
   await page.keyboard.press("Enter");
   await expect(page.locator("video")).toHaveCount(1);
-  await page.getByLabel("Back to library").click();
+  await page.getByRole("button", { name: "Back", exact: true }).click();
   await expect(page).toHaveURL(/#\/next\/home$/);
   await expect(page.getByRole("heading", { name: "Home" })).toBeVisible();
 });

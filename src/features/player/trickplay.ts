@@ -25,13 +25,17 @@ export function thumbnailPlace(info: TrickplayInfo, seconds: number): ThumbnailP
   };
 }
 
-// CSS that shows one cell of a tile image at the thumbnail's own size.
-export function thumbnailStyle(info: TrickplayInfo, place: ThumbnailPlace, tileUrl: string | undefined) {
+// CSS that shows one cell of a tile image. Unscaled, the cell has its own
+// size; with `frameWidth` it is scaled to that width, keeping its aspect.
+export function thumbnailStyle(info: TrickplayInfo, place: ThumbnailPlace, tileUrl: string | undefined, frameWidth?: number) {
+  const scale = frameWidth && frameWidth > 0 && info.width > 0 ? frameWidth / info.width : 1;
+  const width = info.width * scale;
+  const height = info.height * scale;
   return {
-    width: info.width,
-    height: info.height,
+    width,
+    height,
     backgroundImage: tileUrl ? `url("${tileUrl}")` : undefined,
-    backgroundSize: `${info.width * info.tileWidth}px ${info.height * info.tileHeight}px`,
-    backgroundPosition: `${-place.column * info.width}px ${-place.row * info.height}px`,
+    backgroundSize: `${width * info.tileWidth}px ${height * info.tileHeight}px`,
+    backgroundPosition: `${-place.column * width}px ${-place.row * height}px`,
   };
 }

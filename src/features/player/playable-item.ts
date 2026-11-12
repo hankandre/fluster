@@ -8,6 +8,8 @@ export function toPlayableItem(detail: ItemDetail): LibraryItem {
     name: detail.title,
     type: detail.type === "Episode" ? "Episode" : "Movie",
     seriesName: detail.seriesName,
+    season: detail.seasonNumber,
+    episode: detail.episodeNumber,
     productionYear: detail.year,
     runTimeTicks: detail.runTimeTicks,
     overview: detail.overview,

@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PlayerServicesProvider, type PlayerServices } from "../../app/player-services";
 import { SessionProvider, useSession, type SessionGateway } from "../../app/session";
@@ -150,7 +150,7 @@ describe("Auto-play the next episode", () => {
 
     await moveTo(engine, 1175);
     expect(await screen.findByLabelText("Up next")).toHaveTextContent("Up next S1E2 Second");
-    expect(screen.getByRole("status")).toHaveTextContent("Playing in 10 s");
+    expect(within(screen.getByRole("complementary", { name: "Up next" })).getByRole("status")).toHaveTextContent("Playing in 10 s");
 
     await moveTo(engine, 600);
     expect(screen.queryByLabelText("Up next")).not.toBeInTheDocument();
@@ -281,14 +281,14 @@ describe("Auto-play the next episode", () => {
       engine.emit({ kind: "first-frame" });
       await vi.advanceTimersByTimeAsync(0);
     });
-    expect(screen.getByRole("status")).toHaveTextContent("Playing in 10 s");
+    expect(within(screen.getByRole("complementary", { name: "Up next" })).getByRole("status")).toHaveTextContent("Playing in 10 s");
 
     for (let second = 0; second < 4; second += 1) {
       await act(async () => {
         await vi.advanceTimersByTimeAsync(1000);
       });
     }
-    expect(screen.getByRole("status")).toHaveTextContent("Playing in 6 s");
+    expect(within(screen.getByRole("complementary", { name: "Up next" })).getByRole("status")).toHaveTextContent("Playing in 6 s");
 
     await act(async () => {
       engine.emit({ kind: "state", snapshot: { ...snapshotAt(1179), paused: true }, cause: "pause" });
@@ -296,7 +296,7 @@ describe("Auto-play the next episode", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(20_000);
     });
-    expect(screen.getByRole("status")).toHaveTextContent("Playing in 6 s");
+    expect(within(screen.getByRole("complementary", { name: "Up next" })).getByRole("status")).toHaveTextContent("Playing in 6 s");
     expect(window.location.hash).toBe("#/next/play/e1");
 
     await act(async () => {
@@ -383,7 +383,7 @@ describe("Auto-play hardening", () => {
       engine.emit({ kind: "ended", reason: "eof", snapshot: snapshotAt(1200) });
     });
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
+      fireEvent.click(screen.getByRole("button", { name: "Back" }));
     });
     expect(window.location.hash).toBe("#/next/play/e1");
     await act(async () => {
@@ -474,7 +474,7 @@ describe("Leaving does not wait for playstate reports", () => {
     expect(gateway.reportProgress).toHaveBeenCalled();
 
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
+      fireEvent.click(screen.getByRole("button", { name: "Back" }));
       await vi.advanceTimersByTimeAsync(100);
     });
     expect(window.location.hash).toBe("#/next/item/e1");
@@ -537,10 +537,10 @@ describe("Leaving does not wait for playstate reports", () => {
     engine.stop.mockImplementationOnce(() => engineStopped.promise.then(() => undefined));
 
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
+      fireEvent.click(screen.getByRole("button", { name: "Back" }));
     });
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
+      fireEvent.click(screen.getByRole("button", { name: "Back" }));
       fireEvent.click(playNow);
     });
     expect(engine.stop).toHaveBeenCalledTimes(1);
@@ -598,7 +598,7 @@ describe("Leaving does not wait for playstate reports", () => {
     }));
 
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
+      fireEvent.click(screen.getByRole("button", { name: "Back" }));
       fireEvent.click(playNow);
     });
     await act(async () => {
@@ -608,9 +608,11 @@ describe("Leaving does not wait for playstate reports", () => {
     expect(window.location.hash).toBe("#/next/play/e1");
     expect(engine.stop).toHaveBeenCalledTimes(1);
 
-    // The error panel repeats Back; either one leaves.
+    // The error panel repeats Back as "Back to library"; either one leaves.
+    const backButtons = screen.getAllByRole("button", { name: /^Back( to library)?$/ });
+    expect(backButtons.map((button) => button.getAttribute("aria-label") ?? button.textContent)).toEqual(["Back", "Back to library"]);
     await act(async () => {
-      fireEvent.click(screen.getAllByRole("button", { name: "Back to library" })[0]);
+      fireEvent.click(backButtons[0]);
     });
     await waitFor(() => expect(window.location.hash).toBe("#/next/item/e1"));
     expect(engine.stop).toHaveBeenCalledTimes(2);

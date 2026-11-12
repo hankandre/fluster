@@ -1,16 +1,17 @@
 import { RefreshCw } from "lucide-react";
 import { BURNED_IN_COPY, type ConversionIndicator } from "./conversion-copy";
 
-// A status, not an alert: icon and words, never colour alone. Shown for the
-// whole session whenever the server converts or repackages the file.
-export function ConversionChip({ indicator }: { indicator: ConversionIndicator }) {
+// Icon and words, never colour alone. Shown in the top bar whenever the server
+// converts or repackages the file; it opens the Info sheet. The OSD line and
+// the loading text announce the conversion, so this is not a live region.
+export function ConversionChip({ indicator, onOpen }: { indicator: ConversionIndicator; onOpen(): void }) {
   return (
-    <p className="conversion-chip" role="status">
+    <button type="button" className="conversion-chip" onClick={onOpen}>
       <RefreshCw size={15} aria-hidden="true" />
       <span>
         {indicator.chip}
         {indicator.subtitlesBurnedIn && <small>{BURNED_IN_COPY}</small>}
       </span>
-    </p>
+    </button>
   );
 }

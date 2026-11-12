@@ -121,7 +121,7 @@ describe("Player feature", () => {
     await startPlaying(engine);
 
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
+      fireEvent.click(screen.getByRole("button", { name: "Back" }));
     });
 
     await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
@@ -177,7 +177,7 @@ describe("Player feature", () => {
     expect(screen.queryByRole("heading", { name: "Playback could not start" })).not.toBeInTheDocument();
 
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
+      fireEvent.click(screen.getByRole("button", { name: "Back" }));
     });
     await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
   });
@@ -191,9 +191,10 @@ describe("Player feature", () => {
     expect(await screen.findByText("The video surface is not ready.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Retry" })).toBeEnabled();
 
-    const backButtons = screen.getAllByRole("button", { name: "Back to library" });
+    // The top bar's Back and the error panel's "Back to library" are both there.
+    expect(screen.getByRole("button", { name: "Back" })).toBeInTheDocument();
     await act(async () => {
-      fireEvent.click(backButtons[backButtons.length - 1]);
+      fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
     });
     await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
   });
@@ -336,7 +337,7 @@ describe("Player feature", () => {
       expect(engine.stop).not.toHaveBeenCalled();
 
       await act(async () => {
-        fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
+        fireEvent.click(screen.getByRole("button", { name: "Back" }));
       });
       await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
       expect(engine.stop).toHaveBeenCalledTimes(1);
@@ -355,12 +356,12 @@ describe("Player feature", () => {
       const stops = deferStops(engine);
 
       await act(async () => {
-        fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
+        fireEvent.click(screen.getByRole("button", { name: "Back" }));
       });
       await waitFor(() => expect(engine.stop).toHaveBeenCalledTimes(1));
       rerender(tree(undefined));
       rerender(tree(2));
-      await screen.findByRole("button", { name: "Back to library" });
+      await screen.findByRole("button", { name: "Back" });
       await act(async () => undefined);
       expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1);
 
@@ -383,7 +384,7 @@ describe("Player feature", () => {
       await waitFor(() => expect(engine.stop).toHaveBeenCalledTimes(1));
       rerender(tree(2));
       await act(async () => {
-        fireEvent.click(await screen.findByRole("button", { name: "Back to library" }));
+        fireEvent.click(await screen.findByRole("button", { name: "Back" }));
       });
 
       await act(async () => stops[0]());
@@ -575,7 +576,7 @@ describe("Player keyboard and pointer", () => {
 
   it("keeps the cursor while it rests on a control, then hides it once the control fades", async () => {
     const root = await renderIdlePlayer();
-    const back = screen.getByRole("button", { name: "Back to library" });
+    const back = screen.getByRole("button", { name: "Back" });
     let under: Element = back;
     vi.useFakeTimers();
     pointAt(root, () => under);
@@ -692,6 +693,14 @@ describe("System media controls", () => {
   });
 
   describe("Play original", () => {
+    // The button lives in the Info sheet.
+    async function openInfoThenPlayOriginal() {
+      fireEvent.click(screen.getByRole("button", { name: "Info" }));
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Play original" }));
+      });
+    }
+
     function limitedPlan(playSessionId: string, available: boolean): PlaybackPlan {
       return {
         ...plan(playSessionId),
@@ -714,9 +723,7 @@ describe("System media controls", () => {
       await renderPlayer(gateway, engine);
       await startPlaying(engine);
 
-      await act(async () => {
-        fireEvent.click(screen.getByRole("button", { name: "Play original" }));
-      });
+      await openInfoThenPlayOriginal();
 
       await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(plan("play-2")));
       expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(2);
@@ -736,9 +743,7 @@ describe("System media controls", () => {
       await startPlaying(engine);
       expect(screen.queryByText("The server still converts this.")).not.toBeInTheDocument();
 
-      await act(async () => {
-        fireEvent.click(screen.getByRole("button", { name: "Play original" }));
-      });
+      await openInfoThenPlayOriginal();
 
       await waitFor(() => expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(2));
       // The snapshot is at 42 s.
@@ -760,9 +765,7 @@ describe("System media controls", () => {
       await renderPlayer(gateway, engine);
       await startPlaying(engine);
 
-      await act(async () => {
-        fireEvent.click(screen.getByRole("button", { name: "Play original" }));
-      });
+      await openInfoThenPlayOriginal();
 
       await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(plan("play-2")));
       expect(order).toEqual(["negotiate", "delete play-1", "negotiate"]);
@@ -780,7 +783,7 @@ describe("System media controls", () => {
       await startPlaying(engine);
 
       await act(async () => {
-        fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
+        fireEvent.click(screen.getByRole("button", { name: "Back" }));
       });
 
       await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
@@ -793,6 +796,8 @@ describe("System media controls", () => {
       const engine = new FakePlayerEngine();
       await renderPlayer(gateway, engine);
       await startPlaying(engine);
+      fireEvent.click(screen.getByRole("button", { name: "Info" }));
+      expect(screen.getByRole("region", { name: "Player information" })).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Play original" })).not.toBeInTheDocument();
     });
 
@@ -800,7 +805,21 @@ describe("System media controls", () => {
       const engine = new FakePlayerEngine();
       await renderPlayer(fakeGateway(), engine);
       await startPlaying(engine);
+      fireEvent.click(screen.getByRole("button", { name: "Info" }));
+      expect(screen.getByRole("region", { name: "Player information" })).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Play original" })).not.toBeInTheDocument();
+    });
+
+    it("opens from the conversion chip with focus on the button", async () => {
+      const gateway = fakeGateway({ createPlaybackPlan: vi.fn().mockResolvedValue(limitedPlan("play-1", true)) });
+      const engine = new FakePlayerEngine();
+      await renderPlayer(gateway, engine);
+      await startPlaying(engine);
+      expect(screen.queryByRole("button", { name: "Play original" })).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole("button", { name: /Converting on server/ }));
+
+      expect(screen.getByRole("button", { name: "Play original" })).toHaveFocus();
     });
 
     it("applies to this session only: a new player view negotiates with the limit again", async () => {
@@ -813,9 +832,7 @@ describe("System media controls", () => {
       const engine = new FakePlayerEngine();
       await renderPlayer(gateway, engine);
       await startPlaying(engine);
-      await act(async () => {
-        fireEvent.click(screen.getByRole("button", { name: "Play original" }));
-      });
+      await openInfoThenPlayOriginal();
       await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(plan("play-2")));
       cleanup();
 
@@ -827,6 +844,8 @@ describe("System media controls", () => {
   });
 
   describe("conversion indicator", () => {
+    const chipButton = () => screen.getByRole("button", { name: /Converting on server|Repackaging on server/ });
+
     function converted(playMethod: "DirectStream" | "Transcode", reasons: PlaybackPlan["conversionReasons"] & string[], burned = false): PlaybackPlan {
       return {
         ...plan(),
@@ -843,7 +862,11 @@ describe("System media controls", () => {
       const engine = new FakePlayerEngine();
       await renderPlayer(fakeGateway(), engine);
       await startPlaying(engine);
-      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+      // No chip, no conversion line, and Info says Original file.
+      expect(screen.queryByRole("button", { name: /Converting|Repackaging/ })).not.toBeInTheDocument();
+      expect(screen.getByRole("status", { name: "Player message" })).toBeEmptyDOMElement();
+      fireEvent.click(screen.getByRole("button", { name: "Info" }));
+      expect(screen.getByRole("region", { name: "Player information" })).toHaveTextContent("Original file");
     });
 
     it("says the server is converting, with the reason and burned-in subtitles", async () => {
@@ -852,9 +875,10 @@ describe("System media controls", () => {
         createPlaybackPlan: vi.fn().mockResolvedValue(converted("Transcode", ["ContainerBitrateExceedsLimit"], true)),
       }), engine);
       await startPlaying(engine);
-      const chip = screen.getByRole("status");
+      const chip = screen.getByRole("button", { name: /Converting on server/ });
       expect(chip).toHaveTextContent("Converting on server: the file is over your streaming limit");
       expect(chip).toHaveTextContent("Subtitles are burned in");
+      expect(screen.getByRole("status", { name: "Player message" })).toHaveTextContent("Subtitles are burned in");
       fireEvent.click(screen.getByRole("button", { name: "Info" }));
       expect(screen.getByRole("region", { name: "Player information" })).toHaveTextContent("the file is over your streaming limit");
     });
@@ -875,13 +899,16 @@ describe("System media controls", () => {
         });
         await renderPlayer(gateway, engine);
         await startPlaying(engine);
-        expect(screen.getByRole("status")).toHaveTextContent("Converting on server: the server needs to convert this file");
+        expect(chipButton()).toHaveTextContent("Converting on server: the server needs to convert this file");
         await act(async () => {
           await vi.advanceTimersByTimeAsync(3_000);
         });
-        await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(
+        await waitFor(() => expect(chipButton()).toHaveTextContent(
           "Repackaging on server, original quality: playing the original file failed",
         ));
+        expect(screen.getByRole("status", { name: "Player message" })).toHaveTextContent(
+          "Repackaging on server, original quality: playing the original file failed",
+        );
         fireEvent.click(screen.getByRole("button", { name: "Info" }));
         expect(screen.getByRole("region", { name: "Player information" })).toHaveTextContent("Direct stream");
         expect(gateway.sessionPlayMethod).toHaveBeenCalledWith(expect.objectContaining({ itemId: "m1" }), expect.any(AbortSignal));
@@ -899,7 +926,7 @@ describe("System media controls", () => {
           await vi.advanceTimersByTimeAsync(11_000);
         });
         expect(gateway.sessionPlayMethod).toHaveBeenCalledTimes(2);
-        expect(screen.getByRole("status")).toHaveTextContent("Converting on server: playing the original file failed");
+        expect(chipButton()).toHaveTextContent("Converting on server: playing the original file failed");
       });
     });
 
@@ -909,7 +936,7 @@ describe("System media controls", () => {
         createPlaybackPlan: vi.fn().mockResolvedValue(converted("DirectStream", ["ContainerNotSupported"])),
       }), engine);
       await startPlaying(engine);
-      expect(screen.getByRole("status")).toHaveTextContent(
+      expect(chipButton()).toHaveTextContent(
         "Repackaging on server, original quality: the file format is not supported here",
       );
       expect(screen.queryByText("Subtitles are burned in")).not.toBeInTheDocument();

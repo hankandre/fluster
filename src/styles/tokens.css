@@ -71,6 +71,17 @@
   --hit-min: 44px;
   --search-field-h: 64px;
   --suggestion-art-w: 40px;
+  --player-sheet-w: 420px;
+  --player-play-disc: 56px;
+  --player-status-disc: 64px;
+  --scrub-track-h: 4px;
+  --scrub-track-h-active: 8px;
+  --scrub-thumb: 16px;
+  --scrub-gap: 2px;
+  --scrub-preview-w: 320px;
+  --volume-slider-w: 110px;
+  --scrim-player-top-h: 160px;
+  --scrim-player-bottom-h: 240px;
 
   /* Shape */
   --radius-xs: 4px;
@@ -127,6 +138,8 @@
   --hit-min: 64px;
   --search-field-h: 96px;
   --suggestion-art-w: 60px;
+  --player-sheet-w: 33vw;
+  --scrub-preview-w: 384px;
   --type-meta: 500 0.9375rem / 1.35 var(--font-ui);
   --lift: scale(1.08);
 }
