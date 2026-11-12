@@ -75,7 +75,7 @@ const SHIP = {
 const denied = (result) => (result && result.deniedCommands && result.deniedCommands.length ? result.deniedCommands : null);
 const numbered = (list) => list.map((item, i) => `${i + 1}. ${item}`).join('\n');
 const VERIFY_STEPS =
-  'Run the verify skill before you return: mise exec -- pnpm check, then pnpm test:e2e with FLUSTER_E2E_PORT set to a free port; if the diff against origin/main touches src/features/ or src/styles/, also pnpm test:visual with FLUSTER_VISUAL_PORT set to a free port. Return checksPassed, the evidence (commands with their result lines), and each failure with file:line.';
+  'Run the verify skill before you return: mise exec -- pnpm check, then pnpm test:e2e with FLUSTER_E2E_PORT set to a free port; if the diff against origin/main touches src/features/ or src/styles/, also pnpm test:visual with FLUSTER_VISUAL_PORT set to a free port. Never run pkill or killall: stop only processes you started, with TaskStop or their own PID, and pick a fresh port instead of clearing a busy one. If a test fails, rerun it alone with --repeat-each 5 and on origin/main before blaming or fixing the change, and say which in the evidence. Return checksPassed, the evidence (commands with their result lines), and each failure with file:line.';
 
 async function runTask(task, opts) {
   const highRisk = opts.risk === 'high';
