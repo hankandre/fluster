@@ -23,22 +23,28 @@ export function inEndWindow(
   return positionSeconds >= cardStartSeconds(durationSeconds, outroStartSeconds);
 }
 
-// secondsLeft is undefined while the card is hidden.
+// secondsLeft is undefined while the card is hidden. dismissed is set by Hide
+// and lasts for the session: the card does not come back and nothing advances.
 export interface AutoPlayState {
   secondsLeft: number | undefined;
+  dismissed: boolean;
 }
 
 export type AutoPlayAction =
   | { type: "window"; inWindow: boolean }
-  | { type: "tick" };
+  | { type: "tick" }
+  | { type: "hide" };
 
 export function autoPlayReducer(state: AutoPlayState, action: AutoPlayAction): AutoPlayState {
   switch (action.type) {
     case "window":
-      if (!action.inWindow) return state.secondsLeft === undefined ? state : { secondsLeft: undefined };
-      return state.secondsLeft === undefined ? { secondsLeft: AUTO_PLAY_SECONDS } : state;
+      if (state.dismissed) return state;
+      if (!action.inWindow) return state.secondsLeft === undefined ? state : { ...state, secondsLeft: undefined };
+      return state.secondsLeft === undefined ? { ...state, secondsLeft: AUTO_PLAY_SECONDS } : state;
     case "tick":
       if (state.secondsLeft === undefined) return state;
-      return { secondsLeft: Math.max(0, state.secondsLeft - 1) };
+      return { ...state, secondsLeft: Math.max(0, state.secondsLeft - 1) };
+    case "hide":
+      return { secondsLeft: undefined, dismissed: true };
   }
 }

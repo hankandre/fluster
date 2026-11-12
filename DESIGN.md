@@ -122,6 +122,9 @@ Rules: sentence case everywhere (no uppercase-tracked labels, no eyebrow or kick
 | `--shadow-sheet` | `0 28px 72px -16px rgb(0 0 0 / .75)` | Sheets, dialogs, Up Next |
 | `--scrim-hero` | `linear-gradient(90deg, rgb(11 12 14 / .94) 0%, rgb(11 12 14 / .72) 38%, rgb(11 12 14 / 0) 72%)` | Text side of backdrops |
 | `--scrim-floor` | `linear-gradient(0deg, var(--surface-0) 0%, rgb(11 12 14 / 0) 40%)` | Backdrop fading into the page |
+| `--skip-fill` | `color-mix(in srgb, var(--text-1) 92%, transparent)` | SkipButton pill |
+| `--up-next-surface` | `color-mix(in srgb, var(--surface-1) 96%, transparent)` | Up Next card |
+| `--up-next-fill` | `color-mix(in srgb, var(--on-light) 14%, transparent)` | Countdown fill on Play now |
 | `--surface-0-glass` | `color-mix(in srgb, var(--surface-0) 92%, transparent)` | Nav bar fill (blur is `--blur-nav`, P13-08) |
 | `--scrim-player-top` | `linear-gradient(180deg, rgb(0 0 0 / .72), rgb(0 0 0 / 0))` (160 px) | Player title zone |
 | `--scrim-player-bottom` | `linear-gradient(0deg, rgb(0 0 0 / .85), rgb(0 0 0 / 0))` (240 px) | Player controls zone |
@@ -295,8 +298,8 @@ Idle: the chrome hides 3 s after the last input while playing. It never hides wh
 
 ### 7.15 Skip and Up Next
 
-- **`SkipButton`**: a pill (`--text-1` at 92% fill, `--on-light` text, skip icon) at the bottom right, above the scrubber's position. It sits higher when the chrome is visible. It appears with a fade when an Intro or Outro segment is active and stays until the segment ends. Desktop: never takes focus (as today), and the `s` key activates it. TV: while the chrome is hidden, OK activates the visible Skip and arrows wake the chrome (decision 4).
-- **`UpNextCard`**: bottom right, 400 px (TV 560), `--surface-1` at 96% with `--shadow-sheet` and `--radius-sheet`. It shows the next episode's 16:9 still (with series poster fallback), "Up next · S1 · E2", the title, then **Play now** (primary, with the countdown drawn as a fill sweeping the button over the remaining seconds) and **Hide** (quiet; cancels autoplay, as today's Cancel). Text is announced once on appear ("Up next: The Keeper's Log, playing in 10 seconds") and again at 5 s, not every second.
+- **`SkipButton`**: a pill (`--text-1` at 92% fill, `--on-light` text, skip icon) at the bottom right, above the scrubber's position. It sits higher when the chrome is visible. It appears with a fade when an Intro or Outro segment is active and stays until the segment ends. Desktop: never takes focus (as today), and the `s` key activates it. The Outro's Skip credits is not offered when a next episode exists; Up Next takes its place (Q19 A). TV: while the chrome is hidden, OK activates the visible Skip, else Play now on a visible Up Next card; arrows wake the chrome (decision 4, P13-18).
+- **`UpNextCard`**: bottom right, 400 px (TV 560), `--surface-1` at 96% with `--shadow-sheet` and `--radius-sheet`. It shows the next episode's 16:9 still (with series poster fallback), "Up next · S1 · E2", the title, then **Play now** (primary, with the countdown drawn as a fill sweeping the button over the remaining seconds) and **Hide** (quiet; dismisses the card for this session and cancels autoplay while playback continues; at the end of the file the player opens the series page). Text is announced once on appear ("Up next: The Keeper's Log, playing in 10 seconds") and again at 5 s, not every second. `n` activates Play now. With reduced motion, Play now has no fill and the card shows "Playing in N seconds".
 
 ### 7.16 Notices, dialogs, toasts
 
@@ -411,6 +414,9 @@ A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings
   --search-field-h: 64px;
   --suggestion-art-w: 40px;
   --player-sheet-w: 420px; --player-play-disc: 56px; --player-status-disc: 64px;
+  --up-next-w: 400px; /* TV 560px */
+  --player-prompt-inset: var(--space-8); /* Skip and Up Next, chrome hidden */
+  --player-prompt-inset-chrome: calc(var(--space-5) * 2 + var(--hit-min) * 2 + var(--space-3) * 2); /* chrome visible: clears the footer */
   --scrub-track-h: 4px; --scrub-track-h-active: 8px; --scrub-thumb: 16px; --scrub-gap: 2px;
   --scrub-preview-w: 320px; --volume-slider-w: 110px;
   --scrim-player-top-h: 160px; --scrim-player-bottom-h: 240px;
@@ -471,6 +477,7 @@ A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings
   --search-field-h: 96px;
   --suggestion-art-w: 60px;
   --player-sheet-w: 33vw;
+  --up-next-w: 560px;
   --scrub-preview-w: 384px;
   --type-meta: 500 0.9375rem / 1.35 var(--font-ui);
   --lift: scale(1.08);
@@ -512,8 +519,9 @@ A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings
 | Player | `m` / `f` / `c` | Mute / fullscreen / cycle subtitles | Exists, gains OSD feedback |
 | Player | `i` | Info sheet | Exists, restyled |
 | Player | `a` | Audio & Subtitles panel | P13-13 |
-| Player | `s` | Activate the visible Skip | New in P13 |
-| Player | `n` | Play now on the Up Next card | New in P13 |
+| Player | `s` | Activate the visible Skip | Exists (P13-14) |
+| Player | `n` | Play now on the Up Next card | Exists (P13-14) |
+| Player (TV form) | Enter (OK) | Skip, else Play now, while the chrome is hidden | P13-14 |
 | Player | Home / End, 0–9 | Start / end, jump to 0–90% | P13-13 |
 
 **Idle hiding.** See §7.14. Home's ambient backdrop follows focus only after a 300 ms dwell, so fast scrolling doesn't flicker.

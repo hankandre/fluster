@@ -72,6 +72,10 @@
   --search-field-h: 64px;
   --suggestion-art-w: 40px;
   --player-sheet-w: 420px;
+  --up-next-w: 400px;
+  --player-prompt-inset: var(--space-8);
+  /* Clears the control footer: its padding, scrubber, and control row, plus a gap. */
+  --player-prompt-inset-chrome: calc(var(--space-5) * 2 + var(--hit-min) * 2 + var(--space-3) * 2);
   --player-play-disc: 56px;
   --player-status-disc: 64px;
   --scrub-track-h: 4px;
@@ -95,6 +99,9 @@
   --shadow-sheet: 0 28px 72px -16px rgb(0 0 0 / 0.75);
   --scrim-hero: linear-gradient(90deg, rgb(11 12 14 / 0.94) 0%, rgb(11 12 14 / 0.72) 38%, rgb(11 12 14 / 0) 72%);
   --scrim-floor: linear-gradient(0deg, var(--surface-0) 0%, rgb(11 12 14 / 0) 40%);
+  --skip-fill: color-mix(in srgb, var(--text-1) 92%, transparent);
+  --up-next-surface: color-mix(in srgb, var(--surface-1) 96%, transparent);
+  --up-next-fill: color-mix(in srgb, var(--on-light) 14%, transparent);
   --surface-0-glass: color-mix(in srgb, var(--surface-0) 92%, transparent);
   --scrim-nav: linear-gradient(180deg, rgb(11 12 14 / 0.85) 0%, rgb(11 12 14 / 0.85) 50%, rgb(11 12 14 / 0) 100%);
   --blur-nav: 16px;
@@ -139,6 +146,7 @@
   --search-field-h: 96px;
   --suggestion-art-w: 60px;
   --player-sheet-w: 33vw;
+  --up-next-w: 560px;
   --scrub-preview-w: 384px;
   --type-meta: 500 0.9375rem / 1.35 var(--font-ui);
   --lift: scale(1.08);

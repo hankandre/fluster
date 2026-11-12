@@ -275,6 +275,60 @@ test("skip buttons appear inside the intro and the credits and seek to the segme
   await expect(page.getByRole("button", { name: /Skip/ })).toHaveCount(0);
 });
 
+function startWithSegments(page: Page) {
+  return startArrival(page, true, { hasSegments: true, segments: introAndOutro });
+}
+
+const currentTime = (page: Page) => page.locator("video").evaluate((video: HTMLVideoElement) => video.currentTime);
+
+async function hideChrome(page: Page) {
+  await page.mouse.move(5, 5);
+  await page.mouse.move(8, 8);
+  await expect(page.locator(".player-chrome")).toHaveAttribute("data-visible", "false", { timeout: 6_000 });
+}
+
+test("s skips the intro", async ({ page }) => {
+  await startWithSegments(page);
+  await moveTo(page, 30);
+  await expect(page.getByRole("button", { name: "Skip intro" })).toBeVisible();
+  await page.keyboard.press("s");
+  await expect.poll(() => currentTime(page)).toBe(70);
+});
+
+test("Skip sits above the scrubber with the chrome up and lower once it hides", async ({ page }) => {
+  await startWithSegments(page);
+  await moveTo(page, 30);
+  const skip = page.getByRole("button", { name: "Skip intro" });
+  await expect(skip).toBeVisible();
+  await page.mouse.move(700, 400);
+  await page.mouse.move(720, 410);
+  await expect(page.locator(".player-chrome")).toHaveAttribute("data-visible", "true");
+
+  const slider = page.getByRole("slider", { name: "Playback position" });
+  await expect.poll(async () => {
+    const [skipBox, sliderBox] = await Promise.all([skip.boundingBox(), slider.boundingBox()]);
+    return skipBox && sliderBox ? sliderBox.y - (skipBox.y + skipBox.height) : -1;
+  }).toBeGreaterThan(0);
+  const raised = await skip.boundingBox();
+
+  await hideChrome(page);
+  await expect.poll(async () => (await skip.boundingBox())?.y ?? 0).toBeGreaterThan((raised?.y ?? 0) + 20);
+});
+
+test("on the TV form OK skips while the chrome is hidden; on desktop it does nothing", async ({ page }) => {
+  await startWithSegments(page);
+  await moveTo(page, 30);
+  await expect(page.getByRole("button", { name: "Skip intro" })).toBeVisible();
+  await hideChrome(page);
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(300);
+  expect(await currentTime(page)).toBe(30);
+
+  await page.evaluate(() => { document.documentElement.dataset.form = "tv"; });
+  await page.keyboard.press("Enter");
+  await expect.poll(() => currentTime(page)).toBe(70);
+});
+
 test("a version without segments never asks for them and shows no skip button", async ({ page }) => {
   const log = await mockPlayerServer(page, { hasSegments: false, segments: introAndOutro });
   await openArrival(page);
@@ -322,8 +376,8 @@ test("the Info panel toggles with its button and the i key and shows no ids or U
 });
 
 // trackPaused makes the file-less <video> remember pause and play, as keyboard.spec.ts does.
-async function startArrival(page: Page, trackPaused = false) {
-  await mockPlayerServer(page);
+async function startArrival(page: Page, trackPaused = false, serverOptions: Parameters<typeof mockPlayerServer>[1] = {}) {
+  await mockPlayerServer(page, serverOptions);
   if (trackPaused) {
     await page.addInitScript(() => {
       const paused = new WeakMap<HTMLMediaElement, boolean>();

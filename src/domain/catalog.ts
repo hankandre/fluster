@@ -249,8 +249,10 @@ export class ItemNotFoundError extends Error {
 export interface NextEpisode {
   id: string;
   title: string;
-  // For example "S1E2"; absent when the server sent no numbers.
+  // For example "S1 · E2"; absent when the server sent no numbers.
   label?: string;
+  // The still shown on the Up Next card: the episode's Primary, else the series poster.
+  image?: ImageRef;
 }
 
 export interface ItemDetail {

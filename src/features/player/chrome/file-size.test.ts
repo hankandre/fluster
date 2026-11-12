@@ -28,7 +28,7 @@ describe("player chrome file size", () => {
     });
   }
 
-  it("has the eight named parts", () => {
+  it("has the named parts", () => {
     for (const part of [
       "player-top-bar.tsx",
       "scrubber.tsx",
@@ -39,6 +39,8 @@ describe("player chrome file size", () => {
       "osd.tsx",
       "player-status.tsx",
       "player-loading.tsx",
+      "skip-button.tsx",
+      "up-next-card.tsx",
     ]) {
       expect(existsSync(join(chromeDir, part)), part).toBe(true);
     }

@@ -56,23 +56,23 @@ describe("inEndWindow", () => {
 });
 
 describe("autoPlayReducer", () => {
-  const idle: AutoPlayState = { secondsLeft: undefined };
+  const idle: AutoPlayState = { secondsLeft: undefined, dismissed: false };
 
   it("starts the countdown when the window is entered", () => {
-    expect(autoPlayReducer(idle, { type: "window", inWindow: true })).toEqual({ secondsLeft: AUTO_PLAY_SECONDS });
+    expect(autoPlayReducer(idle, { type: "window", inWindow: true })).toEqual({ secondsLeft: AUTO_PLAY_SECONDS, dismissed: false });
   });
 
   it("keeps counting when the window is reported again", () => {
-    expect(autoPlayReducer({ secondsLeft: 4 }, { type: "window", inWindow: true })).toEqual({ secondsLeft: 4 });
+    expect(autoPlayReducer({ secondsLeft: 4, dismissed: false }, { type: "window", inWindow: true })).toEqual({ secondsLeft: 4, dismissed: false });
   });
 
   it("hides the card when the viewer seeks out of the window", () => {
-    expect(autoPlayReducer({ secondsLeft: 4 }, { type: "window", inWindow: false })).toEqual(idle);
+    expect(autoPlayReducer({ secondsLeft: 4, dismissed: false }, { type: "window", inWindow: false })).toEqual(idle);
   });
 
   it("counts down one second per tick and stops at zero", () => {
-    expect(autoPlayReducer({ secondsLeft: 3 }, { type: "tick" })).toEqual({ secondsLeft: 2 });
-    expect(autoPlayReducer({ secondsLeft: 0 }, { type: "tick" })).toEqual({ secondsLeft: 0 });
+    expect(autoPlayReducer({ secondsLeft: 3, dismissed: false }, { type: "tick" })).toEqual({ secondsLeft: 2, dismissed: false });
+    expect(autoPlayReducer({ secondsLeft: 0, dismissed: false }, { type: "tick" })).toEqual({ secondsLeft: 0, dismissed: false });
   });
 
   it("ignores ticks while hidden", () => {
@@ -80,7 +80,18 @@ describe("autoPlayReducer", () => {
   });
 
   it("restarts from the full countdown after seeking back in", () => {
-    const hidden = autoPlayReducer({ secondsLeft: 2 }, { type: "window", inWindow: false });
-    expect(autoPlayReducer(hidden, { type: "window", inWindow: true })).toEqual({ secondsLeft: AUTO_PLAY_SECONDS });
+    const hidden = autoPlayReducer({ secondsLeft: 2, dismissed: false }, { type: "window", inWindow: false });
+    expect(autoPlayReducer(hidden, { type: "window", inWindow: true })).toEqual({ secondsLeft: AUTO_PLAY_SECONDS, dismissed: false });
+  });
+
+  it("hide clears the countdown and dismisses the card", () => {
+    expect(autoPlayReducer({ secondsLeft: 4, dismissed: false }, { type: "hide" })).toEqual({ secondsLeft: undefined, dismissed: true });
+  });
+
+  it("stays hidden when the window is entered again after hide", () => {
+    const dismissed = autoPlayReducer({ secondsLeft: 4, dismissed: false }, { type: "hide" });
+    expect(autoPlayReducer(dismissed, { type: "window", inWindow: true })).toEqual(dismissed);
+    expect(autoPlayReducer(dismissed, { type: "window", inWindow: false })).toEqual(dismissed);
+    expect(autoPlayReducer(dismissed, { type: "tick" })).toEqual(dismissed);
   });
 });

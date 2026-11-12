@@ -47,16 +47,17 @@ export function leaveToSeries(seriesId: string): void {
 export interface AutoPlayCountdown {
   // Undefined while the card is hidden.
   secondsLeft: number | undefined;
+  // True after Hide: no card and no advance for the rest of the session.
+  dismissed: boolean;
   playNow(): void;
-  cancel(): void;
+  hide(): void;
 }
 
 // Shows the card near the end of an episode and counts down one second at a
 // time (a timeout per tick, cleared on every change). Playing counts; paused
 // holds the countdown. At zero it advances.
-export function useAutoPlayCountdown({ next, seriesId, snapshot, outroStartSeconds, failed, advance, stopAndLeave }: {
+export function useAutoPlayCountdown({ next, snapshot, outroStartSeconds, failed, advance, stopAndLeave }: {
   next: NextEpisode | undefined;
-  seriesId: string | undefined;
   snapshot: PlaybackSnapshot | undefined;
   // Where the credits start, from the Outro media segment, when there is one.
   outroStartSeconds?: number;
@@ -67,7 +68,7 @@ export function useAutoPlayCountdown({ next, seriesId, snapshot, outroStartSecon
   advance(next: NextEpisode): void;
   stopAndLeave(destination: () => void): Promise<boolean>;
 }): AutoPlayCountdown {
-  const [state, dispatch] = useReducer(autoPlayReducer, { secondsLeft: undefined } satisfies AutoPlayState);
+  const [state, dispatch] = useReducer(autoPlayReducer, { secondsLeft: undefined, dismissed: false } satisfies AutoPlayState);
   const leaving = useRef(false);
   const position = snapshot?.positionSeconds ?? 0;
   const duration = snapshot?.durationSeconds;
@@ -90,9 +91,9 @@ export function useAutoPlayCountdown({ next, seriesId, snapshot, outroStartSecon
     if (next) go(() => advance(next));
   }, [go, next]);
 
-  const cancel = useCallback(() => {
-    if (seriesId) go(() => leaveToSeries(seriesId));
-  }, [go, seriesId]);
+  // Hide keeps playing and cancels the advance; the end of the file then
+  // leaves for the series page (see onLeave in the player).
+  const hide = useCallback(() => dispatch({ type: "hide" }), []);
 
   const secondsLeft = next && !failed ? state.secondsLeft : undefined;
   useEffect(() => {
@@ -105,5 +106,5 @@ export function useAutoPlayCountdown({ next, seriesId, snapshot, outroStartSecon
     return () => window.clearTimeout(timer);
   }, [secondsLeft, paused, playNow]);
 
-  return { secondsLeft, playNow, cancel };
+  return { secondsLeft, dismissed: state.dismissed, playNow, hide };
 }

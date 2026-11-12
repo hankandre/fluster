@@ -596,7 +596,13 @@ export class JellyfinGateway {
   async nextEpisode(seriesId: string, episodeId: string, signal?: AbortSignal): Promise<NextEpisode | undefined> {
     const { userId } = this.requireSession();
     const { data } = await this.get<ItemsResult>(`/Shows/${encodeURIComponent(seriesId)}/Episodes`, {
-      params: { userId, adjacentTo: episodeId, isMissing: false },
+      params: {
+        userId,
+        adjacentTo: episodeId,
+        isMissing: false,
+        imageTypeLimit: CARD_IMAGE_PARAMS.imageTypeLimit,
+        enableImageTypes: CARD_IMAGE_PARAMS.enableImageTypes,
+      },
       signal,
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });

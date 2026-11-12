@@ -3,7 +3,7 @@ import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 
 import type { LibraryItem } from "../domain/catalog";
 import type { PlayerEngine, PlayMethod } from "../domain/playback";
 import type { TrackKind } from "../domain/track-choice";
-import type { MediaSegment } from "../domain/media-segments";
+import { activeSegment, type MediaSegment } from "../domain/media-segments";
 import type { PlaybackSessionState } from "../lib/player/session-state";
 import { type ConversionIndicator } from "../features/player/conversion-copy";
 import type { ReadyPlayerStatus } from "../features/player/player-status";
@@ -15,6 +15,7 @@ import { PlayerLoading, type LoadingBackdrop } from "../features/player/chrome/p
 import { PlayerStatus } from "../features/player/chrome/player-status";
 import { PlayerTopBar, titleLine } from "../features/player/chrome/player-top-bar";
 import type { SeekChapter } from "../features/player/chrome/player-time";
+import { SkipButton } from "../features/player/chrome/skip-button";
 import { Scrubber } from "../features/player/chrome/scrubber";
 import { TrackPanel } from "../features/player/chrome/track-panel";
 import type { ConvertedTracks } from "../features/player/chrome/track-options";
@@ -25,7 +26,6 @@ import { useOsd } from "../features/player/chrome/use-osd";
 import { seekTarget, usePlayerKeys, type SheetName } from "../features/player/chrome/use-player-keys";
 import "../features/player/chrome/player.css";
 import { NativeVideoSurface } from "./NativeVideoSurface";
-import { SkipSegmentButton } from "./SkipSegmentButton";
 
 export type { SeekChapter };
 
@@ -54,6 +54,7 @@ export function PlayerView({
   playOriginal,
   backdrop,
   prompt,
+  onPlayNext,
 }: {
   item: LibraryItem;
   player: PlayerEngine;
@@ -85,6 +86,8 @@ export function PlayerView({
   backdrop?: LoadingBackdrop;
   // The Up Next card. It sits inside the player so focus in it keeps the chrome up.
   prompt?: ReactNode;
+  // Plays the next episode: `n`, and OK on the TV form. Set only while the Up Next card shows.
+  onPlayNext?(): void;
 }) {
   const [commandError, setCommandError] = useState<string>();
   const [sheet, setSheet] = useState<SheetName>();
@@ -133,6 +136,10 @@ export function PlayerView({
     setSheet("info");
   };
 
+  const playing = Boolean(snapshot && !snapshot.paused);
+  const visibility = useChromeVisibility({ playing, pinned: Boolean(error) || sheet !== undefined });
+  const skip = segments && snapshot ? activeSegment(segments, snapshot.positionSeconds) : undefined;
+
   usePlayerKeys({
     player,
     snapshot,
@@ -145,6 +152,9 @@ export function PlayerView({
     onToggleSheet: toggleSheet,
     onCloseSheet: closeSheet,
     showOsd: osd.show,
+    skipTo: skip?.endSeconds,
+    chromeVisible: visibility.visible,
+    onPlayNext,
   });
 
   // The conversion is announced at the start of every converted session, and
@@ -155,8 +165,6 @@ export function PlayerView({
     if (session.firstFrameReady && noticeText) showOsd(noticeText, "notice");
   }, [session.firstFrameReady, noticeText, showOsd]);
 
-  const playing = Boolean(snapshot && !snapshot.paused);
-  const visibility = useChromeVisibility({ playing, pinned: Boolean(error) || sheet !== undefined });
   const chromeShown = session.firstFrameReady || Boolean(error);
 
   return (
@@ -219,14 +227,27 @@ export function PlayerView({
         <PlayerWarnings softwareDecoding={snapshot?.diagnostics?.decodeMode === "software"} reportingWarning={session.reportingWarning} />
       )}
 
-      {segments && snapshot && (
-        <SkipSegmentButton
-          segments={segments}
-          positionSeconds={snapshot.positionSeconds}
-          onSeek={(seconds) => void execute(() => player.seek(seconds))}
-        />
+      {skip && (
+        <div
+          className="player-skip"
+          data-chrome-visible={visibility.visible}
+          data-sheet-open={sheet !== undefined || undefined}
+          {...{ [CHROME_ZONE_ATTRIBUTE]: "" }}
+        >
+          <SkipButton segment={skip} onSkip={(seconds) => void execute(() => player.seek(seconds))} />
+        </div>
       )}
-      {prompt && <div className="player-prompt" {...{ [CHROME_ZONE_ATTRIBUTE]: "" }}>{prompt}</div>}
+      {prompt && (
+        <div
+          className="player-prompt"
+          data-chrome-visible={visibility.visible}
+          data-sheet-open={sheet !== undefined || undefined}
+          data-with-skip={skip ? "" : undefined}
+          {...{ [CHROME_ZONE_ATTRIBUTE]: "" }}
+        >
+          {prompt}
+        </div>
+      )}
 
       {sheet === "tracks" && (
         <TrackPanel

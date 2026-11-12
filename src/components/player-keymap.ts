@@ -11,6 +11,10 @@ export type PlayerKeyAction =
   | { kind: "seek-to"; fraction: number }
   | { kind: "open-tracks" }
   | { kind: "toggle-info" }
+  | { kind: "skip" }
+  | { kind: "play-next" }
+  // OK on a TV remote: acts only in the TV form while the chrome is hidden.
+  | { kind: "ok" }
   | { kind: "escape" };
 
 export interface PlayerKeyInput {
@@ -76,6 +80,12 @@ function actionFor(key: string): PlayerKeyAction | undefined {
       return { kind: "open-tracks" };
     case "i":
       return { kind: "toggle-info" };
+    case "s":
+      return { kind: "skip" };
+    case "n":
+      return { kind: "play-next" };
+    case "Enter":
+      return { kind: "ok" };
     case "Escape":
       return { kind: "escape" };
     default:

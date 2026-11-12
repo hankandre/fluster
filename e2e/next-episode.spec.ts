@@ -24,10 +24,14 @@ function episode(id: string, name: string, number: number) {
     ParentIndexNumber: 1,
     IndexNumber: number,
     RunTimeTicks: 250_000_000,
+    ImageTags: { Primary: `tag-${id}` },
     MediaSources: [source(id)],
     UserData: { Played: false, IsFavorite: false, PlaybackPositionTicks: 0 },
   };
 }
+
+// A 1x1 PNG, so the still loads and nothing 404s.
+const PIXEL = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
 
 interface ServerLog {
   playbackInfo: Array<{ itemId: string; body: Record<string, unknown> }>;
@@ -83,6 +87,9 @@ async function mockServer(page: Page): Promise<ServerLog> {
     if (/^\/Videos\/ep-\d\/stream$/.test(url.pathname)) {
       return route.fulfill({ status: 200, headers: cors, contentType: "video/mp4", body: "" });
     }
+    if (/^\/Items\/ep-\d\/Images\/Primary$/.test(url.pathname)) {
+      return route.fulfill({ status: 200, headers: cors, contentType: "image/png", body: PIXEL });
+    }
     switch (url.pathname) {
       case "/System/Info/Public":
         return json({ ServerName: "Testfin", Version: "10.11.7", Id: "server-1" });
@@ -133,8 +140,10 @@ test("the countdown near the end of an episode starts the next one with a fresh 
   await playFirstEpisode(page);
 
   const card = page.getByLabel("Up next");
-  await expect(card).toContainText("S1E2 Second");
-  await expect(card.getByRole("status")).toContainText(/Playing in \d+ s/);
+  await expect(card).toContainText("Up next · S1 · E2");
+  await expect(card).toContainText("Second");
+  await expect(card.getByRole("status")).toContainText(/playing in 10 seconds/i);
+  await expect(card.locator("img")).toHaveAttribute("src", /\/Items\/ep-2\/Images\/Primary/);
   // StrictMode may repeat the lookup in dev; it is always for the episode playing.
   expect(new Set(log.nextLookups)).toEqual(new Set(["ep-1"]));
 
@@ -150,11 +159,21 @@ test("the countdown near the end of an episode starts the next one with a fresh 
   expect(log.stopped[0]).toMatchObject({ PlaySessionId: "play-ep-1-1", Failed: false });
 });
 
-test("Cancel stops the episode and returns to the series", async ({ page }) => {
+test("Hide keeps playing, never advances, and the end returns to the series", async ({ page }) => {
+  test.setTimeout(30_000);
   const log = await mockServer(page);
   await playFirstEpisode(page);
 
-  await page.getByLabel("Up next").getByRole("button", { name: "Cancel" }).click();
+  await page.getByLabel("Up next").getByRole("button", { name: "Hide" }).click();
+  await expect(page.getByLabel("Up next")).toHaveCount(0);
+
+  // Past the length of the countdown: nothing stops, nothing advances.
+  await page.waitForTimeout(12_000);
+  await expect(page).toHaveURL(/#\/next\/play\/ep-1$/);
+  expect(log.stopped).toHaveLength(0);
+  expect(log.playbackInfo.map((entry) => entry.itemId)).toEqual(["ep-1"]);
+
+  await page.locator("video").dispatchEvent("ended");
 
   await expect(page).toHaveURL(/#\/next\/series\/series-1$/);
   await expect(page.getByRole("tab", { name: "Season 1" })).toBeVisible();
@@ -163,4 +182,38 @@ test("Cancel stops the episode and returns to the series", async ({ page }) => {
   await expect.poll(() => log.stopped.length).toBe(1);
   expect(log.stopped[0]).toMatchObject({ PlaySessionId: "play-ep-1-1" });
   expect(log.playbackInfo.map((entry) => entry.itemId)).toEqual(["ep-1"]);
+});
+
+test("n plays the next episode with a fresh play session", async ({ page }) => {
+  const log = await mockServer(page);
+  await playFirstEpisode(page);
+  await expect(page.getByLabel("Up next")).toBeVisible();
+
+  await page.keyboard.press("n");
+
+  await expect(page).toHaveURL(/#\/next\/play\/ep-2$/);
+  await expect.poll(() => log.playbackInfo.map((entry) => entry.itemId)).toEqual(["ep-1", "ep-2"]);
+});
+
+test("without reduced motion the countdown is a fill and the text is hidden", async ({ page }) => {
+  await mockServer(page);
+  await playFirstEpisode(page);
+  const card = page.getByLabel("Up next");
+  await expect(card).toBeVisible();
+
+  const fill = card.locator(".up-next-fill");
+  expect(await fill.evaluate((element) => getComputedStyle(element).display)).not.toBe("none");
+  expect(await fill.evaluate((element) => getComputedStyle(element).animationName)).toBe("up-next-fill");
+  // The text stays in the page for assistive technology, clipped away from view.
+  expect(await card.locator(".up-next-countdown").evaluate((element) => getComputedStyle(element).clip)).toMatch(/rect\(0px, 0px, 0px, 0px\)/);
+});
+
+test("with reduced motion the countdown is text only", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await mockServer(page);
+  await playFirstEpisode(page);
+  const card = page.getByLabel("Up next");
+
+  await expect(card.getByText(/^Playing in \d+ seconds?$/)).toBeVisible();
+  expect(await card.locator(".up-next-fill").evaluate((element) => getComputedStyle(element).display)).toBe("none");
 });

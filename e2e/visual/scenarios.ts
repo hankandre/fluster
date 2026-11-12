@@ -49,6 +49,14 @@ async function play(page: Page, itemHash: string): Promise<void> {
   await page.waitForTimeout(300);
 }
 
+// Moves the browser player's clock and tells the app.
+async function seekPlayerTo(page: Page, seconds: number): Promise<void> {
+  await page.locator("video").evaluate((video, position) => {
+    (video as HTMLVideoElement).currentTime = position;
+    video.dispatchEvent(new Event("timeupdate"));
+  }, seconds);
+}
+
 // The search page with suggestions for "the" showing.
 async function searchHints(page: Page): Promise<void> {
   await signedInAt(page, "#/next/search");
@@ -332,6 +340,35 @@ export const scenarios: Scenario[] = [
     await page.waitForTimeout(300);
   } },
   { name: "55-player-next-episode", opts: { duration: 25, short: true }, run: async (page) => {
+    await play(page, "#/next/item/ep-1");
+    await page.getByRole("complementary", { name: "Up next" }).waitFor({ timeout: 8_000 });
+    await page.waitForTimeout(300);
+  } },
+  { name: "54a-player-skip-hidden-chrome", opts: { segments: intro }, run: async (page) => {
+    await play(page, "#/next/item/m4");
+    await seekPlayerTo(page, 20);
+    await page.getByRole("button", { name: "Skip intro" }).waitFor();
+    await page.mouse.move(5, 5);
+    await page.mouse.move(8, 8);
+    await page.waitForTimeout(3_400);
+  } },
+  { name: "54b-player-skip-sheet-open", opts: { segments: intro }, run: async (page) => {
+    await play(page, "#/next/item/m4");
+    await seekPlayerTo(page, 20);
+    await page.getByRole("button", { name: "Skip intro" }).waitFor();
+    await page.getByRole("button", { name: "Audio & Subtitles" }).click();
+    await page.getByRole("region", { name: "Audio and subtitles" }).waitFor();
+    await page.waitForTimeout(500);
+  } },
+  { name: "55a-player-next-episode-chrome", opts: { duration: 25, short: true }, run: async (page) => {
+    await play(page, "#/next/item/ep-1");
+    await page.getByRole("complementary", { name: "Up next" }).waitFor({ timeout: 8_000 });
+    await page.mouse.move(700, 400);
+    await page.mouse.move(720, 410);
+    await page.waitForTimeout(500);
+  } },
+  { name: "55b-player-next-episode-reduced-motion", opts: { duration: 25, short: true }, run: async (page) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await play(page, "#/next/item/ep-1");
     await page.getByRole("complementary", { name: "Up next" }).waitFor({ timeout: 8_000 });
     await page.waitForTimeout(300);

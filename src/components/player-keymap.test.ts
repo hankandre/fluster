@@ -127,4 +127,28 @@ describe("playerKeyAction", () => {
     expect(press("ArrowRight", { target })).toEqual({ kind: "seek-by", seconds: 10 });
     expect(press("Escape", { target })).toEqual({ kind: "escape" });
   });
+
+  it("maps s to skip, n to play-next, and Enter to ok", () => {
+    expect(press("s")).toEqual({ kind: "skip" });
+    expect(press("S")).toEqual({ kind: "skip" });
+    expect(press("n")).toEqual({ kind: "play-next" });
+    expect(press("N")).toEqual({ kind: "play-next" });
+    expect(press("Enter")).toEqual({ kind: "ok" });
+  });
+
+  it("gives Enter to the focused control, except a slider", () => {
+    expect(press("Enter", { target: element("<button>Go</button>") })).toBeUndefined();
+    expect(press("Enter", { target: element('<a href="#x">Go</a>') })).toBeUndefined();
+    expect(press("Enter", { target: element('<ul role="listbox"><li role="option" id="o">A</li></ul>').firstElementChild })).toBeUndefined();
+    expect(press("Enter", { target: element('<input type="text">') })).toBeUndefined();
+    expect(press("Enter", { target: element('<input type="range">') })).toEqual({ kind: "ok" });
+  });
+
+  it("does not repeat skip, play-next, or ok, and ignores modified keys", () => {
+    expect(press("s", { repeat: true })).toBeUndefined();
+    expect(press("n", { repeat: true })).toBeUndefined();
+    expect(press("Enter", { repeat: true })).toBeUndefined();
+    expect(press("s", { ctrlKey: true })).toBeUndefined();
+    expect(press("n", { metaKey: true })).toBeUndefined();
+  });
 });
