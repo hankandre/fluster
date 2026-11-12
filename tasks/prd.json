@@ -2115,10 +2115,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "in_progress",
+          "status": "done",
           "owner": "claude-code (task/P13-20)",
-          "passes": false,
-          "evidence": "Implemented on branch task/P13-20 (spec docs/specs/P13-20.md). pnpm check green (145 files, 1890 tests); pnpm test:e2e 118 passed; pnpm test:visual 203 passed (43a/43b/43c/83 captured at 1440x900 and 1920x1080). Pending: design review, PR."
+          "passes": true,
+          "evidence": "Branch task/P13-20 (spec docs/specs/P13-20.md). pnpm check green (145 files, 1890 tests, Rust 183 passed); pnpm test:e2e 118 passed; pnpm test:visual 203 passed (43a/43b/43c/83 at 1440x900 and 1920x1080). Fresh-context design review passed with 3 lows logged in plan 002. Screenshots to be linked in the PR."
         },
         {
           "id": "P13-17",
