@@ -178,7 +178,7 @@ export function PlayerView({
         <div className="player-chrome" data-visible={visibility.visible}>
           <div className="player-shade" />
           <PlayerTopBar item={item} indicator={retrying ? undefined : indicator} onBack={() => void onBack()} onOpenInfo={openInfoFromChip} />
-          <footer className="player-controls" {...{ [CHROME_ZONE_ATTRIBUTE]: "" }}>
+          <footer className="player-controls" data-sheet-open={sheet !== undefined || undefined} {...{ [CHROME_ZONE_ATTRIBUTE]: "" }}>
             <Scrubber
               snapshot={snapshot}
               onSeek={(seconds) => void execute(() => player.seek(seconds))}

@@ -45,6 +45,9 @@
     padding: var(--space-5) var(--gutter);
     transform: translateY(var(--space-2));
   }
+  /* An open sheet owns the right edge: the control row stops at its edge so
+     no button sits under it and focus never lands on a covered control. */
+  .player-controls[data-sheet-open] { padding-right: calc(var(--player-sheet-w) + var(--space-5)); }
   .player-chrome[data-visible="true"] .player-top-bar,
   .player-chrome[data-visible="true"] .player-controls {
     opacity: 1;
