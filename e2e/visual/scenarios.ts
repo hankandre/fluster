@@ -295,6 +295,24 @@ export const scenarios: Scenario[] = [
   { name: "41-detail-movie-fullpage", fullPage: true, run: (page) => signedInAt(page, "#/next/item/m1", 1_000) },
   { name: "42-detail-resume", run: (page) => signedInAt(page, "#/next/item/m2", 1_000) },
   { name: "43-detail-played-favorite", run: (page) => signedInAt(page, "#/next/item/m3", 1_000) },
+  { name: "43a-detail-watched-toast", run: async (page) => {
+    await signedInAt(page, "#/next/item/m1", 1_000);
+    await page.getByRole("button", { name: "Watched" }).click();
+    await page.getByText("Marked as watched.").waitFor();
+    await page.waitForTimeout(300);
+  } },
+  { name: "43b-detail-watched-error", opts: { flagError: true }, run: async (page) => {
+    await signedInAt(page, "#/next/item/m1", 1_000);
+    await page.getByRole("button", { name: "Watched" }).click();
+    await page.getByText("Couldn't update watched state. Try again.").waitFor();
+    await page.waitForTimeout(300);
+  } },
+  { name: "43c-detail-favorite-error", opts: { flagError: true }, run: async (page) => {
+    await signedInAt(page, "#/next/item/m1", 1_000);
+    await page.getByRole("button", { name: "Favorite" }).click();
+    await page.getByText("Couldn't update favorite. Try again.").waitFor();
+    await page.waitForTimeout(300);
+  } },
   { name: "44-detail-episode", fullPage: true, run: (page) => signedInAt(page, "#/next/item/ep-2", 1_000) },
   { name: "45-detail-not-found", expect404: true, run: (page) => signedInAt(page, "#/next/item/nope", 1_000) },
   { name: "46-detail-version-picker", run: async (page) => {
@@ -489,7 +507,7 @@ export const scenarios: Scenario[] = [
     await go(page, "#/next/gallery", 400);
     await page.getByRole("button", { name: "Show toast" }).click();
     await page.getByRole("button", { name: "Show error toast" }).click();
-    await page.getByText("Marked as watched").waitFor();
+    await page.getByText("Marked as watched.").waitFor();
   } },
   { name: "84-ui-gallery-keyboard-focus", run: async (page) => {
     await go(page, "#/next/gallery", 400);

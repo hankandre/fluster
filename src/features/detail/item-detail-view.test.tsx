@@ -7,6 +7,7 @@ import { FakePlayerEngine } from "../../test/fake-player-engine";
 import { SessionProvider, useSession, type SessionGateway } from "../../app/session";
 import { ItemNotFoundError, type EpisodeCard, type ItemDetail, type ItemVersion } from "../../domain/catalog";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
+import { ToastProvider } from "../shared/ui";
 import { ItemDetailView } from "./index";
 
 vi.mock("../home/blurhash", () => ({
@@ -72,12 +73,14 @@ function SignIn({ gateway }: { gateway: SessionGateway }) {
 
 async function renderDetail(gateway: SessionGateway, itemId = "m1", client = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
   render(
-    <QueryClientProvider client={client}>
-      <SessionProvider createGateway={() => gateway}>
-        <SignIn gateway={gateway} />
-        <ItemDetailView itemId={itemId} />
-      </SessionProvider>
-    </QueryClientProvider>,
+    <ToastProvider>
+      <QueryClientProvider client={client}>
+        <SessionProvider createGateway={() => gateway}>
+          <SignIn gateway={gateway} />
+          <ItemDetailView itemId={itemId} />
+        </SessionProvider>
+      </QueryClientProvider>
+    </ToastProvider>,
   );
   await act(async () => {
     fireEvent.click(screen.getByRole("button", { name: "test sign in" }));
@@ -231,8 +234,87 @@ describe("watch state", () => {
     const gateway = fakeGateway({ setFavorite: vi.fn().mockRejectedValue(new Error("boom")) });
     await renderDetail(gateway);
     fireEvent.click(await screen.findByRole("button", { name: "Favorite" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Couldn't update favorite");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Couldn't update favorite. Try again.");
     expect(screen.getByRole("button", { name: "Favorite" })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("says nothing inline when a flag update fails, and keeps the error toast until dismissed", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      await renderDetail(fakeGateway({ setPlayed: vi.fn().mockRejectedValue(new Error("boom")) }));
+      await user.click(await screen.findByRole("button", { name: "Watched" }));
+      const toast = await screen.findByRole("alert");
+      expect(toast).toHaveTextContent("Couldn't update watched state. Try again.");
+      expect(screen.getByRole("button", { name: "Watched" })).toHaveAttribute("aria-pressed", "false");
+      expect(document.querySelector(".detail-message")).toBeNull();
+      expect(toast.closest(".ui-toast-region")).not.toBeNull();
+      await act(async () => {
+        vi.advanceTimersByTime(10_000);
+      });
+      expect(screen.getByRole("alert")).toHaveTextContent("Couldn't update watched state");
+      await user.click(within(screen.getByRole("alert")).getByRole("button", { name: "Dismiss" }));
+      expect(screen.queryByText(/Couldn't update watched state/)).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it.each([
+    { label: "Watched", played: false, favorite: false, message: "Marked as watched." },
+    { label: "Watched", played: true, favorite: false, message: "Marked as unwatched." },
+    { label: "Favorite", played: false, favorite: false, message: "Added to favorites." },
+    { label: "Favorite", played: false, favorite: true, message: "Removed from favorites." },
+  ])("confirms $message with a polite toast once the server answers", async ({ label, played, favorite, message }) => {
+    const data = detail({ userData: { played, favorite, resumePositionTicks: 0 } });
+    await renderDetail(fakeGateway({ itemDetail: vi.fn().mockResolvedValue(data) }));
+    const button = await screen.findByRole("button", { name: label });
+    button.focus();
+    fireEvent.click(button);
+    const region = document.querySelector<HTMLElement>(".ui-toast-region");
+    expect(await within(region as HTMLElement).findByRole("status")).toHaveTextContent(message);
+    expect(button).toHaveFocus();
+  });
+
+  it("shows one toast per flag when it is switched on and off quickly", async () => {
+    const itemDetail = vi.fn()
+      .mockResolvedValueOnce(detail())
+      .mockResolvedValue(detail({ userData: { played: true, favorite: false, resumePositionTicks: 0 } }));
+    await renderDetail(fakeGateway({ itemDetail }));
+    const button = await screen.findByRole("button", { name: "Watched" });
+    fireEvent.click(button);
+    await screen.findByText("Marked as watched.");
+    await waitFor(() => expect(button).toHaveAttribute("aria-disabled", "false"));
+    fireEvent.click(button);
+    await screen.findByText("Marked as unwatched.");
+    expect(screen.queryByText("Marked as watched.")).not.toBeInTheDocument();
+  });
+
+  it("still confirms when the server answers after the view is gone", async () => {
+    let answer: () => void = () => undefined;
+    const setPlayed = vi.fn().mockReturnValue(new Promise<void>((resolve) => { answer = resolve; }));
+    const gateway = fakeGateway({ setPlayed });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const tree = (showDetail: boolean) => (
+      <ToastProvider>
+        <QueryClientProvider client={client}>
+          <SessionProvider createGateway={() => gateway}>
+            <SignIn gateway={gateway} />
+            {showDetail ? <ItemDetailView itemId="m1" /> : null}
+          </SessionProvider>
+        </QueryClientProvider>
+      </ToastProvider>
+    );
+    const view = render(tree(true));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "test sign in" }));
+    });
+    fireEvent.click(await screen.findByRole("button", { name: "Watched" }));
+    await waitFor(() => expect(setPlayed).toHaveBeenCalled());
+    view.rerender(tree(false));
+    await act(async () => answer());
+    // TanStack Query still runs the useMutation callbacks after the view unmounts, so the answer is confirmed.
+    expect(await screen.findByText("Marked as watched.")).toBeInTheDocument();
   });
 
   it("rolls back only the failed flag when the other changed meanwhile", async () => {
@@ -376,11 +458,13 @@ describe("route behavior", () => {
 
   it("redirects to sign-in when signed out", () => {
     render(
-      <QueryClientProvider client={new QueryClient()}>
-        <SessionProvider createGateway={() => fakeGateway()}>
-          <ItemDetailView itemId="m1" />
-        </SessionProvider>
-      </QueryClientProvider>,
+      <ToastProvider>
+        <QueryClientProvider client={new QueryClient()}>
+          <SessionProvider createGateway={() => fakeGateway()}>
+            <ItemDetailView itemId="m1" />
+          </SessionProvider>
+        </QueryClientProvider>
+      </ToastProvider>,
     );
     expect(window.location.hash).toBe("#/next/sign-in");
   });
@@ -430,25 +514,33 @@ describe("player availability", () => {
     const gateway = fakeGateway();
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
-      <QueryClientProvider client={client}>
-        <SessionProvider createGateway={() => gateway}>
-          <PlayerServicesProvider services={{ engine }}>
-            <SignIn gateway={gateway} />
-            <ItemDetailView itemId="m1" />
-          </PlayerServicesProvider>
-        </SessionProvider>
-      </QueryClientProvider>,
+      <ToastProvider>
+        <QueryClientProvider client={client}>
+          <SessionProvider createGateway={() => gateway}>
+            <PlayerServicesProvider services={{ engine }}>
+              <SignIn gateway={gateway} />
+              <ItemDetailView itemId="m1" />
+            </PlayerServicesProvider>
+          </SessionProvider>
+        </QueryClientProvider>
+      </ToastProvider>,
     );
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "test sign in" }));
     });
   }
 
+  // The toast region has its own (empty) alert list, so the player message is found by its box.
+  async function playerAlert(): Promise<HTMLElement> {
+    await waitFor(() => expect(document.querySelector(".detail-message [role='alert']")).not.toBeNull());
+    return document.querySelector(".detail-message [role='alert']") as HTMLElement;
+  }
+
   it("says why the native player cannot start before Play is pressed, without secrets", async () => {
     const engine = new FakePlayerEngine();
     engine.initialize.mockRejectedValue("libmpv 0.30 is too old; need 0.35 (token=SECRET-TOKEN)");
     await renderWithEngine(engine);
-    const alert = await screen.findByRole("alert");
+    const alert = await playerAlert();
     expect(alert).toHaveTextContent("libmpv 0.30 is too old; need 0.35");
     expect(alert.textContent).not.toContain("SECRET-TOKEN");
     expect(screen.getByRole("link", { name: /Play/ })).toBeInTheDocument();
@@ -460,20 +552,20 @@ describe("player availability", () => {
       "x: /usr/lib/x86_64-linux-gnu/libEGL.so.1 file:///home/u/x ftp://h/x C:\\Users\\u\\x.dll api_key=SECRET-TOKEN",
     );
     await renderWithEngine(engine);
-    const alert = await screen.findByRole("alert");
+    const alert = await playerAlert();
     for (const leak of ["libEGL", "/home/u", "ftp://", "x.dll", "SECRET-TOKEN"]) expect(alert.textContent).not.toContain(leak);
 
     expect(screen.getByRole("button", { name: "Check again" }).closest("[data-spatial-row]")).not.toBeNull();
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Check again" }));
     });
-    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+    await waitFor(() => expect(document.querySelector(".detail-message")).toBeNull());
     expect(engine.initialize).toHaveBeenCalledTimes(2);
   });
 
   it("shows no warning when the player starts", async () => {
     await renderWithEngine(new FakePlayerEngine());
     await screen.findByRole("link", { name: "Play" });
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(document.querySelector(".detail-message")).toBeNull();
   });
 });

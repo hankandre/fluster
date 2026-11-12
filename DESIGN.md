@@ -584,6 +584,8 @@ Fluster talks like a knowledgeable friend running the projector: calm, brief, pl
 | Sign-in, anything else | n/a | Something went wrong. Try again. | n/a |
 | Series, no episodes | n/a | This series has no episodes yet. | n/a |
 | Next episode error | n/a | Couldn't load your next episode. | Retry |
+| Detail, watched or favorite toast | n/a | Marked as watched. / Marked as unwatched. / Added to favorites. / Removed from favorites. | n/a |
+| Detail, watched or favorite failed | n/a | Couldn't update watched state. Try again. / Couldn't update favorite. Try again. | n/a |
 | Item gone | This item is no longer on the server | It may have been removed or renamed. | Go home |
 | Player loading | n/a | Opening the original file… | Back |
 | Player loading, converting | n/a | Converting on server: {reason}… | Back |

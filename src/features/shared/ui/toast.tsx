@@ -20,7 +20,7 @@ interface ToastEntry extends ToastInput {
   id: number;
 }
 
-type ToastAction = { type: "add"; entry: ToastEntry } | { type: "dismiss"; id: number };
+type ToastAction = { type: "add"; entry: ToastEntry } | { type: "dismiss"; id: number } | { type: "clear" };
 
 export function toastReducer(entries: ToastEntry[], action: ToastAction): ToastEntry[] {
   switch (action.type) {
@@ -31,6 +31,8 @@ export function toastReducer(entries: ToastEntry[], action: ToastAction): ToastE
     }
     case "dismiss":
       return entries.filter((entry) => entry.id !== action.id);
+    case "clear":
+      return [];
     default:
       return entries;
   }
@@ -52,12 +54,19 @@ export function useToast(): ToastApi {
 const ICONS = { info: Info, ok: CircleCheck, error: CircleAlert } as const;
 
 // Toasts sit bottom left and never take focus. Errors stay until dismissed; the rest leave after
-// `durationMs`, and wait while the pointer or focus is on them.
-export function ToastProvider({ children, durationMs = 5_000 }: { children: ReactNode; durationMs?: number }) {
+// `durationMs`, and wait while the pointer or focus is on them. While `suppressed` (the player, where the
+// OSD speaks), toasts are dropped, not held, so a stale one never shows after playback.
+export function ToastProvider({ children, durationMs = 5_000, suppressed = false }: { children: ReactNode; durationMs?: number; suppressed?: boolean }) {
   const [entries, dispatch] = useReducer(toastReducer, []);
   const nextId = useRef(1);
   const region = useRef<HTMLDivElement>(null);
   const lastOutside = useRef<HTMLElement | null>(null);
+  const suppressedRef = useRef(suppressed);
+  suppressedRef.current = suppressed;
+
+  useEffect(() => {
+    if (suppressed) dispatch({ type: "clear" });
+  }, [suppressed]);
 
   // Remembers where focus was, so dismissing a focused toast gives it back.
   useEffect(() => {
@@ -76,13 +85,15 @@ export function ToastProvider({ children, durationMs = 5_000 }: { children: Reac
   const show = useCallback((input: ToastInput) => {
     const id = nextId.current;
     nextId.current += 1;
+    if (suppressedRef.current) return id;
     dispatch({ type: "add", entry: { ...input, id } });
     return id;
   }, []);
 
   const api = useMemo(() => ({ show, dismiss }), [show, dismiss]);
-  const polite = entries.filter((entry) => entry.tone !== "error");
-  const alerts = entries.filter((entry) => entry.tone === "error");
+  const shown = suppressed ? [] : entries;
+  const polite = shown.filter((entry) => entry.tone !== "error");
+  const alerts = shown.filter((entry) => entry.tone === "error");
 
   return (
     <ToastContext.Provider value={api}>
@@ -92,9 +103,12 @@ export function ToastProvider({ children, durationMs = 5_000 }: { children: Reac
           <div role="status" aria-live="polite" className="ui-toast-list">
             {polite.map((entry) => <ToastItem key={entry.id} entry={entry} durationMs={durationMs} onDismiss={dismiss} />)}
           </div>
-          <div role="alert" className="ui-toast-list">
-            {alerts.map((entry) => <ToastItem key={entry.id} entry={entry} durationMs={durationMs} onDismiss={dismiss} />)}
-          </div>
+          {/* Mounted only while an error shows: an alert announces on insertion, and an empty one on every page would match every alert query. */}
+          {alerts.length > 0 ? (
+            <div role="alert" className="ui-toast-list">
+              {alerts.map((entry) => <ToastItem key={entry.id} entry={entry} durationMs={durationMs} onDismiss={dismiss} />)}
+            </div>
+          ) : null}
         </div>,
         document.body,
       )}

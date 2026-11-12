@@ -6,6 +6,7 @@ import { SessionProvider, useSession, type SessionGateway } from "../../app/sess
 import type { ItemDetail } from "../../domain/catalog";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
 import { FakePlayerEngine } from "../../test/fake-player-engine";
+import { ToastProvider } from "../shared/ui";
 import { ItemDetailView } from "./index";
 
 vi.mock("../home/blurhash", () => ({ blurhashToDataUrl: () => undefined }));
@@ -38,14 +39,16 @@ describe("item detail backdrop", () => {
     });
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const tree = (id: string) => (
-      <QueryClientProvider client={client}>
-        <PlayerServicesProvider services={{ engine: new FakePlayerEngine() }}>
-          <SessionProvider createGateway={() => gateway}>
-            <SignIn gateway={gateway} />
-            <ItemDetailView itemId={id} />
-          </SessionProvider>
-        </PlayerServicesProvider>
-      </QueryClientProvider>
+      <ToastProvider>
+        <QueryClientProvider client={client}>
+          <PlayerServicesProvider services={{ engine: new FakePlayerEngine() }}>
+            <SessionProvider createGateway={() => gateway}>
+              <SignIn gateway={gateway} />
+              <ItemDetailView itemId={id} />
+            </SessionProvider>
+          </PlayerServicesProvider>
+        </QueryClientProvider>
+      </ToastProvider>
     );
     const view = render(tree("a"));
     await act(async () => {

@@ -15,6 +15,7 @@ import { createServices, type AppServices } from "./compose";
 import { PlayerServicesProvider, type PlayerServices } from "./player-services";
 import { PreferencesProvider } from "./preferences";
 import { SessionProvider } from "./session";
+import { ToastProvider } from "../features/shared/ui";
 
 // The UI gallery exists only in browser development. Vite replaces import.meta.env.DEV with false in a
 // build, so the branch and the module behind it are dropped (scripts/check-no-test-engine.sh proves it).
@@ -52,18 +53,20 @@ export function App() {
   }, []);
 
   return (
-    <SessionProvider
-      createGateway={services.createGateway}
-      realtime={services.realtime}
-      onServerDataChanged={refreshRows}
-    >
-      <PlayerServicesProvider services={player}>
-        <PreferencesProvider preferences={preferences}>
-          {!services.native && <BrowserModeLabel />}
-          {inApp ? renderWithChrome(hash, services) : null}
-        </PreferencesProvider>
-      </PlayerServicesProvider>
-    </SessionProvider>
+    <ToastProvider suppressed={isPlayerHash(hash)}>
+      <SessionProvider
+        createGateway={services.createGateway}
+        realtime={services.realtime}
+        onServerDataChanged={refreshRows}
+      >
+        <PlayerServicesProvider services={player}>
+          <PreferencesProvider preferences={preferences}>
+            {!services.native && <BrowserModeLabel />}
+            {inApp ? renderWithChrome(hash, services) : null}
+          </PreferencesProvider>
+        </PlayerServicesProvider>
+      </SessionProvider>
+    </ToastProvider>
   );
 }
 
@@ -75,6 +78,11 @@ function isAppHash(hash: string): boolean {
 
 function BrowserModeLabel() {
   return <p className="browser-mode-label" role="status">Browser development mode</p>;
+}
+
+// Routes that show the player, where the OSD speaks and no toast shows. Add any new player route here.
+function isPlayerHash(hash: string): boolean {
+  return hash === "#/next/player" || hash.startsWith("#/next/play/");
 }
 
 // Which pages get the app nav. The player, sign-in, and developer pages do not.
