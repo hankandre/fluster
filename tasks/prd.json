@@ -2759,6 +2759,41 @@
           "evidence": ""
         },
         {
+          "id": "P16-02",
+          "title": "Keep Home stable and lead with what you're watching now",
+          "domain": "Catalog",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P16-01",
+            "P3-27",
+            "P3-22"
+          ],
+          "acceptance": [
+            "Home's rows appear in one fixed order, documented in DESIGN.md §7.4, on every visit and for every account (owner, Q1 A)",
+            "One Continue watching row holds in-progress items and next episodes together, most recently played first (owner, Q2 B); if P16-01 shows the two lists can't be ordered by last play, they stay two rows and the hero follows the most recent activity across both",
+            "An item last played longer ago than the window is left out of the row and is never the hero; its saved position is untouched and its own page still offers Resume (owner, Q4)",
+            "The window is 14 days by default; Settings offers 7, 14, or 30 days, or Keep everything (owner, Q14 B)",
+            "A series the viewer had caught up on returns to the row when a new episode arrives, even when its last play is older than the window (owner, Q14)",
+            "The window is applied as P16-01 verified: nextUpDateCutoff where the server honours it, and otherwise a filter on the last-played date in a pure function with unit tests at the boundary and for the new-episode case",
+            "A pure function in src/domain/ picks Up next by the rules in docs/plans/proposals/discovery-and-profiles.md §2.2; the hero and the row both use it, so they never disagree",
+            "A row with nothing to show is hidden and the others keep their order; a unit test loads Home twice with the same fixtures and asserts the same rows and cards in the same order",
+            "Gateway tests assert the requests against the P16-01 fixtures; no playback request changes",
+            "A Playwright journey finishes an episode and finds the next episode first on Home, and a second shows an old item absent from the row and still resumable from its page",
+            "DESIGN.md §7.3, §7.4, and §7.18 match what ships",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "P16-04",
           "title": "Show More like this on movies and series",
           "domain": "Catalog",
@@ -2902,6 +2937,38 @@
             "The spec is checked as a high-risk task and the diff gets a guardian review",
             "A Playwright journey plays a trailer and returns",
             "DESIGN.md §7.7 and §7.8 match what ships",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P16-09",
+          "title": "Preview a title's trailer while browsing, off by default",
+          "domain": "Playback Session",
+          "model": "opus",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P16-08",
+            "P3-22"
+          ],
+          "acceptance": [
+            "Settings has Play previews while browsing, off by default (owner, Q13 B)",
+            "With it on, a title's local trailer plays muted after focus rests on the Home hero or a detail page; with it off, nothing plays until the viewer asks",
+            "No preview plays with reduced motion, for a title with no local trailer, or when Playback Negotiation would have the server repackage or convert the trailer; pnpm test:tripwire still passes and no conversion is started by a preview",
+            "A preview stops when focus moves, when the viewer presses Play, and when the window loses focus, and no server job outlives it",
+            "A preview never changes a title's resume position or watched state and sends no playstate report for the title",
+            "The dwell time is a token or a named constant, and a preview is never unmuted by itself",
+            "The spec is checked as a high-risk task and the diff gets a guardian review",
+            "Unit tests cover each condition that blocks a preview, and a Playwright journey covers the setting on and off",
+            "DESIGN.md §7.2, §7.3, and §7.18 match what ships",
             "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
             "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
             "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",

@@ -51,14 +51,14 @@ No decision yet.
 Triage, the owner's answers of 2026-11-12, and the open questions are in `docs/plans/proposals/discovery-and-profiles.md`.
 
 - Tasks now: P3-27, P16-01, P16-04 (More like this), P16-05 (Because you watched), P16-06 (genres), P16-07 (people pages and cast on the series page), P16-08 (local trailers and extras), P13-27 (private accounts).
-- Waiting for Q14 (the Continue watching window): proposed P16-02, the fixed Home order, the merged row, and ageing.
-- Waiting for Q13: previews while browsing.
+- Also tasks, after the owner's Batch 4 answers: P16-02 (the fixed Home order, the merged row, and a 14-day window with a setting) and P16-09 (previews, off by default).
+- Waiting for the owner: adding P16-02 to P4-01's `depends_on` (Q16). It edits an existing task.
 
 - A "private session" that plays without reporting, for watching on someone else's account. Touches Playstate Reporting (§4.2). M.
 - An end-of-film card that offers "More like this" after the credits finish, never over them. Needs "More like this" (proposed P16-04). S.
 - Use the time of day and the runtime to rank suggestions (§2.3). Needs a viewer profile. M.
 - Let the viewer reorder or hide Home rows (Q1; the owner chose a fixed order for now). M.
-- Previews while browsing, if Q13 allows them: a local trailer, muted, opt-in. Needs P16-08. M.
+- ~~Previews while browsing, if Q13 allows them: a local trailer, muted, opt-in. Needs P16-08. M.~~ Taken by P16-09.
 - A remove button for Continue watching, if ageing proves not enough (Q4). S.
 - Revisit genre rows on Home after the dogfood week; the case against them was an inference, not evidence. S.
 - A row for a collection on Home (`docs/research/streaming-ux-gripes.md` §3). S.
