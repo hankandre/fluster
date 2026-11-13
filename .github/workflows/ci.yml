@@ -86,8 +86,6 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:visual
-        env:
-          CI: ""
       # test:visual only writes the contact sheet when every test passes.
       - name: Build contact sheet
         if: always()
