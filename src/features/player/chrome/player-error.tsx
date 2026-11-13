@@ -21,7 +21,7 @@ export function CommandErrorPanel({ message, retrying, retryLabel, onRetry, onBa
           {retrying ? <LoaderCircle className="spin" size={17} aria-hidden="true" /> : null}
           {retryLabel}
         </Button>
-        <Button variant="secondary" onClick={onBack}>Return to details</Button>
+        <Button variant="secondary" onClick={onBack}>Back to details</Button>
       </div>
     </div>
   );
