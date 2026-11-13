@@ -313,6 +313,113 @@
           "owner": "native-engineer",
           "passes": false,
           "evidence": "Reported 2026-11-10 on Hankflix, pnpm tauri dev, Wayland, NVIDIA (CUDA thread present): after Back, native stop completes (trace reaches 'stop acknowledged'), GTK main thread and WebKit web process are idle, but the window never draws again; the last video frame stays and newly exposed areas after maximize show the desktop. Every time. 2026-11-10 native-engineer: fix implemented per docs/specs/P0-13.md (teardown makes the GLArea context current before freeing the mpv render context, clears and collapses the surface, restores the background, redraws the whole window; order in surface/teardown.rs). Checks on the dev host (CI-like, no hardware run): cargo fmt --check ok; clippy -D warnings ok; cargo test 179 passed 0 failed 6 ignored (incl. 6 new surface::teardown tests and trace_canary); cargo test --release 179 passed; pnpm check exit 0 (vitest 84 files, 1245 tests passed). Acceptance 1-3 are recorded only from manual checks M1-M3 in docs/validation.md gate 6, run by the human; the 'window painted after detach' log count only detects a stalled frame clock and does not prove pixels reached the screen. Not run: M1-M3 and the log count on any hardware; Wayland+NVIDIA (reporting machine), AMD, Intel; other compositors; X11; macOS; release AppImage. passes stays false until the human records M1-M3. 2026-11-10 review fix (native-engineer): make_current now clears GDK's current context before GLArea.make_current and returns Err unless gdk::GLContext::current() equals the GLArea context, so the teardown trace fires when the context is not current; 4 new check_current unit tests. Checks: cargo fmt --check exit 0; clippy -D warnings ok; cargo test 183 passed 0 failed 6 ignored; cargo test --release 183 passed; pnpm check exit 0 (vitest 84 files, 1245 tests). Two low review findings logged as follow-ups in docs/plans/active/002 (Decision log 2026-11-10). Still not run: M1-M3 and the log count on any hardware; status stays in_progress and passes false until the human records M1-M3 (spec Human confirmation 2)."
+        },
+        {
+          "id": "P0-14",
+          "title": "Make the import-boundary lint read the code again",
+          "domain": "Process",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [],
+          "acceptance": [
+            "pnpm lint:boundaries fails, with a message that says how to fix it, when dependency-cruiser checks zero modules or prints its missing-compiler warning; a test or a scripted run with the compiler made unavailable proves the failure (owner, D6 A; docs/plans/proposals/code-quality-triage.md)",
+            "dependency-cruiser resolves TypeScript sources through its own TypeScript 6 compiler, installed as an aliased dev dependency that only the lint uses; the app, the build, and the type-checks stay on the TypeScript version in package.json",
+            "If aliasing proves impossible, the app goes back to TypeScript 6 until dependency-cruiser supports 7, the spec records what was tried and why it failed, and every other item here still holds",
+            "A run of pnpm lint:boundaries on main reports a real module count, more than zero and covering the files under src/ outside tests, and the count is pasted in the task's evidence",
+            "Deliberate breaks fail the lint and are reverted: a React import in src/domain/, a Tauri import in the shell-neutral core (rule core-is-shell-neutral), and a break of one other rule in .dependency-cruiser.cjs; the failing output is pasted in the evidence",
+            "Every boundary violation the repaired lint finds on main, which may have entered since TypeScript 7 on 2026-11-12, is fixed, or listed in the PR and appended to tasks/backlog.md with its reason; no rule in .dependency-cruiser.cjs is removed or loosened",
+            "CI's frontend job fails on the same zero-module condition, shown by the failing run of a throwaway commit that is then reverted",
+            "The dependency policy is followed for the added dev dependency, and pnpm audit still passes",
+            "The PR calls out the change to what CI runs and to the enforcement of invariant I8 (ARCHITECTURE.md §4)"
+          ],
+          "verify": "pnpm lint:boundaries && pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P0-15",
+          "title": "Run every pnpm check guard in CI",
+          "domain": "Process",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P0-14"
+          ],
+          "acceptance": [
+            "The frontend job in .github/workflows/ci.yml runs pnpm test:no-test-engine directly after pnpm build and before pnpm test:e2e, then pnpm typecheck:integration and pnpm typecheck:core (owner, D1 A; docs/plans/proposals/code-quality-triage.md)",
+            "Every step of the pnpm check script in package.json that is not Rust runs in CI's frontend job; a test or script fails when a step is added to pnpm check and not to CI",
+            "A throwaway commit that uses a DOM global in src/domain/ fails CI on typecheck:core and is reverted; the failing run is linked in the evidence",
+            "The steps add no secret, permission, or unpinned action to the workflow",
+            "The PR calls out the CI change"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P0-16",
+          "title": "Lint hook dependencies and unused code",
+          "domain": "Process",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P0-14",
+            "P13-34",
+            "P13-22",
+            "P13-24",
+            "P13-23"
+          ],
+          "acceptance": [
+            "ESLint runs with only the React hooks rules, rules-of-hooks and exhaustive-deps, both as errors, over src/; no formatter and no other rule set is added (owner, D2 A; docs/plans/proposals/code-quality-triage.md)",
+            "pnpm lint runs it, pnpm check includes it, and CI's frontend job runs it",
+            "Every finding of the first run is fixed, or disabled on its own line with a one-line reason; the PR lists each disabled line, and a fix that changes when an effect runs has a test",
+            "The two existing eslint-disable-next-line react-hooks/exhaustive-deps comments (src/features/player/chrome/player-sheet.tsx, src/features/shared/ambient-backdrop.tsx) are either still needed, with a reason, or removed",
+            "tsconfig.app.json turns on noUnusedLocals and noUnusedParameters, and everything they report is removed, not silenced (owner, D3 A)",
+            "A throwaway commit with a missing hook dependency and an unused local fails CI and is reverted; the failing run is linked in the evidence",
+            "The dependency policy is followed for the added dev dependencies, and pnpm audit still passes",
+            "No behaviour changes except where a finding was a real bug; each such fix is named in the PR",
+            "The PR calls out the CI change",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P0-17",
+          "title": "Compile and lint the macOS surface in CI",
+          "domain": "Video Surface & Window",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "P0-13",
+            "P13-23"
+          ],
+          "acceptance": [
+            "A CI job on a macOS runner runs cargo check and cargo clippy with -D warnings for src-tauri, on pushes to main and on pull requests that change src-tauri/ (owner, D4 B; docs/plans/proposals/code-quality-triage.md)",
+            "The job is not a required check; docs/validation.md says so and says that P6-01 makes it required",
+            "The job installs a libmpv that meets the version gate (0.41 or newer) and pins its actions by commit SHA, like the other jobs",
+            "src-tauri/src/surface/macos.rs compiles and passes clippy in that job. If it does not compile today, the fixes are in this task; each keeps its SAFETY comment accurate and is listed in the PR as untested on real hardware",
+            "A throwaway commit that breaks macos.rs fails the job and is reverted; the failing run is linked in the evidence",
+            "No Tauri command is added or changed; the command allowlist test is unchanged; Linux behaviour is unchanged",
+            "A guardian review passes if any Rust source changes",
+            "The PR calls out the CI change and lists the untested macOS gates (rendering, VideoToolbox, Now Playing)"
+          ],
+          "verify": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings && pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
         }
       ]
     },
