@@ -43,21 +43,31 @@ function listBaselines(): string[] {
   }).sort();
 }
 
+type Scenario = (typeof scenarios)[number];
+
+// The passes a scenario is captured in: phone, TV only, desktop only, or desktop plus the TV form.
+function passesOf(scenario: Scenario) {
+  return scenario.phone ? phone : scenario.tvOnly ? tv : scenario.desktopOnly ? desktop : [...desktop, ...tv];
+}
+
+function sizeOf(pass: { width: number; height: number; form?: string }): string {
+  return `${pass.width}x${pass.height}${pass.form ? `-${pass.form}` : ""}`;
+}
+
 if (compare) {
   test("baselines match scenarios", () => {
     const expected = scenarios
-      .flatMap((scenario) => (scenario.phone ? phone : desktop).map((viewport) => `${viewport.width}x${viewport.height}/${scenario.name}.png`))
+      .flatMap((scenario) => passesOf(scenario).map((pass) => `${sizeOf(pass)}/${scenario.name}.png`))
       .sort();
     expect(listBaselines()).toEqual(expected);
   });
 }
 
 for (const scenario of scenarios) {
-  const passes = scenario.phone ? phone : scenario.tvOnly ? tv : scenario.desktopOnly ? desktop : [...desktop, ...tv];
-  for (const pass of passes) {
+  for (const pass of passesOf(scenario)) {
     const { width, height } = pass;
     const form = "form" in pass ? pass.form : undefined;
-    const size = `${width}x${height}${form ? `-${form}` : ""}`;
+    const size = sizeOf(pass);
     const viewport = { width, height };
     test.describe(size, () => {
       test.use({ viewport });
