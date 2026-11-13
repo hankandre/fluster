@@ -11,6 +11,12 @@
     scrollbar-width: thin;
   }
 
+  /* The TV form scales rem from the root. It sits here, after the `font` shorthand above, which would
+     otherwise reset the root size (DESIGN.md 6). */
+  html[data-form="tv"] {
+    font-size: calc(16px * var(--ui-scale));
+  }
+
   html,
   body,
   #root {

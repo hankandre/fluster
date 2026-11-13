@@ -58,6 +58,15 @@ export function pickArrowTarget(key: string, from: Box, boxes: Box[]): number | 
   return best;
 }
 
+// The box arrows start from. A heading or other block spans the page, so its text is the origin instead.
+function originBox(target: HTMLElement): DOMRect {
+  if (target.matches("a, button, input, textarea, [role='option'], [data-roving-item]")) return target.getBoundingClientRect();
+  const range = document.createRange();
+  range.selectNodeContents(target);
+  const text = range.getBoundingClientRect();
+  return text.width > 0 ? text : target.getBoundingClientRect();
+}
+
 function rendered(element: HTMLElement): boolean {
   if (element.closest("[inert], [aria-hidden='true'], [hidden]")) return false;
   const rect = element.getBoundingClientRect();
@@ -74,20 +83,23 @@ export function useTvArrowFallback(): void {
       if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
       const target = event.target;
       if (!(target instanceof HTMLElement)) return;
+      // The player surface owns its arrows. The nav's roving list owns Left and Right; Down from it enters
+      // the page here when no spatial row is there to take it (Settings), and Up has nothing above it.
       if (target.closest("[data-tv-own-arrows]")) return;
+      if (target.closest("nav[aria-label='Main']") && event.key !== "ArrowDown") return;
       if (isTextTarget(target) && (event.key === "ArrowLeft" || event.key === "ArrowRight")) return;
       const layers = document.querySelectorAll(MODAL_LAYER);
       const scope: ParentNode = layers.length > 0 ? layers[layers.length - 1] : document;
       const nav = document.querySelector<HTMLElement>('header.app-nav[data-hidden="true"]');
       const candidates = Array.from(scope.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
-        (element) => element !== target && rendered(element) && !nav?.contains(element) && !element.closest("nav[aria-label='Main']"),
+        (element) => element !== target && rendered(element) && !nav?.contains(element) && !element.closest("nav[aria-label='Main'], .skip-link") && !element.matches(".skip-link"),
       );
-      const picked = pickArrowTarget(event.key, target.getBoundingClientRect(), candidates.map((element) => element.getBoundingClientRect()));
+      const picked = pickArrowTarget(event.key, originBox(target), candidates.map((element) => element.getBoundingClientRect()));
       if (picked === undefined) {
         // Nothing above: Up reaches the nav's current entry.
         if (event.key !== "ArrowUp" || layers.length > 0) return;
         const entry = document.querySelector<HTMLElement>('nav[aria-label="Main"] [data-roving-item][tabindex="0"]');
-        if (!entry || entry.contains(target)) return;
+        if (!entry) return;
         event.preventDefault();
         entry.focus();
         return;

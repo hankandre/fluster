@@ -1,0 +1,124 @@
+import { expect, test } from "@playwright/test";
+import { mockPlayerServer } from "../support/player-server";
+import { expectNoSmallText, expectTitleSafe, openArrivalTv, stubMedia, videoTime } from "./support";
+
+const chrome = (page: import("@playwright/test").Page) => page.locator(".player-chrome");
+const slider = (page: import("@playwright/test").Page) => page.getByRole("slider", { name: "Playback position" });
+
+test("Player: arrows wake the chrome on the scrubber, zones move with Up and Down, sheets open and close, Escape leaves", async ({ page }) => {
+  await mockPlayerServer(page);
+  await stubMedia(page);
+  await openArrivalTv(page);
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/#\/next\/play\/movie-1/);
+  await expect(page.locator("video")).toHaveCount(1);
+  await expect(slider(page)).toBeEnabled();
+  await expect(chrome(page)).toHaveAttribute("data-visible", "true");
+  await expect(page.locator(".volume-group")).toBeHidden();
+  await expect(page.getByRole("button", { name: /fullscreen/i })).toHaveCount(0);
+
+  // A key keeps the chrome up for another idle period, then it hides and focus rests on the player.
+  await page.keyboard.press("ArrowRight");
+  await expect(slider(page)).toBeFocused();
+  expect(await videoTime(page)).toBe(0);
+  await expect(chrome(page)).toHaveAttribute("data-visible", "false", { timeout: 8_000 });
+  await expect(page.getByRole("region", { name: "Player" })).toBeFocused();
+
+  // OK with no prompt wakes the chrome with focus on Play or Pause.
+  await page.keyboard.press("Enter");
+  await expect(chrome(page)).toHaveAttribute("data-visible", "true");
+  await expect(page.getByRole("button", { name: "Pause" })).toBeFocused();
+  await expectNoSmallText(page);
+  await expectTitleSafe(page);
+  const elapsed = await page.locator(".player-time").first().evaluate((element) => parseFloat(getComputedStyle(element).fontSize));
+  expect(elapsed).toBeGreaterThanOrEqual(22);
+
+  // Up reaches the scrubber, Right seeks +10 s there, Down returns to the control row.
+  await page.keyboard.press("ArrowUp");
+  await expect(slider(page)).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await expect.poll(() => videoTime(page)).toBe(10);
+  await page.keyboard.press("ArrowDown");
+  await expect(page.getByRole("button", { name: "Pause" })).toBeFocused();
+
+  // Right to Audio & Subtitles, Enter opens the sheet, Escape closes it and returns focus to its trigger.
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
+  const tracks = page.getByRole("button", { name: "Audio & Subtitles" });
+  await expect(tracks).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.locator(".player-sheet")).toBeVisible();
+  await expectNoSmallText(page);
+  await expectTitleSafe(page);
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".player-sheet")).toBeHidden();
+  await expect(tracks).toBeFocused();
+
+  // Up, Up reaches the top bar; Escape leaves to the detail page.
+  await page.keyboard.press("ArrowUp");
+  await expect(slider(page)).toBeFocused();
+  await page.keyboard.press("ArrowUp");
+  await expect(page.getByRole("button", { name: "Back", exact: true })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
+});
+
+test("Player: the Info sheet opens from the control row with arrows and Enter, and Backspace leaves", async ({ page }) => {
+  await mockPlayerServer(page);
+  await stubMedia(page);
+  await openArrivalTv(page);
+  await page.keyboard.press("Enter");
+  await expect(slider(page)).toBeEnabled();
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByRole("button", { name: "Info" })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("region", { name: "Player information" })).toContainText("Direct play");
+  await expectNoSmallText(page);
+  await expectTitleSafe(page);
+  await page.keyboard.press("Backspace");
+  await expect(page.getByRole("region", { name: "Player information" })).toBeHidden();
+  await page.keyboard.press("Backspace");
+  await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
+});
+
+test("Player: OK skips a visible Skip while the chrome is hidden", async ({ page }) => {
+  await mockPlayerServer(page, {
+    hasSegments: true,
+    segments: [{ Id: "seg-1", Type: "Intro", StartTicks: 100_000_000, EndTicks: 700_000_000 }],
+  });
+  await stubMedia(page);
+  await openArrivalTv(page);
+  await page.keyboard.press("Enter");
+  await expect(slider(page)).toBeEnabled();
+  await page.locator("video").evaluate((video: HTMLVideoElement) => {
+    video.currentTime = 30;
+    video.dispatchEvent(new Event("timeupdate"));
+  });
+  await expect(page.getByRole("button", { name: "Skip intro" })).toBeVisible();
+  await expectNoSmallText(page);
+  await expectTitleSafe(page);
+  await page.keyboard.press("ArrowRight");
+  await expect(chrome(page)).toHaveAttribute("data-visible", "false", { timeout: 8_000 });
+  await page.keyboard.press("Enter");
+  await expect.poll(() => videoTime(page)).toBe(70);
+});
+
+test("Playback notices: arrows reach Retry and Back to details; Escape leaves", async ({ page }) => {
+  await mockPlayerServer(page, { disc: true });
+  await openArrivalTv(page);
+  await page.keyboard.press("Enter");
+  const heading = page.getByRole("heading", { level: 1 });
+  await expect(heading).toBeFocused();
+  await expectNoSmallText(page);
+  await expectTitleSafe(page);
+  await page.keyboard.press("ArrowDown");
+  await expect(page.getByRole("button", { name: "Retry" })).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByRole("button", { name: "Back to details" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
+});
