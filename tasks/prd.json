@@ -2206,7 +2206,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "Milestone 1: gateway currentUserName, nav initial, Picker describedBy/openOnArrow, settings tokens, app version define."
+          "evidence": "Implemented in 4 commits on task/P13-17 (not pushed). pnpm check: exit 0 (1951+ vitest tests, build, typecheck, cargo test 183 passed). pnpm test:e2e (FLUSTER_E2E_PORT=14721): 121 passed. pnpm test:visual (FLUSTER_VISUAL_PORT=14731): 221 passed; before shots need a run on origin/main. Greps for <select, signOut( outside settings, removed e2e tests, src-tauri diff: all empty. Awaiting reviewer + guardian review, PR."
         },
         {
           "id": "P13-18",
