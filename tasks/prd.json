@@ -3041,6 +3041,34 @@
           "owner": null,
           "passes": false,
           "evidence": ""
+        },
+        {
+          "id": "P16-11",
+          "title": "Record wish-list contract fixtures for 10.11 and 12.x",
+          "domain": "Catalog",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P0-02",
+            "P0-03",
+            "P16-01"
+          ],
+          "acceptance": [
+            "A recorded sequence from Jellyfin 10.11.7 and 12.4.0 shows what POST /Sessions/{sessionId}/User/{userId} does while a session plays: which permission it needs, and whether the progress and stopped reports that follow change Played, PlaybackPositionTicks, PlayCount, and LastPlayedDate for the added user; and what DELETE on the same route does",
+            "The synthetic sample set gains a file whose second audio track carries the visual-impaired stream marker and a descriptive title, and a subtitle track with the hearing-impaired marker; fixtures show how each version reports them in MediaStreams (Title, DisplayTitle, IsHearingImpaired, and any other field that tells them apart); tests/samples/README.md lists the file",
+            "A fixture or a recorded empty answer shows whether GET /MediaSegments/{itemId} can return a Recap segment on each version without a plugin, for a sample whose chapter is named as a recap",
+            "Fixtures for GET /Items sorted by Runtime and by Random with a limit show what each version returns, and a recorded request shows whether any parameter limits results to a running-time range",
+            "A recorded round trip shows GET and POST /DisplayPreferences/{preferenceId} keeping a CustomPrefs entry per account under a client name of Fluster's own, across a server restart, and what happens to a value of 4 KB",
+            "A recorded sequence shows PlayCount and LastPlayedDate before and after an already played item is played to the end again",
+            "docs/research/wishlist-api.md states, per route and version, what was observed, and beside it the route's status in Jellyscale's compat/endpoints.yaml; every unverified server claim in docs/research/streaming-wishlist.md that the fixtures settle is updated",
+            "Fixtures are scrubbed per the jellyfin-api contract-fixtures reference; no gateway method, playback request, setting, or UI changes"
+          ],
+          "verify": "pnpm test -- fixtures && ls docs/research/wishlist-api.md",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
         }
       ]
     },
