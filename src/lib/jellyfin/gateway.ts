@@ -365,7 +365,8 @@ export class JellyfinGateway {
   }
 
   // The signed-in Authorization header, handed only to Rust: the server socket
-  // (realtime_connect) and the playback plan's media requests. Never log it.
+  // (realtime_connect) and the native engine's launch request, read through the
+  // coordinator at launch. Plans never carry it. Never log it.
   authorizationHeader(): string {
     const { accessToken } = this.requireSession();
     if (!this.deviceId) throw new Error("Sign in before using the library.");
