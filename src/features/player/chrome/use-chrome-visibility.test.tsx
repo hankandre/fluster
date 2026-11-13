@@ -138,3 +138,37 @@ describe("useChromeVisibility", () => {
     expect(stage()).toHaveAttribute("data-visible", "true");
   });
 });
+
+describe("useChromeVisibility in the TV form", () => {
+  function TvHarness({ playing }: { playing: boolean }) {
+    const { visible, sectionProps } = useChromeVisibility({ playing, pinned: false, tv: true });
+    return (
+      <section aria-label="Stage" data-visible={visible} {...sectionProps}>
+        <button type="button" {...{ [CHROME_ZONE_ATTRIBUTE]: "" }}>Control</button>
+        <div className="player-prompt" {...{ [CHROME_ZONE_ATTRIBUTE]: "" }}><button type="button">Prompt</button></div>
+      </section>
+    );
+  }
+
+  it("hides after the idle time even with a control focused, and a key brings it back for another period", () => {
+    const { rerender } = render(<TvHarness playing={false} />);
+    rerender(<TvHarness playing />);
+    act(() => screen.getByRole("button", { name: "Control" }).focus());
+    act(() => vi.advanceTimersByTime(CHROME_IDLE_MS + 100));
+    expect(stage()).toHaveAttribute("data-visible", "false");
+    act(() => {
+      fireEvent.keyDown(window, { key: "ArrowRight" });
+    });
+    expect(stage()).toHaveAttribute("data-visible", "true");
+    act(() => vi.advanceTimersByTime(CHROME_IDLE_MS + 100));
+    expect(stage()).toHaveAttribute("data-visible", "false");
+  });
+
+  it("stays up while a prompt has focus", () => {
+    const { rerender } = render(<TvHarness playing={false} />);
+    rerender(<TvHarness playing />);
+    act(() => screen.getByRole("button", { name: "Prompt" }).focus());
+    act(() => vi.advanceTimersByTime(CHROME_IDLE_MS * 3));
+    expect(stage()).toHaveAttribute("data-visible", "true");
+  });
+});

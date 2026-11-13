@@ -165,7 +165,7 @@
   }
 
   :where(h1, h2)[tabindex="-1"]:focus-visible,
-  :root[data-form="tv"] :where(h1, h2, main)[tabindex="-1"]:focus {
+  :root[data-form="tv"] :where(h1, h2, main, .player-page)[tabindex="-1"]:focus {
     outline: none;
     box-shadow: none;
   }

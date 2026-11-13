@@ -6,6 +6,10 @@ import { CHROME_IDLE_MS } from "./timing";
 export const CHROME_ZONE_ATTRIBUTE = "data-chrome-zone";
 const ZONE_SELECTOR = `[${CHROME_ZONE_ATTRIBUTE}]`;
 
+function inPrompt(target: EventTarget | null): boolean {
+  return target instanceof Element && target.closest(".player-prompt") != null;
+}
+
 function inZone(target: EventTarget | null): boolean {
   return target instanceof Element && target.closest(ZONE_SELECTOR) != null;
 }
@@ -15,9 +19,13 @@ function inZone(target: EventTarget | null): boolean {
 // keyboard focus is on a chrome control or prompt, and for CHROME_IDLE_MS
 // after the last pointer move (or the resume from a pause). The pointer leaving the player hides them at
 // once while playing. A control focused by a click does not hold the chrome up.
-export function useChromeVisibility({ playing, pinned }: { playing: boolean; pinned: boolean }) {
+//
+// In the TV form (DESIGN.md 7.14) a focused control does not keep the chrome up while playing: it hides
+// CHROME_IDLE_MS after the last key, and `wake` brings it back. Paused, pinned, and prompts still hold it.
+export function useChromeVisibility({ playing, pinned, tv = false }: { playing: boolean; pinned: boolean; tv?: boolean }) {
   const [awake, setAwake] = useState(true);
   const [focused, setFocused] = useState(false);
+  const [promptFocused, setPromptFocused] = useState(false);
   const timer = useRef<number | undefined>(undefined);
   const byPointer = useRef(false);
 
@@ -75,6 +83,21 @@ export function useChromeVisibility({ playing, pinned }: { playing: boolean; pin
     setAwake(false);
   }, [playing]);
 
+  // TV form: any key press while playing keeps the chrome up for another idle period.
+  useEffect(() => {
+    if (!tv) return undefined;
+    const onKey = () => {
+      if (playing) schedule();
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [tv, playing, schedule]);
+
+  const wakeNow = useCallback(() => {
+    if (playing) schedule();
+    else setAwake(true);
+  }, [playing, schedule]);
+
   const sectionProps = {
     onMouseMove: wake,
     onMouseLeave: sleep,
@@ -84,11 +107,13 @@ export function useChromeVisibility({ playing, pinned }: { playing: boolean; pin
     },
     onFocus: (event: FocusEvent) => {
       if (!byPointer.current && inZone(event.target)) setFocused(true);
+      setPromptFocused(inPrompt(event.target));
     },
     onBlur: (event: FocusEvent) => {
       setFocused(!byPointer.current && inZone(event.relatedTarget));
+      setPromptFocused(inPrompt(event.relatedTarget));
     },
   };
 
-  return { visible: !playing || pinned || focused || awake, sectionProps };
+  return { visible: !playing || pinned || (focused && (!tv || promptFocused)) || awake, wake: wakeNow, sectionProps };
 }
