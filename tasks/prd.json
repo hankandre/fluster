@@ -602,10 +602,10 @@
             "Hankflix titles of each codec play on both GPUs"
           ],
           "verify": "pnpm test:tripwire",
-          "status": "in_progress",
-          "owner": "implementer",
+          "status": "todo",
+          "owner": null,
           "passes": false,
-          "evidence": "Implemented on task/P13-34: TV type tokens (28 px body, 24 px floor), hold-OK details, TV scrub with held picture, Leave Fluster? dialog, TV-only Backspace. pnpm check exit 0 (163 files, 2097 tests; cargo 183 passed). pnpm test:e2e 155 passed, 1 failed: e2e/tv/detail.spec.ts:61 fails 1 of 3 with --repeat-each 3 on origin/main too (pre-existing flake). pnpm test:visual 338 passed. Review pending."
+          "evidence": ""
         },
         {
           "id": "P1-09",
@@ -2634,10 +2634,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
+          "status": "done",
+          "owner": "implementer",
+          "passes": true,
+          "evidence": "Implemented on task/P13-34: TV type tokens (28 px body, 24 px floor), hold-OK details, TV scrub with held picture, Leave Fluster? dialog, TV-only Backspace. pnpm check exit 0 (cargo 183 passed). pnpm test:e2e 156 passed (FLUSTER_E2E_PORT=47311). pnpm test:visual 338 passed (FLUSTER_VISUAL_PORT=47312). e2e/tv/detail.spec.ts:61 passed 5 of 5 with --repeat-each 5 on this branch; it is a known flake on origin/main (2 of 5, plan 002 P13-26 follow-up 3). Fresh-context review done; lows logged in plan 002. Screenshots attach at ship."
         },
         {
           "id": "P13-22",
