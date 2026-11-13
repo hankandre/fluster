@@ -20,6 +20,8 @@ import { Scrubber } from "../features/player/chrome/scrubber";
 import { TrackPanel } from "../features/player/chrome/track-panel";
 import type { ConvertedTracks } from "../features/player/chrome/track-options";
 import { TransportControls } from "../features/player/chrome/transport-controls";
+import { focusChromeControl, useTvChromeFocus } from "../features/player/chrome/use-tv-chrome-focus";
+import { useTvForm } from "../features/shared/use-tv-form";
 import { CHROME_ZONE_ATTRIBUTE, useChromeVisibility } from "../features/player/chrome/use-chrome-visibility";
 import { useFullscreen } from "../features/player/chrome/use-fullscreen";
 import { useOsd } from "../features/player/chrome/use-osd";
@@ -145,7 +147,20 @@ export function PlayerView({
   };
 
   const playing = Boolean(snapshot && !snapshot.paused);
-  const visibility = useChromeVisibility({ playing, pinned: Boolean(commandError) || sheet !== undefined });
+  const tv = useTvForm();
+  const region = useRef<HTMLElement>(null);
+  const visibility = useChromeVisibility({ playing, pinned: Boolean(commandError) || sheet !== undefined, tv });
+  useTvChromeFocus(region);
+  // TV idle: when the chrome hides while playing, focus moves to the player region, so the next arrow wakes it.
+  useEffect(() => {
+    if (!tv || visibility.visible) return;
+    const active = document.activeElement;
+    if (active && region.current?.contains(active) && active !== region.current) region.current.focus();
+  }, [tv, visibility.visible]);
+  const wake = useCallback((target: "scrubber" | "play") => {
+    visibility.wake();
+    focusChromeControl(region.current, target);
+  }, [visibility.wake]);
   const skip = segments && snapshot ? activeSegment(segments, snapshot.positionSeconds) : undefined;
 
   // A failed session replaces the chrome with a notice, so any open sheet closes.
@@ -169,6 +184,7 @@ export function PlayerView({
     skipTo: skip?.endSeconds,
     chromeVisible: visibility.visible,
     onPlayNext,
+    onWake: wake,
   });
 
   // The conversion is announced at the start of every converted session, and
@@ -184,7 +200,7 @@ export function PlayerView({
 
   if (sessionError) {
     return (
-      <section className="player-page" aria-label="Player" {...visibility.sectionProps}>
+      <section className="player-page" aria-label="Player" ref={region} tabIndex={tv ? -1 : undefined} data-tv-own-arrows={tv ? "" : undefined} {...visibility.sectionProps}>
         <NativeVideoSurface player={player} onError={setCommandError} />
         <PlaybackErrorNotice
           item={item}
@@ -202,7 +218,7 @@ export function PlayerView({
   }
 
   return (
-    <section className="player-page" aria-label="Player" {...visibility.sectionProps}>
+    <section className="player-page" aria-label="Player" ref={region} tabIndex={tv ? -1 : undefined} data-tv-own-arrows={tv ? "" : undefined} {...visibility.sectionProps}>
       <NativeVideoSurface player={player} onError={setCommandError} />
 
       {!chromeShown && (

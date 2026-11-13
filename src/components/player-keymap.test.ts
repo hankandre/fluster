@@ -152,3 +152,25 @@ describe("playerKeyAction", () => {
     expect(press("n", { metaKey: true })).toBeUndefined();
   });
 });
+
+describe("playerKeyAction in the TV form", () => {
+  it("wakes the chrome on an arrow from the player region and never changes the volume", () => {
+    for (const key of ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"]) {
+      expect(press(key, { tv: true })).toEqual({ kind: "wake" });
+    }
+  });
+
+  it("leaves arrows to a focused button, slider, or list", () => {
+    for (const html of ["<button>Go</button>", '<input type="range">', '<ul role="listbox"><li role="option">A</li></ul>']) {
+      const target = html.startsWith("<ul") ? element(html).firstElementChild : element(html);
+      expect(press("ArrowRight", { tv: true, target })).toBeUndefined();
+      expect(press("ArrowUp", { tv: true, target })).toBeUndefined();
+    }
+  });
+
+  it("keeps the other keys and the desktop table", () => {
+    expect(press("k", { tv: true })).toEqual({ kind: "toggle-pause" });
+    expect(press("Enter", { tv: true })).toEqual({ kind: "ok" });
+    expect(press("ArrowUp")).toEqual({ kind: "volume-by", amount: 5 });
+  });
+});

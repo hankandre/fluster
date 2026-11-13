@@ -39,6 +39,8 @@ interface PlayerKeysInput {
   chromeVisible: boolean;
   // Plays the next episode while the Up Next card is shown.
   onPlayNext?(): void;
+  // TV form: shows the chrome and focuses the scrubber (arrows) or Play or Pause (OK with no prompt).
+  onWake?(target: "scrubber" | "play"): void;
 }
 
 // The player's keyboard shortcuts. A key does its action and posts a message
@@ -52,11 +54,11 @@ export function usePlayerKeys(input: PlayerKeysInput): void {
 
   useEffect(() => {
     const onKeyDown = (keyboardEvent: KeyboardEvent) => {
-      const action = playerKeyAction(keyboardEvent);
+      const action = playerKeyAction({ key: keyboardEvent.key, repeat: keyboardEvent.repeat, ctrlKey: keyboardEvent.ctrlKey, metaKey: keyboardEvent.metaKey, altKey: keyboardEvent.altKey, target: keyboardEvent.target, tv: isTvForm() });
       if (!action) return;
       if (latest.current.suspended && action.kind !== "escape") return;
       keyboardEvent.preventDefault();
-      const { player, snapshot, converted, sheet, execute, changeFullscreen, fullscreenRef, onBack, onToggleSheet, onCloseSheet, showOsd, skipTo, chromeVisible, onPlayNext } = latest.current;
+      const { player, snapshot, converted, sheet, execute, changeFullscreen, fullscreenRef, onBack, onToggleSheet, onCloseSheet, showOsd, skipTo, chromeVisible, onPlayNext, onWake } = latest.current;
       switch (action.kind) {
         case "toggle-pause":
           if (snapshot) void execute(() => player.setPaused(!snapshot.paused));
@@ -133,7 +135,11 @@ export function usePlayerKeys(input: PlayerKeysInput): void {
           // the chrome is hidden, and only in the TV form (DESIGN.md 7.15).
           if (!isTvForm() || chromeVisible) break;
           if (skipTo !== undefined) void execute(() => player.seek(skipTo));
-          else onPlayNext?.();
+          else if (onPlayNext) onPlayNext();
+          else onWake?.("play");
+          break;
+        case "wake":
+          onWake?.("scrubber");
           break;
         case "escape":
           // Escape closes an open sheet, then leaves fullscreen, then the player.

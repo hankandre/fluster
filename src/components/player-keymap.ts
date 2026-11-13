@@ -15,6 +15,8 @@ export type PlayerKeyAction =
   | { kind: "play-next" }
   // OK on a TV remote: acts only in the TV form while the chrome is hidden.
   | { kind: "ok" }
+  // A TV arrow with focus on the player region: wakes the chrome with focus on the scrubber.
+  | { kind: "wake" }
   | { kind: "escape" };
 
 export interface PlayerKeyInput {
@@ -24,6 +26,8 @@ export interface PlayerKeyInput {
   metaKey: boolean;
   altKey: boolean;
   target: EventTarget | null;
+  // The 10-foot form: arrows wake the chrome and never change the volume; the focused scrubber seeks.
+  tv?: boolean;
 }
 
 export const SEEK_STEP_SECONDS = 10;
@@ -36,6 +40,7 @@ type TargetKind = "text" | "slider" | "list" | "activator" | "other";
 
 const ACTIVATOR_INPUTS = new Set(["checkbox", "radio", "button", "submit", "reset"]);
 const SLIDER_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"]);
+const ARROW_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"]);
 const LIST_KEYS = new Set(["ArrowUp", "ArrowDown", "Home", "End", "Enter", " "]);
 
 function targetKind(target: EventTarget | null): TargetKind {
@@ -104,6 +109,10 @@ export function playerKeyAction(input: PlayerKeyInput): PlayerKeyAction | undefi
   const key = input.key.length === 1 ? input.key.toLowerCase() : input.key;
   const action = actionFor(key);
   if (!action) return undefined;
+  if (input.tv && ARROW_KEYS.has(key)) {
+    // Arrows wake the chrome from the player region and belong to the focused control otherwise.
+    return targetKind(input.target) === "other" ? { kind: "wake" } : undefined;
+  }
   if (input.repeat && !repeats(action)) return undefined;
   switch (targetKind(input.target)) {
     case "text":

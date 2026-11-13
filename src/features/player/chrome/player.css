@@ -34,7 +34,7 @@
     grid-template-columns: auto minmax(0, 1fr) auto;
     gap: var(--space-4);
     align-items: center;
-    padding: var(--space-5) var(--gutter);
+    padding: calc(var(--space-5) + var(--safe-y)) var(--gutter) var(--space-5);
     transform: translateY(calc(var(--space-2) * -1));
   }
   .player-controls {
@@ -42,7 +42,7 @@
     z-index: 5;
     display: grid;
     gap: var(--space-3);
-    padding: var(--space-5) var(--gutter);
+    padding: var(--space-5) var(--gutter) calc(var(--space-5) + var(--safe-y));
     transform: translateY(var(--space-2));
   }
   /* An open sheet owns the right edge: the control row stops at its edge so
@@ -244,11 +244,25 @@
   .player-sheet-section p { margin: 0; color: var(--text-2); font: var(--type-meta); }
   .player-sheet-section .ui-button { justify-self: start; }
 
+  /* TV form (DESIGN.md 7.14): the sheet sits inside the safe inset, the row is centred, and the TV owns
+     volume and fullscreen. */
+  :root[data-form="tv"] .player-sheet {
+    inset: var(--safe-y) var(--safe-x) var(--safe-y) auto;
+    border-radius: var(--radius-sheet);
+  }
+  :root[data-form="tv"] .player-controls[data-sheet-open] { padding-right: calc(var(--player-sheet-w) + var(--safe-x) + var(--space-5)); }
+  :root[data-form="tv"] .player-skip[data-sheet-open],
+  :root[data-form="tv"] .player-prompt[data-sheet-open] { right: calc(var(--player-sheet-w) + var(--safe-x) + var(--space-5)); }
+  :root[data-form="tv"] .volume-group { display: none; }
+  .control-row[data-tv="true"] { display: grid; grid-template-columns: 1fr auto 1fr; }
+  .control-center { display: flex; align-items: center; gap: var(--space-4); }
+  .control-end { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-3); }
+
   /* On-screen feedback for keys, and the conversion line. */
   .player-osd {
     position: absolute;
     z-index: 3;
-    top: calc(var(--space-5) + var(--icon-button) + var(--space-3));
+    top: calc(var(--space-5) + var(--safe-y) + var(--icon-button) + var(--space-3));
     left: 50%;
     transform: translateX(-50%);
     pointer-events: none;
@@ -313,7 +327,7 @@
     grid-template-columns: auto 1fr;
     gap: var(--space-4);
     align-items: center;
-    padding: var(--space-5) var(--gutter);
+    padding: calc(var(--space-5) + var(--safe-y)) var(--gutter) var(--space-5);
   }
 
   /* Errors and warnings. */
@@ -338,8 +352,8 @@
     padding: var(--space-3) var(--space-4);
     font: var(--type-meta);
   }
-  .player-cpu-warning { top: calc(var(--space-5) + var(--icon-button) + var(--space-7)); }
-  .player-reporting-warning { top: calc(var(--space-5) + var(--icon-button) + var(--space-7) + var(--space-7)); max-width: min(680px, calc(100vw - 36px)); }
+  .player-cpu-warning { top: calc(var(--space-5) + var(--safe-y) + var(--icon-button) + var(--space-7)); }
+  .player-reporting-warning { top: calc(var(--space-5) + var(--safe-y) + var(--icon-button) + var(--space-7) + var(--space-7)); max-width: min(680px, calc(100vw - 36px)); }
 
   /* Skip and Up Next: anchored bottom right, just above the scrubber while the
      chrome shows and lower when it is hidden. Under a sheet they stop at its edge. */

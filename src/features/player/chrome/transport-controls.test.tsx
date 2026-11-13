@@ -92,3 +92,22 @@ describe("TransportControls", () => {
     expect(screen.getByRole("button", { name: "Info" })).toBeEnabled();
   });
 });
+
+describe("TransportControls in the TV form", () => {
+  afterEach(() => {
+    delete document.documentElement.dataset.form;
+  });
+
+  it("centres back, Play or Pause, and forward, with Audio & Subtitles and Info, and no volume or Fullscreen", () => {
+    document.documentElement.dataset.form = "tv";
+    setup();
+    expect(screen.getAllByRole("button").map((button) => button.getAttribute("aria-label"))).toEqual([
+      "Back 10 seconds",
+      "Pause",
+      "Forward 10 seconds",
+      "Audio & Subtitles",
+      "Info",
+    ]);
+    expect(screen.queryByLabelText("Volume")).toBeNull();
+  });
+});

@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PlaybackSnapshot, PlayerEngine } from "../domain/playback";
 import { conversionIndicator } from "../features/player/conversion-copy";
 import type { ReadyPlayerStatus } from "../features/player/player-status";
@@ -741,6 +741,49 @@ describe("skip and up next", () => {
     wakeThenHide();
     press("Enter");
     expect(onPlayNext).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("TV form wake and idle", () => {
+  const region = () => screen.getByRole("region", { name: "Player" });
+  const idle = () => {
+    fireEvent.mouseMove(region(), { clientX: 6, clientY: 6 });
+    act(() => vi.advanceTimersByTime(CHROME_IDLE_MS + 100));
+  };
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    document.documentElement.dataset.form = "tv";
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    delete document.documentElement.dataset.form;
+  });
+
+  it("moves focus to the player region when the chrome hides on idle", () => {
+    renderView();
+    screen.getByRole("button", { name: "Pause" }).focus();
+    idle();
+    expect(document.querySelector(".player-chrome")).toHaveAttribute("data-visible", "false");
+    expect(region()).toHaveFocus();
+  });
+
+  it("an arrow on the region wakes the chrome with focus on the scrubber and does not seek", () => {
+    const { player } = renderView();
+    idle();
+    act(() => void fireEvent.keyDown(region(), { key: "ArrowRight" }));
+    expect(document.querySelector(".player-chrome")).toHaveAttribute("data-visible", "true");
+    expect(screen.getByRole("slider", { name: "Playback position" })).toHaveFocus();
+    expect(player.seek).not.toHaveBeenCalled();
+  });
+
+  it("OK with no prompt wakes the chrome with focus on Play or Pause", () => {
+    const { player } = renderView();
+    idle();
+    act(() => void fireEvent.keyDown(region(), { key: "Enter" }));
+    expect(document.querySelector(".player-chrome")).toHaveAttribute("data-visible", "true");
+    expect(screen.getByRole("button", { name: "Pause" })).toHaveFocus();
+    expect(player.setPaused).not.toHaveBeenCalled();
   });
 });
 
