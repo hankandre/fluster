@@ -551,6 +551,21 @@ export const scenarios: Scenario[] = [
     await page.getByRole("listbox").waitFor();
     await page.keyboard.press("ArrowDown");
   } },
+  { name: "81b-ui-gallery-menu-open", run: async (page) => {
+    await go(page, "#/next/gallery", 400);
+    await page.getByRole("button", { name: "More", exact: true }).focus();
+    await page.keyboard.press("Enter");
+    await page.getByRole("menu").waitFor();
+    await page.keyboard.press("ArrowDown");
+    await page.waitForTimeout(150);
+  } },
+  { name: "81c-ui-gallery-menu-checked", run: async (page) => {
+    await go(page, "#/next/gallery", 400);
+    await page.getByRole("button", { name: "Account" }).focus();
+    await page.keyboard.press("Enter");
+    await page.getByRole("menu").waitFor();
+    await page.waitForTimeout(150);
+  } },
   { name: "82-ui-gallery-dialog", run: async (page) => {
     await go(page, "#/next/gallery", 400);
     await page.getByRole("button", { name: "Open dialog" }).click();

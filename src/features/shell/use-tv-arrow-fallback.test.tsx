@@ -11,7 +11,7 @@ function place(element: HTMLElement, left: number, top: number, width = 100, hei
   element.getBoundingClientRect = () => ({ left, top, right: left + width, bottom: top + height, width, height, x: left, y: top, toJSON: () => ({}) });
 }
 
-function Page({ dialog }: { dialog?: boolean }) {
+function Page({ dialog, menu }: { dialog?: boolean; menu?: boolean }) {
   useTvArrowFallback();
   return (
     <>
@@ -21,6 +21,7 @@ function Page({ dialog }: { dialog?: boolean }) {
       <input type="text" aria-label="Field" data-at="200,100" />
       <div data-tv-own-arrows=""><button type="button" data-at="400,0">Own</button></div>
       {dialog ? <div role="dialog" aria-modal="true"><button type="button" data-at="0,300">D1</button><button type="button" data-at="200,300">D2</button></div> : null}
+      {menu ? <ul className="ui-picker-list" role="menu"><li><button type="button" role="menuitem" data-at="0,300">M1</button></li><li><button type="button" role="menuitem" data-at="200,300">M2</button></li></ul> : null}
     </>
   );
 }
@@ -80,6 +81,18 @@ describe("useTvArrowFallback", () => {
     expect(d1).toHaveFocus();
     fireEvent.keyDown(d1, { key: "ArrowRight" });
     expect(screen.getByRole("button", { name: "D2" })).toHaveFocus();
+  });
+
+  it("stays inside an open menu", () => {
+    document.documentElement.dataset.form = "tv";
+    render(<Page menu />);
+    layout();
+    const m1 = screen.getByRole("menuitem", { name: "M1" });
+    m1.focus();
+    fireEvent.keyDown(m1, { key: "ArrowUp" });
+    expect(m1).toHaveFocus();
+    fireEvent.keyDown(m1, { key: "ArrowRight" });
+    expect(screen.getByRole("menuitem", { name: "M2" })).toHaveFocus();
   });
 
   it("leaves Left and Right to a text field but moves Up and Down", () => {

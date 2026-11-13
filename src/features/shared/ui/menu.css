@@ -1,0 +1,8 @@
+@layer reset, tokens, base, components, features, focus;
+
+@layer components {
+  /* Wraps the icon trigger only; keeps the round button at its 7.19 size and anchors blur checks. */
+  .ui-menu {
+    display: inline-flex;
+  }
+}

@@ -1,7 +1,8 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { Check, ChevronDown } from "lucide-react";
 import { useTvForm } from "../use-tv-form";
+import { useAnchoredPlace } from "./anchored-place";
 import { DIALOG_EXEMPT_ATTRIBUTE } from "./dialog";
 import "./picker.css";
 
@@ -34,7 +35,7 @@ interface PickerProps {
 
 const TYPEAHEAD_RESET_MS = 700;
 
-function enabledIndex(options: PickerOption[], from: number, step: 1 | -1): number | undefined {
+export function enabledIndex(options: ReadonlyArray<{ disabled?: boolean }>, from: number, step: 1 | -1): number | undefined {
   for (let index = from; index >= 0 && index < options.length; index += step) {
     if (!options[index].disabled) return index;
   }
@@ -42,7 +43,7 @@ function enabledIndex(options: PickerOption[], from: number, step: 1 | -1): numb
 }
 
 // The index the typed text points at, searching on from the current option.
-export function typeaheadIndex(options: PickerOption[], current: number, typed: string): number | undefined {
+export function typeaheadIndex(options: ReadonlyArray<{ label: string; disabled?: boolean }>, current: number, typed: string): number | undefined {
   const text = typed.toLowerCase();
   // One repeated letter cycles through the options that start with it.
   const cycle = text.length > 1 && [...text].every((char) => char === text[0]);
@@ -69,40 +70,10 @@ export function Picker({ label, hideLabel, options, value, onChange, placeholder
   const trigger = useRef<HTMLButtonElement>(null);
   const list = useRef<HTMLUListElement>(null);
   const tv = useTvForm();
-  const [place, setPlace] = useState<CSSProperties>({});
   const optionRefs = useRef<(HTMLLIElement | null)[]>([]);
   const typed = useRef({ text: "", timer: 0 });
 
-  // The list is in a portal so no scrolling or clipping ancestor (a dialog panel) cuts it off. It sits under
-  // the trigger, or above it when there is more room there.
-  useLayoutEffect(() => {
-    if (!open || tv) return;
-    const position = () => {
-      const anchor = trigger.current?.getBoundingClientRect();
-      const menu = list.current;
-      if (!anchor || !menu) return;
-      const margin = 8;
-      const below = window.innerHeight - anchor.bottom - margin;
-      const above = anchor.top - margin;
-      const wanted = Math.min(menu.scrollHeight, 18 * parseFloat(getComputedStyle(document.documentElement).fontSize));
-      const flip = wanted > below && above > below;
-      const room = Math.max(flip ? above : below, 96);
-      const height = Math.min(wanted, room);
-      setPlace({
-        left: Math.max(margin, Math.min(anchor.left, window.innerWidth - anchor.width - margin)),
-        top: flip ? anchor.top - 4 - height : anchor.bottom + 4,
-        minWidth: anchor.width,
-        maxHeight: `min(${room}px, 18rem)`,
-      });
-    };
-    position();
-    window.addEventListener("resize", position);
-    window.addEventListener("scroll", position, true);
-    return () => {
-      window.removeEventListener("resize", position);
-      window.removeEventListener("scroll", position, true);
-    };
-  }, [open, tv]);
+  const place = useAnchoredPlace(open, tv, trigger, list);
 
   useEffect(() => {
     if (open) optionRefs.current[active]?.focus();

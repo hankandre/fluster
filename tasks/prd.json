@@ -2375,10 +2375,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "Implemented on task/P13-26: Menu primitive, useAnchoredPlace, MODAL_LAYER, gallery Menu section, scenarios 81b/81c. Verify and design review pending."
         },
         {
           "id": "P13-23",
