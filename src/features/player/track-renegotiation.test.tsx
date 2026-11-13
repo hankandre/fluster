@@ -38,7 +38,6 @@ function directPlan(playSessionId = "play-1", extra: Partial<PlaybackPlan> = {})
     title: "Arrival",
     streamUrl: "https://media.test/Videos/m1/stream?Static=true",
     mediaSourceId: "src-hd",
-    authorization: 'MediaBrowser Client="Fluster", Token="test"',
     playSessionId,
     startPositionTicks: 0,
     tracks: sourceTracks,
@@ -197,7 +196,7 @@ describe("track changes while converting", () => {
 
     await choose("Audio track", "French");
 
-    await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(convertedPlan("play-2", { defaultAudioStreamIndex: 2 })));
+    await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(convertedPlan("play-2", { defaultAudioStreamIndex: 2 }), expect.any(Function)));
     expect(order).toEqual([
       "negotiate 0 -> play-1",
       "player stop",
@@ -418,7 +417,7 @@ describe("guardian review fixes", () => {
 
     await playOriginalFromInfo();
 
-    await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(directPlan("play-2")));
+    await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(directPlan("play-2"), expect.any(Function)));
     expect(order).toContain("stopped play-1 failed=true");
     expect(negotiationOptions(gateway, 1)[3]).toBe("src-hd");
     expect(negotiationOptions(gateway, 1)[4]).toEqual({ ignoreStreamingLimit: true });
@@ -489,7 +488,7 @@ describe("guardian review fixes", () => {
     });
     await act(async () => answer(convertedPlan("play-1")));
 
-    await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(convertedPlan("play-2")));
+    await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(convertedPlan("play-2"), expect.any(Function)));
     expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(2);
   });
 
@@ -561,7 +560,7 @@ describe("streaming limit changes during playback", () => {
       limits.set({ remoteMbps: 4 });
     });
 
-    await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(convertedPlan("play-2")));
+    await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(convertedPlan("play-2"), expect.any(Function)));
     expect(negotiationOptions(gateway, 1)[1]).toBe(420_000_000);
     expect(negotiationOptions(gateway, 1)[4]).toEqual({ ignoreStreamingLimit: false, audioStreamIndex: 1, subtitleStreamIndex: 3 });
     expect(order.slice(1)).toEqual(["stopped play-1 failed=true", "delete play-1", "negotiate 420000000 -> play-2"]);
@@ -583,7 +582,7 @@ describe("streaming limit changes during playback", () => {
     await act(async () => {
       limits.set({ remoteMbps: 20, localMbps: 2 });
     });
-    await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(convertedPlan("play-2")));
+    await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(convertedPlan("play-2"), expect.any(Function)));
     expect(negotiationOptions(gateway, 1)[1]).toBe(420_000_000);
     expect(gateway.stopActiveEncoding).not.toHaveBeenCalled();
   });

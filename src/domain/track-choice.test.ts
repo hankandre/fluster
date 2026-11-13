@@ -17,7 +17,6 @@ function converting(overrides: Partial<PlaybackPlan> = {}): PlaybackPlan {
     itemId: "m1",
     title: "Arrival",
     streamUrl: "https://media.test/videos/m1/master.m3u8",
-    authorization: "MediaBrowser",
     mediaSourceId: "src",
     playSessionId: "play-1",
     startPositionTicks: 0,

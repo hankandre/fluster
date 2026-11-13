@@ -7,7 +7,6 @@ const plan: PlaybackPlan = {
   itemId: "item-1",
   title: "Movie",
   streamUrl: "https://media.test/videos/item-1/master.m3u8?MediaSourceId=s&EnableTrickplay=false",
-  authorization: 'MediaBrowser Client="Fluster", Token="secret"',
   mediaSourceId: "s",
   playSessionId: "p",
   startPositionTicks: 0,

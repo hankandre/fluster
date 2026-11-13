@@ -179,7 +179,7 @@ async function playSample(server: ServerContext, sample: Sample, item: ItemDto):
     }
     if (plan) {
       addSecret(plan.playSessionId);
-      addSecret(/Token="([^"]+)"/.exec(plan.authorization)?.[1]);
+      addSecret(/Token="([^"]+)"/.exec(gateway.authorizationHeader())?.[1]);
       addSecret(new URL(plan.streamUrl).searchParams.get("api_key") ?? undefined);
       hasAudio = plan.tracks.some((track) => track.type === "Audio");
       result.plan = {

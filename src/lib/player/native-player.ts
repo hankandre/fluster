@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import {
   PlaybackRefusedError,
+  type LaunchAuthorization,
   type PlayerCapabilities,
   type PlaybackPlan,
   type PlayerEngine,
@@ -37,10 +38,11 @@ export class NativePlayerEngine implements PlayerEngine {
   // The header travels as its own typed LaunchRequest field, so Rust can
   // validate it and give it to libmpv as a fixed HTTP header. The plan's
   // typed `delivery` field picks Rust's static or HLS path (P10-04).
-  async launch(plan: PlaybackPlan): Promise<void> {
-    const { authorization, ...launchPlan } = plan;
+  async launch(plan: PlaybackPlan, readAuthorization: LaunchAuthorization): Promise<void> {
     try {
-      await invoke("launch_playback", { request: { plan: launchPlan, authorization, testForceSoftware: false } });
+      await invoke("launch_playback", {
+        request: { plan, authorization: readAuthorization(), testForceSoftware: false },
+      });
     } catch (error) {
       if (typeof error === "string" && error.startsWith(UNSAFE_CONVERSION_PREFIX)) {
         throw new PlaybackRefusedError({ reason: "unsafe-transcoding-url", detail: "converted stream checks" });

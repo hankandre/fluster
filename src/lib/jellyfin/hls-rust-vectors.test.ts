@@ -36,7 +36,7 @@ const CONVERSIONS: [string, string][] = [
 
 interface Vector {
   name: string;
-  plan: Omit<PlaybackPlan, "authorization">;
+  plan: PlaybackPlan;
 }
 
 class AnswerTransport implements HttpTransport {
@@ -62,8 +62,8 @@ async function hlsPlan(server: string, answer: PlaybackInfoResponse, itemId: str
   const gateway = new JellyfinGateway(server, new AnswerTransport(answer), "install-1");
   await gateway.login("tester", "password");
   const item: LibraryItem = { id: itemId, name: "Fixture", type: "Movie", resumePositionTicks: 0, played: false };
-  const { authorization, ...plan } = await gateway.createPlaybackPlan(item);
-  expect(authorization).toContain("test-token");
+  const plan = await gateway.createPlaybackPlan(item);
+  expect(plan).not.toHaveProperty("authorization");
   return plan;
 }
 

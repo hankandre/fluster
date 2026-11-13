@@ -28,7 +28,6 @@ function plan(playSessionId = "play-1"): PlaybackPlan {
     title: "Arrival",
     streamUrl: "https://media.test/Videos/m1/stream?Static=true",
     mediaSourceId: "src-hd",
-    authorization: 'MediaBrowser Client="Fluster", Token="test"',
     playSessionId,
     startPositionTicks: 0,
     tracks: [],
@@ -110,9 +109,33 @@ describe("Player feature", () => {
       "src-hd",
       { ignoreStreamingLimit: false },
     );
-    expect(engine.launch).toHaveBeenCalledWith(plan());
+    expect(engine.launch).toHaveBeenCalledWith(plan(), expect.any(Function));
     await waitFor(() => expect(gateway.reportStart).toHaveBeenCalledWith(plan(), snapshot, expect.any(AbortSignal)));
     expect(screen.getByRole("heading", { name: "Arrival", level: 1 })).toBeInTheDocument();
+  });
+
+  // The signed-in header is read only when the engine asks for it at launch;
+  // it never enters the plan, the rendered tree, or the Query cache.
+  it("never puts the authorization header in the plan, the view, the Query cache, or the engine's arguments", async () => {
+    const canary = "CANARY-TOKEN-7f3a91";
+    const gateway = fakeGateway({ authorizationHeader: vi.fn(() => `MediaBrowser Client="Fluster", Token="${canary}"`) });
+    const engine = new FakePlayerEngine();
+    const client = await renderPlayer(gateway, engine);
+    await startPlaying(engine);
+
+    const [launchedPlan, readAuthorization] = engine.launch.mock.calls[0] as unknown as [PlaybackPlan, () => string];
+    expect(launchedPlan).not.toHaveProperty("authorization");
+    expect(JSON.stringify(launchedPlan)).not.toContain(canary);
+    expect(gateway.authorizationHeader).not.toHaveBeenCalled();
+    expect(document.body.innerHTML).not.toContain(canary);
+    const cache = JSON.stringify(client.getQueryCache().getAll().map((query) => [query.queryKey, query.state.data]));
+    expect(cache).not.toContain(canary);
+    const reported = JSON.stringify([
+      (gateway.reportStart as ReturnType<typeof vi.fn>).mock.calls,
+      (gateway.reportProgress as ReturnType<typeof vi.fn>).mock.calls,
+    ]);
+    expect(reported).not.toContain(canary);
+    expect(readAuthorization()).toContain(canary);
   });
 
   it("Back stops the player, reports stopped, and returns to the detail view", async () => {
@@ -173,7 +196,7 @@ describe("Player feature", () => {
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     });
-    await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(plan("play-2")));
+    await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(plan("play-2"), expect.any(Function)));
     expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(2);
     expect(screen.queryByRole("heading", { name: "Playback could not start" })).not.toBeInTheDocument();
 
@@ -280,7 +303,7 @@ describe("Player feature", () => {
       fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     });
 
-    await waitFor(() => expect(engine.launch).toHaveBeenCalledWith(plan("play-2")));
+    await waitFor(() => expect(engine.launch).toHaveBeenCalledWith(plan("play-2"), expect.any(Function)));
     expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(2);
     expect(screen.queryByRole("heading", { name: REFUSAL_COPY["conversion-not-allowed"].title })).not.toBeInTheDocument();
   });
@@ -392,7 +415,7 @@ describe("Player feature", () => {
       expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(1);
 
       await act(async () => stops[0]());
-      await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(plan("play-2")));
+      await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(plan("play-2"), expect.any(Function)));
       expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(2);
     });
 
@@ -789,7 +812,7 @@ describe("System media controls", () => {
 
       await openInfoThenPlayOriginal();
 
-      await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(plan("play-2")));
+      await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(plan("play-2"), expect.any(Function)));
       expect(gateway.createPlaybackPlan).toHaveBeenCalledTimes(2);
       expect(vi.mocked(gateway.createPlaybackPlan).mock.calls[0][4]).toEqual({ ignoreStreamingLimit: false });
       expect(vi.mocked(gateway.createPlaybackPlan).mock.calls[1][4]).toEqual({ ignoreStreamingLimit: true });
@@ -831,7 +854,7 @@ describe("System media controls", () => {
 
       await openInfoThenPlayOriginal();
 
-      await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(plan("play-2")));
+      await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(plan("play-2"), expect.any(Function)));
       expect(order).toEqual(["negotiate", "delete play-1", "negotiate"]);
     });
 
@@ -897,7 +920,7 @@ describe("System media controls", () => {
       await renderPlayer(gateway, engine);
       await startPlaying(engine);
       await openInfoThenPlayOriginal();
-      await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(plan("play-2")));
+      await waitFor(() => expect(engine.launch).toHaveBeenLastCalledWith(plan("play-2"), expect.any(Function)));
       cleanup();
 
       const next = new FakePlayerEngine();

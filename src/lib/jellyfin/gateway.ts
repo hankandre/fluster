@@ -761,7 +761,6 @@ export class JellyfinGateway {
       streamUrl: decision.kind === "direct-play"
         ? buildStaticStreamUrl(this.serverUrl, item.id, source.Id, data.PlaySessionId)
         : decision.masterUrl,
-      authorization: this.authorizationHeader(),
       hasSegments: source.HasSegments === true,
       ...(typeof source.Bitrate === "number" ? { sourceBitrate: source.Bitrate } : {}),
       subtitlesBurnedIn: decision.kind === "convert" && decision.subtitlesBurnedIn,

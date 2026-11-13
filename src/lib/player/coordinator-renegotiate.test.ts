@@ -10,7 +10,6 @@ function hlsPlan(playSessionId: string): PlaybackPlan {
     itemId: "one",
     title: "One",
     streamUrl: "https://media.test/videos/one/master.m3u8",
-    authorization: 'MediaBrowser Token="secret"',
     mediaSourceId: "source-a",
     playSessionId,
     startPositionTicks: 0,
@@ -74,6 +73,7 @@ function orderedGateway(order: string[], plans: PlaybackPlan[]) {
     reportStopped: vi.fn(async (stopped: PlaybackPlan, _snapshot: PlaybackSnapshot, _signal?: AbortSignal, failed?: boolean) => {
       order.push(`stopped ${stopped.playSessionId} failed=${String(failed)}`);
     }),
+    authorizationHeader: () => "test-header",
     stopActiveEncoding: vi.fn(async (playSessionId: string) => { order.push(`delete ${playSessionId}`); }),
   };
   return gateway;
@@ -158,6 +158,7 @@ describe("PlaybackCoordinator.renegotiate", () => {
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
       // The old encode's DELETE never answers either.
+      authorizationHeader: () => "test-header",
       stopActiveEncoding: vi.fn(() => new Promise<void>(() => undefined)),
     };
     const player = new FakePlayer();

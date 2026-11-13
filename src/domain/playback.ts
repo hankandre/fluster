@@ -175,13 +175,11 @@ export interface ServerPlayMethod {
 export interface PlaybackPlanBase {
   itemId: string;
   title: string;
-  // Token-free: media requests authenticate with `authorization` instead.
+  // Token-free: the plan never carries the signed-in header. Media requests
+  // authenticate with it only inside the native engine's launch call.
   // Static delivery: the `Static=true` original-file URL. HLS delivery: the
   // rebuilt same-origin `master.m3u8` URL (ARCHITECTURE.md §3 HLS URL rules).
   streamUrl: string;
-  // The signed-in `MediaBrowser …` header. Only the native engine sends it,
-  // through the typed launch request; it must never be logged or put in a URL.
-  authorization: string;
   mediaSourceId: string;
   playSessionId: string;
   startPositionTicks: number;
@@ -277,12 +275,17 @@ export type PlayerEvent =
   | { kind: "ended"; snapshot?: PlaybackSnapshot; reason: PlaybackEndReason }
   | { kind: "error"; message: string };
 
+// Reads the signed-in `MediaBrowser …` header at launch. Only the native
+// engine calls it, to fill the typed launch request; nothing may keep, log, or
+// put the value in a URL.
+export type LaunchAuthorization = () => string;
+
 export interface PlayerEngine {
   readonly mode: "native" | "browser";
   initialize(): Promise<PlayerCapabilities>;
   subscribe(listener: (event: PlayerEvent) => void): Promise<() => void>;
   setSurface(frame: PlayerSurfaceFrame): Promise<void>;
-  launch(plan: PlaybackPlan): Promise<void>;
+  launch(plan: PlaybackPlan, authorization: LaunchAuthorization): Promise<void>;
   setPaused(paused: boolean): Promise<void>;
   seek(positionSeconds: number): Promise<void>;
   setVolume(volume: number): Promise<void>;

@@ -35,6 +35,8 @@ export interface PlaybackGateway extends PlaystateGateway {
   ): Promise<PlaybackPlan>;
   // The server session's view of a running conversion. Without it a
   // converted plan keeps its provisional label.
+  // Read at launch only, for the native engine's typed launch request.
+  authorizationHeader(): string;
   sessionPlayMethod?(plan: Pick<PlaybackPlan, "itemId" | "mediaSourceId">, signal?: AbortSignal): Promise<ServerPlayMethod | undefined>;
 }
 
@@ -243,7 +245,7 @@ export class PlaybackCoordinator {
     };
     controller.signal.addEventListener("abort", cancelLaunch, { once: true });
     try {
-      await this.player.launch(plan);
+      await this.player.launch(plan, () => this.gateway.authorizationHeader());
       this.assertCurrentAttempt(attempt, controller);
       return plan;
     } catch (error) {

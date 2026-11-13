@@ -412,8 +412,9 @@ describe("JellyfinGateway direct-play contract", () => {
     expect(subtitleUrl.href).not.toContain("top-secret");
     expect(subtitleUrl.hash).toBe("");
     expect(plan.streamUrl).not.toContain("top-secret");
-    expect(plan.authorization).toBe(gateway.authorizationHeader());
-    expect(plan.authorization).toContain('Token="top-secret"');
+    expect(plan).not.toHaveProperty("authorization");
+    expect(JSON.stringify(plan)).not.toContain("top-secret");
+    expect(gateway.authorizationHeader()).toContain('Token="top-secret"');
   });
 
   it("strips every server credential parameter from subtitle URLs", async () => {
@@ -476,7 +477,6 @@ describe("JellyfinGateway direct-play contract", () => {
       itemId: "item-1",
       title: "Movie",
       streamUrl: "https://media.test/video",
-      authorization: 'MediaBrowser Token="secret"',
       mediaSourceId: "source-1",
       playSessionId: "play-1",
       startPositionTicks: 0,
@@ -536,7 +536,6 @@ describe("playstate reports carry the plan's play method", () => {
     itemId: "item-1",
     title: "Movie",
     streamUrl: "https://media.test/video",
-    authorization: 'MediaBrowser Token="secret"',
     mediaSourceId: "source-1",
     playSessionId: "play-1",
     startPositionTicks: 0,
@@ -727,7 +726,7 @@ describe("JellyfinGateway device identity and logout", () => {
 
   it("sends Failed on stopped reports only when requested", async () => {
     const { gateway, transport } = await authenticatedGateway();
-    const plan: PlaybackPlan = { itemId: "i", mediaSourceId: "m", playSessionId: "p", startPositionTicks: 0, streamUrl: "", authorization: "", title: "t", tracks: [], delivery: "static", playMethod: "DirectPlay", conversionReasons: [] };
+    const plan: PlaybackPlan = { itemId: "i", mediaSourceId: "m", playSessionId: "p", startPositionTicks: 0, streamUrl: "", title: "t", tracks: [], delivery: "static", playMethod: "DirectPlay", conversionReasons: [] };
     const snapshot = { positionSeconds: 1, paused: false, buffering: false, volume: 50, muted: false, tracks: [], diagnostics: { decodeMode: "hardware", decodeLabel: "x", droppedFrames: 0 } } as PlaybackSnapshot;
     await gateway.reportStopped(plan, snapshot, undefined, true);
     expect(transport.requests.at(-1)!.data).toMatchObject({ Failed: true });
@@ -1396,7 +1395,7 @@ describe("JellyfinGateway plain-HTTP policy (docs/decisions/0001)", () => {
 // In WebKitGTK the fetch adapter's `redirect: "manual"` yields an opaque
 // redirect with status 0, and Axios resolves it instead of rejecting.
 describe("JellyfinGateway resolved redirect responses", () => {
-  const plan: PlaybackPlan = { itemId: "i", mediaSourceId: "m", playSessionId: "p", startPositionTicks: 0, streamUrl: "", authorization: "", title: "t", tracks: [], delivery: "static", playMethod: "DirectPlay", conversionReasons: [] };
+  const plan: PlaybackPlan = { itemId: "i", mediaSourceId: "m", playSessionId: "p", startPositionTicks: 0, streamUrl: "", title: "t", tracks: [], delivery: "static", playMethod: "DirectPlay", conversionReasons: [] };
   const snapshot = { positionSeconds: 1, paused: false, buffering: false, volume: 50, muted: false, tracks: [], diagnostics: { decodeMode: "hardware", decodeLabel: "x", droppedFrames: 0 } } as PlaybackSnapshot;
 
   it.each([0, 302, 307])("refuses a probe that resolves with status %i", async (status) => {

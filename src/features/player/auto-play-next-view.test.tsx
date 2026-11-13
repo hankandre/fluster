@@ -35,7 +35,6 @@ function plan(itemId: string, playSessionId: string): PlaybackPlan {
     title: itemId,
     streamUrl: `https://media.test/Videos/${itemId}/stream?Static=true`,
     mediaSourceId: "src",
-    authorization: 'MediaBrowser Token="test"',
     playSessionId,
     startPositionTicks: 0,
     tracks: [],
@@ -200,7 +199,7 @@ describe("Auto-play the next episode", () => {
       undefined,
       { ignoreStreamingLimit: false },
     );
-    expect(engine.launch).toHaveBeenLastCalledWith(plan("e2", "play-e2-1"));
+    expect(engine.launch).toHaveBeenLastCalledWith(plan("e2", "play-e2-1"), expect.any(Function));
     const reportStopped = vi.mocked(gateway.reportStopped).mock.invocationCallOrder[0];
     const secondNegotiation = vi.mocked(gateway.createPlaybackPlan).mock.invocationCallOrder[1];
     expect(reportStopped).toBeLessThan(secondNegotiation);

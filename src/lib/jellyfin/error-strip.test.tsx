@@ -91,7 +91,6 @@ function plan(): PlaybackPlan {
     itemId: "m1",
     title: "Fixture",
     streamUrl: `${SERVER}/Videos/m1/stream?Static=true`,
-    authorization: 'MediaBrowser Client="Fluster"',
     mediaSourceId: "s",
     playSessionId: "p1",
     startPositionTicks: 0,

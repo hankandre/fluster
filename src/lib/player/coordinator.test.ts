@@ -14,7 +14,6 @@ const plan: PlaybackPlan = {
   itemId: "one",
   title: "One",
   streamUrl: "https://media.test/video",
-  authorization: 'MediaBrowser Token="secret"',
   mediaSourceId: "source",
   playSessionId: "session",
   startPositionTicks: 0,
@@ -59,6 +58,7 @@ function orderedGateway(order: string[], plans: PlaybackPlan[]): PlaybackGateway
     reportStart: vi.fn(async () => undefined),
     reportProgress: vi.fn(async () => undefined),
     reportStopped: vi.fn(async (stopped: PlaybackPlan) => { order.push(`stopped ${stopped.playSessionId}`); }),
+    authorizationHeader: () => "test-header",
     stopActiveEncoding: vi.fn(async (playSessionId: string) => { order.push(`delete ${playSessionId}`); }),
   };
 }
@@ -91,6 +91,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      authorizationHeader: () => "test-header",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
@@ -117,6 +118,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      authorizationHeader: () => "test-header",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
@@ -131,8 +133,8 @@ describe("PlaybackCoordinator", () => {
 
     expect(gateway.createPlaybackPlan).toHaveBeenNthCalledWith(1, item, item.resumePositionTicks, expect.any(AbortSignal));
     expect(gateway.createPlaybackPlan).toHaveBeenNthCalledWith(2, item, item.resumePositionTicks, expect.any(AbortSignal));
-    expect(player.launch).toHaveBeenNthCalledWith(1, plan);
-    expect(player.launch).toHaveBeenNthCalledWith(2, replacementPlan);
+    expect(player.launch).toHaveBeenNthCalledWith(1, plan, expect.any(Function));
+    expect(player.launch).toHaveBeenNthCalledWith(2, replacementPlan, expect.any(Function));
   });
 
   it("refuses to relaunch a retry with the failed play-session ID", async () => {
@@ -141,6 +143,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      authorizationHeader: () => "test-header",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
@@ -166,6 +169,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(() => record("start")),
       reportProgress: vi.fn(() => record("progress")),
       reportStopped: vi.fn(() => record("stop")),
+      authorizationHeader: () => "test-header",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
@@ -196,6 +200,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      authorizationHeader: () => "test-header",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
@@ -224,6 +229,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      authorizationHeader: () => "test-header",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
@@ -251,6 +257,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      authorizationHeader: () => "test-header",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
@@ -273,6 +280,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      authorizationHeader: () => "test-header",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
@@ -310,6 +318,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(() => new Promise<void>((resolve) => { finishReport = resolve; })),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      authorizationHeader: () => "test-header",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
@@ -335,6 +344,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(() => new Promise<void>((resolve) => { finishStartReport = resolve; })),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      authorizationHeader: () => "test-header",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
@@ -365,6 +375,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      authorizationHeader: () => "test-header",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
@@ -403,6 +414,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(() => new Promise<void>(() => undefined)),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      authorizationHeader: () => "test-header",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
@@ -436,6 +448,7 @@ describe("PlaybackCoordinator", () => {
       reportProgress: vi.fn(async () => undefined),
       // A server that never answers and ignores cancellation.
       reportStopped: vi.fn(() => new Promise<void>(() => undefined)),
+      authorizationHeader: () => "test-header",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
@@ -469,6 +482,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      authorizationHeader: () => "test-header",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
@@ -502,6 +516,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      authorizationHeader: () => "test-header",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
@@ -522,6 +537,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      authorizationHeader: () => "test-header",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
@@ -541,6 +557,7 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
+      authorizationHeader: () => "test-header",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
     const player = new FakePlayer();
@@ -616,6 +633,7 @@ describe("PlaybackCoordinator", () => {
           reportProgress: vi.fn(async () => undefined),
           reportStopped: vi.fn(stopped),
           // A server that never answers and ignores cancellation.
+          authorizationHeader: () => "test-header",
           stopActiveEncoding: vi.fn(() => new Promise<void>(() => undefined)),
         } as PlaybackGateway;
         const player = new FakePlayer();

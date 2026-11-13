@@ -6,7 +6,6 @@ const plan: PlaybackPlan = {
   itemId: "one",
   title: "One",
   streamUrl: "https://media.test/video",
-  authorization: 'MediaBrowser Token="secret"',
   mediaSourceId: "source",
   playSessionId: "session",
   startPositionTicks: 0,
