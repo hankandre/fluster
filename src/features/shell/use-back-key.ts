@@ -4,7 +4,7 @@ import { isTvForm } from "../shared/tv-form";
 import { isTextTarget } from "../use-escape-key";
 
 const HOME_HASH = "#/next/home";
-export const MODAL_LAYER = '[role="dialog"][aria-modal="true"], [role="alertdialog"], .ui-picker-list[role="listbox"]';
+export const MODAL_LAYER = '[role="dialog"][aria-modal="true"], [role="alertdialog"], .ui-picker-list[role="listbox"], .ui-picker-list[role="menu"]';
 const NAV_CURRENT = 'nav[aria-label="Main"] [aria-current="page"], nav[aria-label="Main"] [data-roving-item][tabindex="0"]';
 
 // True once this tab has pushed a history entry, so history.back() stays inside the app. A replace

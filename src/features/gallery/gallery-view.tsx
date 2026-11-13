@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from "react";
-import { Heart, Inbox, Play, Trash2, TriangleAlert } from "lucide-react";
+import { Heart, Inbox, Play, Trash2, TriangleAlert, User } from "lucide-react";
 import {
   Button,
   Dialog,
@@ -7,6 +7,7 @@ import {
   InlineError,
   MediaCard,
   MediaRow,
+  Menu,
   Picker,
   SegmentedTabPanel,
   SegmentedTabs,
@@ -16,6 +17,7 @@ import {
   SettingsRow,
   SettingsSection,
   useToast,
+  type MenuItem,
   type PickerOption,
 } from "../shared/ui";
 import { PlayerChromeGallery } from "./player-chrome-gallery";
@@ -42,6 +44,24 @@ const LIMITS: PickerOption[] = [
   { value: "8", label: "8 Mbps", description: "Not available on this connection", disabled: true },
 ];
 
+// Menu rows that show a toast so a gallery viewer sees the activation (dev-only copy).
+function menuItems(rows: Omit<MenuItem, "onSelect">[], choose: (label: string) => void): MenuItem[] {
+  return rows.map((row) => ({ ...row, onSelect: () => choose(row.label) }));
+}
+
+const MORE_ROWS = [
+  { id: "files", label: "File and streams" },
+  { id: "series", label: "Go to series", description: "Harbor Lights" },
+  { id: "season", label: "Mark season watched", description: "Not available yet", disabled: true },
+];
+
+const ACCOUNT_ROWS = [
+  { id: "sam", label: "Sam · Hearth", checked: true },
+  { id: "alex", label: "Alex · Hearth", checked: false },
+  { id: "add", label: "Add account" },
+  { id: "manage", label: "Manage accounts" },
+];
+
 const SEASONS = [
   { id: "s1", label: "Season 1" },
   { id: "s2", label: "Season 2" },
@@ -66,6 +86,9 @@ function Gallery() {
   const [unwatched, setUnwatched] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const cancel = useRef<HTMLButtonElement>(null);
+  const choose = (label: string) => toast.show({ message: `Chose ${label}.` });
+  const moreItems = menuItems(MORE_ROWS, choose);
+  const accountItems = menuItems(ACCOUNT_ROWS, choose);
 
   return (
     <main className="gallery" data-gallery={GALLERY_MARKER}>
@@ -180,6 +203,12 @@ function Gallery() {
       <PlayerChromeGallery />
       <PlaybackNoticeGallery />
       <SignInGallery />
+
+      <Section title="Menu">
+        <Menu label="More" items={moreItems} />
+        <Menu appearance="icon" icon={<User aria-hidden="true" size={20} />} label="Account" items={accountItems} />
+        <Menu label="More (disabled)" items={moreItems} disabled />
+      </Section>
     </main>
   );
 }

@@ -261,7 +261,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 - A trigger button shows the current value ("4K HDR ▾", "English · TrueHD 7.1 ▾"). It opens an anchored menu on desktop or a right-side sheet on TV and in the player. The TV sheet is `--player-sheet-w` wide inside the safe inset and uses the same listbox, keys, and focus return.
 - The list is a `role="listbox"` (or `radiogroup`) of rows with a check on the selected row and a two-line label (name, then codec, channels, and default or external flags).
 - Arrow keys move, Enter selects and closes, Escape or Back closes without change. Never a native `<select>` (it opens an OS popup the TV shell cannot style or focus).
-- **`Menu`** (P13-26) is the same trigger and anchored list for actions instead of a value: `role="menu"` rows with no check, Enter activates and closes, Escape closes and returns focus to the trigger. It serves the `More` menu (§7.8) and the account menu (§7.21).
+- **`Menu`** (P13-26) is the same trigger and anchored list for actions instead of a value: the trigger is the Picker's pill (label and chevron) or a round icon button (§7.19) for the nav's account control, and on TV the list is the same right-side sheet. Rows are `role="menu"` rows with no check; a row that marks the current choice among actions, such as the active account (§7.21), is a `menuitemradio` with a check. Arrows move, Home and End jump, typing jumps by label, Enter activates and closes, and Escape or Back closes and returns focus to the trigger. It serves the `More` menu (§7.8) and the account menu (§7.21).
 
 ### 7.11 Segmented tabs (`SegmentedTabs`)
 

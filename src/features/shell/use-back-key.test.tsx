@@ -117,4 +117,13 @@ describe("useBackKey", () => {
     fireEvent.keyDown(screen.getByLabelText("Field"), { key: "Escape" });
     expect(back).not.toHaveBeenCalled();
   });
+
+  it("does nothing while a menu is open", () => {
+    window.location.hash = "#/next/item/abc";
+    const back = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
+    render(<><Probe /><ul className="ui-picker-list" role="menu" /></>);
+    fireEvent.keyDown(screen.getByRole("button", { name: "Content" }), { key: "Escape" });
+    expect(back).not.toHaveBeenCalled();
+    expect(window.location.hash).toBe("#/next/item/abc");
+  });
 });
