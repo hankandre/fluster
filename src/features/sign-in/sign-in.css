@@ -4,6 +4,11 @@
     place-items: center;
     padding: 8vh 0 12vh;
   }
+  :root[data-form="tv"] .sign-in {
+    padding: var(--safe-y) var(--safe-x);
+    min-block-size: 100vh;
+    box-sizing: border-box;
+  }
   .sign-in-card {
     inline-size: var(--sign-in-w);
     display: grid;

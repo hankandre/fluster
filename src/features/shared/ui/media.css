@@ -201,6 +201,11 @@
     color: var(--text-1);
   }
 
+  /* The TV form has no pointer: keys page the row (DESIGN.md 9). */
+  :root[data-form="tv"] .media-row-page {
+    display: none;
+  }
+
   /* Pointer paging: shown on hover or focus-within for fine pointers; keys page for everyone else. */
   .media-row-page {
     display: none;

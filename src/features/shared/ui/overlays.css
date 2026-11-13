@@ -13,6 +13,16 @@
     animation: ui-fade-in var(--dur-base) var(--ease-out);
   }
 
+  :root[data-form="tv"] .ui-dialog-veil {
+    padding: var(--safe-y) var(--safe-x);
+  }
+
+  :root[data-form="tv"] .ui-toast-region {
+    bottom: var(--safe-y);
+    left: var(--safe-x);
+    max-width: min(28rem, calc(100vw - 2 * var(--safe-x)));
+  }
+
   .ui-dialog {
     box-sizing: border-box;
     display: grid;

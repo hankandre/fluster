@@ -7,6 +7,7 @@ import { safeReason } from "../player/safe-reason";
 import { playRoute, type PlayRoute } from "../routes";
 import { useRovingFocus } from "../roving-focus";
 import { ActionBar, Button, ButtonLink, Picker, ProgressRing, ToggleButton } from "../shared/ui";
+import { useTvPrimaryRef } from "../shared/use-tv-form";
 import { positionLabel } from "./format";
 import { versionSummary } from "./media-badges";
 import type { useFlagMutation } from "./use-flag-mutation";
@@ -24,6 +25,7 @@ interface DetailActionsProps {
 // Resume or Play, the version Picker (two or more versions), Start over, then the Watched and Favorite toggles
 // (DESIGN.md 7.8 as amended by Q6 A and Q7 A). Each opens the player for the selected version.
 export function DetailActions({ item, selected, onVersion, played, favorite }: DetailActionsProps) {
+  const primaryRef = useTvPrimaryRef();
   const resumeTicks = resumeTicksOf(item);
   const startOver: PlayRoute = { itemId: item.id, mediaSourceId: selected?.id, startTicks: 0 };
   const primaryRoute: PlayRoute = resumeTicks === undefined ? startOver : { ...startOver, startTicks: resumeTicks };
@@ -34,6 +36,7 @@ export function DetailActions({ item, selected, onVersion, played, favorite }: D
       <ButtonLink
         variant="primary"
         href={playRoute(primaryRoute)}
+        ref={primaryRef}
         onClick={playActivation(primaryRoute)}
         data-roving-item=""
         icon={fraction !== undefined ? <ProgressRing value={fraction} /> : undefined}

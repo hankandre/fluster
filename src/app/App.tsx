@@ -9,6 +9,7 @@ import { SearchView } from "../features/search";
 import { DetailView, ItemDetailView } from "../features/detail";
 import { SettingsView } from "../features/settings";
 import { SignedInChrome } from "../features/shell";
+import { useTvArrowFallback } from "../features/shell/use-tv-arrow-fallback";
 import { useBackspaceAsEscape } from "../features/shell/use-backspace-as-escape";
 import { PlayerFeatureView, PlayerRouteView } from "../features/player";
 import { parseLibraryRoute, parsePlayRoute } from "../features/routes";
@@ -27,6 +28,7 @@ const GalleryView = import.meta.env.DEV
 export function App() {
   const services = useMemo(() => createServices(), []);
   useBackspaceAsEscape();
+  useTvArrowFallback();
   // One player engine for the whole app.
   const player = useMemo<PlayerServices>(
     () => ({

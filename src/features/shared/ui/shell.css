@@ -59,6 +59,21 @@
     --sticky-top: 0;
   }
 
+  /* TV form: the tab row sits inside the title-safe inset (DESIGN.md 6). */
+  :root[data-form="tv"] {
+    scroll-padding-top: calc(var(--nav-h) + var(--safe-y));
+  }
+
+  :root[data-form="tv"] .app-nav {
+    block-size: calc(var(--nav-h) + var(--safe-y));
+    padding-block-start: var(--safe-y);
+    padding-inline: var(--safe-x);
+  }
+
+  :root[data-form="tv"] .app-content {
+    padding-block-end: var(--safe-y);
+  }
+
   .app-nav-bar {
     display: flex;
     align-items: center;
