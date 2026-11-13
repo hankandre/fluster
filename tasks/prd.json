@@ -1,6 +1,6 @@
 {
   "product": "Fluster",
-  "updated": "2026-11-12",
+  "updated": "2026-11-13",
   "rules": [
     "Pick the first task whose status is todo and whose depends_on tasks all pass.",
     "Skip tasks with human set to true; set them to blocked and state in evidence what the person must do.",
@@ -680,6 +680,208 @@
             "Every synthetic sample plays headless to playback-restart against both fixture servers"
           ],
           "verify": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings && cargo test --release --manifest-path src-tauri/Cargo.toml",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P2-07",
+          "title": "Fix the gateway's small inconsistencies",
+          "domain": "Playback Negotiation",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [],
+          "acceptance": [
+            "The PlaybackInfo request builds its path with encodeURIComponent(itemId), like every other path in the gateway; a gateway test passes an id with a reserved character and asserts the encoded path (docs/plans/proposals/code-quality-triage.md, problem 5)",
+            "For an ordinary item id the PlaybackInfo path, body, and query string are unchanged: the body and query still carry the same flags, the Fluster DeviceProfile is still sent, and pnpm test:tripwire passes against both fixture servers",
+            "mediaSegments calls requireSession() before it sends anything; a test asserts that a signed-out gateway rejects with the sign-in error and sends no request",
+            "JellyfinGateway.latest() is removed. The test of its own mapping goes with it; every other test that used it as a vehicle (sign-in required, redaction canary, error stripping, an empty result) keeps its assertions on a catalog call that production code makes",
+            "The private get, post, and delete wrappers share one implementation; the redirect-refusal and error-stripping tests pass unchanged",
+            "The client version sent to the server is the app's version from package.json, handed to the gateway by the composition root; src/lib/jellyfin/ reads no Vite global and pnpm typecheck:core passes; a test fails when the two versions differ",
+            "The device name names the platform the app runs on, handed to the gateway by the composition root: \"Fluster Linux\" on Linux, unchanged, and \"Fluster macOS\" on macOS; it never holds a host name or a user name",
+            "The device id is unchanged, so a signed-in device is not listed twice on the server",
+            "A guardian review passes, because the change touches a PlaybackInfo request and the Authorization header's fields",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:tripwire",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P2-08",
+          "title": "Split gateway.ts along its domains",
+          "domain": "Server Connection & Identity",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P2-07"
+          ],
+          "acceptance": [
+            "Sign-in and Quick Connect, catalog, user data, playback negotiation, and playstate reporting each live in their own module under src/lib/jellyfin/; no file the split creates or leaves, gateway.ts included, is longer than about 400 lines (docs/plans/proposals/code-quality-triage.md, problem 5)",
+            "src/lib/jellyfin/gateway.ts still exports JellyfinGateway, and it stays the only way the rest of the app talks to Jellyfin; its public methods and their signatures are unchanged, and no file outside src/lib/jellyfin/ changes except an import path",
+            "The token stays with the gateway object: the new modules are given an authenticated request function, and none of them reads or stores the access token (DOMAINS.md, Server Connection & Identity)",
+            "Media URLs are still built only in the playback negotiation module; no other new module builds a stream, playlist, or subtitle URL",
+            "The move changes no request: no path, parameter, header, body, or timeout differs. The gateway tests pass with no assertion changed (their files may be split the same way), and pnpm test:tripwire passes against both fixture servers",
+            "pnpm lint:boundaries and pnpm typecheck:core pass, and every dependency-cruiser rule that names gateway.ts covers the new modules, so no boundary is loosened",
+            "The \"Code today\" lines in DOMAINS.md that name gateway.ts name the new modules",
+            "The first module moved is reviewed as a pilot before the rest move (WORKFLOW.md, Pilot before scale)",
+            "A guardian review passes, because Playback Negotiation and token-handling code moves",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:tripwire",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P2-09",
+          "title": "Move the player view out of src/components/",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P13-34",
+            "P13-22",
+            "P13-24",
+            "P13-23",
+            "P3-31"
+          ],
+          "acceptance": [
+            "src/components/ no longer exists: PlayerView, NativeVideoSurface, player-keymap, and their tests live under src/features/player/, with kebab-case file names that do not collide with the files already there (docs/plans/proposals/code-quality-triage.md, problem 6)",
+            "No file under src/features/ imports from a components directory, and a dependency-cruiser rule fails if src/components/ returns",
+            "The move changes no behaviour: every unit test that passed before passes with no assertion changed, and pnpm test:visual passes without accepting a new baseline",
+            "DOMAINS.md is updated where it names the old paths: the \"Code today\" lines of Video Surface & Window and App Shell & Presentation, and the \"ui (features, components)\" layer in the dependency rules",
+            "No Tauri command is added or changed",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P2-10",
+          "title": "Keep routes and the sign-in guard in one place",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P13-24",
+            "P13-31",
+            "P13-34"
+          ],
+          "acceptance": [
+            "Every route is built and parsed in src/features/routes.ts: no other file under src/ outside tests contains the text \"#/next\", and a test that scans the source fails if one does (docs/plans/proposals/code-quality-triage.md, problem 6)",
+            "The sign-in route is declared once",
+            "The \"no gateway, go to sign-in\" redirect lives in one place and covers Home, Search, a library, a series, an item's details, and the player; no view holds its own copy",
+            "A route is guarded unless it is on an explicit list of open routes (sign-in, the gallery, the developer index); a test asserts that each guarded route sends a signed-out viewer to sign-in",
+            "The placeholder pages at #/next/detail and #/next/player are removed with their stub components; those hashes show the not-found view",
+            "No route string changes: the #/next prefix stays, and every e2e journey and visual baseline passes unchanged",
+            "Back, focus restore, and place restore behave as P13-24 and P13-31 left them; their journeys pass unchanged",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P2-11",
+          "title": "Return typed errors from the native commands",
+          "domain": "Player Engine",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "P3-31",
+            "P0-13",
+            "P13-23"
+          ],
+          "acceptance": [
+            "Every Tauri command that can fail returns a serialised error with a stable code and a user-facing message instead of a String; the codes are a closed Rust enum, and a Rust test beside command_allowlist fails if a command returns Result<_, String> (docs/plans/proposals/code-quality-triage.md, problem 2)",
+            "The message passes Rust's redaction as it does today; the Rust redaction canary covers the new shape, and no code or message carries a URL, a token, a play-session id, or a file path",
+            "TypeScript reads the shape in one place per native adapter (player, discovery, realtime) and turns it into typed errors; the converted-stream refusal is recognised by its code, and the message-prefix contract between src-tauri/src/player/mod.rs and src/lib/player/native-player.ts is gone",
+            "One fixture under tests/fixtures/ lists every code with a sample of the serialised error; a Rust test and a TypeScript test both read it, so the two sides cannot drift",
+            "The TypeScript tests reject with the serialised object from that fixture, which is what Tauri sends, not with new Error",
+            "The text a viewer sees for each failure is the same as after P3-31",
+            "No Tauri command is added, removed, or renamed, and no command's arguments change; the command allowlist test is unchanged",
+            "docs/security.md and docs/architecture.md describe the error shape, and the PR calls out the change to the command surface (ARCHITECTURE.md I3, I4)",
+            "The PR lists the macOS surface's error paths as an untested gate",
+            "A guardian review passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P2-12",
+          "title": "Type the track selector and survive a poisoned lock",
+          "domain": "Player Engine",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "P2-11"
+          ],
+          "acceptance": [
+            "select_track takes a Rust enum of audio and subtitle, deserialised by serde; an unknown value is refused before the handler runs, and the controller no longer matches on a string (docs/plans/proposals/code-quality-triage.md, smaller points)",
+            "The values on the wire stay \"audio\" and \"subtitle\"; the TypeScript call is unchanged, and a Rust test asserts that an unknown track type is refused",
+            "No lock under src-tauri/src/player/ panics on a poisoned mutex: each site returns a typed error or recovers the guard, and the spec says which for each mutex and why",
+            "A Rust test poisons the session mutex and the libmpv mutex, by panicking in a thread that holds each, and asserts that later commands return without panicking and that stop_playback still clears the session so a new launch can start",
+            "The other .expect(\"... poisoned\") sites (src-tauri/src/media_controls.rs, src-tauri/src/surface/linux.rs, src-tauri/src/surface/macos.rs) follow the same rule, or each is appended to tasks/backlog.md with its reason; a change to surface/macos.rs is listed in the PR as an untested gate",
+            "No Tauri command is added, removed, or renamed; the command allowlist test is unchanged",
+            "Clippy still denies unwrap_used, and no debug_assert! gains a side effect",
+            "A guardian review passes"
+          ],
+          "verify": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings && cargo test --release --manifest-path src-tauri/Cargo.toml && pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P2-13",
+          "title": "Make the playback session lifecycle an explicit state",
+          "domain": "Playback Session",
+          "model": "opus",
+          "skill": "exec-plan",
+          "human": false,
+          "depends_on": [
+            "P13-34",
+            "P13-22",
+            "P13-24",
+            "P13-23",
+            "P3-30",
+            "P2-09",
+            "P4-02"
+          ],
+          "acceptance": [
+            "A plan exists in docs/plans/active/ and the owner approved it before implementation. It lists every mutable field and flag of today's two layers (src/lib/player/coordinator.ts and src/features/player/use-playback-session.ts) and says for each which state replaces it or why it stays (docs/plans/proposals/code-quality-triage.md, problem 3)",
+            "The session lifecycle is one discriminated-union state type with a pure reducer that uses switch, beside src/lib/player/session-state.ts; it imports no React, Tauri, or HTTP code",
+            "ActiveSession's started, stopping, and ending flags and the module-level pendingStops map in use-playback-session.ts are replaced by that state, except where the plan says one stays",
+            "Reducer tests cover every state with every event, and name the orderings that comments describe today: a late stop after a new launch, a StrictMode remount, Back during a launch, and a natural end during a renegotiation",
+            "src/features/player/index.tsx no longer reads upNext and leaveTarget before they are declared, and the comment that explains it is gone",
+            "The existing coordinator, renegotiation, play-method, player-view, and auto-play tests pass with no assertion removed or weakened",
+            "Nothing sent to Jellyfin changes: the PlaybackInfo requests, the start, progress, and stopped reports (exactly one Stopped for each started session), and the stop of an active encode; pnpm test:tripwire passes against both fixture servers",
+            "No Tauri command is added or changed, and the PlayerEngine port is unchanged",
+            "No file the work touches is left longer than about 400 lines",
+            "A guardian review passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:tripwire",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -1377,6 +1579,32 @@
             "No Tauri command is added; the command allowlist test is unchanged",
             "Coordinator and session-hook tests cover a failure before the first frame, a failure mid-play, and a failure after a seek; a Playwright journey fails playback mid-item and asserts the retried position",
             "A guardian review passes, because the change is in what the coordinator asks Playback Negotiation for",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P3-31",
+          "title": "Show the native player's reason when it fails",
+          "domain": "Playback Session",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [],
+          "acceptance": [
+            "A native command that rejects with a plain string, which is what Tauri sends for the commands' Result<_, String>, reaches the rest of the app as an Error whose message is that string; one module (the native engine adapter, src/lib/player/native-player.ts) does the conversion for every command it invokes (docs/plans/proposals/code-quality-triage.md, problem 2)",
+            "When launch_playback rejects with a string, the player's error panel shows that reason through the same redaction and safeReason path an Error's message takes today, not \"Something went wrong.\"",
+            "A failed pause, seek, volume, track, fullscreen, or stop command shows the same text whether the engine rejected with a string or an Error; src/components/PlayerView.tsx and src/features/player/use-playback-session.ts no longer each decide how to read a value that is not an Error",
+            "redactError in src/lib/redact.ts redacts a string it is given instead of returning it unchanged",
+            "A test rejects launch with a string that carries a token, an authenticated URL, and a file path, and asserts that none of them is shown or held in state",
+            "Rust's refusal of a converted stream still becomes the unsafe-transcoding-url refusal, and its text is still not shown",
+            "The launch-failure tests in src/features/player/player-view.test.tsx and a coordinator test reject with strings, as Tauri does; no existing test is deleted or weakened",
+            "No Tauri command is added or changed; nothing under src-tauri/ changes",
+            "A guardian review passes, because the change is on the redaction path",
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e",
