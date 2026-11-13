@@ -651,4 +651,22 @@ export const scenarios: Scenario[] = [
     await page.getByRole("region", { name: "Sign-in discovery found" }).scrollIntoViewIfNeeded();
     await page.waitForTimeout(300);
   } },
+  { name: "95-tv-player-scrub", tvOnly: true, run: async (page) => {
+    await play(page, "#/next/item/m4");
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.down("ArrowRight");
+    await page.waitForTimeout(1_800);
+    await page.keyboard.up("ArrowRight");
+    await page.waitForTimeout(300);
+  } },
+  { name: "96-tv-leave-confirm", tvOnly: true, run: async (page) => {
+    await page.addInitScript(() => {
+      document.addEventListener("readystatechange", () => { document.documentElement.dataset.tvPlatform = "tizen"; });
+    });
+    await signedInAt(page, "#/next/home", 1_200);
+    await page.keyboard.press("Escape");
+    await page.keyboard.press("Escape");
+    await page.getByRole("alertdialog", { name: "Leave Fluster?" }).waitFor();
+    await page.waitForTimeout(400);
+  } },
 ];

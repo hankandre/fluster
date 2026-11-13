@@ -1,6 +1,7 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { artTint } from "../art-tint";
+import { HOLD_MS } from "../hold-key";
 import { Hero, type HeroProps } from "./hero";
 
 vi.mock("../../home/blurhash", () => ({
@@ -135,6 +136,18 @@ describe("Hero TV form", () => {
     expect(fireEvent.keyDown(primary, { key: "Enter" })).toBe(true);
     expect(window.location.hash).toBe("");
     expect(fireEvent.keyDown(primary, { key: "ContextMenu" })).toBe(false);
+    expect(window.location.hash).toBe("#/next/item/m1");
+  });
+
+  it("opens More info when OK is held on the primary", () => {
+    vi.useFakeTimers();
+    document.documentElement.dataset.form = "tv";
+    renderHero();
+    const primary = screen.getByRole("link", { name: "Play" });
+    fireEvent.keyDown(primary, { key: "Enter" });
+    act(() => vi.advanceTimersByTime(HOLD_MS));
+    fireEvent.keyUp(primary, { key: "Enter" });
+    vi.useRealTimers();
     expect(window.location.hash).toBe("#/next/item/m1");
   });
 

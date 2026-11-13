@@ -17,6 +17,10 @@
     font-size: calc(16px * var(--ui-scale));
   }
 
+  html[data-form="tv"] body {
+    font: var(--type-body);
+  }
+
   html,
   body,
   #root {

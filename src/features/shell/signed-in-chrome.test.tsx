@@ -3,9 +3,14 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SessionProvider, useSession, type SessionGateway } from "../../app/session";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
+import { LEAVE_APP_EVENT } from "./leave-app";
 import { initialOf, SignedInChrome } from "./signed-in-chrome";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  delete document.documentElement.dataset.form;
+  delete document.documentElement.dataset.tvPlatform;
+});
 
 function SignIn({ gateway }: { gateway: SessionGateway }) {
   const session = useSession();
@@ -71,5 +76,42 @@ describe("SignedInChrome", () => {
     await renderChrome(fakeSessionGateway(), true);
     fireEvent.keyDown(screen.getByRole("heading", { name: "Page" }), { key: "/" });
     expect(window.location.hash).toBe("#/next/search");
+  });
+
+  it("leaves at once from the Home tab on the browser TV form", async () => {
+    document.documentElement.dataset.form = "tv";
+    window.location.hash = "#/next/home";
+    const leave = vi.fn();
+    window.addEventListener(LEAVE_APP_EVENT, leave);
+    await renderChrome(fakeSessionGateway(), true);
+    const home = screen.getByRole("link", { name: "Home" });
+    home.focus();
+    fireEvent.keyDown(home, { key: "Escape" });
+    window.removeEventListener(LEAVE_APP_EVENT, leave);
+    expect(leave).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+  });
+
+  it("asks Leave Fluster? on a platform that confirms", async () => {
+    document.documentElement.dataset.form = "tv";
+    document.documentElement.dataset.tvPlatform = "tizen";
+    window.location.hash = "#/next/home";
+    const leave = vi.fn();
+    window.addEventListener(LEAVE_APP_EVENT, leave);
+    await renderChrome(fakeSessionGateway(), true);
+    const home = screen.getByRole("link", { name: "Home" });
+    home.focus();
+    fireEvent.keyDown(home, { key: "Escape" });
+    const dialog = await screen.findByRole("alertdialog", { name: "Leave Fluster?" });
+    expect(dialog).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole("button", { name: "Stay" }), { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+    expect(leave).not.toHaveBeenCalled();
+    expect(screen.getByRole("link", { name: "Home" })).toHaveFocus();
+    fireEvent.keyDown(screen.getByRole("link", { name: "Home" }), { key: "Escape" });
+    fireEvent.click(await screen.findByRole("button", { name: "Leave" }));
+    window.removeEventListener(LEAVE_APP_EVENT, leave);
+    expect(leave).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
   });
 });

@@ -5,6 +5,7 @@ import { artTint } from "../art-tint";
 import { useTvForm } from "../use-tv-form";
 import { timeLeftLabel } from "../time-left";
 import { ButtonLink } from "./button";
+import { useHoldOk } from "./use-hold-ok";
 import { cardAccessibleName } from "./media-card";
 import { MediaFrame } from "./media-frame";
 import "./episode-row.css";
@@ -68,6 +69,7 @@ export function EpisodeList({ label, children }: { label: string; children: Reac
 export function EpisodeRow(props: EpisodeRowProps) {
   const { title, number, runtime, remainingTicks, progress, played, overview, image, href, onActivate, detailsHref } = props;
   const tv = useTvForm();
+  const hold = useHoldOk(detailsHref);
   const ids = useId();
   const metaId = `${ids}-meta`;
   const overviewId = `${ids}-overview`;
@@ -94,7 +96,10 @@ export function EpisodeRow(props: EpisodeRowProps) {
         aria-describedby={describedBy || undefined}
         aria-keyshortcuts="i"
         style={style}
+        onKeyUp={hold.onKeyUp}
+        onBlur={hold.onBlur}
         onKeyDown={(event: KeyboardEvent<HTMLAnchorElement>) => {
+          hold.onKeyDown(event);
           const isInfo = event.key === "i" && !event.ctrlKey && !event.metaKey && !event.altKey;
           if (isInfo || event.key === "ContextMenu") openDetails(event);
         }}

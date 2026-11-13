@@ -38,7 +38,7 @@ export async function pressTo(page: Page, key: string, expected: Locator): Promi
 }
 
 // No visible text renders under `min` px (DESIGN.md 6, 8). Visually hidden and clipped text is skipped.
-export async function expectNoSmallText(page: Page, min = 22): Promise<void> {
+export async function expectNoSmallText(page: Page, min = 24): Promise<void> {
   const small = await page.evaluate((floor) => {
     const found: string[] = [];
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);

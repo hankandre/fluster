@@ -49,6 +49,80 @@ test("Home: the hero takes focus, Menu opens details, Up reaches the nav, Escape
   await expect(page).toHaveURL(/#\/next\/(home|item\/[^/]+)$/);
 });
 
+test("Home: holding OK on a Continue watching card opens details; Back on Home leaves the app", async ({ page }) => {
+  await page.addInitScript(() => {
+    const w = window as unknown as { __leaves: number };
+    w.__leaves = 0;
+    window.addEventListener("fluster:leave-app", () => { w.__leaves += 1; });
+  });
+  const leaves = () => page.evaluate(() => (window as unknown as { __leaves: number }).__leaves);
+  await signInTv(page);
+  await expect(page.locator(".hero-actions a").first()).toBeFocused({ timeout: 10_000 });
+  await page.keyboard.press("ArrowDown");
+  await expect(page.locator(".home-rows [data-media-card]").first()).toBeFocused();
+
+  // Hold OK: details open, the auto-repeat after navigation does not press Play, release does nothing more.
+  await page.keyboard.down("Enter");
+  await expect(page).toHaveURL(/#\/next\/item\//);
+  await page.keyboard.down("Enter");
+  await expect(page).toHaveURL(/#\/next\/item\//);
+  await expect(page.getByRole("link", { name: /^(Play|Resume)/ })).toBeFocused();
+  await page.keyboard.up("Enter");
+  await expect(page).toHaveURL(/#\/next\/item\//);
+  await page.keyboard.press("Escape");
+  await expect(page).toHaveURL(/#\/next\/home$/);
+
+  // Back from the hero focuses the nav; Back on Home from the nav leaves without a question.
+  await expect(page.locator(".hero-actions a").first()).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(nav(page).getByRole("link", { name: "Home" })).toBeFocused();
+  expect(await leaves()).toBe(0);
+  await page.keyboard.press("Escape");
+  expect(await leaves()).toBe(1);
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page).toHaveURL(/#\/next\/home$/);
+  await page.keyboard.press("Backspace");
+  expect(await leaves()).toBe(2);
+});
+
+test("Home: on a platform that confirms, Back on Home asks Leave Fluster?", async ({ page }) => {
+  await page.addInitScript(() => {
+    const w = window as unknown as { __leaves: number };
+    w.__leaves = 0;
+    window.addEventListener("fluster:leave-app", () => { w.__leaves += 1; });
+    // The root element may not exist yet when an init script runs.
+    document.addEventListener("readystatechange", () => { document.documentElement.dataset.tvPlatform = "tizen"; });
+    if (document.documentElement) document.documentElement.dataset.tvPlatform = "tizen";
+  });
+  const leaves = () => page.evaluate(() => (window as unknown as { __leaves: number }).__leaves);
+  await signInTv(page);
+  await expect(page.locator(".hero-actions a").first()).toBeFocused({ timeout: 10_000 });
+  await page.keyboard.press("Escape");
+  await expect(nav(page).getByRole("link", { name: "Home" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  const dialog = page.getByRole("alertdialog", { name: "Leave Fluster?" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Stay" })).toBeFocused();
+  await expectNoSmallText(page);
+  await expectTitleSafe(page);
+  expect(await leaves()).toBe(0);
+
+  await page.keyboard.press("Backspace");
+  await expect(dialog).toBeHidden();
+  expect(await leaves()).toBe(0);
+  await expect(nav(page).getByRole("link", { name: "Home" })).toBeFocused();
+  await expect(page).toHaveURL(/#\/next\/home$/);
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("ArrowRight");
+  await expect(dialog.getByRole("button", { name: "Leave" })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(dialog).toBeHidden();
+  expect(await leaves()).toBe(1);
+});
+
 test("Home: Up from the hero reaches the nav, Right picks a library, Down returns; Escape focuses the nav", async ({ page }) => {
   await signInTv(page);
   await expect(page.locator(".hero-actions a").first()).toBeFocused({ timeout: 10_000 });

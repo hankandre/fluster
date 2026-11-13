@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { mockPlayerServer } from "../support/player-server";
 import { expectNoSmallText, expectTitleSafe, openArrivalTv, stubMedia, videoTime } from "./support";
 
@@ -31,7 +31,7 @@ test("Player: arrows wake the chrome on the scrubber, zones move with Up and Dow
   await expectNoSmallText(page);
   await expectTitleSafe(page);
   const elapsed = await page.locator(".player-time").first().evaluate((element) => parseFloat(getComputedStyle(element).fontSize));
-  expect(elapsed).toBeGreaterThanOrEqual(22);
+  expect(elapsed).toBeGreaterThanOrEqual(24);
 
   // Up reaches the scrubber, Right seeks +10 s there, Down returns to the control row.
   await page.keyboard.press("ArrowUp");
@@ -83,6 +83,63 @@ test("Player: the Info sheet opens from the control row with arrows and Enter, a
   await expect(page.getByRole("region", { name: "Player information" })).toBeHidden();
   await page.keyboard.press("Backspace");
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
+});
+
+const sliderValue = async (page: Page) => Number(await slider(page).inputValue());
+
+// Plays Arrival, wakes the chrome onto the scrubber, and steps to 10 s with a press.
+async function playToTenSeconds(page: Page): Promise<void> {
+  await mockPlayerServer(page);
+  await stubMedia(page);
+  await openArrivalTv(page);
+  await page.keyboard.press("Enter");
+  await expect(slider(page)).toBeEnabled();
+  await page.keyboard.press("ArrowRight");
+  await expect(slider(page)).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await expect.poll(() => videoTime(page)).toBe(10);
+}
+
+const isPaused = (page: Page) => page.locator("video").evaluate((video: HTMLVideoElement) => video.paused);
+
+test("Player: a press steps 10 s; holding scrubs with the picture held; OK commits", async ({ page }) => {
+  await playToTenSeconds(page);
+  await page.keyboard.down("ArrowRight");
+  await expect.poll(() => sliderValue(page), { timeout: 10_000 }).toBeGreaterThan(30);
+  expect(await isPaused(page)).toBe(true);
+  expect(await videoTime(page)).toBe(10);
+  await page.keyboard.up("ArrowRight");
+  const target = await sliderValue(page);
+  expect(await videoTime(page)).toBe(10);
+  await page.keyboard.press("Enter");
+  await expect.poll(() => videoTime(page)).toBe(target);
+  await expect.poll(() => isPaused(page)).toBe(false);
+});
+
+for (const back of ["Escape", "Backspace"]) {
+  test(`Player: holding to scrub then ${back} returns to where playback was`, async ({ page }) => {
+    await playToTenSeconds(page);
+    await page.keyboard.down("ArrowRight");
+    await expect.poll(() => sliderValue(page), { timeout: 10_000 }).toBeGreaterThan(30);
+    await page.keyboard.up("ArrowRight");
+    await page.keyboard.press(back);
+    await expect.poll(() => sliderValue(page)).toBe(10);
+    expect(await videoTime(page)).toBe(10);
+    await expect.poll(() => isPaused(page)).toBe(false);
+    await expect(page).toHaveURL(/#\/next\/play\//);
+  });
+}
+
+test("Player: Up or Down shows the controls without pausing", async ({ page }) => {
+  await playToTenSeconds(page);
+  for (const arrow of ["ArrowUp", "ArrowDown"]) {
+    await expect(chrome(page)).toHaveAttribute("data-visible", "false", { timeout: 8_000 });
+    const before = await videoTime(page);
+    await page.keyboard.press(arrow);
+    await expect(chrome(page)).toHaveAttribute("data-visible", "true");
+    expect(await isPaused(page)).toBe(false);
+    expect(await videoTime(page)).toBe(before);
+  }
 });
 
 test("Player: OK skips a visible Skip while the chrome is hidden", async ({ page }) => {

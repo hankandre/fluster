@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { currentNavEntry } from "../shared/ui/app-nav";
 import { isTvForm } from "../shared/tv-form";
 import { isTextTarget } from "../use-escape-key";
+import { currentTvPlatform, exitRule, leaveApp } from "./leave-app";
 
 const HOME_HASH = "#/next/home";
 export const MODAL_LAYER = '[role="dialog"][aria-modal="true"], [role="alertdialog"], .ui-picker-list[role="listbox"], .ui-picker-list[role="menu"]';
@@ -21,8 +22,14 @@ if (typeof window !== "undefined") {
 
 // Screen-level Back for signed-in, non-player routes (DESIGN.md §9). Registered on window (bubble), so it
 // runs after every document handler: a layer, field, or page that used Escape has already prevented it.
-// Non-root screens go back; on a root tab in the TV form, focus goes to the nav's current entry.
-export function useBackKey(): void {
+// Non-root screens go back; on a root tab in the TV form, focus goes to the nav's current entry, and Back on
+// Home with focus already there leaves the app by the platform's rule (D14 B): at once, or after
+// `onConfirmLeave` asks.
+export function useBackKey(onConfirmLeave?: () => void): void {
+  const confirmLeave = useRef(onConfirmLeave);
+  useEffect(() => {
+    confirmLeave.current = onConfirmLeave;
+  });
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || event.defaultPrevented) return;
@@ -32,7 +39,19 @@ export function useBackKey(): void {
       if (currentNavEntry(hash) !== undefined) {
         if (!isTvForm()) return;
         const nav = document.querySelector<HTMLElement>('nav[aria-label="Main"]');
-        if (nav?.contains(document.activeElement)) return;
+        if (nav?.contains(document.activeElement)) {
+          if (hash !== HOME_HASH) return;
+          event.preventDefault();
+          switch (exitRule(currentTvPlatform())) {
+            case "leave":
+              leaveApp();
+              break;
+            case "confirm":
+              confirmLeave.current?.();
+              break;
+          }
+          return;
+        }
         const entry = document.querySelector<HTMLElement>(NAV_CURRENT);
         if (!entry) return;
         event.preventDefault();
