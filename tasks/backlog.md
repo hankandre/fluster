@@ -137,3 +137,26 @@ Research, verdicts, and the twelve decisions are in `docs/research/streaming-wis
 - Note for the product review's Q9 A (one set of settings per computer): "global defaults across clients" has 260 votes and Jellyfin and Jellyscale both implement a per-account preferences record. Revisit with the TV shell; the answer stands.
 - Note for a "private session": "anonymous, guest access" has 88 votes on Jellyfin's tracker.
 - Jellyscale (D11): the coordinator files two requests, marking audio-description and hard-of-hearing tracks, and a running-time range with sorting by runtime on item queries. Not filed: a loudness figure per audio track, and Recap and Preview as segment types. Dropped with D5: one session counting for more than one account.
+
+## UX audit (from the 2026-11-12 UX research pass)
+
+Research is in `docs/research/video-app-ux.md`. The audit, the built-features scorecard, twenty open decisions (D1 to D20), and the dogfood protocol are in `docs/plans/proposals/ux-audit.md`.
+
+- Tasks now: P3-30 (retry playback from where it stopped), P13-29 (two-line track labels and a spoken scrubber time), P13-30 (a worst-case artwork fixture and a contrast report).
+- Waiting for the owner: adding P3-30, and P13-31 if it becomes a task, to P4-01's `depends_on` (D4). It edits an existing task.
+- Back restores the place: keep each account's browse data while the account is active, put sort and filters in the route, restore scroll (D1; proposed P13-31). Every browse query drops its data on leaving (`gcTime: 0`), so Back reloads from the top and a library loses its sort. Baymard's testing ties this to abandonment. It changes the per-account cache rule in `src/features/query-scope.ts`, so it needs a `guardian` review. Works with P13-24, which restores focus only. Takes in "Remember a library's sort and filters between visits; write the sort into the URL" above, for the URL half. M.
+- Show the whole first row under the Home hero at 1440×900 and do not repeat the hero's title in it; show season tabs and the first episode row on a series page at 1440×900 (D2, D3; proposed P13-32, after P16-02). The second is the P13-10 low "the header height at 1440×900". S.
+- Seek further with a held key, and jump by chapter (D5; proposed P15-16). Convention on Apple TV, Android TV, and YouTube; no research on step sizes. The wish-list pass asks separately whether the step is a setting. S.
+- Wait 500 ms before showing "Buffering…", and never use `--text-3` over video (D6, D8; proposed P13-33). S.
+- A "Show password" control on sign-in, and a `?` sheet of keyboard shortcuts (D9, D12; proposed P15-17). The second is "A keyboard shortcut help sheet" above. S.
+- TV form follow-ups after P13-18 (D13 to D16; proposed P13-34): body text of 28 px with a 24 px floor; exit confirmation per platform; details by holding OK on a remote with no Menu key; hold to scrub with the preview, OK commits, Back cancels, and Up or Down shows the controls. M.
+- Notes for P13-18's spec, which edit nothing: Android TV's quality rules say not to depend on a Menu key and not to confirm exit; tvOS wants 60 pt top and bottom where `--safe-y` is 54 px; season tabs wrap at their ends and rows stop. Details are in the audit's §4.
+- Notes for P9-01 (the TV shell spike): measure the time from a key press to the focus moving, because one service halved it and card views doubled; check `--void` and `--surface-0` for banding on a real panel; a library grid renders every loaded card with no windowing.
+- Note for P5-05's spec: the BBC sizes subtitles at 7 to 8% of picture height in at most two lines on a box drawn per line; a US device rule lists size from 50% to 200%, colour, background, and edge style. Whether one size control comes sooner is D17.
+- Note for P4-01: a protocol of eleven timed tasks on day one and day seven, two lines each evening, and seven things to notice is in the audit's §8 (D20).
+- Click the picture to pause and double-click for fullscreen (D7). Convention only; no source found. Decide after the dogfood week. S.
+- Recent searches, per account, with a Clear control (D10). Worth most on a TV, where a letter costs about half a second. Shows what was searched to the next person at the screen. S.
+- A letter jump in a library sorted by name (D18). No evidence either way; decide with the TV shell. S.
+- Library entries in the nav show nothing while libraries load or fail (`src/features/shell/signed-in-chrome.tsx`). Home shows the error, so this is small. S.
+- Row hints for a screen reader on TV ("row 2 of 5, Continue watching"), after the screen-reader audit the wish-list pass proposes. S.
+- Jellyscale requests for the owner to carry if D19 agrees, in order: search that tolerates a typo and ranks by relevance; remembered audio and subtitle selections honoured per account; a Quick Connect approval link a phone can open from a QR code; a last-played date filter on Resume and Next Up. Nothing was sent, and the Jellyscale repository was not touched.

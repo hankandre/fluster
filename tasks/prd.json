@@ -1356,6 +1356,34 @@
           "owner": null,
           "passes": false,
           "evidence": ""
+        },
+        {
+          "id": "P3-30",
+          "title": "Retry playback from where it stopped",
+          "domain": "Playback Session",
+          "model": "opus",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P13-15",
+            "P10-07"
+          ],
+          "acceptance": [
+            "When playback fails after a first frame was shown, Retry on the error panel starts the new attempt at the last position the player reported, not at the position the session was launched with (docs/plans/proposals/ux-audit.md, G2)",
+            "When playback fails before any frame was shown, Retry keeps the original start choice, as today",
+            "Retry after a failed track or streaming-limit change still returns to the streams that were playing, at the current position",
+            "Only the start position of the retried attempt changes: no other PlaybackInfo field, URL, or header changes, the request body and query string still carry the same flags, and the transcode tripwire still passes",
+            "The failed session's Stopped report is unchanged, so the server's saved position is neither lost nor moved backwards",
+            "No Tauri command is added; the command allowlist test is unchanged",
+            "Coordinator and session-hook tests cover a failure before the first frame, a failure mid-play, and a failure after a seek; a Playwright journey fails playback mid-item and asserts the retried position",
+            "A guardian review passes, because the change is in what the coordinator asks Playback Negotiation for",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
         }
       ]
     },
@@ -2406,6 +2434,59 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P13-29",
+          "title": "Label tracks fully and speak the scrubber's time",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P13-13"
+          ],
+          "acceptance": [
+            "Each row in the Audio and Subtitles lists has the two-line label of DESIGN.md §7.10: the name, then codec and channels for audio, and the flags the gateway already has for the track (default, forced, hard of hearing, external) in words",
+            "Two tracks in the same language are distinguishable by their rows alone; a unit test covers two English subtitle tracks, one forced",
+            "The labels come from data the playback plan and the player snapshot already carry; no server call, Tauri command, or playback request is added or changed",
+            "The scrubber exposes its position to assistive technology as a time, for example \"41 minutes 19 seconds of 2 hours 3 minutes\", through aria-valuetext; the volume slider exposes a percentage",
+            "A direct-play session and a converted session show the same label format; tests cover both sources of track titles",
+            "The empty Audio list in the browser development engine (docs/design/rework-plan.md, P13-13 lows) shows a sentence instead of an empty list",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P13-30",
+          "title": "Add a worst-case artwork fixture to the visual captures",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P13-01",
+            "P13-13"
+          ],
+          "acceptance": [
+            "scripts/generate-visual-art.mjs produces one bright, high-contrast, busy synthetic image set (backdrop, poster, still), with no copyrighted media, and one fixture item uses it",
+            "Captures at 1440×900 and 1920×1080 show that item on the Home hero, a detail header, a series header, a media card with a title under it, the player with the controls shown, and the Up Next card",
+            "A check measures the contrast of each text run over that artwork in those captures and reports any below 4.5:1 (3:1 for text of 24 px or more), as DESIGN.md §11 rule 1 asks",
+            "The report is written to docs/design/contrast-report.md with the capture name and the measured ratio for each failure; failures become entries in tasks/backlog.md and are not fixed in this task",
+            "The existing captures are unchanged, so the visual baseline of P13-25 moves only by the new scenarios",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:visual && ls docs/design/contrast-report.md",
           "status": "todo",
           "owner": null,
           "passes": false,
