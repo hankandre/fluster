@@ -1,7 +1,8 @@
 import { Info } from "lucide-react";
-import { useId, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useId, useState, type CSSProperties, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { useRovingFocus } from "../../roving-focus";
 import { artTint } from "../art-tint";
+import { useTvForm } from "../use-tv-form";
 import { timeLeftLabel } from "../time-left";
 import { ButtonLink } from "./button";
 import { cardAccessibleName } from "./media-card";
@@ -29,13 +30,36 @@ export interface EpisodeRowProps {
   detailsHref: string;
 }
 
+// The overview of the episode card that has focus, read from the card's own text.
+function overviewOf(link: Element | null | undefined): string {
+  return link?.querySelector(".ui-episode-row-overview")?.textContent ?? "";
+}
+
 // The episodes of one season: one Tab stop, a two-column grid of play and Details links (DESIGN.md 7.6).
+// In the TV form it is a horizontal row of cards with one overview under it that follows focus.
 export function EpisodeList({ label, children }: { label: string; children: ReactNode }) {
-  const roving = useRovingFocus<HTMLUListElement>("grid", { spatial: true, columns: 2 });
+  const tv = useTvForm();
+  const roving = useRovingFocus<HTMLUListElement>(tv ? "row" : "grid", tv ? { spatial: true } : { spatial: true, columns: 2 });
+  const [overview, setOverview] = useState("");
+
+  // Starts with the Tab stop's card, then follows focus.
+  useEffect(() => {
+    if (!tv) return;
+    setOverview(overviewOf(roving.ref.current?.querySelector('[data-roving-item][tabindex="0"]')));
+  }, [tv, children, roving.ref]);
+
+  function onFocus(event: FocusEvent<HTMLUListElement>) {
+    roving.onFocus(event);
+    if (tv) setOverview(overviewOf((event.target as HTMLElement).closest("[data-roving-item]")));
+  }
+
   return (
-    <ul className="episode-list" aria-label={label} data-spatial-row="" ref={roving.ref} onKeyDown={roving.onKeyDown} onFocus={roving.onFocus}>
-      {children}
-    </ul>
+    <>
+      <ul className="episode-list" aria-label={label} data-spatial-row="" ref={roving.ref} onKeyDown={roving.onKeyDown} onFocus={onFocus}>
+        {children}
+      </ul>
+      {tv ? <p className="episode-row-overview" aria-hidden="true">{overview}</p> : null}
+    </>
   );
 }
 
@@ -43,6 +67,7 @@ export function EpisodeList({ label, children }: { label: string; children: Reac
 // a trailing icon link opens the details, as `i` does.
 export function EpisodeRow(props: EpisodeRowProps) {
   const { title, number, runtime, remainingTicks, progress, played, overview, image, href, onActivate, detailsHref } = props;
+  const tv = useTvForm();
   const ids = useId();
   const metaId = `${ids}-meta`;
   const overviewId = `${ids}-overview`;
@@ -57,7 +82,7 @@ export function EpisodeRow(props: EpisodeRowProps) {
   }
 
   return (
-    <li className="ui-episode-row">
+    <li className="ui-episode-row" data-tv={tv ? "true" : undefined}>
       <a
         className="ui-episode-row-link"
         href={href}
@@ -82,9 +107,11 @@ export function EpisodeRow(props: EpisodeRowProps) {
           {overview ? <p id={overviewId} className="ui-episode-row-overview">{overview}</p> : null}
         </div>
       </a>
-      <ButtonLink variant="icon" href={detailsHref} aria-label={`Details for ${title}`} data-roving-item="">
-        <Info aria-hidden="true" size={20} />
-      </ButtonLink>
+      {tv ? null : (
+        <ButtonLink variant="icon" href={detailsHref} aria-label={`Details for ${title}`} data-roving-item="">
+          <Info aria-hidden="true" size={20} />
+        </ButtonLink>
+      )}
     </li>
   );
 }

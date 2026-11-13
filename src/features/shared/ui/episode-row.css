@@ -63,6 +63,44 @@
     box-shadow: var(--shadow-lift);
   }
 
+  /* TV form (DESIGN.md 7.6): a horizontal row of cards, the focused card's overview under the row. */
+  :root[data-form="tv"] .episode-list {
+    display: flex;
+    gap: var(--space-4);
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-inline: calc(var(--gutter) * -1);
+    padding: var(--space-3) var(--gutter);
+    scroll-padding-inline: var(--gutter);
+  }
+
+  :root[data-form="tv"] .ui-episode-row {
+    display: block;
+    flex: none;
+    inline-size: var(--thumb-w);
+  }
+
+  :root[data-form="tv"] .ui-episode-row-link {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* The card keeps its overview for assistive technology only; the row shows one under the list. */
+  :root[data-form="tv"] .ui-episode-row-overview {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .episode-row-overview {
+    margin: 0;
+    min-block-size: calc(2 * 1.5em);
+    max-inline-size: var(--measure);
+    color: var(--text-2);
+    font: var(--type-body);
+  }
+
   /* Narrow windows: the text stacks under the art. */
   @media (max-width: 719px) {
     .ui-episode-row-link {

@@ -118,3 +118,39 @@ describe("EpisodeList", () => {
     expect(screen.getByRole("link", { name: "Details for Second" })).toHaveFocus();
   });
 });
+
+describe("EpisodeList in the TV form", () => {
+  afterEach(() => {
+    delete document.documentElement.dataset.form;
+  });
+
+  function renderList() {
+    render(
+      <EpisodeList label="Season 1 episodes">
+        <EpisodeRow {...keeper} />
+        <EpisodeRow {...keeper} title="Second" number={3} href="#/next/play/ep-3" detailsHref="#/next/item/ep-3" overview="A lamp goes out." />
+      </EpisodeList>,
+    );
+  }
+
+  it("moves along a row, shows the focused card's overview under it, and has no Details link", () => {
+    document.documentElement.dataset.form = "tv";
+    renderList();
+    expect(screen.queryByRole("link", { name: /^Details for/ })).toBeNull();
+    const under = () => document.querySelector(".episode-row-overview")!.textContent;
+    expect(under()).toBe("A journal washes ashore.");
+    const links = screen.getAllByRole("link");
+    links[0].focus();
+    fireEvent.keyDown(links[0], { key: "ArrowRight" });
+    expect(links[1]).toHaveFocus();
+    expect(under()).toBe("A lamp goes out.");
+    expect(fireEvent.keyDown(links[1], { key: "ContextMenu" })).toBe(false);
+    expect(window.location.hash).toBe("#/next/item/ep-3");
+  });
+
+  it("keeps the two-column grid and Details links on desktop", () => {
+    renderList();
+    expect(screen.getAllByRole("link", { name: /^Details for/ })).toHaveLength(2);
+    expect(document.querySelector(".episode-row-overview")).toBeNull();
+  });
+});

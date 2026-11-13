@@ -1,5 +1,5 @@
 import { TriangleAlert } from "lucide-react";
-import { useId, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { DISCOVERY_FAILED_MESSAGE, type DiscoveredServer } from "../../domain/server-discovery";
 import { useRovingFocus } from "../roving-focus";
 import { Button, InlineError, Skeleton } from "../shared/ui";
@@ -15,10 +15,13 @@ export function ServerList({
   search,
   busy,
   onChoose,
+  focusOnResult,
 }: {
   search: ServerSearch;
   busy: boolean;
   onChoose: (server: DiscoveredServer) => void;
+  // TV form: when results arrive, focus the first server, else "Search again".
+  focusOnResult?: boolean;
 }) {
   const titleId = useId();
   const title = useRef<HTMLHeadingElement>(null);
@@ -29,6 +32,14 @@ export function ServerList({
   const refused = state.name === "found" ? state.result.refused : 0;
   const dropped = state.name === "found" ? state.result.dropped : 0;
 
+  const section = useRef<HTMLElement>(null);
+  const resultName = state.name;
+  useEffect(() => {
+    if (!focusOnResult || (resultName !== "found" && resultName !== "failed")) return;
+    const target = section.current?.querySelector<HTMLElement>(".sign-in-server") ?? section.current?.querySelector<HTMLElement>("button");
+    target?.focus();
+  }, [focusOnResult, resultName]);
+
   // The retry buttons unmount when a search starts; keep focus in the section.
   function searchAgain() {
     title.current?.focus();
@@ -36,7 +47,7 @@ export function ServerList({
   }
 
   return (
-    <section className="sign-in-discovery" aria-labelledby={titleId}>
+    <section className="sign-in-discovery" aria-labelledby={titleId} ref={section}>
       <h2 id={titleId} ref={title} tabIndex={-1} className="sign-in-section-title">On this network</h2>
       {searching && (
         <>

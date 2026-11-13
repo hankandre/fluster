@@ -578,3 +578,34 @@ describe("SignInView unencrypted dialog", () => {
   });
 });
 
+
+describe("SignInView TV form keys", () => {
+  afterEach(() => {
+    delete document.documentElement.dataset.form;
+  });
+
+  it("moves from Username to Password on Enter in the TV form instead of submitting", async () => {
+    document.documentElement.dataset.form = "tv";
+    const gateway = fakeGateway({ quickConnectEnabled: vi.fn().mockResolvedValue(false) });
+    renderView(gateway);
+    await connect();
+    const username = screen.getByLabelText("Username");
+    expect(username).toHaveAttribute("enterkeyhint", "next");
+    expect(username).toHaveAttribute("autocapitalize", "none");
+    fireEvent.keyDown(username, { key: "Enter" });
+    expect(screen.getByLabelText("Password")).toHaveFocus();
+    expect(gateway.login).not.toHaveBeenCalled();
+  });
+
+  it("Escape outside a field on the password step is Change server", async () => {
+    const gateway = fakeGateway({ quickConnectEnabled: vi.fn().mockResolvedValue(false) });
+    renderView(gateway);
+    await connect();
+    const change = screen.getByRole("button", { name: "Change server" });
+    change.focus();
+    await act(async () => {
+      fireEvent.keyDown(change, { key: "Escape" });
+    });
+    expect(screen.getByLabelText("Server URL")).toBeInTheDocument();
+  });
+});

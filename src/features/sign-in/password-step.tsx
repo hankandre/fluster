@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { SessionGateway } from "../../app/session";
 import { Button, InlineError, TextField } from "../shared/ui";
+import { isTvForm } from "../shared/tv-form";
+import { useEscapeKey } from "../use-escape-key";
 import { isAbort, signInErrorCopy } from "./sign-in-errors";
 import { StepShell } from "./step-shell";
 
@@ -19,6 +21,9 @@ export function PasswordStep({
   const [error, setError] = useState("");
   const controller = useRef<AbortController | undefined>(undefined);
   const usernameField = useRef<HTMLInputElement>(null);
+  const passwordField = useRef<HTMLInputElement>(null);
+  // Escape outside a field is "Change server" (DESIGN.md 9).
+  useEscapeKey(onBack);
 
   useEffect(() => () => controller.current?.abort(), []);
 
@@ -57,13 +62,25 @@ export function PasswordStep({
           label="Username"
           required
           autoComplete="username"
+          autoCapitalize="none"
+          spellCheck={false}
+          enterKeyHint="next"
+          onKeyDown={(event) => {
+            // A TV keyboard sends Enter for "next": move on instead of submitting.
+            if (event.key === "Enter" && isTvForm()) {
+              event.preventDefault();
+              passwordField.current?.focus();
+            }
+          }}
           value={username}
           onChange={(event) => setUsername(event.target.value)}
         />
         <TextField
+          ref={passwordField}
           label="Password"
           type="password"
           autoComplete="current-password"
+          enterKeyHint="go"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
         />
