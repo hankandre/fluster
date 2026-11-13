@@ -1,8 +1,87 @@
 # Streaming wish list: where Fluster could go beyond
 
-Status: **proposal, 2026-11-12. D1 to D12 are open.** One task was added to `tasks/prd.json` (P16-11); it records server facts and shows a viewer nothing. Everything else waits for the owner.
+Status: **D1 to D12 answered 2026-11-12.** The owner's answers are in "Answers" below, as relayed by the coordinating agent. Two differ from the recommendation (D3, D5), one goes further (D7), and D3 came with a standing principle. The tasks they settle are in `tasks/prd.json` (P5-06, P13-28, P15-11, P15-12, P15-13, P16-11, P16-12). Sections 1 to 9 keep the original proposal text for the record. The owner merging the pull request is the approval of the relayed answers.
 
 This is a Fable 5.2 product-review pass under the `AGENTS.md` "Tasks" rule. It triages `tasks/backlog.md` against new research and recommends. The owner decides.
+
+## Answers (owner, 2026-11-12)
+
+Relayed by the coordinating agent. An answer marked **differs** is not the recommendation in §7.
+
+| # | Answer | Applied in |
+|---|---|---|
+| D1 | C: a spike in the cinema-quality phase, after the dogfood week. | **P5-06**, added |
+| D2 | B: captions on skip-back and a resume 3 seconds early, both on by default. | **P15-11**, added |
+| D3 | **No (differs).** Own words, below. No spoiler setting. | The principle below; `tasks/backlog.md` |
+| D4 | A: the sleep timer stays in the backlog. | `tasks/backlog.md` |
+| D5 | **No (differs).** "Watching with" is out. | P16-11 loses its session item; Jellyscale request 1 is dropped; proposed P16-12 "Watch with" is withdrawn |
+| D6 | C: label audio-description and hard-of-hearing tracks, add a preference, and audit with a screen reader. | **P15-12**, **P13-28**, added; a note for P5-05's spec |
+| D7 | **B (differs):** running-time filter chips in the library. | **P16-12**, added |
+| D8 | A: no "where you left off". | `tasks/backlog.md` |
+| D9 | B: a skip-step setting of 5, 10, 15, or 30 seconds, low priority. | **P15-13**, added |
+| D10 | A: no cast on the paused player. | `tasks/backlog.md` |
+| D11 | Requests 2 and 4 only. | §8; filed by the coordinator |
+| D12 | A: dual subtitles stay in the backlog. | `tasks/backlog.md` |
+
+### The owner's principle (D3)
+
+"This is saying you don't want to know the details about an episode of a series that you're watching because you're worried that you'll learn something that you may otherwise watch. I think as long as we have very succinct setup phases, I'm okay keeping them. I mean, they're prevalent in every media platform. I don't want to deviate from media platform for user requests that have 100+ votes. Jellyfin has a lot more use than just those 100 or so votes."
+
+Recorded as a standing rule for this and later research: **what mainstream media platforms do is the default. A few hundred votes on a tracker is not enough to depart from it.** A tracker count is a tiny share of the people who use the product. Departing from a convention needs evidence of the kind Wishes calls strong (a survey with a sample size, or a measured behaviour), or the owner's own judgement.
+
+The rule is about departing from a convention. Adding something a platform lacks, where nothing familiar changes, is a separate question and still the owner's call.
+
+### The other recommendations, checked against the principle
+
+| Item | Against the principle | Reading |
+|---|---|---|
+| D1 voice clarity and night mode | Speech and night modes are standard on TVs, soundbars, and streaming devices. | **Stronger.** It follows a convention and has the widest survey evidence. |
+| D6 audio description and captions | Every large service labels described tracks and offers caption settings. | **Stronger.** |
+| D9 skip step | The default stays 10 seconds, as on the large services. | **Unaffected.** A setting, not a departure. |
+| D2 captions on skip-back, on by default | One platform does this (Apple TV). The large services do not, and the request evidence is two threads. | **Weak under the principle, and settled.** On by default is a behaviour most viewers have not met. The switch is the safeguard. Worth a look in the dogfood week: if it surprises, turn the default off. |
+| D2 resume 3 seconds early | Whether the large services rewind on resume is unverified. 55 tracker votes. | **Weak under the principle, and settled.** Small enough to pass unnoticed; it stays inside the "resume within 10 s" measure. |
+| D7 running-time chips | No large service was found offering it, and no tracker asks for it. | **Weak on evidence, and settled.** It adds a filter and changes nothing familiar, so it does not depart from a convention. It may go unused. |
+| Dual subtitles (D12 A), sleep timer (D4 A), cast overlay (D10 A), "where you left off" (D8 A) | Tracker-sized evidence, and none is a convention of the large services. | **Consistent** with staying in the backlog. |
+| Backlog: "Hide a title" (131 votes), personal ratings (461), a "Watched" view (835) | Tracker counts only. | **Weaker than their counts suggested.** The earlier "not for now" answers stand more firmly. |
+| Wishes shortlist ranks 3 (spoilers) and 4 (watching with) | Declined. | **Withdrawn.** The shortlist in Wishes §4 is annotated. |
+| Wishes verdicts for W13 and W23 ("unsolved everywhere") | "Unsolved" there also means the mainstream chose not to. | **Read with care.** Persistence of a small request is not evidence of a wide need. |
+
+### "Very succinct setup": what `DESIGN.md` already says
+
+The owner's condition is that episode descriptions stay short. `DESIGN.md` already limits them wherever an episode is listed:
+
+- §7.3 Hero: "at most two lines of overview".
+- §7.6 Episode row: "a two-line overview".
+- §7.7 Detail header: "a three-line overview with a 'More' disclosure". The full text shows only when the viewer asks.
+- §7.15 Up Next card: the still, "Up next · S1 · E2", and the title. No description.
+
+One gap: §7.6 says that on TV "the season's episodes become a horizontal row of `thumb` cards with the overview under the focused one" and gives no line limit. **Proposed amendment, not applied** (the owner approves design changes): add "at most two lines" to that sentence. `DESIGN.md` is not edited by this pass.
+
+### Tasks added after the answers
+
+All are in `tasks/prd.json`, which is the source of truth for acceptance. Ids differ from the provisional ones in §5.2 in places; the mapping is given.
+
+| Task | Decision | Place | Depends on | Priority, size, model |
+|---|---|---|---|---|
+| **P5-06** Spike voice clarity and night mode in mpv | D1 C | P5, after P5-02 and before P5-03 (passthrough) | P2-04, P4-02 (so it waits for the dogfood week) | Medium. S to M. Opus, `native-player` |
+| **P15-11** Show captions for the line you missed, and resume a little early | D2 B | P15, after P15-07 | P3-13, P3-22, P4-02 | Medium. S to M. Sonnet |
+| **P15-12** Label audio description and let it be preferred (provisional P15-14) | D6 C | P15, after P15-11 | P16-11, P3-13, P3-22 | Medium. S. Sonnet, `jellyfin-api` |
+| **P15-13** Choose the skip step (provisional P15-15) | D9 B | P15, after P15-12 | P3-14, P3-22 | Low. S. Sonnet |
+| **P13-28** Audit Fluster with a screen reader's view | D6 C | P13, directly before P13-19, which closes or files what it finds | P13-13, P13-16, P13-17 | Medium. S. Sonnet, `verify` |
+| **P16-12** Filter films by running time (provisional P16-13) | D7 B | P16, after P16-11 | P16-06, P16-11 | Low. S. Sonnet, `jellyfin-api` |
+
+Notes on these:
+
+- **P5-06 ships nothing.** It reports and recommends. The feature (provisional P5-07 in §5.2) is not a task; it comes back to the owner with the report.
+- **P13-28 changed from §5.2.** An agent cannot listen to a screen reader. The task reads what the app exposes to one (names, roles, states) and runs an automated check, says plainly that nothing was listened to, and files a listening pass for a person in the backlog. It sits in P13, so it runs before the dogfood week; it is small and fixes nothing.
+- **P15-11 and P15-13 wait for the dogfood week** through their dependencies or their phase, like the rest of P15.
+- **Where the new settings rows live** (Subtitles for captions on skip-back; Playback for the early resume, the skip step, and "Prefer audio description") follows the sections in `DESIGN.md` §7.18. That placement is this pass's reading, not an owner's answer; each task's spec should confirm it.
+- **P16-11 was trimmed.** Its item about adding a second user to a session served only D5 and is removed. It keeps seven items; those for audio-description tracks and running time now feed P15-12 and P16-12.
+- **A note for P5-05's spec (D6 C):** caption style settings show a live sample and can be reached from the player's subtitle menu. P5-05's acceptance is not edited.
+
+### Jellyscale requests after D11
+
+Two of the five in §8 go forward: request 2 (mark audio-description and hard-of-hearing tracks) and request 4 (a running-time range on item queries, and sorting by runtime). **Filed by the coordinator** as issues on Jellyscale. Request 1 is dropped with D5. Requests 3 and 5 are not filed.
 
 ## The owner's request (2026-11-12)
 
@@ -92,6 +171,8 @@ None is changed. Each task below must hold them.
 ## 5. Tasks
 
 ### 5.1 Added to `tasks/prd.json`
+
+One task at the time of the proposal; six more followed the answers (see "Answers"). Its session item was removed after D5.
 
 One task. It needs no design choice and changes nothing a viewer sees.
 
@@ -240,7 +321,7 @@ Added to the backlog by this pass: see "Wish list" at the end of `tasks/backlog.
 
 ## 7. Decision list
 
-Twelve decisions in three batches of four. Each stands alone. "Rec" is a recommendation; the owner decides.
+D1 to D12 were answered on 2026-11-12; see "Answers" at the top. Their text is kept as asked. Twelve decisions in three batches of four. Each stands alone. "Rec" is a recommendation; the owner decides.
 
 ### Batch 1: while watching
 
@@ -335,6 +416,8 @@ It is in the backlog (your answer Q18 A). Language learners ask steadily: 134 li
 ---
 
 ## 8. Jellyscale requests
+
+After D11: requests 2 and 4 are filed by the coordinator; request 1 is dropped (D5); requests 3 and 5 are not filed. The text below is as proposed.
 
 For the coordinator to file, if the owner agrees (D11). Each is additive and worded generally. Status is from `compat/endpoints.yaml` and `docs/status.md` at `93a0f3f`.
 

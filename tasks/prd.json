@@ -2412,6 +2412,31 @@
           "evidence": ""
         },
         {
+          "id": "P13-28",
+          "title": "Audit Fluster with a screen reader's view",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P13-13",
+            "P13-16",
+            "P13-17"
+          ],
+          "acceptance": [
+            "docs/research/screen-reader-audit.md records, for Home, a library, search, a detail page, the series page, the player chrome, Settings, and sign-in: the name, role, and state each control exposes in the accessibility tree of the running desktop app under WebKitGTK, and whether every action can be reached and performed from the keyboard (owner, D6 C)",
+            "An automated accessibility check runs over the same screens in the Playwright suite, and its findings are listed in the report",
+            "The report says plainly what was not checked: nothing was listened to; a listening pass with Orca is appended to tasks/backlog.md as work for a person",
+            "Each failure is appended to tasks/backlog.md with a size; nothing is fixed in this task, and P13-19 closes, files, or keeps what it finds",
+            "No test is skipped, deleted, or weakened; no Tauri command is added"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && ls docs/research/screen-reader-audit.md",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "P13-19",
           "title": "Run the design audit and sync the docs",
           "domain": "App Shell & Presentation",
@@ -2762,6 +2787,98 @@
           "evidence": ""
         },
         {
+          "id": "P15-11",
+          "title": "Show captions for the line you missed, and resume a little early",
+          "domain": "Playback Session",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P3-13",
+            "P3-22",
+            "P4-02"
+          ],
+          "acceptance": [
+            "When subtitles are off and the viewer skips back by 30 seconds or less, the preferred subtitle track is shown from the new position until playback passes the point the skip started from, then hidden again; an OSD line says so (owner, D2 B)",
+            "It does nothing when subtitles are already on, when the title has no subtitle track, or after the viewer turns subtitles on or off during the stretch: their choice then stands",
+            "The track shown is the one the P3-13 preferences would pick; no playback request changes, and during a server conversion the rule applies only if the subtitle can be shown without restarting the stream",
+            "Resume starts 3 seconds before the stored position, never before the start, and never on Start over; the position reported to the server is the true one, so the resume-accuracy measure in PRODUCT.md still holds",
+            "Settings › Subtitles has a switch for captions on skip-back and Settings › Playback has one for the early resume; both are on by default (owner, D2 B) and are kept in the P3-22 store",
+            "If showing a subtitle track for a stretch needs a player command that does not exist, the spec stops and asks the human; otherwise the command allowlist test is unchanged",
+            "Unit tests cover the rule's edges: repeated skips, a skip across a chapter, a seek by scrubbing does not trigger it, and each switch off",
+            "A Playwright journey skips back and sees the caption appear and leave",
+            "DESIGN.md §7.14 and §7.18 match what ships",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P15-12",
+          "title": "Label audio description and let it be preferred",
+          "domain": "Playback Session",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P16-11",
+            "P3-13",
+            "P3-22"
+          ],
+          "acceptance": [
+            "An audio track that the P16-11 findings identify as audio description is labelled Audio description in the player's audio menu and in the detail page's media facts (owner, D6 C)",
+            "A subtitle track the server marks as for the hard of hearing is labelled as such in the subtitle menu",
+            "Settings › Playback has Prefer audio description, off by default; when on, an audio-description track in the preferred audio language is chosen first, and the per-series memory of P15-07 still wins once the viewer has chosen a track for that series",
+            "Where a server gives no way to tell such a track apart, nothing is guessed and the label is absent; docs/research/wishlist-api.md is the record of what each version reports",
+            "No playback request changes beyond the track indexes already sent; unit tests cover track choice with the setting on and off, and a gateway test asserts the mapping against the P16-11 fixtures",
+            "A Playwright journey turns the setting on and finds the described track selected and labelled",
+            "DESIGN.md §7.14 and §7.18 match what ships",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P15-13",
+          "title": "Choose the skip step",
+          "domain": "Playback Session",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P3-14",
+            "P3-22"
+          ],
+          "acceptance": [
+            "Settings › Playback offers the skip step: 5, 10, 15, or 30 seconds, with 10 the default (owner, D9 B), kept in the P3-22 store",
+            "The arrow keys, j and l, the on-screen skip buttons, and the media keys that seek all use the chosen step",
+            "The OSD and the buttons' labels and accessible names show the chosen step",
+            "No Tauri command is added; unit tests cover the mapping, and a Playwright journey changes the step and seeks",
+            "DESIGN.md §7.14, §7.18, and the key table match what ships",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "P15-08",
           "title": "Spike one Home across servers",
           "domain": "Server Connection & Identity",
@@ -3055,8 +3172,7 @@
             "P16-01"
           ],
           "acceptance": [
-            "A recorded sequence from Jellyfin 10.11.7 and 12.4.0 shows what POST /Sessions/{sessionId}/User/{userId} does while a session plays: which permission it needs, and whether the progress and stopped reports that follow change Played, PlaybackPositionTicks, PlayCount, and LastPlayedDate for the added user; and what DELETE on the same route does",
-            "The synthetic sample set gains a file whose second audio track carries the visual-impaired stream marker and a descriptive title, and a subtitle track with the hearing-impaired marker; fixtures show how each version reports them in MediaStreams (Title, DisplayTitle, IsHearingImpaired, and any other field that tells them apart); tests/samples/README.md lists the file",
+            "From Jellyfin 10.11.7 and 12.4.0: the synthetic sample set gains a file whose second audio track carries the visual-impaired stream marker and a descriptive title, and a subtitle track with the hearing-impaired marker; fixtures show how each version reports them in MediaStreams (Title, DisplayTitle, IsHearingImpaired, and any other field that tells them apart); tests/samples/README.md lists the file",
             "A fixture or a recorded empty answer shows whether GET /MediaSegments/{itemId} can return a Recap segment on each version without a plugin, for a sample whose chapter is named as a recap",
             "Fixtures for GET /Items sorted by Runtime and by Random with a limit show what each version returns, and a recorded request shows whether any parameter limits results to a running-time range",
             "A recorded round trip shows GET and POST /DisplayPreferences/{preferenceId} keeping a CustomPrefs entry per account under a client name of Fluster's own, across a server restart, and what happens to a value of 4 KB",
@@ -3065,6 +3181,36 @@
             "Fixtures are scrubbed per the jellyfin-api contract-fixtures reference; no gateway method, playback request, setting, or UI changes"
           ],
           "verify": "pnpm test -- fixtures && ls docs/research/wishlist-api.md",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P16-12",
+          "title": "Filter films by running time",
+          "domain": "Catalog",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P16-06",
+            "P16-11"
+          ],
+          "acceptance": [
+            "The film library's toolbar gains running-time chips: under 90 minutes, 90 to 120 minutes, and over 120 minutes (owner, D7 B)",
+            "A chip combines with the other filters and the sort, and is part of the URL, so Back returns to it",
+            "How it is applied follows the P16-11 findings: a server parameter where one exists, and otherwise a sort by runtime with the range cut in the client; a library too large to cut in the client says so plainly and never shows a partial answer as if it were complete",
+            "The chips are absent in libraries that are not films, and Home gains nothing",
+            "Gateway tests assert the requests against the P16-11 fixtures from 10.11.7 and 12.4.0; no playback request changes",
+            "A Playwright journey chooses a chip and opens a film from the result",
+            "DESIGN.md §7.12 matches what ships",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -3118,6 +3264,31 @@
             "Non-HDR displays tone-map correctly"
           ],
           "verify": "pnpm tauri dev",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P5-06",
+          "title": "Spike voice clarity and night mode in mpv",
+          "domain": "Player Engine",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "P2-04",
+            "P4-02"
+          ],
+          "acceptance": [
+            "On a development branch, the spike plays the stereo, 5.1, and 7.1 samples with at least three candidate treatments for clearer voices (a centre-channel lift before downmix, and two speech or dynamics filters) and two for night mode, each set through mpv's audio filter option (owner, D1 C)",
+            "docs/research/voice-clarity.md reports, for each treatment: whether dialogue is audibly clearer on stereo output, artefacts heard, added CPU, added delay between picture and sound, and behaviour on a stereo source with no centre channel",
+            "It states what happens with audio passthrough (P5-03) and recommends what the control should show then",
+            "It confirms from the server's session record that the play method stays direct play with each treatment, and the tripwire passes",
+            "It recommends one treatment and its strength steps for each control, or recommends against shipping; whether anything ships is the owner's decision (docs/plans/proposals/streaming-wishlist.md, D1)",
+            "No Tauri command, setting, or UI is merged; the command allowlist test is unchanged; libmpv user config and scripts stay disabled"
+          ],
+          "verify": "cargo test --manifest-path src-tauri/Cargo.toml && ls docs/research/voice-clarity.md",
           "status": "todo",
           "owner": null,
           "passes": false,
