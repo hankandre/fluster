@@ -136,13 +136,14 @@ Composition spike first: transparent WebView2 over an mpv D3D11 surface. Then D3
 
 ### M5 — Connected
 
-- Act as a Jellyfin cast target: other clients can send play/pause/seek.
 - SyncPlay (watch together).
 - Offline downloads of the original file.
 
 ### M6 — Living room and mobile
 
 A TV/mobile shell that reuses Fluster's domain, gateway, and playback policy. Android TV comes first, then Android phones; Apple TV follows. The shell spike starts as soon as the fallback core (M1b negotiation) lands, in parallel with the desktop milestones.
+
+- Act as a Jellyfin cast target, so a phone can be the TV's remote and other clients can send play, pause and seek (P8-01, moved here from M5 by the owner, 2026-11-12, D4 B).
 
 ### Order
 
