@@ -1,8 +1,93 @@
 # UX audit: Fluster against the evidence
 
-Status: **proposal, 2026-11-12. Nothing here is decided.** The owner makes the design decisions; this document researches, weighs, audits, and recommends. Section 7 is the decision list.
+Status: **answered 2026-11-12.** The owner answered all twenty decisions; see "Answers" below. The rest of the document is kept as proposed, so its recommendations read as they did when asked.
 
 This is a Fable 5.2 product-review pass under the `AGENTS.md` "Tasks" rule. It audits Fluster as it stands against [`docs/research/video-app-ux.md`](../../research/video-app-ux.md) (cited as **Research §n**), and against the three feature studies: **Gripes** ([`streaming-ux-gripes.md`](../../research/streaming-ux-gripes.md)), **Loves** ([`streaming-ux-loves.md`](../../research/streaming-ux-loves.md)), and **Clients** ([`jellyfin-clients.md`](../../research/jellyfin-clients.md)). The wish-list study (**Wishes**) was read from its open pull request (#137) late in this pass; where the two overlap this document points to its decisions and does not ask them again.
+
+## Answers (owner, 2026-11-12)
+
+Relayed by the coordinating agent, which reports that the owner answered directly. Every answer is the recommended option in §7.
+
+| # | Answer | Applied in |
+|---|---|---|
+| D1 | B: keep each account's browse data while that account is active; erase it on switch, sign-out, and close. Back restores position, sort, filters, and focus. | **P13-31**, added; `DESIGN.md` §9 |
+| D2 | B: a shorter hero on small windows so the whole first row shows; the hero's title is not repeated in the row. | **P13-32**, added; `DESIGN.md` §6, §7.3 |
+| D3 | B: shorten the series header on small windows so the tabs and the first episode row show. | **P13-32**; `DESIGN.md` §6 |
+| D4 | C: P4-01 waits for P3-30 and P13-31. | **Not applied here.** See below. |
+| D5 | B, after the dogfood week: a held key seeks in growing steps; two keys jump by chapter. | **P15-16**, added; `DESIGN.md` §7.14, §9 |
+| D6 | B: "Buffering…" after 500 ms; placeholders stay at 150 ms. | **P13-33**, added; `DESIGN.md` §7.14 |
+| D7 | C: decide after the dogfood week. | `docs/dogfood-protocol.md` §4, item 4, with the note below |
+| D8 | B: text over video is never the dimmest grey. | **P13-33**; `DESIGN.md` §3.1 |
+| D9 | B: a "Show password" control. | **P15-17**, added; `DESIGN.md` §7.20 |
+| D10 | A on the desktop; decide C (TV form only) with the TV shell. | `tasks/backlog.md` (the entry stays) |
+| D11 | A: leave the client; ask Jellyscale for tolerant, ranked search. | Jellyscale request 1 (§9) |
+| D12 | B, low priority: `?` opens a sheet of the keys for the current screen. | **P15-17**; `DESIGN.md` §9 |
+| D13 | B: TV body text 28 px, nothing under 24 px, layout unchanged. | **P13-34**, added; `DESIGN.md` §6 |
+| D14 | B: leaving the app follows each platform's rule; no question on Android TV. | **P13-34**; `DESIGN.md` §6 |
+| D15 | B: holding OK also opens details. | **P13-34**; `DESIGN.md` §7.5, §9 |
+| D16 | B: press to step, hold to scrub with the preview, OK commits, Back cancels; Up or Down shows the controls. | **P13-34**; `DESIGN.md` §7.14, §9 |
+| D17 | C: decide on a subtitle size control after the first dogfood evening. | `docs/dogfood-protocol.md` §4, item 5 |
+| D18 | C: decide on a letter jump with the TV shell. | `tasks/backlog.md` (the entry stays) |
+| D19 | A: carry all four Jellyscale requests. | §9; filed by the coordinator |
+| D20 | A: use the protocol as written. | **`docs/dogfood-protocol.md`**, added |
+
+### Not applied: waiting for the coordinator
+
+**D4, the edit to P4-01.** P4-01 is an existing task, and the `rules` in `tasks/prd.json` allow an agent to change only `status`, `owner`, `passes`, and `evidence`. The coordinating agent applies it. The exact change: append `"P3-30"` and `"P13-31"` to the end of P4-01's `depends_on`, after `"P16-02"`. Nothing else in the task changes.
+
+**Auto-merge on this pull request.** It adds nine tasks and changes `DESIGN.md`. The owner merging it is the approval.
+
+### Tasks added after the answers
+
+In `tasks/prd.json`, which is the source of truth for acceptance. §6.2 has the reasoning; the acceptance there was the draft.
+
+| Id | Title | Place | Priority |
+|---|---|---|---|
+| P13-34 | Apply the TV form decisions | P13, directly after P13-18 | Medium |
+| P13-31 | Restore the place after Back | P13, after P13-30 and before P13-19 | High |
+| P13-32 | Bring the first row and the episodes onto the first screen | P13, after P13-31; waits for P16-02 | Medium |
+| P13-33 | Wait before showing Buffering, and brighten text over video | P13, after P13-32; waits for P13-30 | Low to medium |
+| P15-16 | Seek further with a held key, and jump by chapter | P15, after P15-07; waits for P4-02 | Medium |
+| P15-17 | Show the password on sign-in, and list the keyboard shortcuts | P15, after P15-16; waits for P4-02 | Low |
+
+Changed from §6.2 as first written:
+
+- P13-31 depends on P13-24 and adds to it; it gains a line that nothing is written to disk, which is the difference between D1 B and D1 C.
+- P13-32 hides the row when the hero's title was its only item.
+- P13-33 depends on P13-30, so its result can be seen in the worst-case capture.
+- P13-34 is a task of its own, placed after P13-18, and does not edit P13-18. If P13-18's spec takes any of the four decisions first, P13-34 does not rebuild them.
+- P15-16's step rule is one pure function that P13-34 also uses, so the desktop and the TV accelerate the same way.
+
+### `DESIGN.md` changes after the answers
+
+Each traces to an answer above; `DESIGN.md` §13 has the same table. A11 in §5 (a spoken value for sliders) was not one of the decisions and is not applied.
+
+| Section | Change | Answer |
+|---|---|---|
+| §3.1 | Text over video is never `--text-3` | D8 B |
+| §6 desktop | The first screen shows the first row, and a series page its tabs and first episode row, at 1440×900 | D2 B, D3 B |
+| §6 10-foot | TV body text 28 px, nothing under 24 px | D13 B |
+| §6 10-foot | Leaving the app follows each platform's rule | D14 B |
+| §7.3 | The hero's title is not repeated in the row | D2 B |
+| §7.5 | Holding OK opens details on TV | D15 B |
+| §7.14 | A held key seeks further; the TV seek model; "Buffering…" after 500 ms | D5 B, D16 B, D6 B |
+| §7.20 | Show password | D9 B |
+| §9 | Back restores the place; six keyboard-map rows | D1 B, D5 B, D12 B, D15 B, D16 B |
+| §13 | A table of these decisions | all of the above |
+
+The token block in §8 is not changed. It mirrors `src/styles/tokens.css`, and P13-32 and P13-34 change both together. The safe-inset note proposed in A3 was not part of D14 and is not applied.
+
+### The standing principle (owner, 2026-11-12)
+
+Relayed by the coordinating agent: **mainstream media-platform conventions are the default, and a few hundred tracker votes is not enough to depart from them.** The recommendations were checked against it.
+
+- **D7 is the one it bears on.** Click to pause and double-click for fullscreen are mainstream conventions. This pass found no source to cite for that and said so, which is a limit of the search, not a reason to doubt the convention. Under the principle the default is to add them, and the dogfood week checks for a reason not to. The protocol says this.
+- **D17.** Every mainstream platform lets a viewer change the subtitle size. The principle favours having the control; the answer (see how mpv's default reads first) decides when, not whether. P5-05 already owns it.
+- **D5.** The recommendation keeps one step both ways, as Netflix and YouTube do, and turns down the uneven steps of Plex and Jellyfin's web client. Consistent.
+- **D2 and D3** keep the hero, which is the mainstream form, and change its height only.
+- **D13 to D16** each follow what Apple and Google's TV platforms share.
+- **D10, D11, D18** leave out things mainstream apps have (recent searches, forgiving search, a letter jump is not mainstream). D10 and D11 are departures the owner chose with the reasons given: privacy for the first, and the server being the right place for the second.
+- Nothing in this audit rests on tracker votes. The wish-list pass is where that caution applies.
 
 ## The owner's requests (2026-11-12)
 
@@ -19,7 +104,7 @@ Both were relayed by the coordinating agent.
 - **What the captures cannot show.** They run the browser development engine against a mock server with synthetic artwork (soft colour gradients). So they show layout, copy, and focus. They do not show real video, real posters, text over a bright or busy picture, timing, or anything on Wayland, a GPU, or a TV.
 - **Nothing was run on a real server or real hardware in this pass.** §3.3 lists what that leaves unjudged.
 - **Evidence strength** is the research document's: strong, medium, weak, none.
-- **Not done:** no edit to `DESIGN.md`, `PRODUCT.md`, or any code; no existing task's acceptance or `depends_on` changed; the Jellyscale repository was not touched.
+- **Not done:** no edit to `PRODUCT.md` or any code; no existing task's acceptance or `depends_on` changed; the Jellyscale repository was not touched. `DESIGN.md` was edited only after the owner's answers, and only where an answer settles it.
 
 ## 1. Where Fluster already meets or beats the evidence
 
@@ -257,7 +342,7 @@ P13-18 is being specified now. These are findings and options, not instructions;
 
 ## 5. Proposed `DESIGN.md` amendments
 
-Proposals only. `DESIGN.md` is not edited by this pass. Each waits for the decision named.
+As proposed, before the answers. A1 to A10 were applied to `DESIGN.md` after the owner answered, except the safe-inset sentence in A3; A11 was not. See "`DESIGN.md` changes after the answers" at the top.
 
 | # | Section | Proposed text | Waits for |
 |---|---|---|---|
@@ -291,7 +376,7 @@ Ids avoid the ones the wish-list pass reserves in pull request #137 (P13-28, P15
 
 ### 6.2 Proposed, waiting for decisions
 
-Not in `tasks/prd.json`. Each is in `tasks/backlog.md`.
+All six were added to `tasks/prd.json` after the owner's answers; see "Tasks added after the answers" at the top. The drafts below are kept as proposed.
 
 **P13-31. Restore the place after Back** (D1). High. M. Sonnet; a `guardian` review for the cache rule.
 - Home, library, collection, series, detail, and search results keep their data while their account is active; a test proves it is gone after a switch, a sign-out, and a restart.
@@ -342,7 +427,7 @@ See `tasks/backlog.md`, "UX audit". It holds the proposed tasks above, G21, the 
 
 ## 7. Decision list
 
-Twenty decisions in five batches of four. Each stands alone. "Rec" is a recommendation; the owner decides. Spoilers and the size of the skip step are already asked by the wish-list proposal (its D3 and D9) and are not asked again; this audit's evidence on them is in Research §7.2 and §5.4.
+D1 to D20 were answered on 2026-11-12; see "Answers" at the top. Their text is kept as asked. Twenty decisions in five batches of four. Each stands alone. "Rec" is a recommendation; the owner decides. Spoilers and the size of the skip step are already asked by the wish-list proposal (its D3 and D9) and are not asked again; this audit's evidence on them is in Research §7.2 and §5.4.
 
 ### Batch 1: keeping your place
 
@@ -490,6 +575,8 @@ P4-01 asks for a daily log, the time to first frame, and crashes. §8 adds eleve
 
 ## 8. Usability testing for the dogfood week (P4-01)
 
+**Chosen by the owner (D20 A).** The protocol now lives in [`docs/dogfood-protocol.md`](../../dogfood-protocol.md), which is the copy to follow; P4-01's spec should point there. The text below is kept as proposed.
+
 A protocol for one person, with no telemetry. Nothing leaves the computer; everything is written by hand into `docs/dogfood/YYYY-MM-DD.md`, which P4-01 already requires.
 
 ### 8.1 Why this shape
@@ -552,7 +639,7 @@ One viewer, one library, one computer. It finds friction; it does not measure ho
 
 ## 9. Jellyscale requests
 
-For the owner to carry over if D19 says so. Nothing here was sent, and the Jellyscale repository was not read or touched in this pass.
+The owner chose to carry all four (D19 A). The coordinating agent reports filing them in Jellyscale's tracker: #116 for request 1, #117 for request 2, #118 for request 3, and a comment on #101 for request 4. This pass did not send anything, did not read or touch the Jellyscale repository, and has not checked those numbers.
 
 1. **Search that tolerates a typo and ranks by relevance,** on `/Search/Hints` and on `/Items?searchTerm=`. Fluster's full results are sorted by name because the server offers no relevance order (G11).
 2. **Honour remembered audio and subtitle selections per account** (Jellyfin's `RememberAudioSelections` and `RememberSubtitleSelections`), so a track choice carries to the next episode on every client. P15-07 does this on one computer only.
@@ -572,7 +659,7 @@ Flagged so that nothing here is mistaken for a neutral change.
 | Playback Negotiation: "Build media URLs only in Playback Negotiation"; direct play first | P3-30 changes only the start position a retry asks for. Its acceptance forbids any other request change and keeps the tripwire. |
 | "Treat every new Tauri command as an architecture change" | D17 B would need one. P3-30, P13-29, and P13-30 add none. |
 | "Show every server conversion and its reason" | Untouched. P13-33 must not delay or dim the conversion notice. |
-| `DESIGN.md` is owner-approved | §5 is proposals only. P13-29 implements §7.10 as written. |
+| `DESIGN.md` is owner-approved | Changed only where an answer to D1 to D16 settles the text; each change names its decision. P13-29 implements §7.10 as written. |
 | "Never edit acceptance items without human approval" | No existing task is edited. D4 asks. |
 | `PRODUCT.md` principle 6, "Private by default" | The protocol in §8 records by hand. D10 and D1 C are flagged for what they would store. |
 
@@ -583,4 +670,4 @@ Flagged so that nothing here is mistaken for a neutral change.
 - It did not measure any time.
 - It did not install or run any competing app.
 - It did not review the wish-list proposal beyond avoiding its ids and its decisions.
-- It did not edit `DESIGN.md`, `PRODUCT.md`, any code, or any existing task.
+- It did not edit `PRODUCT.md`, any code, or any existing task. It edited `DESIGN.md` only where an owner answer settles the text.
