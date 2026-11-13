@@ -258,7 +258,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 
 ### 7.11 Segmented tabs (`SegmentedTabs`)
 
-- Used for seasons and for Settings sections on wide screens. `role="tablist"`. The selected tab is `--text-1` with a 2 px `--art-accent` bar under it. The others are `--text-2`. Left and Right move and select (automatic activation, since season lists are cheap). Specials go last. The tab bar scrolls sideways when the tabs overflow, with room inside the scroll box for the focus ring.
+- Used for seasons. `role="tablist"`. The selected tab is `--text-1` with a 2 px `--art-accent` bar under it. The others are `--text-2`. Left and Right move and select (automatic activation, since season lists are cheap). Specials go last. The tab bar scrolls sideways when the tabs overflow, with room inside the scroll box for the focus ring.
 
 ### 7.12 Toolbar (`BrowseToolbar`)
 
@@ -317,17 +317,16 @@ Idle: the chrome hides 3 s after the last input while playing. It never hides wh
 
 ### 7.18 Settings (`SettingsPage`, `SettingsSection`, `SettingsRow`)
 
-A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings/settings-view.tsx`). P13-17 rebuilds it as the shell below with the streaming limits, Account, and About. Each later row arrives with the task that builds its behaviour: the preferences store (P3-22), auto-play (P3-23), skip (P3-24), accounts (P13-21), subtitle styling (P5-05), and audio passthrough (P5-03). Settings are one set per computer, not per account.
+A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings/settings-view.tsx`). P13-17 rebuilt it as the shell below and ships Playback (the streaming limits, with Audio passthrough as an unavailable row), Subtitles, Account, and About & diagnostics. Each later row arrives with the task that builds its behaviour: the preferences store (P3-22), auto-play (P3-23), skip (P3-24), accounts (P13-21), subtitle styling (P5-05), and audio passthrough (P5-03). Settings are one set per computer, not per account.
 
-
-- Layout: section list on the left (desktop or TV) and section content on the right. Compact windows use a single list that drills in.
+- Layout: a vertical `role="tablist"` of sections on the left (`--settings-nav-w`) and the selected section's panel on the right (`--settings-panel-max`). Up and Down select a section (Home and End jump), Right enters the rows, and Left returns to the section list. Escape does nothing here. Under 720 px a list of sections drills in: Enter opens one and focuses its heading, and Escape or "Back to settings" returns with focus on that section. The route stays `#/next/settings`; the section is screen state.
 - Sections:
-  - **Playback**: streaming limit, local and remote (same values and storage as P10-05), each a `Picker` of "No limit" and presets (Q21 A; no custom value). Play next episode automatically (on by default) and its countdown (5, 10, or 15 s; default 10). Intros and Credits, each with three choices: "Show a Skip button" (default), "Skip automatically", or "Do nothing". Audio passthrough (P5-03) joins later.
-  - **Subtitles**: one sentence saying that languages follow the Jellyfin account (Q23 A; no link and no server read). Styling comes in M2 (P5-05).
-  - **Account** (P13-17): server name and address (Mono), user, and Sign out. From P13-21 it becomes **Accounts**: every saved account as "name · server" with its stay-signed-in state, Sign out, and Remove, then "Add account". There is no launch setting: two or more signed-in accounts always show "Who's watching?" (§7.21). There is no "Change server" in Settings; adding an account never signs anyone out.
-  - Rows for features that are not built yet show disabled with "Not available yet" (Q23 A).
-  - **About & diagnostics**: version, player and libmpv version, renderer, and "Copy diagnostics" (redacted). The copy holds the app version, OS, libmpv version, renderer, decode mode, Jellyfin server version, and host class, and nothing else (Q24 B).
-- `SettingsRow` is a 64 px row with a label and description on the left and a control on the right (switch, value plus chevron opening a `Picker`, or button). The whole row is the focus and hit target. Changes save immediately and confirm with a toast where the effect is invisible.
+  - **Playback**: streaming limit, local and remote (same values and storage as P10-05), each a `Picker` of "No limit" and presets (Q21 A; no custom value). A changed limit confirms with a toast, because the change is otherwise invisible. Play next episode automatically (on by default) and its countdown (5, 10, or 15 s; default 10) arrive with P3-23. Intros and Credits, each with three choices: "Show a Skip button" (default), "Skip automatically", or "Do nothing", arrive with P3-24. Audio passthrough shows as unavailable until P5-03.
+  - **Subtitles**: one sentence saying that languages follow the Jellyfin account (Q23 A; no link, no server read, nothing focusable). Styling comes in M2 (P5-05).
+  - **Account** (P13-17): server name, address (Mono), and user. Stay signed in shows as unavailable until P3-02, P13-21, and P13-27 (per-account stay-signed-in in Settings > Accounts). Sign out is a `danger` button that signs out at once and ends on the sign-in screen with a "Signed out" toast; there is no confirm. From P13-21 the section becomes **Accounts**: every saved account as "name · server" with its stay-signed-in state, Sign out, and Remove, then "Add account". There is no launch setting: two or more signed-in accounts always show "Who's watching?" (§7.21). There is no "Change server" in Settings; adding an account never signs anyone out.
+  - **About & diagnostics**: version, player and libmpv version, renderer, Jellyfin server version, and "Copy diagnostics" (redacted). The copy is seven lines: the app version, OS, player and libmpv version, renderer, decode mode, Jellyfin server version, and host class, and nothing else (Q24 B). It goes to the clipboard with a "Diagnostics copied" toast. If the clipboard refuses, an alert says so and the same text shows in a focused, selected block to copy by hand.
+- Rows for features that are not built yet show disabled with "Not available yet." (Q23 A): no control and nothing focusable. The state is in words and `aria-disabled`, never colour alone.
+- `SettingsRow` is a `--settings-row-h` row with a label and description on the left and a control on the right (switch, value plus chevron opening a `Picker`, or button; the switch arrives with P3-23). The whole row is the hit target and the row takes a `--surface-2` fill while its control has keyboard focus. Up and Down move between the rows' controls; Enter or Space opens a `Picker`. Changes save immediately and confirm with a toast where the effect is invisible.
 
 ### 7.19 Buttons and fields
 
@@ -337,7 +336,7 @@ A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings
 | `secondary` | `rgb(242 239 233 / .12)` fill, `--text-1` text | Start over, Retry next to a primary |
 | `quiet` | Transparent, `--text-2` text that becomes `--text-1` on hover or focus | Hide, Change server |
 | `icon` | 44 px (TV 64) circle, `rgb(242 239 233 / .10)` fill | Watched, Favorite, player controls |
-| `danger` | `secondary` with `--danger` text | Sign out confirm |
+| `danger` | `secondary` with `--danger` text | Sign out, destructive confirms |
 
 - All buttons have a `--dur-quick` hover fill change, `--dur-instant` press (scale .98, none with reduced motion), and the shared focus ring.
 - `TextField`: a 52 px `--surface-2` field with a `--line-strong` border and `--radius-control`, label above in `--type-label` and `--text-2` (never tiny tracked capitals), helper and error text below, with the error linked via `aria-describedby`.
@@ -440,6 +439,7 @@ Fluster remembers any number of accounts. An account is one user on one server. 
   --hit-min: 44px;
   --search-field-h: 64px;
   --suggestion-art-w: 40px;
+  --settings-row-h: 4rem; --settings-nav-w: 16rem; --settings-panel-max: 46rem; /* rem, so the TV scale applies */
   --player-sheet-w: 420px; --player-play-disc: 56px; --player-status-disc: 64px;
   --up-next-w: 400px; /* TV 560px */
   --player-prompt-inset: var(--space-8); /* Skip and Up Next, chrome hidden */
@@ -539,6 +539,7 @@ Fluster remembers any number of accounts. An account is one user on one server. 
 | Anywhere | Arrows, Enter, Escape | Move, activate, back | Exists (partly) |
 | Anywhere | `/` | Focus search; opens Search from other signed-in screens. Not in the player or sign-in. | P13-12 |
 | Anywhere outside fields | Backspace | Back | New in P13 |
+| Settings | Up / Down, Right, Left, Escape | Up and Down move in the section list or between rows; Right enters the rows from the list; Left returns to the list; Escape returns to the list on compact windows only | P13-17 |
 | Card | `i` or Menu | Open details (when Enter resumes) | New in P13 |
 | Player | Space or `k` | Play or pause | Exists |
 | Player | Left / Right or `j` / `l` | Seek ∓10 s | Exists |
@@ -587,6 +588,12 @@ Fluster talks like a knowledgeable friend running the projector: calm, brief, pl
 | Next episode error | n/a | Couldn't load your next episode. | Retry |
 | Detail, watched or favorite toast | n/a | Marked as watched. / Marked as unwatched. / Added to favorites. / Removed from favorites. | n/a |
 | Detail, watched or favorite failed | n/a | Couldn't update watched state. Try again. / Couldn't update favorite. Try again. | n/a |
+| Settings, limit changed | n/a | {Local network or Remote} limit set to {n} Mbps. / {Local network or Remote} limit removed. | n/a |
+| Settings, Subtitles | n/a | Subtitle languages follow your Jellyfin account; change them in Jellyfin. | n/a |
+| Settings, unavailable row | n/a | Not available yet. | n/a |
+| Settings, signed out | n/a | Signed out | n/a |
+| Settings, copy diagnostics | n/a | Diagnostics copied | Copy |
+| Settings, copy failed | n/a | Couldn't copy. Select the text below and copy it. | n/a |
 | Item gone | This item is no longer on the server | It may have been removed or renamed. | Go home |
 | Player loading | n/a | Opening the original file… | Back |
 | Player loading, converting | n/a | Converting on server: {reason}… | Back |
@@ -624,7 +631,7 @@ Fluster talks like a knowledgeable friend running the projector: calm, brief, pl
 | Silent key actions in the player | OSD feedback |
 | STEP kickers, giant sign-in headings, and raw sign-in errors | One question per step in `--type-title`, copy table, `Dialog` for the unencrypted warning |
 | Raw errors; giant refusal headline | Copy table; `Notice` over the dimmed backdrop |
-| Settings with two native selects and developer links (P10-05) | Settings with Playback, Subtitles, Account, About, built from `SettingsRow` and `Picker` |
+| Settings with two native selects and developer links (P10-05) | Settings with Playback, Subtitles, Account, About & diagnostics, built from `SettingsRow` and `Picker` (done in P13-17) |
 
 ## 13. Decisions (accepted 2026-11-08)
 

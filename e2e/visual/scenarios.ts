@@ -26,6 +26,13 @@ async function signIn(page: Page): Promise<void> {
   await page.getByRole("heading", { name: "Home" }).waitFor({ timeout: 10_000 });
 }
 
+// Signs in, then opens Settings through the nav.
+async function openSettings(page: Page): Promise<void> {
+  await signIn(page);
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Settings" }).click();
+  await page.getByRole("heading", { level: 1, name: "Settings" }).waitFor();
+}
+
 async function startConnect(page: Page, url: string): Promise<void> {
   await go(page, "#/next/sign-in", 200);
   await page.getByLabel("Server URL").fill(url);
@@ -448,9 +455,62 @@ export const scenarios: Scenario[] = [
   { name: "60-features-index", run: (page) => signedInAt(page, "#/next") },
   { name: "61-not-found", run: (page) => signedInAt(page, "#/next/nowhere") },
   { name: "70-settings", run: async (page) => {
-    await signIn(page);
-    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Settings" }).click();
-    await page.getByLabel("Local network maximum bitrate").waitFor();
+    await openSettings(page);
+    await page.getByRole("tab", { name: "Playback", selected: true }).waitFor();
+  } },
+  { name: "70a-settings-limit-open", run: async (page) => {
+    await openSettings(page);
+    await page.getByRole("button", { name: /^Remote maximum bitrate/ }).click();
+    await page.getByRole("listbox").waitFor();
+    await page.waitForTimeout(300);
+  } },
+  { name: "70b-settings-row-focus", run: async (page) => {
+    await openSettings(page);
+    await page.getByRole("tab", { name: "Playback" }).focus();
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("ArrowDown");
+    await page.waitForTimeout(300);
+  } },
+  { name: "70c-settings-limit-toast", run: async (page) => {
+    await openSettings(page);
+    await page.getByRole("button", { name: /^Remote maximum bitrate/ }).click();
+    await page.getByRole("option", { name: "10 Mbps", exact: true }).click();
+    await page.getByText("Remote limit set to 10 Mbps.").waitFor();
+    await page.waitForTimeout(400);
+  } },
+  { name: "71-settings-subtitles", run: async (page) => {
+    await openSettings(page);
+    await page.getByRole("tab", { name: "Subtitles" }).click();
+    await page.getByRole("heading", { level: 2, name: "Subtitles" }).waitFor();
+  } },
+  { name: "72-settings-account", run: async (page) => {
+    await openSettings(page);
+    await page.getByRole("tab", { name: "Account" }).click();
+    await page.getByText("Hearth").waitFor();
+  } },
+  { name: "72a-settings-signed-out-toast", run: async (page) => {
+    await openSettings(page);
+    await page.getByRole("tab", { name: "Account" }).click();
+    await page.getByRole("button", { name: "Sign out" }).click();
+    await page.getByText("Signed out").waitFor();
+    await page.waitForTimeout(400);
+  } },
+  { name: "73-settings-about", run: async (page) => {
+    await openSettings(page);
+    await page.getByRole("tab", { name: "About & diagnostics" }).click();
+    await page.getByText("Browser (development)").waitFor();
+    await page.getByText("10.11.7").waitFor();
+  } },
+  { name: "73a-settings-copy-fallback", run: async (page) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: () => Promise.reject(new Error("denied")) } });
+    });
+    await openSettings(page);
+    await page.getByRole("tab", { name: "About & diagnostics" }).click();
+    await page.getByText("10.11.7").waitFor();
+    await page.getByRole("button", { name: "Copy" }).click();
+    await page.getByRole("alert").waitFor();
+    await page.waitForTimeout(300);
   } },
 
   // UI gallery (browser development only)
@@ -523,4 +583,14 @@ export const scenarios: Scenario[] = [
   { name: "66-phone-nav-fade", phone: true, opts: { manyLibraries: true }, run: (page) => signedInAt(page, "#/next/home", 1_000) },
   { name: "67-phone-search-hints", phone: true, run: searchHints },
   { name: "68-phone-search-results", phone: true, fullPage: true, run: (page) => signedInAt(page, "#/next/search/o", 1_000) },
+  { name: "74-phone-settings-list", phone: true, run: async (page) => {
+    await openSettings(page);
+    await page.getByRole("navigation", { name: "Settings sections" }).waitFor();
+  } },
+  { name: "74a-phone-settings-section", phone: true, run: async (page) => {
+    await openSettings(page);
+    await page.getByRole("button", { name: "Playback" }).click();
+    await page.getByRole("button", { name: "Back to settings" }).waitFor();
+    await page.waitForTimeout(300);
+  } },
 ];

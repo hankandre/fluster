@@ -231,6 +231,7 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
       }
       // The server stops the conversion it started (the desktop-only refusal cleans up).
       if (p === "/Videos/ActiveEncodings") return route.fulfill({ status: 204, headers: cors });
+      if (p === "/Sessions/Logout") return route.fulfill({ status: 204, headers: cors });
       const info = /^\/Items\/([^/]+)\/PlaybackInfo$/.exec(p);
       if (info) {
         if (opts.playbackDelayMs) await sleep(opts.playbackDelayMs);
