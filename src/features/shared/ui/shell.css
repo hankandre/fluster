@@ -140,6 +140,19 @@
     background: var(--text-1);
   }
 
+  .app-nav-initial {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    box-sizing: border-box;
+    inline-size: var(--space-5);
+    block-size: var(--space-5);
+    border-radius: var(--radius-pill);
+    background: var(--surface-3);
+    color: var(--text-1);
+    font: var(--type-label);
+  }
+
   .app-nav-wordmark {
     color: var(--text-1);
   }

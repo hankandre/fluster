@@ -75,6 +75,9 @@
   --suggestion-art-w: 40px;
   --player-sheet-w: 420px;
   --up-next-w: 400px;
+  --settings-row-h: 4rem;
+  --settings-nav-w: 16rem;
+  --settings-panel-max: 46rem;
   --player-prompt-inset: var(--space-8);
   /* Clears the control footer: its padding, scrubber, and control row, plus a gap. */
   --player-prompt-inset-chrome: calc(var(--space-5) * 2 + var(--hit-min) * 2 + var(--space-3) * 2);

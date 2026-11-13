@@ -23,6 +23,8 @@ export interface SessionGateway {
   pollQuickConnect(secret: string, signal?: AbortSignal): Promise<{ authenticated: boolean }>;
   authenticateWithQuickConnect(secret: string, signal?: AbortSignal): Promise<{ userId: string; username: string }>;
   logout(): Promise<void>;
+  // The signed-in user's display name for labels, or undefined when signed out.
+  currentUserName(): string | undefined;
   userViews(signal?: AbortSignal): Promise<LibraryView[]>;
   resumeItems(signal?: AbortSignal): Promise<MediaCard[]>;
   nextUp(signal?: AbortSignal): Promise<MediaCard[]>;

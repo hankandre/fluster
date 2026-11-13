@@ -21,5 +21,11 @@ function NavShell({ gateway, hash, children }: { gateway: SessionGateway; hash: 
   });
   // Pending or failed: only the fixed entries show, with no placeholder and no error text.
   const libraries = views.data?.map((view) => ({ id: view.id, name: view.name }));
-  return <AppShell nav={<AppNav libraries={libraries} hash={hash} />}>{children}</AppShell>;
+  return <AppShell nav={<AppNav libraries={libraries} hash={hash} userInitial={initialOf(gateway.currentUserName())} />}>{children}</AppShell>;
+}
+
+// The first letter of the user's name, upper-cased, or undefined for an empty name.
+export function initialOf(name: string | undefined): string | undefined {
+  const first = Array.from(name?.trim() ?? "")[0];
+  return first ? first.toLocaleUpperCase() : undefined;
 }

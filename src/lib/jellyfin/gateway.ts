@@ -189,6 +189,7 @@ export class JellyfinGateway {
   private api?: Api;
   private accessToken?: string;
   private userId?: string;
+  private userName?: string;
   private serverId?: string;
   private deviceId?: string;
 
@@ -349,12 +350,18 @@ export class JellyfinGateway {
     if (!data.AccessToken || !data.User?.Id) throw new SignInFailure("unexpected-response", "Jellyfin did not return a valid user session.");
     this.accessToken = data.AccessToken;
     this.userId = data.User.Id;
+    this.userName = data.User.Name ?? fallbackName;
     this.deviceId = deviceId;
     if (this.api) {
       this.api = createSdkApi(this.serverUrl, deviceId, data.AccessToken);
       this.transport = this.api.axiosInstance as HttpTransport;
     }
-    return { userId: data.User.Id, username: data.User.Name ?? fallbackName };
+    return { userId: data.User.Id, username: this.userName };
+  }
+
+  // The signed-in user's display name, or undefined when signed out. Display only.
+  currentUserName(): string | undefined {
+    return this.accessToken ? this.userName : undefined;
   }
 
   // The signed-in Authorization header, handed only to Rust: the server socket
@@ -370,6 +377,7 @@ export class JellyfinGateway {
     // Clear local state first so the UI can never keep a revoked token.
     this.accessToken = undefined;
     this.userId = undefined;
+    this.userName = undefined;
     this.deviceId = undefined;
     const transport = this.transport;
     if (this.api) {

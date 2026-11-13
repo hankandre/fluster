@@ -2203,10 +2203,10 @@
             "Uses only shared UI primitives; no native select, radio, or checkbox remains"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "Milestone 1: gateway currentUserName, nav initial, Picker describedBy/openOnArrow, settings tokens, app version define."
         },
         {
           "id": "P13-18",

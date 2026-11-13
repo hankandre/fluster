@@ -65,6 +65,10 @@ describe("DESIGN.md §3.1 token contrast", () => {
     }
   }
 
+  it("--text-3 on --surface-1 (an unavailable Settings row label) meets 4.5:1", () => {
+    expect(contrastRatio(solid("--text-3"), solid("--surface-1"))).toBeGreaterThanOrEqual(4.5);
+  });
+
   it("--text-3 is not for surface-3 (below 4.5:1 there)", () => {
     expect(contrastRatio(solid("--text-3"), solid("--surface-3"))).toBeLessThan(4.5);
   });

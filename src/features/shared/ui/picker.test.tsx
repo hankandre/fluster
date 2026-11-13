@@ -62,6 +62,28 @@ describe("Picker", () => {
     expect(screen.getByRole("listbox")).toBeInTheDocument();
   });
 
+  it("leaves ArrowUp and ArrowDown to the surrounding column when openOnArrow is false, and still opens with Enter", async () => {
+    const user = userEvent.setup();
+    render(<Picker label="Row limit" options={OPTIONS} value="20" onChange={vi.fn()} openOnArrow={false} />);
+    const button = screen.getByRole("button", { name: /Row limit/ });
+    button.focus();
+    await user.keyboard("{ArrowDown}");
+    await user.keyboard("{ArrowUp}");
+    expect(screen.queryByRole("listbox")).toBeNull();
+    await user.keyboard("{Enter}");
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+  });
+
+  it("points the trigger at the text that describes it", () => {
+    render(
+      <>
+        <p id="hint">Servers on the internet.</p>
+        <Picker label="Row limit" options={OPTIONS} value="20" onChange={vi.fn()} describedBy="hint" />
+      </>,
+    );
+    expect(screen.getByRole("button", { name: /Row limit/ })).toHaveAccessibleDescription("Servers on the internet.");
+  });
+
   it("moves with arrows, Home, and End, skipping disabled options", async () => {
     const user = userEvent.setup();
     render(<Harness />);
