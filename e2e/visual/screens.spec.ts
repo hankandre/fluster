@@ -9,6 +9,8 @@ const FIXED_TIME = new Date("2026-11-08T12:00:00Z");
 
 const desktop = [{ width: 1440, height: 900 }, { width: 1920, height: 1080 }];
 const phone = [{ width: 390, height: 844 }];
+// The 10-foot form (DESIGN.md 6): every non-phone scenario again at 1920x1080 with <html data-form="tv">.
+const tv = [{ width: 1920, height: 1080, form: "tv" }];
 
 // Freezes motion and waits for fonts and images so a capture is repeatable.
 async function settle(page: Page): Promise<void> {
@@ -22,11 +24,23 @@ async function settle(page: Page): Promise<void> {
 }
 
 for (const scenario of scenarios) {
-  for (const viewport of scenario.phone ? phone : desktop) {
-    const size = `${viewport.width}x${viewport.height}`;
+  const passes = scenario.phone ? phone : scenario.tvOnly ? tv : scenario.desktopOnly ? desktop : [...desktop, ...tv];
+  for (const pass of passes) {
+    const { width, height } = pass;
+    const form = "form" in pass ? pass.form : undefined;
+    const size = `${width}x${height}${form ? `-${form}` : ""}`;
+    const viewport = { width, height };
     test.describe(size, () => {
       test.use({ viewport });
       test(scenario.name, async ({ page }) => {
+        // The root element does not exist yet when an init script runs, so apply the form once it appears.
+        if (form) {
+          await page.addInitScript((value) => {
+            const apply = () => { if (document.documentElement) document.documentElement.dataset.form = value; };
+            apply();
+            new MutationObserver(apply).observe(document, { childList: true });
+          }, form);
+        }
         await page.clock.setFixedTime(FIXED_TIME);
         await page.addInitScript(() => {
           document.addEventListener("DOMContentLoaded", () => {

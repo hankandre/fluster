@@ -172,10 +172,13 @@ Reduced motion (`prefers-reduced-motion: reduce`):
 ### 10-foot (TV shell, M6)
 
 - Logical canvas 1920×1080, which the shell scales to the panel. **Title-safe inset** is 5%: 96 px left and right, 54 px top and bottom. Nothing focusable or textual goes outside it, except artwork bleeding to the edges.
-- `--ui-scale: 1.5` (root 24 px). The type scale multiplies with it, and `--type-meta` is raised to `0.9375rem` (22.5 px rendered).
+- `--ui-scale: 1.5` (root 24 px). The type scale multiplies with it, and `--type-meta` and `--type-mono` are raised to `0.9375rem` (22.5 px rendered), so labels, timecodes, and codes meet the 22 px floor. The root size is set in the base layer, after the `font` shorthand, so rem scales with it.
 - Posters are 248 px (6 visible). Thumbs are 416 px (4 visible). Row gap is 48 px. Focus lift is `scale(1.08)` with `--shadow-lift`.
 - **No hover and no pointer.** All functions work with D-pad, OK, Back, Play/Pause, and Menu or Info. Text entry happens only in search and sign-in, through the shell's on-screen keyboard; sign-in leads with discovered servers and Quick Connect, so typing is the fallback (Q25 A).
-- Navigation is a top tab row that is hidden while a content row has focus and appears when focus moves up from the first row. Back from any root tab returns focus to the tab row, and Back on Home exits (after a confirmation in the shell).
+- Navigation is a top tab row inside the safe inset that is hidden while focus is in the content and appears when Up from the first row reaches it. Down returns to the page. Back (Escape or Backspace) on a root tab focuses the tab row, and Back on Home exits (after a confirmation in the shell). Up from the first row reaches the nav on every form.
+- Opening a screen focuses its primary action. Screens without one keep their heading, search field, or section list.
+- There is no Tab key: where no roving list takes an arrow key, a geometric fallback moves focus to the nearest control in that direction, inside the topmost dialog or sheet.
+- Development: `?form=tv` turns the form on in browser mode (`applyFormFlag`, development builds only). The TV shell sets `data-form="tv"` itself.
 
 ## 7. Components
 
@@ -226,7 +229,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 
 - Grid columns are `var(--thumb-w)` and `minmax(0, 1fr)`. The thumb has progress and a played check. Text: "2 · The Keeper's Log" (`--type-label`), the runtime or "22 min left" (`--type-meta`), and a two-line overview (`--type-body`, `--text-2`).
 - The row is one link that plays: click or Enter anywhere on the art, title, or overview. Its accessible name is the card rule's ("The Keeper's Log, Episode 2, 23 minutes left"); the runtime and overview are its description. A trailing "Details" icon link and the `i` key open the episode detail. On compact windows the text stacks under the art.
-- On TV, the season's episodes become a horizontal row of `thumb` cards with the overview under the focused one.
+- On TV, the season's episodes become a horizontal row of `thumb` cards (art, "2 · Title", time left) with one overview paragraph under the row that follows focus. The cards carry no Details link; Menu or `i` opens details.
 
 ### 7.7 Detail header (`DetailHeader`)
 
@@ -251,7 +254,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 
 ### 7.10 Pickers (`Picker`, used for Version, Audio, and Subtitles)
 
-- A trigger button shows the current value ("4K HDR ▾", "English · TrueHD 7.1 ▾"). It opens an anchored menu on desktop or a right-side sheet on TV and in the player.
+- A trigger button shows the current value ("4K HDR ▾", "English · TrueHD 7.1 ▾"). It opens an anchored menu on desktop or a right-side sheet on TV and in the player. The TV sheet is `--player-sheet-w` wide inside the safe inset and uses the same listbox, keys, and focus return.
 - The list is a `role="listbox"` (or `radiogroup`) of rows with a check on the selected row and a two-line label (name, then codec, channels, and default or external flags).
 - Arrow keys move, Enter selects and closes, Escape or Back closes without change. Never a native `<select>` (it opens an OS popup the TV shell cannot style or focus).
 - **`Menu`** (P13-26) is the same trigger and anchored list for actions instead of a value: `role="menu"` rows with no check, Enter activates and closes, Escape closes and returns focus to the trigger. It serves the `More` menu (§7.8) and the account menu (§7.21).
@@ -284,7 +287,7 @@ Pure video by default. The chrome is three zones, shown together and hidden toge
 1. **Top bar** (`PlayerTopBar`, over `--scrim-player-top`): Back (icon button), then the title block. Episodes show the series name (`--type-meta`, `--text-2`) above the episode title ("S1 · E2 The Keeper's Log", `--type-heading`). On the right, a `ConversionChip` only when the play method is not direct play: the PRODUCT.md sentence ("Converting on server: the file is over your streaming limit") in `--notice` with an icon. It hides with the chrome; the OSD line at the start of the session, the `PlayerLoading` text, and the Info sheet carry the invariant while it is hidden. It opens the Info sheet with focus on Play original. Nothing is shown for direct play (PRODUCT.md: "no indicator beyond the player information panel"). The **Play original** action that P10-05 added as a floating button moves into the Info sheet's Playback section. The chip also offers it when the user's own streaming limit is the only reason.
 2. **Scrubber** (`Scrubber`, full width inside the gutter): a 4 px track that grows to 8 px when hovered or focused. Elapsed time sits left and remaining time right ("−1:21:40"), in `--type-mono`. "Ends at 22:41" appears beside the remaining time when there is room. Chapters are 2 px gaps cut into the track, not ticks above it. The buffered range is deferred (the engine reports no buffered position). The fill is `--art-accent`. The thumb is a 16 px `--text-1` disc that appears on hover or focus.
    - `ScrubPreview`: a frame sized to the trickplay tile (320×180 desktop, 384×216 TV) at `--radius-art`, with time and chapter name inside its lower edge on `--veil`, clamped within the gutter. Keyboard focus on the scrubber shows the preview at the playhead, and Left and Right step 10 s with the preview following.
-3. **Control row** (`TransportControls`). Desktop: Play or Pause (56 px light disc, the only light-filled control), back 10, forward 10, then Volume (icon plus slider revealed on hover or focus), then a spacer. Right side: "Audio & Subtitles" (speech icon), Info (`i` icon), Fullscreen. The Chapters button is deferred with `ChapterList`. TV: transport is centred (back 10, Play or Pause, forward 10) and the rest sits right. Volume is the TV's.
+3. **Control row** (`TransportControls`). Desktop: Play or Pause (56 px light disc, the only light-filled control), back 10, forward 10, then Volume (icon plus slider revealed on hover or focus), then a spacer. Right side: "Audio & Subtitles" (speech icon), Info (`i` icon), Fullscreen. The Chapters button is deferred with `ChapterList`. TV: transport is centred (back 10, Play or Pause, forward 10) and Audio & Subtitles and Info sit right. There is no volume control and no Fullscreen: the TV owns both. Everything sits inside the safe inset, and the Play disc is `--player-play-disc` (84 px).
 
 Panels:
 
@@ -297,6 +300,8 @@ OSD (`Osd`): a transient pill at top centre, under the top bar's position, visib
 Status (`PlayerStatus`): loading, buffering, and seeking show a centred 64 px disc on `--veil` with a ring and one line of text ("Opening the original file…", "Buffering…"). It is visible regardless of chrome. Before the first frame, `PlayerLoading` shows the item's backdrop at 40% with the title and the status, plus Back. Controls are not drawn until there is a snapshot.
 
 Idle: the chrome hides 3 s after the last input while playing. It never hides while paused, while a panel or menu is open, while a chrome control has focus, or while a skip or Up Next prompt has focus. The cursor keeps its own 3 s timer (as today): it hides when it stops moving unless it rests on a visible control, whether or not the chrome is pinned. The desktop player is the one screen where the arrow keys seek and change volume and Tab reaches the controls (Q17 A).
+
+**TV form** (Q17 A, with the answer to the open question on idle). An arrow wakes the chrome with focus on the scrubber and does not seek. Left and Right then seek 10 s on the scrubber; Up and Down move between the top bar (Back, then the conversion chip), the scrubber, and the control row, and then to a visible Up Next card. Each zone remembers its last control. A sheet keeps its own arrows. While playing, the chrome hides 3 s after the last key even with a control focused, and focus moves to the player, so the next arrow wakes it. OK with no Skip or Up Next wakes the chrome with focus on Play or Pause. Paused, an open sheet, or a focused prompt still keep the chrome up. This is a TV exception to the focus rule above.
 
 ### 7.15 Skip and Up Next
 
@@ -345,7 +350,7 @@ A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings
 
 Three steps in one centred `--surface-1` card (`--sign-in-w`, `--radius-sheet`). Each step has one `h1` in `--type-title` that asks one question, and no eyebrow.
 
-1. **Where is your Jellyfin server?** From P3-19, "Your servers" lists remembered servers first, as the same large rows; choosing one skips the address. On desktop the search runs once when the screen opens, and "On this network" lists the servers found above the address field as large rows: name, address in `--type-mono`, "Advertised by {ip}", and the conflict warning in `--danger`. The list is one Tab stop with Up and Down between rows; "Search again" is a quiet button. Below it, a "Server URL" `TextField` and a primary "Connect". Browser mode has no list.
+1. **Where is your Jellyfin server?** From P3-19, "Your servers" lists remembered servers first, as the same large rows; choosing one skips the address. On desktop the search runs once when the screen opens, and "On this network" lists the servers found above the address field as large rows: name, address in `--type-mono`, "Advertised by {ip}", and the conflict warning in `--danger`. The list is one Tab stop with Up and Down between rows; "Search again" is a quiet button. Below it, a "Server URL" `TextField` and a primary "Connect". Browser mode has no list. TV form: with discovery, the server step opens on the first found server (else "Search again"), and "Enter address" (secondary) reveals the Server URL field. Without discovery, the field shows. Back on steps 2 and 3 is "Change server". Fields take input from `input` events and carry `enterKeyHint`, so the shell's on-screen keyboard can type and submit; Enter in Username moves to Password.
 2. **Approve this code in Jellyfin.** A chip under the heading shows the server origin in Mono. The code is the hero in `--type-code`, grouped ("482 913"). No primary button: "Use password" is secondary and "Change server" is quiet. The heading takes focus on arrival.
 3. **Who is signing in?** The same origin chip, "Username" and "Password" fields, "Change server" (quiet) and "Sign in" (primary).
 
@@ -490,8 +495,7 @@ Fluster remembers any number of accounts. An account is one user on one server. 
 
 /* 10-foot: set by the TV shell on <html data-form="tv"> */
 :root[data-form="tv"] {
-  --ui-scale: 1.5;
-  font-size: calc(16px * var(--ui-scale));
+  --ui-scale: 1.5; /* root font-size: calc(16px * var(--ui-scale)), set in base.css */
   --safe-x: 96px;
   --safe-y: 54px;
   --gutter: var(--safe-x);
@@ -507,6 +511,8 @@ Fluster remembers any number of accounts. An account is one user on one server. 
   --up-next-w: 560px;
   --scrub-preview-w: 384px;
   --type-meta: 500 0.9375rem / 1.35 var(--font-ui);
+  --type-mono: 500 0.9375rem / 1.3 var(--font-mono);
+  --player-play-disc: 84px;
   --lift: scale(1.08);
 }
 
@@ -530,7 +536,7 @@ Fluster remembers any number of accounts. An account is one user on one server. 
 
 **Hover and focus.** Hover previews (half-strength lift, row arrows, scrubber thickening) but never moves focus. Every hover-revealed control is also reachable and visible on focus.
 
-**Back.** Back or Escape closes the topmost layer: menu, then sheet, then dialog, then fullscreen, then player, then screen (browser history). Backspace does the same outside text fields.
+**Back.** Back or Escape closes the topmost layer: menu, then sheet, then dialog, then fullscreen, then player, then screen (browser history). Backspace does the same outside text fields. Up from the first row reaches the nav and Down returns, on every form. Escape or Backspace on a non-root screen goes back (browser history, else Home); on a root tab it does nothing on desktop and focuses the tab row on TV.
 
 **Keyboard map**
 
@@ -538,9 +544,9 @@ Fluster remembers any number of accounts. An account is one user on one server. 
 |---|---|---|---|
 | Anywhere | Arrows, Enter, Escape | Move, activate, back | Exists (partly) |
 | Anywhere | `/` | Focus search; opens Search from other signed-in screens. Not in the player or sign-in. | P13-12 |
-| Anywhere outside fields | Backspace | Back | New in P13 |
+| Anywhere outside fields | Backspace | Back | Exists (P13-18) |
 | Settings | Up / Down, Right, Left, Escape | Up and Down move in the section list or between rows; Right enters the rows from the list; Left returns to the list; Escape returns to the list on compact windows only | P13-17 |
-| Card | `i` or Menu | Open details (when Enter resumes) | New in P13 |
+| Card, hero primary, TV episode card | `i` or Menu | Open details (when Enter resumes or plays) | Exists (P13-18 adds the hero and TV episode cards) |
 | Player | Space or `k` | Play or pause | Exists |
 | Player | Left / Right or `j` / `l` | Seek ∓10 s | Exists |
 | Player | Up / Down | Volume ±5 | Exists |
@@ -551,6 +557,7 @@ Fluster remembers any number of accounts. An account is one user on one server. 
 | Player | `n` | Play now on the Up Next card | Exists (P13-14) |
 | Player (TV form) | Enter (OK) | Skip, else Play now, while the chrome is hidden | P13-14 |
 | Player | Home / End, 0–9 | Start / end, jump to 0–90% | P13-13 |
+| Player (TV form) | Arrows | Wake the chrome on the scrubber; Up and Down move between zones; Left and Right seek on the scrubber | P13-18 |
 
 **Idle hiding.** See §7.14. Home's ambient backdrop follows focus only after a 300 ms dwell, so fast scrolling doesn't flicker.
 

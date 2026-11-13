@@ -7,6 +7,10 @@ export interface Scenario {
   fullPage?: boolean;
   // Defaults to the desktop viewports. Phone shots run at 390x844 only.
   phone?: boolean;
+  // Captured only in the TV form (1920x1080-tv), with keyboard-driven states.
+  tvOnly?: boolean;
+  // Skipped in the TV pass: the state needs a pointer or a desktop-only key (the TV has neither).
+  desktopOnly?: boolean;
   // Set when the scenario deliberately provokes a 404 from the mock server.
   expect404?: boolean;
   run: (page: Page) => Promise<void>;
@@ -29,7 +33,15 @@ async function signIn(page: Page): Promise<void> {
 // Signs in, then opens Settings through the nav.
 async function openSettings(page: Page): Promise<void> {
   await signIn(page);
-  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Settings" }).click();
+  if (await page.evaluate(() => document.documentElement.dataset.form === "tv")) {
+    // The TV form has no pointer: Up reaches the tab row, End the Settings entry.
+    await page.waitForTimeout(800);
+    await page.keyboard.press("ArrowUp");
+    await page.keyboard.press("End");
+    await page.keyboard.press("Enter");
+  } else {
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Settings" }).click();
+  }
   await page.getByRole("heading", { level: 1, name: "Settings" }).waitFor();
 }
 
@@ -164,7 +176,7 @@ export const scenarios: Scenario[] = [
     await page.keyboard.press("ArrowDown");
     await page.waitForTimeout(300);
   } },
-  { name: "18-home-row-paging", opts: { longRows: true }, run: async (page) => {
+  { name: "18-home-row-paging", desktopOnly: true, opts: { longRows: true }, run: async (page) => {
     await signIn(page);
     await page.waitForTimeout(800);
     const row = page.getByRole("region", { name: "Latest in Movies" });
@@ -359,7 +371,7 @@ export const scenarios: Scenario[] = [
     await page.getByRole("region", { name: "Audio and subtitles" }).waitFor();
     await page.waitForTimeout(300);
   } },
-  { name: "59a-player-osd", run: async (page) => {
+  { name: "59a-player-osd", desktopOnly: true, run: async (page) => {
     await play(page, "#/next/item/m1");
     await page.keyboard.press("ArrowRight");
     await page.getByRole("status", { name: "Player message" }).getByText("+10 s").waitFor();
@@ -591,6 +603,37 @@ export const scenarios: Scenario[] = [
     await openSettings(page);
     await page.getByRole("button", { name: "Playback" }).click();
     await page.getByRole("button", { name: "Back to settings" }).waitFor();
+    await page.waitForTimeout(300);
+  } },
+
+  // TV form only (P13-18): states a remote reaches with the D-pad.
+  { name: "90-tv-home-nav", tvOnly: true, run: async (page) => {
+    await signedInAt(page, "#/next/home", 1_200);
+    await page.keyboard.press("ArrowUp");
+    await page.waitForTimeout(400);
+  } },
+  { name: "91-tv-series-episode-row", tvOnly: true, run: async (page) => {
+    await signedInAt(page, "#/next/series/s1", 1_000);
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowRight");
+    await page.waitForTimeout(400);
+  } },
+  { name: "92-tv-player-chrome", tvOnly: true, run: async (page) => {
+    await play(page, "#/next/item/m4");
+    await page.keyboard.press("ArrowRight");
+    await page.waitForTimeout(300);
+  } },
+  { name: "93-tv-picker-sheet", tvOnly: true, run: async (page) => {
+    await signedInAt(page, "#/next/browse/lib-movies", 1_000);
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+    await page.getByRole("listbox").waitFor();
+    await page.waitForTimeout(300);
+  } },
+  { name: "94-tv-sign-in-discovery", tvOnly: true, fullPage: true, run: async (page) => {
+    await go(page, "#/next/gallery");
+    await page.getByRole("region", { name: "Sign-in discovery found" }).scrollIntoViewIfNeeded();
     await page.waitForTimeout(300);
   } },
 ];

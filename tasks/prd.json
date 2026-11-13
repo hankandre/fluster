@@ -2244,7 +2244,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "P13-18 in progress: spec approved; milestones landing one per commit."
+          "evidence": "Implemented, one commit per milestone. pnpm check exit 0 (156 files, 2012 Vitest tests; Rust 183 passed, 6 ignored). pnpm test:e2e 149 passed (includes e2e/tv/ keyboard journeys and e2e/back-keys.spec.ts; no existing e2e changed). pnpm test:visual 330 passed (adds 1920x1080-tv pass and scenarios 90-94). Not done here: design review (acceptance 11), before/after desktop pairs and PR screenshots (ship phase), real remote, on-screen keyboard, WebKitGTK TV form. See docs/plans/active/002 for decisions and lows."
         },
         {
           "id": "P13-22",
