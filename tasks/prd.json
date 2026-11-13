@@ -2173,10 +2173,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "Code, CI, accept script, and docs done on task/P13-25 (rebased on 6daeb8f). pnpm check exit 0 (1890 vitest, 183 cargo). pnpm test:e2e 118 passed on rerun; first run had 1 failure (player.spec.ts:414 OSD \"Muted\") that passed 5/5 alone and on main under --repeat-each 5, so load-related and unrelated. pnpm test:visual 203 passed (capture mode). Orphan test fails with a clear set diff when baselines/ is missing. failOnFlakyTests exists in Playwright 1.64.1. Pending: push, bootstrap CI run, pnpm test:visual:accept <run-id>, baseline commit, A2 fail/revert proof, run URLs."
         },
         {
           "id": "P13-20",

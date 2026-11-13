@@ -60,10 +60,11 @@ jobs:
       - run: pnpm build
       - run: pnpm test:e2e
 
-  # Screenshots for design review (P13-01). Output only: not required, and not
-  # in the linux-wayland-beta gate's needs.
+  # Visual regression gate (P13-25). Compares every capture with
+  # e2e/visual/baselines/; required through linux-wayland-beta. A failing run's
+  # visual-captures artifact is the candidate baseline set for
+  # `pnpm test:visual:accept <run-id>`.
   visual:
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-22.04
     timeout-minutes: 45
     steps:
@@ -85,12 +86,24 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:visual
+      # test:visual only writes the contact sheet when every test passes.
+      - name: Build contact sheet
+        if: always()
+        run: node scripts/build-visual-index.mjs
       - name: Upload visual captures
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: visual-captures
           path: visual-captures/
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Upload visual diffs
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: visual-diffs
+          path: test-results/visual-run/
           retention-days: 14
           if-no-files-found: warn
 
@@ -159,11 +172,11 @@ jobs:
       - run: cargo build --release --manifest-path src-tauri/Cargo.toml
 
   # The main ruleset requires this check name. It passes only when every
-  # Linux job above and the tripwire succeeded (a skipped or cancelled job
+  # Linux job above, the visual gate, and the tripwire succeeded (a skipped or cancelled job
   # fails it).
   linux-wayland-beta:
     if: always()
-    needs: [frontend, rust-checks, rust-release, tripwire]
+    needs: [frontend, rust-checks, rust-release, tripwire, visual]
     runs-on: ubuntu-22.04
     steps:
       - name: Require every Linux job to pass
@@ -172,12 +185,14 @@ jobs:
           RUST_CHECKS: ${{ needs.rust-checks.result }}
           RUST_RELEASE: ${{ needs.rust-release.result }}
           TRIPWIRE: ${{ needs.tripwire.result }}
+          VISUAL: ${{ needs.visual.result }}
         run: |
-          echo "frontend=$FRONTEND rust-checks=$RUST_CHECKS rust-release=$RUST_RELEASE tripwire=$TRIPWIRE"
+          echo "frontend=$FRONTEND rust-checks=$RUST_CHECKS rust-release=$RUST_RELEASE tripwire=$TRIPWIRE visual=$VISUAL"
           test "$FRONTEND" = success
           test "$RUST_CHECKS" = success
           test "$RUST_RELEASE" = success
           test "$TRIPWIRE" = success
+          test "$VISUAL" = success
 
   # Server conversion tripwire (P0-04, P10-09): plays every synthetic sample
   # through the gateway against the pinned Jellyfin 10.11 and 12.4 fixture.

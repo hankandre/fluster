@@ -15,7 +15,7 @@ description: Run Fluster's checks and record evidence before asking for review. 
 
 - Run `pnpm test:e2e`.
 - Drive the changed flow in browser mode with Playwright.
-- For visible UI changes run `pnpm test:visual` and attach the affected captures from `visual-captures/` (contact sheet: `index.html`). Output only; not part of `pnpm check`.
+- For visible UI changes run `pnpm test:visual` and attach the affected captures from `visual-captures/` (contact sheet: `index.html`). `pnpm check` does not run it, but CI gates on `e2e/visual/baselines/`; for an intended change run `pnpm test:visual:accept <run-id>` (see `WORKFLOW.md` §5).
 
 ## When Rust changed
 
