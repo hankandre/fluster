@@ -83,11 +83,13 @@ export function useChromeVisibility({ playing, pinned, tv = false }: { playing: 
     setAwake(false);
   }, [playing]);
 
-  // TV form: any key press while playing keeps the chrome up for another idle period.
+  // TV form: a key press while the chrome shows keeps it up for another idle period. While it is hidden the
+  // key's own action decides (an arrow or OK wakes it through `wake`).
+  const shown = useRef(true);
   useEffect(() => {
     if (!tv) return undefined;
     const onKey = () => {
-      if (playing) schedule();
+      if (playing && shown.current) schedule();
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
@@ -115,5 +117,7 @@ export function useChromeVisibility({ playing, pinned, tv = false }: { playing: 
     },
   };
 
-  return { visible: !playing || pinned || (focused && (!tv || promptFocused)) || awake, wake: wakeNow, sectionProps };
+  const visible = !playing || pinned || (focused && (!tv || promptFocused)) || awake;
+  shown.current = visible;
+  return { visible, wake: wakeNow, sectionProps };
 }

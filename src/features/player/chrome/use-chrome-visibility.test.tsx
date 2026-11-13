@@ -150,17 +150,21 @@ describe("useChromeVisibility in the TV form", () => {
     );
   }
 
-  it("hides after the idle time even with a control focused, and a key brings it back for another period", () => {
+  it("hides after the idle time even with a control focused; a key while shown extends it, a key while hidden does not wake it", () => {
     const { rerender } = render(<TvHarness playing={false} />);
     rerender(<TvHarness playing />);
     act(() => screen.getByRole("button", { name: "Control" }).focus());
-    act(() => vi.advanceTimersByTime(CHROME_IDLE_MS + 100));
+    act(() => vi.advanceTimersByTime(CHROME_IDLE_MS - 500));
+    act(() => {
+      fireEvent.keyDown(window, { key: "ArrowRight" });
+    });
+    act(() => vi.advanceTimersByTime(CHROME_IDLE_MS - 500));
+    expect(stage()).toHaveAttribute("data-visible", "true");
+    act(() => vi.advanceTimersByTime(600));
     expect(stage()).toHaveAttribute("data-visible", "false");
     act(() => {
       fireEvent.keyDown(window, { key: "ArrowRight" });
     });
-    expect(stage()).toHaveAttribute("data-visible", "true");
-    act(() => vi.advanceTimersByTime(CHROME_IDLE_MS + 100));
     expect(stage()).toHaveAttribute("data-visible", "false");
   });
 

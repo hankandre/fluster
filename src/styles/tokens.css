@@ -138,7 +138,6 @@
 /* 10-foot: set by the TV shell on <html data-form="tv"> */
 :root[data-form="tv"] {
   --ui-scale: 1.5;
-  font-size: calc(16px * var(--ui-scale));
   --safe-x: 96px;
   --safe-y: 54px;
   --gutter: var(--safe-x);
