@@ -163,3 +163,8 @@ Research is in `docs/research/video-app-ux.md`. The audit, the built-features sc
 - Library entries in the nav show nothing while libraries load or fail (`src/features/shell/signed-in-chrome.tsx`). Home shows the error, so this is small. S.
 - Row hints for a screen reader on TV ("row 2 of 5, Continue watching"), after the screen-reader audit the wish-list pass proposes. S.
 - Jellyscale requests (D19 A: carry all four). Filed by the coordinator, by its report: #116 search that tolerates a typo and ranks by relevance; #117 remembered audio and subtitle selections honoured per account; #118 a Quick Connect approval link a phone can open from a QR code; a comment on #101 for a last-played date filter on Resume and Next Up. This pass did not touch the Jellyscale repository.
+
+## PR #142 guardian review lows (2026-11-13)
+
+- The Authorization header is now read at launch, not when the plan is made. If the user signs out mid-negotiation, `readAuthorization()` throws and the launch fails with plain copy; no token leaks, and this is safer than before. No test covers it; add one (`native-player.ts:44`, `coordinator.ts:248`). S.
+- The launch reader reaches every engine; only convention stops the browser and e2e engines from calling it. Add a test that `BrowserPlayerEngine.launch` and the e2e engine never call a spy reader (`coordinator.ts:248`). S.
