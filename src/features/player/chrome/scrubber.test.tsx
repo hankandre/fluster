@@ -1,6 +1,7 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PlaybackSnapshot } from "../../../domain/playback";
+import { HOLD_MS } from "../../shared/hold-key";
 import { endsAt } from "./player-time";
 import { Scrubber } from "./scrubber";
 
@@ -87,5 +88,53 @@ describe("Scrubber", () => {
     fireEvent.focus(slider());
     expect(container.querySelector(".scrub-preview-pill")).toHaveTextContent("10:00");
     expect(container.querySelector(".scrub-preview-pill")).toHaveTextContent("Start");
+  });
+});
+
+describe("Scrubber in the TV form", () => {
+  beforeEach(() => {
+    document.documentElement.dataset.form = "tv";
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    delete document.documentElement.dataset.form;
+  });
+
+  it("commits a press on release without holding the picture", () => {
+    const onSeek = vi.fn();
+    const onScrubHold = vi.fn();
+    render(<Scrubber snapshot={snapshot} onSeek={onSeek} onScrubHold={onScrubHold} />);
+    fireEvent.keyDown(slider(), { key: "ArrowRight" });
+    fireEvent.keyUp(slider(), { key: "ArrowRight" });
+    expect(onSeek).toHaveBeenCalledWith(610);
+    expect(onScrubHold).not.toHaveBeenCalled();
+  });
+
+  it("holds the picture on a hold, follows with the slider, and commits on OK", () => {
+    const onSeek = vi.fn();
+    const onScrubHold = vi.fn();
+    render(<Scrubber snapshot={snapshot} onSeek={onSeek} onScrubHold={onScrubHold} />);
+    fireEvent.keyDown(slider(), { key: "ArrowRight" });
+    act(() => vi.advanceTimersByTime(HOLD_MS + 400));
+    fireEvent.keyUp(slider(), { key: "ArrowRight" });
+    expect(onScrubHold).toHaveBeenCalledWith(true);
+    const value = Number((slider() as HTMLInputElement).value);
+    expect(value).toBeGreaterThan(610);
+    expect(onSeek).not.toHaveBeenCalled();
+    fireEvent.keyDown(slider(), { key: "Enter" });
+    expect(onSeek).toHaveBeenCalledWith(value);
+    expect(onScrubHold).toHaveBeenLastCalledWith(false);
+  });
+
+  it("returns to the playhead on Escape", () => {
+    const onSeek = vi.fn();
+    render(<Scrubber snapshot={snapshot} onSeek={onSeek} onScrubHold={vi.fn()} />);
+    fireEvent.keyDown(slider(), { key: "ArrowRight" });
+    act(() => vi.advanceTimersByTime(HOLD_MS + 400));
+    fireEvent.keyUp(slider(), { key: "ArrowRight" });
+    fireEvent.keyDown(slider(), { key: "Escape" });
+    expect((slider() as HTMLInputElement).value).toBe("600");
+    expect(onSeek).not.toHaveBeenCalled();
   });
 });

@@ -100,7 +100,7 @@ How:
 | `--type-meta` | 0.8125rem / 1.35 | 500 | 0.01em | Card subtitles, facts line, badges |
 | `--type-mono` | 0.875rem / 1.3 | 500 | 0 | Timecodes, codes, technical values (`tnum`) |
 
-Rules: sentence case everywhere (no uppercase-tracked labels, no eyebrow or kicker labels). Text is never smaller than 13 px on desktop or 22 px on TV. Titles truncate to one line in cards and two lines in headers, with the full title in the accessible name.
+Rules: sentence case everywhere (no uppercase-tracked labels, no eyebrow or kicker labels). Text is never smaller than 13 px on desktop or 24 px on TV. Titles truncate to one line in cards and two lines in headers, with the full title in the accessible name.
 
 ## 5. Space, shape, depth, motion
 
@@ -174,11 +174,11 @@ Reduced motion (`prefers-reduced-motion: reduce`):
 ### 10-foot (TV shell, M6)
 
 - Logical canvas 1920×1080, which the shell scales to the panel. **Title-safe inset** is 5%: 96 px left and right, 54 px top and bottom. Nothing focusable or textual goes outside it, except artwork bleeding to the edges.
-- `--ui-scale: 1.5` (root 24 px). The type scale multiplies with it, and `--type-meta` and `--type-mono` are raised to `0.9375rem` (22.5 px rendered), so labels, timecodes, and codes meet the 22 px floor. The root size is set in the base layer, after the `font` shorthand, so rem scales with it.
-- **TV body text is 28 px and no TV text is under 24 px** (UX audit D13 B): the sizes tvOS, Fire TV, and Xbox agree on. The type tokens are raised for the TV form; the scale, and six posters across, stay. P13-34 changes the tokens; until it lands the §8 block gives 24 px body and 22.5 px for labels and meta.
+- `--ui-scale: 1.5` (root 24 px). The type scale multiplies with it. The TV block raises `--type-body` to `1.1667rem` (28 px), `--type-body-lg` to `1.3125rem` (31.5 px), and `--type-label`, `--type-meta`, and `--type-mono` to `1rem` (24 px), so body text is 28 px and labels, timecodes, and codes meet the 24 px floor; the TV `body` takes `--type-body`. The root size is set in the base layer, after the `font` shorthand, so rem scales with it.
+- **TV body text is 28 px and no TV text is under 24 px** (UX audit D13 B): the sizes tvOS, Fire TV, and Xbox agree on. The type tokens are raised for the TV form; the scale, and six posters across, stay. The tokens are raised in the §8 block (P13-34).
 - Posters are 248 px (6 visible). Thumbs are 416 px (4 visible). Row gap is 48 px. Focus lift is `scale(1.08)` with `--shadow-lift`.
 - **No hover and no pointer.** All functions work with D-pad, OK, Back, Play/Pause, and Menu or Info. Text entry happens only in search and sign-in, through the shell's on-screen keyboard; sign-in leads with discovered servers and Quick Connect, so typing is the fallback (Q25 A).
-- Navigation is a top tab row inside the safe inset that is hidden while focus is in the content and appears when Up from the first row reaches it. Down returns to the page. Back (Escape or Backspace) on a root tab focuses the tab row, and Back on Home leaves the app the way the platform requires: without a question on Android TV, whose guidelines say not to gate exit, and after a confirmation where a platform's rules ask for one (UX audit D14 B; P13-34). Up from the first row reaches the nav on every form.
+- Navigation is a top tab row inside the safe inset that is hidden while focus is in the content and appears when Up from the first row reaches it. Down returns to the page. Back (Escape or Backspace) on a root tab focuses the tab row, and Back on Home leaves the app the way the platform requires: without a question on Android TV, whose guidelines say not to gate exit, and after a confirmation where a platform's rules ask for one (UX audit D14 B; P13-34): on Tizen, Back on Home asks "Leave Fluster?" with Stay focused and Leave primary, and Back closes it. The browser TV form follows the Android TV rule. The platform comes from `<html data-tv-platform>`, set by the TV shell. Up from the first row reaches the nav on every form.
 - Opening a screen focuses its primary action. Screens without one keep their heading, search field, or section list.
 - There is no Tab key: where no roving list takes an arrow key, a geometric fallback moves focus to the nearest control in that direction, inside the topmost dialog or sheet.
 - Development: `?form=tv` turns the form on in browser mode (`applyFormFlag`, development builds only). The TV shell sets `data-form="tv"` itself.
@@ -290,8 +290,8 @@ Pure video by default. The chrome is three zones, shown together and hidden toge
 
 1. **Top bar** (`PlayerTopBar`, over `--scrim-player-top`): Back (icon button), then the title block. Episodes show the series name (`--type-meta`, `--text-2`) above the episode title ("S1 · E2 The Keeper's Log", `--type-heading`). On the right, a `ConversionChip` only when the play method is not direct play: the PRODUCT.md sentence ("Converting on server: the file is over your streaming limit") in `--notice` with an icon. It hides with the chrome; the OSD line at the start of the session, the `PlayerLoading` text, and the Info sheet carry the invariant while it is hidden. It opens the Info sheet with focus on Play original. Nothing is shown for direct play (PRODUCT.md: "no indicator beyond the player information panel"). The **Play original** action that P10-05 added as a floating button moves into the Info sheet's Playback section. The chip also offers it when the user's own streaming limit is the only reason.
 2. **Scrubber** (`Scrubber`, full width inside the gutter): a 4 px track that grows to 8 px when hovered or focused. Elapsed time sits left and remaining time right ("−1:21:40"), in `--type-mono`. "Ends at 22:41" appears beside the remaining time when there is room. Chapters are 2 px gaps cut into the track, not ticks above it. The buffered range is deferred (the engine reports no buffered position). The fill is `--art-accent`. The thumb is a 16 px `--text-1` disc that appears on hover or focus.
-   - `ScrubPreview`: a frame sized to the trickplay tile (320×180 desktop, 384×216 TV) at `--radius-art`, with time and chapter name inside its lower edge on `--veil`, clamped within the gutter. Keyboard focus on the scrubber shows the preview at the playhead, and Left and Right step 10 s with the preview following. Holding Left or Right seeks in growing steps with the preview following and commits on release; a single press stays 10 s both ways (UX audit D5 B; P15-16, after the dogfood week).
-3. **Control row** (`TransportControls`). Desktop: Play or Pause (56 px light disc, the only light-filled control), back 10, forward 10, then Volume (icon plus slider revealed on hover or focus), then a spacer. Right side: "Audio & Subtitles" (speech icon), Info (`i` icon), Fullscreen. The Chapters button is deferred with `ChapterList`. TV: transport is centred (back 10, Play or Pause, forward 10) and Audio & Subtitles and Info sit right. There is no volume control and no Fullscreen: the TV owns both. Everything sits inside the safe inset, and the Play disc is `--player-play-disc` (84 px). **Seeking with a remote** (UX audit D16 B; P13-34): a press of Left or Right moves 10 s; holding scrubs in growing steps with the preview following and the picture held; OK commits the new position and Back returns to where playback was. Up or Down shows the controls without pausing.
+   - `ScrubPreview`: a frame sized to the trickplay tile (320×180 desktop, 384×216 TV) at `--radius-art`, with time and chapter name inside its lower edge on `--veil`, clamped within the gutter. Keyboard focus on the scrubber shows the preview at the playhead, and Left and Right step 10 s with the preview following. Holding Left or Right seeks in growing steps with the preview following and commits on release; a single press stays 10 s both ways (UX audit D5 B; P15-16, after the dogfood week). On TV the hold pauses and scrubs a pending position instead (below).
+3. **Control row** (`TransportControls`). Desktop: Play or Pause (56 px light disc, the only light-filled control), back 10, forward 10, then Volume (icon plus slider revealed on hover or focus), then a spacer. Right side: "Audio & Subtitles" (speech icon), Info (`i` icon), Fullscreen. The Chapters button is deferred with `ChapterList`. TV: transport is centred (back 10, Play or Pause, forward 10) and Audio & Subtitles and Info sit right. There is no volume control and no Fullscreen: the TV owns both. Everything sits inside the safe inset, and the Play disc is `--player-play-disc` (84 px). **Seeking with a remote** (UX audit D16 B; P13-34): a press of Left or Right moves 10 s; holding for half a second scrubs in growing steps (10 s per 200 ms tick, then 20, 60, and 120 s as the key stays down, never more than a fiftieth of the duration) with the preview following and the picture held by pausing; OK commits the new position and Back returns to where playback was. Up or Down shows the controls without pausing.
 
 Panels:
 
@@ -514,8 +514,11 @@ Fluster remembers any number of accounts. An account is one user on one server. 
   --player-sheet-w: 33vw;
   --up-next-w: 560px;
   --scrub-preview-w: 384px;
-  --type-meta: 500 0.9375rem / 1.35 var(--font-ui);
-  --type-mono: 500 0.9375rem / 1.3 var(--font-mono);
+  --type-body: 400 1.1667rem / 1.5 var(--font-ui);
+  --type-body-lg: 400 1.3125rem / 1.55 var(--font-ui);
+  --type-label: 600 1rem / 1.3 var(--font-ui);
+  --type-meta: 500 1rem / 1.35 var(--font-ui);
+  --type-mono: 500 1rem / 1.3 var(--font-mono);
   --player-play-disc: 84px;
   --lift: scale(1.08);
 }
@@ -540,7 +543,7 @@ Fluster remembers any number of accounts. An account is one user on one server. 
 
 **Hover and focus.** Hover previews (half-strength lift, row arrows, scrubber thickening) but never moves focus. Every hover-revealed control is also reachable and visible on focus.
 
-**Back.** Back or Escape closes the topmost layer: menu, then sheet, then dialog, then fullscreen, then player, then screen (browser history). Backspace does the same outside text fields. Up from the first row reaches the nav and Down returns, on every form. Escape or Backspace on a non-root screen goes back (browser history, else Home); on a root tab it does nothing on desktop and focuses the tab row on TV.
+**Back.** Back or Escape closes the topmost layer: menu, then sheet, then dialog, then fullscreen, then player, then screen (browser history). In the TV form Backspace does the same outside text fields; on desktop Backspace does nothing outside text fields, and Escape and the Back button remain (owner, 2026-11-13; P13-34). Up from the first row reaches the nav and Down returns, on every form. Back (Escape, or Backspace in the TV form) on a non-root screen goes back (browser history, else Home); on a root tab it does nothing on desktop and focuses the tab row on TV, and Back on Home from the tab row leaves the app by the platform's rule (D14 B).
 
 **Back restores the place** (UX audit D1 B; P13-31). Back returns to the screen as it was left: the same scroll position, sort, filters, loaded pages, and focused card, with no skeleton. A screen's data is kept while its account is the active one and dropped when the account changes, signs out, or the app closes. Nothing is written to disk. A library's sort and filters live in the route.
 
@@ -550,7 +553,7 @@ Fluster remembers any number of accounts. An account is one user on one server. 
 |---|---|---|---|
 | Anywhere | Arrows, Enter, Escape | Move, activate, back | Exists (partly) |
 | Anywhere | `/` | Focus search; opens Search from other signed-in screens. Not in the player or sign-in. | P13-12 |
-| Anywhere outside fields | Backspace | Back | Exists (P13-18) |
+| Anywhere outside fields (TV form) | Backspace | Back; does nothing on desktop (owner, 2026-11-13) | Exists (P13-18); TV only from P13-34 |
 | Settings | Up / Down, Right, Left, Escape | Up and Down move in the section list or between rows; Right enters the rows from the list; Left returns to the list; Escape returns to the list on compact windows only | P13-17 |
 | Card, hero primary, TV episode card | `i` or Menu | Open details (when Enter resumes or plays) | Exists (P13-18 adds the hero and TV episode cards) |
 | Player | Space or `k` | Play or pause | Exists |
@@ -566,9 +569,9 @@ Fluster remembers any number of accounts. An account is one user on one server. 
 | Player (TV form) | Arrows | Wake the chrome on the scrubber; Up and Down move between zones; Left and Right seek on the scrubber | P13-18 |
 | Player | Hold Left / Right | Seek in growing steps with the preview; commits on release (D5 B) | P15-16 |
 | Player | Previous and next chapter (keys set in P15-16's spec) | Jump by chapter; the OSD names it (D5 B) | P15-16 |
-| Player (TV form) | Hold Left / Right, then OK or Back | Scrub with the preview; OK commits, Back returns to where playback was (D16 B) | P13-34 |
-| Player (TV form) | Up / Down | Show the controls without pausing (D16 B) | P13-34 |
-| Card (TV form) | Hold OK | Open details where Enter plays (D15 B) | P13-34 |
+| Player (TV form) | Hold Left / Right, then OK or Back | Scrub with the preview; OK commits, Back returns to where playback was (D16 B) | Exists (P13-34) |
+| Player (TV form) | Up / Down | Show the controls without pausing (D16 B) | Exists (P13-34) |
+| Card (TV form) | Hold OK | Open details where Enter plays (D15 B) | Exists (P13-34) |
 | Anywhere outside fields | `?` | A sheet of the keys for this screen (D12 B) | P15-17 |
 
 **Idle hiding.** See §7.14. Home's ambient backdrop follows focus only after a 300 ms dwell, so fast scrolling doesn't flicker.

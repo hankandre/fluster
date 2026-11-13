@@ -1,8 +1,10 @@
 import { useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import type { PlaybackSnapshot } from "../../../domain/playback";
 import { SEEK_STEP_SECONDS } from "../../../components/player-keymap";
+import { useTvForm } from "../../shared/use-tv-form";
 import { clock, endsAt, remaining, type SeekChapter } from "./player-time";
 import { ScrubPreview } from "./scrub-preview";
+import { useTvScrub } from "./use-tv-scrub";
 
 function chapterAt(chapters: SeekChapter[], seconds: number): SeekChapter | undefined {
   let current: SeekChapter | undefined;
@@ -15,10 +17,13 @@ function chapterAt(chapters: SeekChapter[], seconds: number): SeekChapter | unde
 // The seek bar: a transparent range input over a drawn track, with elapsed
 // and remaining time. Without a preview or chapters it is the bare slider.
 // The pointer, Left and Right (10 s), Home, and End move a pending position
-// that is committed on pointer-up or key-up.
-export function Scrubber({ snapshot, onSeek, seekPreview, chapters, now = () => new Date() }: {
+// that is committed on pointer-up or key-up. In the TV form a hold scrubs until OK commits or Back drops it
+// (useTvScrub).
+export function Scrubber({ snapshot, onSeek, onScrubHold, seekPreview, chapters, now = () => new Date() }: {
   snapshot: PlaybackSnapshot | undefined;
   onSeek(seconds: number): void;
+  // TV form: true when a hold starts a scrub, false when it ends.
+  onScrubHold?(held: boolean): void;
   // Draws the picture above the position under the pointer or the keyboard position.
   seekPreview?: (seconds: number, frameWidth: number) => ReactNode;
   chapters?: SeekChapter[];
@@ -27,7 +32,7 @@ export function Scrubber({ snapshot, onSeek, seekPreview, chapters, now = () => 
   const [seekValue, setSeekValue] = useState<number>();
   const [hoverSeconds, setHoverSeconds] = useState<number>();
   const [focused, setFocused] = useState(false);
-
+  const tv = useTvForm();
   const duration = snapshot?.durationSeconds ?? 0;
   const max = Math.max(duration, 1);
   const position = seekValue ?? snapshot?.positionSeconds ?? 0;
@@ -35,6 +40,8 @@ export function Scrubber({ snapshot, onSeek, seekPreview, chapters, now = () => 
   const previewSeconds = hoverSeconds ?? (focused ? position : undefined);
   const chapterName = previewSeconds != null && chapters ? chapterAt(chapters, previewSeconds)?.name : undefined;
   const fill = duration > 0 ? Math.min(Math.max(position / duration, 0), 1) * 100 : 0;
+
+  const tvScrub = useTvScrub({ playhead: snapshot?.positionSeconds ?? 0, duration, setPending: setSeekValue, onSeek, onScrubHold });
 
   const commit = () => {
     if (seekValue != null) onSeek(seekValue);
@@ -68,10 +75,13 @@ export function Scrubber({ snapshot, onSeek, seekPreview, chapters, now = () => 
       value={Math.min(position, max)}
       onChange={(event) => setSeekValue(Number(event.target.value))}
       onPointerUp={commit}
-      onKeyDown={onKeyDown}
-      onKeyUp={commit}
+      onKeyDown={tv ? tvScrub.onKeyDown : onKeyDown}
+      onKeyUp={tv ? tvScrub.onKeyUp : commit}
       onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
+      onBlur={() => {
+        setFocused(false);
+        if (tv) tvScrub.onBlur();
+      }}
       disabled={!snapshot || !duration}
     />
   );

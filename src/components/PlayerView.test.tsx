@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PlaybackSnapshot, PlayerEngine } from "../domain/playback";
+import { HOLD_MS } from "../features/shared/hold-key";
 import { conversionIndicator } from "../features/player/conversion-copy";
 import type { ReadyPlayerStatus } from "../features/player/player-status";
 import { CHROME_IDLE_MS, OSD_MS, OSD_NOTICE_MS } from "../features/player/chrome/timing";
@@ -783,6 +784,53 @@ describe("TV form wake and idle", () => {
     act(() => void fireEvent.keyDown(region(), { key: "Enter" }));
     expect(document.querySelector(".player-chrome")).toHaveAttribute("data-visible", "true");
     expect(screen.getByRole("button", { name: "Pause" })).toHaveFocus();
+    expect(player.setPaused).not.toHaveBeenCalled();
+  });
+});
+
+describe("TV form scrub", () => {
+  const slider = () => screen.getByRole("slider", { name: "Playback position" });
+  const startScrub = () => {
+    slider().focus();
+    fireEvent.keyDown(slider(), { key: "ArrowRight" });
+    act(() => vi.advanceTimersByTime(HOLD_MS + 400));
+    fireEvent.keyUp(slider(), { key: "ArrowRight" });
+  };
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    document.documentElement.dataset.form = "tv";
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    delete document.documentElement.dataset.form;
+  });
+
+  it("pauses a playing session on a hold, then seeks and resumes on OK", () => {
+    const { player } = renderView();
+    startScrub();
+    expect(player.setPaused).toHaveBeenCalledWith(true);
+    expect(player.seek).not.toHaveBeenCalled();
+    const value = Number((slider() as HTMLInputElement).value);
+    act(() => void fireEvent.keyDown(slider(), { key: "Enter" }));
+    expect(player.seek).toHaveBeenCalledWith(value);
+    expect(player.setPaused).toHaveBeenLastCalledWith(false);
+  });
+
+  it("resumes without seeking on Escape and does not leave the player", () => {
+    const { player, onBack } = renderView();
+    startScrub();
+    act(() => void fireEvent.keyDown(slider(), { key: "Escape" }));
+    expect(player.seek).not.toHaveBeenCalled();
+    expect(player.setPaused).toHaveBeenLastCalledWith(false);
+    expect(onBack).not.toHaveBeenCalled();
+  });
+
+  it("leaves an already paused session paused", () => {
+    const { player } = renderView({ paused: true });
+    startScrub();
+    act(() => void fireEvent.keyDown(slider(), { key: "Enter" }));
+    expect(player.seek).toHaveBeenCalled();
     expect(player.setPaused).not.toHaveBeenCalled();
   });
 });

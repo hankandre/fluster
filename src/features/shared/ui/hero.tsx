@@ -7,6 +7,7 @@ import { LogoTitle } from "./logo-title";
 import { ProgressRing } from "./progress-ring";
 import { useNavOverHero } from "./app-shell";
 import { ButtonLink } from "./button";
+import { useHoldOk } from "./use-hold-ok";
 import { Skeleton } from "./skeleton";
 import "./hero.css";
 
@@ -35,6 +36,7 @@ export function Hero(props: HeroProps) {
   const titleId = useId();
   const roving = useRovingFocus<HTMLDivElement>("row", { spatial: true });
   const primaryRef = useTvPrimaryRef();
+  const hold = useHoldOk(props.pending ? undefined : props.moreInfoHref);
 
   if (props.pending) {
     return (
@@ -87,7 +89,16 @@ export function Hero(props: HeroProps) {
               onClick={primary.onActivate}
               data-roving-item=""
               aria-keyshortcuts={moreInfoHref ? "i" : undefined}
-              onKeyDown={moreInfoHref ? (event) => openDetails(event, moreInfoHref) : undefined}
+              onKeyDown={
+                moreInfoHref
+                  ? (event) => {
+                      hold.onKeyDown(event);
+                      openDetails(event, moreInfoHref);
+                    }
+                  : undefined
+              }
+              onKeyUp={hold.onKeyUp}
+              onBlur={hold.onBlur}
               icon={primary.progress !== undefined ? <ProgressRing value={primary.progress} /> : undefined}
             >
               {primary.label}

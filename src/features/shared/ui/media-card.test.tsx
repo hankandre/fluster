@@ -1,8 +1,9 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { MouseEvent } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { artTint } from "../art-tint";
+import { HOLD_MS } from "../hold-key";
 import { MediaCard } from "./media-card";
 
 vi.mock("../../home/blurhash", () => ({
@@ -168,5 +169,35 @@ describe("MediaCard one-press actions", () => {
     const link = screen.getByRole("link", { name: "Arrival" });
     expect(link).toHaveAttribute("aria-keyshortcuts", "i");
     expect(link).toHaveAttribute("aria-describedby", "hint");
+  });
+});
+
+describe("MediaCard hold OK in the TV form", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    delete document.documentElement.dataset.form;
+    window.location.hash = "";
+  });
+
+  it("plays on a press and opens details on a hold", () => {
+    vi.useFakeTimers();
+    document.documentElement.dataset.form = "tv";
+    const onActivate = vi.fn((event: MouseEvent) => event.preventDefault());
+    render(<MediaCard variant="thumb" title="Arrival" href="#/next/play/m1" detailsHref="#/next/item/m1" onActivate={onActivate} />);
+    const link = screen.getByRole("link", { name: "Arrival" });
+    fireEvent.keyDown(link, { key: "Enter" });
+    fireEvent.keyUp(link, { key: "Enter" });
+    expect(onActivate).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(link, { key: "Enter" });
+    act(() => vi.advanceTimersByTime(HOLD_MS));
+    fireEvent.keyUp(link, { key: "Enter" });
+    expect(window.location.hash).toBe("#/next/item/m1");
+    expect(onActivate).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves a card without details alone", () => {
+    document.documentElement.dataset.form = "tv";
+    render(<MediaCard variant="thumb" title="Arrival" href="#/next/play/m1" />);
+    expect(fireEvent.keyDown(screen.getByRole("link", { name: "Arrival" }), { key: "Enter" })).toBe(true);
   });
 });

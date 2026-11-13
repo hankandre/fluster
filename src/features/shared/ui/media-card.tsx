@@ -1,6 +1,7 @@
 import type { CSSProperties, KeyboardEvent, MouseEvent } from "react";
 import { artTint } from "../art-tint";
 import { timeLeftLabel, timeLeftSpoken } from "../time-left";
+import { useHoldOk } from "./use-hold-ok";
 import { MediaFrame, type MediaCardVariant } from "./media-frame";
 import "./media.css";
 
@@ -45,6 +46,7 @@ export function cardAccessibleName(props: Pick<MediaCardProps, "title" | "subtit
 // technology because the accessible name carries them all.
 export function MediaCard(props: MediaCardProps) {
   const { variant, title, subtitle, href, image, remainingTicks, progress, played, unplayedCount, onActivate, detailsHref, describedBy } = props;
+  const hold = useHoldOk(href ? detailsHref : undefined);
   const label = cardAccessibleName(props);
   const style = { "--art-accent": artTint(image?.blurHash).accent } as CSSProperties;
   const timeLeft = progress !== undefined && remainingTicks !== undefined ? timeLeftLabel(remainingTicks) : undefined;
@@ -70,7 +72,10 @@ export function MediaCard(props: MediaCardProps) {
   if (href) {
     const details = detailsHref
       ? {
+          onKeyUp: hold.onKeyUp,
+          onBlur: hold.onBlur,
           onKeyDown(event: KeyboardEvent<HTMLAnchorElement>) {
+            hold.onKeyDown(event);
             const isInfo = event.key === "i" && !event.ctrlKey && !event.metaKey && !event.altKey;
             if (!isInfo && event.key !== "ContextMenu") return;
             event.preventDefault();

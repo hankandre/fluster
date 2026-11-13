@@ -602,10 +602,10 @@
             "Hankflix titles of each codec play on both GPUs"
           ],
           "verify": "pnpm test:tripwire",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "Implemented on task/P13-34: TV type tokens (28 px body, 24 px floor), hold-OK details, TV scrub with held picture, Leave Fluster? dialog, TV-only Backspace. pnpm check exit 0 (163 files, 2097 tests; cargo 183 passed). pnpm test:e2e 155 passed, 1 failed: e2e/tv/detail.spec.ts:61 fails 1 of 3 with --repeat-each 3 on origin/main too (pre-existing flake). pnpm test:visual 338 passed. Review pending."
         },
         {
           "id": "P1-09",

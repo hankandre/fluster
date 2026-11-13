@@ -147,6 +147,18 @@ export function PlayerView({
   };
 
   const playing = Boolean(snapshot && !snapshot.paused);
+  // TV scrub (DESIGN.md 7.14): a hold pauses a playing session so the picture is held, and the commit or
+  // the cancel resumes it.
+  const resumeAfterScrub = useRef(false);
+  const onScrubHold = (held: boolean) => {
+    if (held) {
+      resumeAfterScrub.current = playing;
+      if (playing) void execute(() => player.setPaused(true));
+    } else if (resumeAfterScrub.current) {
+      resumeAfterScrub.current = false;
+      void execute(() => player.setPaused(false));
+    }
+  };
   const tv = useTvForm();
   const region = useRef<HTMLElement>(null);
   const visibility = useChromeVisibility({ playing, pinned: Boolean(commandError) || sheet !== undefined, tv });
@@ -240,6 +252,7 @@ export function PlayerView({
             <Scrubber
               snapshot={snapshot}
               onSeek={(seconds) => void execute(() => player.seek(seconds))}
+              onScrubHold={onScrubHold}
               seekPreview={seekPreview}
               chapters={chapters}
             />

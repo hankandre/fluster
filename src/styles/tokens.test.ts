@@ -119,9 +119,27 @@ describe("hero contrast proofs (DESIGN.md §11.1)", () => {
 
 describe("TV form type floor", () => {
   const tvBlock = /:root\[data-form="tv"\] \{([\s\S]*?)\n\}/.exec(tokensCss)?.[1] ?? "";
-  it.each(["--type-mono", "--type-meta"])("%s renders at 22px or more at 24px root", (name) => {
-    const match = new RegExp(`${name}:\\s*\\d+ ([\\d.]+)rem`).exec(tvBlock);
-    expect(match, `${name} in the TV block`).not.toBeNull();
-    expect(Number(match![1]) * 24).toBeGreaterThanOrEqual(22);
+  const rootBlock = /:root \{([\s\S]*?)\n\}/.exec(tokensCss)?.[1] ?? "";
+  // The first rem value of a type token: a plain size, or the minimum of a clamp().
+  function remOf(block: string, name: string): number | undefined {
+    const match = new RegExp(`${name}:\\s*\\d+ (?:clamp\\()?([\\d.]+)rem`).exec(block);
+    return match ? Number(match[1]) : undefined;
+  }
+
+  it("renders body text at 28px at the 24px root", () => {
+    expect((remOf(tvBlock, "--type-body") ?? 0) * 24).toBeCloseTo(28, 1);
+  });
+
+  it.each(["--type-body", "--type-body-lg", "--type-label", "--type-meta", "--type-mono", "--type-heading", "--type-title", "--type-hero", "--type-code"])(
+    "%s renders at 24px or more",
+    (name) => {
+      const rem = remOf(tvBlock, name) ?? remOf(rootBlock, name);
+      expect(rem, `${name} in the TV or root block`).toBeDefined();
+      expect((rem ?? 0) * 24).toBeGreaterThanOrEqual(24);
+    },
+  );
+
+  it("keeps six posters across", () => {
+    expect(/--poster-w:\s*248px/.test(tvBlock)).toBe(true);
   });
 });

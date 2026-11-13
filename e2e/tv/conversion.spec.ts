@@ -20,7 +20,7 @@ test("TV: a converted session shows its reason inside the safe area, and the chi
   expect(box!.y).toBeGreaterThanOrEqual(54);
   expect(box!.x).toBeGreaterThanOrEqual(96);
   expect(box!.x + box!.width).toBeLessThanOrEqual(1824);
-  expect(await pill.evaluate((element) => parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(22);
+  expect(await pill.evaluate((element) => parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(24);
 
   // The chip is in the top bar once the chrome is woken, and Up from the scrubber reaches it.
   await page.keyboard.press("ArrowRight");

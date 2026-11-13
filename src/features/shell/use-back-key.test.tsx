@@ -1,19 +1,21 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useEscapeKey } from "../use-escape-key";
+import { LEAVE_APP_EVENT } from "./leave-app";
 import { useBackKey } from "./use-back-key";
 
 afterEach(() => {
   cleanup();
   delete document.documentElement.dataset.form;
+  delete document.documentElement.dataset.tvPlatform;
   vi.restoreAllMocks();
 });
 beforeEach(() => {
   window.location.hash = "#/next/home";
 });
 
-function Probe({ page }: { page?: () => void }) {
-  useBackKey();
+function Probe({ page, onConfirmLeave }: { page?: () => void; onConfirmLeave?: () => void }) {
+  useBackKey(onConfirmLeave);
   return (
     <>
       <nav aria-label="Main">
@@ -49,6 +51,48 @@ describe("useBackKey", () => {
     content.focus();
     expect(fireEvent.keyDown(content, { key: "Escape" })).toBe(false);
     expect(screen.getByRole("link", { name: "Home" })).toHaveFocus();
+  });
+
+  it("leaves the app on Home when focus is already in the nav", () => {
+    document.documentElement.dataset.form = "tv";
+    const leave = vi.fn();
+    const confirm = vi.fn();
+    window.addEventListener(LEAVE_APP_EVENT, leave);
+    render(<Probe onConfirmLeave={confirm} />);
+    const home = screen.getByRole("link", { name: "Home" });
+    home.focus();
+    expect(fireEvent.keyDown(home, { key: "Escape" })).toBe(false);
+    window.removeEventListener(LEAVE_APP_EVENT, leave);
+    expect(leave).toHaveBeenCalledTimes(1);
+    expect(confirm).not.toHaveBeenCalled();
+  });
+
+  it("asks first on a platform that confirms", () => {
+    document.documentElement.dataset.form = "tv";
+    document.documentElement.dataset.tvPlatform = "tizen";
+    const leave = vi.fn();
+    const confirm = vi.fn();
+    window.addEventListener(LEAVE_APP_EVENT, leave);
+    render(<Probe onConfirmLeave={confirm} />);
+    const home = screen.getByRole("link", { name: "Home" });
+    home.focus();
+    expect(fireEvent.keyDown(home, { key: "Escape" })).toBe(false);
+    window.removeEventListener(LEAVE_APP_EVENT, leave);
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(leave).not.toHaveBeenCalled();
+  });
+
+  it("does not leave from the nav on another root tab", () => {
+    document.documentElement.dataset.form = "tv";
+    window.location.hash = "#/next/library/abc";
+    const leave = vi.fn();
+    window.addEventListener(LEAVE_APP_EVENT, leave);
+    render(<Probe />);
+    const home = screen.getByRole("link", { name: "Home" });
+    home.focus();
+    fireEvent.keyDown(home, { key: "Escape" });
+    window.removeEventListener(LEAVE_APP_EVENT, leave);
+    expect(leave).not.toHaveBeenCalled();
   });
 
   it("skips when a page handler already used Escape", () => {

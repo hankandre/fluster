@@ -1,5 +1,6 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { HOLD_MS } from "../hold-key";
 import { EpisodeList, EpisodeRow, type EpisodeRowProps } from "./episode-row";
 import { cardAccessibleName } from "./media-card";
 
@@ -146,6 +147,18 @@ describe("EpisodeList in the TV form", () => {
     expect(under()).toBe("A lamp goes out.");
     expect(fireEvent.keyDown(links[1], { key: "ContextMenu" })).toBe(false);
     expect(window.location.hash).toBe("#/next/item/ep-3");
+  });
+
+  it("opens details when OK is held on a TV episode card", () => {
+    vi.useFakeTimers();
+    document.documentElement.dataset.form = "tv";
+    renderList();
+    const link = screen.getAllByRole("link")[0];
+    fireEvent.keyDown(link, { key: "Enter" });
+    act(() => vi.advanceTimersByTime(HOLD_MS));
+    fireEvent.keyUp(link, { key: "Enter" });
+    vi.useRealTimers();
+    expect(window.location.hash).toBe("#/next/item/ep-2");
   });
 
   it("keeps the two-column grid and Details links on desktop", () => {
