@@ -168,3 +168,24 @@ Research is in `docs/research/video-app-ux.md`. The audit, the built-features sc
 
 - The Authorization header is now read at launch, not when the plan is made. If the user signs out mid-negotiation, `readAuthorization()` throws and the launch fails with plain copy; no token leaks, and this is safer than before. No test covers it; add one (`native-player.ts:44`, `coordinator.ts:248`). S.
 - The launch reader reaches every engine; only convention stops the browser and e2e engines from calling it. Add a test that `BrowserPlayerEngine.launch` and the e2e engine never call a spy reader (`coordinator.ts:248`). S.
+
+## Code quality review (2026-11-13)
+
+The review is `docs/research/code-quality-review-2026-11-13.md` (commit `fb8d071`, read-only). The verdict on each finding, the tasks, and decisions D1 to D6 are in `docs/plans/proposals/code-quality-triage.md`.
+
+- In progress, no task: problem 1, the Authorization header on the plan held in React state. Branch `fix/plan-without-token`.
+- Tasks now: P3-31 (the native player's reason reaches the viewer), P2-07 (the gateway's small inconsistencies), P2-08 (split `gateway.ts`), P2-09 (move the player view out of `src/components/`), P2-10 (routes and the sign-in guard in one place), P2-11 (typed errors from the native commands), P2-12 (a typed track selector and poisoned locks), P2-13 (the session lifecycle as an explicit state).
+- Waiting for the owner: D1 to D4 and D6 change CI or what it runs, and D5 edits P4-01. None is applied.
+
+- Run `pnpm typecheck:core`, `pnpm typecheck:integration`, and `pnpm test:no-test-engine` in CI (D1). `pnpm check` runs them; `.github/workflows/ci.yml` does not, so the shell-neutral core's DOM check and the test-engine guard hold only when someone runs `pnpm check`. Problem 4. S.
+- A TypeScript lint for hook dependencies (D2). No linter is configured, yet two `eslint-disable-next-line react-hooks/exhaustive-deps` comments exist (`src/features/player/chrome/player-sheet.tsx:37`, `src/features/shared/ambient-backdrop.tsx:61`). Problem 4. S to M; the number of findings on the first run is unverified.
+- Turn on `noUnusedLocals` and `noUnusedParameters` in `tsconfig.app.json` (D3). `tsconfig.integration.json` has both. Problem 4. S; the number of findings is unverified.
+- Compile and lint `src-tauri/src/surface/macos.rs` in CI (D4). Every job runs on `ubuntu-22.04`, so its 331 lines and its `unsafe` blocks are never compiled, while `src-tauri/Cargo.toml` says "for Linux and macOS". Problem 4. S if it compiles today, which is unverified.
+- Add P3-31 to P4-01's `depends_on` (D5). It edits an existing task, so the owner or the coordinating agent applies it.
+- `src/app/compose.ts:15` imports the e2e engine from `src/test/` into the composition root. The guard that keeps it out of a build (`pnpm test:no-test-engine`) runs in `release-appimage.yml` and in `pnpm check` only. D1 A covers it; if D1 is declined, load the engine so the composition root does not import test code. Problem 6. S.
+- `ensure_numeric_locale` accepts a data race in its `SAFETY` comment (`src-tauri/src/player/version.rs:25-32`): `setlocale` runs after other threads exist. Check whether the call can become a read that only fails the launch when the locale is wrong. Smaller points. S.
+- A check that fails on a source file over about 400 lines (`WORKFLOW.md`, Mechanical enforcement backlog, "File size"). The review found `gateway.ts` at 955, `coordinator.ts` at 476, and `use-playback-session.ts` at 434. Goes with the linter if D2 adds one. S.
+- Drop the `#/next` prefix from every route once P2-10 has put the routes in one module. The proof-of-concept screens it kept apart are deleted. Not a finding of the review; noted by the triage. It moves every e2e journey and deep link. S to M.
+- Check `docs/security.md` lines 9 and 30 against the code when `fix/plan-without-token` lands: line 9 does not say the plan was held in component state, and line 30 says the browser player "never receives the header" while it was handed the whole plan. Problem 1. S.
+- **`pnpm lint:boundaries` cruises 0 modules and still exits 0 (D6).** dependency-cruiser 18.7.2 supports TypeScript below 7, and `7cfa705` (2026-11-12) moved the app to 7.0.2, so the lint for invariant I8 and the `DOMAINS.md` layer rules has read no file since. Found by the triage when it ran `pnpm check`; the review lists the lint under "done well". Make it fail on zero modules, then give it a compiler it can use. Do it before P2-08 and P2-09, which rely on it. S to M.
+- Review what the first pass did not read: the catalog views, the shared UI primitives, the HLS validator, the surface code, the e2e specs, and the CSS. The review ran nothing, so a second pass should also run the checks. M.
