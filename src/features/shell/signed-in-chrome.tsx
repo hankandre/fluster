@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSession, type SessionGateway } from "../../app/session";
 import { scopeFor } from "../query-scope";
 import { AppNav, AppShell } from "../shared/ui";
+import { useBackKey } from "./use-back-key";
 import { useSearchShortcut } from "./use-search-shortcut";
 
 // Wraps signed-in pages in the app shell. While signed out it renders the page alone.
@@ -14,6 +15,7 @@ export function SignedInChrome({ hash, children }: { hash: string; children: Rea
 
 function NavShell({ gateway, hash, children }: { gateway: SessionGateway; hash: string; children: ReactNode }) {
   useSearchShortcut();
+  useBackKey();
   const views = useQuery({
     queryKey: ["nav", scopeFor(gateway), "views"],
     queryFn: ({ signal }) => gateway.userViews(signal),

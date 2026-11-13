@@ -106,7 +106,12 @@ export function SearchBox({ gateway, initialTerm }: { gateway: SessionGateway; i
         return;
       }
       case "ArrowUp":
-        if (hints.length === 0) return;
+        if (!expanded) {
+          // With the list closed, Up leaves the field for the row above, or the nav.
+          const row = event.currentTarget.closest<HTMLElement>("[data-spatial-row]");
+          if (row && moveToAdjacentRow(row, event.currentTarget, -1)) event.preventDefault();
+          return;
+        }
         event.preventDefault();
         setOpen(true);
         setActive(active <= 0 ? hints.length - 1 : active - 1);

@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { isTvForm } from "../tv-form";
 import "./shell.css";
 
 // A screen with a hero calls this while mounted, so the nav is clear over the hero (DESIGN.md 7.1).
@@ -36,7 +37,9 @@ export function AppShell({ nav, children }: { nav: ReactNode; children: ReactNod
     setAtTop(y <= 0);
     const navHeight = header.current?.offsetHeight || FALLBACK_NAV_HEIGHT;
     const delta = y - lastY.current;
-    if (document.documentElement.dataset.form === "tv" || y <= navHeight) {
+    // In the TV form focus drives the tab row (see onContentFocus), not scroll.
+    if (document.documentElement.dataset.form === "tv") return;
+    if (y <= navHeight) {
       lastY.current = y;
       setHidden(false);
     } else if (delta >= SCROLL_STEP) {
@@ -76,6 +79,11 @@ export function AppShell({ nav, children }: { nav: ReactNode; children: ReactNod
     main.focus();
   }
 
+  // TV form: the tab row hides while focus is in the content and shows when focus enters it (DESIGN.md §6).
+  function onContentFocus() {
+    if (isTvForm()) setHidden(true);
+  }
+
   const surface = overHero > 0 && atTop ? "clear" : "glass";
 
   return (
@@ -91,7 +99,7 @@ export function AppShell({ nav, children }: { nav: ReactNode; children: ReactNod
         >
           {nav}
         </header>
-        <div className="app-content" ref={content}>{children}</div>
+        <div className="app-content" ref={content} onFocus={onContentFocus}>{children}</div>
       </div>
     </NavOverHeroContext.Provider>
   );

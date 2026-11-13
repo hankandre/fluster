@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { moveToAdjacentRow, nearestByCentre, nextRovingIndex, useRovingFocus, type RovingLayout } from "./roving-focus";
+import { enterFirstRow, moveToAdjacentRow, nearestByCentre, nextRovingIndex, useRovingFocus, type RovingLayout } from "./roving-focus";
 
 afterEach(cleanup);
 
@@ -278,5 +278,38 @@ describe("moveToAdjacentRow", () => {
     expect(moveToAdjacentRow(rowB, screen.getByRole("link", { name: "B1" }), -1)).toBe(true);
     expect(screen.getByRole("link", { name: "A1" })).toHaveFocus();
     expect(moveToAdjacentRow(rowA, screen.getByRole("link", { name: "A1" }), -1)).toBe(false);
+  });
+});
+
+describe("nav reach", () => {
+  function Page() {
+    return (
+      <>
+        <nav aria-label="Main">
+          <a href="#/home" data-roving-item="" tabIndex={-1}>Fluster</a>
+          <a href="#/home" data-roving-item="" tabIndex={0} aria-current="page">Home</a>
+        </nav>
+        <main>
+          <div data-spatial-row="" data-testid="row-a"><a href="#/a" data-roving-item="" tabIndex={-1}>A1</a><a href="#/b" data-roving-item="" tabIndex={0}>A2</a></div>
+          <div data-spatial-row="" data-testid="row-b"><a href="#/c" data-roving-item="">B1</a></div>
+        </main>
+      </>
+    );
+  }
+
+  it("Up from the first row focuses the nav's current entry; Up from a later row still moves up", () => {
+    render(<Page />);
+    const a2 = screen.getByRole("link", { name: "A2" });
+    expect(moveToAdjacentRow(screen.getByTestId("row-a"), a2, -1)).toBe(true);
+    expect(screen.getByRole("link", { name: "Home" })).toHaveFocus();
+    const b1 = screen.getByRole("link", { name: "B1" });
+    expect(moveToAdjacentRow(screen.getByTestId("row-b"), b1, -1)).toBe(true);
+    expect(a2.ownerDocument.activeElement).toBe(screen.getByRole("link", { name: "A1" }));
+  });
+
+  it("Down from the nav enters the first row at its Tab stop", () => {
+    render(<Page />);
+    expect(enterFirstRow()).toBe(true);
+    expect(screen.getByRole("link", { name: "A2" })).toHaveFocus();
   });
 });

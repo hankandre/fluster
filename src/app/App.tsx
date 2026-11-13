@@ -9,6 +9,7 @@ import { SearchView } from "../features/search";
 import { DetailView, ItemDetailView } from "../features/detail";
 import { SettingsView } from "../features/settings";
 import { SignedInChrome } from "../features/shell";
+import { useBackspaceAsEscape } from "../features/shell/use-backspace-as-escape";
 import { PlayerFeatureView, PlayerRouteView } from "../features/player";
 import { parseLibraryRoute, parsePlayRoute } from "../features/routes";
 import { createServices, type AppServices } from "./compose";
@@ -25,6 +26,7 @@ const GalleryView = import.meta.env.DEV
 
 export function App() {
   const services = useMemo(() => createServices(), []);
+  useBackspaceAsEscape();
   // One player engine for the whole app.
   const player = useMemo<PlayerServices>(
     () => ({

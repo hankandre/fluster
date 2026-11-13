@@ -126,4 +126,19 @@ describe("AppShell nav surface and hiding", () => {
     scrollTo(400);
     expect(header()).toHaveAttribute("data-hidden", "false");
   });
+
+  it("hides while focus is in the content and shows when focus is in the header (TV form)", () => {
+    document.documentElement.dataset.form = "tv";
+    renderShell();
+    act(() => screen.getByRole("button", { name: "Content control" }).focus());
+    expect(header()).toHaveAttribute("data-hidden", "true");
+    act(() => screen.getByRole("link", { name: "Home" }).focus());
+    expect(header()).toHaveAttribute("data-hidden", "false");
+  });
+
+  it("does not hide on content focus on desktop", () => {
+    renderShell();
+    act(() => screen.getByRole("button", { name: "Content control" }).focus());
+    expect(header()).toHaveAttribute("data-hidden", "false");
+  });
 });
