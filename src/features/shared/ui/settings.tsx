@@ -169,7 +169,8 @@ function CompactSettings({ label, sections, value, onChange, children }: Setting
 }
 
 // One panel: a heading, an optional intro, and the rows. The rows are one Tab stop; Up and Down move between them.
-export function SettingsSection({ title, intro, children }: { title: string; intro?: string; children?: ReactNode }) {
+// `footer` follows the rows and is not part of their roving set.
+export function SettingsSection({ title, intro, children, footer }: { title: string; intro?: string; children?: ReactNode; footer?: ReactNode }) {
   const roving = useRovingFocus<HTMLDivElement>("column");
   return (
     <div className="settings-section">
@@ -180,6 +181,7 @@ export function SettingsSection({ title, intro, children }: { title: string; int
           {children}
         </div>
       ) : null}
+      {footer}
     </div>
   );
 }

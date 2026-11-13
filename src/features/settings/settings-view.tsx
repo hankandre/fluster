@@ -1,68 +1,39 @@
-import { useState, type ChangeEvent } from "react";
-import { SignOutButton } from "../sign-out-button";
-import { usePreferences } from "../../app/preferences";
-import { isLimitChoice, STREAMING_LIMIT_CHOICES_MBPS, type StreamingLimits } from "../../lib/streaming-limits";
+import { useState } from "react";
+import { SettingsPage } from "../shared/ui";
+import { AboutSection } from "./about-section";
+import { AccountSection } from "./account-section";
+import { PlaybackSection } from "./playback-section";
+import { SubtitlesSection } from "./subtitles-section";
 
-const NO_LIMIT = "none";
+const SECTIONS = [
+  { id: "playback", label: "Playback" },
+  { id: "subtitles", label: "Subtitles" },
+  { id: "account", label: "Account" },
+  { id: "about", label: "About & diagnostics" },
+];
 
-export function SettingsView() {
-  const { streamingLimits } = usePreferences();
-  const [limits, setLimits] = useState<StreamingLimits>(() => streamingLimits.get());
-
-  function change(field: keyof StreamingLimits) {
-    return (event: ChangeEvent<HTMLSelectElement>) => {
-      const value = Number(event.target.value);
-      const next = { ...limits, [field]: isLimitChoice(value) ? value : undefined };
-      setLimits(next);
-      streamingLimits.set(next);
-    };
+function panelFor(section: string) {
+  switch (section) {
+    case "subtitles":
+      return <SubtitlesSection />;
+    case "account":
+      return <AccountSection />;
+    case "about":
+      return <AboutSection />;
+    default:
+      return <PlaybackSection />;
   }
-
-  return (
-    <main className="settings">
-      <h1>Settings</h1>
-      <section aria-labelledby="streaming-limits">
-        <h2 id="streaming-limits">Streaming limits</h2>
-        <p>
-          Fluster plays the original file. If a file is above your limit, the server converts it to fit.
-          Both limits start as No limit and apply the next time you press Play.
-        </p>
-        <LimitSelect
-          label="Local network"
-          hint="Servers on this computer or your home network."
-          value={limits.localMbps}
-          onChange={change("localMbps")}
-        />
-        <LimitSelect
-          label="Remote"
-          hint="Servers on the internet."
-          value={limits.remoteMbps}
-          onChange={change("remoteMbps")}
-        />
-      </section>
-      <SignOutButton />
-    </main>
-  );
 }
 
-function LimitSelect({ label, hint, value, onChange }: {
-  label: string;
-  hint: string;
-  value: number | undefined;
-  onChange(event: ChangeEvent<HTMLSelectElement>): void;
-}) {
+// The Settings shell (DESIGN.md 7.18). The selected section is state here; the route stays one hash.
+export function SettingsView() {
+  const [section, setSection] = useState("playback");
   return (
-    <div className="settings-field">
-      <label>
-        {label} maximum bitrate
-        <select value={value === undefined ? NO_LIMIT : String(value)} onChange={onChange}>
-          <option value={NO_LIMIT}>No limit</option>
-          {STREAMING_LIMIT_CHOICES_MBPS.map((mbps) => (
-            <option key={mbps} value={mbps}>{mbps} Mbps</option>
-          ))}
-        </select>
-      </label>
-      <p>{hint}</p>
-    </div>
+    <main className="settings-page">
+      <h1 className="settings-page-title">Settings</h1>
+      <SettingsPage label="Settings sections" sections={SECTIONS} value={section} onChange={setSection}>
+        {panelFor(section)}
+      </SettingsPage>
+    </main>
   );
 }

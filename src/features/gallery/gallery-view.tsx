@@ -13,6 +13,8 @@ import {
   Skeleton,
   TextField,
   ToggleChip,
+  SettingsRow,
+  SettingsSection,
   useToast,
   type PickerOption,
 } from "../shared/ui";
@@ -92,6 +94,19 @@ function Gallery() {
         <Picker label="Streaming limit" options={LIMITS} value={limit} onChange={setLimit} />
         <Picker label="Nothing chosen" options={LIMITS} value={undefined} onChange={setLimit} placeholder="Choose a limit" />
         <Picker label="Disabled picker" options={LIMITS} value="20" onChange={setLimit} disabled />
+      </Section>
+
+      <Section title="Settings rows">
+        <div className="gallery-stack">
+          <SettingsSection title="Playback" intro="Rows hold a Picker, a button, a value, or an unavailable state.">
+            <SettingsRow label="Local network" description="Servers on this computer or your home network.">
+              <Picker label="Gallery limit" hideLabel options={LIMITS} value={limit} onChange={setLimit} rovingItem openOnArrow={false} />
+            </SettingsRow>
+            <SettingsRow label="Copy report"><Button variant="secondary" data-roving-item="">Copy</Button></SettingsRow>
+            <SettingsRow label="Server" value="Hearth" />
+            <SettingsRow label="Audio passthrough" unavailable="P5-03" />
+          </SettingsSection>
+        </div>
       </Section>
 
       <Section title="Segmented tabs">
