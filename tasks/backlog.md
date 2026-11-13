@@ -114,23 +114,26 @@ Status of each is from `compat/endpoints.yaml` and `docs/status.md` at `93a0f3f`
 
 ## Wish list (from the 2026-11-12 wish-list pass)
 
-Research, verdicts, and the twelve open decisions are in `docs/research/streaming-wishlist.md` and `docs/plans/proposals/streaming-wishlist.md`.
+Research, verdicts, and the twelve decisions are in `docs/research/streaming-wishlist.md` and `docs/plans/proposals/streaming-wishlist.md`. The owner answered D1 to D12 on 2026-11-12; the answers are at the top of the proposal.
 
-- Task now: P16-11 (record wish-list contract fixtures; it settles the unverified server facts behind D5, D6, D7, and D8).
-- Clear voices and night mode, applied on the device with the original file (D1; proposed P5-06 spike, then P5-07). A 1,265-person survey ties most subtitle use to dialogue that is hard to hear; Plex's version is paid and converts on the server. Needs typed player commands; does not apply with passthrough. S to M for the spike, M for the feature.
-- Captions for the stretch a viewer skips back over, and a resume that starts a few seconds early (D2; proposed P15-11). Apple TV does the first; 55 votes on Jellyfin's tracker for the second. S to M.
-- "Hide spoilers" for unwatched episodes on every surface (D3; proposed P15-12). 120 votes on Jellyfin's tracker, 118 and 49 on Plex, asked since 2012. M.
-- A sleep timer with "Stop after this episode" (D4; proposed P15-13). Weak evidence; it also answers "Still watching?" as a choice the viewer makes. S.
-- "Watching with": a second signed-in account is marked as having watched too (D5; proposed P16-12). 164 votes on Jellyfin's tracker; no app found does it. Waits for P16-11; writes to a second account, so it needs a plan and a `guardian` review. M.
-- Label audio-description and hard-of-hearing tracks, and a "Prefer audio description" setting (D6; proposed P15-14). S.
-- Audit the app with a screen reader and file what it finds (D6; proposed P13-28). Never tried under WebKitGTK. S.
-- A running-time filter for films (D7; proposed P16-13). The problem (time lost choosing) is well measured; this remedy has no evidence. S.
-- "Where you left off" on the series page after a long gap (D8). No demand evidence. S.
-- A setting for the skip step: 5, 10, 15, or 30 seconds (D9; proposed P15-15). 454 votes on Plex. S.
-- A cast strip on the paused player (D10). 39 votes on Jellyfin's tracker. S.
-- Note for "Audio sync offset and dual subtitles": dual subtitles have 134 likes on Infuse's forum and 93 thumbs-up across three Jellyfin clients, none of which has built it (D12).
-- Note for P5-05's spec: caption style settings should show a live sample and be reachable from the player's subtitle menu (a US accessibility rule's checklist; `docs/research/streaming-wishlist.md` W28). P5-05's acceptance is not edited.
+- Tasks now: P16-11 (wish-list contract fixtures), P5-06 (voice clarity and night mode spike, D1 C), P15-11 (captions on skip-back and a resume 3 s early, D2 B), P15-12 (audio-description and hard-of-hearing labels and a preference, D6 C), P13-28 (screen-reader audit, D6 C), P16-12 (running-time filter chips, D7 B), P15-13 (skip step setting, D9 B).
+- **Standing principle (owner, D3):** what mainstream media platforms do is the default; a few hundred tracker votes is not enough to depart from it. Entries in this file that rest on tracker counts alone should be read with that.
+- ~~"Hide spoilers" for unwatched episodes (D3). 120 votes on Jellyfin's tracker, 118 and 49 on Plex.~~ Declined by the owner (D3). Episode descriptions stay, kept short.
+- ~~"Watching with": a second signed-in account is marked as having watched too (D5). 164 votes on Jellyfin's tracker.~~ Declined by the owner (D5).
+- ~~Captions for the stretch a viewer skips back over, and an early resume (D2).~~ Taken by P15-11.
+- ~~Label audio-description and hard-of-hearing tracks, and "Prefer audio description" (D6).~~ Taken by P15-12.
+- ~~Audit the app with a screen reader (D6).~~ Taken by P13-28. It cannot listen; a listening pass with Orca by a person follows from its report.
+- ~~A running-time filter for films (D7).~~ Taken by P16-12.
+- ~~A setting for the skip step (D9).~~ Taken by P15-13.
+- Clear voices and night mode as shipped controls (provisional P5-07). Waits for P5-06's report and the owner's approval of its recommendation. Needs typed player commands and a `guardian` review; does not apply with passthrough. M.
+- A sleep timer with "Stop after this episode" (D4 A: stays here). Weak evidence. S. It replaces the sleep-timer part of the Loves entry above.
+- "Where you left off" on the series page after a long gap (D8 A: stays here). No demand evidence. S.
+- A cast strip on the paused player (D10 A: stays here). 39 votes on Jellyfin's tracker. S.
+- Note for "Audio sync offset and dual subtitles" (D12 A: stays): dual subtitles have 134 likes on Infuse's forum and 93 thumbs-up across three Jellyfin clients.
+- Note for P5-05's spec (D6 C): caption style settings show a live sample and can be reached from the player's subtitle menu. P5-05's acceptance is not edited.
+- Proposed `DESIGN.md` amendment, waiting for the owner: §7.6's TV form gives no line limit for the overview under the focused episode card; add "at most two lines", to match the owner's "very succinct" condition (D3). S.
+- Check in the dogfood week: captions on skip-back are on by default (D2 B), which most platforms do not do. If it surprises, the default is the thing to change.
 - Note for "Playlists" and "Remember a library's sort and filters": smart playlists have 1,425 votes on Plex and 588 on Jellyfin; they are a server feature, and a remembered filter is the client-side part.
 - Note for the product review's Q9 A (one set of settings per computer): "global defaults across clients" has 260 votes and Jellyfin and Jellyscale both implement a per-account preferences record. Revisit with the TV shell; the answer stands.
 - Note for a "private session": "anonymous, guest access" has 88 votes on Jellyfin's tracker.
-- Jellyscale requests for the coordinator to file if the owner agrees (D11), in order: one session counting for more than one account; a flag on audio-description and hard-of-hearing tracks; a loudness figure per audio track; a running-time range on item queries; Recap and Preview as segment types. Wording is in the proposal §8.
+- Jellyscale (D11): the coordinator files two requests, marking audio-description and hard-of-hearing tracks, and a running-time range with sorting by runtime on item queries. Not filed: a loudness figure per audio track, and Recap and Preview as segment types. Dropped with D5: one session counting for more than one account.

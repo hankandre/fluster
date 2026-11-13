@@ -13,6 +13,7 @@ It completes a trio with [`streaming-ux-gripes.md`](streaming-ux-gripes.md) (wha
   - *Loud wish, little use*: visible demand, and the usage evidence points the other way or is absent after years of availability.
   - *Already solved elsewhere*: a working version exists; the wish is to have it here.
   - *Unproven*: no demand evidence was found either way. It is not a claim that nobody wants it.
+- **Mainstream conventions are the default (the owner, 2026-11-12).** Answering the proposal's D3, the owner declined a spoiler setting: "I don't want to deviate from media platform for user requests that have 100+ votes. Jellyfin has a lot more use than just those 100 or so votes." The rule for this and later research: what the large media platforms do is the default, and a few hundred tracker votes is not enough to depart from it. A departure needs strong evidence as defined below, or the owner's judgement. The verdicts in this document were written before that answer; where it changes the reading, §4 says so. "Unsolved everywhere" should be read with it in mind: sometimes the mainstream chose not to.
 - **Evidence strength** follows Loves: **strong** (a survey of 1,000 or more with its method stated, or a measured behaviour), **medium** (a vote board, a vendor's own numbers, a self-selected or sponsored poll), **weak** (forum threads, reviews, a vendor shipping something, a small study).
 - **Votes are not use.** A vote board counts people who visit vote boards. Plex's votes are capped per user and are the cleanest count; Jellyfin's are open; Infuse's forum shows only likes summed over a thread; Emby's numbers below were parsed from HTML and are approximate.
 - **Where the numbers came from.**
@@ -295,6 +296,22 @@ Ranked by evidence first and fit second. "Lead" means no personal-media client f
 | 9 | **Who is in this.** The cast on the paused player. (W41) | Weak: 39 votes, 14 likes. | Data already fetched for the title's page. | Small. |
 
 Ideas 1 to 3 have the best case. Ideas 7 to 9 are cheap guesses and are marked as such.
+
+### After the owner's answers (2026-11-12)
+
+| Rank | Idea | Outcome |
+|---|---|---|
+| 1 | Hear every line | A spike after the dogfood week: **P5-06** (D1 C). It follows a mainstream convention, so the principle above strengthens it. |
+| 2 | "What did they say?" | **P15-11** (D2 B), on by default. Weak under the principle; see the proposal. |
+| 3 | A series page that cannot spoil | **Declined** (D3). Episode descriptions stay, kept short; `DESIGN.md` already limits them. |
+| 4 | Two people, one screen | **Declined** (D5). |
+| 5 | Described and captioned | **P15-12** and **P13-28** (D6 C). Strengthened by the principle. |
+| 6 | Stop when this episode ends | Backlog (D4 A). |
+| 7 | "I have 90 minutes" | **P16-12** (D7 B). |
+| 8 | Where you left off | Backlog (D8 A). |
+| 9 | Who is in this | Backlog (D10 A). |
+
+The skip-step setting (W11) became **P15-13** (D9 B).
 
 ## 5. Already planned, by task
 
