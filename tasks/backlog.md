@@ -80,3 +80,22 @@ Each line points at its full text in `docs/design/rework-plan.md` ("Decision log
 - P13-06: the "Browser development mode" label overlapping content on phone captures.
 - Error stripping (PR #128): the four test gaps.
 - Unverified on the dogfood server (`FLUSTER_DOGFOOD_SERVER`): the Jellyfin 10.11 and 12.4 response checks listed under P13-07, P13-08, P13-09, P13-10, P13-11, and P13-12, and the WebKitGTK checks listed beside them.
+
+## Loves (from the 2026-11-12 loves pass)
+
+Research, verdicts, and the eight open decisions are in `docs/research/streaming-ux-loves.md` and `docs/plans/proposals/streaming-loves.md`.
+
+- Task now: P3-28 (measure startup and the gap between episodes).
+- Waiting for the owner: D1 to D8 in the proposal.
+
+- A Favorites row on Home (D1; proposed P15-09). A pinned watch list came second of 13 features in a survey of 3,000; Favorites is the watch list (Q10 A). S.
+- A "Watched" view of finished titles, newest first (D2; proposed P15-10). 835 votes on Jellyfin's tracker; no usage data. M.
+- "Not this one" on a suggested title (D6; proposed P16-10). Where the dismissal is kept is the open question. S to M.
+- Prepare the next episode during the Up Next countdown, direct play only (D7; proposed P3-29). 223 votes; decide after P3-28 measures the gap. Touches Playback Negotiation. M.
+- Carry P8-01 (cast target) into the TV shell's plan so a phone running any Jellyfin app can be the remote and keyboard (D4). Third of 13 features in the same survey. No new work until the owner decides.
+- Jellyscale notes for the test pass and for the owner's carry-over list (D8): media segments, Quick Connect, and trickplay are "not built", and `/Sessions/Capabilities` and `/Sessions/Capabilities/Full` are stubs (`compat/endpoints.yaml` and `docs/status.md` at `93a0f3f`). Skip intro, sign-in by code, scrub previews, and remote control depend on them.
+- Lead the phone shell's task list with offline downloads when that list is written: the most-voted Jellyfin client request (1,827). Not a reason to move P8-03 on the desktop. Note only.
+- Note for "Let the viewer reorder or hide Home rows": 47% of 3,000 surveyed viewers would "absolutely" use hiding rows they do not use; the rows they were shown are promotional ones.
+- Note for "Revisit genre rows on Home": 82% of 1,362 subscribers said in 2020 that they would use groupings of similar content (intent).
+- Marks on cards for what is new since the last visit (Netflix added status tags in 2025; no usage data found). S.
+- A sleep timer, picture-in-picture, and a dialogue-boost or night-mode audio option. No usage data was found for any of them; the last needs a typed player command. S, M, M.

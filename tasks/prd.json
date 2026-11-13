@@ -1327,6 +1327,35 @@
           "owner": null,
           "passes": false,
           "evidence": ""
+        },
+        {
+          "id": "P3-28",
+          "title": "Measure startup and the gap between episodes",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P13-08",
+            "P3-10",
+            "P0-06",
+            "P0-10"
+          ],
+          "acceptance": [
+            "A development-only timing record gives, for each launch, the time from the WebView time origin to Home showing its first row and to the hero primary action being focusable; the launcher script times process start to that origin from outside",
+            "The record also gives the time from Resume on Home to the first frame, and from the Up Next card starting the next episode to that episode's first frame, read from the player snapshots that exist today",
+            "A record holds durations, the screen or step name, and the play method only: no URL, item id, token, or play-session id; the redaction canary tests cover it",
+            "Nothing leaves the computer and nothing is recorded unless a development flag is set; PRODUCT.md principle 6 holds",
+            "No Tauri command is added, or the spec stops and asks the human; the command allowlist test is unchanged, and no playback request changes",
+            "docs/research/startup-timing.md reports the median and the worst of ten launches and ten episode changes on this computer, direct play, against the Jellyfin 10.11.7 and 12.4.0 dogfood servers, and says how to repeat the run",
+            "No target is set and PRODUCT.md is unchanged; a target is the owner's decision (docs/plans/proposals/streaming-loves.md, D3)",
+            "Unit tests cover the record's shape and that it is off by default"
+          ],
+          "verify": "pnpm check && ls docs/research/startup-timing.md",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
         }
       ]
     },
