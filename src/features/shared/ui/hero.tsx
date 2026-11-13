@@ -1,7 +1,8 @@
-import { useId, useState, type CSSProperties, type MouseEvent } from "react";
+import { useId, useState, type CSSProperties, type KeyboardEvent, type MouseEvent } from "react";
 import { blurhashToDataUrl } from "../../home/blurhash";
 import { useRovingFocus } from "../../roving-focus";
 import { artTint } from "../art-tint";
+import { useTvPrimaryRef } from "../use-tv-form";
 import { LogoTitle } from "./logo-title";
 import { ProgressRing } from "./progress-ring";
 import { useNavOverHero } from "./app-shell";
@@ -33,6 +34,7 @@ export function Hero(props: HeroProps) {
   useNavOverHero();
   const titleId = useId();
   const roving = useRovingFocus<HTMLDivElement>("row", { spatial: true });
+  const primaryRef = useTvPrimaryRef();
 
   if (props.pending) {
     return (
@@ -81,8 +83,11 @@ export function Hero(props: HeroProps) {
             <ButtonLink
               variant="primary"
               href={primary.href}
+              ref={primaryRef}
               onClick={primary.onActivate}
               data-roving-item=""
+              aria-keyshortcuts={moreInfoHref ? "i" : undefined}
+              onKeyDown={moreInfoHref ? (event) => openDetails(event, moreInfoHref) : undefined}
               icon={primary.progress !== undefined ? <ProgressRing value={primary.progress} /> : undefined}
             >
               {primary.label}
@@ -97,6 +102,14 @@ export function Hero(props: HeroProps) {
       </div>
     </section>
   );
+}
+
+// Menu (ContextMenu) or `i` on the primary opens details where Enter plays (DESIGN.md 9).
+function openDetails(event: KeyboardEvent<HTMLAnchorElement>, href: string) {
+  const isInfo = event.key === "i" && !event.ctrlKey && !event.metaKey && !event.altKey;
+  if (!isInfo && event.key !== "ContextMenu") return;
+  event.preventDefault();
+  window.location.hash = href;
 }
 
 function ArtImage({ src }: { src: string }) {

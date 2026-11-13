@@ -7,6 +7,7 @@ import { Overview } from "../detail/overview";
 import { useHeaderArt } from "../detail/use-header-art";
 import { playRoute } from "../routes";
 import { ActionBar, ButtonLink, DetailHeader, InlineError, ProgressRing, Skeleton } from "../shared/ui";
+import { useTvPrimaryRef } from "../shared/use-tv-form";
 import { initialSeason, orderSeasons, seriesPrimary, type SeriesPrimary } from "./series-next";
 import { seriesFacts } from "./series-facts";
 import { useSeasonEpisodes, useSeriesNextUp, useSeriesSeasons } from "./series-queries";
@@ -75,11 +76,13 @@ export function SeriesBody({ gateway, item, onArt, headingRef }: SeriesBodyProps
 
 // Plays the next episode in one activation (a click or Enter opens the player). No confirm step.
 function SeriesActions({ primary }: { primary: SeriesPrimary }) {
+  const primaryRef = useTvPrimaryRef();
   return (
     <ActionBar>
       <ButtonLink
         variant="primary"
         href={playRoute(primary.route)}
+        ref={primaryRef}
         onClick={playActivation(primary.route)}
         data-roving-item=""
         icon={primary.progress !== undefined ? <ProgressRing value={primary.progress} /> : undefined}

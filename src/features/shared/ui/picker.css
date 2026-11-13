@@ -69,6 +69,16 @@
     box-shadow: var(--shadow-sheet);
   }
 
+  /* TV form (DESIGN.md 7.10): the open list is a right-side sheet inside the safe inset. */
+  :root[data-form="tv"] .ui-picker-list--sheet {
+    inset-block: var(--safe-y);
+    inset-inline: auto var(--safe-x);
+    width: var(--player-sheet-w);
+    max-width: none;
+    max-height: none;
+    border-radius: var(--radius-sheet);
+  }
+
   .ui-picker-option {
     display: flex;
     align-items: center;

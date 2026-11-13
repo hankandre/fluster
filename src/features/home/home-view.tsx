@@ -1,4 +1,5 @@
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { isTvForm } from "../shared/tv-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSession, type SessionGateway } from "../../app/session";
 import type { ImageRef, MediaCard } from "../../domain/catalog";
@@ -69,6 +70,17 @@ function HomeContent({ gateway }: { gateway: SessionGateway }) {
       }
     });
   };
+
+  // TV form with no hero: the first card of the first row takes focus (DESIGN.md 9).
+  const focusedFirstCard = useRef(false);
+  useEffect(() => {
+    if (!isTvForm() || hero.status !== "none" || empty || focusedFirstCard.current) return;
+    const first = document.querySelector<HTMLElement>(".home-rows [data-roving-item]");
+    const active = document.activeElement;
+    if (!first || (active && active !== document.body && !active.matches("h1, main") && !active.closest('nav[aria-label="Main"]'))) return;
+    focusedFirstCard.current = true;
+    first.focus();
+  });
 
   const ambientCard = focused ?? (hero.status === "ready" ? hero.card : undefined);
   const art: ImageRef | undefined = ambientCard ? heroArtFor(ambientCard) : undefined;

@@ -49,3 +49,5 @@
   .ambient { transition: none; }
   .ambient-layer[data-entering="true"] { animation: none; }
 }
+
+:root[data-form="tv"] .browser-mode-label { right: var(--safe-x); bottom: var(--safe-y); }

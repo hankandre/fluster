@@ -215,3 +215,31 @@ describe("Picker appearance and rovingItem", () => {
     expect(screen.getByRole("button", { name: /Version/ })).toHaveAttribute("data-roving-item");
   });
 });
+
+describe("Picker in the TV form", () => {
+  afterEach(() => {
+    delete document.documentElement.dataset.form;
+  });
+
+  it("opens the list as a right-side sheet with the same listbox and keys", async () => {
+    document.documentElement.dataset.form = "tv";
+    const user = userEvent.setup();
+    render(<Harness />);
+    trigger().focus();
+    await user.keyboard("{Enter}");
+    const list = screen.getByRole("listbox", { name: "Streaming limit" });
+    expect(list).toHaveClass("ui-picker-list--sheet");
+    expect(list.style.left).toBe("");
+    await user.keyboard("{ArrowDown}{Enter}");
+    expect(trigger()).toHaveTextContent("40 Mbps");
+    expect(trigger()).toHaveFocus();
+  });
+
+  it("keeps the anchored list on desktop", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    trigger().focus();
+    await user.keyboard("{Enter}");
+    expect(screen.getByRole("listbox")).not.toHaveClass("ui-picker-list--sheet");
+  });
+});

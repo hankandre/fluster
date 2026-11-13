@@ -1,6 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { Check, ChevronDown } from "lucide-react";
+import { useTvForm } from "../use-tv-form";
 import { DIALOG_EXEMPT_ATTRIBUTE } from "./dialog";
 import "./picker.css";
 
@@ -67,6 +68,7 @@ export function Picker({ label, hideLabel, options, value, onChange, placeholder
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const list = useRef<HTMLUListElement>(null);
+  const tv = useTvForm();
   const [place, setPlace] = useState<CSSProperties>({});
   const optionRefs = useRef<(HTMLLIElement | null)[]>([]);
   const typed = useRef({ text: "", timer: 0 });
@@ -74,7 +76,7 @@ export function Picker({ label, hideLabel, options, value, onChange, placeholder
   // The list is in a portal so no scrolling or clipping ancestor (a dialog panel) cuts it off. It sits under
   // the trigger, or above it when there is more room there.
   useLayoutEffect(() => {
-    if (!open) return;
+    if (!open || tv) return;
     const position = () => {
       const anchor = trigger.current?.getBoundingClientRect();
       const menu = list.current;
@@ -100,7 +102,7 @@ export function Picker({ label, hideLabel, options, value, onChange, placeholder
       window.removeEventListener("resize", position);
       window.removeEventListener("scroll", position, true);
     };
-  }, [open]);
+  }, [open, tv]);
 
   useEffect(() => {
     if (open) optionRefs.current[active]?.focus();
@@ -215,7 +217,7 @@ export function Picker({ label, hideLabel, options, value, onChange, placeholder
       {open ? createPortal(
         <ul
           ref={list}
-          className="ui-picker-list"
+          className={tv ? "ui-picker-list ui-picker-list--sheet" : "ui-picker-list"}
           role="listbox"
           aria-labelledby={labelId}
           style={place}

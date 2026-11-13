@@ -121,3 +121,29 @@ describe("Hero frame", () => {
     expect(container.querySelector(".hero-art img")).toHaveAttribute("src", "https://media.test/art.jpg");
   });
 });
+
+describe("Hero TV form", () => {
+  afterEach(() => {
+    delete document.documentElement.dataset.form;
+    window.location.hash = "";
+  });
+
+  it("Menu or i on the primary opens More info; Enter is left to the link", () => {
+    renderHero();
+    const primary = screen.getByRole("link", { name: "Play" });
+    expect(primary).toHaveAttribute("aria-keyshortcuts", "i");
+    expect(fireEvent.keyDown(primary, { key: "Enter" })).toBe(true);
+    expect(window.location.hash).toBe("");
+    expect(fireEvent.keyDown(primary, { key: "ContextMenu" })).toBe(false);
+    expect(window.location.hash).toBe("#/next/item/m1");
+  });
+
+  it("focuses the primary action on mount in the TV form only", () => {
+    const { unmount } = renderHero();
+    expect(screen.getByRole("link", { name: "Play" })).not.toHaveFocus();
+    unmount();
+    document.documentElement.dataset.form = "tv";
+    renderHero();
+    expect(screen.getByRole("link", { name: "Play" })).toHaveFocus();
+  });
+});
