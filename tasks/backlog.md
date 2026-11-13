@@ -111,3 +111,26 @@ Status of each is from `compat/endpoints.yaml` and `docs/status.md` at `93a0f3f`
 - Note for "Revisit genre rows on Home": 82% of 1,362 subscribers said in 2020 that they would use groupings of similar content (intent).
 - Marks on cards for what is new since the last visit (Netflix added status tags in 2025; no usage data found). S.
 - A sleep timer, picture-in-picture, and a dialogue-boost or night-mode audio option. No usage data was found for any of them; the last needs a typed player command. S, M, M.
+
+## Wish list (from the 2026-11-12 wish-list pass)
+
+Research, verdicts, and the twelve open decisions are in `docs/research/streaming-wishlist.md` and `docs/plans/proposals/streaming-wishlist.md`.
+
+- Task now: P16-11 (record wish-list contract fixtures; it settles the unverified server facts behind D5, D6, D7, and D8).
+- Clear voices and night mode, applied on the device with the original file (D1; proposed P5-06 spike, then P5-07). A 1,265-person survey ties most subtitle use to dialogue that is hard to hear; Plex's version is paid and converts on the server. Needs typed player commands; does not apply with passthrough. S to M for the spike, M for the feature.
+- Captions for the stretch a viewer skips back over, and a resume that starts a few seconds early (D2; proposed P15-11). Apple TV does the first; 55 votes on Jellyfin's tracker for the second. S to M.
+- "Hide spoilers" for unwatched episodes on every surface (D3; proposed P15-12). 120 votes on Jellyfin's tracker, 118 and 49 on Plex, asked since 2012. M.
+- A sleep timer with "Stop after this episode" (D4; proposed P15-13). Weak evidence; it also answers "Still watching?" as a choice the viewer makes. S.
+- "Watching with": a second signed-in account is marked as having watched too (D5; proposed P16-12). 164 votes on Jellyfin's tracker; no app found does it. Waits for P16-11; writes to a second account, so it needs a plan and a `guardian` review. M.
+- Label audio-description and hard-of-hearing tracks, and a "Prefer audio description" setting (D6; proposed P15-14). S.
+- Audit the app with a screen reader and file what it finds (D6; proposed P13-28). Never tried under WebKitGTK. S.
+- A running-time filter for films (D7; proposed P16-13). The problem (time lost choosing) is well measured; this remedy has no evidence. S.
+- "Where you left off" on the series page after a long gap (D8). No demand evidence. S.
+- A setting for the skip step: 5, 10, 15, or 30 seconds (D9; proposed P15-15). 454 votes on Plex. S.
+- A cast strip on the paused player (D10). 39 votes on Jellyfin's tracker. S.
+- Note for "Audio sync offset and dual subtitles": dual subtitles have 134 likes on Infuse's forum and 93 thumbs-up across three Jellyfin clients, none of which has built it (D12).
+- Note for P5-05's spec: caption style settings should show a live sample and be reachable from the player's subtitle menu (a US accessibility rule's checklist; `docs/research/streaming-wishlist.md` W28). P5-05's acceptance is not edited.
+- Note for "Playlists" and "Remember a library's sort and filters": smart playlists have 1,425 votes on Plex and 588 on Jellyfin; they are a server feature, and a remembered filter is the client-side part.
+- Note for the product review's Q9 A (one set of settings per computer): "global defaults across clients" has 260 votes and Jellyfin and Jellyscale both implement a per-account preferences record. Revisit with the TV shell; the answer stands.
+- Note for a "private session": "anonymous, guest access" has 88 votes on Jellyfin's tracker.
+- Jellyscale requests for the coordinator to file if the owner agrees (D11), in order: one session counting for more than one account; a flag on audio-description and hard-of-hearing tracks; a loudness figure per audio track; a running-time range on item queries; Recap and Preview as segment types. Wording is in the proposal §8.
