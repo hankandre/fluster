@@ -2375,10 +2375,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "Implemented on task/P13-26: Menu primitive, useAnchoredPlace, MODAL_LAYER, gallery Menu section, scenarios 81b/81c. Verify and design review pending."
+          "passes": true,
+          "evidence": "Menu primitive, useAnchoredPlace, MODAL_LAYER, gallery Menu section, scenarios 81b/81c on task/P13-26. pnpm check exit 0 (157 files, 2036 tests; cargo 183 passed). pnpm test:e2e 148 passed, 1 failed: e2e/tv/detail.spec.ts:61 fails 2 of 5 with --repeat-each 5 on origin/main too (pre-existing flake). pnpm test:visual 336 passed. Fresh-context design review found no violations."
         },
         {
           "id": "P13-23",
