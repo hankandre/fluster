@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useSession, type SessionGateway } from "../../app/session";
 import { DISCOVERED_ID_MISMATCH_MESSAGE, sameServerId, type DiscoveredServer } from "../../domain/server-discovery";
 import { Button, Dialog, InlineError, TextField } from "../shared/ui";
+import { useTvForm } from "../shared/use-tv-form";
 import { ServerList } from "./server-discovery";
 import { isAbort, signInErrorCopy } from "./sign-in-errors";
 import { chooseSignInStage, type Stage } from "./sign-in-stage";
@@ -17,6 +18,10 @@ interface Pending {
 export function ServerStep({ search, onConnected }: { search?: ServerSearch; onConnected: (stage: Stage) => void }) {
   const session = useSession();
   const [serverUrl, setServerUrl] = useState("");
+  const tv = useTvForm();
+  // TV form with discovery: the form stays hidden behind "Enter address" (DESIGN.md 7.20).
+  const [addressShown, setAddressShown] = useState(false);
+  const showForm = !(tv && search) || addressShown;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [pending, setPending] = useState<Pending | undefined>(undefined);
@@ -83,12 +88,19 @@ export function ServerStep({ search, onConnected }: { search?: ServerSearch; onC
 
   return (
     <StepShell title="Where is your Jellyfin server?">
-      {search && <ServerList search={search} busy={busy} onChoose={choose} />}
-      <form className="sign-in-form" onSubmit={submit}>
+      {search && <ServerList search={search} busy={busy} onChoose={choose} focusOnResult={tv && !addressShown} />}
+      {!showForm && (
+        <div className="sign-in-actions">
+          <span />
+          <Button variant="secondary" onClick={() => setAddressShown(true)}>Enter address</Button>
+        </div>
+      )}
+      {showForm && <form className="sign-in-form" onSubmit={submit}>
         {search && <p className="sign-in-note">Or enter its address</p>}
         <TextField
           label="Server URL"
           type="url"
+          enterKeyHint="go"
           autoFocus
           required
           placeholder="https://jellyfin.example.com"
@@ -103,7 +115,7 @@ export function ServerStep({ search, onConnected }: { search?: ServerSearch; onC
             {busy ? "Connecting…" : "Connect"}
           </Button>
         </div>
-      </form>
+      </form>}
       {pending && (
         <UnencryptedDialog
           pending={pending}

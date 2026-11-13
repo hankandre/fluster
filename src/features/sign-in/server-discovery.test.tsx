@@ -325,3 +325,36 @@ describe("Servers on this network", () => {
     expect(screen.getByTestId("sign-in-origin")).toHaveTextContent("Signing in to https://media.test");
   });
 });
+
+describe("Servers on this network in the TV form", () => {
+  afterEach(() => {
+    delete document.documentElement.dataset.form;
+  });
+
+  it("opens on the first found server and reveals the address field behind Enter address", async () => {
+    document.documentElement.dataset.form = "tv";
+    renderView(fakeDiscovery(found([LAN_SERVER])));
+    await findServers();
+    expect(screen.getByRole("button", { name: /Living Room/ })).toHaveFocus();
+    expect(screen.queryByLabelText("Server URL")).not.toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Enter address" }));
+    });
+    expect(screen.getByLabelText("Server URL")).toHaveFocus();
+    expect(screen.getByLabelText("Server URL")).toHaveAttribute("enterkeyhint", "go");
+  });
+
+  it("opens on Search again when no server answered", async () => {
+    document.documentElement.dataset.form = "tv";
+    renderView(fakeDiscovery(found([])));
+    await findServers();
+    expect(screen.getByRole("button", { name: "Search again" })).toHaveFocus();
+  });
+
+  it("shows the field at once without discovery", () => {
+    document.documentElement.dataset.form = "tv";
+    renderView(undefined);
+    expect(screen.getByLabelText("Server URL")).toHaveFocus();
+    expect(screen.queryByRole("button", { name: "Enter address" })).not.toBeInTheDocument();
+  });
+});

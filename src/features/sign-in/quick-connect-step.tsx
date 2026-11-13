@@ -3,6 +3,7 @@ import type { SessionGateway } from "../../app/session";
 import { Button, InlineError } from "../shared/ui";
 import { QuickConnectCode } from "./quick-connect-code";
 import { isAbort, signInErrorCopy } from "./sign-in-errors";
+import { useEscapeKey } from "../use-escape-key";
 import { StepShell } from "./step-shell";
 
 export const QUICK_CONNECT_POLL_MS = 2_000;
@@ -109,6 +110,8 @@ export function QuickConnectStep({
     controller.current?.abort();
     onCancel();
   }
+  // Escape outside a field is "Change server" (DESIGN.md 9).
+  useEscapeKey(cancel);
 
   return (
     <StepShell title="Approve this code in Jellyfin" origin={gateway.origin} titleRef={title}>
