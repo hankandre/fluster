@@ -29,7 +29,7 @@ Relayed by the coordinating agent. Every answer is the recommended option in §7
 - Two things changed from §5.2 as first written. The order is stated as "the Favorites view's own order" only, because whether the server reports when a title was favourited is unverified and the row must agree with the view. And the task depends on P16-01 for its fixture.
 - With this row Home's fixed order is: the hero, Continue watching, Favorites, "Because you watched", then "Latest in {library}".
 
-### Not applied: the edit to P8-01 (D4 B)
+### Applied: the edit to P8-01 (D4 B)
 
 P8-01 is an existing task, and the `rules` in `tasks/prd.json` allow an agent to change only `status`, `owner`, `passes`, and `evidence`. The owner approved D4 B in the coordinating agent's session, so that agent applies the change. What this pass proposed to it:
 

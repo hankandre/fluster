@@ -87,7 +87,7 @@ Research, verdicts, and the eight open decisions are in `docs/research/streaming
 
 - Tasks now: P3-28 (measure startup and the gap between episodes) and P15-09 (the Favorites row on Home).
 - The owner answered D1 to D8 on 2026-11-12, all as recommended; the answers are at the top of the proposal.
-- Waiting for the coordinating agent: moving P8-01 into the TV shell's phase (D4 B). It edits an existing task.
+- Applied by the coordinating agent: moving P8-01 into the TV shell's phase (D4 B). It edits an existing task.
 - When P3-28 passes, its numbers go back to the owner with proposed targets for `PRODUCT.md` (D3 B), and they settle D7.
 - Note for P15-06's spec (D5 A): playback speed resets to normal for every title, and the range is 0.5x to 2x.
 

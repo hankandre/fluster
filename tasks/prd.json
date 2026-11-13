@@ -3227,33 +3227,11 @@
     {
       "id": "P8",
       "name": "Connected (M5)",
-      "goal": "Fluster is a cast target, joins SyncPlay, and downloads originals for offline play.",
+      "goal": "Fluster joins SyncPlay and downloads originals for offline play.",
       "exit": [
         "All P8 tasks pass"
       ],
       "tasks": [
-        {
-          "id": "P8-01",
-          "title": "Act as a Jellyfin cast target",
-          "domain": "Realtime & Remote Control",
-          "model": "opus",
-          "skill": "jellyfin-api",
-          "human": false,
-          "depends_on": [
-            "P3-15"
-          ],
-          "acceptance": [
-            "A plan exists before implementation",
-            "Capabilities are registered",
-            "Remote Play routes through negotiation",
-            "Remote Playstate commands control playback"
-          ],
-          "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
-        },
         {
           "id": "P8-02",
           "title": "Join SyncPlay groups",
@@ -3322,6 +3300,29 @@
             "Android TV plays a sample with direct play and a converted sample over HLS with header authentication",
             "The prototype shows hardware decoding is active during direct play and direct stream (for example mpv reports a MediaCodec hwdec)",
             "A decision record chooses the TV and mobile shell"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P8-01",
+          "title": "Act as a Jellyfin cast target",
+          "domain": "Realtime & Remote Control",
+          "model": "opus",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P3-15",
+            "P9-01"
+          ],
+          "acceptance": [
+            "A plan exists before implementation",
+            "Capabilities are registered",
+            "Remote Play routes through negotiation",
+            "Remote Playstate commands control playback"
           ],
           "verify": "pnpm check",
           "status": "todo",
