@@ -79,7 +79,7 @@ async function hlsGet(ctx: HlsContext, rawUrl: string): Promise<Uint8Array | und
     ctx.fail("I2", `conversion request ${entry.url}: ${check.reason}`);
     return undefined;
   }
-  const response = await fetch(rawUrl, { headers: { Authorization: ctx.plan.authorization }, redirect: "manual" });
+  const response = await fetch(rawUrl, { headers: { Authorization: ctx.gateway.authorizationHeader() }, redirect: "manual" });
   const body = new Uint8Array(await response.arrayBuffer());
   entry.status = response.status;
   entry.contentType = response.headers.get("content-type") ?? undefined;

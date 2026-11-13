@@ -18,7 +18,6 @@ const hls: PlaybackPlan = {
   itemId: "one",
   title: "One",
   streamUrl: "https://media.test/videos/one/master.m3u8",
-  authorization: 'MediaBrowser Token="secret"',
   mediaSourceId: "source",
   playSessionId: "session",
   startPositionTicks: 0,
@@ -54,6 +53,7 @@ function setup(planned: PlaybackPlan, answers: (() => Promise<ServerPlayMethod |
     reportStart: vi.fn(async () => undefined),
     reportProgress: vi.fn(async () => undefined),
     reportStopped: vi.fn(async () => undefined),
+    authorizationHeader: () => "test-header",
     stopActiveEncoding: vi.fn(async () => undefined),
     sessionPlayMethod: vi.fn(async () => (queue.shift() ?? (async () => undefined))()),
   } satisfies PlaybackGateway;

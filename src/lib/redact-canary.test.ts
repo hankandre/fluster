@@ -210,7 +210,6 @@ function planWith(playSessionId: string): PlaybackPlan {
     itemId: "one",
     title: "One",
     streamUrl: `${SERVER}/Videos/1/stream?api_key=${CANARY}`,
-    authorization: `MediaBrowser Client="Fluster", Token="${CANARY}"`,
     mediaSourceId: "source",
     playSessionId,
     startPositionTicks: 0,
@@ -270,6 +269,7 @@ describe("redaction canary: PlaybackCoordinator", () => {
         reportStart: vi.fn(async () => undefined),
         reportProgress: vi.fn(async () => undefined),
         reportStopped: vi.fn(async () => undefined),
+        authorizationHeader: () => "test-header",
         stopActiveEncoding: vi.fn(async () => undefined),
       } as PlaybackGateway;
       const player = new FakePlayer();
@@ -295,6 +295,7 @@ describe("redaction canary: PlaybackCoordinator", () => {
         reportStart: vi.fn(async () => { throw reportError; }),
         reportProgress: vi.fn(async () => { throw reportError; }),
         reportStopped: vi.fn(async () => { throw reportError; }),
+        authorizationHeader: () => "test-header",
         stopActiveEncoding: vi.fn(async () => undefined),
       } as PlaybackGateway;
       const player = new FakePlayer();
@@ -324,6 +325,7 @@ describe("redaction canary: PlaybackCoordinator", () => {
         reportStart: vi.fn(async () => undefined),
         reportProgress: vi.fn(async () => undefined),
         reportStopped: vi.fn(async () => undefined),
+        authorizationHeader: () => "test-header",
         stopActiveEncoding: vi.fn(async () => undefined),
       } as PlaybackGateway;
       const player = new FakePlayer();

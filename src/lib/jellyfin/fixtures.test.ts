@@ -119,8 +119,8 @@ describe.each(versions)("PlaybackInfo fixtures from Jellyfin %s", (version) => {
     expect(url.pathname).toBe("/Videos/item-h264/stream");
     expect(url.searchParams.get("Static")).toBe("true");
     expect(result.streamUrl).not.toMatch(/api_?key|token/i);
-    expect(result.authorization).toMatch(/^MediaBrowser /);
-    expect(result.authorization).toContain('Token="test-token"');
+    expect(result).not.toHaveProperty("authorization");
+    expect(JSON.stringify(result)).not.toContain("test-token");
   });
 
   it("maps the external subtitle and its DeliveryUrl", async () => {

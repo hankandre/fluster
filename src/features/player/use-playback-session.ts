@@ -71,6 +71,7 @@ function playbackGatewayFor(
     reportProgress: (plan, snapshot, signal) => gateway.reportProgress(plan, snapshot, signal),
     reportStopped: (plan, snapshot, signal, failed) => gateway.reportStopped(plan, snapshot, signal, failed),
     stopActiveEncoding: (playSessionId, signal) => gateway.stopActiveEncoding(playSessionId, signal),
+    authorizationHeader: () => gateway.authorizationHeader(),
     sessionPlayMethod: (plan, signal) => gateway.sessionPlayMethod(plan, signal),
   };
 }
