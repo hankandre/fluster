@@ -1,8 +1,49 @@
 # Streaming loves: what to adopt from what viewers praise
 
-Status: **Proposed 2026-11-12. Eight decisions wait for the owner (§7).** One task that needs no owner choice is in `tasks/prd.json` (P3-28). Nothing else is applied. The pull request that carries this is not set to merge by itself.
+Status: **D1 to D8 answered 2026-11-12, all as recommended.** The owner's answers are in "Answers" below, as relayed by the coordinating agent. The tasks they settle are in `tasks/prd.json` (P3-28, P15-09). One answer, D4 B, changes an existing task (P8-01) and is not applied by this pass; the coordinating agent applies it. Sections 1 to 8 keep the original proposal text for the record. The owner merging the pull request is the approval of the relayed answers.
 
 This is a Fable 5.2 product-review pass under the `AGENTS.md` "Tasks" rule. It triages `tasks/backlog.md` against new research and recommends. The owner decides.
+
+## Answers (owner, 2026-11-12)
+
+Relayed by the coordinating agent. Every answer is the recommended option in §7.
+
+| # | Answer | Applied in |
+|---|---|---|
+| D1 | B: one Favorites row on Home, directly after Continue watching and before "Because you watched", up to 12 cards and a "See all" tile, hidden when empty. | **P15-09**, added |
+| D2 | A: no watch history for now. | `tasks/backlog.md` (the entry stays) |
+| D3 | B: after P3-28 reports, its numbers come back to the owner with proposed targets for `PRODUCT.md` success measures. No target is set until then. | P3-28 (unchanged; its item 7 already says so); `tasks/backlog.md` |
+| D4 | B: P8-01 becomes part of the TV shell's plan. | **Not applied here.** See below. |
+| D5 | A: playback speed resets to normal for every title; the range is 0.5x to 2x. | A note for P15-06's spec, below and in `tasks/backlog.md`. P15-06's acceptance is not edited. |
+| D6 | A: no dismiss control; wait for the server-side profile. | `tasks/backlog.md` (the entry stays) |
+| D7 | A: wait for P3-28's measurement of the gap between episodes, then decide. | `tasks/backlog.md` (the entry stays) |
+| D8 | A: carry four items into Jellyscale's backlog, in this order after Next Up: media segments, Quick Connect, trickplay, the session Capabilities routes. | The Jellyscale carry-over list in `tasks/backlog.md`. The owner carries it; Fluster has no task. |
+
+### Task added after the answers
+
+**P15-09. Show Favorites as a row on Home** (D1 B). Priority: medium. Size S. Sonnet, `jellyfin-api`. Domain: Catalog.
+
+- **Place:** phase P15, directly after P15-01, which builds the Favorites view the row's "See all" tile opens.
+- **Depends on:** P15-01 (the view), P16-02 (Home's fixed order and the merged Continue watching row it follows), P16-01 (the contract-fixture set it adds to).
+- **Acceptance:** in `tasks/prd.json`, which is the source of truth. It is §5.2's text with the owner's choices filled in: the place (after Continue watching, before "Because you watched"), 12 cards, and the "See all" tile.
+- Two things changed from §5.2 as first written. The order is stated as "the Favorites view's own order" only, because whether the server reports when a title was favourited is unverified and the row must agree with the view. And the task depends on P16-01 for its fixture.
+- With this row Home's fixed order is: the hero, Continue watching, Favorites, "Because you watched", then "Latest in {library}".
+
+### Not applied: the edit to P8-01 (D4 B)
+
+P8-01 is an existing task, and the `rules` in `tasks/prd.json` allow an agent to change only `status`, `owner`, `passes`, and `evidence`. The owner approved D4 B in the coordinating agent's session, so that agent applies the change. What this pass proposed to it:
+
+1. Move the P8-01 object, unchanged, from phase P8 ("Connected") to phase P9 ("Living room and mobile"), directly after P9-01.
+2. Add `"P9-01"` to the end of its `depends_on`, which becomes `["P3-15", "P9-01"]`.
+3. Leave its acceptance as it is. Whether a phone can also send typed text to Fluster, which is the survey's reason for wanting a phone as the remote, depends on which remote-control commands Jellyfin's apps send. That is unverified, and it is a question for P8-01's plan, which its first acceptance item already requires.
+
+### A note for P15-06's spec (D5 A)
+
+When P15-06 is specified: playback speed resets to normal at the start of every title, including the next episode of a series, and the range offered is 0.5x to 2x. The owner chose this on 2026-11-12 (D5 A). P15-06's acceptance is unchanged; its spec records the answer.
+
+### What comes back to the owner (D3 B)
+
+When P3-28 passes, its report (`docs/research/startup-timing.md`) goes to the owner with a proposed line for each measure in `PRODUCT.md` "Success measures": launch to a usable Home, Resume to first frame, and the gap between episodes. Two seconds is the outside reference (Loves L2). `PRODUCT.md` changes only after the owner approves the numbers. The same report settles D7.
 
 ## The owner's request (2026-11-12)
 
@@ -224,7 +265,7 @@ Added to the backlog by this pass: see the "Loves" section at the end of `tasks/
 
 ## 7. Decision list
 
-Eight decisions in two batches of four. Each stands alone. "Rec" is a recommendation; the owner decides.
+D1 to D8 were answered on 2026-11-12; see "Answers" at the top. Their text is kept as asked. Eight decisions in two batches of four. Each stands alone. "Rec" is a recommendation; the owner decides.
 
 ### Batch 1: Home and what it measures
 
