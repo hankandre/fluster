@@ -1,0 +1,218 @@
+@layer reset, tokens, base, components, features, focus;
+
+@layer features {
+  /* The Settings shell (DESIGN.md 7.18): a section list on the left, the selected panel on the right. */
+  .settings-layout {
+    display: grid;
+    grid-template-columns: var(--settings-nav-w) minmax(0, var(--settings-panel-max));
+    gap: var(--space-7);
+    align-items: start;
+  }
+
+  .settings-tabs {
+    display: grid;
+    gap: var(--space-1);
+    /* Room inside the box for the focus ring. */
+    padding: var(--space-2);
+    margin: calc(var(--space-2) * -1);
+  }
+
+  .settings-tab,
+  .settings-section-button {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    box-sizing: border-box;
+    min-block-size: var(--hit-min);
+    padding: 0 var(--space-4);
+    border: 0;
+    border-radius: var(--radius-control);
+    background: transparent;
+    color: var(--text-2);
+    font: var(--type-label);
+    text-align: start;
+    transition: color var(--dur-quick) var(--ease-out), background-color var(--dur-quick) var(--ease-out);
+  }
+
+  .settings-tab:hover,
+  .settings-section-button:hover {
+    color: var(--text-1);
+    background: var(--surface-2);
+  }
+
+  .settings-tab[aria-selected="true"] {
+    color: var(--text-1);
+  }
+
+  /* The selected bar is a shape, so selection never rests on colour alone. */
+  .settings-tab[aria-selected="true"]::before {
+    content: "";
+    position: absolute;
+    inset-block: var(--space-2);
+    inset-inline-start: 0;
+    inline-size: 2px;
+    border-radius: var(--radius-pill);
+    background: var(--art-accent);
+  }
+
+  .settings-section-button {
+    color: var(--text-1);
+    background: var(--surface-1);
+  }
+
+  .settings-section-button svg {
+    flex: none;
+    color: var(--text-2);
+  }
+
+  .settings-sections,
+  .settings-compact {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .settings-compact {
+    gap: var(--space-4);
+  }
+
+  .settings-panel {
+    min-inline-size: 0;
+  }
+
+  .settings-section {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .settings-section-title {
+    margin: 0;
+    font: var(--type-heading);
+    color: var(--text-1);
+  }
+
+  .settings-intro {
+    margin: 0;
+    max-inline-size: var(--measure);
+    color: var(--text-2);
+    font: var(--type-body);
+  }
+
+  .settings-rows {
+    display: grid;
+    border-radius: var(--radius-sheet);
+    background: var(--surface-1);
+  }
+
+  .settings-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-5);
+    box-sizing: border-box;
+    min-block-size: var(--settings-row-h);
+    padding: var(--space-3) var(--space-5);
+    border-block-end: 1px solid var(--line);
+    transition: background-color var(--dur-quick) var(--ease-out);
+  }
+
+  .settings-row:first-child {
+    border-start-start-radius: var(--radius-sheet);
+    border-start-end-radius: var(--radius-sheet);
+  }
+
+  .settings-row:last-child {
+    border-block-end: 0;
+    border-end-start-radius: var(--radius-sheet);
+    border-end-end-radius: var(--radius-sheet);
+  }
+
+  .settings-row:has(:focus-visible) {
+    background: var(--surface-2);
+  }
+
+  .settings-row-text {
+    display: grid;
+    gap: var(--space-1);
+    min-inline-size: 0;
+  }
+
+  .settings-row-label {
+    color: var(--text-1);
+    font: var(--type-label);
+  }
+
+  .settings-row-description {
+    color: var(--text-2);
+    font: var(--type-body);
+    overflow-wrap: anywhere;
+  }
+
+  .settings-row-value {
+    flex: none;
+    color: var(--text-1);
+    font: var(--type-label);
+  }
+
+  .settings-row-control {
+    flex: none;
+  }
+
+  /* The whole row is the target: the control's ::after covers the row. */
+  .settings-row-control > button::after,
+  .settings-row-control > .ui-picker > button::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+
+  .settings-row-control .ui-picker {
+    position: static;
+  }
+
+  .settings-row-control > button,
+  .settings-row-control > .ui-picker > button {
+    position: static;
+  }
+
+  .settings-row[aria-disabled="true"] .settings-row-label {
+    color: var(--text-3);
+  }
+
+  .settings-mono {
+    font: var(--type-mono);
+  }
+
+  .settings-diagnostics {
+    margin: 0;
+    padding: var(--space-4);
+    border-radius: var(--radius-control);
+    background: var(--surface-1);
+    color: var(--text-1);
+    font: var(--type-mono);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    user-select: text;
+  }
+
+  .settings-page {
+    padding: var(--space-6) var(--gutter) var(--space-8);
+  }
+
+  .settings-page-title {
+    margin: 0 0 var(--space-6);
+    font: var(--type-title);
+  }
+
+  .settings-alert {
+    margin-block-start: var(--space-3);
+  }
+
+  @media (max-width: 719px) {
+    .settings-layout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+}

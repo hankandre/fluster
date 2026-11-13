@@ -20,6 +20,7 @@ export { OptionList, type OptionListOption } from "./option-list";
 export { Picker, type PickerOption } from "./picker";
 export { SegmentedTabPanel, SegmentedTabs, type TabItem } from "./segmented-tabs";
 export { ProgressRing } from "./progress-ring";
+export { SettingsPage, SettingsRow, SettingsSection, useSettingsRow, type SettingsSectionItem } from "./settings";
 export { Skeleton } from "./skeleton";
 export { TextField, type TextFieldType } from "./text-field";
 export { ToastProvider, useToast, type ToastInput, type ToastTone } from "./toast";
