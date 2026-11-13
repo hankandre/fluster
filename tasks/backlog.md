@@ -85,14 +85,26 @@ Each line points at its full text in `docs/design/rework-plan.md` ("Decision log
 
 Research, verdicts, and the eight open decisions are in `docs/research/streaming-ux-loves.md` and `docs/plans/proposals/streaming-loves.md`.
 
-- Task now: P3-28 (measure startup and the gap between episodes).
-- Waiting for the owner: D1 to D8 in the proposal.
+- Tasks now: P3-28 (measure startup and the gap between episodes) and P15-09 (the Favorites row on Home).
+- The owner answered D1 to D8 on 2026-11-12, all as recommended; the answers are at the top of the proposal.
+- Waiting for the coordinating agent: moving P8-01 into the TV shell's phase (D4 B). It edits an existing task.
+- When P3-28 passes, its numbers go back to the owner with proposed targets for `PRODUCT.md` (D3 B), and they settle D7.
+- Note for P15-06's spec (D5 A): playback speed resets to normal for every title, and the range is 0.5x to 2x.
 
-- A Favorites row on Home (D1; proposed P15-09). A pinned watch list came second of 13 features in a survey of 3,000; Favorites is the watch list (Q10 A). S.
-- A "Watched" view of finished titles, newest first (D2; proposed P15-10). 835 votes on Jellyfin's tracker; no usage data. M.
-- "Not this one" on a suggested title (D6; proposed P16-10). Where the dismissal is kept is the open question. S to M.
-- Prepare the next episode during the Up Next countdown, direct play only (D7; proposed P3-29). 223 votes; decide after P3-28 measures the gap. Touches Playback Negotiation. M.
-- Carry P8-01 (cast target) into the TV shell's plan so a phone running any Jellyfin app can be the remote and keyboard (D4). Third of 13 features in the same survey. No new work until the owner decides.
+**Jellyscale carry-over list (D8 A, owner, 2026-11-12).** For the owner to carry into Jellyscale's own backlog. It extends the list in `docs/plans/proposals/discovery-and-profiles.md` §3.4 A, whose first item is `GET /Shows/NextUp`. After Next Up, in this order:
+
+1. Media segments (`GET /MediaSegments/{itemId}`), from operator data or chapter markers as Jellyscale already decided. Skip intro has no data without it.
+2. Quick Connect (`/QuickConnect/Enabled` is a stub). Fluster's sign-in leads with it.
+3. Trickplay, for scrub previews.
+4. `POST /Sessions/Capabilities` and `/Sessions/Capabilities/Full` (stubs), for remote control from a phone (P8-01).
+
+Status of each is from `compat/endpoints.yaml` and `docs/status.md` at `93a0f3f`.
+
+- ~~A Favorites row on Home (D1; proposed P15-09). A pinned watch list came second of 13 features in a survey of 3,000; Favorites is the watch list (Q10 A). S.~~ Taken by P15-09.
+- A "Watched" view of finished titles, newest first (D2; proposed P15-10). 835 votes on Jellyfin's tracker; no usage data. M. The owner chose "not for now" on 2026-11-12 (D2 A).
+- "Not this one" on a suggested title (D6; proposed P16-10). Where the dismissal is kept is the open question. S to M. The owner chose to wait for the server-side profile (D6 A).
+- Prepare the next episode during the Up Next countdown, direct play only (D7; proposed P3-29). 223 votes; decide after P3-28 measures the gap. Touches Playback Negotiation. M. The owner chose to wait for the measurement (D7 A).
+- Carry P8-01 (cast target) into the TV shell's plan so a phone running any Jellyfin app can be the remote and keyboard (D4). Third of 13 features in the same survey. The owner chose this on 2026-11-12 (D4 B); the coordinating agent applies the move.
 - Jellyscale notes for the test pass and for the owner's carry-over list (D8): media segments, Quick Connect, and trickplay are "not built", and `/Sessions/Capabilities` and `/Sessions/Capabilities/Full` are stubs (`compat/endpoints.yaml` and `docs/status.md` at `93a0f3f`). Skip intro, sign-in by code, scrub previews, and remote control depend on them.
 - Lead the phone shell's task list with offline downloads when that list is written: the most-voted Jellyfin client request (1,827). Not a reason to move P8-03 on the desktop. Note only.
 - Note for "Let the viewer reorder or hide Home rows": 47% of 3,000 surveyed viewers would "absolutely" use hiding rows they do not use; the rows they were shown are promotional ones.
