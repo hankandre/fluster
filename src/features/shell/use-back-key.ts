@@ -7,11 +7,15 @@ const HOME_HASH = "#/next/home";
 export const MODAL_LAYER = '[role="dialog"][aria-modal="true"], [role="alertdialog"], .ui-picker-list[role="listbox"]';
 const NAV_CURRENT = 'nav[aria-label="Main"] [aria-current="page"], nav[aria-label="Main"] [data-roving-item][tabindex="0"]';
 
-// True once this tab has changed the hash, so history.back() stays inside the app.
+// True once this tab has pushed a history entry, so history.back() stays inside the app. A replace
+// (first-load normalisation, redirects) fires hashchange too but leaves history.length unchanged.
 let navigatedInApp = false;
+let lastHistoryLength = typeof window !== "undefined" ? window.history.length : 0;
 if (typeof window !== "undefined") {
   window.addEventListener("hashchange", () => {
-    navigatedInApp = true;
+    const length = window.history.length;
+    if (length > lastHistoryLength) navigatedInApp = true;
+    lastHistoryLength = length;
   });
 }
 

@@ -62,13 +62,35 @@ describe("useBackKey", () => {
     expect(content).toHaveFocus();
   });
 
-  it("goes back on a non-root screen when the tab navigated inside the app", () => {
-    window.location.hash = "#/next/item/abc";
+  it("goes back on a non-root screen when the tab navigated inside the app", async () => {
+    vi.resetModules();
+    const fresh = await import("./use-back-key");
     const back = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
-    render(<Probe />);
-    window.dispatchEvent(new HashChangeEvent("hashchange"));
-    fireEvent.keyDown(screen.getByRole("button", { name: "Content" }), { key: "Escape" });
+    function Fresh() {
+      fresh.useBackKey();
+      return <button type="button">Content</button>;
+    }
+    render(<Fresh />);
+    window.location.hash = "#/next/item/abc";
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    fireEvent.keyDown(screen.getByRole("button"), { key: "Escape" });
     expect(back).toHaveBeenCalled();
+  });
+
+  it("goes Home when the only hash changes were replaces such as redirects", async () => {
+    vi.resetModules();
+    const fresh = await import("./use-back-key");
+    const back = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
+    function Fresh() {
+      fresh.useBackKey();
+      return <button type="button">Content</button>;
+    }
+    render(<Fresh />);
+    window.location.replace("#/next/item/abc");
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    fireEvent.keyDown(screen.getByRole("button"), { key: "Escape" });
+    expect(back).not.toHaveBeenCalled();
+    expect(window.location.hash).toBe("#/next/home");
   });
 
   it("goes Home on a non-root screen with no in-app history", async () => {
