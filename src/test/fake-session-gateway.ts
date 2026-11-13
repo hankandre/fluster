@@ -18,6 +18,7 @@ export function fakeSessionGateway(overrides: Partial<SessionGateway> = {}): Ses
     pollQuickConnect: vi.fn(),
     authenticateWithQuickConnect: vi.fn(),
     logout: vi.fn().mockResolvedValue(undefined),
+    currentUserName: vi.fn(() => "Tester"),
     userViews: vi.fn(),
     resumeItems: vi.fn(),
     nextUp: vi.fn(),

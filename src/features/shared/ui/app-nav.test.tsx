@@ -42,6 +42,20 @@ describe("AppNav", () => {
     expect(current()).toEqual(expected);
   });
 
+  it("draws the user's initial as a label inside the Settings link, hidden from assistive technology", () => {
+    render(<AppNav libraries={LIBRARIES} hash="#/next/home" userInitial="T" />);
+    const settings = screen.getByRole("link", { name: "Settings" });
+    const initial = settings.querySelector(".app-nav-initial");
+    expect(initial).toHaveTextContent("T");
+    expect(initial).toHaveAttribute("aria-hidden", "true");
+    expect(screen.getByRole("link", { name: "Settings" })).toHaveAccessibleName("Settings");
+  });
+
+  it("draws no initial without one", () => {
+    renderNav("#/next/home");
+    expect(document.querySelector(".app-nav-initial")).toBeNull();
+  });
+
   it("never marks the wordmark current", () => {
     renderNav("#/next/home");
     expect(screen.getByRole("link", { name: "Fluster" })).not.toHaveAttribute("aria-current");

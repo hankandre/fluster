@@ -25,6 +25,10 @@ interface PickerProps {
   appearance?: "field" | "pill";
   // Makes the trigger an item of the surrounding roving row.
   rovingItem?: boolean;
+  // The id of text that describes the trigger, such as a row's description.
+  describedBy?: string;
+  // False leaves ArrowUp and ArrowDown on the closed trigger to the surrounding column. Enter and Space still open it.
+  openOnArrow?: boolean;
 }
 
 const TYPEAHEAD_RESET_MS = 700;
@@ -53,7 +57,7 @@ export function typeaheadIndex(options: PickerOption[], current: number, typed: 
 
 // A menu button that opens a listbox (ARIA APG). Focus moves onto the options while open;
 // Escape closes and returns focus to the trigger. It never renders a native select.
-export function Picker({ label, hideLabel, options, value, onChange, placeholder = "Choose", disabled, appearance = "field", rovingItem }: PickerProps) {
+export function Picker({ label, hideLabel, options, value, onChange, placeholder = "Choose", disabled, appearance = "field", rovingItem, describedBy, openOnArrow = true }: PickerProps) {
   const id = useId();
   const labelId = `${id}-label`;
   const triggerId = `${id}-trigger`;
@@ -128,7 +132,7 @@ export function Picker({ label, hideLabel, options, value, onChange, placeholder
 
   function onTriggerKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
-    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    if (openOnArrow && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
       event.preventDefault();
       if (open) return;
       openAt(undefined);
@@ -199,6 +203,7 @@ export function Picker({ label, hideLabel, options, value, onChange, placeholder
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-labelledby={`${labelId} ${triggerId}`}
+        aria-describedby={describedBy}
         disabled={disabled}
         {...(rovingItem ? { "data-roving-item": "" } : {})}
         onClick={() => (open ? close(false) : openAt(undefined))}

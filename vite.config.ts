@@ -1,8 +1,10 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { readFileSync } from "node:fs";
 
 const host = process.env.TAURI_DEV_HOST;
+const { version } = JSON.parse(readFileSync("package.json", "utf8")) as { version: string };
 
 // Only the e2e dev server may select the test engine. A build with the flag,
 // from the shell or a .env file, would ship it in place of the real engine.
@@ -18,6 +20,7 @@ export default defineConfig(({ command, mode }) => {
   assertNoTestEngine(command, mode);
   return {
     plugins: [react(), tailwindcss()],
+    define: { __APP_VERSION__: JSON.stringify(version) },
     clearScreen: false,
     server: {
       port: 1420,

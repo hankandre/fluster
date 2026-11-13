@@ -35,8 +35,9 @@ function overflowOf(list: HTMLElement): Overflow {
 }
 
 // The main navigation bar (DESIGN.md 7.1). Presentational: the caller supplies the libraries.
-// `undefined` libraries (pending or failed) leaves only the fixed entries.
-export function AppNav({ libraries, hash }: { libraries: NavLibrary[] | undefined; hash: string }) {
+// `undefined` libraries (pending or failed) leaves only the fixed entries. `userInitial` is a label only, drawn
+// inside the Settings link until the account menu (P13-21) gives it a control of its own.
+export function AppNav({ libraries, hash, userInitial }: { libraries: NavLibrary[] | undefined; hash: string; userInitial?: string }) {
   const current = currentNavEntry(hash);
   const entries = [
     { key: "home", href: HOME_HASH },
@@ -110,6 +111,7 @@ export function AppNav({ libraries, hash }: { libraries: NavLibrary[] | undefine
       </div>
       <a className="app-nav-entry app-nav-settings" href={SETTINGS_HASH} aria-label="Settings" data-roving-item="" {...aria("settings")}>
         <Settings aria-hidden="true" size={20} />
+        {userInitial ? <span className="app-nav-initial" aria-hidden="true">{userInitial}</span> : null}
       </a>
     </nav>
   );

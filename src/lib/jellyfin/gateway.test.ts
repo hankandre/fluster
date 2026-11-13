@@ -623,6 +623,15 @@ describe("JellyfinGateway device identity and logout", () => {
     await expect(gateway.latest()).rejects.toThrow("Sign in");
   });
 
+  it("exposes the display name only while signed in", async () => {
+    const before = new JellyfinGateway("https://media.test", new FakeTransport(), "install-1");
+    expect(before.currentUserName()).toBeUndefined();
+    const { gateway } = await loginWith("install-1", "server-1", "Louise");
+    expect(gateway.currentUserName()).toBe("Louise");
+    await gateway.logout();
+    expect(gateway.currentUserName()).toBeUndefined();
+  });
+
   it("exposes the signed-in authorization header for the server socket only while signed in", async () => {
     const { gateway, deviceId } = await loginWith("install-1", "server-1", "Louise");
     const header = gateway.authorizationHeader();
@@ -783,6 +792,7 @@ describe("JellyfinGateway device identity and logout", () => {
       });
       await gateway.initiateQuickConnect();
       await expect(gateway.authenticateWithQuickConnect("s3cret")).resolves.toEqual({ userId: "user-1", username: "Louise" });
+      expect(gateway.currentUserName()).toBe("Louise");
       const [initiate, authenticate] = transport.requests.slice(-2);
       expect(authenticate).toMatchObject({ method: "POST", url: "/Users/AuthenticateWithQuickConnect", data: { Secret: "s3cret" } });
       expect(authenticate.params).toBeUndefined();

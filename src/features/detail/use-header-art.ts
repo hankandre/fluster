@@ -5,7 +5,7 @@ import { backdropWidth, imageUrlFor, POSTER_IMAGE_WIDTH } from "../card-view";
 import type { DetailHeaderProps } from "../shared/ui";
 import type { ArtSource } from "./art-source";
 import { detailArt } from "./detail-art";
-import { useCompact } from "./use-compact";
+import { useCompact } from "../shared/use-compact";
 
 // Sets the page's ambient art and returns the art shown in the flow of the page: the poster beside the text when
 // there is no backdrop, or the backdrop itself on compact windows.

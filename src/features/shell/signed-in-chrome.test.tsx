@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SessionProvider, useSession, type SessionGateway } from "../../app/session";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
-import { SignedInChrome } from "./signed-in-chrome";
+import { initialOf, SignedInChrome } from "./signed-in-chrome";
 
 afterEach(cleanup);
 
@@ -33,6 +33,21 @@ describe("SignedInChrome", () => {
     await renderChrome(fakeSessionGateway(), false);
     expect(screen.queryByRole("navigation", { name: "Main" })).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Page" })).toBeInTheDocument();
+  });
+
+  it("passes the user's initial to the nav, and none when the name is unknown", async () => {
+    await renderChrome(fakeSessionGateway({ currentUserName: vi.fn(() => "tester") }), true);
+    expect(document.querySelector(".app-nav-initial")).toHaveTextContent("T");
+    cleanup();
+    await renderChrome(fakeSessionGateway({ currentUserName: vi.fn(() => undefined) }), true);
+    expect(document.querySelector(".app-nav-initial")).toBeNull();
+  });
+
+  it("takes the first letter of a name", () => {
+    expect(initialOf("  marc")).toBe("M");
+    expect(initialOf("Émile")).toBe("É");
+    expect(initialOf("")).toBeUndefined();
+    expect(initialOf(undefined)).toBeUndefined();
   });
 
   it("shows the libraries from the gateway", async () => {
