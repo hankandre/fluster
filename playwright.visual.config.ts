@@ -1,9 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// Screenshot harness: output only, never part of `pnpm check` or CI gating.
+// Screenshot harness. CI compares every capture with e2e/visual/baselines/ and
+// fails on any difference; locally, comparing is opt-in (FLUSTER_VISUAL_COMPARE=1).
+// Baselines come only from `pnpm test:visual:accept`, never from a local run.
 // It starts its own dev server (never reuses one: another worktree's server
 // would serve different code). FLUSTER_VISUAL_PORT moves it off 1430.
 const port = Number(process.env.FLUSTER_VISUAL_PORT ?? 1430);
+const compare = Boolean(process.env.CI) || process.env.FLUSTER_VISUAL_COMPARE === "1";
 
 export default defineConfig({
   testDir: "./e2e/visual",
@@ -12,6 +15,12 @@ export default defineConfig({
   fullyParallel: true,
   workers: process.env.CI ? 1 : 4,
   retries: 1,
+  // A capture that differs and then matches on the retry is nondeterminism: fail it in CI.
+  failOnFlakyTests: Boolean(process.env.CI),
+  snapshotPathTemplate: "{testDir}/baselines/{arg}{ext}",
+  // Never write a baseline from a test run (local or CI).
+  updateSnapshots: compare ? "none" : "missing",
+  expect: { toMatchSnapshot: { threshold: 0.2, maxDiffPixels: 0 } },
   timeout: 60_000,
   reporter: "list",
   use: {

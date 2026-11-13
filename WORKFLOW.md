@@ -92,7 +92,7 @@ pnpm test:e2e
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 ```
 
-For visible UI changes also run `pnpm test:visual`. It writes screenshots to `visual-captures/<width>x<height>/` and a contact sheet at `visual-captures/index.html`; attach the affected captures to the PR. It is output only and not part of `pnpm check` or CI.
+For visible UI changes also run `pnpm test:visual`. It writes screenshots to `visual-captures/<width>x<height>/` and a contact sheet at `visual-captures/index.html`; attach the affected captures to the PR. `pnpm check` does not run it. CI compares every capture with `e2e/visual/baselines/` and fails on any difference or missing or extra baseline. When a UI change is intended, run `pnpm test:visual:accept <run-id>` on the failed run, check the changed images in its contact sheet, and commit the baselines in the same PR. Baselines come only from CI (local renders differ); locally, `FLUSTER_VISUAL_COMPARE=1` compares without ever writing. After a rebase onto a branch that changed baselines, accept again from the new run; never hand-merge PNGs. A bump of the Playwright version or the runner image can shift rendering: fix it with a baseline-only PR accepted from CI.
 
 The PR or plan records the commands run and their results. "Tests pass" without output is not evidence. User-visible changes are checked by driving the app (Playwright in browser mode, or the native harness), not only by unit tests.
 

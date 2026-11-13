@@ -12,6 +12,7 @@
     "test:dogfood-redaction": "bash scripts/dogfood-redaction-check.sh",
     "test:e2e": "playwright test",
     "test:visual": "playwright test -c playwright.visual.config.ts && node scripts/build-visual-index.mjs",
+    "test:visual:accept": "bash scripts/accept-visual-baselines.sh",
     "test:no-test-engine": "bash scripts/check-no-test-engine.sh",
     "fixture:up": "docker compose -f tests/integration/docker-compose.yml up -d --wait",
     "fixture:setup": "bash tests/integration/setup-servers.sh",
