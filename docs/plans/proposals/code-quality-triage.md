@@ -1,6 +1,37 @@
 # Code quality review: triage
 
-Status: **proposed 2026-11-13.** Six decisions wait for the owner (§5). Eight tasks are added (§3). Nothing in CI is changed.
+Status: **answered 2026-11-13.** The owner answered all six decisions as recommended; see "Answers" below. The rest of the document is kept as proposed, so its recommendations read as they did when asked.
+
+## Answers (owner, 2026-11-13)
+
+Relayed by the coordinating agent, which reports that the owner answered directly. Every answer is the recommended option in §5.
+
+| # | Answer | Applied in |
+|---|---|---|
+| D1 | A: run `typecheck:core`, `typecheck:integration`, and `test:no-test-engine` in CI. | **P0-15**, added |
+| D2 | A: ESLint with only the React hooks rules, no formatter. | **P0-16**, added |
+| D3 | A: turn on `noUnusedLocals` and `noUnusedParameters` for the app. | **P0-16** |
+| D4 | B: a macOS `cargo check` and clippy job on `main` and on pull requests that change `src-tauri/`, not required until P6-01. | **P0-17**, added |
+| D5 | A: the dogfood week waits for P3-31. | **Not applied here.** The coordinating agent appends `"P3-31"` to P4-01's `depends_on`; this pass may not edit an existing task. |
+| D6 | A: the lint fails on zero modules, and dependency-cruiser gets its own TypeScript 6. Putting the app back on TypeScript 6 is the fallback. | **P0-14**, added |
+
+### Tasks added after the answers
+
+In `tasks/prd.json`, which is the source of truth for acceptance. They sit in P0, "Dogfood foundation", whose goal is that the core invariants are checked by machines.
+
+| Id | Title | Place | Waits for | Priority | Size | Model |
+|---|---|---|---|---|---|---|
+| P0-14 | Make the import-boundary lint read the code again | P0, after P0-13 | nothing | **Top: runs next**, before the remaining P13 tasks | S to M | Sonnet |
+| P0-15 | Run every `pnpm check` guard in CI | P0, after P0-14 | P0-14 | High | S | Sonnet |
+| P0-16 | Lint hook dependencies and unused code | P0, after P0-15 | P0-14, P13-34, P13-22, P13-24, P13-23 | Medium | S to M | Sonnet |
+| P0-17 | Compile and lint the macOS surface in CI | P0, after P0-16 | P0-13, P13-23 | Medium | S, or unknown if `macos.rs` does not compile | Opus (`native-engineer`) |
+
+- **P0-14 is first.** Invariant I8 has had no working check since 2026-11-12. The task has no dependencies, and it is the first eligible `todo` task in the file, so the rule "pick the first task whose status is todo" selects it.
+- **P0-15 waits for P0-14** so the top priority is unambiguous, and so the guard it adds to CI is one that can fail.
+- **P0-16 waits for the four P13 player tasks**, because fixing hook dependencies edits the player's hooks. It waits for P0-14 so its new dependencies do not land under a lint that reads nothing.
+- **P0-17 waits for P0-13 and P13-23**, because it may have to change `macos.rs` and native work stays serial. P2-11 and P2-12 list the macOS surface as an untested gate; once P0-17 passes, their changes to it are at least compiled.
+- **P2-08 and P2-09 rely on the lint.** Their `depends_on` is not edited. P0-14 sits ahead of them in the file with no dependencies, so it is picked first.
+- Each of the four changes CI or what it runs, and each task's acceptance says its pull request calls that out.
 
 This is a Fable 5.2 product-review pass under the `AGENTS.md` "Tasks" rule. It triages an independent code-quality review into `tasks/prd.json` and `tasks/backlog.md`.
 
