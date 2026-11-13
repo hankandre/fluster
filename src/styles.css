@@ -34,10 +34,6 @@
 
 .detail-player-warning { margin-top: var(--space-3); color: var(--danger); }
 
-.settings { padding: var(--space-6) var(--gutter) var(--space-8); }
-.settings h1 { margin-bottom: var(--space-6); }
-.settings-field { margin: var(--space-4) 0; }
-.settings-field label { display: grid; gap: 6px; max-width: 24rem; }
 }
 
 /* Ambient backdrop (DESIGN.md §7.2). The layers sit at z-index -1 inside the frame's stacking context (.home), so the frame must create one. */

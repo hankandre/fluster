@@ -4,6 +4,7 @@ import type { PlaybackPlan, PlaybackSnapshot, PlayerEngine, PlayerEvent } from "
 import { JellyfinGateway } from "./jellyfin/gateway";
 import type { HttpRequestConfig, HttpTransport } from "./jellyfin/types";
 import { PlaybackCoordinator, type PlaybackGateway } from "./player/coordinator";
+import { diagnosticsText } from "../features/settings/diagnostics";
 import { redactError, redactText, redactUrl } from "./redact";
 
 const CANARY = "CANARY-7f3a9c1e5b";
@@ -336,4 +337,22 @@ describe("redaction canary: PlaybackCoordinator", () => {
     }
     expectNoCanaryInConsole();
   }, 60_000);
+});
+
+describe("redaction canary: diagnostics", () => {
+  it("never lets the canary into the copied report, whatever free text a field holds", () => {
+    for (const text of [...errorTexts(), ...canaryUrls]) {
+      const report = diagnosticsText({
+        appVersion: text,
+        os: text,
+        player: { kind: "native", libmpvVersion: text, renderer: text },
+        decode: { mode: "hardware", hwdec: text },
+        serverVersion: text,
+        hostClass: "public",
+      });
+      expectClean(`diagnosticsText(${text})`, report);
+      expect(report.split("\n")).toHaveLength(7);
+    }
+    expectNoCanaryInConsole();
+  });
 });

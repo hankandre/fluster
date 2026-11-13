@@ -6,9 +6,7 @@ import { describe, expect, it } from "vitest";
 // Picker, SegmentedTabs, and ToggleChip. The files below predate the primitives; the P13 task named on each line
 // migrates the file and removes its entry. The user approved (2026-11-08) adding the acceptance line "Uses only
 // shared UI primitives; no native select, radio, or checkbox remains" to P13-09, P13-11, and P13-17. A new file must not be added to this list.
-const ALLOWLIST: Record<string, string> = {
-  "settings/settings-view.tsx": "P13-17 (Settings: streaming-limit selects)",
-};
+const ALLOWLIST: Record<string, string> = {};
 
 const featuresDir = __dirname;
 const NATIVE_CONTROL = /<select[\s>]|type\s*[=:]\s*\{?\s*["'](?:radio|checkbox)["']/;

@@ -1,5 +1,3 @@
-import { SignOutButton } from "./sign-out-button";
-
 const features = ["sign-in", "home", "search", "detail", "player", "settings"];
 
 export function FeatureIndex() {
@@ -13,7 +11,6 @@ export function FeatureIndex() {
           </li>
         ))}
       </ul>
-      <SignOutButton />
     </main>
   );
 }

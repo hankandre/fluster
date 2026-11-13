@@ -23,6 +23,7 @@ import { useSeekPreview } from "./use-seek-preview";
 import { useIdleCursor } from "./use-idle-cursor";
 import { useEscapeKey } from "../use-escape-key";
 import { conversionIndicator } from "./conversion-copy";
+import { useRecordDecode } from "./last-decode";
 import { usePlayerStatus, type ReadyPlayerStatus } from "./player-status";
 
 const SIGN_IN_ROUTE = "#/next/sign-in";
@@ -173,6 +174,7 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
       else leavePlayer(route.itemId);
     },
   });
+  useRecordDecode(playback.state.snapshot?.diagnostics);
   const indicator = conversionIndicator(playback.plan);
   const backdrop = noticeBackdrop(gateway, detail);
   // "Back to details" always lands on the item's detail view; Escape and the top bar's Back go
