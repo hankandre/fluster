@@ -27,6 +27,18 @@ Where Fluster leads other clients today, and where it does not yet, is recorded 
 6. **Private by default.** No analytics and no third-party services. Credentials are held as securely as the platform allows, and authenticated URLs never reach logs.
 7. **Small and sharp.** Do a few things very well. Every feature has to justify itself against the playback core.
 
+## Better than a streaming service
+
+Fluster borrows the feel of a streaming service and leaves out what such a service does for its own benefit. A personal library has no reason to keep anyone watching, and nothing in it expires. These rules follow from that (owner, 2026-11-12). The research and the weighing behind them are in [`docs/research/streaming-ux-gripes.md`](docs/research/streaming-ux-gripes.md) and [`docs/plans/proposals/discovery-and-profiles.md`](docs/plans/proposals/discovery-and-profiles.md).
+
+1. **Your next episode comes first.** The first thing on Home is what you were in the middle of, and one press plays it.
+2. **Home stays where you left it.** The rows and their order are the same on every visit. A row's contents change only when the library or your own history does.
+3. **The first row holds what you're watching now.** A title you last played more than two weeks ago leaves Continue watching; the length is a setting. Its position is kept, and its own page still offers Resume.
+4. **The end of a film is the end.** In a series the next episode plays after a countdown you can see, hide, or turn off. Nothing unrelated starts by itself.
+5. **Your account is yours.** Remembering several accounts must not let one person open another's. What Fluster learns about a viewer stays on that viewer's server, under their account.
+6. **Nothing from outside.** No ads, no promoted titles, and nothing that is not in the library.
+7. **Nothing plays by itself unless you turn it on.** Previews while browsing are off by default.
+
 ## Who it's for
 
 | Persona | Situation | What they need |

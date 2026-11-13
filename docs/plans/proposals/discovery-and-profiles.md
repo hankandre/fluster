@@ -1,6 +1,6 @@
 # Discovery and profiles: improving on Netflix in a personal library
 
-Status: **Q1 to Q12 answered 2026-11-12; Q13 to Q16 are open.** The owner's answers are in "Answers" below, as relayed by the coordinating agent. The tasks they settle are in `tasks/prd.json`. Sections 1 to 7 keep the original proposal text for the record; where an answer differs from a recommendation, the answer wins. The pull request that carries this is not set to merge by itself: the owner merging it is the approval of the relayed answers.
+Status: **Q1 to Q15 answered 2026-11-12. Q16 is answered but not applied: it edits an existing task and waits for the owner's own confirmation.** The owner's answers are in "Answers" below, as relayed by the coordinating agent. The tasks they settle are in `tasks/prd.json`. Sections 1 to 7 keep the original proposal text for the record; where an answer differs from a recommendation, the answer wins. The pull request that carries this is not set to merge by itself: the owner merging it is the approval of the relayed answers.
 
 This is the Fable 5.2 product-review pass that the rule names. It triages the discovery entries in `tasks/backlog.md` and the proposals below.
 
@@ -23,6 +23,22 @@ Relayed by the coordinating agent. An answer marked **own words** is not one of 
 | Q11 | D: turning "Stay signed in" off is the privacy control now; a PIN comes with the TV shell | P13-27; `DESIGN.md` §7.21; `PRODUCT.md` "Open product questions" |
 | Q12 | B: rules in the client now, the profile on the server starting with Jellyscale. §3.4 stays the owner's carry-over proposal. | P16-05 is stage 0; §3.4 unchanged |
 
+### Batch 4 answers (owner, 2026-11-12)
+
+Relayed by the coordinating agent, which reports that the owner answered in its question tool.
+
+| # | Answer | Applied in |
+|---|---|---|
+| Q13 | B: previews are off by default, with a setting. A preview is the title's local trailer, muted, after a dwell, never with reduced motion, and never when the server would convert. Low priority, after P16-08. | P16-09; N1 as reworded in `PRODUCT.md` |
+| Q14 | B: 14 days by default, with a setting of 7, 14, or 30 days, or "Keep everything". A new episode brings back a series the viewer had caught up on. | P16-02 |
+| Q15 | A: the six principles that stand go into `PRODUCT.md`. N1 is kept in its Q13 form. N4, N5, and N9 stay working rules in this proposal. | `PRODUCT.md` "Better than a streaming service" |
+| Q16 | A: add P16-02 to P4-01's `depends_on`. | **Not applied.** See below. |
+
+**Not applied: waiting for the owner.** Two things were left undone on purpose. Both rest on an approval that reached this pass only through another agent's message.
+
+1. **Q16, the edit to P4-01.** P4-01 is an existing task. The `rules` in `tasks/prd.json` allow agents to change only a task's `status`, `owner`, `passes`, and `evidence`. The change is one line, ready to make: add `"P16-02"` to the end of P4-01's `depends_on`.
+2. **Auto-merge on this pull request.** It adds ten tasks and a phase, and changes `PRODUCT.md` and `DESIGN.md`. The owner merging it is the approval.
+
 ### Tasks added after the answers
 
 In `tasks/prd.json`, under the `AGENTS.md` "Tasks" rule. Full acceptance is in the file; §6.3 has the reasoning.
@@ -35,10 +51,12 @@ In `tasks/prd.json`, under the `AGENTS.md` "Tasks" rule. Full acceptance is in t
 | P16-07 | Open a person's titles and show cast on the series page | P16, after P16-06 | Low to medium |
 | P16-08 | Play local trailers and extras | P16, last | Low |
 | P13-27 | Keep an account private on this computer | P13, after P13-21 and before P13-19 | Medium |
+| P16-02 | Keep Home stable and lead with what you're watching now | P16, after P16-01 and before P16-04 | High |
+| P16-09 | Preview a title's trailer while browsing, off by default | P16, last, after P16-08 | Low |
 
 Not added:
 
-- **P16-02** (stable Home and the merged row) uses the ageing window, which is Q14. It stays proposed in §6.3, updated.
+- **P16-02** waited for Q14 and was added once Q14 was answered. It depends on P3-22 for the window setting.
 - **P16-03** (a remove button) is withdrawn by the Q4 answer. The backlog entry stays.
 
 Changed from §6.3 as first written:
@@ -533,7 +551,8 @@ In tasks/prd.json:  P3-27 hero plays the next episode
                     P16-01 discovery fixtures → P16-04 More like this → P16-05 Because you watched
                     → P16-06 genres → P16-07 people → P16-08 trailers and extras
                     P13-27 private accounts, after P13-21
-Waits for Q14:      P16-02 stable Home, the merged row, and ageing (goes after P16-01)
+Added after Q14:    P16-02 stable Home, the merged row, and ageing (after P16-01, before P16-04)
+Added after Q13:    P16-09 previews, off by default (last, after P16-08)
 Withdrawn:          P16-03 remove from Continue watching
 Carried to Jellyscale by the owner: §3.4 A, then C
 ```
@@ -552,7 +571,7 @@ P16-02 has the clearest evidence behind it (Gripes §5, rows 3 and 4). It would 
 
 ## 7. Decision list
 
-Q1 to Q12 were answered on 2026-11-12; see "Answers" at the top. Their text is kept as asked. **Batch 4 (Q13 to Q16) is open.** Each question stands alone. "Rec" is a recommendation; the owner decides.
+Q1 to Q16 were answered on 2026-11-12; see "Answers" and "Batch 4 answers" at the top. Their text is kept as asked. Q16 is answered but not yet applied. Each question stands alone. "Rec" is a recommendation; the owner decides.
 
 ### Batch 1: Home
 
@@ -640,7 +659,7 @@ Cast cards are not interactive today, and the series page has no cast row.
 - C: A Jellyfin plugin.
 - **Rec: B,** with the privacy rules in §3.3 and AI last (§3.1). This also asks the owner to carry §3.4 into Jellyscale's own backlog.
 
-### Batch 4: open after the answers
+### Batch 4: asked after the first answers
 
 **Q13. Previews while browsing.**
 This replaces Q3. The complaint is loud, but Netflix says its tests showed previews "helped them browse less and watch more", has kept them for nine years, and gave an off switch in 2020. Nobody outside Netflix knows how many people use that switch (Gripes §5, row 1). Three things differ in a personal library. A preview needs a trailer file, and most libraries have few. Each preview is a real playback request to the user's own server. And Fluster gains nothing from attention.
