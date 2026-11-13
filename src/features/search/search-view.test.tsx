@@ -137,6 +137,12 @@ describe("type-ahead", () => {
     expect(input()).toHaveAttribute("aria-expanded", "false");
   });
 
+  it("Up from the field with the list closed leaves for the row above", async () => {
+    await renderView(fakeGateway());
+    fireEvent.keyDown(input(), { key: "ArrowUp" });
+    expect(input()).toHaveAttribute("aria-expanded", "false");
+  });
+
   it("opens a series hint and a movie hint directly", async () => {
     await renderView(fakeGateway());
     await type("ar");

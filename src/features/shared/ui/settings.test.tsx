@@ -238,4 +238,12 @@ describe("SettingsPage on compact windows", () => {
     await user.keyboard("{Escape}");
     expect(screen.getByRole("heading", { level: 2, name: "Playback" })).toBeInTheDocument();
   });
+
+  it("does not prevent Escape while no section is open", () => {
+    compact();
+    render(<Harness />);
+    const button = screen.getByRole("button", { name: "Account" });
+    button.focus();
+    expect(fireEvent.keyDown(button, { key: "Escape" })).toBe(true);
+  });
 });

@@ -154,6 +154,7 @@
   --up-next-w: 560px;
   --scrub-preview-w: 384px;
   --type-meta: 500 0.9375rem / 1.35 var(--font-ui);
+  --type-mono: 500 0.9375rem / 1.3 var(--font-mono);
   --lift: scale(1.08);
 }
 

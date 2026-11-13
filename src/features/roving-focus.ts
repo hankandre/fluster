@@ -57,13 +57,22 @@ export function nearestByCentre(centreX: number, boxes: { left: number; width: n
 
 const SPATIAL_ROW_SELECTOR = "[data-spatial-row]";
 
+const NAV_STOP_SELECTOR = 'nav[aria-label="Main"] [data-roving-item][tabindex="0"]';
+
 // Moves focus Up or Down to the nearest item (by horizontal centre) of the adjacent spatial row
-// in the same <main>. Returns true when it moved focus.
+// in the same <main>. Up from the first row reaches the nav's current entry (DESIGN.md §9).
+// Returns true when it moved focus.
 export function moveToAdjacentRow(container: HTMLElement, current: HTMLElement, direction: 1 | -1): boolean {
   const scope: ParentNode = container.closest("main") ?? document;
   const rows = Array.from(scope.querySelectorAll<HTMLElement>(SPATIAL_ROW_SELECTOR));
   let index = rows.indexOf(container) + direction;
   while (index >= 0 && index < rows.length && itemsIn(rows[index]).length === 0) index += direction;
+  if (index < 0 && direction === -1) {
+    const entry = document.querySelector<HTMLElement>(NAV_STOP_SELECTOR);
+    if (!entry) return false;
+    entry.focus();
+    return true;
+  }
   if (index < 0 || index >= rows.length) return false;
   const items = itemsIn(rows[index]);
   const box = current.getBoundingClientRect();
@@ -71,6 +80,19 @@ export function moveToAdjacentRow(container: HTMLElement, current: HTMLElement, 
   if (target === undefined) return false;
   items[target].focus();
   return true;
+}
+
+// Down from the nav: focuses the Tab stop of the page's first spatial row that has items.
+export function enterFirstRow(): boolean {
+  const rows = Array.from(document.querySelectorAll<HTMLElement>(`main ${SPATIAL_ROW_SELECTOR}`));
+  for (const row of rows) {
+    const items = itemsIn(row);
+    if (items.length === 0) continue;
+    const stop = items.find((item) => item.getAttribute("tabindex") === "0") ?? items[0];
+    stop.focus();
+    return true;
+  }
+  return false;
 }
 
 function itemsIn(container: HTMLElement): HTMLElement[] {

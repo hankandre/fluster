@@ -150,19 +150,22 @@
 /* Focus layer: declared after features so no component rule can remove the ring (DESIGN.md §9, §11.2).
    The transparent outline keeps a ring in forced-colors mode, where box-shadow is dropped. */
 @layer focus {
-  :focus-visible {
+  :focus-visible,
+  :root[data-form="tv"] :focus {
     outline: 3px solid transparent;
     outline-offset: 0;
     box-shadow: var(--focus-ring);
   }
 
   @media (forced-colors: active) {
-    :focus-visible {
+    :focus-visible,
+    :root[data-form="tv"] :focus {
       outline-color: Highlight;
     }
   }
 
-  :where(h1, h2)[tabindex="-1"]:focus-visible {
+  :where(h1, h2)[tabindex="-1"]:focus-visible,
+  :root[data-form="tv"] :where(h1, h2, main)[tabindex="-1"]:focus {
     outline: none;
     box-shadow: none;
   }

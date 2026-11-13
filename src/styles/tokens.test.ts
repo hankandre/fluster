@@ -116,3 +116,12 @@ describe("hero contrast proofs (DESIGN.md §11.1)", () => {
     expect(contrastRatio(solid("--text-1"), bg)).toBeGreaterThanOrEqual(4.5);
   });
 });
+
+describe("TV form type floor", () => {
+  const tvBlock = /:root\[data-form="tv"\] \{([\s\S]*?)\n\}/.exec(tokensCss)?.[1] ?? "";
+  it.each(["--type-mono", "--type-meta"])("%s renders at 22px or more at 24px root", (name) => {
+    const match = new RegExp(`${name}:\\s*\\d+ ([\\d.]+)rem`).exec(tvBlock);
+    expect(match, `${name} in the TV block`).not.toBeNull();
+    expect(Number(match![1]) * 24).toBeGreaterThanOrEqual(22);
+  });
+});

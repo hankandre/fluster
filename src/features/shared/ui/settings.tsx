@@ -120,9 +120,7 @@ function CompactSettings({ label, sections, value, onChange, children }: Setting
     returnFocus.current = true;
     setOpen(false);
   }, []);
-  useEscapeKey(() => {
-    if (open) back();
-  });
+  useEscapeKey(back, { enabled: open });
 
   // Opening a section moves focus to its heading; closing returns it to that section's button.
   useEffect(() => {

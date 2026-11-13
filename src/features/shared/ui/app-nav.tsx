@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { FocusEvent } from "react";
+import type { FocusEvent, KeyboardEvent } from "react";
 import { Search, Settings } from "lucide-react";
-import { useRovingFocus } from "../../roving-focus";
+import { enterFirstRow, useRovingFocus } from "../../roving-focus";
 import { libraryRoute, parseLibraryRoute } from "../../routes";
 import "./shell.css";
 
@@ -86,10 +86,16 @@ export function AppNav({ libraries, hash, userInitial }: { libraries: NavLibrary
     if (typeof target.scrollIntoView === "function") target.scrollIntoView({ block: "nearest", inline: "nearest" });
   }
 
+  function onKeyDown(event: KeyboardEvent<HTMLElement>) {
+    roving.onKeyDown(event);
+    if (event.defaultPrevented || event.key !== "ArrowDown") return;
+    if (enterFirstRow()) event.preventDefault();
+  }
+
   const aria = (key: string) => (current === key ? ({ "aria-current": "page" } as const) : {});
 
   return (
-    <nav className="app-nav-bar" aria-label="Main" ref={roving.ref} onKeyDown={roving.onKeyDown} onFocus={onFocus}>
+    <nav className="app-nav-bar" aria-label="Main" ref={roving.ref} onKeyDown={onKeyDown} onFocus={onFocus}>
       <div className="app-nav-list" ref={list} data-overflow={overflow} onScroll={measure}>
         <a className="app-nav-entry app-nav-wordmark" href={HOME_HASH} data-roving-item="">Fluster</a>
         <a className="app-nav-entry" href={HOME_HASH} data-roving-item="" {...aria("home")}>Home</a>
