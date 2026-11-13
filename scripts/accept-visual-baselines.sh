@@ -17,7 +17,7 @@ gh run download "$1" -n visual-captures -D "$tmp"
 # Only size directories are allowed, plus an optional index.html contact sheet.
 for entry in "$tmp"/*; do
   name="$(basename "$entry")"
-  if [ -d "$entry" ] && [[ "$name" =~ ^[0-9]+x[0-9]+$ ]]; then continue; fi
+  if [ -d "$entry" ] && [[ "$name" =~ ^[0-9]+x[0-9]+(-tv)?$ ]]; then continue; fi
   if [ -f "$entry" ] && [ "$name" = "index.html" ]; then continue; fi
   echo "unexpected entry in artifact: $name" >&2
   exit 1
