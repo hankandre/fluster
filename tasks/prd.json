@@ -2275,6 +2275,36 @@
           "evidence": "Implemented, one commit per milestone. pnpm check exit 0 (156 files, 2012 Vitest tests; Rust 183 passed, 6 ignored). pnpm test:e2e 149 passed (includes e2e/tv/ keyboard journeys and e2e/back-keys.spec.ts; no existing e2e changed). pnpm test:visual 330 passed (adds 1920x1080-tv pass and scenarios 90-94). Review round done (fresh-context design review counted); back-key medium fixed (use-back-key.ts counts only history.length growth). After fix: pnpm check exit 0 (2013 Vitest tests, Rust 183 passed), pnpm test:e2e 149 passed, pnpm test:visual 330 passed. Screenshots are linked in the Ship phase. Not done here: real remote, real remote, on-screen keyboard, WebKitGTK TV form. See docs/plans/active/002 for decisions and lows."
         },
         {
+          "id": "P13-34",
+          "title": "Apply the TV form decisions",
+          "domain": "App Shell & Presentation",
+          "model": "opus",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P13-18"
+          ],
+          "acceptance": [
+            "In the TV form body text renders at 28 px and no text renders under 24 px, by raising the type tokens; six posters across is unchanged (owner, D13 B; DESIGN.md §6)",
+            "Back on Home leaves the app the way the platform requires: without a question on Android TV, after a confirmation where a platform's rules ask for one; the browser TV form follows the Android TV rule (owner, D14 B; DESIGN.md §6)",
+            "On a card where Enter plays, holding OK opens details, and Menu still does where the remote has one; a single press still plays (owner, D15 B; DESIGN.md §7.5 and §13 decision 1)",
+            "In the TV player a press of Left or Right moves 10 s; holding scrubs in growing steps with the preview following and the picture held; OK commits the new position and Back returns to where playback was (owner, D16 B; DESIGN.md §7.14)",
+            "In the TV player Up or Down shows the controls without pausing",
+            "Whatever P13-18 already delivered of these is not rebuilt; its acceptance is not edited",
+            "Playwright keyboard-only journeys in the TV form cover hold-OK for details, hold-to-scrub with commit and cancel, and Back on Home",
+            "Unit tests cover the scrub step rule and the hold threshold",
+            "No Tauri command is added; the command allowlist test is unchanged",
+            "Before and after screenshots of every affected state in the TV form are attached to the PR",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "P13-22",
           "title": "Add the chapter list",
           "domain": "App Shell & Presentation",
@@ -2487,6 +2517,100 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:visual && ls docs/design/contrast-report.md",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P13-31",
+          "title": "Restore the place after Back",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P13-08",
+            "P13-10",
+            "P13-11",
+            "P13-12",
+            "P13-24"
+          ],
+          "acceptance": [
+            "Home, library, collection, series, detail, and search results keep their data while their account is the active one, so returning to any of them shows the screen without a skeleton (owner, D1 B; DESIGN.md §9 Back)",
+            "The kept data is dropped when the active account changes, signs out, or the app closes; tests prove a second account never sees the first account's data after a switch, a sign-out, and a restart",
+            "Nothing is written to disk and no token, authenticated URL, or play-session id is held in a query cache; the AGENTS.md rule is unchanged",
+            "A library's sort and filters are in the route, so Back and a reload restore them, and Home's See all links still open Newest added first",
+            "Returning to a library or to search results shows every page that was loaded, at the scroll position it was left at",
+            "Kept data refreshes in the background, so a change made on another client still appears (P3-15 keeps working)",
+            "Focus returns to the card that was left, as P13-24 requires; this task does not replace P13-24",
+            "A Playwright journey sorts a library, scrolls to its third page, opens a title, presses Back, and finds the same sort, the same position, and the same focused card; a second journey does the same from Home",
+            "A guardian review passes, because the per-account cache rule in src/features/query-scope.ts changes",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P13-32",
+          "title": "Bring the first row and the episodes onto the first screen",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P13-08",
+            "P13-10",
+            "P16-02"
+          ],
+          "acceptance": [
+            "At 1440×900 Home shows the hero and the whole first row under it, card titles included, without scrolling (owner, D2 B; DESIGN.md §6 and §7.3)",
+            "The title the hero shows is not also the first card of the row below it; the row starts with the next item, and when the hero's title is the row's only item the row is hidden",
+            "At 1440×900 a series page shows the season tabs and at least one whole episode row without scrolling (owner, D3 B; DESIGN.md §7.7)",
+            "Hero and header heights come from tokens; no size literal is added to feature CSS",
+            "At 1920×1080 the hero and the first row still fit, and the captures at both sizes show the new first screens",
+            "A unit test covers the row with and without the hero's title, and that Home's fixed order (P16-02) is otherwise unchanged",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P13-33",
+          "title": "Wait before showing Buffering, and brighten text over video",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P13-13",
+            "P13-30"
+          ],
+          "acceptance": [
+            "\"Buffering…\" appears only after the player has waited 500 ms; a stall shorter than that shows nothing (owner, D6 B; DESIGN.md §7.14 Status)",
+            "The wait before the first frame is unchanged: PlayerLoading still shows at once",
+            "The conversion notice and the ConversionChip are neither delayed nor dimmed",
+            "No text drawn over video uses --text-3; Ends at and every other player text over a scrim uses --text-1 or --text-2 (owner, D8 B; DESIGN.md §3.1 and §7.14)",
+            "The worst-case artwork capture from P13-30 shows the player text at 4.5:1 or more, and docs/design/contrast-report.md is updated",
+            "Unit tests cover a stall under and over 500 ms; the buffering live region still announces once per stall",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -2862,6 +2986,64 @@
             "Tests cover the match rules, including an episode that lacks the remembered track"
           ],
           "verify": "pnpm check && pnpm test:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P15-16",
+          "title": "Seek further with a held key, and jump by chapter",
+          "domain": "Playback Session",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P4-02",
+            "P13-13"
+          ],
+          "acceptance": [
+            "Holding a seek key seeks in growing steps with the scrub preview following, and commits on release (owner, D5 B; DESIGN.md §7.14 and §9)",
+            "A single press still moves 10 s, forward and back alike",
+            "Two keys move to the previous and the next chapter when the file has chapters, and the OSD names the chapter; DESIGN.md §9 lists the keys",
+            "With no chapters the chapter keys do nothing and say so in the OSD",
+            "The rule for the growing steps is a pure function with unit tests; it is the one P13-34 uses in the TV form",
+            "No Tauri command is added; seeking uses the existing typed command",
+            "A Playwright journey covers the chapter keys",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P15-17",
+          "title": "Show the password on sign-in, and list the keyboard shortcuts",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P4-02",
+            "P13-16"
+          ],
+          "acceptance": [
+            "Sign-in's password step has a Show password control beside the field, labelled in words, with aria-pressed, reachable by keyboard; it never changes the field's autocomplete (owner, D9 B; DESIGN.md §7.20)",
+            "The password is masked again whenever the step is left or submitted",
+            "? opens a sheet that lists the keys for the current screen, from the same key map the handlers use, and closes on Escape with focus restored (owner, D12 B; DESIGN.md §9)",
+            "The sheet is not opened from a text field, a dialog, or sign-in",
+            "Tests cover the toggle, the masking on leave, and that every key in the map appears in the sheet",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
           "status": "todo",
           "owner": null,
           "passes": false,
