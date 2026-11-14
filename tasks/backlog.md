@@ -193,3 +193,4 @@ The review is `docs/research/code-quality-review-2026-11-13.md` (commit `fb8d071
 - Review what the first pass did not read: the catalog views, the shared UI primitives, the HLS validator, the surface code, the e2e specs, and the CSS. The review ran nothing, so a second pass should also run the checks. M.
 
 - `.ui-dialog-title` sets a literal `font-size: 1.5rem` (`src/features/shared/ui/overlays.css:56`; 36 px on TV, documented in DESIGN.md §4 and §7.16); move it to a token. Found in P13-34. S.
+- Drop the `typescript-6` alias, `scripts/depcruise-typescript-6.mjs`, and the Dependabot ignore once a dependency-cruiser release supports the app's TypeScript 7 minor; 18.8.0-beta-2 supports `>=7.1.0 <8`, the app is on `~7.0.2`. P0-14. S.
