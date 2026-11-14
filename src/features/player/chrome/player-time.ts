@@ -4,6 +4,15 @@ export interface SeekChapter {
   name: string;
 }
 
+// The chapter playing at a time: the last one that starts at or before it.
+export function chapterAt(chapters: SeekChapter[], seconds: number): SeekChapter | undefined {
+  let current: SeekChapter | undefined;
+  for (const chapter of chapters) {
+    if (chapter.startSeconds <= seconds) current = chapter;
+  }
+  return current;
+}
+
 const MINUS = "−";
 
 function parts(value: number): { hours: number; minutes: number; seconds: number } {

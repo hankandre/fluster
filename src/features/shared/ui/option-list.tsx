@@ -1,4 +1,4 @@
-import { useRef, type KeyboardEvent } from "react";
+import { useRef, type KeyboardEvent, type ReactNode } from "react";
 import { Check } from "lucide-react";
 import "./picker.css";
 
@@ -8,6 +8,8 @@ export interface OptionListOption {
   // A second line, such as codec and channels.
   description?: string;
   disabled?: boolean;
+  // A picture before the text, such as a chapter thumbnail. It is hidden from the row's accessible name.
+  media?: ReactNode;
 }
 
 interface OptionListProps {
@@ -82,6 +84,7 @@ export function OptionList({ label, options, value, onChange, disabled = false }
             <span className="ui-picker-check">
               {index === selected ? <Check aria-hidden="true" size={18} strokeWidth={2.5} /> : null}
             </span>
+            {option.media ? <span className="ui-option-media" aria-hidden="true">{option.media}</span> : null}
             <span className="ui-picker-text">
               <span className="ui-picker-label">{option.label}</span>
               {option.description ? <span className="ui-picker-description">{option.description}</span> : null}

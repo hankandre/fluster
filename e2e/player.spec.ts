@@ -36,6 +36,9 @@ test("Play opens the player and Back returns to the detail view", async ({ page 
   expectFallbackFlags(log, 0);
   // Direct play shows no conversion indicator, and the report names its method.
   await expect(page.locator(".conversion-chip")).toHaveCount(0);
+  // The movie has no chapters, so the control row has no Chapters button.
+  await expect(page.getByRole("button", { name: "Info" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Chapters" })).toHaveCount(0);
   expect(log.reports.find((report) => report.path === "/Sessions/Playing")?.body).toMatchObject({ PlayMethod: "DirectPlay" });
   await page.keyboard.press("i");
   await expect(page.getByRole("region", { name: "Player information" })).toContainText("Direct play");

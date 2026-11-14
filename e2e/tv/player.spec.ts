@@ -142,6 +142,50 @@ test("Player: Up or Down shows the controls without pausing", async ({ page }) =
   }
 });
 
+test("Player: the Chapters sheet opens from the control row, Enter seeks and closes, Escape closes", async ({ page }) => {
+  await mockPlayerServer(page, {
+    chapters: [
+      { StartPositionTicks: 0, Name: "Opening" },
+      { StartPositionTicks: 300_000_000, Name: "Contact" },
+      { StartPositionTicks: 900_000_000, Name: "Departure" },
+    ],
+  });
+  await stubMedia(page);
+  await openArrivalTv(page);
+  await page.keyboard.press("Enter");
+  await expect(slider(page)).toBeEnabled();
+  await page.keyboard.press("ArrowRight");
+  await expect(slider(page)).toBeFocused();
+  // Down enters the control row on forward 10 (as the Info journey above relies on); Chapters is the next control.
+  await page.keyboard.press("ArrowDown");
+  await expect(page.getByRole("button", { name: "Forward 10 seconds" })).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  const chapters = page.getByRole("button", { name: "Chapters" });
+  await expect(chapters).toBeFocused();
+  await page.keyboard.press("Enter");
+  const sheet = page.getByRole("region", { name: "Chapters" });
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByRole("option", { name: /^Opening/ })).toBeFocused();
+  await expectNoSmallText(page);
+  await expectTitleSafe(page);
+
+  // Down to Contact, Enter seeks to 30 s, closes the sheet, and returns focus to Chapters.
+  await page.keyboard.press("ArrowDown");
+  await expect(sheet.getByRole("option", { name: /^Contact/ })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect.poll(() => videoTime(page)).toBe(30);
+  await expect(sheet).toBeHidden();
+  await expect(chapters).toBeFocused();
+
+  // Escape on its own closes a reopened sheet and returns focus, without leaving the player.
+  await page.keyboard.press("Enter");
+  await expect(sheet).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(sheet).toBeHidden();
+  await expect(chapters).toBeFocused();
+  await expect(page).toHaveURL(/#\/next\/play\/movie-1/);
+});
+
 test("Player: OK skips a visible Skip while the chrome is hidden", async ({ page }) => {
   await mockPlayerServer(page, {
     hasSegments: true,

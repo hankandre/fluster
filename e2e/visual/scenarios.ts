@@ -352,6 +352,18 @@ export const scenarios: Scenario[] = [
 
   // Player
   { name: "50-player-controls", opts: { trickplay: true }, run: (page) => play(page, "#/next/item/m1") },
+  { name: "59d-player-chapters", opts: { trickplay: true }, run: async (page) => {
+    await play(page, "#/next/item/m1");
+    await page.getByRole("button", { name: "Chapters" }).click();
+    await page.getByRole("region", { name: "Chapters" }).waitFor();
+    await page.waitForTimeout(700);
+  } },
+  { name: "59e-player-chapters-no-trickplay", opts: { chapters: true }, run: async (page) => {
+    await play(page, "#/next/item/m1");
+    await page.getByRole("button", { name: "Chapters" }).click();
+    await page.getByRole("region", { name: "Chapters" }).waitFor();
+    await page.waitForTimeout(400);
+  } },
   { name: "51-player-idle", run: async (page) => { await play(page, "#/next/item/m1"); await page.waitForTimeout(3_400); } },
   { name: "52-player-info-panel", run: async (page) => {
     await play(page, "#/next/item/m1");

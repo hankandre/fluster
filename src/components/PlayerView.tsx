@@ -7,6 +7,7 @@ import { activeSegment, type MediaSegment } from "../domain/media-segments";
 import type { PlaybackSessionState } from "../lib/player/session-state";
 import { type ConversionIndicator } from "../features/player/conversion-copy";
 import type { ReadyPlayerStatus } from "../features/player/player-status";
+import { ChapterList } from "../features/player/chrome/chapter-list";
 import { InfoSheet, type PlayOriginalState } from "../features/player/chrome/info-sheet";
 import { conversionCopy } from "../features/player/chrome/osd-copy";
 import { Osd } from "../features/player/chrome/osd";
@@ -108,6 +109,7 @@ export function PlayerView({
   const osd = useOsd();
   const tracksId = useId();
   const infoId = useId();
+  const chaptersId = useId();
 
   useEffect(() => {
     document.documentElement.classList.add("native-playing");
@@ -259,6 +261,9 @@ export function PlayerView({
             <TransportControls
               snapshot={snapshot}
               fullscreen={fullscreen}
+              chapters={Boolean(chapters?.length)}
+              chaptersOpen={sheet === "chapters"}
+              chaptersId={chaptersId}
               tracksOpen={sheet === "tracks"}
               infoOpen={sheet === "info"}
               tracksId={tracksId}
@@ -267,6 +272,7 @@ export function PlayerView({
               onSeekBy={(seconds) => snapshot && void execute(() => player.seek(seekTarget(snapshot, seconds)))}
               onToggleMute={() => snapshot && void execute(() => player.setMuted(!snapshot.muted))}
               onVolume={(volume) => void execute(() => player.setVolume(volume))}
+              onToggleChapters={() => toggleSheet("chapters")}
               onToggleTracks={() => toggleSheet("tracks")}
               onToggleInfo={() => toggleSheet("info")}
               onToggleFullscreen={() => void changeFullscreen(!fullscreen)}
@@ -312,6 +318,17 @@ export function PlayerView({
         </div>
       )}
 
+      {sheet === "chapters" && chapters && chapters.length > 0 && (
+        <ChapterList
+          id={chaptersId}
+          chapters={chapters}
+          positionSeconds={snapshot?.positionSeconds}
+          durationSeconds={snapshot?.durationSeconds}
+          picture={seekPreview}
+          onSeek={(seconds) => void execute(() => player.seek(seconds))}
+          onClose={closeSheet}
+        />
+      )}
       {sheet === "tracks" && (
         <TrackPanel
           id={tracksId}

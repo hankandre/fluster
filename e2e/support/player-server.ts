@@ -53,6 +53,8 @@ export interface ServerOptions {
   // The source has two audio streams. A converted answer carries the
   // requested AudioStreamIndex (default 1), as Jellyfin does.
   audioStreams?: boolean;
+  // Chapters the item detail lists.
+  chapters?: Array<{ StartPositionTicks: number; Name: string }>;
 }
 
 export interface ServerLog {
@@ -156,6 +158,7 @@ export async function mockPlayerServer(page: Page, options: ServerOptions = {}):
           // A backdrop tag, so the playback notices draw art (the image request itself is not answered).
           BackdropImageTags: ["bd-movie-1"],
           MediaSources: [source],
+          ...(options.chapters ? { Chapters: options.chapters } : {}),
           UserData: { Played: false, IsFavorite: false, PlaybackPositionTicks: options.resumeTicks ?? 0 },
         });
       case "/Videos/ActiveEncodings":

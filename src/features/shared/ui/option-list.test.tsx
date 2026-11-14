@@ -66,4 +66,21 @@ describe("OptionList", () => {
     expect(screen.getByRole("listbox")).toHaveAttribute("aria-disabled", "true");
     expect(screen.getAllByRole("option").every((option) => option.tabIndex === -1)).toBe(true);
   });
+
+  it("draws media before the text, hidden from the row's name", () => {
+    render(
+      <OptionList
+        label="Chapter"
+        options={[{ value: "a", label: "Opening", description: "0:00", media: <div data-testid="thumb" /> }, { value: "b", label: "Plain" }]}
+        value="a"
+        onChange={vi.fn()}
+      />,
+    );
+    const media = screen.getByTestId("thumb").parentElement!;
+    expect(media).toHaveClass("ui-option-media");
+    expect(media).toHaveAttribute("aria-hidden", "true");
+    expect(media.nextElementSibling).toHaveClass("ui-picker-text");
+    expect(screen.getByRole("option", { name: "Opening0:00" })).toBeInTheDocument();
+    expect(document.querySelectorAll(".ui-option-media")).toHaveLength(1);
+  });
 });
