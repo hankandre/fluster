@@ -89,9 +89,8 @@ test("Series: season tabs, a horizontal episode row with the overview under it, 
   await page.keyboard.press("Backspace");
   await expect(page).toHaveURL(/#\/next\/series\/s1$/);
 
-  await expect(page.getByRole("link", { name: /^(Play|Resume)/ })).toBeFocused();
-  await page.keyboard.press("ArrowDown");
-  await page.keyboard.press("ArrowDown");
+  // Back restores the episode that was left (DESIGN.md 9), where it used to open on the primary action.
+  await expect(episodes.nth(1)).toBeFocused();
   await expect(page.locator(".ui-episode-row-link:focus")).toHaveCount(1);
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/#\/next\/play\//);

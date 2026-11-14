@@ -18,6 +18,24 @@ afterEach(() => {
 });
 
 describe("useHeadingFocus", () => {
+  it("keeps focus on a card that a return has already restored", () => {
+    const { rerender } = render(
+      <>
+        <Page settled={false} />
+        <main><ul data-focus-row="r"><li data-focus-id="a"><a href="#/a" data-roving-item>a</a></li></ul></main>
+      </>,
+    );
+    const card = document.querySelector<HTMLElement>("[data-roving-item]")!;
+    card.focus();
+    rerender(
+      <>
+        <Page settled />
+        <main><ul data-focus-row="r"><li data-focus-id="a"><a href="#/a" data-roving-item>a</a></li></ul></main>
+      </>,
+    );
+    expect(document.activeElement).toBe(card);
+  });
+
   it("focuses the heading once the page settles", () => {
     const { rerender, getByRole } = render(<Page settled={false} />);
     expect(document.activeElement).toBe(document.body);

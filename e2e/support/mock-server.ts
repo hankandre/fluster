@@ -42,6 +42,8 @@ export interface MockOptions {
   rowDelayMs?: number;
   // /Items/Latest for lib-movies returns 18 movies, so the row scrolls.
   longRows?: boolean;
+  // Ids that /Items/Latest leaves out. The test adds to the set while it runs, to make a card disappear.
+  hiddenFromLatest?: Set<string>;
   // Continue watching and Next up are empty, so the Home hero is the newest item.
   homeLatestOnly?: boolean;
   // /Items/{id} answers after this delay (the detail loading state).
@@ -303,7 +305,7 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
           if (opts.empty) return json([]);
           const parent = url.searchParams.get("parentId") ?? url.searchParams.get("ParentId");
           if (parent === "lib-shows") return json([seriesDto("s1"), seriesDto("s2")]);
-          const latest = ["m1", "m4", "m5", "m6", "m3", "m2"].map((id) => movieDto(id, opts));
+          const latest = ["m1", "m4", "m5", "m6", "m3", "m2"].filter((id) => !opts.hiddenFromLatest?.has(id)).map((id) => movieDto(id, opts));
           if (opts.longRows) return json([...latest, ...latest.map((m) => ({ ...m, Id: `${m.Id}-b` })), ...latest.map((m) => ({ ...m, Id: `${m.Id}-c` }))]);
           return json(latest);
         }

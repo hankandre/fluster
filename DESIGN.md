@@ -242,7 +242,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 - Variants:
   - **movie**
   - **series**: facts are the year range, the season count, and genres (no rating). The primary action is "Resume S1 · E2" or "Play S1 · E3". Season tabs and the episode list sit below.
-  - **episode**: the series name is a link above the title. Facts read "S1 · E2 · 45 min". The episode still replaces the backdrop when the episode has no backdrop. A "More from Season 1" episode strip sits below.
+  - **episode**: the series name is a link above the title. Facts read "S1 · E2 · 45 min". The episode still replaces the backdrop when the episode has no backdrop. A "More from Season 1" episode strip sits below and opens positioned at the current episode.
 - Compact windows stack poster (or still), then title, then actions, then overview.
 
 ### 7.8 Action bar (`ActionBar`)
@@ -539,7 +539,7 @@ Fluster remembers any number of accounts. An account is one user on one server. 
 
 - One focus at a time, always visible when it came from a keyboard or remote (`:focus-visible`). On TV, focus is always visible.
 - Containers are one Tab stop with arrows inside (roving tabindex, as in `roving-focus.ts`). Up and Down across rows and sections are spatial: they go to the nearest item by horizontal centre.
-- Opening a screen focuses its primary action (TV) or its `h1` (desktop, for screen readers), with the primary action as the next Tab. Returning with Back restores the previously focused card.
+- Opening a screen focuses its primary action (TV) or its `h1` (desktop, for screen readers), with the primary action as the next Tab. Returning with Back restores the previously focused card or episode row; when it is gone, focus lands on the card now at the same place in the same row, and when the row is gone too, on the screen's opening focus. A fresh visit never restores.
 - Focus is never obscured: rows scroll the focused card to at least `--gutter` from any edge, and the sticky nav never covers it (WCAG 2.4.11).
 
 **Hover and focus.** Hover previews (half-strength lift, row arrows, scrubber thickening) but never moves focus. Every hover-revealed control is also reachable and visible on focus.

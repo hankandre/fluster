@@ -206,3 +206,8 @@ The review is `docs/research/code-quality-review-2026-11-13.md` (commit `fb8d071
 - libmpv2 5.0.3 drops a `PropertyChange` whose format is `MPV_FORMAT_NONE` (`libmpv2-5.0.3/src/mpv/events.rs:267-270`), so an observed property that becomes unavailable (audio disabled, `demuxer-cache-time` after a cache reset) keeps its last value in the snapshot. The existing diagnostics already behave this way. Decide whether to clear stale values on `AudioReconfig`/`VideoReconfig` or patch the binding. S.
 - `diagnostics.videoCodec` (the long description) and the new `video.codec` (short name) overlap; so do `diagnostics.width`, `height`, and `bitDepth` against `video`. Merge them without breaking `src/lib/player/last-decode.test.ts`. S.
 - Show the Dolby Vision gamma next to the profile in the Info sheet if the human wants to tell "DV signalled" from "DV rendered". P13-23. S.
+
+- P13-24 follow-ups: restore focus to the hero's Resume or More info, the series header's primary action, and the detail action bar's buttons after Back (they open as today). S.
+- P13-24 follow-up: restore focus after auto-play next. `use-auto-play-next.ts` replaces the player entry and drops its state, so leaving a second episode replaces the route with its detail page instead of going Back. S.
+- P13-24 follow-up: restore scroll position for screens that have no restorable card. S.
+- P13-24 note: a card restored on a TV screen can sit inside the bottom title-safe inset when the page scrolls to it, because scrolling content has no bottom scroll padding. The TV journeys therefore bound the vertical position by the window, as `expectTitleSafe` does. Needs a design call on a scroll inset. S.
