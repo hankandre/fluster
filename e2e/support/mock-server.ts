@@ -35,6 +35,8 @@ export interface MockOptions {
   converted?: boolean;
   short?: boolean;
   trickplay?: boolean;
+  // Serves the movie's chapters without trickplay (trickplay serves both).
+  chapters?: boolean;
   segments?: Array<Record<string, unknown>>;
   playbackDelayMs?: number;
   rowDelayMs?: number;
@@ -142,7 +144,7 @@ function movieDto(id: string, opts: MockOptions): Dto {
     }),
     MediaSources: opts.disc && id === "m1" ? [discSource] : (m.MediaSources ?? [simpleSource(id)]).map((s: Dto) => ({ ...s, HasSegments: Boolean(opts.segments) })),
     ...(m.Trickplay && opts.trickplay ? { Trickplay: { "src-4k": { 320: { Width: 320, Height: 180, TileWidth: 5, TileHeight: 2, ThumbnailCount: 10, Interval: 738000 } } } } : {}),
-    ...(m.Chapters && opts.trickplay ? { Chapters: [
+    ...(m.Chapters && (opts.trickplay || opts.chapters) ? { Chapters: [
       { StartPositionTicks: 0, Name: "Station" }, { StartPositionTicks: ticks(1500), Name: "The Signal" }, { StartPositionTicks: ticks(3600), Name: "Winter" }, { StartPositionTicks: ticks(5800), Name: "Thaw" },
     ] } : {}),
     UserData: { Played: Boolean(m.played), IsFavorite: Boolean(m.favorite), PlaybackPositionTicks: m.resume ?? 0 },

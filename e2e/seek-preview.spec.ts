@@ -151,3 +151,46 @@ test("the seek bar stays plain when the item has no trickplay or chapters", asyn
   await expect(page.locator(".seek-track")).toHaveCount(0);
   await expect(page.getByRole("slider", { name: "Playback position" })).toBeVisible();
 });
+
+test("the Chapters sheet lists chapters with trickplay pictures, Enter seeks, and Escape returns focus", async ({ page }) => {
+  const log = await mockServer(page, true);
+  await playArrival(page);
+
+  const button = page.getByRole("button", { name: "Chapters" });
+  await button.focus();
+  await page.keyboard.press("Enter");
+  const sheet = page.getByRole("region", { name: "Chapters" });
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByRole("option")).toHaveCount(3);
+  await expect(sheet.getByRole("option", { name: /^Opening/ })).toBeFocused();
+
+  // Contact starts at 30 s: thumbnail 3 of tile 0, column 3 of row 0, scaled from the 320 px tile cell to the token width.
+  const width = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--chapter-thumb-w")));
+  expect(width).toBeGreaterThan(0);
+  const scale = width / 320;
+  const thumbnail = sheet.getByRole("option", { name: /^Contact/ }).locator(".ui-option-media > .seek-thumbnail");
+  await expect(thumbnail).toHaveCSS("background-position", `${-3 * 320 * scale}px 0px`);
+  await expect(thumbnail).toHaveCSS("background-size", `${5 * 320 * scale}px ${2 * 180 * scale}px`);
+  await expect(thumbnail).toHaveCSS("background-image", /^url\("blob:/);
+  expect(log.tileRequests.length).toBeGreaterThan(0);
+  for (const tile of log.tileRequests) {
+    expect(tile.url).not.toContain("api_key");
+    expect(tile.url).not.toContain("test-token");
+    expect(tile.authorization).toContain('Token="test-token"');
+  }
+
+  // Enter seeks to the chapter and closes the sheet, with focus back on Chapters.
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Enter");
+  await expect.poll(() => page.locator("video").evaluate((video: HTMLVideoElement) => video.currentTime)).toBe(30);
+  await expect(sheet).toHaveCount(0);
+  await expect(button).toBeFocused();
+
+  // Escape on its own closes the sheet, returns focus, and stays in the player.
+  await page.keyboard.press("Enter");
+  await expect(sheet).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(sheet).toHaveCount(0);
+  await expect(button).toBeFocused();
+  await expect(page).toHaveURL(/#\/next\/play\/movie-1/);
+});

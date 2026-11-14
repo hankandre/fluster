@@ -2,17 +2,9 @@ import { useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent a
 import type { PlaybackSnapshot } from "../../../domain/playback";
 import { SEEK_STEP_SECONDS } from "../../../components/player-keymap";
 import { useTvForm } from "../../shared/use-tv-form";
-import { clock, endsAt, remaining, type SeekChapter } from "./player-time";
+import { chapterAt, clock, endsAt, remaining, type SeekChapter } from "./player-time";
 import { ScrubPreview } from "./scrub-preview";
 import { useTvScrub } from "./use-tv-scrub";
-
-function chapterAt(chapters: SeekChapter[], seconds: number): SeekChapter | undefined {
-  let current: SeekChapter | undefined;
-  for (const chapter of chapters) {
-    if (chapter.startSeconds <= seconds) current = chapter;
-  }
-  return current;
-}
 
 // The seek bar: a transparent range input over a drawn track, with elapsed
 // and remaining time. Without a preview or chapters it is the bare slider.

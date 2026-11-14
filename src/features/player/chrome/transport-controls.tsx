@@ -1,15 +1,18 @@
 import { useState } from "react";
-import { Captions, Info, Maximize, Minimize, Pause, Play, RotateCcw, RotateCw, Volume2, VolumeX } from "lucide-react";
+import { Captions, Info, ListVideo, Maximize, Minimize, Pause, Play, RotateCcw, RotateCw, Volume2, VolumeX } from "lucide-react";
 import type { PlaybackSnapshot } from "../../../domain/playback";
 import { SEEK_STEP_SECONDS } from "../../../components/player-keymap";
 import { Button } from "../../shared/ui";
 import { useTvForm } from "../../shared/use-tv-form";
 
-// Play or Pause, back and forward 10 s, mute and volume on the left; Audio &
-// Subtitles, Info, and Fullscreen on the right.
+// Play or Pause, back and forward 10 s, mute and volume on the left; Chapters
+// (only when the item has them), Audio & Subtitles, Info, and Fullscreen on the right.
 export function TransportControls({
   snapshot,
   fullscreen,
+  chapters = false,
+  chaptersOpen = false,
+  chaptersId,
   tracksOpen,
   infoOpen,
   tracksId,
@@ -18,12 +21,17 @@ export function TransportControls({
   onSeekBy,
   onToggleMute,
   onVolume,
+  onToggleChapters,
   onToggleTracks,
   onToggleInfo,
   onToggleFullscreen,
 }: {
   snapshot: PlaybackSnapshot | undefined;
   fullscreen: boolean;
+  // True when the item has chapters: the Chapters button shows.
+  chapters?: boolean;
+  chaptersOpen?: boolean;
+  chaptersId?: string;
   tracksOpen: boolean;
   infoOpen: boolean;
   tracksId: string;
@@ -32,6 +40,7 @@ export function TransportControls({
   onSeekBy(seconds: number): void;
   onToggleMute(): void;
   onVolume(volume: number): void;
+  onToggleChapters?(): void;
   onToggleTracks(): void;
   onToggleInfo(): void;
   onToggleFullscreen(): void;
@@ -67,6 +76,18 @@ export function TransportControls({
       <RotateCw size={20} aria-hidden="true" />
     </Button>
   );
+  const chapterList = chapters ? (
+    <Button
+      variant="icon"
+      aria-label="Chapters"
+      aria-expanded={chaptersOpen}
+      aria-controls={chaptersOpen ? chaptersId : undefined}
+      onClick={onToggleChapters}
+      disabled={!snapshot}
+    >
+      <ListVideo size={20} aria-hidden="true" />
+    </Button>
+  ) : null;
   const tracks = (
     <Button
       variant="icon"
@@ -98,7 +119,7 @@ export function TransportControls({
       <div className="control-row" data-tv="true">
         <span />
         <div className="control-center">{back}{play}{forward}</div>
-        <div className="control-end">{tracks}{info}</div>
+        <div className="control-end">{chapterList}{tracks}{info}</div>
       </div>
     );
   }
@@ -127,6 +148,7 @@ export function TransportControls({
         />
       </div>
       <span className="control-spacer" />
+      {chapterList}
       {tracks}
       {info}
       <Button variant="icon" aria-label={fullscreen ? "Exit fullscreen" : "Enter fullscreen"} onClick={onToggleFullscreen}>

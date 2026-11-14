@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clock, endsAt, remaining } from "./player-time";
+import { chapterAt, clock, endsAt, remaining } from "./player-time";
 
 describe("player time", () => {
   it("formats a clock, with hours only when needed", () => {
@@ -22,5 +22,14 @@ describe("player time", () => {
     const expected = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" }).format(new Date(2026, 10, 11, 21, 30, 0));
     expect(endsAt(now, 5400)).toBe(expected);
     expect(endsAt(now, -5)).toBe(new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" }).format(now));
+  });
+
+  it("finds the chapter at a time: none before the first, the new one exactly at a start, the last after the end", () => {
+    const chapters = [{ startSeconds: 10, name: "A" }, { startSeconds: 60, name: "B" }];
+    expect(chapterAt(chapters, 5)).toBeUndefined();
+    expect(chapterAt(chapters, 10)?.name).toBe("A");
+    expect(chapterAt(chapters, 59.9)?.name).toBe("A");
+    expect(chapterAt(chapters, 60)?.name).toBe("B");
+    expect(chapterAt(chapters, 9999)?.name).toBe("B");
   });
 });

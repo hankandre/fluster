@@ -22,6 +22,7 @@ function setup(overrides: Partial<Parameters<typeof TransportControls>[0]> = {})
     onSeekBy: vi.fn(),
     onToggleMute: vi.fn(),
     onVolume: vi.fn(),
+    onToggleChapters: vi.fn(),
     onToggleTracks: vi.fn(),
     onToggleInfo: vi.fn(),
     onToggleFullscreen: vi.fn(),
@@ -44,6 +45,31 @@ describe("TransportControls", () => {
       "Info",
       "Enter fullscreen",
     ]);
+  });
+
+  it("puts Chapters first in the right-hand group when the item has chapters, and wires it", () => {
+    const handlers = setup({ chapters: true, chaptersOpen: true, chaptersId: "chapters" });
+    expect(screen.getAllByRole("button").map((button) => button.getAttribute("aria-label"))).toEqual([
+      "Pause",
+      "Back 10 seconds",
+      "Forward 10 seconds",
+      "Mute",
+      "Chapters",
+      "Audio & Subtitles",
+      "Info",
+      "Enter fullscreen",
+    ]);
+    const chapters = screen.getByRole("button", { name: "Chapters" });
+    expect(chapters).toHaveAttribute("aria-expanded", "true");
+    expect(chapters).toHaveAttribute("aria-controls", "chapters");
+    fireEvent.click(chapters);
+    expect(handlers.onToggleChapters).toHaveBeenCalledTimes(1);
+    cleanup();
+    setup({ chapters: true });
+    expect(screen.getByRole("button", { name: "Chapters" })).not.toHaveAttribute("aria-controls");
+    cleanup();
+    setup({ chapters: true, snapshot: undefined });
+    expect(screen.getByRole("button", { name: "Chapters" })).toBeDisabled();
   });
 
   it("calls the matching handler for each button", () => {
@@ -109,5 +135,18 @@ describe("TransportControls in the TV form", () => {
       "Info",
     ]);
     expect(screen.queryByLabelText("Volume")).toBeNull();
+  });
+
+  it("puts Chapters before Audio & Subtitles when the item has chapters, and omits it otherwise", () => {
+    document.documentElement.dataset.form = "tv";
+    setup({ chapters: true });
+    expect(screen.getAllByRole("button").map((button) => button.getAttribute("aria-label"))).toEqual([
+      "Back 10 seconds",
+      "Pause",
+      "Forward 10 seconds",
+      "Chapters",
+      "Audio & Subtitles",
+      "Info",
+    ]);
   });
 });

@@ -74,6 +74,7 @@
   --search-field-h: 64px;
   --suggestion-art-w: 40px;
   --player-sheet-w: 420px;
+  --chapter-thumb-w: 128px;
   --up-next-w: 400px;
   --settings-row-h: 4rem;
   --settings-nav-w: 16rem;
@@ -150,6 +151,7 @@
   --search-field-h: 96px;
   --suggestion-art-w: 60px;
   --player-sheet-w: 33vw;
+  --chapter-thumb-w: 192px;
   --player-play-disc: 84px;
   --up-next-w: 560px;
   --scrub-preview-w: 384px;

@@ -243,6 +243,7 @@
   .player-sheet-section .player-ok { color: var(--ok); }
   .player-sheet-section p { margin: 0; color: var(--text-2); font: var(--type-meta); }
   .player-sheet-section .ui-button { justify-self: start; }
+  .player-sheet .ui-option-media { width: var(--chapter-thumb-w); }
 
   /* TV form (DESIGN.md 7.14): the sheet sits inside the safe inset, the row is centred, and the TV owns
      volume and fullscreen. */

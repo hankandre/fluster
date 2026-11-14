@@ -7,7 +7,7 @@ import { isTvForm } from "../../shared/tv-form";
 import { nextSubtitle, type ConvertedTracks } from "./track-options";
 import type { OsdKind } from "./use-osd";
 
-export type SheetName = "tracks" | "info";
+export type SheetName = "tracks" | "info" | "chapters";
 
 // Where a relative seek lands: within the file, never before its start.
 export function seekTarget(snapshot: PlaybackSnapshot, seconds: number): number {

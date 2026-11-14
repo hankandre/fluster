@@ -124,6 +124,17 @@
 }
 
 @layer components {
+  .ui-option-media {
+    display: block;
+    flex: none;
+    overflow: hidden;
+    border-radius: var(--radius-art);
+  }
+
+  .ui-option-media > * {
+    display: block;
+  }
+
   .ui-option-list {
     display: grid;
     margin: 0;
