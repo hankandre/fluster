@@ -194,3 +194,9 @@ The review is `docs/research/code-quality-review-2026-11-13.md` (commit `fb8d071
 
 - `.ui-dialog-title` sets a literal `font-size: 1.5rem` (`src/features/shared/ui/overlays.css:56`; 36 px on TV, documented in DESIGN.md §4 and §7.16); move it to a token. Found in P13-34. S.
 - Drop the `typescript-6` alias, `scripts/depcruise-typescript-6.mjs`, and the Dependabot ignore once a dependency-cruiser release supports the app's TypeScript 7 minor; 18.8.0-beta-2 supports `>=7.1.0 <8`, the app is on `~7.0.2`. P0-14. S.
+
+## Flaky e2e: Back keys (found 2026-11-13)
+
+- `e2e/back-keys.spec.ts` fails intermittently in full `pnpm test:e2e` runs, on task branches and on main (different tests each time: ":89 Backspace closes the unencrypted-connection dialog", ":20 Backspace and Escape go back from item detail"). Each passes 5/5 alone with `--repeat-each 5`. It looks load-dependent; the cause is unverified. Find the race (as P13-14 did for three journeys) and make each test wait for the state it depends on; never weaken an assertion. Evidence: the P0-14 runs in `tasks/prd.json`. S to M.
+- Also from the P0-14 runs: `FLUSTER_E2E_PORT` collides when port+1 is taken, because the web server uses both ports. Pick both ports free, or document it. S.
+- From the P0-14 review (lows): `scripts/lint-boundaries.mjs:82` passes the violation count as the exit code, so exactly 256 violations exit 0 (use `exitCode > 0 ? 1 : 0`). The success line's `n/n source files` restates the coverage check rather than measuring it. Whether the Dependabot ignore for the `typescript-6` alias applies is unverified. S each.
