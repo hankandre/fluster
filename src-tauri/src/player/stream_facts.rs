@@ -84,7 +84,16 @@ pub(super) fn read_current_codecs(mpv: &Mpv, state: &mut RuntimeState) -> bool {
         .get_property::<i64>("current-tracks/video/dolby-vision-profile")
         .ok()
         .and_then(count);
-    apply_current_codecs(state, video_codec, audio_codec, profile)
+    let mut changed = apply_current_codecs(state, video_codec, audio_codec, profile);
+    // libmpv2 drops property-unavailable events, so re-read the cache time.
+    let cache = mpv.get_property::<f64>("demuxer-cache-time").ok();
+    changed |= apply_buffered(state, cache);
+    changed
+}
+
+fn apply_buffered(state: &mut RuntimeState, value: Option<f64>) -> bool {
+    let value = value.filter(|v| v.is_finite() && *v >= 0.0);
+    set(&mut state.snapshot.buffered_seconds, value)
 }
 
 fn apply_current_codecs(
@@ -93,8 +102,20 @@ fn apply_current_codecs(
     audio_codec: Option<String>,
     profile: Option<u64>,
 ) -> bool {
+    // A missing track means its stream properties are unavailable. libmpv2
+    // never reports that, so clear the facts here.
+    let mut changed = false;
+    if video_codec.is_none() {
+        changed |= set(&mut state.gamma, None);
+    }
     let facts = &mut state.snapshot;
-    let mut changed = set(&mut facts.video.codec, video_codec);
+    if audio_codec.is_none() {
+        changed |= set(&mut facts.audio.channel_count, None);
+        changed |= set(&mut facts.audio.sample_rate, None);
+        changed |= set(&mut facts.audio.output_format, None);
+        changed |= set(&mut facts.audio.output_channel_count, None);
+    }
+    changed |= set(&mut facts.video.codec, video_codec);
     changed |= set(&mut facts.audio.codec, audio_codec);
     changed |= set(&mut facts.video.dolby_vision_profile, profile);
     let range = video_range(state.gamma.as_deref(), profile);
@@ -252,5 +273,55 @@ mod tests {
             None
         ));
         assert_eq!(state.snapshot.video.range, VideoRange::Pq);
+    }
+
+    #[test]
+    fn missing_tracks_clear_their_stream_facts() {
+        let mut state = RuntimeState::new();
+        apply_property(&mut state, "video-params/gamma", PropertyData::Str("pq"));
+        apply_property(
+            &mut state,
+            "audio-params/channel-count",
+            PropertyData::Int64(8),
+        );
+        apply_property(
+            &mut state,
+            "audio-params/samplerate",
+            PropertyData::Int64(48000),
+        );
+        apply_property(
+            &mut state,
+            "audio-out-params/format",
+            PropertyData::Str("spdif-eac3"),
+        );
+        apply_property(
+            &mut state,
+            "audio-out-params/channel-count",
+            PropertyData::Int64(2),
+        );
+        assert!(apply_current_codecs(
+            &mut state,
+            Some("hevc".into()),
+            None,
+            None
+        ));
+        let audio = &state.snapshot.audio;
+        assert_eq!(audio.channel_count, None);
+        assert_eq!(audio.sample_rate, None);
+        assert_eq!(audio.output_format, None);
+        assert_eq!(audio.output_channel_count, None);
+        assert_eq!(state.snapshot.video.range, VideoRange::Pq);
+        assert!(apply_current_codecs(&mut state, None, None, None));
+        assert_eq!(state.gamma, None);
+        assert_eq!(state.snapshot.video.range, VideoRange::Unknown);
+    }
+
+    #[test]
+    fn unavailable_cache_time_clears_the_buffered_position() {
+        let mut state = RuntimeState::new();
+        assert!(apply_buffered(&mut state, Some(12.0)));
+        assert!(!apply_buffered(&mut state, Some(12.0)));
+        assert!(apply_buffered(&mut state, None));
+        assert_eq!(state.snapshot.buffered_seconds, None);
     }
 }
