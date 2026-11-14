@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ItemDetail, ItemUserData } from "../../domain/catalog";
 import type { SessionGateway } from "../../app/session";
 import { refreshHomeRows } from "../home";
+import { markAccountDataStale } from "../query-scope";
 import { useToast } from "../shared/ui";
 import { detailKey } from "./detail-key";
 
@@ -49,6 +50,7 @@ export function useFlagMutation(gateway: SessionGateway, itemId: string, flag: F
     onSuccess: (_data, value) => say(value ? TOASTS[flag].on : TOASTS[flag].off, "ok"),
     onSettled: () => {
       void refreshHomeRows(queryClient);
+      markAccountDataStale(queryClient);
       // While the other toggle is still in flight, a refetch would show the server's older state.
       if (queryClient.isMutating({ mutationKey: [...key, "flag"] }) > 1) return;
       void queryClient.invalidateQueries({ queryKey: key });

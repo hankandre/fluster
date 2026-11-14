@@ -1,6 +1,6 @@
 import { useIsFetching } from "@tanstack/react-query";
 import { useEffect, useRef, useSyncExternalStore } from "react";
-import { finishReturn, getPendingReturn, subscribeReturn, tryRestore } from "./focus-return";
+import { endSettling, finishReturn, getPendingReturn, isSettling, settleFocus, subscribeReturn, tryRestore, tryRestoreScroll } from "./focus-return";
 
 // A give-up time for a return whose screen never settles; not a motion duration.
 export const RETURN_WAIT_MS = 10_000;
@@ -25,6 +25,7 @@ export function useFocusReturn(): void {
       frame = 0;
     };
     const check = () => {
+      tryRestoreScroll();
       if (tryRestore()) return;
       cancel();
       if (!settled()) return;
@@ -54,4 +55,20 @@ export function useFocusReturn(): void {
   useEffect(() => {
     checkRef.current();
   }, [fetching]);
+
+  // A card restored from kept data can leave when the screen's background refetch ends; focus then moves to the
+  // same place in the row instead of falling to the page.
+  const settling = useSyncExternalStore(subscribeReturn, isSettling, () => false);
+  useEffect(() => {
+    if (!settling || pending) return undefined;
+    const timer = window.setTimeout(endSettling, RETURN_WAIT_MS);
+    if (fetching > 0) return () => window.clearTimeout(timer);
+    let frame = window.requestAnimationFrame(() => {
+      frame = window.requestAnimationFrame(settleFocus);
+    });
+    return () => {
+      window.clearTimeout(timer);
+      window.cancelAnimationFrame(frame);
+    };
+  }, [settling, pending, fetching]);
 }

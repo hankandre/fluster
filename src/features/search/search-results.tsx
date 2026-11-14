@@ -5,7 +5,7 @@ import type { SessionGateway } from "../../app/session";
 import { imageUrlFor, toMediaRowItems } from "../card-view";
 import { detailKey } from "../detail/detail-key";
 import { useFocusDwell } from "../home/use-focus-dwell";
-import { scopeFor } from "../query-scope";
+import { ACCOUNT_GC_TIME, scopeFor } from "../query-scope";
 import { useRovingFocus } from "../roving-focus";
 import { cardRoute } from "../routes";
 import { readOnReturn, rememberForReturn } from "../shell/focus-return";
@@ -37,7 +37,7 @@ export function SearchResults({ gateway, term }: { gateway: SessionGateway; term
     initialPageParam: 0,
     queryFn: ({ pageParam, signal }) => gateway.searchItems(term, { startIndex: pageParam, limit: RESULT_PAGE_SIZE }, signal),
     getNextPageParam: (lastPage, allPages) => (lastPage.hasMore ? allPages.length * RESULT_PAGE_SIZE : undefined),
-    gcTime: 0,
+    gcTime: ACCOUNT_GC_TIME,
   });
   const queryClient = useQueryClient();
   // A Back to this entry loads the pages that were showing before the card left can appear.

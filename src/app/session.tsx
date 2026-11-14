@@ -71,6 +71,7 @@ export function SessionProvider({
   createGateway,
   realtime,
   onServerDataChanged,
+  onAccountChanged,
   children,
 }: {
   createGateway: (serverUrl: string) => SessionGateway;
@@ -79,11 +80,15 @@ export function SessionProvider({
   // Called when another client changed watched state, or after the socket
   // reconnects and changes may have been missed.
   onServerDataChanged?: () => void;
+  // Called after the signed-in gateway is replaced or signed out, once the old account's screens have
+  // unmounted. Not called for the first sign-in after launch.
+  onAccountChanged?: (gateway: SessionGateway | undefined) => void;
   children: ReactNode;
 }) {
   const [gateway, setGateway] = useState<SessionGateway | undefined>();
   useServerSocket(realtime, gateway);
   useServerEvents(realtime, onServerDataChanged);
+  useAccountChanged(gateway, onAccountChanged);
 
   const signOut = useCallback(async () => {
     const current = gateway;
@@ -103,6 +108,19 @@ export function SessionProvider({
   );
 
   return <SessionContext.Provider value={session}>{children}</SessionContext.Provider>;
+}
+
+function useAccountChanged(gateway: SessionGateway | undefined, onAccountChanged: ((gateway: SessionGateway | undefined) => void) | undefined) {
+  const callback = useRef(onAccountChanged);
+  const previous = useRef<SessionGateway | undefined>(undefined);
+  useEffect(() => {
+    callback.current = onAccountChanged;
+  }, [onAccountChanged]);
+  useEffect(() => {
+    const before = previous.current;
+    previous.current = gateway;
+    if (before && before !== gateway) callback.current?.(gateway);
+  }, [gateway]);
 }
 
 // Opens the server socket for the signed-in gateway and closes it on sign-out

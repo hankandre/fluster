@@ -126,3 +126,38 @@ describe("SessionProvider server events", () => {
     expect(realtime.listenerCount).toBe(0);
   });
 });
+
+describe("SessionProvider onAccountChanged", () => {
+  async function renderWith(gateways: SessionGateway[], onAccountChanged: (gateway: SessionGateway | undefined) => void) {
+    render(
+      <SessionProvider createGateway={() => gateways[0]} onAccountChanged={onAccountChanged}>
+        <Controls gateways={gateways} />
+      </SessionProvider>,
+    );
+    await act(async () => undefined);
+  }
+
+  it("is not called on the first sign-in", async () => {
+    const onAccountChanged = vi.fn();
+    await renderWith([stubGateway("https://one.test", "a")], onAccountChanged);
+    await click("sign in 0");
+    expect(onAccountChanged).not.toHaveBeenCalled();
+  });
+
+  it("is called with undefined after a sign-out", async () => {
+    const onAccountChanged = vi.fn();
+    await renderWith([stubGateway("https://one.test", "a")], onAccountChanged);
+    await click("sign in 0");
+    await click("sign out");
+    expect(onAccountChanged).toHaveBeenCalledExactlyOnceWith(undefined);
+  });
+
+  it("is called with the new gateway when it replaces the signed-in one", async () => {
+    const onAccountChanged = vi.fn();
+    const gateways = [stubGateway("https://one.test", "a"), stubGateway("https://two.test", "b")];
+    await renderWith(gateways, onAccountChanged);
+    await click("sign in 0");
+    await click("sign in 1");
+    expect(onAccountChanged).toHaveBeenCalledExactlyOnceWith(gateways[1]);
+  });
+});

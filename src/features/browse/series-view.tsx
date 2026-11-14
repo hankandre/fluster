@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ItemNotFoundError } from "../../domain/catalog";
 import { useSession, type SessionGateway } from "../../app/session";
+import { ACCOUNT_GC_TIME } from "../query-scope";
 import { DetailBackdrop } from "../detail/detail-backdrop";
 import type { ArtSource } from "../detail/art-source";
 import { detailKey } from "../detail/detail-key";
@@ -36,7 +37,7 @@ function SeriesContent({ gateway, seriesId, onArt }: { gateway: SessionGateway; 
   const query = useQuery({
     queryKey: detailKey(gateway, seriesId),
     queryFn: ({ signal }) => gateway.itemDetail(seriesId, signal),
-    gcTime: 0,
+    gcTime: ACCOUNT_GC_TIME,
   });
   const heading = useHeadingFocus(!query.isPending);
 

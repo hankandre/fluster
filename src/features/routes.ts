@@ -1,5 +1,5 @@
-import type { MediaCard } from "../domain/catalog";
-import { parseLibrarySort, type LibrarySortId } from "./browse/library-sort";
+import type { BrowseFilter, MediaCard } from "../domain/catalog";
+import { DEFAULT_LIBRARY_SORT, LIBRARY_FILTERS, parseLibrarySort, type LibrarySortId } from "./browse/library-sort";
 
 export function itemRoute(id: string): string {
   return `#/next/item/${encodeURIComponent(id)}`;
@@ -11,38 +11,84 @@ export function seriesRoute(id: string): string {
 
 const LIBRARY_PREFIX = "#/next/browse/";
 
-// #/next/browse/<libraryId>, optionally with ?sort=<sortId> to open the library in that order.
-export function libraryRoute(id: string, sort?: LibrarySortId): string {
-  const base = `${LIBRARY_PREFIX}${encodeURIComponent(id)}`;
-  return sort ? `${base}?sort=${encodeURIComponent(sort)}` : base;
+// ?sort=<sortId>&filters=<a,b>. The default sort and no filters write nothing, so the bare route means the
+// defaults. An explicit sort other than the default stays (See all opens Newest added first). Written by hand
+// so the filter list keeps its literal commas.
+function viewQuery(sort: LibrarySortId | undefined, filters: readonly BrowseFilter[]): string {
+  const parts: string[] = [];
+  if (sort && sort !== DEFAULT_LIBRARY_SORT) parts.push(`sort=${encodeURIComponent(sort)}`);
+  const names = LIBRARY_FILTERS.filter((filter) => filters.includes(filter));
+  if (names.length > 0) parts.push(`filters=${names.join(",")}`);
+  return parts.length > 0 ? `?${parts.join("&")}` : "";
+}
+
+// #/next/browse/<libraryId>, optionally with ?sort=<sortId>&filters=<a,b> to open the library in that view.
+export function libraryRoute(id: string, sort?: LibrarySortId, filters: readonly BrowseFilter[] = []): string {
+  return `${LIBRARY_PREFIX}${encodeURIComponent(id)}${viewQuery(sort, filters)}`;
 }
 
 export interface LibraryRoute {
   libraryId: string;
   // Absent when the route has no sort or names an unknown one.
   sort?: LibrarySortId;
+  filters: BrowseFilter[];
 }
 
-// Reads a library route. A missing or malformed id is not a route.
-export function parseLibraryRoute(hash: string): LibraryRoute | undefined {
-  if (!hash.startsWith(LIBRARY_PREFIX)) return undefined;
-  const rest = hash.slice(LIBRARY_PREFIX.length);
+export interface CollectionRoute {
+  collectionId: string;
+  sort?: LibrarySortId;
+  filters: BrowseFilter[];
+}
+
+function parseViewRoute(hash: string, prefix: string): { id: string; sort?: LibrarySortId; filters: BrowseFilter[] } | undefined {
+  if (!hash.startsWith(prefix)) return undefined;
+  const rest = hash.slice(prefix.length);
   const queryStart = rest.indexOf("?");
   const encodedId = queryStart === -1 ? rest : rest.slice(0, queryStart);
   if (!encodedId || encodedId.includes("/")) return undefined;
-  let libraryId: string;
+  let id: string;
   try {
-    libraryId = decodeURIComponent(encodedId);
+    id = decodeURIComponent(encodedId);
   } catch {
     return undefined;
   }
   const params = new URLSearchParams(queryStart === -1 ? "" : rest.slice(queryStart + 1));
   const sort = parseLibrarySort(params.get("sort") ?? "");
-  return sort ? { libraryId, sort } : { libraryId };
+  const named = (params.get("filters") ?? "").split(",");
+  const filters = LIBRARY_FILTERS.filter((filter) => named.includes(filter));
+  return sort ? { id, sort, filters } : { id, filters };
 }
 
-export function collectionRoute(id: string): string {
-  return `#/next/collection/${encodeURIComponent(id)}`;
+// Reads a library route. A missing or malformed id is not a route.
+export function parseLibraryRoute(hash: string): LibraryRoute | undefined {
+  const route = parseViewRoute(hash, LIBRARY_PREFIX);
+  if (!route) return undefined;
+  const { id, ...view } = route;
+  return { libraryId: id, ...view };
+}
+
+const COLLECTION_PREFIX = "#/next/collection/";
+
+export function collectionRoute(id: string, sort?: LibrarySortId, filters: readonly BrowseFilter[] = []): string {
+  return `${COLLECTION_PREFIX}${encodeURIComponent(id)}${viewQuery(sort, filters)}`;
+}
+
+// Reads a collection route. A missing or malformed id is not a route.
+export function parseCollectionRoute(hash: string): CollectionRoute | undefined {
+  const route = parseViewRoute(hash, COLLECTION_PREFIX);
+  if (!route) return undefined;
+  const { id, ...view } = route;
+  return { collectionId: id, ...view };
+}
+
+export const ROUTE_REPLACED_EVENT = "fluster:route-replaced";
+
+// Rewrites the current history entry's URL without a new entry or a hashchange. It keeps history.state, so the
+// entry keeps its focus-return stamp. The app is told through ROUTE_REPLACED_EVENT.
+export function replaceRoute(hash: string): void {
+  if (hash === window.location.hash) return;
+  window.history.replaceState(window.history.state, "", hash);
+  window.dispatchEvent(new Event(ROUTE_REPLACED_EVENT));
 }
 
 // Where a card leads. A card of an unknown kind is not a link.

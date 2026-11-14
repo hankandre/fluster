@@ -1,4 +1,4 @@
-import type { BrowseSortBy, BrowseSortOrder } from "../../domain/catalog";
+import type { BrowseFilter, BrowseSortBy, BrowseSortOrder } from "../../domain/catalog";
 
 export type LibrarySortId =
   | "name-asc"
@@ -39,3 +39,6 @@ export function librarySort(id: LibrarySortId): LibrarySort {
 export function parseLibrarySort(value: string): LibrarySortId | undefined {
   return LIBRARY_SORTS.find((sort) => sort.id === value)?.id;
 }
+
+// Every filter, in the one order the route and the toolbar write them.
+export const LIBRARY_FILTERS: BrowseFilter[] = ["IsUnplayed", "IsFavorite", "IsResumable"];

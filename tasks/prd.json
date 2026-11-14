@@ -2887,10 +2887,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "todo",
+          "status": "in_progress",
           "owner": null,
           "passes": false,
-          "evidence": ""
+          "evidence": "Branch task/P13-31 (local): pnpm check green (2381 unit tests, build, boundaries, cargo test); pnpm test:e2e 188 passed (third full run; two earlier full runs each failed only e2e/tv/detail.spec.ts:46, a load flake: it passed alone with --repeat-each 10 and in the third run, and a full run on origin/main a904886 passed 181); pnpm test:visual 369 passed, no baseline change. Pending in Ship: PR with before/after screenshots at 1440x900 and 1920x1080 and the TV form, guardian review (query-scope rule change), design review."
         },
         {
           "id": "P13-32",

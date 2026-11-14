@@ -5,12 +5,12 @@ import type { SessionGateway } from "../../app/session";
 import { imageUrlFor, toMediaCardProps } from "../card-view";
 import { detailKey } from "../detail/detail-key";
 import { useFocusDwell } from "../home/use-focus-dwell";
-import { scopeFor } from "../query-scope";
+import { ACCOUNT_GC_TIME, scopeFor } from "../query-scope";
 import { useRovingFocus } from "../roving-focus";
 import { BrowseToolbar, Button, InlineError, MediaCard } from "../shared/ui";
 import { itemCountLabel } from "./item-count";
 import { EmptyLibrary, FilteredEmpty, LibrarySkeleton } from "./library-states";
-import { DEFAULT_LIBRARY_SORT, LIBRARY_SORTS, librarySort, parseLibrarySort, type LibrarySortId } from "./library-sort";
+import { DEFAULT_LIBRARY_SORT, LIBRARY_FILTERS, LIBRARY_SORTS, librarySort, parseLibrarySort, type LibrarySortId } from "./library-sort";
 import { useAutoPaging } from "./use-auto-paging";
 import { readLibraryReturn, useLibraryReturn } from "./use-library-return";
 import "./library.css";
@@ -20,11 +20,13 @@ export const PAGE_SIZE = 60;
 const PREFETCH_DWELL_MS = 300;
 const PREFETCH_MS = 30_000;
 
-const FILTER_OPTIONS: { value: BrowseFilter; label: string }[] = [
-  { value: "IsUnplayed", label: "Unwatched" },
-  { value: "IsFavorite", label: "Favorites" },
-  { value: "IsResumable", label: "In progress" },
-];
+const FILTER_LABELS: Record<BrowseFilter, string> = {
+  IsUnplayed: "Unwatched",
+  IsFavorite: "Favorites",
+  IsResumable: "In progress",
+};
+
+const FILTER_OPTIONS: { value: BrowseFilter; label: string }[] = LIBRARY_FILTERS.map((value) => ({ value, label: FILTER_LABELS[value] }));
 
 const SORT_OPTIONS = LIBRARY_SORTS.map((sort) => ({ value: sort.id, label: sort.label }));
 
@@ -36,17 +38,18 @@ interface LibraryGridProps {
   label: string;
   // What an error says it could not load: the library name, or "this collection".
   errorLabel?: string;
-  initialSort?: LibrarySortId;
+  // The sort and filters come from the route; a change is reported through onViewChange.
+  sortId: LibrarySortId;
+  filters: BrowseFilter[];
+  onViewChange: (view: { sortId: LibrarySortId; filters: BrowseFilter[] }) => void;
 }
 
 // The toolbar and the paged grid of a library or collection. Pages load as the end nears the viewport, and
 // "Load more" stays as the keyboard fallback. A change of sort or filter changes the query key, which starts at page one.
-export function LibraryGrid({ gateway, parentId, itemTypes, label, errorLabel = label, initialSort = DEFAULT_LIBRARY_SORT }: LibraryGridProps) {
+export function LibraryGrid({ gateway, parentId, itemTypes, label, errorLabel = label, sortId, filters, onViewChange }: LibraryGridProps) {
   const scope = scopeFor(gateway);
   const queryClient = useQueryClient();
   const [restored] = useState(readLibraryReturn);
-  const [sortId, setSortIdState] = useState<LibrarySortId>(restored?.sortId ?? initialSort);
-  const [filters, setFiltersState] = useState<BrowseFilter[]>(restored?.filters ?? []);
   const { sortBy, sortOrder } = librarySort(sortId);
 
   const query = useInfiniteQuery({
@@ -55,10 +58,10 @@ export function LibraryGrid({ gateway, parentId, itemTypes, label, errorLabel = 
     queryFn: ({ pageParam, signal }) =>
       gateway.libraryItems(parentId, { itemTypes, startIndex: pageParam, limit: PAGE_SIZE, sortBy, sortOrder, filters }, signal),
     getNextPageParam: (lastPage, allPages) => (lastPage.hasMore ? allPages.length * PAGE_SIZE : undefined),
-    gcTime: 0,
+    gcTime: ACCOUNT_GC_TIME,
   });
 
-  const { catchingUp, stopCatchUp } = useLibraryReturn(restored, { sortId, filters }, {
+  const { catchingUp, stopCatchUp } = useLibraryReturn(restored, {
     pages: query.data?.pages.length ?? 0,
     isPending: query.isPending,
     isError: query.isError,
@@ -68,11 +71,11 @@ export function LibraryGrid({ gateway, parentId, itemTypes, label, errorLabel = 
   });
   const setSortId = (value: LibrarySortId) => {
     stopCatchUp();
-    setSortIdState(value);
+    onViewChange({ sortId: value, filters });
   };
   const setFilters = (value: BrowseFilter[]) => {
     stopCatchUp();
-    setFiltersState(value);
+    onViewChange({ sortId, filters: value });
   };
 
   const cards = query.data?.pages.flatMap((page) => page.cards) ?? [];
@@ -146,7 +149,7 @@ export function LibraryGrid({ gateway, parentId, itemTypes, label, errorLabel = 
   }
 
   function setFilter(value: string, on: boolean) {
-    setFilters(FILTER_OPTIONS.map((option) => option.value).filter((filter) =>
+    setFilters(LIBRARY_FILTERS.filter((filter) =>
       filter === value ? on : filters.includes(filter)));
   }
 

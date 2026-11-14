@@ -18,6 +18,7 @@ const latestMovies = (page: Page) => page.getByRole("region", { name: "Latest in
 const itemCard = (scope: Locator, id: string) => scope.locator(`a[href="#/next/item/${id}"]`);
 const gridCards = (page: Page) => page.locator(".library-grid a.media-card");
 const noObserver = (page: Page) => page.addInitScript(() => { (window as unknown as { IntersectionObserver: unknown }).IntersectionObserver = undefined; });
+const scrollOf = (page: Page) => page.evaluate(() => Math.round(window.scrollY));
 const focusedId = (page: Page) => page.evaluate(() => (document.activeElement?.closest("[data-focus-id]") as HTMLElement | null)?.dataset.focusId ?? "");
 
 test("Home: Escape returns to the card that was left, and the browser Back button does too", async ({ page }) => {
@@ -105,7 +106,7 @@ test("Library: Back restores the sort, the filter, the loaded pages, and the car
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/#\/next\/item\//);
   await page.keyboard.press("Escape");
-  await expect(page).toHaveURL(/#\/next\/browse\/lib-movies$/);
+  await expect(page).toHaveURL(/#\/next\/browse\/lib-movies\?sort=added-desc&filters=IsUnplayed$/);
   await expect(gridCards(page)).toHaveCount(120);
   await expect(gridCards(page).nth(60)).toBeFocused();
   await expect(page.getByRole("button", { name: "Sort Newest added first" })).toBeVisible();
@@ -170,11 +171,13 @@ test("Search: Back returns to a card loaded by Load more", async ({ page }) => {
   await page.keyboard.press("Enter");
   const fresh = page.locator('[data-media-card][href="#/next/item/m1-41"]');
   await expect(fresh).toBeFocused();
+  const before = await scrollOf(page);
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/#\/next\/item\/m1-41$/);
   await page.keyboard.press("Escape");
   await expect(page).toHaveURL(/#\/next\/search\/o$/);
   await expect(fresh).toBeFocused();
+  expect(Math.abs((await scrollOf(page)) - before)).toBeLessThanOrEqual(2);
 });
 
 test("Series: Back returns to the season that was shown and to the episode or its Details link", async ({ page }) => {
@@ -251,10 +254,12 @@ test("Fallback: a card that is gone gives focus to the card now at its place", a
   await expect(itemCard(row, "m5")).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/#\/next\/item\/m5$/);
-  // Wait for the detail to load, so Home is gone and its rows are fetched afresh on the way back.
   await expect(page.getByRole("heading", { level: 1, name: "Glass Orchard" })).toBeVisible();
-  // The next fetch of the row leaves m5 out.
+  // The next fetch of the row leaves m5 out. Marking it watched makes the kept Home rows stale, so they are
+  // fetched again, in the background, on the way back.
   hidden.add("m5");
+  await page.getByRole("button", { name: "Watched" }).click();
+  await expect(page.getByText("Marked as watched.")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page).toHaveURL(/#\/next\/home$/);
   await expect(itemCard(row, "m5")).toHaveCount(0);
@@ -278,4 +283,97 @@ test("A fresh visit never restores: the nav's Home link is a new visit, and Back
   await page.goBack();
   await expect(page).toHaveURL(/#\/next\/home$/);
   await expect(itemCard(row, "m4")).toBeFocused();
+});
+
+// P13-31: Back restores the place: the sort, the filters, every loaded page, the scroll position, and the card.
+for (const viewport of [{ width: 1440, height: 900 }, { width: 1920, height: 1080 }]) {
+  test(`Library at ${viewport.width}x${viewport.height}: Back restores the sort, the third page, the scroll position, and the card`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    const liveDelay = { libraryMs: 0 };
+    await signIn(page, { bigLibrary: true, liveDelay });
+    await navLink(page, "Movies").click();
+    await expect(page.getByRole("heading", { level: 1, name: "Movies" })).toBeFocused();
+    // A tall window can load the second page by itself, so the count is not fixed here.
+    await expect(gridCards(page).first()).toBeVisible();
+    await chooseSortAndFilter(page);
+    await expect(page).toHaveURL(/#\/next\/browse\/lib-movies\?sort=added-desc&filters=IsUnplayed$/);
+    await gridCards(page).first().focus();
+    // Pages load as the end nears the viewport; the keyboard walks there.
+    for (let attempt = 0; attempt < 20 && (await gridCards(page).count()) < 150; attempt += 1) {
+      await page.keyboard.press("End");
+      await page.waitForTimeout(300);
+    }
+    await expect(gridCards(page)).toHaveCount(150);
+    await gridCards(page).nth(125).focus();
+    const id = await focusedId(page);
+    const before = await scrollOf(page);
+    expect(before).toBeGreaterThan(0);
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/#\/next\/item\//);
+    // A server that answers slowly must not hold the screen back: it shows what it kept.
+    liveDelay.libraryMs = 5_000;
+    await page.keyboard.press("Escape");
+    await expect(page).toHaveURL(/#\/next\/browse\/lib-movies\?sort=added-desc&filters=IsUnplayed$/);
+    await expect(gridCards(page)).toHaveCount(150, { timeout: 2_000 });
+    await expect(page.getByTestId("card-skeleton")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Sort Newest added first" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Unwatched" })).toHaveAttribute("aria-pressed", "true");
+    await expect.poll(() => focusedId(page)).toBe(id);
+    expect(Math.abs((await scrollOf(page)) - before)).toBeLessThanOrEqual(2);
+  });
+
+  test(`Home at ${viewport.width}x${viewport.height}: Back restores the scroll position and the card`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    const liveDelay = { rowsMs: 0 };
+    await signIn(page, { longRows: true, liveDelay });
+    const row = latestMovies(page);
+    await row.getByRole("link").first().focus();
+    for (let step = 0; step < 6; step += 1) await page.keyboard.press("ArrowRight");
+    const id = await focusedId(page);
+    expect(id).not.toBe("");
+    const before = await scrollOf(page);
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/#\/next\/item\//);
+    liveDelay.rowsMs = 5_000;
+    await page.keyboard.press("Escape");
+    await expect(page).toHaveURL(/#\/next\/home$/);
+    await expect(row.locator(`[data-focus-id="${id}"] a`).first()).toBeFocused({ timeout: 2_000 });
+    await expect(page.locator('main [aria-busy="true"]')).toHaveCount(0);
+    expect(Math.abs((await scrollOf(page)) - before)).toBeLessThanOrEqual(2);
+  });
+}
+
+test("Library: opening a URL with a sort and filters shows them", async ({ page }) => {
+  await signIn(page);
+  await go(page, "#/next/browse/lib-movies?sort=added-desc&filters=IsUnplayed");
+  await expect(page.getByRole("heading", { level: 1, name: "Movies" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sort Newest added first" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Unwatched" })).toHaveAttribute("aria-pressed", "true");
+});
+
+test("Account: signing out and in again drops what was kept and starts at the defaults", async ({ page }) => {
+  let libraryRequests = 0;
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    if (url.pathname === "/Items" && url.searchParams.get("parentId") === "lib-movies") libraryRequests += 1;
+  });
+  await signIn(page);
+  await navLink(page, "Movies").click();
+  await expect(gridCards(page).first()).toBeVisible();
+  await chooseSortAndFilter(page);
+  await expect(page).toHaveURL(/#\/next\/browse\/lib-movies\?sort=added-desc&filters=IsUnplayed$/);
+  const first = libraryRequests;
+  expect(first).toBeGreaterThan(0);
+  await go(page, "#/next/settings");
+  await page.getByRole("tab", { name: "Account" }).click();
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await page.getByLabel("Server URL").waitFor();
+  await page.getByLabel("Server URL").fill(SERVER);
+  await page.keyboard.press("Enter");
+  await page.getByRole("heading", { name: "Home" }).waitFor({ timeout: 10_000 });
+  await navLink(page, "Movies").click();
+  await expect(page.getByRole("button", { name: "Sort Name A to Z" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Unwatched" })).toHaveAttribute("aria-pressed", "false");
+  await expect(gridCards(page).first()).toBeVisible();
+  expect(libraryRequests).toBeGreaterThan(first);
 });

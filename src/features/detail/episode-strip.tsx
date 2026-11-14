@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { ItemDetail, Season } from "../../domain/catalog";
 import type { SessionGateway } from "../../app/session";
+import { ACCOUNT_GC_TIME } from "../query-scope";
 import { imageUrlFor, toMediaRowItems } from "../card-view";
 import { MediaRow } from "../shared/ui";
 import { seasonEpisodesKey, seriesSeasonsKey } from "./detail-key";
@@ -27,7 +28,7 @@ export function EpisodeStrip({ gateway, item }: { gateway: SessionGateway; item:
     queryKey: seriesSeasonsKey(gateway, seriesId ?? ""),
     queryFn: ({ signal }) => gateway.seasons(seriesId!, signal),
     enabled: needsSeason,
-    gcTime: 0,
+    gcTime: ACCOUNT_GC_TIME,
   });
   const seasonId = item.seasonId ?? (seasons.data ? findSeasonId(seasons.data, item) : undefined);
   const enabled = isEpisode && seasonId !== undefined;
@@ -35,7 +36,7 @@ export function EpisodeStrip({ gateway, item }: { gateway: SessionGateway; item:
     queryKey: seasonEpisodesKey(gateway, seriesId ?? "", seasonId ?? ""),
     queryFn: ({ signal }) => gateway.episodes(seriesId!, seasonId!, signal),
     enabled,
-    gcTime: 0,
+    gcTime: ACCOUNT_GC_TIME,
   });
   if (!isEpisode) return null;
   const title = stripTitle(item);

@@ -271,3 +271,8 @@ Measured by the worst-case artwork captures; see `docs/design/contrast-report.md
 ## Flaky `rust-audit` on a Dependabot PR (#149, 2026-11-14)
 
 - `rustsec/audit-check` found no vulnerabilities but failed with `Not Found - https://docs.github.com/rest/checks/runs#update-a-check-run` while posting its check run. A rerun of the same job passed. If it recurs, run `cargo audit` directly in the job instead of the action, which needs no check-run API. S.
+
+- Cap kept browse data per account if memory grows; every visited screen is kept for the whole session (P13-31).
+- After sign-in, return to the route that sent the visitor to sign-in, so a reload keeps the place (P13-31).
+- A card restored from kept data that leaves in the background refetch moves focus to the same place in its row; a screen whose first card is a hero or a tile has no such fallback yet (P13-31).
+- A fresh nav-bar visit to a library shows every default-sort page that was loaded earlier, at the top; confirm in the design review that this fits DESIGN.md section 9 "A fresh visit never restores" (P13-31).

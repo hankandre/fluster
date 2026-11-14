@@ -63,6 +63,9 @@ export interface MockOptions {
   libraryPageError?: boolean;
   // Library /Items answers after this delay (the library loading state).
   libraryItemsDelayMs?: number;
+  // Delays that apply from the moment a test sets them, to prove a screen shown again does not wait for the
+  // server: library /Items answers after libraryMs, Home rows after rowsMs.
+  liveDelay?: { libraryMs?: number; rowsMs?: number };
   // Library /Items answers 500 (the library error state).
   libraryItemsError?: boolean;
   // /UserViews returns twelve libraries, so the nav overflows on a phone.
@@ -272,6 +275,7 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
         if (/^big-\d+$/.test(id)) return json(bigMovie(Number(id.slice(4)), opts));
         return missing();
       }
+      if (opts.liveDelay?.rowsMs && ["/UserItems/Resume", "/Shows/NextUp", "/Items/Latest", "/UserViews"].includes(p)) await sleep(opts.liveDelay.rowsMs);
       if (opts.rowDelayMs && ["/UserItems/Resume", "/Shows/NextUp", "/Items/Latest", "/UserViews"].includes(p)) await sleep(opts.rowDelayMs);
       if (/^\/User(Played|Favorite)Items\//.test(p)) {
         if (opts.flagError) return route.fulfill({ status: 500, headers: cors });
@@ -336,6 +340,7 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
           const start = Number(url.searchParams.get("startIndex") ?? 0);
           if (parent) {
             if (opts.libraryItemsDelayMs) await sleep(opts.libraryItemsDelayMs);
+            if (opts.liveDelay?.libraryMs) await sleep(opts.liveDelay.libraryMs);
             if (opts.libraryItemsError || (opts.libraryPageError && start > 0)) return route.fulfill({ status: 500, headers: cors });
           }
           if (parent === "box-1") return json({ Items: [movieDto("m1", opts), movieDto("m4", opts)], TotalRecordCount: 2 });

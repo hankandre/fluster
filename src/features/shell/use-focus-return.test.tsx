@@ -38,6 +38,42 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+describe("useFocusReturn scroll", () => {
+  const scrollTo = vi.fn();
+  let scrollHeight = 5000;
+
+  beforeEach(() => {
+    scrollTo.mockClear();
+    scrollHeight = 5000;
+    window.scrollTo = scrollTo as unknown as typeof window.scrollTo;
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 800 });
+    Object.defineProperty(document.documentElement, "scrollHeight", { configurable: true, get: () => scrollHeight });
+    resetFocusReturn();
+    armReturnNow({}, 2000);
+  });
+
+  it("scrolls as soon as the page is tall enough, then focuses the card", async () => {
+    scrollHeight = 1000;
+    mount();
+    let main!: HTMLElement;
+    await act(async () => {
+      main = screenWith("probe");
+      await Promise.resolve();
+    });
+    expect(scrollTo).not.toHaveBeenCalled();
+    expect(document.activeElement).not.toBe(main.querySelector("a"));
+    expect(isReturning()).toBe(true);
+    await act(async () => {
+      scrollHeight = 5000;
+      main.append(document.createElement("div"));
+      await Promise.resolve();
+    });
+    expect(scrollTo).toHaveBeenCalledExactlyOnceWith({ top: 2000, behavior: "instant" });
+    expect(document.activeElement).toBe(main.querySelector("a"));
+    expect(isReturning()).toBe(false);
+  });
+});
+
 describe("useFocusReturn", () => {
   it("focuses the card when it renders after the return began", async () => {
     mount();
@@ -49,6 +85,36 @@ describe("useFocusReturn", () => {
     });
     expect(document.activeElement).toBe(main.querySelector("a"));
     expect(isReturning()).toBe(false);
+  });
+
+  it("moves focus to the same place in the row when the restored card leaves in a refetch", async () => {
+    mount();
+    let main!: HTMLElement;
+    await act(async () => {
+      main = screenWith("probe", "next");
+      await Promise.resolve();
+    });
+    expect(document.activeElement).toBe(main.querySelector("a"));
+    await act(async () => {
+      main.querySelector('[data-focus-id="probe"]')?.remove();
+      await vi.advanceTimersByTimeAsync(100);
+    });
+    expect(document.activeElement).toBe(main.querySelector('[data-focus-id="next"] a'));
+  });
+
+  it("leaves focus alone when the user has moved on before the screen settles", async () => {
+    mount();
+    let main!: HTMLElement;
+    await act(async () => {
+      main = screenWith("probe", "next");
+      await Promise.resolve();
+    });
+    await act(async () => {
+      document.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true }));
+      main.querySelector('[data-focus-id="probe"]')?.remove();
+      await vi.advanceTimersByTimeAsync(100);
+    });
+    expect(document.activeElement).toBe(document.body);
   });
 
   it("waits while a section is busy, then falls back to the same place in the row", async () => {

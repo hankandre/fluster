@@ -13,11 +13,13 @@ import { useTvArrowFallback } from "../features/shell/use-tv-arrow-fallback";
 import { useBackspaceAsEscape } from "../features/shell/use-backspace-as-escape";
 import { useFocusReturn } from "../features/shell/use-focus-return";
 import { PlayerFeatureView, PlayerRouteView } from "../features/player";
-import { parseLibraryRoute, parsePlayRoute } from "../features/routes";
+import { parseCollectionRoute, parseLibraryRoute, parsePlayRoute, ROUTE_REPLACED_EVENT } from "../features/routes";
+import { markAccountDataStale } from "../features/query-scope";
+import { resetAccountData } from "./account-data";
 import { createServices, type AppServices } from "./compose";
 import { PlayerServicesProvider, type PlayerServices } from "./player-services";
 import { PreferencesProvider } from "./preferences";
-import { SessionProvider } from "./session";
+import { SessionProvider, type SessionGateway } from "./session";
 import { ToastProvider } from "../features/shared/ui";
 
 // The UI gallery exists only in browser development. Vite replaces import.meta.env.DEV with false in a
@@ -42,8 +44,13 @@ export function App() {
   );
   const preferences = useMemo(() => ({ streamingLimits: services.streamingLimits }), [services]);
   const queryClient = useQueryClient();
-  const refreshRows = useCallback(() => void refreshHomeRows(queryClient), [queryClient]);
-  const [hash, setHash] = useState(window.location.hash);
+  const refreshRows = useCallback(() => {
+    void refreshHomeRows(queryClient);
+    markAccountDataStale(queryClient);
+  }, [queryClient]);
+  const onAccountChanged = useCallback((next: SessionGateway | undefined) => resetAccountData(queryClient, next), [queryClient]);
+  // `visit` counts real navigations. A route replace (a sort or filter change) keeps it, so the screen is not remounted.
+  const [{ hash, visit }, setRoute] = useState({ hash: window.location.hash, visit: 0 });
 
   // The app lives under #/next. Anything else, including an empty hash, goes
   // to Home, which sends a signed-out visitor on to sign-in.
@@ -53,9 +60,15 @@ export function App() {
   }, [inApp]);
 
   useEffect(() => {
-    const onHashChange = () => setHash(window.location.hash);
+    // A hashchange can arrive after a quick second navigation; it names the same hash then, and is not a visit.
+    const onHashChange = () => setRoute((route) => (route.hash === window.location.hash ? route : { hash: window.location.hash, visit: route.visit + 1 }));
+    const onReplaced = () => setRoute((route) => ({ ...route, hash: window.location.hash }));
     window.addEventListener("hashchange", onHashChange);
-    return () => window.removeEventListener("hashchange", onHashChange);
+    window.addEventListener(ROUTE_REPLACED_EVENT, onReplaced);
+    return () => {
+      window.removeEventListener("hashchange", onHashChange);
+      window.removeEventListener(ROUTE_REPLACED_EVENT, onReplaced);
+    };
   }, []);
 
   return (
@@ -64,11 +77,12 @@ export function App() {
         createGateway={services.createGateway}
         realtime={services.realtime}
         onServerDataChanged={refreshRows}
+        onAccountChanged={onAccountChanged}
       >
         <PlayerServicesProvider services={player}>
           <PreferencesProvider preferences={preferences}>
             {!services.native && <BrowserModeLabel />}
-            {inApp ? renderWithChrome(hash, services) : null}
+            {inApp ? renderWithChrome(hash, visit, services) : null}
           </PreferencesProvider>
         </PlayerServicesProvider>
       </SessionProvider>
@@ -104,13 +118,13 @@ function chromeFor(hash: string): "nav" | "none" {
   }
 }
 
-function renderWithChrome(hash: string, services: AppServices) {
-  const route = renderRoute(hash, services);
+function renderWithChrome(hash: string, visit: number, services: AppServices) {
+  const route = renderRoute(hash, visit, services);
   if (chromeFor(hash) === "none") return route;
   return <SignedInChrome hash={hash}>{route}</SignedInChrome>;
 }
 
-function renderRoute(hash: string, services: AppServices) {
+function renderRoute(hash: string, visit: number, services: AppServices) {
   switch (hash) {
     case "#/next":
       return services.native ? <NotFoundView /> : <FeatureIndex />;
@@ -130,7 +144,7 @@ function renderRoute(hash: string, services: AppServices) {
       return GalleryView && !services.native ? <Suspense fallback={null}><GalleryView /></Suspense> : <NotFoundView />;
     default:
       if (hash.startsWith("#/next/play/")) return renderPlayRoute(hash);
-      return renderBrowseRoute(hash) ?? <NotFoundView />;
+      return renderBrowseRoute(hash, visit) ?? <NotFoundView />;
   }
 }
 
@@ -144,10 +158,14 @@ function renderPlayRoute(hash: string) {
 // Routes with an id: #/next/browse/<libraryId>, #/next/item/<id>, #/next/series/<id>, #/next/collection/<id>,
 // and #/next/search/<term>.
 // Anything else, including malformed ids, is not found.
-function renderBrowseRoute(hash: string) {
+function renderBrowseRoute(hash: string, visit: number) {
   if (hash.startsWith("#/next/browse/")) {
     const route = parseLibraryRoute(hash);
-    return route ? <BrowseView libraryId={route.libraryId} initialSort={route.sort} /> : undefined;
+    return route ? <BrowseView key={`${route.libraryId}|${visit}`} libraryId={route.libraryId} sort={route.sort} filters={route.filters} /> : undefined;
+  }
+  if (hash.startsWith("#/next/collection/")) {
+    const route = parseCollectionRoute(hash);
+    return route ? <CollectionView key={`${route.collectionId}|${visit}`} collectionId={route.collectionId} sort={route.sort} filters={route.filters} /> : undefined;
   }
   const [, , section, id, ...extra] = hash.split("/");
   if (!id || extra.length > 0) return undefined;
@@ -164,8 +182,6 @@ function renderBrowseRoute(hash: string) {
       return <SeriesView seriesId={itemId} />;
     case "search":
       return <SearchView term={itemId} />;
-    case "collection":
-      return <CollectionView collectionId={itemId} />;
     default:
       return undefined;
   }

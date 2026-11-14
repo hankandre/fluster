@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   currentEntryId,
   deferDefaultFocus,
@@ -8,6 +8,7 @@ import {
   rememberForReturn,
   resetFocusReturn,
   tryRestore,
+  tryRestoreScroll,
 } from "./focus-return";
 
 // Chromium's order for every hash navigation: the history change, popstate, then hashchange.
@@ -273,5 +274,132 @@ describe("slots", () => {
     navigate("#/next/home", home, "traverse");
     expect(readOnReturn("library")).toEqual({ pages: 2 });
     expect(readOnReturn("other")).toBeUndefined();
+  });
+});
+
+describe("scroll", () => {
+  const scrollTo = vi.fn();
+  let scrollY = 0;
+  let scrollHeight = 5000;
+
+  beforeEach(async () => {
+    // An earlier test clicked a link; jsdom delivers that navigation late.
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    window.history.replaceState(null, "", "#/next/home");
+    resetFocusReturn();
+    page({ Latest: ["a", "b", "c"] });
+    scrollTo.mockClear();
+    scrollY = 0;
+    scrollHeight = 5000;
+    window.scrollTo = scrollTo as unknown as typeof window.scrollTo;
+    Object.defineProperty(window, "scrollY", { configurable: true, get: () => scrollY });
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 800 });
+    Object.defineProperty(document.documentElement, "scrollHeight", { configurable: true, get: () => scrollHeight });
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
+  // Focus a card at a scroll position, leave, and come back.
+  function leaveScrolled(testId: string, at: number) {
+    scrollY = at;
+    return leaveFrom(testId);
+  }
+
+  it("records the scroll position per entry and restores it on a return before the card takes focus", () => {
+    const home = leaveScrolled("b", 1234);
+    navigate("#/next/home", home, "traverse");
+    expect(tryRestore()).toBe(true);
+    expect(scrollTo).toHaveBeenCalledWith({ top: 1234, behavior: "instant" });
+    expect(document.activeElement).toBe(el("b"));
+    expect(scrollTo.mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(document.activeElement!.scrollIntoView).mock.invocationCallOrder[0] ?? Infinity);
+  });
+
+  it("focuses with preventScroll and scrolls into view only when the card is outside the viewport", () => {
+    const home = leaveScrolled("b", 100);
+    navigate("#/next/home", home, "traverse");
+    const focus = vi.spyOn(el("b"), "focus");
+    el("b").getBoundingClientRect = () => ({ top: 10, left: 10, bottom: 50, right: 50 }) as DOMRect;
+    tryRestore();
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    expect(el("b").scrollIntoView).not.toHaveBeenCalled();
+
+    const again = leaveScrolled("b", 100);
+    navigate("#/next/home", again, "traverse");
+    el("b").getBoundingClientRect = () => ({ top: 2000, left: 10, bottom: 2040, right: 50 }) as DOMRect;
+    tryRestore();
+    expect(el("b").scrollIntoView).toHaveBeenCalledWith({ block: "nearest", inline: "nearest" });
+  });
+
+  it("keeps the card unfocused and the return pending while the page is shorter than the recorded position", () => {
+    const home = leaveScrolled("b", 3000);
+    navigate("#/next/home", home, "traverse");
+    el("b").blur();
+    scrollHeight = 1000;
+    expect(tryRestore()).toBe(false);
+    expect(isReturning()).toBe(true);
+    expect(scrollTo).not.toHaveBeenCalled();
+    expect(document.activeElement).not.toBe(el("b"));
+    scrollHeight = 5000;
+    expect(tryRestore()).toBe(true);
+    expect(scrollTo).toHaveBeenCalledTimes(1);
+    expect(scrollTo).toHaveBeenCalledWith({ top: 3000, behavior: "instant" });
+    expect(document.activeElement).toBe(el("b"));
+  });
+
+  it("scrolls clamped to the page end when the return finishes on a short page", () => {
+    const home = leaveScrolled("b", 3000);
+    navigate("#/next/home", home, "traverse");
+    scrollHeight = 1500;
+    finishReturn(true);
+    expect(scrollTo).toHaveBeenCalledWith({ top: 700, behavior: "instant" });
+    expect(isReturning()).toBe(false);
+  });
+
+  it("applies the scroll once", () => {
+    const home = leaveScrolled("b", 500);
+    navigate("#/next/home", home, "traverse");
+    expect(tryRestoreScroll()).toBe(true);
+    expect(tryRestoreScroll()).toBe(true);
+    expect(scrollTo).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not restore on a fresh visit", () => {
+    scrollY = 900;
+    el("b").focus();
+    push("#/next/item/x");
+    push("#/next/home");
+    expect(isReturning()).toBe(false);
+    expect(tryRestoreScroll()).toBe(false);
+    expect(scrollTo).not.toHaveBeenCalled();
+  });
+
+  it("returns to a scrolled entry that had no focused card", async () => {
+    const home = window.history.state;
+    scrollY = 640;
+    window.dispatchEvent(new Event("scroll"));
+    await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+    push("#/next/item/x");
+    navigate("#/next/home", home, "traverse");
+    expect(isReturning()).toBe(true);
+    expect(tryRestore()).toBe(false);
+    expect(scrollTo).toHaveBeenCalledWith({ top: 640, behavior: "instant" });
+    finishReturn();
+    expect(isReturning()).toBe(false);
+  });
+
+  it("stops waiting when the wheel or a touch takes over", () => {
+    for (const type of ["wheel", "touchstart"]) {
+      const home = leaveScrolled("b", 100);
+      navigate("#/next/home", home, "traverse");
+      expect(isReturning()).toBe(true);
+      document.dispatchEvent(new Event(type, { bubbles: true }));
+      expect(isReturning()).toBe(false);
+    }
+  });
+
+  it("forgets scroll positions on reset", () => {
+    const home = leaveScrolled("b", 100);
+    resetFocusReturn();
+    navigate("#/next/home", home, "traverse");
+    expect(isReturning()).toBe(false);
   });
 });

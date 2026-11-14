@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Clapperboard } from "lucide-react";
 import type { SessionGateway } from "../../app/session";
+import { ACCOUNT_GC_TIME } from "../query-scope";
 import { ButtonLink, EmptyState } from "../shared/ui";
 
 function hostOf(origin: string): string {
@@ -17,7 +18,7 @@ export function HomeEmpty({ gateway, scope }: { gateway: SessionGateway; scope: 
   const server = useQuery({
     queryKey: ["home", scope, "server"],
     queryFn: ({ signal }) => gateway.connect(signal),
-    gcTime: 0,
+    gcTime: ACCOUNT_GC_TIME,
     retry: false,
   });
   const name = server.data?.name || hostOf(gateway.origin);

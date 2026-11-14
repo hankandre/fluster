@@ -48,6 +48,16 @@ describe("App entry", () => {
     },
   );
 
+  it.each(["#/next/collection/box-1?sort=name-desc&filters=IsUnplayed", "#/next/browse/lib-1?sort=added-desc&filters=IsUnplayed"])(
+    "treats %s as a screen, which sends a signed-out visitor to sign-in",
+    async (hash) => {
+      window.location.hash = hash;
+      renderApp();
+      await waitFor(() => expect(window.location.hash).toBe("#/next/sign-in"));
+      expect(screen.queryByRole("heading", { name: "Not found" })).not.toBeInTheDocument();
+    },
+  );
+
   it("labels browser development mode", () => {
     window.location.hash = "#/next/sign-in";
     renderApp();
