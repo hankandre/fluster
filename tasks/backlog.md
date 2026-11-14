@@ -214,3 +214,8 @@ The review is `docs/research/code-quality-review-2026-11-13.md` (commit `fb8d071
 - P13-24 review low: `e2e/tv/browse.spec.ts` (Home) and `e2e/tv/detail.spec.ts` (Series) replaced two existing assertions (hero primary focused after Back; series primary focused plus two ArrowDown presses) with assertions on the restored card or row. This is the specified new behaviour, but the diff is not additions only; the human should confirm. S.
 - P13-24 review low: `src/features/shell/focus-return.ts` `remember()` deletes the entry's record on any focusin in main that is not a restorable item. If a screen focuses a non-card element during a pending return, a second Back to that entry restores nothing. Safe failure, unlikely. S.
 - P13-24 review low: `src/features/shell/use-focus-return.ts` gives up after 10s and forces focus to the same index or the deferred default. No test covers the slow-network path end to end (unverified); manual WebKitGTK checks are untested. S.
+
+## From P3-22 (preferences store)
+
+- P3-22 review low: `src/lib/browser-preference-store.ts:49-62` (`migrate`) and `:73-85` (`update`): when `setItem` throws and the legacy key is present, the subscriber's `get()` re-runs `migrate()` and overwrites a just-set limit with the legacy values. Add a migrated or dirty flag so `migrate()` skips the legacy key once memory has been written. S.
+- P3-22 review low: with blocked storage, `update()` writes only the changed key to memory while `get()` reads other keys from the memory defaults. Add a two-field, blocked-storage test when P3-23, P3-24, or P3-26 add a second preference. S.
