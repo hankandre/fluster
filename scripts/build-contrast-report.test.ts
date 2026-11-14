@@ -34,6 +34,12 @@ describe("renderReport", () => {
     expect(report).toContain("## Failures\n\nNo text run is below its threshold.\n");
   });
 
+  it("warns that a failure may be shadow-assisted text", () => {
+    const report = renderReport([{ capture: "a", runs: [run("x", 2)] }]);
+    expect(report).toContain("text shadows removed");
+    expect(report).toContain("a failure may be text that is legible only through its own text-shadow");
+  });
+
   it("is deterministic", () => {
     const input = [{ capture: "a", runs: [run("x", 2)] }];
     expect(renderReport(input)).toBe(renderReport(input));
