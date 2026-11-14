@@ -1,11 +1,13 @@
 mod detach;
 mod egl;
+mod layout;
 
 use crate::model::{PlayerEvent, PlayerSurfaceFrame};
 use detach::{clear_surface, collapse_surface};
 use egl::{gl_proc_address, gl_proc_address_with_context};
 use gtk::glib;
 use gtk::prelude::*;
+use layout::stack_video_under_webview;
 use libmpv2::{
     render::{OpenGLInitParams, RenderContext, RenderParam, RenderParamApiType},
     Mpv,
@@ -91,12 +93,6 @@ pub fn initialize(app: &AppHandle) -> Result<String, String> {
                     .downcast::<gtk::Window>()
                     .map_err(|_| "The WebView container is not attached to a GTK window.".to_string())?;
 
-                let overlay = gtk::Overlay::new();
-                overlay.set_hexpand(true);
-                overlay.set_vexpand(true);
-                let fixed = gtk::Fixed::new();
-                fixed.set_hexpand(true);
-                fixed.set_vexpand(true);
                 let gl_area = gtk::GLArea::new();
                 gl_area.set_auto_render(false);
                 gl_area.set_has_alpha(false);
@@ -142,24 +138,9 @@ pub fn initialize(app: &AppHandle) -> Result<String, String> {
                     glib::Propagation::Proceed
                 });
 
-                parent.remove(&webview);
-                webview.set_hexpand(true);
-                webview.set_vexpand(true);
-                webview.set_halign(gtk::Align::Fill);
-                webview.set_valign(gtk::Align::Fill);
-                native_window.remove(&parent);
-                fixed.put(&gl_area, 0, 0);
-                parent.add(&fixed);
-                overlay.add(&parent);
-                overlay.add_overlay(&webview);
-                overlay.set_overlay_pass_through(&webview, false);
-                native_window.add(&overlay);
-                let sized_fixed = fixed.clone();
-                let sized_webview = webview.clone();
-                overlay.connect_size_allocate(move |_, allocation| {
-                    sized_fixed.set_size_request(allocation.width(), allocation.height());
-                    sized_webview.set_size_request(allocation.width(), allocation.height());
-                });
+                let webview: gtk::Widget = webview.upcast();
+                let (overlay, fixed) =
+                    stack_video_under_webview(&native_window, &parent, &webview, &gl_area);
                 overlay.show_all();
                 webview.grab_focus();
 
@@ -167,7 +148,7 @@ pub fn initialize(app: &AppHandle) -> Result<String, String> {
                     *slot.borrow_mut() = Some(LinuxUi {
                         fixed,
                         gl_area,
-                        webview: webview.upcast(),
+                        webview,
                         wayland_display,
                     });
                 });
