@@ -1,4 +1,5 @@
 import { useCallback, useSyncExternalStore } from "react";
+import { deferDefaultFocus } from "../shell/focus-return";
 import { isTvForm } from "./tv-form";
 
 const listeners = new Set<() => void>();
@@ -35,6 +36,6 @@ export function useTvPrimaryRef(): (element: HTMLElement | null) => void {
       active === document.body ||
       active.matches("h1, h2, main") ||
       active.closest('nav[aria-label="Main"]') !== null;
-    if (free) element.focus();
+    if (free && !deferDefaultFocus(element)) element.focus();
   }, []);
 }

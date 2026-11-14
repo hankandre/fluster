@@ -12,6 +12,7 @@ import { itemCountLabel } from "./item-count";
 import { EmptyLibrary, FilteredEmpty, LibrarySkeleton } from "./library-states";
 import { DEFAULT_LIBRARY_SORT, LIBRARY_SORTS, librarySort, parseLibrarySort, type LibrarySortId } from "./library-sort";
 import { useAutoPaging } from "./use-auto-paging";
+import { readLibraryReturn, useLibraryReturn } from "./use-library-return";
 import "./library.css";
 
 export const PAGE_SIZE = 60;
@@ -43,8 +44,9 @@ interface LibraryGridProps {
 export function LibraryGrid({ gateway, parentId, itemTypes, label, errorLabel = label, initialSort = DEFAULT_LIBRARY_SORT }: LibraryGridProps) {
   const scope = scopeFor(gateway);
   const queryClient = useQueryClient();
-  const [sortId, setSortId] = useState<LibrarySortId>(initialSort);
-  const [filters, setFilters] = useState<BrowseFilter[]>([]);
+  const [restored] = useState(readLibraryReturn);
+  const [sortId, setSortIdState] = useState<LibrarySortId>(restored?.sortId ?? initialSort);
+  const [filters, setFiltersState] = useState<BrowseFilter[]>(restored?.filters ?? []);
   const { sortBy, sortOrder } = librarySort(sortId);
 
   const query = useInfiniteQuery({
@@ -55,6 +57,23 @@ export function LibraryGrid({ gateway, parentId, itemTypes, label, errorLabel = 
     getNextPageParam: (lastPage, allPages) => (lastPage.hasMore ? allPages.length * PAGE_SIZE : undefined),
     gcTime: 0,
   });
+
+  const { catchingUp, stopCatchUp } = useLibraryReturn(restored, { sortId, filters }, {
+    pages: query.data?.pages.length ?? 0,
+    isPending: query.isPending,
+    isError: query.isError,
+    hasNextPage: query.hasNextPage,
+    isFetchingNextPage: query.isFetchingNextPage,
+    fetchNextPage: () => void query.fetchNextPage(),
+  });
+  const setSortId = (value: LibrarySortId) => {
+    stopCatchUp();
+    setSortIdState(value);
+  };
+  const setFilters = (value: BrowseFilter[]) => {
+    stopCatchUp();
+    setFiltersState(value);
+  };
 
   const cards = query.data?.pages.flatMap((page) => page.cards) ?? [];
   const totalCount = query.data?.pages[0]?.totalCount;
@@ -140,7 +159,7 @@ export function LibraryGrid({ gateway, parentId, itemTypes, label, errorLabel = 
   const empty = query.isSuccess && cards.length === 0;
 
   return (
-    <section ref={section} className="library-grid" aria-label={label} aria-busy={query.isPending || query.isFetchingNextPage}>
+    <section ref={section} className="library-grid" aria-label={label} aria-busy={query.isPending || query.isFetchingNextPage || catchingUp}>
       <BrowseToolbar
         sortOptions={SORT_OPTIONS}
         sortValue={sortId}
@@ -157,9 +176,9 @@ export function LibraryGrid({ gateway, parentId, itemTypes, label, errorLabel = 
       {empty && filters.length === 0 ? <EmptyLibrary /> : null}
       {empty && filters.length > 0 ? <FilteredEmpty onClear={clearFilters} /> : null}
       {cards.length > 0 ? (
-        <ul className="media-grid" data-variant="poster" data-spatial-row="" ref={gridRef} onKeyDown={roving.onKeyDown} onFocus={onGridFocus}>
+        <ul className="media-grid" data-variant="poster" data-spatial-row="" data-focus-row="Library" ref={gridRef} onKeyDown={roving.onKeyDown} onFocus={onGridFocus}>
           {cards.map((card) => (
-            <li key={card.id}>
+            <li key={card.id} data-focus-id={card.id}>
               <MediaCard {...toMediaCardProps(card, "poster", imageUrl)} />
             </li>
           ))}

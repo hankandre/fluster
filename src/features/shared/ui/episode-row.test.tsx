@@ -7,6 +7,7 @@ import { cardAccessibleName } from "./media-card";
 const TICKS_PER_MINUTE = 600_000_000;
 
 const keeper: EpisodeRowProps = {
+  id: "ep-2",
   title: "The Keeper's Log",
   number: 2,
   subtitle: "Episode 2",
@@ -29,6 +30,11 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("EpisodeRow", () => {
+  it("marks its item id and the list's row name for focus return", () => {
+    render(<EpisodeList label="Season 1 episodes"><EpisodeRow {...keeper} /></EpisodeList>);
+    expect(document.querySelector('ul[data-focus-row="Season 1 episodes"] > li[data-focus-id="ep-2"]')).not.toBeNull();
+  });
+
   it("shows the number and title, the time left, and the overview", () => {
     renderRow();
     expect(document.querySelector(".ui-episode-row-title")).toHaveTextContent("2 · The Keeper's Log");
@@ -94,8 +100,8 @@ describe("EpisodeList", () => {
     return (
       <main>
         <EpisodeList label="Season 1 episodes">
-          <EpisodeRow {...keeper} title="First" href="#/play/1" detailsHref="#/item/1" />
-          <EpisodeRow {...keeper} title="Second" href="#/play/2" detailsHref="#/item/2" />
+          <EpisodeRow {...keeper} id="ep-1" title="First" href="#/play/1" detailsHref="#/item/1" />
+          <EpisodeRow {...keeper} id="ep-2" title="Second" href="#/play/2" detailsHref="#/item/2" />
         </EpisodeList>
       </main>
     );
@@ -129,7 +135,7 @@ describe("EpisodeList in the TV form", () => {
     render(
       <EpisodeList label="Season 1 episodes">
         <EpisodeRow {...keeper} />
-        <EpisodeRow {...keeper} title="Second" number={3} href="#/next/play/ep-3" detailsHref="#/next/item/ep-3" overview="A lamp goes out." />
+        <EpisodeRow {...keeper} id="ep-3" title="Second" number={3} href="#/next/play/ep-3" detailsHref="#/next/item/ep-3" overview="A lamp goes out." />
       </EpisodeList>,
     );
   }

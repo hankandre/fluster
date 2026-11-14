@@ -8,6 +8,7 @@ import { AmbientBackdrop } from "../shared/ambient-backdrop";
 import { Hero, MediaRow } from "../shared/ui";
 import { detailKey } from "../detail/detail-key";
 import { libraryRoute } from "../routes";
+import { deferDefaultFocus } from "../shell/focus-return";
 import { HomeEmpty } from "./home-empty";
 import { HomeHero } from "./home-hero";
 import { isHomeEmpty, useHomeData } from "./home-data";
@@ -79,7 +80,7 @@ function HomeContent({ gateway }: { gateway: SessionGateway }) {
     const active = document.activeElement;
     if (!first || (active && active !== document.body && !active.matches("h1, main") && !active.closest('nav[aria-label="Main"]'))) return;
     focusedFirstCard.current = true;
-    first.focus();
+    if (!deferDefaultFocus(first)) first.focus();
   });
 
   const ambientCard = focused ?? (hero.status === "ready" ? hero.card : undefined);

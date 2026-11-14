@@ -42,6 +42,28 @@ function renderStrip(item: ItemDetail, episodes = vi.fn().mockResolvedValue(card
   return episodes;
 }
 
+describe("EpisodeStrip start", () => {
+  const six = ["e1", "e2", "e3", "e4", "e5", "e6"].map((id) => ({ id, title: id, aspectRatio: 16 / 9, kind: "Episode" }) as EpisodeCard);
+  async function tabStop(current: string): Promise<string | null> {
+    renderStrip(episode({ id: current }), vi.fn().mockResolvedValue(six));
+    const links = await screen.findAllByRole("link");
+    const stop = links.find((link) => link.getAttribute("tabindex") === "0");
+    return stop?.getAttribute("href") ?? null;
+  }
+
+  it("holds the Tab stop on the episode after the current one", async () => {
+    expect(await tabStop("e5")).toBe("#/next/item/e6");
+  });
+
+  it("holds it on the previous episode when the current is last", async () => {
+    expect(await tabStop("e6")).toBe("#/next/item/e5");
+  });
+
+  it("holds it on the second episode when the current is first", async () => {
+    expect(await tabStop("e1")).toBe("#/next/item/e2");
+  });
+});
+
 describe("EpisodeStrip", () => {
   it("asks for the season's episodes and lists the others", async () => {
     const episodes = renderStrip(episode());

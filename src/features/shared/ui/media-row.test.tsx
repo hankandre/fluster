@@ -17,6 +17,22 @@ const items = [
   { id: "c", variant: "poster" as const, title: "Gamma", href: "#/c" },
 ];
 
+describe("MediaRow focus return", () => {
+  it("marks the row name, each item id, and the See all tile", () => {
+    const { container } = render(<MediaRow title="Latest" variant="poster" status="ready" items={items} seeAll={{ label: "See all in Movies", href: "#/all" }} />);
+    const list = container.querySelector('ul[data-focus-row="Latest"]');
+    expect(Array.from(list?.querySelectorAll("li[data-focus-id]") ?? []).map((li) => li.getAttribute("data-focus-id"))).toEqual(["a", "b", "c", "see-all"]);
+  });
+
+  it("gives the Tab stop to startIndex without moving focus", () => {
+    render(<MediaRow title="Latest" variant="poster" status="ready" items={items} startIndex={2} />);
+    const links = screen.getAllByRole("link");
+    expect(links[2]).toHaveAttribute("tabindex", "0");
+    expect(links[0]).toHaveAttribute("tabindex", "-1");
+    expect(document.activeElement).toBe(document.body);
+  });
+});
+
 describe("MediaRow", () => {
   it("names the section by its heading", () => {
     render(<MediaRow title="Latest" variant="poster" status="ready" items={items} />);
