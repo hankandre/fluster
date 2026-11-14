@@ -261,3 +261,7 @@ Measured by the worst-case artwork captures; see `docs/design/contrast-report.md
 ## Visual baseline accept script (found in P13-24, 2026-11-14)
 
 - `pnpm test:visual:accept <run-id>` also rewrote three captures that had not failed (`14-home-keyboard-focus`, `15-nav-keyboard-focus`, `85-ui-gallery-dialog-picker`); the agent reverted them by hand. Either the script copies every capture instead of only the failing ones, or those three render slightly differently between runs. Make accept copy only the failed captures, and investigate determinism for the three. S.
+
+## Dependabot alert 34: glib 0.18 unsoundness (RUSTSEC-2024-0429), 2026-11-14
+
+- `glib 0.18.5` is pulled in by `gtk`, `gdk` and `webkit2gtk` 0.18 (Tauri 2's GTK3 stack on Linux). The fix is in glib 0.20, which needs the GTK4 stack; Fluster cannot bump it alone. Fluster does not call `glib::VariantStrIter` (grep of `src-tauri/src`, 2026-11-14), so the unsound path is not reached by our code; reach through Tauri or WebKitGTK is unverified. Revisit when Tauri moves to GTK4; decide whether to dismiss the alert with this reason (owner call). S.
