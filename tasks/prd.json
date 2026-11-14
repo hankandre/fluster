@@ -2852,10 +2852,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:visual && ls docs/design/contrast-report.md",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "Implemented in worktree: worst-case art, opt-in worstCaseArt mock, six 10x-worst-art scenarios, contrast measurement and report. Local pnpm test:visual: 357 passed, report written with 24 failing runs (all player chrome). Baselines and CI run pending."
         },
         {
           "id": "P13-31",

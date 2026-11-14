@@ -20,9 +20,12 @@ const art = (name: string): Buffer => {
   return data;
 };
 
-export const frameDataUrl = (): string => `data:image/png;base64,${art("frame").toString("base64")}`;
+export const artDataUrl = (name: string): string => `data:image/png;base64,${art(name).toString("base64")}`;
+export const frameDataUrl = (): string => artDataUrl("frame");
 
 export interface MockOptions {
+  // The series Harbor Lights and its episodes serve bright, busy art, and ep-2 leads Continue watching (contrast captures).
+  worstCaseArt?: boolean;
   empty?: boolean;
   noQuickConnect?: boolean;
   holdQuickConnect?: boolean;
@@ -178,8 +181,12 @@ const MORE_LIBRARIES = ["Documentaries", "Anime", "Concerts", "Classics", "Kids"
 function bigMovie(index: number, opts: MockOptions): Dto {
   return { ...movieDto("m1", opts), Id: `big-${index}`, Name: `Big Movie ${String(index).padStart(3, "0")}` };
 }
-function imageFor(id: string, type: string): string {
+function imageFor(id: string, type: string, opts: MockOptions = {}): string {
   if (type === "Logo") return "logo";
+  if (opts.worstCaseArt) {
+    if (id === "s1") return type === "Backdrop" || type === "Thumb" ? "worst-backdrop" : "worst-poster";
+    if (episodes[id]) return "worst-still";
+  }
   if (movies[id]) return type === "Backdrop" ? movies[id].backdrop : type === "Thumb" ? movies[id].backdrop : movies[id].poster;
   if (series[id]) return type === "Backdrop" || type === "Thumb" ? series[id].backdrop : series[id].poster;
   if (episodes[id]) return episodes[id].thumb;
@@ -226,7 +233,7 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
       if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
       if (p.startsWith("/Sessions/Playing")) return route.fulfill({ status: 204, headers: cors });
       const img = /^\/Items\/([^/]+)\/Images\/(\w+)$/.exec(p);
-      if (img) return route.fulfill({ status: 200, headers: cors, contentType: "image/png", body: art(imageFor(img[1], img[2])) });
+      if (img) return route.fulfill({ status: 200, headers: cors, contentType: "image/png", body: art(imageFor(img[1], img[2], opts)) });
       if (/\/Trickplay\//.test(p)) return route.fulfill({ status: 200, headers: cors, contentType: "image/png", body: art("trick") });
       if (/^\/Videos\/[^/]+\/stream/.test(p)) return route.fulfill({ status: 200, headers: cors, contentType: "video/mp4", body: "" });
       if (/^\/MediaSegments\//.test(p)) {
@@ -291,7 +298,7 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
             ...(opts.manyLibraries ? MORE_LIBRARIES.map((Name) => ({ Id: `lib-${Name.toLowerCase().replace(/ /g, "-")}`, Name, CollectionType: "movies", ImageTags: { Primary: "tag-lib1" } })) : []),
           ] });
         case "/UserItems/Resume":
-          return json({ Items: opts.empty || opts.homeLatestOnly ? [] : [movieDto("m2", opts), episodeDto("ep-2")] });
+          return json({ Items: opts.empty || opts.homeLatestOnly ? [] : opts.worstCaseArt ? [episodeDto("ep-2"), movieDto("m2", opts)] : [movieDto("m2", opts), episodeDto("ep-2")] });
         case "/Shows/NextUp": {
           const seriesId = url.searchParams.get("seriesId") ?? url.searchParams.get("SeriesId");
           if (seriesId) {

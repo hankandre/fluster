@@ -2,6 +2,7 @@ import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 import { installMockServer } from "../support/mock-server";
+import { measureCapture } from "./contrast-measure";
 import { scenarios } from "./scenarios";
 
 const outDir = join(process.cwd(), "visual-captures");
@@ -100,6 +101,7 @@ for (const scenario of scenarios) {
           scale: "css",
         });
         writeFileSync(join(outDir, size, `${scenario.name}.png`), image);
+        if (scenario.contrast) await measureCapture(page, scenario.name, size, Boolean(scenario.fullPage));
         if (compare) expect(image).toMatchSnapshot([size, `${scenario.name}.png`]);
       });
     });
