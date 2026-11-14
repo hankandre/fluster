@@ -8,7 +8,7 @@ import { useHeaderArt } from "../detail/use-header-art";
 import { playRoute } from "../routes";
 import { ActionBar, ButtonLink, DetailHeader, InlineError, ProgressRing, Skeleton } from "../shared/ui";
 import { useTvPrimaryRef } from "../shared/use-tv-form";
-import { initialSeason, orderSeasons, seriesPrimary, type SeriesPrimary } from "./series-next";
+import { fallbackSeasonOf, seriesPrimaryState, type SeriesPrimary } from "./series-next";
 import { seriesFacts } from "./series-facts";
 import { useSeasonEpisodes, useSeriesNextUp, useSeriesSeasons } from "./series-queries";
 import { SeriesSeasons } from "./series-seasons";
@@ -28,23 +28,14 @@ export function SeriesBody({ gateway, item, onArt, headingRef }: SeriesBodyProps
   const nextUp = useSeriesNextUp(gateway, item.id);
 
   // Without a next episode from the server, the first episode of the season that would open is offered.
-  const fallbackSeason = seasons.data ? initialSeason(orderSeasons(seasons.data), undefined) : undefined;
+  const fallbackSeason = fallbackSeasonOf(seasons.data);
   const needsFallback = nextUp.isSuccess && nextUp.data === null;
   const fallback = useSeasonEpisodes(gateway, item.id, fallbackSeason?.id, needsFallback);
-
-  let pending: boolean;
-  let primary: SeriesPrimary | undefined;
-  if (nextUp.isPending) {
-    pending = true;
-  } else if (nextUp.isError) {
-    pending = false;
-  } else if (nextUp.data) {
-    pending = false;
-    primary = seriesPrimary(nextUp.data, undefined);
-  } else {
-    pending = seasons.isPending || (fallbackSeason !== undefined && fallback.isPending);
-    primary = seriesPrimary(undefined, fallback.data?.[0], fallbackSeason);
-  }
+  const { pending, primary } = seriesPrimaryState(
+    { status: nextUp.status, data: nextUp.data },
+    { status: seasons.status, data: seasons.data },
+    { status: fallback.status, data: fallback.data },
+  );
 
   const actions = pending
     ? <Skeleton shape="block" width="var(--skeleton-action-w)" height="var(--control-h)" />

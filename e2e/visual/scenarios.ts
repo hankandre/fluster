@@ -5,6 +5,9 @@ import { worstArtScenarios } from "./worst-art-scenarios";
 
 export type { Scenario };
 
+// Latest in Movies is empty, so a Home hero comes from Latest in Shows (a series).
+const HIDDEN_MOVIES = new Set(["m1", "m2", "m3", "m4", "m5", "m6"]);
+
 const intro = [{ Id: "seg-1", Type: "Intro", StartTicks: 0, EndTicks: ticks(90) }];
 
 // Signs in, then opens Settings through the nav.
@@ -146,6 +149,9 @@ export const scenarios: Scenario[] = [
     await page.waitForTimeout(700);
   } },
   { name: "19a-home-hero-newest", opts: { homeLatestOnly: true }, run: async (page) => { await signIn(page); await page.waitForTimeout(1_200); } },
+  { name: "19d-home-hero-series-resume", opts: { homeLatestOnly: true, hiddenFromLatest: HIDDEN_MOVIES, seriesNextUp: "resume" }, run: async (page) => { await signIn(page); await page.waitForTimeout(1_200); } },
+  { name: "19e-home-hero-series-next", opts: { homeLatestOnly: true, hiddenFromLatest: HIDDEN_MOVIES, seriesNextUp: "next" }, run: async (page) => { await signIn(page); await page.waitForTimeout(1_200); } },
+  { name: "19f-home-hero-series-watched", opts: { homeLatestOnly: true, hiddenFromLatest: HIDDEN_MOVIES, seriesNextUp: "none" }, run: async (page) => { await signIn(page); await page.waitForTimeout(1_200); } },
   { name: "19b-home-ambient-follow", run: async (page) => {
     await signIn(page);
     await page.waitForTimeout(800);

@@ -4,9 +4,10 @@ import type { SessionGateway } from "../../app/session";
 import { backdropWidth, heroArtFor, playActivation } from "../card-view";
 import { cardRoute, playRoute } from "../routes";
 import { Hero } from "../shared/ui";
-import { heroFacts, primaryAction, type HeroEpisode } from "./hero-facts";
+import { fallbackSeasonOf, seriesPrimaryState } from "../browse/series-next";
+import { heroFacts, primaryAction } from "./hero-facts";
 
-// The Home hero for one card: detail adds the overview and facts, and a series resolves its first episode.
+// The Home hero for one card: detail adds the overview and facts, and a series resolves the episode its series page would offer.
 // Both are optional; the hero renders from the card alone when they fail.
 export function HomeHero({ card, gateway, scope }: { card: MediaCard; gateway: SessionGateway; scope: number }) {
   const detail = useQuery({
@@ -16,26 +17,42 @@ export function HomeHero({ card, gateway, scope }: { card: MediaCard; gateway: S
     retry: false,
   });
   const isSeries = card.kind === "Series";
-  const episode = useQuery({
-    queryKey: ["home", scope, "hero-episode", card.id],
-    queryFn: async ({ signal }): Promise<HeroEpisode | null> => {
-      const seasons = await gateway.seasons(card.id, signal);
-      const season = seasons.find((candidate) => (candidate.indexNumber ?? 0) >= 1) ?? seasons[0];
-      if (!season) return null;
-      const [first] = await gateway.episodes(card.id, season.id, signal);
-      if (!first) return null;
-      return {
-        id: first.id,
-        seasonNumber: first.seasonNumber ?? season.indexNumber,
-        episodeNumber: first.episodeNumber,
-      };
-    },
+  // A series offers what its series page offers: Next Up, else the first episode of the season that would open.
+  const nextUp = useQuery({
+    queryKey: ["home", scope, "hero-next-up", card.id],
+    queryFn: async ({ signal }) => (await gateway.seriesNextUp(card.id, signal)) ?? null,
     enabled: isSeries,
     gcTime: 0,
     retry: false,
   });
+  const needsFallback = nextUp.isSuccess && nextUp.data === null;
+  const seasons = useQuery({
+    queryKey: ["home", scope, "hero-seasons", card.id],
+    queryFn: ({ signal }) => gateway.seasons(card.id, signal),
+    enabled: isSeries && needsFallback,
+    gcTime: 0,
+    retry: false,
+  });
+  const fallbackSeason = fallbackSeasonOf(seasons.data);
+  const fallback = useQuery({
+    queryKey: ["home", scope, "hero-episodes", card.id, fallbackSeason?.id ?? ""],
+    queryFn: ({ signal }) => gateway.episodes(card.id, fallbackSeason!.id, signal),
+    enabled: isSeries && needsFallback && fallbackSeason !== undefined,
+    gcTime: 0,
+    retry: false,
+  });
 
-  const action = primaryAction(card, episode.data ?? undefined);
+  const series = isSeries
+    ? seriesPrimaryState(
+      { status: nextUp.status, data: nextUp.data },
+      { status: seasons.status, data: seasons.data },
+      { status: fallback.status, data: fallback.data },
+    )
+    : undefined;
+  const action = series ? series.primary : primaryAction(card);
+  const progress = series
+    ? series.primary?.progress
+    : action && action.route.startTicks > 0 ? card.progress : undefined;
   const art = heroArtFor(card);
   const logo = card.logo;
 
@@ -47,16 +64,16 @@ export function HomeHero({ card, gateway, scope }: { card: MediaCard; gateway: S
         src: gateway.imageUrl(art.itemId, art.type, art.tag, backdropWidth()),
         ...(art.blurHash ? { blurHash: art.blurHash } : {}),
       } : undefined}
-      facts={heroFacts(card, detail.data)}
+      facts={heroFacts(card, detail.data, series?.primary?.numbering)}
       overview={detail.data?.overview}
       detailPending={detail.isPending}
       primary={action ? {
         label: action.label,
         href: playRoute(action.route),
         onActivate: playActivation(action.route),
-        ...(action.route.startTicks > 0 && card.progress !== undefined ? { progress: card.progress } : {}),
+        ...(progress !== undefined ? { progress } : {}),
       } : undefined}
-      primaryPending={isSeries && episode.isPending}
+      primaryPending={series?.pending ?? false}
       moreInfoHref={cardRoute(card)}
     />
   );

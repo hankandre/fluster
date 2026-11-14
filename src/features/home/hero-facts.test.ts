@@ -39,12 +39,8 @@ describe("primaryAction", () => {
     expect(primaryAction(card({ kind: "Episode", seasonNumber: 1 }))?.label).toBe("Play");
   });
 
-  it("plays a series' resolved episode from the start, and has no action until it resolves", () => {
-    const series = card({ kind: "Series", resumePositionTicks: 5 * MIN });
-    expect(primaryAction(series)).toBeUndefined();
-    expect(primaryAction(series, { id: "e1", seasonNumber: 1, episodeNumber: 1 }))
-      .toEqual({ label: "Play S1 · E1", route: { itemId: "e1", startTicks: 0 } });
-    expect(primaryAction(series, { id: "e1" })?.label).toBe("Play");
+  it("has no action for a series: the series page's rule supplies it", () => {
+    expect(primaryAction(card({ kind: "Series", resumePositionTicks: 5 * MIN }))).toBeUndefined();
   });
 
   it("has no action for a kind that cannot play", () => {
@@ -79,5 +75,12 @@ describe("heroFacts", () => {
   it("shows a series' year and up to two genres", () => {
     expect(heroFacts(card({ kind: "Series" }), detail({ year: 2020, genres: ["Drama", "Mystery", "Sci-Fi"] }))).toBe("2020 · Drama · Mystery");
     expect(heroFacts(card({ kind: "Series" }))).toBeUndefined();
+  });
+
+  it("puts the series' next-episode token first, and drops it when there is none", () => {
+    const series = detail({ year: 2020, genres: ["Drama", "Mystery"] });
+    expect(heroFacts(card({ kind: "Series" }), series, "S1 · E2")).toBe("S1 · E2 · 2020 · Drama · Mystery");
+    expect(heroFacts(card({ kind: "Series" }), undefined, "S1 · E2")).toBe("S1 · E2");
+    expect(heroFacts(card({ kind: "Series" }), series, undefined)).toBe("2020 · Drama · Mystery");
   });
 });
