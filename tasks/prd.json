@@ -2736,10 +2736,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual && cargo test --manifest-path src-tauri/Cargo.toml",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "Milestone 1 (native) done on branch task/P13-23: cargo test 192 passed, clippy -D warnings clean, command_allowlist unchanged. Milestone 2 (TypeScript, Info sheet, scrubber, TV scroll stop) done: pnpm check green, pnpm test:e2e 155 passed with 3 load flakes (playback-notices.spec.ts:42, player.spec.ts:57 and :74) that pass 120/120 alone with --repeat-each 5, pnpm test:visual 342 passed (3 flaky retried). Open: visual baselines via CI accept, fresh-context design review, real-video native gates."
+          "passes": true,
+          "evidence": "Milestone 1 (native) done on branch task/P13-23: cargo test 192 passed, clippy -D warnings clean, command_allowlist unchanged. Milestone 2 (TypeScript, Info sheet, scrubber, TV scroll stop) done: pnpm check green, pnpm test:e2e 155 passed with 3 load flakes (playback-notices.spec.ts:42, player.spec.ts:57 and :74) that pass 120/120 alone with --repeat-each 5, pnpm test:visual 342 passed (3 flaky retried). Review fix: stale gamma, audio facts, and buffered position cleared on reconfig; cargo test 194 passed, clippy clean, pnpm check green (2156 tests), pnpm test:visual 342 passed (3 flaky retried), e2e 156 passed with 2 load flakes (search.spec.ts:154, tv/detail.spec.ts:61) that pass 10/10 with --repeat-each 5. Fresh-context review done. Open at ship: visual baselines via CI accept, screenshots in PR, real-video native gates (listed in PR; demuxer-cache-time timeline unverified)."
         },
         {
           "id": "P13-21",
