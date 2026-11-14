@@ -98,6 +98,7 @@ export interface MediaStreamDto {
   Codec?: string;
   DisplayTitle?: string;
   Language?: string;
+  Title?: string | null;
   IsExternal?: boolean;
   DeliveryUrl?: string | null;
   // Display-only fields for the detail view.
@@ -113,6 +114,7 @@ export interface MediaStreamDto {
   ChannelLayout?: string | null;
   IsDefault?: boolean;
   IsForced?: boolean;
+  IsHearingImpaired?: boolean;
   VideoRange?: string;
   VideoRangeType?: string;
   ColorTransfer?: string | null;

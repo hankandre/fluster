@@ -80,7 +80,9 @@ describe("OptionList", () => {
     expect(media).toHaveClass("ui-option-media");
     expect(media).toHaveAttribute("aria-hidden", "true");
     expect(media.nextElementSibling).toHaveClass("ui-picker-text");
-    expect(screen.getByRole("option", { name: "Opening0:00" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Opening, 0:00" })).toBeInTheDocument();
+    // A row with no description keeps its content as its name.
+    expect(screen.getByRole("option", { name: "Plain" })).not.toHaveAttribute("aria-label");
     expect(document.querySelectorAll(".ui-option-media")).toHaveLength(1);
   });
 });

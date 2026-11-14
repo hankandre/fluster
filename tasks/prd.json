@@ -2827,10 +2827,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "todo",
+          "status": "in_progress",
           "owner": null,
           "passes": false,
-          "evidence": ""
+          "evidence": "Implemented on branch task/P13-29: pnpm check green; e2e and visual run in the verify step; ship pending."
         },
         {
           "id": "P13-30",

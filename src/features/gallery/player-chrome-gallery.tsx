@@ -1,12 +1,13 @@
 import { useState, type ReactNode } from "react";
 import type { LibraryItem } from "../../domain/catalog";
-import type { PlaybackSnapshot } from "../../domain/playback";
+import type { MediaTrack, PlaybackSnapshot, PlayerTrack } from "../../domain/playback";
 import { CONVERSION_REASON_COPY, type ConversionIndicator } from "../player/conversion-copy";
 import { InfoSheet } from "../player/chrome/info-sheet";
 import { Osd } from "../player/chrome/osd";
 import { CommandErrorPanel } from "../player/chrome/player-error";
 import { PlayerLoading } from "../player/chrome/player-loading";
 import { Scrubber } from "../player/chrome/scrubber";
+import { TrackPanel } from "../player/chrome/track-panel";
 import { SkipButton } from "../player/chrome/skip-button";
 import { UpNextCard } from "../player/chrome/up-next-card";
 import { PlayerTopBar } from "../player/chrome/player-top-bar";
@@ -53,6 +54,25 @@ const INDICATOR: ConversionIndicator = {
   subtitlesBurnedIn: true,
 };
 
+// Streams for the two-line track rows: two English subtitles, one forced and
+// one hard of hearing and external; two English audio tracks.
+const PLAN_TRACKS: MediaTrack[] = [
+  { index: 1, type: "Audio", displayTitle: "English - TrueHD - 7.1 - Default", codec: "truehd", language: "eng", external: false, channels: 8, isDefault: true },
+  { index: 2, type: "Audio", displayTitle: "English - AC3 - 5.1", codec: "ac3", language: "eng", external: false, channels: 6, title: "Commentary" },
+  { index: 3, type: "Subtitle", displayTitle: "English - PGS - Forced", codec: "pgssub", language: "eng", external: false, isForced: true },
+  { index: 4, type: "Subtitle", displayTitle: "English - SRT - External", codec: "subrip", language: "eng", external: true, isHearingImpaired: true },
+];
+
+const PLAYER_TRACKS: PlayerTrack[] = PLAN_TRACKS.map((track, position) => ({
+  playerId: position + 1,
+  jellyfinIndex: track.index,
+  type: track.type,
+  title: track.displayTitle,
+  language: track.language,
+  external: track.external,
+  selected: position === 0 || position === 2,
+}));
+
 function Frame({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="gallery-player-frame" role="group" aria-label={label}>
@@ -63,6 +83,7 @@ function Frame({ label, children }: { label: string; children: ReactNode }) {
 
 export function PlayerChromeGallery() {
   const [infoOpen, setInfoOpen] = useState(false);
+  const [tracksOpen, setTracksOpen] = useState(false);
   return (
     <section className="gallery-section" aria-label="Player chrome">
       <h2>Player chrome</h2>
@@ -83,6 +104,18 @@ export function PlayerChromeGallery() {
               indicator={INDICATOR}
               playOriginal={{ available: true, stillConverting: true, onPlay: () => undefined }}
               onClose={() => setInfoOpen(false)}
+            />
+          )}
+        </Frame>
+        <Frame label="Track panel with two-line labels">
+          <Button variant="secondary" onClick={() => setTracksOpen(true)}>Open Track panel</Button>
+          {tracksOpen && (
+            <TrackPanel
+              snapshot={{ ...SNAPSHOT, tracks: PLAYER_TRACKS }}
+              planTracks={PLAN_TRACKS}
+              onSelect={() => undefined}
+              onChangeConverted={() => undefined}
+              onClose={() => setTracksOpen(false)}
             />
           )}
         </Frame>

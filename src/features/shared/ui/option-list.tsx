@@ -77,6 +77,7 @@ export function OptionList({ label, options, value, onChange, disabled = false }
             tabIndex={!disabled && index === tabStop ? 0 : -1}
             aria-selected={index === selected}
             aria-disabled={inert || undefined}
+            aria-label={option.description ? `${option.label}, ${option.description}` : undefined}
             className="ui-picker-option"
             onClick={() => { if (!inert) onChange(option.value); }}
             onKeyDown={(event) => { if (!disabled) onKeyDown(event, index); }}

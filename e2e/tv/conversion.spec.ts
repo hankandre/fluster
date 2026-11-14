@@ -56,3 +56,41 @@ test("TV: a converted session shows its reason inside the safe area, and the chi
   await page.keyboard.press("Escape");
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
 });
+
+test("TV: the track panel's two-line rows work with the remote inside the safe area", async ({ page }) => {
+  const log = await mockPlayerServer(page, { converted: true, conversionReasons: "VideoCodecNotSupported", audioStreams: true });
+  await openArrivalTv(page);
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/#\/next\/play\/movie-1/);
+  await expect.poll(() => log.sequence).toContain("/Sessions/Playing play-1");
+
+  // Wake the chrome, drop to the control row, and move Right to Audio & Subtitles.
+  const tracks = page.getByRole("button", { name: "Audio & Subtitles" });
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowDown");
+  for (let press = 0; press < 8 && !(await tracks.evaluate((element) => element === document.activeElement)); press += 1) {
+    await page.keyboard.press("ArrowRight");
+  }
+  await expect(tracks).toBeFocused();
+  await page.keyboard.press("Enter");
+
+  const audio = page.getByRole("listbox", { name: "Audio track" });
+  const english = audio.getByRole("option", { name: "English, AAC Stereo · default", exact: true });
+  await expect(english).toBeFocused();
+  await expect(english).toContainText("AAC Stereo · default");
+  await expectNoSmallText(page);
+  await expectTitleSafe(page);
+
+  // Escape closes the sheet and returns focus to its trigger.
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".player-sheet")).toBeHidden();
+  await expect(tracks).toBeFocused();
+
+  // Down moves between the two-line rows and Enter chooses.
+  await page.keyboard.press("Enter");
+  await expect(english).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(audio.getByRole("option", { name: "French, AC-3 5.1", exact: true })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect.poll(() => log.playbackInfo.length).toBe(2);
+});

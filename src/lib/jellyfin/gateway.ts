@@ -777,6 +777,11 @@ export class JellyfinGateway {
           language: track.Language,
           external: Boolean(track.IsExternal),
           deliveryUrl: buildSubtitleUrl(this.serverUrl, track.DeliveryUrl),
+          ...(track.Title ? { title: track.Title } : {}),
+          ...(typeof track.Channels === "number" && track.Channels > 0 ? { channels: track.Channels } : {}),
+          ...(track.IsDefault ? { isDefault: true } : {}),
+          ...(track.IsForced ? { isForced: true } : {}),
+          ...(track.IsHearingImpaired ? { isHearingImpaired: true } : {}),
         }];
       }),
       defaultAudioStreamIndex: source.DefaultAudioStreamIndex ?? undefined,

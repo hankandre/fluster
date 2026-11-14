@@ -147,6 +147,14 @@ describe.each(versions)("PlaybackInfo fixtures from Jellyfin %s", (version) => {
     expect(multitrack.defaultSubtitleStreamIndex).toBeUndefined();
   });
 
+  it("carries each audio stream's title, channels, and default flag for the track labels", async () => {
+    const multitrack = await (await plan(version, "multitrack-profile", "item-multitrack")).run();
+    const audio = multitrack.tracks.filter((track) => track.type === "Audio");
+    expect(audio[0]).toMatchObject({ title: "English stereo", channels: 2, isDefault: true });
+    expect(audio[1]).toMatchObject({ title: "Spanish 5.1", channels: 6 });
+    expect(audio[1]).not.toHaveProperty("isDefault");
+  });
+
   it("carries the defaults the server computed from the user's configuration", async () => {
     const spanish = await (await plan(version, "multitrack-prefer-spanish", "item-multitrack")).run();
     expect(spanish.defaultAudioStreamIndex).toBe(2);

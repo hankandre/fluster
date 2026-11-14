@@ -243,6 +243,7 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
         onBackToDetails={backToDetails}
         retryLabel={playback.previousTracksOffered ? PREVIOUS_TRACKS : undefined}
         convertedTracks={playback.convertedTracks}
+        planTracks={playback.plan?.tracks}
         onChangeConvertedTrack={playback.changeTrack}
         playMethod={playback.plan?.playMethod}
         indicator={indicator}

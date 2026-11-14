@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { LibraryItem } from "../domain/catalog";
-import type { PlayerEngine, PlayMethod } from "../domain/playback";
+import type { MediaTrack, PlayerEngine, PlayMethod } from "../domain/playback";
 import type { TrackKind } from "../domain/track-choice";
 import { activeSegment, type MediaSegment } from "../domain/media-segments";
 import type { PlaybackSessionState } from "../lib/player/session-state";
@@ -54,6 +54,7 @@ export function PlayerView({
   seekPreview,
   chapters,
   convertedTracks,
+  planTracks,
   onChangeConvertedTrack,
   retryLabel = "Retry",
   playMethod,
@@ -86,6 +87,8 @@ export function PlayerView({
   // and a choice goes to onChangeConvertedTrack (undefined: subtitles off),
   // which may start a new conversion. Absent, it lists mpv's tracks.
   convertedTracks?: ConvertedTracks;
+  // The plan's streams, for the track rows' codec, channels, and flags.
+  planTracks?: readonly MediaTrack[];
   onChangeConvertedTrack?(kind: TrackKind, jellyfinIndex: number | undefined): Promise<void>;
   // The error panel's Retry text ("Back to previous tracks" after a failed track change).
   retryLabel?: string;
@@ -334,6 +337,7 @@ export function PlayerView({
           id={tracksId}
           snapshot={snapshot}
           converted={converted}
+          planTracks={planTracks}
           onSelect={(kind, id) => void execute(() => player.selectTrack(kind, id))}
           onChangeConverted={(change) => void execute(change)}
           onClose={closeSheet}

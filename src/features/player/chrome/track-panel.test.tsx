@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { PlaybackSnapshot, PlayerTrack } from "../../../domain/playback";
+import type { MediaTrack, PlaybackSnapshot, PlayerTrack } from "../../../domain/playback";
 import { TrackPanel } from "./track-panel";
 import type { ConvertedTracks } from "./track-options";
 
@@ -70,10 +70,43 @@ describe("TrackPanel", () => {
     expect(onChange.mock.calls).toEqual([["audio", 2], ["subtitle", undefined]]);
   });
 
-  it("disables the lists without a snapshot", () => {
+  it("says tracks are loading and disables the subtitle list without a snapshot", () => {
     render(<TrackPanel snapshot={undefined} onSelect={vi.fn()} onChangeConverted={vi.fn()} onClose={vi.fn()} />);
-    expect(audio()).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText("Loading tracks…")).toBeInTheDocument();
+    expect(screen.queryByRole("listbox", { name: "Audio track" })).not.toBeInTheDocument();
     expect(subtitles()).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("says there are no audio tracks, and focuses the selected subtitle row", () => {
+    render(<TrackPanel snapshot={{ ...snapshot, tracks: [] }} onSelect={vi.fn()} onChangeConverted={vi.fn()} onClose={vi.fn()} />);
+    expect(screen.getByText("No audio tracks to choose from.")).toBeInTheDocument();
+    expect(screen.queryByRole("listbox", { name: "Audio track" })).not.toBeInTheDocument();
+    expect(within(subtitles()).getByRole("option", { name: "Subtitles off" })).toHaveFocus();
+  });
+
+  it("shows two lines per row and tells two English subtitles apart", () => {
+    const withFacts: PlaybackSnapshot = {
+      ...snapshot,
+      tracks: [
+        { ...track(1, "Audio", "mpv one", true), language: "eng" },
+        { ...track(2, "Subtitle", "mpv two"), language: "eng" },
+        { ...track(3, "Subtitle", "mpv three"), language: "eng" },
+      ],
+    };
+    const planTracks: MediaTrack[] = [
+      { index: 11, type: "Audio", displayTitle: "x", codec: "aac", language: "eng", external: false, channels: 2, isDefault: true },
+      { index: 12, type: "Subtitle", displayTitle: "y", codec: "subrip", language: "eng", external: false },
+      { index: 13, type: "Subtitle", displayTitle: "z", codec: "subrip", language: "eng", external: false, isForced: true },
+    ];
+    render(<TrackPanel snapshot={withFacts} planTracks={planTracks} onSelect={vi.fn()} onChangeConverted={vi.fn()} onClose={vi.fn()} />);
+    expect(within(audio()).getByRole("option", { name: "English, AAC Stereo · default" })).toBeInTheDocument();
+    expect(within(subtitles()).getByRole("option", { name: "English, SRT" })).toBeInTheDocument();
+    expect(within(subtitles()).getByRole("option", { name: "English, SRT · forced" })).toBeInTheDocument();
+    expect(within(subtitles()).getAllByRole("option").map((option) => option.textContent)).toEqual([
+      "Subtitles off",
+      "EnglishSRT",
+      "EnglishSRT · forced",
+    ]);
   });
 
   it("closes with Close", () => {

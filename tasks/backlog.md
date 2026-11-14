@@ -235,3 +235,14 @@ Measured by the worst-case artwork captures; see `docs/design/contrast-report.md
 - For about one frame after the window shrinks, the video `GLArea` keeps its old size until the frontend's ResizeObserver sends the new frame; GTK clips it. Cosmetic. S.
 - `PlayerSurfaceFrame::validate` (`src-tauri/src/model.rs:92-104`) has no upper bound. A frame near `i32::MAX` overflows `allocated_width().max(1) * scale` (`linux.rs:111-112`): debug builds panic in a GTK callback, release builds wrap. Only the trusted WebView sends frames, so bound the frame in `validate`. S.
 - Leaving fullscreen or maximize relies on GTK's saved or default window size (1280×820). Untested on compositors other than the owner's (umbriel). S.
+
+## From P13-29 (track labels and spoken time)
+
+- The `Picker` trigger and rows elsewhere (the "English · TrueHD 7.1 ▾" trigger of DESIGN.md §7.10); there is no track Picker trigger in the player today. (P13-29)
+- The OSD line for `c` (`Subtitles: {title}`, `use-player-keys.ts`) still uses the raw title; it could use `trackRow().name` and detail. (P13-29)
+- Carry the audio and subtitle choice to the next episode (P15-07). (P13-29)
+- DESIGN.md §11 wording for spoken slider values (audit A11); waits for the owner. (P13-29)
+- Add DESIGN.md §10 copy rows for "Loading tracks…" and "No audio tracks to choose from." for the docs sync. (P13-29)
+- Add codec, channels, and flags to `PlayerTrack` in Rust for unmapped mpv tracks (a native change). (P13-29)
+- Audio-description labels (wishes W27, decision D6). (P13-29)
+- After a converted track choice renegotiates, keyboard focus does not return to the Audio & Subtitles trigger on Escape (seen in the TV e2e). (P13-29)

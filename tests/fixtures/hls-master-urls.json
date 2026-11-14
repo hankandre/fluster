@@ -35,7 +35,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -75,7 +76,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -115,7 +117,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -155,7 +158,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -195,7 +199,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -235,7 +240,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -275,7 +281,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -315,7 +322,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -355,7 +363,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           },
           {
             "index": 2,
@@ -364,7 +373,8 @@
             "codec": "ass",
             "language": "eng",
             "external": false,
-            "deliveryUrl": "http://127.0.0.1:8096/Videos/item-ass/item-ass/Subtitles/2/0/Stream.ass"
+            "deliveryUrl": "http://127.0.0.1:8096/Videos/item-ass/item-ass/Subtitles/2/0/Stream.ass",
+            "title": "Styled"
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -404,7 +414,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           },
           {
             "index": 2,
@@ -413,7 +424,8 @@
             "codec": "ass",
             "language": "eng",
             "external": false,
-            "deliveryUrl": "https://media.test/Videos/item-ass/item-ass/Subtitles/2/0/Stream.ass"
+            "deliveryUrl": "https://media.test/Videos/item-ass/item-ass/Subtitles/2/0/Stream.ass",
+            "title": "Styled"
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -462,7 +474,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 2,
@@ -512,7 +525,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 2,
@@ -553,7 +567,10 @@
             "displayTitle": "English stereo - AAC - Default",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "title": "English stereo",
+            "channels": 2,
+            "isDefault": true
           },
           {
             "index": 2,
@@ -561,7 +578,9 @@
             "displayTitle": "Spanish 5.1 - Dolby Digital",
             "codec": "ac3",
             "language": "spa",
-            "external": false
+            "external": false,
+            "title": "Spanish 5.1",
+            "channels": 6
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -601,7 +620,10 @@
             "displayTitle": "English stereo - AAC - Default",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "title": "English stereo",
+            "channels": 2,
+            "isDefault": true
           },
           {
             "index": 2,
@@ -609,7 +631,9 @@
             "displayTitle": "Spanish 5.1 - Dolby Digital",
             "codec": "ac3",
             "language": "spa",
-            "external": false
+            "external": false,
+            "title": "Spanish 5.1",
+            "channels": 6
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -649,7 +673,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           },
           {
             "index": 2,
@@ -657,7 +682,8 @@
             "displayTitle": "English - Default - DVDSUB",
             "codec": "DVDSUB",
             "language": "eng",
-            "external": false
+            "external": false,
+            "isDefault": true
           }
         ],
         "defaultAudioStreamIndex": 1,
@@ -698,7 +724,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           },
           {
             "index": 2,
@@ -706,7 +733,8 @@
             "displayTitle": "English - Default - DVDSUB",
             "codec": "DVDSUB",
             "language": "eng",
-            "external": false
+            "external": false,
+            "isDefault": true
           }
         ],
         "defaultAudioStreamIndex": 1,
@@ -747,7 +775,8 @@
             "displayTitle": "English - Dolby Digital - Stereo",
             "codec": "ac3",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -787,7 +816,8 @@
             "displayTitle": "English - Dolby Digital - Stereo",
             "codec": "ac3",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -908,7 +938,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -949,7 +980,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -990,7 +1022,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -1031,7 +1064,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -1072,7 +1106,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -1113,7 +1148,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -1154,7 +1190,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -1195,7 +1232,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -1236,7 +1274,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           },
           {
             "index": 2,
@@ -1245,7 +1284,8 @@
             "codec": "ass",
             "language": "eng",
             "external": false,
-            "deliveryUrl": "http://127.0.0.1:8096/Videos/item-ass/item-ass/Subtitles/2/0/Stream.ass"
+            "deliveryUrl": "http://127.0.0.1:8096/Videos/item-ass/item-ass/Subtitles/2/0/Stream.ass",
+            "title": "Styled"
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -1286,7 +1326,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           },
           {
             "index": 2,
@@ -1295,7 +1336,8 @@
             "codec": "ass",
             "language": "eng",
             "external": false,
-            "deliveryUrl": "https://media.test/Videos/item-ass/item-ass/Subtitles/2/0/Stream.ass"
+            "deliveryUrl": "https://media.test/Videos/item-ass/item-ass/Subtitles/2/0/Stream.ass",
+            "title": "Styled"
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -1345,7 +1387,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 2,
@@ -1396,7 +1439,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 2,
@@ -1437,7 +1481,10 @@
             "displayTitle": "English stereo - AAC - Default",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "title": "English stereo",
+            "channels": 2,
+            "isDefault": true
           },
           {
             "index": 2,
@@ -1445,7 +1492,9 @@
             "displayTitle": "Spanish 5.1 - Dolby Digital",
             "codec": "ac3",
             "language": "spa",
-            "external": false
+            "external": false,
+            "title": "Spanish 5.1",
+            "channels": 6
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -1485,7 +1534,10 @@
             "displayTitle": "English stereo - AAC - Default",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "title": "English stereo",
+            "channels": 2,
+            "isDefault": true
           },
           {
             "index": 2,
@@ -1493,7 +1545,9 @@
             "displayTitle": "Spanish 5.1 - Dolby Digital",
             "codec": "ac3",
             "language": "spa",
-            "external": false
+            "external": false,
+            "title": "Spanish 5.1",
+            "channels": 6
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -1534,7 +1588,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           },
           {
             "index": 2,
@@ -1542,7 +1597,8 @@
             "displayTitle": "English - Default - DVDSUB",
             "codec": "DVDSUB",
             "language": "eng",
-            "external": false
+            "external": false,
+            "isDefault": true
           }
         ],
         "defaultAudioStreamIndex": 1,
@@ -1584,7 +1640,8 @@
             "displayTitle": "English - AAC - Stereo",
             "codec": "aac",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           },
           {
             "index": 2,
@@ -1592,7 +1649,8 @@
             "displayTitle": "English - Default - DVDSUB",
             "codec": "DVDSUB",
             "language": "eng",
-            "external": false
+            "external": false,
+            "isDefault": true
           }
         ],
         "defaultAudioStreamIndex": 1,
@@ -1634,7 +1692,8 @@
             "displayTitle": "English - Dolby Digital - Stereo",
             "codec": "ac3",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 1
@@ -1675,7 +1734,8 @@
             "displayTitle": "English - Dolby Digital - Stereo",
             "codec": "ac3",
             "language": "eng",
-            "external": false
+            "external": false,
+            "channels": 2
           }
         ],
         "defaultAudioStreamIndex": 1

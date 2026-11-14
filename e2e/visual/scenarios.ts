@@ -512,6 +512,12 @@ export const scenarios: Scenario[] = [
     await page.getByRole("group", { name: "Conversion notice" }).scrollIntoViewIfNeeded();
     await page.waitForTimeout(300);
   } },
+  { name: "88a-ui-gallery-track-panel", fullPage: true, run: async (page) => {
+    await go(page, "#/next/gallery", 600);
+    await page.getByRole("button", { name: "Open Track panel" }).click();
+    await page.getByRole("region", { name: "Audio and subtitles" }).waitFor();
+    await page.waitForTimeout(300);
+  } },
   { name: "89-ui-gallery-player-cannot-start", run: async (page) => {
     await go(page, "#/next/gallery", 600);
     await page.getByRole("button", { name: "Show Player cannot start" }).click();

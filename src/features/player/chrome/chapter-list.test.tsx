@@ -75,7 +75,7 @@ describe("ChapterList", () => {
     setup({ picture });
     expect(picture.mock.calls.map(([seconds]) => seconds)).toEqual([0, 65, 3723]);
     expect(document.querySelectorAll(".ui-option-media")).toHaveLength(3);
-    expect(screen.getByRole("option", { name: "Contact1:05" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Contact, 1:05" })).toBeInTheDocument();
   });
 
   it("has text-only rows without a picture", () => {
