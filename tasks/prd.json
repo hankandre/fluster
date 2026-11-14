@@ -357,10 +357,10 @@
             "The PR calls out the CI change"
           ],
           "verify": "pnpm check",
-          "status": "in_progress",
+          "status": "done",
           "owner": "claude-sonnet",
-          "passes": false,
-          "evidence": "Red first: pnpm test scripts/ci-check-parity.test.ts failed naming pnpm test:no-test-engine, pnpm typecheck:integration, pnpm typecheck:core. After ci.yml edit: 16 passed. ci.yml diff is exactly 3 added '- run: pnpm ...' lines; grep for uses/secrets/permissions/env empty. Local throwaway (typeof window in src/domain/playback.ts): pnpm typecheck:core failed 'error TS2304: Cannot find name window', pnpm build exit 0, reverted with git checkout. Pending (Ship): throwaway CI run link, revert run link, PR body CI change section."
+          "passes": true,
+          "evidence": "Red first: pnpm test scripts/ci-check-parity.test.ts failed naming pnpm test:no-test-engine, pnpm typecheck:integration, pnpm typecheck:core. After ci.yml edit: 16 passed. ci.yml diff is exactly 3 added '- run: pnpm ...' lines; grep for uses/secrets/permissions/env empty. Local throwaway (typeof window in src/domain/playback.ts): pnpm typecheck:core failed 'error TS2304: Cannot find name window', pnpm build exit 0, reverted with git checkout. Acceptance 3 (PR #153): throwaway commit (typeof window in src/domain/playback.ts) failed the frontend job at step pnpm typecheck:core with 'error TS2304: Cannot find name 'window'.', run https://github.com/hankandre/fluster/actions/runs/43541877897 ; reverted in a new commit, frontend job green with test:no-test-engine, typecheck:integration, typecheck:core passing, run https://github.com/hankandre/fluster/actions/runs/43544153109 . Acceptance 5: PR #153 body has a CI change section."
         },
         {
           "id": "P0-16",
