@@ -18,6 +18,7 @@ export const meta = {
 //   from: "check" | "implement" | "review"  skip finished phases (single task only)
 //   notes: [...]                            spec-check notes for the implementer (with from: "implement")
 //   evidence: "..."                         verify evidence from the finished implementation (with from: "review")
+//   ciSteps: [...]                          acceptance steps that need a pushed branch or CI runs (with from: "review")
 // A task whose spec needs a new design call is parked, and the run moves on.
 // The run stops early only on a denied command.
 const input = typeof args === 'string' ? { task: args } : args || {};
@@ -45,6 +46,7 @@ const WORK = {
     failures: strings,
     blockers: strings,
     deniedCommands: strings,
+    ciSteps: strings,
   },
   required: ['done', 'checksPassed', 'summary', 'evidence'],
 };
@@ -175,10 +177,11 @@ Return as open questions only product or design choices the human must make that
 
   // 3. Implement (the implementer runs the checks itself)
   let evidence = opts.evidence || `See the evidence field of ${task} in tasks/prd.json on ${branch}.`;
+  let ciSteps = Array.isArray(opts.ciSteps) ? opts.ciSteps : [];
   if (!skipImpl) {
   const impl = await work(
     `Implement the approved spec.${specNotes.length ? `\nAlso resolve these spec-check notes, updating the spec where they change it:\n${specNotes.join('\n')}` : ''}
-Commit the spec with the work, one milestone per commit. Set the task's status to in_progress with evidence in tasks/prd.json. Do not push or open a PR. Return done=false with blockers if you cannot finish.`,
+Commit the spec with the work, one milestone per commit. Set the task's status to in_progress with evidence in tasks/prd.json. Do not push or open a PR. If an acceptance item can only be met with a pushed branch, an open PR, or CI runs (for example a throwaway commit that must fail CI, or baselines rendered on the CI host), do everything else, set done=true, and list each such step in ciSteps; the Ship phase does them. Return done=false with blockers if you cannot finish for any other reason.`,
     `implement ${task}`,
     'Implement',
   );
@@ -186,6 +189,7 @@ Commit the spec with the work, one milestone per commit. Set the task's status t
   if (denied(impl)) return result('denied', denied(impl));
   if (!impl.done || !impl.checksPassed) return result('blocked', (impl.blockers || []).concat(impl.failures || []));
   evidence = impl.evidence;
+  ciSteps = ciSteps.concat(impl.ciSteps || []);
   }
 
   // 4. Review (one round)
@@ -211,7 +215,7 @@ Adversarially review git diff origin/main...${branch} for token, URL, or session
   const followUp = await work(
     `${blocking.length ? `Fix these review findings and commit, with a test for each behavior change:\n${blocking.join('\n')}` : 'No review findings need a fix.'}
 ${lows.length ? `Log these low findings as follow-ups in the active plan and commit; do not fix them:\n${lows.join('\n')}` : ''}
-Then, if every acceptance item is met (the review above counts as the fresh-context design review; the Ship phase links screenshots) and the spec does not reserve sign-off for the human, set the task's status to done and passes to true in tasks/prd.json, update its evidence, tick its line in the active plan, and commit. Do not push.`,
+Then, if every acceptance item is met (the review above counts as the fresh-context design review; the Ship phase links screenshots) and the spec does not reserve sign-off for the human, set the task's status to done and passes to true in tasks/prd.json, update its evidence, tick its line in the active plan, and commit. Do not push.${ciSteps.length ? `\nThese acceptance steps need CI and are done in the Ship phase, so treat them as pending (not as blockers) and leave status in_progress:\n${ciSteps.join('\n')}` : ''}`,
     `follow-ups ${task}`,
     'Review',
   );
@@ -219,19 +223,23 @@ Then, if every acceptance item is met (the review above counts as the fresh-cont
   if (denied(followUp)) return result('denied', denied(followUp));
   if (!followUp.done || !followUp.checksPassed) return result('blocked', (followUp.blockers || []).concat(followUp.failures || []));
   evidence = followUp.evidence || evidence;
+  ciSteps = ciSteps.concat(followUp.ciSteps || []);
 
   // 5. Ship (CI fixes go through the same retry and Fable escalation)
   const shipPrompt = `${common}
 Ship with the ship skill: rebase onto origin/main if it moved (force-with-lease is allowed on this branch), push, open the PR if none exists, enable auto-merge with rebase, and wait for CI with gh pr checks --watch. The PR body must explain user impact, testing (use the evidence below), conversion and security implications, untested gates, and call out any change to invariants, docs/security.md, release signing, or CI. For a UI change, add a Screenshots section that links the visual-captures artifact from the PR's CI run (gh api repos/hankandre/fluster/actions/runs/<run>/artifacts) and names the captures that changed, plus a Design review notes section from the review. Change no source files. If CI is red, return merged=false with each failing check and its cause. After a merge, run git -C /home/handre/Code/fluster pull --ff-only and remove the worktree and branch.
 Evidence: ${evidence}
-Review: ${blocking.length} fixed, ${lows.length} low logged in the plan.`;
-  let ship = await agent(shipPrompt, { model: 'sonnet', effort: 'low', schema: SHIP, phase: 'Ship', label: `ship ${task}` });
+Review: ${blocking.length} fixed, ${lows.length} low logged in the plan.${ciSteps.length ? `
+Before enabling auto-merge, do these CI-dependent acceptance steps on this PR branch. Temporary commits are allowed only when a step asks for one, and each must be reverted in a later commit. Record each run URL in the task's evidence. Then, if every acceptance item is met, set the task's status to done and passes to true, commit, and push. This is the one case where the Ship phase changes files:
+${ciSteps.join('\n')}` : ''}`;
+  const shipEffort = ciSteps.length ? 'medium' : 'low';
+  let ship = await agent(shipPrompt, { model: 'sonnet', effort: shipEffort, schema: SHIP, phase: 'Ship', label: `ship ${task}` });
   if (!ship) return result('failed', 'The ship agent returned nothing.');
   if (denied(ship)) return result('denied', denied(ship));
   if (!ship.merged && ship.ciFailures && ship.ciFailures.length) {
     const fixed = await work(`CI failed on the PR. Fix the cause, commit, and push:\n${ship.ciFailures.join('\n')}`, `fix CI ${task}`, 'Ship');
     if (denied(fixed)) return result('denied', denied(fixed));
-    ship = await agent(shipPrompt, { model: 'sonnet', effort: 'low', schema: SHIP, phase: 'Ship', label: `ship ${task} (retry)` });
+    ship = await agent(shipPrompt, { model: 'sonnet', effort: shipEffort, schema: SHIP, phase: 'Ship', label: `ship ${task} (retry)` });
   }
   if (!ship || !ship.merged) return result('ci-red', ship ? { prUrl: ship.prUrl, ciFailures: ship.ciFailures } : 'The ship retry returned nothing.');
   return { task, outcome: 'merged', prUrl: ship.prUrl, fixed: blocking, lowsLogged: lows };
