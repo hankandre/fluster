@@ -574,6 +574,80 @@ describe("PlaybackCoordinator", () => {
     expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal), true);
   });
 
+  it("redacts a launch failure that Tauri sends as a string, and still reports a failed stop", async () => {
+    const gateway = {
+      createPlaybackPlan: vi.fn(async () => plan),
+      reportStart: vi.fn(async () => undefined),
+      reportProgress: vi.fn(async () => undefined),
+      reportStopped: vi.fn(async () => undefined),
+      authorizationHeader: () => "test-header",
+      stopActiveEncoding: vi.fn(async () => undefined),
+    } as PlaybackGateway;
+    const player = new FakePlayer();
+    player.launch.mockImplementation(async () => {
+      player.listener?.({ kind: "loaded", snapshot });
+      await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
+      throw 'mpv could not open https://media.test/x?api_key=SECRET-TOKEN (Token="SECRET-TOKEN")';
+    });
+    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
+
+    const caught = await coordinator.start(item).then(() => undefined, (error: unknown) => error);
+    await coordinator.flush();
+
+    expect(caught).toBeDefined();
+    expect(String(caught)).toContain("mpv could not open");
+    expect(String(caught)).not.toContain("SECRET-TOKEN");
+    expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal), true);
+  });
+
+  it.each([
+    ["string", "mpv did not stop at https://media.test/x?api_key=SECRET-TOKEN"],
+    ["Error", new Error("mpv did not stop at https://media.test/x?api_key=SECRET-TOKEN")],
+  ])("reads a failed stop after the end (%s) the same way, redacted", async (_label, failure) => {
+    const gateway = {
+      createPlaybackPlan: vi.fn(async () => plan),
+      reportStart: vi.fn(async () => undefined),
+      reportProgress: vi.fn(async () => undefined),
+      reportStopped: vi.fn(async () => undefined),
+      authorizationHeader: () => "test-header",
+      stopActiveEncoding: vi.fn(async () => undefined),
+    } as PlaybackGateway;
+    const player = new FakePlayer();
+    player.stop.mockRejectedValueOnce(failure);
+    const onEvent = vi.fn();
+    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent, onReportingError: vi.fn() });
+    await coordinator.start(item);
+    player.listener?.({ kind: "loaded", snapshot });
+    await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
+    player.listener?.({ kind: "ended", snapshot, reason: "eof" });
+
+    await vi.waitFor(() => expect(onEvent).toHaveBeenCalledWith(expect.objectContaining({ kind: "error" })));
+    const errorEvent = onEvent.mock.calls.map(([event]) => event).find((event) => event.kind === "error");
+    expect(errorEvent.message).toContain("mpv did not stop at");
+    expect(errorEvent.message).not.toContain("SECRET-TOKEN");
+  });
+
+  it("keeps the fixed shutdown copy when a failed stop has no text", async () => {
+    const gateway = {
+      createPlaybackPlan: vi.fn(async () => plan),
+      reportStart: vi.fn(async () => undefined),
+      reportProgress: vi.fn(async () => undefined),
+      reportStopped: vi.fn(async () => undefined),
+      authorizationHeader: () => "test-header",
+      stopActiveEncoding: vi.fn(async () => undefined),
+    } as PlaybackGateway;
+    const player = new FakePlayer();
+    player.stop.mockRejectedValueOnce({ code: 1 });
+    const onEvent = vi.fn();
+    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent, onReportingError: vi.fn() });
+    await coordinator.start(item);
+    player.listener?.({ kind: "ended", snapshot, reason: "eof" });
+
+    await vi.waitFor(() =>
+      expect(onEvent).toHaveBeenCalledWith({ kind: "error", message: "The player did not finish shutting down." }),
+    );
+  });
+
   describe("stopping server encodes (P10-07)", () => {
     it("stops the old encode before negotiating a retry of a converting item", async () => {
       const order: string[] = [];

@@ -1,4 +1,3 @@
-import { redactText } from "../lib/redact";
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { LibraryItem } from "../domain/catalog";
 import type { PlayerEngine, PlayMethod } from "../domain/playback";
@@ -7,6 +6,7 @@ import { activeSegment, type MediaSegment } from "../domain/media-segments";
 import type { PlaybackSessionState } from "../lib/player/session-state";
 import { type ConversionIndicator } from "../features/player/conversion-copy";
 import type { ReadyPlayerStatus } from "../features/player/player-status";
+import { errorReason } from "../features/player/safe-reason";
 import { ChapterList } from "../features/player/chrome/chapter-list";
 import { InfoSheet, type PlayOriginalState } from "../features/player/chrome/info-sheet";
 import { conversionCopy } from "../features/player/chrome/osd-copy";
@@ -126,7 +126,7 @@ export function PlayerView({
       await operation();
       return true;
     } catch (operationError) {
-      setCommandError(redactText(operationError instanceof Error ? operationError.message : String(operationError)));
+      setCommandError(errorReason(operationError, "Something went wrong."));
       return false;
     }
   }, []);

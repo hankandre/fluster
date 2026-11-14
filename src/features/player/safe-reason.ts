@@ -1,4 +1,4 @@
-import { redactText } from "../../lib/redact";
+import { redactText, redactedErrorMessage } from "../../lib/redact";
 
 const MAX_LENGTH = 300;
 const ADDRESS = /\b[a-z][a-z0-9+.-]*:\/\/[^\s"')\]]*/gi;
@@ -16,4 +16,11 @@ export function safeReason(value: string): string {
     .replace(POSIX_PATH, "[path]")
     .trim();
   return text.length > MAX_LENGTH ? `${text.slice(0, MAX_LENGTH)}…` : text;
+}
+
+// Reads any player failure (string, Error, or other) one way, through
+// safeReason, and gives `fallback` when it has no text.
+export function errorReason(error: unknown, fallback: string): string {
+  const text = safeReason(redactedErrorMessage(error));
+  return text ? text : fallback;
 }

@@ -10,7 +10,7 @@ import type {
   StreamSelection,
 } from "../../domain/playback";
 import { startOverChoice } from "../../domain/playback";
-import { redactError, redactText } from "../redact";
+import { redactError, redactText, redactedErrorMessage } from "../redact";
 import { redactTransportError } from "../transport-error";
 import { confirmedPlan } from "./confirm-play-method";
 import { PlaystateReporter, type PlaystateGateway } from "./playstate-reporter";
@@ -320,7 +320,7 @@ export class PlaybackCoordinator {
         } catch (error) {
           this.callbacks.onEvent({
             kind: "error",
-            message: error instanceof Error ? redactText(error.message) : "The player did not finish shutting down.",
+            message: redactedErrorMessage(error) || "The player did not finish shutting down.",
           });
           await this.finish("error", event.snapshot ?? this.snapshot);
           break;

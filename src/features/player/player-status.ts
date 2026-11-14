@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useOptionalPlayerServices } from "../../app/player-services";
 import type { PlayerCapabilities, PlayerEngine } from "../../domain/playback";
-import { safeReason } from "./safe-reason";
+import { errorReason } from "./safe-reason";
 
 // What the app knows about the player before anything plays.
 export type PlayerStatus =
@@ -21,8 +21,7 @@ const checks = new WeakMap<PlayerEngine, Promise<PlayerStatus>>();
 const known = new WeakMap<PlayerEngine, PlayerStatus>();
 
 function reasonOf(error: unknown): string {
-  const text = typeof error === "string" ? error : error instanceof Error ? error.message : "";
-  return text.trim() ? safeReason(text) : UNKNOWN_REASON;
+  return errorReason(error, UNKNOWN_REASON);
 }
 
 export function checkPlayer(engine: PlayerEngine): Promise<PlayerStatus> {

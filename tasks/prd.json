@@ -1715,10 +1715,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "native-engineer",
           "passes": false,
-          "evidence": ""
+          "evidence": "In progress on task/P3-31: native-player.ts turns every string rejection into an Error (prefix check stays on the raw string); redactError redacts strings; one reader errorReason/redactedErrorMessage used by PlayerView, NativeVideoSurface, failureAction, player-status, and the coordinator's failed stop. pnpm check exit 0 (169 files, 2203 Vitest tests; cargo 194 passed); pnpm test:e2e 158 passed; pnpm test:visual 345 passed; git diff --stat origin/main -- src-tauri/ e2e/ src/domain/ empty. Pending: guardian review and PR."
         }
       ]
     },

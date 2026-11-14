@@ -259,6 +259,14 @@ describe("redaction canary: redactError", () => {
     expectClean("in-place", error.message);
     expect(redactError("plain")).toBe("plain");
   });
+
+  it("redacts a string", () => {
+    for (const text of errorTexts()) {
+      const redacted = redactError(text);
+      expect(typeof redacted).toBe("string");
+      expectClean("string", redacted as string);
+    }
+  });
 });
 
 describe("redaction canary: PlaybackCoordinator", () => {

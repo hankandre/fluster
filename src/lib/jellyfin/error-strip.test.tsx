@@ -171,4 +171,26 @@ describe("failureAction", () => {
     const action = failureAction(axiosFailure("500"));
     expect(action).toEqual({ type: "failure", message: "Jellyfin request failed.", kind: "server" });
   });
+
+  const nativeReason =
+    'mpv could not open https://media.test/Videos/x/stream?api_key=SECRET-TOKEN from /home/u/Movies/x.mkv (Token="SECRET-TOKEN")';
+
+  it.each([
+    ["string", nativeReason],
+    ["Error", new Error(nativeReason)],
+  ])("keeps a native %s reason without token, address, or path", (_label, error) => {
+    const action = failureAction(error);
+    if (action.type !== "failure") throw new Error("expected a failure action");
+    expect(action.kind).toBeUndefined();
+    expect(action.message).toContain("[path]");
+    for (const leak of ["SECRET-TOKEN", "media.test", "api_key", "/home/u", "x.mkv"]) {
+      expect(action.message).not.toContain(leak);
+    }
+  });
+
+  it("gives a failed stop the same message for a string and an Error", () => {
+    const fromString = failureAction("The player did not stop.");
+    expect(fromString).toEqual({ type: "failure", message: "The player did not stop.", kind: undefined });
+    expect(failureAction(new Error("The player did not stop."))).toEqual(fromString);
+  });
 });

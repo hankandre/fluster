@@ -206,10 +206,15 @@ describe("Player feature", () => {
     await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
   });
 
-  it("shows a launch failure with Retry and Back", async () => {
+  // Tauri rejects a native command with a bare string; the native adapter
+  // makes it an Error. Both must read the same.
+  it.each([
+    ["string", "The video surface is not ready."],
+    ["Error", new Error("The video surface is not ready.")],
+  ])("shows a launch failure (%s) with Retry and Back", async (_label, failure) => {
     const gateway = fakeGateway();
     const engine = new FakePlayerEngine();
-    engine.launch.mockRejectedValueOnce(new Error("The video surface is not ready."));
+    engine.launch.mockRejectedValueOnce(failure);
     await renderPlayer(gateway, engine);
 
     expect(await screen.findByText("The video surface is not ready.")).toBeInTheDocument();
@@ -227,7 +232,7 @@ describe("Player feature", () => {
   it("a failed stop on Back to details does not send a later Escape to the details view", async () => {
     const gateway = fakeGateway();
     const engine = new FakePlayerEngine();
-    engine.launch.mockRejectedValueOnce(new Error("The video surface is not ready."));
+    engine.launch.mockRejectedValueOnce("The video surface is not ready.");
     const back = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
     await renderPlayer(gateway, engine);
     await screen.findByRole("heading", { name: "Playback could not start" });
@@ -727,7 +732,7 @@ describe("System media controls", () => {
   it("hides addresses in a playback error and ignores player keys while the notice shows", async () => {
     const gateway = fakeGateway();
     const engine = new FakePlayerEngine();
-    engine.launch.mockRejectedValueOnce(new Error("failed to open https://media.test/x"));
+    engine.launch.mockRejectedValueOnce("failed to open https://media.test/x");
     await renderPlayer(gateway, engine);
     expect(await screen.findByText(/\[address\]/)).toBeInTheDocument();
     expect(screen.queryByText(/media\.test/)).not.toBeInTheDocument();
@@ -735,6 +740,40 @@ describe("System media controls", () => {
     expect(engine.seek).not.toHaveBeenCalled();
     fireEvent.keyDown(document.body, { key: "Escape" });
     await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
+  });
+
+  it("shows a launch failure string without its token, address, or path", async () => {
+    const gateway = fakeGateway();
+    const engine = new FakePlayerEngine();
+    engine.launch.mockRejectedValueOnce(
+      'mpv could not open https://media.test/Videos/x/stream?api_key=SECRET-TOKEN from /home/u/Movies/x.mkv (Token="SECRET-TOKEN")',
+    );
+    await renderPlayer(gateway, engine);
+    const heading = await screen.findByRole("heading", { name: "Playback could not start" });
+    const notice = heading.closest("section, div, [role]")?.parentElement ?? document.body;
+    await waitFor(() => expect(notice.textContent).toContain("mpv could not open"));
+    expect(notice.textContent).toContain("[address]");
+    expect(notice.textContent).toContain("[path]");
+    for (const leak of ["SECRET-TOKEN", "media.test", "api_key", "/home/u", "x.mkv"]) {
+      expect(document.body.textContent).not.toContain(leak);
+    }
+  });
+
+  it.each([
+    ["string", "The player could not pause."],
+    ["Error", new Error("The player could not pause.")],
+  ])("shows a failed pause (%s) with the player's reason", async (_label, failure) => {
+    const engine = new FakePlayerEngine();
+    await renderPlayer(fakeGateway(), engine);
+    await startPlaying(engine);
+    engine.setPaused.mockRejectedValueOnce(failure);
+    const toggle = await screen.findByRole("button", { name: /^(Play|Pause)$/ });
+    await act(async () => {
+      fireEvent.click(toggle);
+    });
+    expect(engine.setPaused).toHaveBeenCalled();
+    expect(await screen.findByText("The player could not pause.")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Playback could not start" })).toBeInTheDocument();
   });
 
   it("reports a player that cannot start instead of launching, with the redacted reason", async () => {

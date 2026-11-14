@@ -37,8 +37,10 @@ export function redactText(value: string): string {
 // Redacts an error's message in place so callers keep its type and identity
 // (for example AbortError checks) while no URL or token can be surfaced. Some
 // errors have a read-only message (DOMException, frozen errors); those are
-// replaced by a new Error that keeps the original name.
+// replaced by a new Error that keeps the original name. A string comes back
+// as the redacted string.
 export function redactError(error: unknown): unknown {
+  if (typeof error === "string") return redactText(error);
   // DOMException is not an Error subclass in every runtime, so accept any
   // object with a string message.
   if (typeof error !== "object" || error === null) return error;
@@ -55,4 +57,13 @@ export function redactError(error: unknown): unknown {
   const replacement = new Error(redacted);
   if (typeof candidate.name === "string") replacement.name = candidate.name;
   return replacement;
+}
+
+// The redacted text of a failure: a string, or any object's string message
+// (Error, DOMException, frozen errors). Anything else gives "".
+export function redactedErrorMessage(error: unknown): string {
+  if (typeof error === "string") return redactText(error);
+  if (typeof error !== "object" || error === null) return "";
+  const message = (error as { message?: unknown }).message;
+  return typeof message === "string" ? redactText(message) : "";
 }
