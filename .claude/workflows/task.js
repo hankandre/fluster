@@ -28,13 +28,13 @@ if (!items.length) return { stopped: 'no-task', detail: 'Pass args: {tasks: ["<I
 const strings = { type: 'array', items: { type: 'string' } };
 const SPEC = {
   type: 'object',
-  properties: { summary: { type: 'string' }, openQuestions: strings, deniedCommands: strings },
-  required: ['summary', 'openQuestions'],
+  properties: { summary: { type: 'string' }, openQuestions: strings, deniedCommands: strings, touchesNative: { type: 'boolean' } },
+  required: ['summary', 'openQuestions', 'touchesNative'],
 };
 const CHECK = {
   type: 'object',
-  properties: { approved: { type: 'boolean' }, issues: strings },
-  required: ['approved', 'issues'],
+  properties: { approved: { type: 'boolean' }, issues: strings, touchesNative: { type: 'boolean' } },
+  required: ['approved', 'issues', 'touchesNative'],
 };
 const WORK = {
   type: 'object',
@@ -82,17 +82,30 @@ const VERIFY_STEPS =
 
 async function runTask(task, opts) {
   const highRisk = opts.risk === 'high';
-  const native = opts.native === true;
+  let native = opts.native === true;
   const skipImpl = opts.from === 'review';
   const skipCheck = opts.from === 'implement' || skipImpl;
   const skipSpec = opts.from === 'check' || skipCheck;
   let specNotes = Array.isArray(opts.notes) ? opts.notes : [];
 
-  const specModel = highRisk ? 'fable' : 'opus';
-  const implAgent = native ? 'native-engineer' : 'implementer';
-  const implModel = native ? 'opus' : 'sonnet';
-  const reviewAgent = native || highRisk ? 'guardian' : 'reviewer';
-  const reviewModel = native || highRisk ? 'opus' : 'sonnet';
+  let specModel, checkModel, implAgent, implModel, reviewAgent, reviewModel;
+  const route = () => {
+    specModel = highRisk ? 'fable' : 'opus';
+    checkModel = highRisk || native ? 'fable' : 'opus';
+    implAgent = native ? 'native-engineer' : 'implementer';
+    implModel = native ? 'opus' : 'sonnet';
+    reviewAgent = native || highRisk ? 'guardian' : 'reviewer';
+    reviewModel = native || highRisk ? 'opus' : 'sonnet';
+  };
+  route();
+  // Native work (src-tauri/ or the PlayerEngine port) goes to native-engineer on Opus with a guardian review (AGENTS.md).
+  const goNative = (flag, by) => {
+    if (flag && !native) {
+      native = true;
+      route();
+      log(`${task}: the ${by} touches src-tauri/ or the PlayerEngine port; routing to native-engineer and guardian`);
+    }
+  };
 
   const worktree = `/home/handre/Code/fluster-${task}`;
   const branch = `task/${task}`;
@@ -143,22 +156,24 @@ async function runTask(task, opts) {
 Create the worktree if it is missing: git -C /home/handre/Code/fluster fetch -q && git -C /home/handre/Code/fluster worktree add ${worktree} -b ${branch} origin/main.
 If a task in this task's depends_on is not done on origin/main, return that as the only open question ("blocked by <ID>").
 If ${spec} already exists with every section, keep it and report on it. Otherwise write it. Do not commit.
-Resolve gaps yourself from the task, the code, the docs, and the settled decisions, and write the answers into the spec. Return as open questions only product or design choices the human must make that no settled decision covers; give each its options and a recommendation.`,
+Resolve gaps yourself from the task, the code, the docs, and the settled decisions, and write the answers into the spec. Return as open questions only product or design choices the human must make that no settled decision covers; give each its options and a recommendation. Set touchesNative=true if the spec's files to touch include anything under src-tauri/ or the PlayerEngine port (src/domain/playback.ts engine interface, src/lib/player/native-player.ts).`,
       { agentType: 'refiner', model: specModel, schema: SPEC, phase: 'Spec', label: `spec ${task}` },
     );
     if (!specResult) return result('failed', 'The refiner returned nothing.');
     if (denied(specResult)) return result('denied', denied(specResult));
     if (specResult.openQuestions.length) return result('parked', specResult.openQuestions);
+    goNative(specResult.touchesNative, 'spec');
   }
 
   // 2. Check
   if (!skipCheck) {
     const check = await agent(
       `${common}
-Check the spec and append your "## Spec check" verdict to it. Set approved=true unless an issue is critical or high; list medium and low issues anyway, prefixed with their severity, and the implementer will resolve them. Return approved and the numbered issues.`,
-      { agentType: 'spec-checker', model: specModel, schema: CHECK, phase: 'Check', label: `check ${task}` },
+Check the spec and append your "## Spec check" verdict to it. Set approved=true unless an issue is critical or high; list medium and low issues anyway, prefixed with their severity, and the implementer will resolve them. Return approved and the numbered issues. Set touchesNative=true if the spec's files to touch include anything under src-tauri/ or the PlayerEngine port (src/domain/playback.ts engine interface, src/lib/player/native-player.ts).`,
+      { agentType: 'spec-checker', model: checkModel, schema: CHECK, phase: 'Check', label: `check ${task}` },
     );
     if (!check) return result('failed', 'The spec-checker returned nothing.');
+    goNative(check.touchesNative, 'spec check');
     if (!check.approved) {
       const revised = await agent(
         `${common}
