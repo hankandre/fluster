@@ -72,7 +72,7 @@ Pilot: milestones 1 and 3 are the pilot for the conversion path. Review both (gu
 - [x] P13-34 (TV form decisions: 28 px body and 24 px floor tokens, hold-OK details, TV scrub with held picture, Back on Home with Leave Fluster? on Tizen, TV-only Backspace; design review passed, ship pending)
 - [x] P13-22 (chapter list sheet, Chapters button, trickplay thumbnails, TV capture; review round done, ship pending)
 - [x] P3-22 (preferences store port `PreferenceStore` with `BrowserPreferenceStore`, streaming limits migrated from `fluster.streamingLimits`, `docs/security.md` updated; PR and CI pending in Ship)
-- [ ] P13-30 (worst-case artwork captures 100-105 and contrast report; review round done; ship pending: accept the 12 baselines from the CI run and record its URL)
+- [x] P13-30 (worst-case artwork captures 100-105 and contrast report; baselines accepted from CI run 43587037640, green run 43588988018)
 - 15 to 19: removed 2026-11-12 (music; video only)
 
 ## Tripwire rules after P10-09 (specified, not implemented)

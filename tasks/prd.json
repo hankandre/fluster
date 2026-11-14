@@ -2852,10 +2852,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:visual && ls docs/design/contrast-report.md",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "Implemented in worktree: worst-case art, opt-in worstCaseArt mock, six worst-art scenarios (100-worst-art-* to 105-worst-art-up-next), contrast measurement and report. Local pnpm test:visual: 357 passed, report written with 24 failing runs (all player chrome). 12 baselines (6 scenarios x 2 sizes) and the CI run id are pending: run pnpm test:visual:accept <run-id> in the Ship phase."
+          "passes": true,
+          "evidence": "Implemented: worst-case art, opt-in worstCaseArt mock, six worst-art scenarios (100-105) at 1440x900 and 1920x1080, contrast measurement and report (24 failing runs, all player chrome, logged for P13-33). pnpm check: 2297 Vitest and 194 Rust passed; pnpm test:e2e: 176 passed. CI run https://github.com/hankandre/fluster/actions/runs/43587037640 failed only on the 12 missing baselines; baselines accepted from it (12 A lines, two unrelated 1920x1080-tv rewrites reverted). CI run https://github.com/hankandre/fluster/actions/runs/43588988018 green after baselines: visual 358 passed, no flaky retries, no differing existing captures; rust-audit rerun once after a transient GitHub API error."
         },
         {
           "id": "P13-31",
