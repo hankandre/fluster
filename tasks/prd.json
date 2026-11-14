@@ -1504,10 +1504,10 @@
             "docs/security.md's sentence that no player preferences are persisted is updated"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "pnpm check exit 0 (vitest 174 files/2263 tests, lint:boundaries, typecheck:core, build, cargo test); pnpm test:e2e 175 passed; boundary negative checks fail as expected. CI run pending."
         },
         {
           "id": "P3-23",
