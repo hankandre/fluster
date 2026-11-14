@@ -2890,7 +2890,7 @@
           "status": "in_progress",
           "owner": null,
           "passes": false,
-          "evidence": "Branch task/P13-31 (local), after the review fix (open screens refetch when marked stale): pnpm check green (2382 unit tests, build, boundaries, cargo test); pnpm test:e2e 188 passed; pnpm test:visual 369 passed, no baseline change. Earlier full e2e runs each failed e2e/tv/detail.spec.ts:46 under load; it passed alone with --repeat-each 10 and in later full runs (logged in tasks/backlog.md). Pending in Ship: PR with before/after screenshots at 1440x900 and 1920x1080 and the TV form, guardian review (query-scope rule change), design review."
+          "evidence": "Branch task/P13-31 (local), after the review fix (open screens refetch when marked stale): pnpm check green (2382 unit tests, build, boundaries, cargo test); pnpm test:e2e 188 passed; pnpm test:visual 369 passed, no baseline change. Earlier full e2e runs each failed e2e/tv/detail.spec.ts:46 under load; it passed alone with --repeat-each 10 and in later full runs (logged in tasks/backlog.md). CI run 43651972360 passed all checks (frontend, rust-checks, rust-audit, rust-release, tripwire, visual, dependency-review). Pending in Ship: PR with before/after screenshots at 1440x900 and 1920x1080 and the TV form, guardian review (query-scope rule change), design review."
         },
         {
           "id": "P13-32",
