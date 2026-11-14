@@ -9,7 +9,7 @@ import type {
   ServerPlayMethod,
   StreamSelection,
 } from "../../domain/playback";
-import { startOverChoice } from "../../domain/playback";
+import { secondsToTicks, startOverChoice } from "../../domain/playback";
 import { redactError, redactText, redactedErrorMessage } from "../redact";
 import { redactTransportError } from "../transport-error";
 import { confirmedPlan } from "./confirm-play-method";
@@ -71,6 +71,11 @@ export class PlaybackCoordinator {
   // The streams the last renegotiation chose. Later attempts for the item
   // (Retry, another renegotiation) keep them.
   private selection?: PlaybackSelection;
+  // Retry resumes from the last position the player reported once an attempt
+  // showed a first frame. It outlives attempts, so a retried attempt that
+  // fails before its own first frame still retries from here.
+  private firstFrameShown = false;
+  private lastPlayedTicks?: number;
   private attemptController?: AbortController;
   private attemptTask?: Promise<PlaybackPlan>;
   // The stop that cancelled a pending launch. Every later stop waits for it,
@@ -102,12 +107,14 @@ export class PlaybackCoordinator {
     this.item = item;
     this.choice = choice;
     this.selection = undefined;
+    this.lastPlayedTicks = undefined;
     return this.runAttempt(item, choice, false);
   }
 
   // Renegotiates the same item. `startPositionTicks` restarts from that
-  // position (Play original uses the current one); omitted, it keeps the
-  // original start choice.
+  // position (Play original uses the current one); omitted, it resumes from
+  // the last position the player reported after a first frame, or keeps the
+  // original start choice when no frame was shown.
   retry(startPositionTicks?: number): Promise<PlaybackPlan> {
     return this.restart("retry", startPositionTicks);
   }
@@ -142,10 +149,6 @@ export class PlaybackCoordinator {
   ): Promise<PlaybackPlan> {
     const item = this.item;
     if (!item || !this.choice) throw new Error("There is no playback attempt to retry.");
-    const choice: PlaybackStartChoice = startPositionTicks === undefined
-      ? this.choice
-      : { kind: "resume", startPositionTicks: Math.max(0, Math.floor(startPositionTicks)) };
-
     const operation = ++this.operation;
     this.cancelAttempt();
     await this.waitForAttempt();
@@ -154,6 +157,11 @@ export class PlaybackCoordinator {
     // The session may have ended on its own (end of file) while it stopped;
     // then nothing owns the engine any more and nothing may launch.
     this.assertCurrentSession(operation, item);
+    // Resolved after the stop so the failed session's final snapshot counts.
+    const position = startPositionTicks ?? (reason === "retry" ? this.lastPlayedTicks : undefined);
+    const choice: PlaybackStartChoice = position === undefined
+      ? this.choice
+      : { kind: "resume", startPositionTicks: Math.max(0, Math.floor(position)) };
     this.choice = choice;
     if (selection) this.selection = selection;
     // Retry, Play original, and track and limit changes start a new play
@@ -176,6 +184,7 @@ export class PlaybackCoordinator {
     await this.stopAttempt("stopped");
     this.item = undefined;
     this.choice = undefined;
+    this.lastPlayedTicks = undefined;
   }
 
   async flush(): Promise<void> {
@@ -294,6 +303,10 @@ export class PlaybackCoordinator {
     if (attempt !== this.attempt) return;
     this.callbacks.onEvent(event.kind === "error" ? { ...event, message: redactText(event.message) } : event);
     if ("snapshot" in event && event.snapshot) this.snapshot = event.snapshot;
+    if (event.kind === "first-frame") this.firstFrameShown = true;
+    if (this.firstFrameShown && this.snapshot) {
+      this.lastPlayedTicks = secondsToTicks(this.snapshot.positionSeconds);
+    }
     const plan = this.plan;
     if (!plan) return;
 
@@ -420,12 +433,14 @@ export class PlaybackCoordinator {
         this.choice = undefined;
         this.previousPlan = undefined;
         this.selection = undefined;
+        this.lastPlayedTicks = undefined;
     }
   }
 
   private resetAttempt(): void {
     this.cancelPlayMethodCheck();
     this.snapshot = undefined;
+    this.firstFrameShown = false;
     this.reporter.reset();
   }
 

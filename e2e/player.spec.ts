@@ -124,6 +124,34 @@ test("Retry after a playback error renegotiates, and Back returns to the detail 
   await expect(page.getByRole("heading", { name: "Arrival", level: 1 })).toBeVisible();
 });
 
+test("Retry after a failure mid-item resumes where it stopped, with the same request otherwise", async ({ page }) => {
+  const log = await mockPlayerServer(page);
+  await openArrival(page);
+
+  await page.getByRole("link", { name: "Play" }).click();
+  await expect.poll(() => reportPaths(log)).toContain("/Sessions/Playing");
+  // Mocked media never advances, so fix the position the player reports.
+  await page.locator("video").evaluate((video) => {
+    Object.defineProperty(video, "currentTime", { configurable: true, get: () => 75, set: () => undefined });
+    video.dispatchEvent(new Event("timeupdate"));
+    video.dispatchEvent(new Event("error"));
+  });
+  await expect(page.getByRole("heading", { name: "Playback could not start" })).toBeVisible();
+  await page.getByRole("button", { name: "Retry" }).click();
+  await expect.poll(() => log.playbackInfo.length).toBe(2);
+
+  expect(log.playbackInfo[1]).toMatchObject({ StartTimeTicks: 750_000_000 });
+  expect(log.playbackInfoQueries[1].get("StartTimeTicks")).toBe("750000000");
+  expectFallbackFlags(log, 0);
+  expectFallbackFlags(log, 1);
+  const { StartTimeTicks: _first, ...firstBody } = log.playbackInfo[0];
+  const { StartTimeTicks: _retried, ...retriedBody } = log.playbackInfo[1];
+  expect(retriedBody).toEqual(firstBody);
+  await expect.poll(() => (
+    log.reports.find((report) => report.path === "/Sessions/Playing/Stopped")?.body
+  )).toMatchObject({ Failed: true, PlaySessionId: "play-1", PositionTicks: 750_000_000 });
+});
+
 test("a Blu-ray folder offered for direct play is asked for once more without it, then explained", async ({ page }) => {
   const log = await mockPlayerServer(page, { disc: true });
   await openArrival(page);
