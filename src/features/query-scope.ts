@@ -37,11 +37,11 @@ export function dropOtherAccounts(queryClient: QueryClient, gateway: SessionGate
 
 const KEPT_KEY_PREFIXES = ["browse", "detail", "search"];
 
-// Marks kept browse, detail, and search data stale without fetching it, so the next visit shows it at once and
-// refreshes it in the background.
+// Marks kept browse, detail, and search data stale. Screens that are open refetch at once, so a change made on
+// another client appears; kept screens that are not open only refetch on their next visit, which shows them at once.
 export function markAccountDataStale(queryClient: QueryClient): void {
   void queryClient.invalidateQueries({
     predicate: (query) => KEPT_KEY_PREFIXES.includes(String(query.queryKey[0])),
-    refetchType: "none",
+    refetchType: "active",
   });
 }
