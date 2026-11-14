@@ -1507,7 +1507,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "pnpm check exit 0 (vitest 174 files/2263 tests, lint:boundaries, typecheck:core, build, cargo test); pnpm test:e2e 175 passed; boundary negative checks fail as expected. CI run pending."
+          "evidence": "pnpm check exit 0 (vitest 174 files/2263 tests, lint:boundaries, typecheck:core, build, cargo test); pnpm test:e2e 175 passed; boundary negative checks fail as expected. Review lows logged in the plan and tasks/backlog.md. PR, CI, and the manual tauri dev upgrade check pending in Ship."
         },
         {
           "id": "P3-23",
