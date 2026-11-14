@@ -1715,10 +1715,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e",
-          "status": "in_progress",
+          "status": "done",
           "owner": "native-engineer",
-          "passes": false,
-          "evidence": "In progress on task/P3-31: native-player.ts turns every string rejection into an Error (prefix check stays on the raw string); redactError redacts strings; one reader errorReason/redactedErrorMessage used by PlayerView, NativeVideoSurface, failureAction, player-status, and the coordinator's failed stop. pnpm check exit 0 (169 files, 2203 Vitest tests; cargo 194 passed); pnpm test:e2e 158 passed; pnpm test:visual 345 passed; git diff --stat origin/main -- src-tauri/ e2e/ src/domain/ empty. Review round: no fixes; one low (coordinator.ts:323 failed-stop message keeps paths and hosts in state, not safeReason) logged in plan 002. Re-verify: pnpm check exit 0 (169 files, 2203 tests; cargo 194 passed); pnpm test:e2e 157 passed, 1 failed (e2e/tv/detail.spec.ts:61, 5/5 alone on this branch, 1 of 5 failed on origin/main: known flake); pnpm test:visual 345 passed. Pending: guardian review and PR."
+          "passes": true,
+          "evidence": "In progress on task/P3-31: native-player.ts turns every string rejection into an Error (prefix check stays on the raw string); redactError redacts strings; one reader errorReason/redactedErrorMessage used by PlayerView, NativeVideoSurface, failureAction, player-status, and the coordinator's failed stop. pnpm check exit 0 (169 files, 2203 Vitest tests; cargo 194 passed); pnpm test:e2e 158 passed; pnpm test:visual 345 passed; git diff --stat origin/main -- src-tauri/ e2e/ src/domain/ empty. Review round: no fixes; one low (coordinator.ts:323 failed-stop message keeps paths and hosts in state, not safeReason) logged in plan 002. Re-verify: pnpm check exit 0 (169 files, 2203 tests; cargo 194 passed); pnpm test:e2e 157 passed, 1 failed (e2e/tv/detail.spec.ts:61, 5/5 alone on this branch, 1 of 5 failed on origin/main: known flake); pnpm test:visual 345 passed.  PR #158: guardian review recorded in the PR (pass, no critical/high/medium); CI run https://github.com/hankandre/fluster/actions/runs/43567700611 all checks green (frontend, visual, rust-checks, rust-release, rust-audit, tripwire, dependency-review)."
         }
       ]
     },
