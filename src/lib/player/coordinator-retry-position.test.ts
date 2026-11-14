@@ -105,6 +105,18 @@ describe("PlaybackCoordinator retry position (P3-30)", () => {
     expect(gateway.reportStopped).toHaveBeenCalledWith(expect.objectContaining({ playSessionId: "session-1" }), at(2400), signal, true);
   });
 
+  it("ignores a reset position of 0 and keeps the launch resume position", async () => {
+    const { gateway, player, coordinator, emit } = setup();
+    player.stopSnapshot = at(0);
+    await coordinator.start(item, resume);
+    await emit({ kind: "first-frame" });
+    await emit({ kind: "error", message: "boom" });
+    await emit({ kind: "ended", snapshot: at(0), reason: "error" });
+    await coordinator.retry();
+
+    expect(gateway.createPlaybackPlan).toHaveBeenNthCalledWith(2, item, 120_000_000, signal);
+  });
+
   it("retries from where the viewer seeked, forwards or backwards", async () => {
     const forward = setup();
     forward.player.stopSnapshot = at(300);
