@@ -2827,10 +2827,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "in_progress",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": "Branch task/P13-29: pnpm check green; pnpm test:e2e 177 passed; pnpm test:visual 348 passed (local). Pending in Ship: accept CI visual baselines (88a, 59, 54b, 88), PR before/after screenshots, PR notes."
+          "passes": true,
+          "evidence": "Branch task/P13-29, PR #167: pnpm check green; pnpm test:e2e 177 passed; pnpm test:visual 348 passed (local). Baselines accepted from CI run 43636270902 (88a, 59, 54b, 88, plus gallery full-page captures 07, 07a, 80, 94 that grew with frame 88a); green CI run https://github.com/hankandre/fluster/actions/runs/43638927631. Before/after screenshots linked in the PR."
         },
         {
           "id": "P13-30",
