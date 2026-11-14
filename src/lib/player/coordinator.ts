@@ -158,7 +158,7 @@ export class PlaybackCoordinator {
     // then nothing owns the engine any more and nothing may launch.
     this.assertCurrentSession(operation, item);
     // Resolved after the stop so the failed session's final snapshot counts.
-    const position = startPositionTicks ?? (reason === "retry" ? this.lastPlayedTicks : undefined);
+    const position = startPositionTicks ?? (reason === "retry" ? this.retryPositionTicks() : undefined);
     const choice: PlaybackStartChoice = position === undefined
       ? this.choice
       : { kind: "resume", startPositionTicks: Math.max(0, Math.floor(position)) };
@@ -435,6 +435,16 @@ export class PlaybackCoordinator {
         this.selection = undefined;
         this.lastPlayedTicks = undefined;
     }
+  }
+
+  // A reported position of 0 is not trusted when the attempt launched later
+  // than 0: the engine may reset time-pos on an error, which would send the
+  // viewer back to the start.
+  private retryPositionTicks(): number | undefined {
+    const played = this.lastPlayedTicks;
+    if (played === undefined) return undefined;
+    const launched = this.choice?.kind === "resume" ? this.choice.startPositionTicks : 0;
+    return played <= 0 && launched > 0 ? launched : played;
   }
 
   private resetAttempt(): void {
