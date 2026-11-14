@@ -58,6 +58,9 @@ jobs:
       - run: pnpm test:dogfood-redaction
       - run: pnpm test
       - run: pnpm build
+      - run: pnpm test:no-test-engine
+      - run: pnpm typecheck:integration
+      - run: pnpm typecheck:core
       - run: pnpm test:e2e
 
   # Visual regression gate (P13-25). Compares every capture with
