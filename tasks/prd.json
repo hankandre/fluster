@@ -2660,10 +2660,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "in_progress",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": "Implemented on task/P13-22: ChapterList sheet and Chapters button, OptionList media slot, --chapter-thumb-w token. pnpm check exit 0 (2030 vitest tests pass, build, cargo test); pnpm test:e2e 151 passed; pnpm test:visual 336 passed (59d, 59e captured at 1440x900, 1920x1080, TV). No src-tauri change. Design review and PR screenshots pending."
+          "passes": true,
+          "evidence": "Implemented on task/P13-22: ChapterList sheet and Chapters button, OptionList media slot, --chapter-thumb-w token. pnpm check exit 0 (2030 vitest tests pass, build, cargo test); pnpm test:e2e 151 passed; pnpm test:visual 336 passed (59d, 59e captured at 1440x900, 1920x1080, TV). No src-tauri change. Review round done (fresh-context design review counted; three lows logged in docs/plans/active/002). Screenshots are linked in the Ship phase."
         },
         {
           "id": "P13-24",
