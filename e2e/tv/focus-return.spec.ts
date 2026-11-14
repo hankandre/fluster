@@ -73,6 +73,63 @@ test("Library: Back returns to the card that was left", async ({ page }) => {
   await expectInsideSafeInsets(same);
 });
 
+test("Library: Back restores the sort, filter, pages, scroll position, and card", async ({ page }) => {
+  await page.addInitScript(() => { (window as unknown as { IntersectionObserver: unknown }).IntersectionObserver = undefined; });
+  await signInTv(page, { bigLibrary: true });
+  await expect(page.locator(".hero-actions a").first()).toBeFocused({ timeout: 10_000 });
+  await openFromNav(page, "Movies", ["ArrowRight"]);
+  await expect(page.getByRole("heading", { level: 1, name: "Movies" })).toBeVisible();
+  await expect(page.locator(".library-grid a.media-card").first()).toBeVisible();
+  await expect(page.locator(".library-grid [aria-busy='true']")).toHaveCount(0);
+  // Down from the heading reaches the Sort picker; its sheet picks Newest added first.
+  await page.keyboard.press("ArrowDown");
+  const sort = page.getByRole("button", { name: /^Sort/ });
+  if (!(await sort.evaluate((element) => element === document.activeElement))) await page.keyboard.press("ArrowUp");
+  await expect(sort).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("listbox")).toBeVisible();
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("button", { name: "Sort Newest added first" })).toBeFocused();
+  await expect(page.locator(".library-grid [aria-busy='true']")).toHaveCount(0);
+  await expect(page.locator(".library-grid a.media-card")).toHaveCount(60);
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByRole("button", { name: "Unwatched" })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("button", { name: "Unwatched" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page).toHaveURL(/#\/next\/browse\/lib-movies\?sort=added-desc&filters=IsUnplayed$/);
+  await expect(page.locator(".library-grid [aria-busy='true']")).toHaveCount(0);
+  await expect(page.locator(".library-grid a.media-card")).toHaveCount(60);
+  // Load more twice: pages two and three.
+  await page.keyboard.press("ArrowDown");
+  await expect(page.locator(".library-grid a.media-card:focus")).toHaveCount(1);
+  for (const total of [120, 150]) {
+    await page.keyboard.press("End");
+    await expect(page.locator(".library-grid a.media-card:focus")).toHaveCount(1);
+    await page.keyboard.press("ArrowDown");
+    await expect(page.getByRole("button", { name: "Load more" })).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(page.locator(".library-grid a.media-card")).toHaveCount(total);
+    await expect(page.locator(".library-grid [aria-busy='true']")).toHaveCount(0);
+  }
+  const href = await page.locator(":focus").getAttribute("href");
+  expect(href).toMatch(/#\/next\/item\/big-/);
+  const before = await page.evaluate(() => Math.round(window.scrollY));
+  expect(before).toBeGreaterThan(0);
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/#\/next\/item\//);
+  await page.keyboard.press("Escape");
+  await expect(page).toHaveURL(/#\/next\/browse\/lib-movies\?sort=added-desc&filters=IsUnplayed$/);
+  const same = page.locator(`.library-grid a[href="${href}"]`);
+  await expectFocused(same);
+  await expectInsideSafeInsets(same);
+  await expect(page.locator(".library-grid a.media-card")).toHaveCount(150);
+  await expect(page.getByRole("button", { name: "Sort Newest added first" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Unwatched" })).toHaveAttribute("aria-pressed", "true");
+  expect(Math.abs((await page.evaluate(() => Math.round(window.scrollY))) - before)).toBeLessThanOrEqual(2);
+});
+
 test("Search: Back returns to the result card, not the field", async ({ page }) => {
   await signInTv(page);
   await expect(page.locator(".hero-actions a").first()).toBeFocused({ timeout: 10_000 });

@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { waitFor } from "@testing-library/react";
-import { itemRoute, leavePlayer, leaveToDetails, libraryRoute, openPlayer, parseItemRoute, parseLibraryRoute, parsePlayRoute, playRoute } from "./routes";
+import { collectionRoute, itemRoute, leavePlayer, leaveToDetails, libraryRoute, openPlayer, parseCollectionRoute, parseItemRoute, parseLibraryRoute, parsePlayRoute, playRoute, replaceRoute, ROUTE_REPLACED_EVENT } from "./routes";
 
 describe("play route", () => {
   it("round-trips the item, version, and start position", () => {
@@ -129,16 +129,69 @@ describe("library route", () => {
   });
 
   it("round-trips the id and a known sort", () => {
-    expect(parseLibraryRoute(libraryRoute("lib 1", "added-desc"))).toEqual({ libraryId: "lib 1", sort: "added-desc" });
-    expect(parseLibraryRoute("#/next/browse/lib-1")).toEqual({ libraryId: "lib-1" });
+    expect(parseLibraryRoute(libraryRoute("lib 1", "added-desc"))).toEqual({ libraryId: "lib 1", sort: "added-desc", filters: [] });
+    expect(parseLibraryRoute("#/next/browse/lib-1")).toEqual({ libraryId: "lib-1", filters: [] });
   });
 
   it("ignores an unknown sort", () => {
-    expect(parseLibraryRoute("#/next/browse/lib-1?sort=bogus")).toEqual({ libraryId: "lib-1" });
+    expect(parseLibraryRoute("#/next/browse/lib-1?sort=bogus")).toEqual({ libraryId: "lib-1", filters: [] });
+  });
+
+  it("writes the sort and filters in canonical order and leaves the defaults out", () => {
+    expect(libraryRoute("lib-1", "name-asc")).toBe("#/next/browse/lib-1");
+    expect(libraryRoute("lib-1", "added-desc", ["IsUnplayed"])).toBe("#/next/browse/lib-1?sort=added-desc&filters=IsUnplayed");
+    expect(libraryRoute("lib-1", "name-desc", ["IsResumable", "IsUnplayed"])).toBe("#/next/browse/lib-1?sort=name-desc&filters=IsUnplayed,IsResumable");
+    expect(libraryRoute("lib-1", undefined, ["IsFavorite"])).toBe("#/next/browse/lib-1?filters=IsFavorite");
+  });
+
+  it("round-trips sort and filters and drops unknown or repeated filters", () => {
+    expect(parseLibraryRoute(libraryRoute("lib-1", "rating-desc", ["IsFavorite", "IsUnplayed"]))).toEqual({
+      libraryId: "lib-1", sort: "rating-desc", filters: ["IsUnplayed", "IsFavorite"],
+    });
+    expect(parseLibraryRoute("#/next/browse/lib-1?filters=Bogus,IsResumable,IsResumable")).toEqual({ libraryId: "lib-1", filters: ["IsResumable"] });
+    expect(parseLibraryRoute("#/next/browse/lib-1?filters=IsUnplayed%2CIsFavorite")?.filters).toEqual(["IsUnplayed", "IsFavorite"]);
   });
 
   it.each(["#/next/browse", "#/next/browse/", "#/next/browse/?sort=added-desc", "#/next/browse/a/b", "#/next/browse/%E0%A4%A", "#/next/item/m1"])(
     "rejects %s",
     (hash) => expect(parseLibraryRoute(hash)).toBeUndefined(),
   );
+});
+
+describe("collection route", () => {
+  it("builds and parses with sort and filters", () => {
+    expect(collectionRoute("box 1")).toBe("#/next/collection/box%201");
+    const hash = collectionRoute("box-1", "name-desc", ["IsUnplayed"]);
+    expect(hash).toBe("#/next/collection/box-1?sort=name-desc&filters=IsUnplayed");
+    expect(parseCollectionRoute(hash)).toEqual({ collectionId: "box-1", sort: "name-desc", filters: ["IsUnplayed"] });
+    expect(parseCollectionRoute("#/next/collection/box-1")).toEqual({ collectionId: "box-1", filters: [] });
+  });
+
+  it.each(["#/next/collection/", "#/next/collection/a/b", "#/next/browse/lib-1"])("rejects %s", (hash) => {
+    expect(parseCollectionRoute(hash)).toBeUndefined();
+  });
+});
+
+describe("replaceRoute", () => {
+  it("rewrites the entry without a new one, keeps its state, and announces it", () => {
+    window.history.replaceState({ focusEntry: "x:1" }, "", "#/next/browse/lib-1");
+    const length = window.history.length;
+    const heard = vi.fn();
+    window.addEventListener(ROUTE_REPLACED_EVENT, heard);
+    replaceRoute("#/next/browse/lib-1?sort=added-desc");
+    window.removeEventListener(ROUTE_REPLACED_EVENT, heard);
+    expect(window.location.hash).toBe("#/next/browse/lib-1?sort=added-desc");
+    expect(window.history.length).toBe(length);
+    expect(window.history.state).toEqual({ focusEntry: "x:1" });
+    expect(heard).toHaveBeenCalledTimes(1);
+  });
+
+  it("does nothing when the hash is unchanged", () => {
+    window.history.replaceState(null, "", "#/next/browse/lib-1");
+    const heard = vi.fn();
+    window.addEventListener(ROUTE_REPLACED_EVENT, heard);
+    replaceRoute("#/next/browse/lib-1");
+    window.removeEventListener(ROUTE_REPLACED_EVENT, heard);
+    expect(heard).not.toHaveBeenCalled();
+  });
 });

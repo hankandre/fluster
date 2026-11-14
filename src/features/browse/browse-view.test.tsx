@@ -10,6 +10,7 @@ import { ItemNotFoundError } from "../../domain/catalog";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
 import { armReturn } from "../../test/arm-return";
 import { resetFocusReturn } from "../shell/focus-return";
+import { libraryRoute, parseLibraryRoute, replaceRoute, ROUTE_REPLACED_EVENT } from "../routes";
 
 vi.mock("../home/blurhash", () => ({
   blurhashToDataUrl: (hash: string) => `data:image/png;base64,${hash}`,
@@ -39,6 +40,7 @@ function SignIn({ gateway }: { gateway: SessionGateway }) {
 }
 
 async function renderView(gateway: SessionGateway, view: React.ReactNode, returning?: Record<string, unknown>) {
+  const routeHash = window.location.hash;
   render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <SessionProvider createGateway={() => gateway}>
@@ -49,7 +51,7 @@ async function renderView(gateway: SessionGateway, view: React.ReactNode, return
   );
   if (returning) {
     // The signed-out view redirects to sign-in, which clears returns; come back to the route first.
-    window.history.replaceState(null, "", "#/next/browse/lib-1");
+    window.history.replaceState(null, "", routeHash);
     await armReturn(returning);
   }
   await act(async () => {
@@ -78,6 +80,18 @@ class FakeObserver {
 
 function intersect() {
   act(() => FakeObserver.instances.forEach((observer) => observer.callback([{ isIntersecting: true }])));
+}
+
+// The route owns the sort and filters; this follows the hash as App does, without remounting on a replace.
+function RoutedBrowse({ libraryId }: { libraryId: string }) {
+  const [hash, setHash] = React.useState(window.location.hash);
+  React.useEffect(() => {
+    const onReplaced = () => setHash(window.location.hash);
+    window.addEventListener(ROUTE_REPLACED_EVENT, onReplaced);
+    return () => window.removeEventListener(ROUTE_REPLACED_EVENT, onReplaced);
+  }, []);
+  const route = parseLibraryRoute(hash);
+  return <BrowseView libraryId={libraryId} sort={route?.sort} filters={route?.filters} />;
 }
 
 async function chooseSort(name: string) {
@@ -145,7 +159,12 @@ describe("library page", () => {
     const gateway = fakeGateway({ libraryItems });
     function Switch() {
       const [id, setId] = React.useState("lib-1");
-      return <><button onClick={() => setId("lib-2")}>switch</button><BrowseView libraryId={id} /></>;
+      return (
+        <>
+          <button onClick={() => { replaceRoute(libraryRoute("lib-2")); setId("lib-2"); }}>switch</button>
+          <RoutedBrowse libraryId={id} />
+        </>
+      );
     }
     await renderView(gateway, <Switch />);
     await screen.findByRole("link", { name: "Arrival" });
@@ -198,7 +217,8 @@ describe("library grid", () => {
 
   it("on a return restores the sort and filters and loads the pages that were showing", async () => {
     const libraryItems = pagedItems();
-    await renderView(fakeGateway({ libraryItems }), <BrowseView libraryId="lib-1" />, { library: { sortId: "added-desc", filters: ["IsFavorite"], pages: 2 } });
+    window.location.hash = "#/next/browse/lib-1?sort=added-desc&filters=IsFavorite";
+    await renderView(fakeGateway({ libraryItems }), <RoutedBrowse libraryId="lib-1" />, { library: { pages: 2 } });
     expect(await screen.findByRole("link", { name: "Third" })).toBeInTheDocument();
     expect(libraryItems.mock.calls[0]?.[1]).toMatchObject({ sortBy: "DateCreated", sortOrder: "Descending", filters: ["IsFavorite"], startIndex: 0 });
     expect(libraryItems.mock.calls[1]?.[1].startIndex).toBe(60);
@@ -240,18 +260,20 @@ describe("library grid", () => {
 
   it("restarts from the first page when sort or filter changes", async () => {
     const libraryItems = vi.fn().mockResolvedValue({ cards: [card("m1", "First")], hasMore: true });
-    await renderView(fakeGateway({ libraryItems }), <BrowseView libraryId="lib-1" />);
+    await renderView(fakeGateway({ libraryItems }), <RoutedBrowse libraryId="lib-1" />);
     await screen.findByRole("link", { name: "First" });
     fireEvent.click(screen.getByRole("button", { name: "Load more" }));
     await waitFor(() => expect(libraryItems).toHaveBeenCalledTimes(2));
 
     await chooseSort("Newest added first");
     await waitFor(() => expect(libraryItems).toHaveBeenCalledTimes(3));
+    expect(window.location.hash).toBe("#/next/browse/lib-1?sort=added-desc");
     expect(libraryItems.mock.calls[2]?.[1]).toMatchObject({ startIndex: 0, sortBy: "DateCreated", sortOrder: "Descending" });
 
     fireEvent.click(within(screen.getByRole("group", { name: "Filters" })).getByRole("button", { name: "Unwatched" }));
     await waitFor(() => expect(libraryItems).toHaveBeenCalledTimes(4));
     expect(libraryItems.mock.calls[3]?.[1]).toMatchObject({ startIndex: 0, sortBy: "DateCreated", sortOrder: "Descending", filters: ["IsUnplayed"] });
+    expect(window.location.hash).toBe("#/next/browse/lib-1?sort=added-desc&filters=IsUnplayed");
   });
 
   it("offers a retry when the first page fails", async () => {
@@ -306,7 +328,7 @@ describe("library grid", () => {
       Promise.resolve(query.filters.length > 0
         ? { cards: [], hasMore: false, totalCount: 0 }
         : { cards: [card("m1", "Arrival")], hasMore: false }));
-    await renderView(fakeGateway({ libraryItems }), <BrowseView libraryId="lib-1" />);
+    await renderView(fakeGateway({ libraryItems }), <RoutedBrowse libraryId="lib-1" />);
     await screen.findByRole("link", { name: "Arrival" });
     fireEvent.click(screen.getByRole("button", { name: "Favorites" }));
     expect(await screen.findByRole("heading", { name: "Nothing matches these filters" })).toBeInTheDocument();

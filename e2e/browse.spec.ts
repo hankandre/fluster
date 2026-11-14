@@ -90,7 +90,7 @@ test("browse a library, sort, open a series and season, and open a collection", 
   await expect(page.getByRole("link", { name: "Second Season Opener, Episode 1" })).toBeVisible();
 
   await page.goBack();
-  await expect(page).toHaveURL(/#\/next\/browse\/lib-1$/);
+  await expect(page).toHaveURL(/#\/next\/browse\/lib-1\?sort=added-desc$/);
   await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Mixed Library" }).click();
   await expect(page).toHaveURL(/#\/next\/browse\/lib-1$/);
   await page.getByRole("link", { name: "Great Saga, 2016" }).click();

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { MediaCard } from "../../domain/catalog";
 import type { SessionGateway } from "../../app/session";
+import { ACCOUNT_GC_TIME } from "../query-scope";
 import { backdropWidth, heroArtFor, playActivation } from "../card-view";
 import { cardRoute, playRoute } from "../routes";
 import { Hero } from "../shared/ui";
@@ -13,7 +14,7 @@ export function HomeHero({ card, gateway, scope }: { card: MediaCard; gateway: S
   const detail = useQuery({
     queryKey: ["home", scope, "hero", card.id],
     queryFn: ({ signal }) => gateway.itemDetail(card.id, signal),
-    gcTime: 0,
+    gcTime: ACCOUNT_GC_TIME,
     retry: false,
   });
   const isSeries = card.kind === "Series";
@@ -22,7 +23,7 @@ export function HomeHero({ card, gateway, scope }: { card: MediaCard; gateway: S
     queryKey: ["home", scope, "hero-next-up", card.id],
     queryFn: async ({ signal }) => (await gateway.seriesNextUp(card.id, signal)) ?? null,
     enabled: isSeries,
-    gcTime: 0,
+    gcTime: ACCOUNT_GC_TIME,
     retry: false,
   });
   const needsFallback = nextUp.isSuccess && nextUp.data === null;
@@ -30,7 +31,7 @@ export function HomeHero({ card, gateway, scope }: { card: MediaCard; gateway: S
     queryKey: ["home", scope, "hero-seasons", card.id],
     queryFn: ({ signal }) => gateway.seasons(card.id, signal),
     enabled: isSeries && needsFallback,
-    gcTime: 0,
+    gcTime: ACCOUNT_GC_TIME,
     retry: false,
   });
   const fallbackSeason = fallbackSeasonOf(seasons.data);
@@ -38,7 +39,7 @@ export function HomeHero({ card, gateway, scope }: { card: MediaCard; gateway: S
     queryKey: ["home", scope, "hero-episodes", card.id, fallbackSeason?.id ?? ""],
     queryFn: ({ signal }) => gateway.episodes(card.id, fallbackSeason!.id, signal),
     enabled: isSeries && needsFallback && fallbackSeason !== undefined,
-    gcTime: 0,
+    gcTime: ACCOUNT_GC_TIME,
     retry: false,
   });
 

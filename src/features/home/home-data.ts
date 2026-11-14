@@ -1,7 +1,7 @@
 import { useQueries, useQuery, type UseQueryResult } from "@tanstack/react-query";
 import type { LibraryView, MediaCard } from "../../domain/catalog";
 import type { SessionGateway } from "../../app/session";
-import { scopeFor } from "../query-scope";
+import { ACCOUNT_GC_TIME, scopeFor } from "../query-scope";
 
 export interface LatestRow {
   view: LibraryView;
@@ -20,15 +20,15 @@ export interface HomeData {
 // hero and the empty state. Keys are ["home", scope, row, ...] (see home-queries.ts).
 export function useHomeData(gateway: SessionGateway): HomeData {
   const scope = scopeFor(gateway);
-  const resume = useQuery({ queryKey: ["home", scope, "resume"], queryFn: ({ signal }) => gateway.resumeItems(signal), gcTime: 0 });
-  const nextUp = useQuery({ queryKey: ["home", scope, "next-up"], queryFn: ({ signal }) => gateway.nextUp(signal), gcTime: 0 });
-  const views = useQuery({ queryKey: ["home", scope, "views"], queryFn: ({ signal }) => gateway.userViews(signal), gcTime: 0 });
+  const resume = useQuery({ queryKey: ["home", scope, "resume"], queryFn: ({ signal }) => gateway.resumeItems(signal), gcTime: ACCOUNT_GC_TIME });
+  const nextUp = useQuery({ queryKey: ["home", scope, "next-up"], queryFn: ({ signal }) => gateway.nextUp(signal), gcTime: ACCOUNT_GC_TIME });
+  const views = useQuery({ queryKey: ["home", scope, "views"], queryFn: ({ signal }) => gateway.userViews(signal), gcTime: ACCOUNT_GC_TIME });
   const libraries = views.data ?? [];
   const results = useQueries({
     queries: libraries.map((view) => ({
       queryKey: ["home", scope, "latest", view.id],
       queryFn: ({ signal }: { signal: AbortSignal }) => gateway.latestInLibrary(view.id, signal),
-      gcTime: 0,
+      gcTime: ACCOUNT_GC_TIME,
     })),
   });
   return { scope, resume, nextUp, views, latest: libraries.map((view, index) => ({ view, query: results[index] })) };
