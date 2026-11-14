@@ -39,9 +39,7 @@ test("Home: the hero takes focus, Menu opens details, Up reaches the nav, Escape
   await page.keyboard.press("Escape");
   await expect(page).toHaveURL(/#\/next\/home$/);
 
-  // Enter on a card plays.
-  await expect(page.locator(".hero-actions a").first()).toBeFocused();
-  await page.keyboard.press("ArrowDown");
+  // Back restores the card that was left (DESIGN.md 9), where it used to open on the hero; Enter on it plays.
   await expect(page.locator(".home-rows [data-media-card]").first()).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/#\/next\/play\//);

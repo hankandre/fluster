@@ -18,13 +18,22 @@ export function useFocusReturn(): void {
     if (!pending) return undefined;
     let frame = 0;
     const settled = () => fetchingRef.current === 0 && document.querySelector('main [aria-busy="true"]') === null;
+    // The screen counts as settled after two quiet frames, so a query that starts right after another ends
+    // (a detail, then its grid) does not end the wait early. Any change to the page starts the count again.
+    const cancel = () => {
+      if (frame !== 0) window.cancelAnimationFrame(frame);
+      frame = 0;
+    };
     const check = () => {
       if (tryRestore()) return;
-      if (!settled() || frame !== 0) return;
+      cancel();
+      if (!settled()) return;
       frame = window.requestAnimationFrame(() => {
-        frame = 0;
-        if (tryRestore()) return;
-        if (settled()) finishReturn();
+        frame = window.requestAnimationFrame(() => {
+          frame = 0;
+          if (tryRestore()) return;
+          if (settled()) finishReturn();
+        });
       });
     };
     checkRef.current = check;
@@ -37,7 +46,7 @@ export function useFocusReturn(): void {
     return () => {
       observer.disconnect();
       window.clearTimeout(timer);
-      if (frame !== 0) window.cancelAnimationFrame(frame);
+      cancel();
       checkRef.current = () => undefined;
     };
   }, [pending]);
