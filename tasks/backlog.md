@@ -265,3 +265,7 @@ Measured by the worst-case artwork captures; see `docs/design/contrast-report.md
 ## Dependabot alert 34: glib 0.18 unsoundness (RUSTSEC-2024-0429), 2026-11-14
 
 - `glib 0.18.5` is pulled in by `gtk`, `gdk` and `webkit2gtk` 0.18 (Tauri 2's GTK3 stack on Linux). The fix is in glib 0.20, which needs the GTK4 stack; Fluster cannot bump it alone. Fluster does not call `glib::VariantStrIter` (grep of `src-tauri/src`, 2026-11-14), so the unsound path is not reached by our code; reach through Tauri or WebKitGTK is unverified. Revisit when Tauri moves to GTK4; decide whether to dismiss the alert with this reason (owner call). S.
+
+## Flaky `rust-audit` on a Dependabot PR (#149, 2026-11-14)
+
+- `rustsec/audit-check` found no vulnerabilities but failed with `Not Found - https://docs.github.com/rest/checks/runs#update-a-check-run` while posting its check run. A rerun of the same job passed. If it recurs, run `cargo audit` directly in the job instead of the action, which needs no check-run API. S.
