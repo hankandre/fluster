@@ -67,10 +67,45 @@ describe("NativePlayerEngine", () => {
     expect((error as Error).message).not.toContain("credential");
   });
 
-  it("passes other launch failures through unchanged", async () => {
-    invoke.mockRejectedValueOnce("Could not start the converted stream: Could not fetch the conversion playlist from the server.");
-    await expect(new NativePlayerEngine().launch(hlsPlan, readAuthorization)).rejects.toBe(
-      "Could not start the converted stream: Could not fetch the conversion playlist from the server.",
-    );
+  it("turns other launch failures into an Error with Rust's message", async () => {
+    const reason = "Could not start the converted stream: Could not fetch the conversion playlist from the server.";
+    invoke.mockRejectedValueOnce(reason);
+    const error = await new NativePlayerEngine().launch(hlsPlan, readAuthorization).catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(Error);
+    expect(error).not.toBeInstanceOf(PlaybackRefusedError);
+    expect((error as Error).message).toBe(reason);
+  });
+
+  type Engine = InstanceType<typeof NativePlayerEngine>;
+  const commands: [string, (engine: Engine) => Promise<unknown>][] = [
+    ["initialize", (engine) => engine.initialize()],
+    ["setSurface", (engine) => engine.setSurface({ x: 0, y: 0, width: 1, height: 1, scaleFactor: 1, visible: true })],
+    ["launch", (engine) => engine.launch(plan, readAuthorization)],
+    ["setPaused", (engine) => engine.setPaused(true)],
+    ["seek", (engine) => engine.seek(5)],
+    ["setVolume", (engine) => engine.setVolume(50)],
+    ["setMuted", (engine) => engine.setMuted(true)],
+    ["selectTrack", (engine) => engine.selectTrack("audio", 1)],
+    ["setFullscreen", (engine) => engine.setFullscreen(true)],
+    ["stop", (engine) => engine.stop()],
+  ];
+
+  it.each(commands)("%s turns a string rejection into an Error with that exact message", async (_name, run) => {
+    invoke.mockRejectedValueOnce("The video surface is not ready.");
+    const error = await run(new NativePlayerEngine()).catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toBe("The video surface is not ready.");
+  });
+
+  it.each(commands)("%s rethrows an Error rejection as the same object", async (_name, run) => {
+    const failure = new Error("The player could not pause.");
+    invoke.mockRejectedValueOnce(failure);
+    await expect(run(new NativePlayerEngine())).rejects.toBe(failure);
+  });
+
+  it.each(commands)("%s passes any other rejection through unchanged", async (_name, run) => {
+    const failure = { code: 1 };
+    invoke.mockRejectedValueOnce(failure);
+    await expect(run(new NativePlayerEngine())).rejects.toBe(failure);
   });
 });

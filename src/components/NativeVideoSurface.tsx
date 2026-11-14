@@ -1,6 +1,6 @@
-import { redactText } from "../lib/redact";
 import { useLayoutEffect, useRef } from "react";
 import type { PlayerEngine, PlayerSurfaceFrame } from "../domain/playback";
+import { errorReason } from "../features/player/safe-reason";
 
 function sameFrame(left: PlayerSurfaceFrame | undefined, right: PlayerSurfaceFrame): boolean {
   return left?.x === right.x
@@ -38,7 +38,7 @@ class SurfaceUpdater {
       await this.player.setSurface(request.frame);
       this.lastFrame = request.frame;
     } catch (error) {
-      request.onError?.(redactText(error instanceof Error ? error.message : String(error)));
+      request.onError?.(errorReason(error, "Something went wrong."));
     } finally {
       this.requestInFlight = false;
       void this.sendPending();

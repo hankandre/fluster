@@ -19,6 +19,7 @@ import type { PlayerServices } from "../../app/player-services";
 import { PlaybackCancelledError, PlaybackCoordinator, type PlaybackGateway } from "../../lib/player/coordinator";
 import { initialPlaybackSessionState, playbackSessionReducer, type PlaybackSessionAction } from "../../lib/player/session-state";
 import { redactText } from "../../lib/redact";
+import { errorReason } from "./safe-reason";
 import { classifyTransportError } from "../../lib/transport-error";
 import { limitChangeAffects, limitMbpsFor, mbpsToBitsPerSecond, type StreamingLimitStore } from "../../lib/streaming-limits";
 
@@ -86,11 +87,7 @@ function keepConfirmed(current: PlaybackPlan | undefined, launched: PlaybackPlan
 // the transport message stays out of state.
 export function failureAction(error: unknown): PlaybackSessionAction {
   const kind = classifyTransportError(error);
-  return { type: "failure", message: kind ? "Jellyfin request failed." : errorText(error), kind };
-}
-
-function errorText(error: unknown): string {
-  return redactText(error instanceof Error ? error.message : "Something went wrong.");
+  return { type: "failure", message: kind ? "Jellyfin request failed." : errorReason(error, "Something went wrong."), kind };
 }
 
 interface ActiveSession {

@@ -16,6 +16,20 @@ import {
 // The rest of the message is fixed text and never names a URL or a body.
 export const UNSAFE_CONVERSION_PREFIX = "Fluster refused the converted stream:";
 
+// Every native command returns `Result<_, String>`, so `invoke` rejects with a
+// bare string. Make it an Error so every reader reads failures one way.
+function toNativeError(error: unknown): unknown {
+  return typeof error === "string" ? new Error(error) : error;
+}
+
+async function call<T>(command: string, args?: Record<string, unknown>): Promise<T> {
+  try {
+    return await invoke<T>(command, args);
+  } catch (error) {
+    throw toNativeError(error);
+  }
+}
+
 export function isTauriRuntime(): boolean {
   return "__TAURI_INTERNALS__" in window;
 }
@@ -24,7 +38,7 @@ export class NativePlayerEngine implements PlayerEngine {
   readonly mode = "native" as const;
 
   initialize(): Promise<PlayerCapabilities> {
-    return invoke("initialize_player");
+    return call("initialize_player");
   }
 
   async subscribe(listener: (event: PlayerEvent) => void): Promise<() => void> {
@@ -32,7 +46,7 @@ export class NativePlayerEngine implements PlayerEngine {
   }
 
   setSurface(frame: PlayerSurfaceFrame): Promise<void> {
-    return invoke("set_player_surface", { frame });
+    return call("set_player_surface", { frame });
   }
 
   // The header travels as its own typed LaunchRequest field, so Rust can
@@ -47,35 +61,35 @@ export class NativePlayerEngine implements PlayerEngine {
       if (typeof error === "string" && error.startsWith(UNSAFE_CONVERSION_PREFIX)) {
         throw new PlaybackRefusedError({ reason: "unsafe-transcoding-url", detail: "converted stream checks" });
       }
-      throw error;
+      throw toNativeError(error);
     }
   }
 
   setPaused(paused: boolean): Promise<void> {
-    return invoke("set_paused", { paused });
+    return call("set_paused", { paused });
   }
 
   seek(positionSeconds: number): Promise<void> {
-    return invoke("seek_absolute", { positionSeconds });
+    return call("seek_absolute", { positionSeconds });
   }
 
   setVolume(volume: number): Promise<void> {
-    return invoke("set_volume", { volume });
+    return call("set_volume", { volume });
   }
 
   setMuted(muted: boolean): Promise<void> {
-    return invoke("set_muted", { muted });
+    return call("set_muted", { muted });
   }
 
   selectTrack(type: "audio" | "subtitle", id?: number): Promise<void> {
-    return invoke("select_track", { trackType: type, id: id ?? null });
+    return call("select_track", { trackType: type, id: id ?? null });
   }
 
   setFullscreen(fullscreen: boolean): Promise<void> {
-    return invoke("set_fullscreen", { fullscreen });
+    return call("set_fullscreen", { fullscreen });
   }
 
   stop(): Promise<void> {
-    return invoke("stop_playback");
+    return call("stop_playback");
   }
 }
