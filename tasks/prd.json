@@ -1689,10 +1689,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e",
-          "status": "in_progress",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": "Implemented in coordinator.ts (lastPlayedTicks after first frame); coordinator, hook and e2e tests added; pnpm check and test:e2e pending Ship CI."
+          "passes": true,
+          "evidence": "Green CI on PR #160 (run 43578387623): frontend (pnpm check, test:e2e) https://github.com/hankandre/fluster/actions/runs/43578387623/job/132397623193; tripwire against both fixture servers https://github.com/hankandre/fluster/actions/runs/43578387623/job/132397623163; visual https://github.com/hankandre/fluster/actions/runs/43578387623/job/132397623276; rust-checks. Guardian review round on PR #160: no critical, high, or medium findings; acceptance 1-9 met (retry position resolved after the stop in coordinator.restart, only StartTimeTicks differs, Stopped report untouched, no Tauri command). Untested: whether mpv resets time-pos to 0 before END_FILE on a native error (dogfood)."
         },
         {
           "id": "P3-31",
