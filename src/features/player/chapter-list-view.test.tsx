@@ -33,7 +33,6 @@ const plan: PlaybackPlan = {
   title: "Arrival",
   streamUrl: "https://media.test/Videos/m1/stream?Static=true",
   mediaSourceId: "src",
-  authorization: 'MediaBrowser Token="test"',
   playSessionId: "play-1",
   startPositionTicks: 0,
   tracks: [],
