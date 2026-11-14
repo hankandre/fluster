@@ -5,6 +5,8 @@ import { SessionProvider, useSession, type SessionGateway } from "../../app/sess
 import type { SearchCard, SearchHint, SearchPage } from "../../domain/catalog";
 import { SearchView } from "./index";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
+import { armReturnNow } from "../../test/arm-return";
+import { isReturning, resetFocusReturn } from "../shell/focus-return";
 
 vi.mock("../home/blurhash", () => ({
   blurhashToDataUrl: (hash: string) => `data:image/png;base64,${hash}`,
@@ -38,7 +40,7 @@ function SignIn({ gateway }: { gateway: SessionGateway }) {
   return <button onClick={() => session.signIn(gateway)}>test sign in</button>;
 }
 
-async function renderView(gateway: SessionGateway, term?: string) {
+async function renderView(gateway: SessionGateway, term?: string, returning?: Record<string, unknown>) {
   render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <SessionProvider createGateway={() => gateway}>
@@ -47,6 +49,11 @@ async function renderView(gateway: SessionGateway, term?: string) {
       </SessionProvider>
     </QueryClientProvider>,
   );
+  if (returning) {
+    // The signed-out view redirects to sign-in, which clears returns; come back to the route first.
+    window.history.replaceState(null, "", "#/next/search");
+    armReturnNow(returning);
+  }
   await act(async () => {
     fireEvent.click(screen.getByRole("button", { name: "test sign in" }));
   });
@@ -77,6 +84,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  resetFocusReturn();
   vi.useRealTimers();
 });
 
@@ -292,6 +300,22 @@ describe("results", () => {
     // Down crosses to the Shows row.
     fireEvent.keyDown(screen.getByRole("link", { name: "Armageddon" }), { key: "ArrowDown" });
     expect(screen.getByRole("link", { name: "Arrow" })).toHaveFocus();
+  });
+
+  it("on a return loads the pages that were showing and leaves the field unfocused", async () => {
+    const searchItems = vi.fn()
+      .mockResolvedValueOnce({ cards: [card("m1", "Arrival", "Movie")], hasMore: true } satisfies SearchPage)
+      .mockResolvedValueOnce({ cards: [card("m2", "Arrow Movie", "Movie")], hasMore: false } satisfies SearchPage);
+    await renderView(fakeGateway({ searchItems }), "ar", { search: 2 });
+    expect(isReturning()).toBe(true);
+    await advance(0);
+    await advance(0);
+    for (let step = 0; step < 4; step += 1) await advance(0);
+    await advance(500);
+    expect(searchItems.mock.calls[1]?.[1]).toEqual({ startIndex: 40, limit: 40 });
+    expect(screen.getByRole("link", { name: "Arrow Movie" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Results for ar" })).toHaveAttribute("aria-busy", "false");
+    expect(input()).not.toHaveFocus();
   });
 
   it("loads more pages", async () => {

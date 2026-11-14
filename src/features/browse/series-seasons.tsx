@@ -1,17 +1,24 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import type { SessionGateway } from "../../app/session";
 import { cardImageFor, cardPlayRoute, imageUrlFor, playActivation, WIDE_IMAGE_WIDTH } from "../card-view";
 import { runtimeLabel } from "../detail/format";
 import { itemRoute, playRoute } from "../routes";
+import { readOnReturn, rememberForReturn } from "../shell/focus-return";
 import { EpisodeList, EpisodeRow, InlineError, SegmentedTabPanel, SegmentedTabs, Skeleton } from "../shared/ui";
 import { initialSeason, orderSeasons } from "./series-next";
 import { useSeasonEpisodes, useSeriesNextUp, useSeriesSeasons } from "./series-queries";
+
+const SEASON_SLOT = "season";
 
 // Season tabs (Specials last) over the selected season's episodes. The tabs wait for Next Up so the right season opens.
 export function SeriesSeasons({ gateway, seriesId }: { gateway: SessionGateway; seriesId: string }) {
   const headingId = useId();
   const idBase = useId();
-  const [chosenId, setChosenId] = useState<string | undefined>();
+  // A Back to this entry reopens the season that was shown.
+  const [chosenId, setChosenId] = useState<string | undefined>(() => {
+    const remembered = readOnReturn(SEASON_SLOT);
+    return typeof remembered === "string" ? remembered : undefined;
+  });
   const seasons = useSeriesSeasons(gateway, seriesId);
   const nextUp = useSeriesNextUp(gateway, seriesId);
 
@@ -35,6 +42,7 @@ export function SeriesSeasons({ gateway, seriesId }: { gateway: SessionGateway; 
           spatial
           idBase={idBase}
         />
+        <RememberSeason id={selected.id} />
         <SegmentedTabPanel idBase={idBase} id={selected.id}>
           <SeasonEpisodes gateway={gateway} seriesId={seriesId} seasonId={selected.id} seasonName={selected.name} />
         </SegmentedTabPanel>
@@ -48,6 +56,12 @@ export function SeriesSeasons({ gateway, seriesId }: { gateway: SessionGateway; 
       {content}
     </section>
   );
+}
+
+// Keeps the shown season for a later Back to this entry.
+function RememberSeason({ id }: { id: string }) {
+  useEffect(() => rememberForReturn(SEASON_SLOT, id), [id]);
+  return null;
 }
 
 function SeasonsSkeleton() {
@@ -85,6 +99,7 @@ function SeasonEpisodes({ gateway, seriesId, seasonId, seasonName }: { gateway: 
         return (
           <EpisodeRow
             key={episode.id}
+            id={episode.id}
             title={episode.title}
             {...(episode.episodeNumber !== undefined ? { number: episode.episodeNumber } : {})}
             {...(episode.subtitle ? { subtitle: episode.subtitle } : {})}

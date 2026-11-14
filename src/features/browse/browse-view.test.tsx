@@ -8,6 +8,8 @@ import { BrowseView } from "./index";
 import { CollectionView } from "./collection-view";
 import { ItemNotFoundError } from "../../domain/catalog";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
+import { armReturn } from "../../test/arm-return";
+import { resetFocusReturn } from "../shell/focus-return";
 
 vi.mock("../home/blurhash", () => ({
   blurhashToDataUrl: (hash: string) => `data:image/png;base64,${hash}`,
@@ -36,7 +38,7 @@ function SignIn({ gateway }: { gateway: SessionGateway }) {
   return <button onClick={() => session.signIn(gateway)}>test sign in</button>;
 }
 
-async function renderView(gateway: SessionGateway, view: React.ReactNode) {
+async function renderView(gateway: SessionGateway, view: React.ReactNode, returning?: Record<string, unknown>) {
   render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <SessionProvider createGateway={() => gateway}>
@@ -45,6 +47,11 @@ async function renderView(gateway: SessionGateway, view: React.ReactNode) {
       </SessionProvider>
     </QueryClientProvider>,
   );
+  if (returning) {
+    // The signed-out view redirects to sign-in, which clears returns; come back to the route first.
+    window.history.replaceState(null, "", "#/next/browse/lib-1");
+    await armReturn(returning);
+  }
   await act(async () => {
     fireEvent.click(screen.getByRole("button", { name: "test sign in" }));
   });
@@ -56,6 +63,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  resetFocusReturn();
   vi.unstubAllGlobals();
 });
 
@@ -180,6 +188,29 @@ describe("library grid", () => {
     await renderView(gateway, <BrowseView libraryId="lib-2" />);
     await screen.findByRole("link", { name: "Arrival" });
     expect(vi.mocked(gateway.libraryItems).mock.calls[0]?.[1].itemTypes).toEqual(["BoxSet"]);
+  });
+
+  it("marks the grid and each card for focus return", async () => {
+    await renderView(fakeGateway(), <BrowseView libraryId="lib-1" />);
+    await screen.findByRole("link", { name: "Arrival" });
+    expect(document.querySelector('ul[data-focus-row="Library"] > li[data-focus-id="m1"]')).not.toBeNull();
+  });
+
+  it("on a return restores the sort and filters and loads the pages that were showing", async () => {
+    const libraryItems = pagedItems();
+    await renderView(fakeGateway({ libraryItems }), <BrowseView libraryId="lib-1" />, { library: { sortId: "added-desc", filters: ["IsFavorite"], pages: 2 } });
+    expect(await screen.findByRole("link", { name: "Third" })).toBeInTheDocument();
+    expect(libraryItems.mock.calls[0]?.[1]).toMatchObject({ sortBy: "DateCreated", sortOrder: "Descending", filters: ["IsFavorite"], startIndex: 0 });
+    expect(libraryItems.mock.calls[1]?.[1].startIndex).toBe(60);
+    expect(screen.getByRole("button", { name: "Favorites" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("starts at the defaults and page one without a return", async () => {
+    const libraryItems = pagedItems();
+    await renderView(fakeGateway({ libraryItems }), <BrowseView libraryId="lib-1" />);
+    await screen.findByRole("link", { name: "First" });
+    expect(libraryItems).toHaveBeenCalledTimes(1);
+    expect(libraryItems.mock.calls[0]?.[1]).toMatchObject({ sortBy: "SortName", filters: [] });
   });
 
   it("loads the next page at the right startIndex", async () => {

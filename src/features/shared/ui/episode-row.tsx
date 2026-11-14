@@ -11,6 +11,8 @@ import { MediaFrame } from "./media-frame";
 import "./episode-row.css";
 
 export interface EpisodeRowProps {
+  // The episode id, so a return can find this row again.
+  id: string;
   title: string;
   // The episode number, shown before the title.
   number?: number;
@@ -56,7 +58,7 @@ export function EpisodeList({ label, children }: { label: string; children: Reac
 
   return (
     <>
-      <ul className="episode-list" aria-label={label} data-spatial-row="" ref={roving.ref} onKeyDown={roving.onKeyDown} onFocus={onFocus}>
+      <ul className="episode-list" aria-label={label} data-spatial-row="" data-focus-row={label} ref={roving.ref} onKeyDown={roving.onKeyDown} onFocus={onFocus}>
         {children}
       </ul>
       {tv ? <p className="episode-row-overview" aria-hidden="true">{overview}</p> : null}
@@ -67,7 +69,7 @@ export function EpisodeList({ label, children }: { label: string; children: Reac
 // One episode: the art, number and title, runtime or time left, and a two-line overview. The whole row plays;
 // a trailing icon link opens the details, as `i` does.
 export function EpisodeRow(props: EpisodeRowProps) {
-  const { title, number, runtime, remainingTicks, progress, played, overview, image, href, onActivate, detailsHref } = props;
+  const { id, title, number, runtime, remainingTicks, progress, played, overview, image, href, onActivate, detailsHref } = props;
   const tv = useTvForm();
   const hold = useHoldOk(detailsHref);
   const ids = useId();
@@ -84,7 +86,7 @@ export function EpisodeRow(props: EpisodeRowProps) {
   }
 
   return (
-    <li className="ui-episode-row" data-tv={tv ? "true" : undefined}>
+    <li className="ui-episode-row" data-focus-id={id} data-tv={tv ? "true" : undefined}>
       <a
         className="ui-episode-row-link"
         href={href}

@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useCallback, useEffect, useId, useLayoutEffect, useState, type FocusEvent } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type FocusEvent } from "react";
 import { useRovingFocus } from "../../roving-focus";
 import { Button } from "./button";
 import { InlineError } from "./inline-error";
@@ -21,6 +21,8 @@ export interface MediaRowProps {
   // A "See all" tile at the end of the row, the last item reached by Right (DESIGN.md 7.4). Its accessible
   // name is `label` ("See all in Movies"); the visible text is "See all".
   seeAll?: { label: string; href: string };
+  // The index of the card that holds the Tab stop and sits at the start of the list when it first shows.
+  startIndex?: number;
 }
 
 const POSTER_SKELETONS = 8;
@@ -28,9 +30,9 @@ const THUMB_SKELETONS = 5;
 
 // One horizontal row of cards (DESIGN.md 7.4). The list bleeds to the window edges, keeps the focused card
 // one gutter from them, and joins the spatial Up and Down focus between rows.
-export function MediaRow({ title, label, variant, status, items = [], onRetry, errorMessage, onItemFocus, seeAll }: MediaRowProps) {
+export function MediaRow({ title, label, variant, status, items = [], onRetry, errorMessage, onItemFocus, seeAll, startIndex }: MediaRowProps) {
   const headingId = useId();
-  const roving = useRovingFocus<HTMLUListElement>("row", { spatial: true });
+  const roving = useRovingFocus<HTMLUListElement>("row", { spatial: true, ...(startIndex !== undefined ? { preferredIndex: startIndex } : {}) });
   const [canScroll, setCanScroll] = useState({ previous: false, next: false });
 
   const measure = useCallback(() => {
@@ -42,6 +44,18 @@ export function MediaRow({ title, label, variant, status, items = [], onRetry, e
   }, [roving.ref]);
 
   useLayoutEffect(measure, [measure, items.length, status]);
+  // Opens scrolled so the start card sits one gutter in, without moving focus.
+  const scrolledToStart = useRef(false);
+  useLayoutEffect(() => {
+    const list = roving.ref.current;
+    if (status !== "ready" || !list || scrolledToStart.current || startIndex === undefined || startIndex <= 0) return;
+    scrolledToStart.current = true;
+    const card = list.querySelectorAll<HTMLElement>("[data-media-card]")[startIndex];
+    if (!card) return;
+    const gutter = parseFloat(getComputedStyle(list).paddingInlineStart) || 0;
+    list.scrollLeft += card.getBoundingClientRect().left - list.getBoundingClientRect().left - gutter;
+    measure();
+  }, [measure, roving.ref, status, startIndex]);
   useEffect(() => {
     const list = roving.ref.current;
     if (!list || typeof ResizeObserver === "undefined") return undefined;
@@ -103,14 +117,14 @@ export function MediaRow({ title, label, variant, status, items = [], onRetry, e
       ) : null}
       {status === "ready" ? (
         <div className="media-row-scroller">
-          <ul className="media-row-list" data-spatial-row="" ref={roving.ref} onKeyDown={roving.onKeyDown} onFocus={onFocus} onScroll={measure}>
+          <ul className="media-row-list" data-spatial-row="" data-focus-row={name} ref={roving.ref} onKeyDown={roving.onKeyDown} onFocus={onFocus} onScroll={measure}>
             {items.map(({ id, ...card }) => (
-              <li key={id}>
+              <li key={id} data-focus-id={id}>
                 <MediaCard {...card} />
               </li>
             ))}
             {seeAll ? (
-              <li className="media-row-see-all" data-variant={variant}>
+              <li className="media-row-see-all" data-variant={variant} data-focus-id="see-all">
                 <a className="ui-see-all" href={seeAll.href} aria-label={seeAll.label} data-roving-item="">See all</a>
               </li>
             ) : null}

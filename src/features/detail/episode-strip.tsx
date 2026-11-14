@@ -49,5 +49,8 @@ export function EpisodeStrip({ gateway, item }: { gateway: SessionGateway; item:
     return <MediaRow title={title} variant="thumb" status="error" errorMessage={error} onRetry={() => void query.refetch()} />;
   }
   const others = query.data.filter((card) => card.id !== item.id);
-  return <MediaRow title={title} variant="thumb" status="ready" items={toMediaRowItems(others, "thumb", imageUrlFor(gateway))} />;
+  // The strip leaves the current episode out, so it opens at the episode after it (the one before it when last).
+  const current = query.data.findIndex((card) => card.id === item.id);
+  const startIndex = current < 0 ? 0 : Math.max(0, Math.min(current, others.length - 1));
+  return <MediaRow title={title} variant="thumb" status="ready" items={toMediaRowItems(others, "thumb", imageUrlFor(gateway))} startIndex={startIndex} />;
 }

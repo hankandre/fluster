@@ -8,10 +8,12 @@ import { useFocusDwell } from "../home/use-focus-dwell";
 import { scopeFor } from "../query-scope";
 import { useRovingFocus } from "../roving-focus";
 import { cardRoute } from "../routes";
+import { readOnReturn, rememberForReturn } from "../shell/focus-return";
 import { Button, InlineError, MediaRow, type MediaCardVariant } from "../shared/ui";
 import { SearchNoResults } from "./search-states";
 
 export const RESULT_PAGE_SIZE = 40;
+const PAGES_SLOT = "search";
 const PREFETCH_DWELL_MS = 300;
 const PREFETCH_MS = 30_000;
 
@@ -38,6 +40,21 @@ export function SearchResults({ gateway, term }: { gateway: SessionGateway; term
     gcTime: 0,
   });
   const queryClient = useQueryClient();
+  // A Back to this entry loads the pages that were showing before the card left can appear.
+  const wanted = useRef<number | undefined>(undefined);
+  if (wanted.current === undefined) {
+    const remembered = readOnReturn(PAGES_SLOT);
+    wanted.current = typeof remembered === "number" ? remembered : 0;
+  }
+  const pageCount = query.data?.pages.length ?? 0;
+  const reached = pageCount >= wanted.current || query.isError || (!query.isPending && !query.hasNextPage);
+  const catchingUp = wanted.current > 0 && !reached;
+  useEffect(() => {
+    rememberForReturn(PAGES_SLOT, Math.max(pageCount, wanted.current ?? 0));
+    if (!wanted.current) return;
+    if (reached) wanted.current = 0;
+    else if (query.hasNextPage && !query.isFetchingNextPage) void query.fetchNextPage();
+  });
   const schedule = useFocusDwell(PREFETCH_DWELL_MS);
   const roving = useRovingFocus<HTMLDivElement>("row", { spatial: true });
   const sectionRef = useRef<HTMLElement>(null);
@@ -101,7 +118,7 @@ export function SearchResults({ gateway, term }: { gateway: SessionGateway; term
   const firstPageFailed = query.isError && cards.length === 0;
 
   return (
-    <section ref={sectionRef} className="search-results" aria-label={`Results for ${term}`} aria-busy={query.isPending}>
+    <section ref={sectionRef} className="search-results" aria-label={`Results for ${term}`} aria-busy={query.isPending || catchingUp}>
       <p role="status" className="visually-hidden">{status}</p>
       {query.isPending ? <MediaRow label="Search results" variant="poster" status="pending" /> : null}
       {firstPageFailed ? <InlineError spatial message="Couldn't load search results." onRetry={() => void query.refetch()} /> : null}

@@ -6,6 +6,7 @@ import { imageUrlFor } from "../card-view";
 import { scopeFor } from "../query-scope";
 import { moveToAdjacentRow } from "../roving-focus";
 import { itemRoute, seriesRoute } from "../routes";
+import { deferDefaultFocus } from "../shell/focus-return";
 import { SearchField, SearchSuggestion } from "../shared/ui";
 import { suggestionLabel, suggestionMeta } from "./search-hint-label";
 import { searchResultsRoute } from "./search-route";
@@ -33,7 +34,8 @@ export function SearchBox({ gateway, initialTerm }: { gateway: SessionGateway; i
 
   // The field takes focus when the page opens and when the route term changes from outside.
   useEffect(() => {
-    inputRef.current?.focus();
+    const input = inputRef.current;
+    if (input && !deferDefaultFocus(input)) input.focus();
   }, [initialTerm]);
 
   useEffect(() => {

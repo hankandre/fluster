@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionProvider, useSession, type SessionGateway } from "../../app/session";
 import { ItemNotFoundError, type EpisodeCard, type ItemDetail, type SeriesNextUp } from "../../domain/catalog";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
+import { armReturn } from "../../test/arm-return";
+import { resetFocusReturn } from "../shell/focus-return";
 import { SeriesView } from "./index";
 
 vi.mock("../home/blurhash", () => ({
@@ -61,7 +63,7 @@ function SignIn({ gateway }: { gateway: SessionGateway }) {
   return <button onClick={() => session.signIn(gateway)}>test sign in</button>;
 }
 
-async function renderSeries(gateway: SessionGateway, seriesId = "series-1") {
+async function renderSeries(gateway: SessionGateway, seriesId = "series-1", returning?: Record<string, unknown>) {
   render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <SessionProvider createGateway={() => gateway}>
@@ -70,6 +72,11 @@ async function renderSeries(gateway: SessionGateway, seriesId = "series-1") {
       </SessionProvider>
     </QueryClientProvider>,
   );
+  if (returning) {
+    // The signed-out view redirects to sign-in, which clears returns; come back to the series route first.
+    window.history.replaceState(null, "", `#/next/series/${seriesId}`);
+    await armReturn(returning);
+  }
   await act(async () => {
     fireEvent.click(screen.getByRole("button", { name: "test sign in" }));
   });
@@ -81,7 +88,10 @@ beforeEach(() => {
   window.location.hash = "#/next/series/series-1";
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  resetFocusReturn();
+});
 
 describe("header", () => {
   it("focuses the series name as the one h1 and shows the facts and overview", async () => {
@@ -227,6 +237,18 @@ describe("seasons", () => {
     expect(tab("Season 2")).toHaveAttribute("aria-selected", "true");
     expect(await screen.findByRole("link", { name: "Opener of se2, Episode 1" })).toBeInTheDocument();
     expect(gateway.episodes).not.toHaveBeenCalledWith("series-1", "se1", expect.anything());
+  });
+
+  it("reopens the season that was shown when the user comes back", async () => {
+    await renderSeries(fakeGateway({ seriesNextUp: vi.fn().mockResolvedValue(NEXT) }), "series-1", { season: "se2" });
+    await screen.findByRole("tab", { name: "Season 2" });
+    expect(tab("Season 2")).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("falls back to the next episode's season when the remembered season is gone", async () => {
+    await renderSeries(fakeGateway({ seriesNextUp: vi.fn().mockResolvedValue(NEXT) }), "series-1", { season: "gone" });
+    await screen.findByRole("tab", { name: "Season 1" });
+    expect(tab("Season 1")).toHaveAttribute("aria-selected", "true");
   });
 
   it("opens the next episode's season by number when the server omits SeasonId", async () => {
