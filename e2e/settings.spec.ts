@@ -151,9 +151,11 @@ test("streaming limits default to no limit, apply by host class, and persist", a
   expect(log.playbackInfo[last].MaxStreamingBitrate).toBe(20_000_000);
   expect(log.playbackInfoQueries[last].get("MaxStreamingBitrate")).toBe("20000000");
 
-  // Only two numbers are stored, never a token.
-  const stored = await page.evaluate(() => window.localStorage.getItem("fluster.streamingLimits"));
-  expect(JSON.parse(stored!)).toEqual({ version: 1, localMbps: 20, remoteMbps: 4 });
+  // Only the allowlisted preference fields are stored, never a token.
+  const stored = await page.evaluate(() => window.localStorage.getItem("fluster.preferences"));
+  expect(JSON.parse(stored!)).toEqual({ version: 1, streamingLimits: { localMbps: 20, remoteMbps: 4 } });
+  const legacy = await page.evaluate(() => window.localStorage.getItem("fluster.streamingLimits"));
+  expect(legacy).toBeNull();
 });
 
 async function openSettings(page: Page) {

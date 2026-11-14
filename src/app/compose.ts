@@ -2,7 +2,8 @@ import type { RealtimeConnection } from "../domain/realtime";
 import type { ServerDiscovery } from "../domain/server-discovery";
 import type { PlayerServices } from "./player-services";
 import { lanHttpConfirmations } from "../lib/browser-lan-http-confirmations";
-import { streamingLimits } from "../lib/browser-streaming-limits";
+import { preferences, streamingLimits } from "../lib/browser-preference-store";
+import type { PreferenceStore } from "../lib/preference-store";
 import type { StreamingLimitStore } from "../lib/streaming-limits";
 import { getInstallId } from "../lib/install-id";
 import { JellyfinGateway } from "../lib/jellyfin/gateway";
@@ -21,7 +22,9 @@ export type AppServices = {
   createGateway(serverUrl: string): JellyfinGateway;
   createPlayerEngine(): PlayerEngine;
   realtime: RealtimeConnection;
-  // The user's streaming limits; a non-secret preference.
+  // Non-secret preferences for this computer.
+  preferences: PreferenceStore;
+  // The user's streaming limits: a view of the preferences store.
   streamingLimits: StreamingLimitStore;
   // LAN server discovery; desktop only, because a browser cannot send UDP.
   discovery?: ServerDiscovery;
@@ -44,6 +47,7 @@ export function createServices(): AppServices {
       if (import.meta.env.VITE_FLUSTER_E2E_ENGINE === "fake-hls") return new E2eHlsEngine();
       return native ? new NativePlayerEngine() : new BrowserPlayerEngine();
     },
+    preferences,
     streamingLimits,
     realtime: native ? new NativeRealtime() : new NoOpRealtime(),
     discovery: native ? new NativeServerDiscovery() : undefined,

@@ -239,8 +239,9 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 - the design system (Tailwind tokens, components)
 - keyboard, remote, and focus navigation
 - media keys (MPRIS, Now Playing, SMTC; these are wired natively but are presentation concerns)
+- non-secret preferences for this computer (the preferences store)
 
-**Code today.** `src/app/App.tsx` (hash routing), `src/features/` (the views), `src/components/PlayerView.tsx` (player shortcuts in `src/components/player-keymap.ts`), the player chrome in `src/features/player/chrome/` (top bar, scrubber and preview, transport, track panel, info sheet, OSD, status, loading), `src/features/roving-focus.ts` (arrow keys in card lists), `src/features/use-escape-key.ts`, `src/features/player/use-idle-cursor.ts`, `src/styles.css`. MPRIS: `src-tauri/src/media_controls.rs` (routing and state) and `src-tauri/src/media_controls/mpris.rs` (the D-Bus service, Linux only), with the stop request handled by `src/app/media-controls.ts` and `use-playback-session.ts`.
+**Code today.** `src/app/App.tsx` (hash routing), `src/features/` (the views), `src/components/PlayerView.tsx` (player shortcuts in `src/components/player-keymap.ts`), the player chrome in `src/features/player/chrome/` (top bar, scrubber and preview, transport, track panel, info sheet, OSD, status, loading), `src/features/roving-focus.ts` (arrow keys in card lists), `src/features/use-escape-key.ts`, `src/features/player/use-idle-cursor.ts`, the preferences store (`src/lib/preference-store.ts` port, `src/lib/browser-preference-store.ts` adapter), `src/styles.css`. MPRIS: `src-tauri/src/media_controls.rs` (routing and state) and `src-tauri/src/media_controls/mpris.rs` (the D-Bus service, Linux only), with the stop request handled by `src/app/media-controls.ts` and `use-playback-session.ts`.
 
 **Rules.**
 - Media-control requests become existing player operations (pause, seek) or the Back path (stop). They never add a command or carry ids, URLs, or tokens.

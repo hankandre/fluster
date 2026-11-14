@@ -14,7 +14,7 @@ vi.mock("../lib/jellyfin/gateway", () => ({
 vi.mock("./media-controls", () => ({ createNativeMediaControls: () => undefined }));
 
 import { lanHttpConfirmations } from "../lib/browser-lan-http-confirmations";
-import { streamingLimits } from "../lib/browser-streaming-limits";
+import { preferences, streamingLimits } from "../lib/browser-preference-store";
 import { getInstallId } from "../lib/install-id";
 import { createServices } from "./compose";
 
@@ -37,6 +37,18 @@ describe("createServices", () => {
       expect(limits).toBe(streamingLimits);
     }
     expect(createServices().streamingLimits).toBe(streamingLimits);
+  });
+
+  it("exposes the preferences store and the limits as a view of it", () => {
+    const services = createServices();
+    expect(services.preferences).toBe(preferences);
+    services.streamingLimits.set({ remoteMbps: 8 });
+    try {
+      expect(createServices().preferences.get().streamingLimits).toEqual({ remoteMbps: 8 });
+    } finally {
+      services.streamingLimits.set({});
+      window.localStorage.clear();
+    }
   });
 });
 

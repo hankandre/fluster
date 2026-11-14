@@ -18,6 +18,8 @@
     "src/lib/player/coordinator.ts",
     "src/lib/player/playstate-reporter.ts",
     "src/lib/player/session-state.ts",
+    "src/lib/preference-store.ts",
+    "src/lib/streaming-limits.ts",
     "src/lib/redact.ts"
   ],
   "exclude": ["**/*.test.ts", "**/*.test.tsx", "src/test/**"]
