@@ -334,10 +334,10 @@
             "The PR calls out the change to what CI runs and to the enforcement of invariant I8 (ARCHITECTURE.md §4)"
           ],
           "verify": "pnpm lint:boundaries && pnpm check",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "2026-11-13, attempt A (alias + resolve hook; B and C not needed). Before the alias, pnpm lint:boundaries exits 1: 'ERROR lint:boundaries checked 0 modules, so no import rule ran.' / 'reported missing-tsc-transpiler' / 'did not read src/app/App.tsx.' ... 'and 203 more files were not read.' / Fix line. After: 'lint:boundaries: 260 modules, 902 dependencies, 223/223 source files under src/', exit 0, run on the branch at origin/main 8a041f9 (no post-merge main run in this evidence). pnpm exec tsc --version: Version 7.0.2; node_modules/.bin/tsc execs typescript@7.0.2. transpilersFound typescript available:true currentVersion typescript@6.0.3. Vitest scripts/lint-boundaries.test.ts 7 passed; each check deleted once makes its test fail. Deliberate breaks: react in src/domain/playback.ts gives domain-is-pure and core-is-shell-neutral (exit 2); @tauri-apps/api/core in src/lib/player/coordinator.ts gives core-is-shell-neutral (exit 1); gateway import in src/features/settings/about-section.tsx gives views-use-composition-root (exit 1); all reverted with git checkout. git diff origin/main -- .dependency-cruiser.cjs empty; no violation found on main. pnpm audit: No known vulnerabilities found. pnpm check exit 0 (2045 vitest tests, cargo 183 passed). pnpm test:e2e 149 passed. Still open, so passes stays false: Acceptance 7 (CI throwaway commit needs a pushed PR branch) and 9 (PR body call-out)."
         },
         {
           "id": "P0-15",

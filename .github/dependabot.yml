@@ -11,6 +11,9 @@ updates:
       # Must match the Rust tauri crate's minor (pinned in src-tauri/Cargo.toml).
       - dependency-name: "@tauri-apps/api"
         update-types: ["version-update:semver-minor", "version-update:semver-major"]
+      # dependency-cruiser needs TypeScript below 7 (P0-14); a 7.x alias would empty the boundary lint.
+      - dependency-name: "typescript-6"
+        update-types: ["version-update:semver-major"]
     groups:
       npm-minor-patch:
         update-types: [minor, patch]
