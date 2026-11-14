@@ -140,6 +140,7 @@ export function TransportControls({
           min={0}
           max={100}
           value={volumeValue ?? snapshot?.volume ?? 100}
+          aria-valuetext={`${Math.round(volumeValue ?? snapshot?.volume ?? 100)}%`}
           onChange={(event) => setVolumeValue(Number(event.target.value))}
           onPointerUp={commitVolume}
           onKeyUp={commitVolume}

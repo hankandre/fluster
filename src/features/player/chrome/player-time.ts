@@ -39,3 +39,28 @@ export function endsAt(now: Date, secondsLeft: number): string {
   const end = new Date(now.getTime() + Math.max(0, secondsLeft) * 1000);
   return new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" }).format(end);
 }
+
+function unit(count: number, name: string): string | undefined {
+  return count > 0 ? `${count} ${name}${count === 1 ? "" : "s"}` : undefined;
+}
+
+// "41 minutes 19 seconds"; undefined when the time is not known.
+export function spokenTime(value: number | undefined): string | undefined {
+  if (value == null || !Number.isFinite(value)) return undefined;
+  const { hours, minutes, seconds } = parts(value);
+  const spoken = [unit(hours, "hour"), unit(minutes, "minute"), unit(seconds, "second")].filter(Boolean);
+  return spoken.length > 0 ? spoken.join(" ") : "0 seconds";
+}
+
+// Like spokenTime, without seconds once the value is a minute or more.
+export function spokenDuration(value: number | undefined): string | undefined {
+  if (value == null || !Number.isFinite(value)) return undefined;
+  return value >= 60 ? spokenTime(Math.floor(value / 60) * 60) : spokenTime(value);
+}
+
+// "41 minutes 19 seconds of 2 hours 3 minutes", or the position alone.
+export function scrubberValueText(position: number, duration: number | undefined): string | undefined {
+  const at = spokenTime(position);
+  const total = duration != null && duration > 0 ? spokenDuration(duration) : undefined;
+  return total ? `${at} of ${total}` : at;
+}

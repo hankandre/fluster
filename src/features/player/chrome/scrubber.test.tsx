@@ -30,6 +30,18 @@ describe("Scrubber", () => {
     expect(screen.getByText("Time remaining")).toHaveClass("visually-hidden");
   });
 
+  it("speaks its position as a time, following the keyboard", () => {
+    render(<Scrubber snapshot={{ ...snapshot, positionSeconds: 2479, durationSeconds: 7380 }} onSeek={vi.fn()} now={now} />);
+    expect(slider()).toHaveAttribute("aria-valuetext", "41 minutes 19 seconds of 2 hours 3 minutes");
+    fireEvent.keyDown(slider(), { key: "ArrowRight" });
+    expect(slider()).toHaveAttribute("aria-valuetext", "41 minutes 29 seconds of 2 hours 3 minutes");
+  });
+
+  it("speaks the position alone without a duration", () => {
+    render(<Scrubber snapshot={{ ...snapshot, positionSeconds: 30, durationSeconds: undefined }} onSeek={vi.fn()} now={now} />);
+    expect(slider()).toHaveAttribute("aria-valuetext", "30 seconds");
+  });
+
   describe("buffered range", () => {
     const buffered = (overrides: Partial<PlaybackSnapshot>) => {
       const { container } = render(

@@ -2,7 +2,7 @@ import { useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent a
 import type { PlaybackSnapshot } from "../../../domain/playback";
 import { SEEK_STEP_SECONDS } from "../../../components/player-keymap";
 import { useTvForm } from "../../shared/use-tv-form";
-import { chapterAt, clock, endsAt, remaining, type SeekChapter } from "./player-time";
+import { chapterAt, clock, endsAt, remaining, scrubberValueText, type SeekChapter } from "./player-time";
 import { ScrubPreview } from "./scrub-preview";
 import { useTvScrub } from "./use-tv-scrub";
 
@@ -71,6 +71,7 @@ export function Scrubber({ snapshot, onSeek, onScrubHold, seekPreview, chapters,
       max={max}
       step={0.25}
       value={Math.min(position, max)}
+      aria-valuetext={scrubberValueText(duration > 0 ? Math.min(position, duration) : position, snapshot?.durationSeconds)}
       onChange={(event) => setSeekValue(Number(event.target.value))}
       onPointerUp={commit}
       onKeyDown={tv ? tvScrub.onKeyDown : onKeyDown}

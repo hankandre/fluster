@@ -417,6 +417,29 @@ describe("JellyfinGateway direct-play contract", () => {
     expect(gateway.authorizationHeader()).toContain('Token="top-secret"');
   });
 
+  it("carries a stream's title, channels, and flags onto the plan's track, and leaves absent ones out", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("POST /Items/item/one/PlaybackInfo", {
+      PlaySessionId: "play-1",
+      MediaSources: [{
+        Id: "source-1",
+        Path: "/media/movie.mkv",
+        Protocol: "File",
+        SupportsDirectPlay: true,
+        MediaStreams: [
+          { Index: 3, Type: "Subtitle", Title: "SDH", IsForced: true, IsHearingImpaired: true, IsDefault: true },
+          { Index: 4, Type: "Audio", Channels: 0, IsForced: false },
+        ],
+      }],
+    });
+
+    const plan = await gateway.createPlaybackPlan(item);
+    expect(plan.tracks[0]).toMatchObject({ title: "SDH", isForced: true, isHearingImpaired: true, isDefault: true });
+    expect(plan.tracks[1]).not.toHaveProperty("channels");
+    expect(plan.tracks[1]).not.toHaveProperty("isForced");
+    expect(plan.tracks[1]).not.toHaveProperty("title");
+  });
+
   it("strips every server credential parameter from subtitle URLs", async () => {
     const { gateway, transport } = await authenticatedGateway();
     transport.responses.set("POST /Items/item/one/PlaybackInfo", {

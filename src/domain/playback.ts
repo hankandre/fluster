@@ -130,6 +130,14 @@ export interface MediaTrack {
   language?: string;
   external: boolean;
   deliveryUrl?: string;
+  // The stream's own title, as the file's author set it.
+  title?: string;
+  // Audio channel count.
+  channels?: number;
+  // Absent means false or unknown for the three flags below.
+  isDefault?: boolean;
+  isForced?: boolean;
+  isHearingImpaired?: boolean;
 }
 
 export interface PlayerTrack {

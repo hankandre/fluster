@@ -96,6 +96,14 @@ describe("TransportControls", () => {
     expect(handlers.onVolume).toHaveBeenCalledWith(35);
   });
 
+  it("speaks the volume as a percentage, following a pending drag", () => {
+    setup();
+    const volume = screen.getByRole("slider", { name: "Volume" });
+    expect(volume).toHaveAttribute("aria-valuetext", "80%");
+    fireEvent.change(volume, { target: { value: "35" } });
+    expect(volume).toHaveAttribute("aria-valuetext", "35%");
+  });
+
   it("reflects the open sheet with aria-expanded and points aria-controls at it only while open", () => {
     setup({ tracksOpen: true });
     const tracks = screen.getByRole("button", { name: "Audio & Subtitles" });

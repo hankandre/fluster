@@ -59,15 +59,15 @@ test("choosing audio the conversion lacks renegotiates at the current position a
 
   await page.getByRole("button", { name: "Audio & Subtitles" }).click();
   const audio = page.getByRole("listbox", { name: "Audio track" });
-  await expect(audio.getByRole("option", { name: "English AAC" })).toHaveAttribute("aria-selected", "true");
-  await expect(audio.getByRole("option")).toHaveText(["English AAC", "French AC3"]);
+  await expect(audio.getByRole("option", { name: "English, AAC Stereo · default", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(audio.getByRole("option")).toHaveText(["EnglishAAC Stereo · default", "FrenchAC-3 5.1"]);
   await expect.poll(() => log.sequence).toContain("/Sessions/Playing play-1");
   // Move to 0:10 so the new conversion has a position to continue from.
   await page.locator(".player-page").hover();
   await page.keyboard.press("ArrowRight");
   await expect(page.getByText("0:10", { exact: true })).toBeVisible();
 
-  await audio.getByRole("option", { name: "French AC3" }).click();
+  await audio.getByRole("option", { name: "French, AC-3 5.1", exact: true }).click();
 
   await expect.poll(() => log.playbackInfo.length).toBe(2);
   const query = log.playbackInfoQueries[1];
@@ -84,7 +84,7 @@ test("choosing audio the conversion lacks renegotiates at the current position a
     "PlaybackInfo play-2",
   ]);
   expect(log.reports.find((report) => report.path === "/Sessions/Playing/Stopped")?.body).toMatchObject({ PlaySessionId: "play-1" });
-  await expect(page.getByRole("listbox", { name: "Audio track" }).getByRole("option", { name: "French AC3" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("listbox", { name: "Audio track" }).getByRole("option", { name: "French, AC-3 5.1", exact: true })).toHaveAttribute("aria-selected", "true");
   await expect.poll(() => log.sequence).toContain("/Sessions/Playing play-2");
 });
 
@@ -96,10 +96,10 @@ test("the track panel opens with a, moves with the arrows, and chooses with Ente
 
   await page.keyboard.press("a");
   const audio = page.getByRole("listbox", { name: "Audio track" });
-  await expect(audio.getByRole("option", { name: "English AAC" })).toBeFocused();
+  await expect(audio.getByRole("option", { name: "English, AAC Stereo · default", exact: true })).toBeFocused();
   // Up and Down belong to the list here, not to the volume.
   await page.keyboard.press("ArrowDown");
-  await expect(audio.getByRole("option", { name: "French AC3" })).toBeFocused();
+  await expect(audio.getByRole("option", { name: "French, AC-3 5.1", exact: true })).toBeFocused();
   await expect(page.getByRole("status", { name: "Player message" })).not.toContainText("Volume");
   await page.keyboard.press("Enter");
 

@@ -14,8 +14,8 @@ const fileSource = {
 
 // English (AAC) and French (AC-3) audio, for track-change journeys.
 const audioStreams = [
-  { Index: 1, Type: "Audio", Codec: "aac", Language: "eng", DisplayTitle: "English AAC", IsExternal: false, IsDefault: true, IsForced: false },
-  { Index: 2, Type: "Audio", Codec: "ac3", Language: "fre", DisplayTitle: "French AC3", IsExternal: false, IsDefault: false, IsForced: false },
+  { Index: 1, Type: "Audio", Codec: "aac", Language: "eng", DisplayTitle: "English AAC", IsExternal: false, IsDefault: true, IsForced: false, Channels: 2 },
+  { Index: 2, Type: "Audio", Codec: "ac3", Language: "fre", DisplayTitle: "French AC3", IsExternal: false, IsDefault: false, IsForced: false, Channels: 6 },
 ];
 
 const discSource = {

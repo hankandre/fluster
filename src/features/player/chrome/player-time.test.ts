@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chapterAt, clock, endsAt, remaining } from "./player-time";
+import { chapterAt, clock, endsAt, remaining, scrubberValueText, spokenDuration, spokenTime } from "./player-time";
 
 describe("player time", () => {
   it("formats a clock, with hours only when needed", () => {
@@ -31,5 +31,29 @@ describe("player time", () => {
     expect(chapterAt(chapters, 59.9)?.name).toBe("A");
     expect(chapterAt(chapters, 60)?.name).toBe("B");
     expect(chapterAt(chapters, 9999)?.name).toBe("B");
+  });
+});
+
+describe("spoken time", () => {
+  it("says hours, minutes, and seconds, leaving out zero units", () => {
+    expect(spokenTime(2479)).toBe("41 minutes 19 seconds");
+    expect(spokenTime(7380)).toBe("2 hours 3 minutes");
+    expect(spokenTime(3661)).toBe("1 hour 1 minute 1 second");
+    expect(spokenTime(45.9)).toBe("45 seconds");
+    expect(spokenTime(0)).toBe("0 seconds");
+    expect(spokenTime(undefined)).toBeUndefined();
+    expect(spokenTime(Number.NaN)).toBeUndefined();
+  });
+
+  it("drops seconds from a duration of a minute or more", () => {
+    expect(spokenDuration(7399)).toBe("2 hours 3 minutes");
+    expect(spokenDuration(125)).toBe("2 minutes");
+    expect(spokenDuration(59)).toBe("59 seconds");
+  });
+
+  it("reads the position of the duration, or the position alone", () => {
+    expect(scrubberValueText(2479, 7380)).toBe("41 minutes 19 seconds of 2 hours 3 minutes");
+    expect(scrubberValueText(30, undefined)).toBe("30 seconds");
+    expect(scrubberValueText(30, 0)).toBe("30 seconds");
   });
 });

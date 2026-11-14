@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { PlaybackSnapshot } from "../../../domain/playback";
+import type { MediaTrack, PlaybackSnapshot } from "../../../domain/playback";
 import type { TrackKind } from "../../../domain/track-choice";
 import { OptionList } from "../../shared/ui";
 import { PlayerSheet } from "./player-sheet";
@@ -14,10 +14,12 @@ export interface TrackPanelConverted {
 // switches by mpv id. A converted session lists the source's streams and hands
 // the Jellyfin index (undefined: subtitles off) to `converted.onChange`, which
 // may renegotiate. The panel stays open after a choice.
-export function TrackPanel({ id, snapshot, converted, onSelect, onChangeConverted, onClose }: {
+export function TrackPanel({ id, snapshot, converted, planTracks, onSelect, onChangeConverted, onClose }: {
   id?: string;
   snapshot: PlaybackSnapshot | undefined;
   converted?: TrackPanelConverted;
+  // The plan's streams, for each row's codec, channels, and flags.
+  planTracks?: readonly MediaTrack[];
   onSelect(kind: TrackKind, playerId: number | undefined): void;
   onChangeConverted(change: () => Promise<void>): void;
   onClose(): void;
@@ -41,8 +43,8 @@ export function TrackPanel({ id, snapshot, converted, onSelect, onChangeConverte
     if (!focused || focused === document.body) row.focus();
   });
 
-  const audioList = audioRows(snapshot, converted?.tracks);
-  const subtitleList = subtitleRows(snapshot, converted?.tracks);
+  const audioList = audioRows(snapshot, converted?.tracks, planTracks);
+  const subtitleList = subtitleRows(snapshot, converted?.tracks, planTracks);
 
   const choose = (kind: TrackKind, value: string) => {
     const trackId = trackIdOf(value);
@@ -58,13 +60,17 @@ export function TrackPanel({ id, snapshot, converted, onSelect, onChangeConverte
     <PlayerSheet id={id} label="Audio and subtitles" title="Audio & Subtitles" onClose={onClose}>
       <section className="player-sheet-section" ref={audio}>
         <h3>Audio</h3>
-        <OptionList
-          label="Audio track"
-          options={audioList.options}
-          value={audioList.value}
-          onChange={(value) => choose("audio", value)}
-          disabled={!snapshot || audioList.options.length === 0}
-        />
+        {audioList.options.length === 0 ? (
+          <p>{snapshot ? "No audio tracks to choose from." : "Loading tracks…"}</p>
+        ) : (
+          <OptionList
+            label="Audio track"
+            options={audioList.options}
+            value={audioList.value}
+            onChange={(value) => choose("audio", value)}
+            disabled={!snapshot}
+          />
+        )}
       </section>
       <section className="player-sheet-section" ref={subtitle}>
         <h3>Subtitles</h3>
