@@ -31,6 +31,13 @@ The dvdsub and ISO samples run only with `FLUSTER_CONVERSION_SAMPLES=1` set for 
    - M3: ten play-and-back cycles in a row, alternating a direct-play item and a converted (HLS) item. The window never freezes and playback starts each time.
    - Log check (debug builds, after M3 in `pnpm dogfood`): `log=$(ls -t release-evidence/dogfood/*.log | head -1)`, then `grep -c "dropping render context" "$log"` and `grep -c "window painted after detach" "$log"`. The counts must be equal and at least ten. The paint trace shows only that GTK's frame clock ran a paint phase after each teardown; it cannot show that pixels reached the screen, so it supports M1-M3 and never replaces them.
    - Not yet run: every compositor and GPU. The reporting machine (Wayland, NVIDIA) is the first to record.
+
+   Window size after fullscreen. Run in `pnpm tauri dev` and record the compositor, GPU, and driver version with each result.
+
+   - Scripted: `cargo test --manifest-path src-tauri/Cargo.toml --lib surface::linux::layout -- --ignored` in a Wayland or X11 session. It builds the window's widget tree, allocates it at fullscreen size with the video sized to match, then at a smaller size, and fails if the window's minimum size keeps the fullscreen size or if the WebView or video does not follow the smaller size. CI has no display, so the test is ignored there.
+   - F1: play an item, enter fullscreen, and leave it. The window returns to its earlier size; the video, the title row, and the control row with "Ends at" all fit inside it, and nothing runs past the bottom or right edge.
+   - F2: after F1, pause and resume. The video keeps the windowed size and does not grow back to the fullscreen size.
+   - F3: after F2, press Back. The library fits the window, with no row or poster cut off at the bottom or right edge. Then maximize and restore the window, and drag it smaller; the library and, in a new playback, the player follow each size.
 7. Inspect application output and crash diagnostics for known canary tokens and authenticated query strings; none may appear.
 8. On Apple Silicon, validate VideoToolbox, windowed/fullscreen geometry, Retina scaling, signed DMG startup, and normal teardown.
 9. Extract the release AppImage on a clean Linux x86_64 host with no system mpv or libmpv. Run `release/test-appimage.sh`, confirm exactly one pinned media closure under `usr/lib`, verify the checksum, SBOM, provenance, notices, and licenses, then confirm playback reaches the first frame and normal EOF returns to the library.
