@@ -228,3 +228,10 @@ Measured by the worst-case artwork captures; see `docs/design/contrast-report.md
 - Player header episode line ("S1 · E2 The Keeper's Log", 22 px, below the 24 px large-text size): 2.64:1 and 2.60:1 (104), 2.60:1 and 2.55:1 (105, "S1 · E1 Landfall"), against 4.5:1. Same top scrim as above. S.
 - Player scrub bar times (elapsed and remaining, 14 px): 1.27:1 to 1.82:1 across 104 and 105 at both sizes, against 4.5:1. The bar sits above the bottom controls with no scrim behind the times. Same fix as the top scrim, for the bottom chrome. S.
 - Player "Ends at" label and clock ("Ends at", "01:41 PM" / "12:00 PM", 14 px): 1.01:1 to 1.38:1 at both sizes, against 4.5:1. This is the `--text-3` line in P13-33 ("brighten text over video", `docs/plans/proposals/ux-audit.md:405`); no new task, check the P13-33 result against these captures. S.
+
+## PR #165 guardian lows (fullscreen-exit resize, 2026-11-14)
+
+- The GTK layout test uses a `DrawingArea` in place of the real `WebKitWebView`. If WebKitGTK ever reports a non-zero minimum size, the WebView could overflow again with no failing test. Manual check F3 covers it for now. S.
+- For about one frame after the window shrinks, the video `GLArea` keeps its old size until the frontend's ResizeObserver sends the new frame; GTK clips it. Cosmetic. S.
+- `PlayerSurfaceFrame::validate` (`src-tauri/src/model.rs:92-104`) has no upper bound. A frame near `i32::MAX` overflows `allocated_width().max(1) * scale` (`linux.rs:111-112`): debug builds panic in a GTK callback, release builds wrap. Only the trusted WebView sends frames, so bound the frame in `validate`. S.
+- Leaving fullscreen or maximize relies on GTK's saved or default window size (1280×820). Untested on compositors other than the owner's (umbriel). S.
