@@ -1632,10 +1632,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "Implemented on task/P3-27: shared seriesPrimaryState drives Home hero and series page; pnpm check, test:e2e (179), test:visual pass locally; baselines for 19d-f and PR screenshots pending CI/ship."
+          "passes": true,
+          "evidence": "Implemented on task/P3-27: shared seriesPrimaryState drives the Home hero and the series page; local pnpm check, test:e2e (179 passed), test:visual (354 passed). Baselines 19d-19f accepted from CI run https://github.com/hankandre/fluster/actions/runs/43623000693 (visual red only on the three missing baselines). Full CI green on the pushed branch: https://github.com/hankandre/fluster/actions/runs/43625477193. Before captures rendered from a throwaway origin/main worktree (nothing committed). PR https://github.com/hankandre/fluster/pull/166"
         },
         {
           "id": "P3-28",
