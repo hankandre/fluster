@@ -222,7 +222,7 @@ The review is `docs/research/code-quality-review-2026-11-13.md` (commit `fb8d071
 
 ## From P13-30 (contrast report)
 
-Measured by the worst-case artwork captures; see `docs/design/contrast-report.md` for every ratio. The Home hero, Home card, detail, and series captures have no failing text run. All failures are in the player (`104-worst-art-player`, `105-worst-art-up-next`) at both sizes, where the chrome text sits on the bright still without a scrim.
+Measured by the worst-case artwork captures; see `docs/design/contrast-report.md` for every ratio. The measurement removes text shadows, so a failure may be text that a text-shadow keeps legible; check that before adding a scrim (P13-33). The Home hero, Home card, detail, and series captures have no failing text run. All failures are in the player (`104-worst-art-player`, `105-worst-art-up-next`) at both sizes, where the chrome text sits on the bright still without a scrim.
 
 - Player header series name ("Harbor Lights", 13 px): 2.02:1 at 1440x900 and 1.88:1 at 1920x1080 against 4.5:1 needed. Give the player's top chrome a scrim that guarantees 4.5:1 over bright art (DESIGN.md section 11 rule 1). S.
 - Player header episode line ("S1 · E2 The Keeper's Log", 22 px, below the 24 px large-text size): 2.64:1 and 2.60:1 (104), 2.60:1 and 2.55:1 (105, "S1 · E1 Landfall"), against 4.5:1. Same top scrim as above. S.
