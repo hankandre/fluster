@@ -357,10 +357,10 @@
             "The PR calls out the CI change"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "claude-sonnet",
           "passes": false,
-          "evidence": ""
+          "evidence": "Red first: pnpm test scripts/ci-check-parity.test.ts failed naming pnpm test:no-test-engine, pnpm typecheck:integration, pnpm typecheck:core. After ci.yml edit: 16 passed. ci.yml diff is exactly 3 added '- run: pnpm ...' lines; grep for uses/secrets/permissions/env empty. Local throwaway (typeof window in src/domain/playback.ts): pnpm typecheck:core failed 'error TS2304: Cannot find name window', pnpm build exit 0, reverted with git checkout. Pending (Ship): throwaway CI run link, revert run link, PR body CI change section."
         },
         {
           "id": "P0-16",
