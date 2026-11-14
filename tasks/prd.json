@@ -2855,7 +2855,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "Implemented in worktree: worst-case art, opt-in worstCaseArt mock, six 10x-worst-art scenarios, contrast measurement and report. Local pnpm test:visual: 357 passed, report written with 24 failing runs (all player chrome). Baselines and CI run pending."
+          "evidence": "Implemented in worktree: worst-case art, opt-in worstCaseArt mock, six worst-art scenarios (100-worst-art-* to 105-worst-art-up-next), contrast measurement and report. Local pnpm test:visual: 357 passed, report written with 24 failing runs (all player chrome). 12 baselines (6 scenarios x 2 sizes) and the CI run id are pending: run pnpm test:visual:accept <run-id> in the Ship phase."
         },
         {
           "id": "P13-31",
