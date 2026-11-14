@@ -1,34 +1,11 @@
 import type { Page } from "@playwright/test";
-import { LAN, SERVER, ticks, frameDataUrl, type MockOptions } from "../support/mock-server";
+import { LAN, SERVER, ticks } from "../support/mock-server";
+import { go, play, signIn, signedInAt, type Scenario } from "./scenario-helpers";
+import { worstArtScenarios } from "./worst-art-scenarios";
 
-export interface Scenario {
-  name: string;
-  opts?: MockOptions;
-  fullPage?: boolean;
-  // Defaults to the desktop viewports. Phone shots run at 390x844 only.
-  phone?: boolean;
-  // Captured only in the TV form (1920x1080-tv), with keyboard-driven states.
-  tvOnly?: boolean;
-  // Skipped in the TV pass: the state needs a pointer or a desktop-only key (the TV has neither).
-  desktopOnly?: boolean;
-  // Set when the scenario deliberately provokes a 404 from the mock server.
-  expect404?: boolean;
-  run: (page: Page) => Promise<void>;
-}
+export type { Scenario };
 
 const intro = [{ Id: "seg-1", Type: "Intro", StartTicks: 0, EndTicks: ticks(90) }];
-
-async function go(page: Page, hash: string, settle = 500): Promise<void> {
-  await page.goto(`/${hash}`);
-  await page.waitForTimeout(settle);
-}
-
-async function signIn(page: Page): Promise<void> {
-  await page.goto("/#/next/sign-in");
-  await page.getByLabel("Server URL").fill(SERVER);
-  await page.keyboard.press("Enter");
-  await page.getByRole("heading", { name: "Home" }).waitFor({ timeout: 10_000 });
-}
 
 // Signs in, then opens Settings through the nav.
 async function openSettings(page: Page): Promise<void> {
@@ -49,23 +26,6 @@ async function startConnect(page: Page, url: string): Promise<void> {
   await go(page, "#/next/sign-in", 200);
   await page.getByLabel("Server URL").fill(url);
   await page.keyboard.press("Enter");
-}
-
-async function signedInAt(page: Page, hash: string, settle = 600): Promise<void> {
-  await signIn(page);
-  await go(page, hash, settle);
-}
-
-// Paints a synthetic frame behind the browser player's <video>.
-async function play(page: Page, itemHash: string): Promise<void> {
-  await signedInAt(page, itemHash);
-  await page.getByRole("link", { name: /^(Play|Resume from)/ }).first().click();
-  await page.locator("video").waitFor({ state: "attached", timeout: 8_000 });
-  await page.addStyleTag({ content: `.browser-player{background:#000 url(${frameDataUrl()}) center/cover no-repeat !important}` });
-  await page.waitForTimeout(400);
-  await page.mouse.move(700, 450);
-  await page.mouse.move(720, 460);
-  await page.waitForTimeout(300);
 }
 
 // Moves the browser player's clock and tells the app.
@@ -692,4 +652,5 @@ export const scenarios: Scenario[] = [
     await page.getByRole("alertdialog", { name: "Leave Fluster?" }).waitFor();
     await page.waitForTimeout(400);
   } },
+  ...worstArtScenarios,
 ];
