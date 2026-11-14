@@ -302,4 +302,3 @@ export function ticksToSeconds(ticks: number | null | undefined): number {
 export function secondsToTicks(seconds: number): number {
   return Math.max(0, Math.round(seconds * TICKS_PER_SECOND));
 }
-export const throwawayDomGlobal = typeof window;
