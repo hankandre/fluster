@@ -70,8 +70,8 @@ test("Home: holding OK on a Continue watching card opens details; Back on Home l
   await page.keyboard.press("Escape");
   await expect(page).toHaveURL(/#\/next\/home$/);
 
-  // Back from the hero focuses the nav; Back on Home from the nav leaves without a question.
-  await expect(page.locator(".hero-actions a").first()).toBeFocused();
+  // Back restores the card that was held (DESIGN.md 9); Back from there reaches the nav, and Back on Home from the nav leaves without a question.
+  await expect(page.locator(".home-rows [data-media-card]").first()).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(nav(page).getByRole("link", { name: "Home" })).toBeFocused();
   expect(await leaves()).toBe(0);
