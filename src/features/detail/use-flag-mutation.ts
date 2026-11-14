@@ -50,10 +50,10 @@ export function useFlagMutation(gateway: SessionGateway, itemId: string, flag: F
     onSuccess: (_data, value) => say(value ? TOASTS[flag].on : TOASTS[flag].off, "ok"),
     onSettled: () => {
       void refreshHomeRows(queryClient);
-      markAccountDataStale(queryClient);
       // While the other toggle is still in flight, a refetch would show the server's older state.
+      // The last toggle to settle refetches this detail screen with the other open ones.
       if (queryClient.isMutating({ mutationKey: [...key, "flag"] }) > 1) return;
-      void queryClient.invalidateQueries({ queryKey: key });
+      markAccountDataStale(queryClient);
     },
   });
 }

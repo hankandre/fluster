@@ -1,6 +1,6 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryObserver } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 import { fakeSessionGateway } from "../test/fake-session-gateway";
 import { ACCOUNT_GC_TIME, dropOtherAccounts, markAccountDataStale, scopeFor, scopeOfKey } from "./query-scope";
@@ -73,6 +73,22 @@ describe("markAccountDataStale", () => {
     expect(client.getQueryState(["search", 1, "z"])?.isInvalidated).toBe(true);
     expect(client.getQueryState(["home", 1, "row"])?.isInvalidated).toBe(false);
     expect(queryFn).not.toHaveBeenCalled();
+  });
+
+  it("refetches a query that is open, so a change on another client appears", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { staleTime: 60_000 } } });
+    let value = "old";
+    const queryFn = vi.fn(() => Promise.resolve(value));
+    const observer = new QueryObserver(client, { queryKey: ["browse", 1, "open"], queryFn });
+    const unsubscribe = observer.subscribe(() => undefined);
+    await vi.waitFor(() => expect(observer.getCurrentResult().data).toBe("old"));
+    await client.fetchQuery({ queryKey: ["browse", 1, "closed"], queryFn, staleTime: 60_000 });
+    queryFn.mockClear();
+    value = "new";
+    markAccountDataStale(client);
+    await vi.waitFor(() => expect(observer.getCurrentResult().data).toBe("new"));
+    expect(queryFn).toHaveBeenCalledTimes(1);
+    unsubscribe();
   });
 });
 
