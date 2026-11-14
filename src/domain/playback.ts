@@ -1,3 +1,4 @@
+import "react";
 import type { LibraryItem } from "./catalog";
 
 export const TICKS_PER_SECOND = 10_000_000;
