@@ -1504,10 +1504,10 @@
             "docs/security.md's sentence that no player preferences are persisted is updated"
           ],
           "verify": "pnpm check",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "pnpm check exit 0 (vitest 174 files/2263 tests, lint:boundaries, typecheck:core, build, cargo test); pnpm test:e2e 175 passed; boundary negative checks fail as expected. Review lows logged in the plan and tasks/backlog.md. PR, CI, and the manual tauri dev upgrade check pending in Ship."
+          "passes": true,
+          "evidence": "pnpm check exit 0 (vitest 174 files/2263 tests, lint:boundaries, typecheck:core, build, cargo test); pnpm test:e2e 175 passed; boundary negative checks fail as expected. Review lows logged in the plan and tasks/backlog.md. PR https://github.com/hankandre/fluster/pull/159 CI green: https://github.com/hankandre/fluster/actions/runs/43572414497 (frontend, rust-checks, rust-release, rust-audit, tripwire, visual, dependency-review pass). docs/security.md and e2e storage assertion changes called out in the PR. Manual pnpm tauri dev upgrade check of a pre-existing fluster.streamingLimits not run; listed untested in the PR (migration unit test covers it)."
         },
         {
           "id": "P3-23",
