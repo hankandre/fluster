@@ -123,7 +123,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 **Owns:**
 - playback attempts and cancellation
 - launch, first-frame, and end handling
-- retry (a fresh plan and play session)
+- retry (a fresh plan and play session, from the last position the player reported once a first frame was shown)
 - stop and back
 - the UI-facing session state reducer
 - later: next-episode auto-play, intro/credits skip using media segments, trickplay scrubbing data
