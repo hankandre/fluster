@@ -25,6 +25,7 @@
   --fill-secondary: rgb(242 239 233 / 0.12);
   --fill-icon: rgb(242 239 233 / 0.10);
   --track: rgb(255 255 255 / 0.22);
+  --track-buffered: rgb(255 255 255 / 0.40);
   --veil: rgb(0 0 0 / 0.6);
 
   /* Artwork tint: overridden per item by artTint() as inline custom properties */

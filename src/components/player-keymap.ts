@@ -36,11 +36,13 @@ export const VOLUME_STEP = 5;
 // What the focused element does with keys of its own. A select keeps every
 // key, Escape included: Escape closes its list instead of leaving the player.
 // A list keeps the keys that move through and choose its rows.
-type TargetKind = "text" | "slider" | "list" | "activator" | "other";
+type TargetKind = "text" | "slider" | "list" | "scroll" | "activator" | "other";
 
 const ACTIVATOR_INPUTS = new Set(["checkbox", "radio", "button", "submit", "reset"]);
 const SLIDER_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"]);
 const ARROW_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"]);
+// A focusable scrolling region (the Info sheet body) keeps the keys that scroll it.
+const SCROLL_KEYS = new Set(["ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"]);
 const LIST_KEYS = new Set(["ArrowUp", "ArrowDown", "Home", "End", "Enter", " "]);
 
 function targetKind(target: EventTarget | null): TargetKind {
@@ -52,6 +54,7 @@ function targetKind(target: EventTarget | null): TargetKind {
     return ACTIVATOR_INPUTS.has(target.type) ? "activator" : "text";
   }
   if (target.closest('[role="listbox"]')) return "list";
+  if (target.hasAttribute("data-key-scroll")) return "scroll";
   if (target.closest("button, a[href], summary")) return "activator";
   return "other";
 }
@@ -121,6 +124,8 @@ export function playerKeyAction(input: PlayerKeyInput): PlayerKeyAction | undefi
       return SLIDER_KEYS.has(key) ? undefined : action;
     case "list":
       return LIST_KEYS.has(key) ? undefined : action;
+    case "scroll":
+      return SCROLL_KEYS.has(key) ? undefined : action;
     case "activator":
       return key === " " || key === "Enter" ? undefined : action;
     case "other":

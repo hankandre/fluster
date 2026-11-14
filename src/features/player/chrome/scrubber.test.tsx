@@ -30,6 +30,40 @@ describe("Scrubber", () => {
     expect(screen.getByText("Time remaining")).toHaveClass("visually-hidden");
   });
 
+  describe("buffered range", () => {
+    const buffered = (overrides: Partial<PlaybackSnapshot>) => {
+      const { container } = render(
+        <Scrubber snapshot={{ ...snapshot, positionSeconds: 1200, durationSeconds: 3000, ...overrides }} onSeek={vi.fn()} now={now} />,
+      );
+      return container.querySelector<HTMLElement>(".scrub-buffered");
+    };
+
+    it("draws the buffered position as a share of the duration, hidden from assistive tech", () => {
+      const bar = buffered({ bufferedSeconds: 1500 });
+      expect(bar).not.toBeNull();
+      expect(bar?.style.width).toBe("50%");
+      expect(bar).toHaveAttribute("aria-hidden", "true");
+    });
+
+    it("draws nothing without a buffered position or when it is not ahead of the playhead", () => {
+      expect(buffered({})).toBeNull();
+      cleanup();
+      expect(buffered({ bufferedSeconds: 1200 })).toBeNull();
+      cleanup();
+      expect(buffered({ bufferedSeconds: 900 })).toBeNull();
+    });
+
+    it("clamps to the full rail past the duration", () => {
+      expect(buffered({ bufferedSeconds: 4000 })?.style.width).toBe("100%");
+    });
+
+    it("draws nothing without a duration", () => {
+      expect(buffered({ bufferedSeconds: 1500, durationSeconds: undefined })).toBeNull();
+      cleanup();
+      expect(buffered({ bufferedSeconds: 1500, durationSeconds: 0 })).toBeNull();
+    });
+  });
+
   it("drops Ends at while paused or without a duration", () => {
     const { rerender } = render(<Scrubber snapshot={{ ...snapshot, paused: true }} onSeek={vi.fn()} now={now} />);
     expect(screen.queryByText(/Ends at/)).not.toBeInTheDocument();

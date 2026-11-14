@@ -77,6 +77,10 @@ test("Player: the Info sheet opens from the control row with arrows and Enter, a
   await expect(page.getByRole("button", { name: "Info" })).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("region", { name: "Player information" })).toContainText("Direct play");
+  // The browser engine reports no codec facts, so the rows read Unknown here; populated values are in conversion.spec.ts.
+  const info = page.getByRole("region", { name: "Player information" });
+  await expect(info.getByRole("heading", { name: "Video" })).toBeVisible();
+  await expect(info.getByRole("heading", { name: "Audio" })).toBeVisible();
   await expectNoSmallText(page);
   await expectTitleSafe(page);
   await page.keyboard.press("Backspace");

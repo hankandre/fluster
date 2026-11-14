@@ -252,6 +252,25 @@ export interface PlaybackDiagnostics {
   warning?: string;
 }
 
+// What the engine reports for the picture. "dolby-vision" is the track's
+// signalling, not proof that the enhancement layer was rendered.
+export type VideoRange = "unknown" | "sdr" | "pq" | "hlg" | "dolby-vision";
+
+export interface VideoFacts {
+  codec?: string;
+  range: VideoRange;
+  dolbyVisionProfile?: number;
+}
+
+export interface AudioFacts {
+  codec?: string;
+  channelCount?: number;
+  sampleRate?: number;
+  // The sample format written to the audio device, for example "floatp" or "spdif-eac3".
+  outputFormat?: string;
+  outputChannelCount?: number;
+}
+
 export interface PlaybackSnapshot {
   positionSeconds: number;
   durationSeconds?: number;
@@ -263,6 +282,10 @@ export interface PlaybackSnapshot {
   subtitleTrack?: number;
   tracks: PlayerTrack[];
   diagnostics: PlaybackDiagnostics;
+  video?: VideoFacts;
+  audio?: AudioFacts;
+  // The last buffered timestamp, on the playback timeline.
+  bufferedSeconds?: number;
 }
 
 export type PlaybackEndReason = "eof" | "stopped" | "quit" | "error";

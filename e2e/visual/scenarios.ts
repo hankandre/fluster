@@ -671,6 +671,17 @@ export const scenarios: Scenario[] = [
     await page.keyboard.up("ArrowRight");
     await page.waitForTimeout(300);
   } },
+  { name: "97-tv-player-info-sheet", tvOnly: true, run: async (page) => {
+    await play(page, "#/next/item/m4");
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("Enter");
+    await page.getByRole("region", { name: "Player information" }).waitFor();
+    await page.waitForTimeout(300);
+  } },
   { name: "96-tv-leave-confirm", tvOnly: true, run: async (page) => {
     await page.addInitScript(() => {
       document.addEventListener("readystatechange", () => { document.documentElement.dataset.tvPlatform = "tizen"; });
