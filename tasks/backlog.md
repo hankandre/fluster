@@ -246,3 +246,18 @@ Measured by the worst-case artwork captures; see `docs/design/contrast-report.md
 - Add codec, channels, and flags to `PlayerTrack` in Rust for unmapped mpv tracks (a native change). (P13-29)
 - Audio-description labels (wishes W27, decision D6). (P13-29)
 - After a converted track choice renegotiates, keyboard focus does not return to the Audio & Subtitles trigger on Escape (seen in the TV e2e). (P13-29)
+
+## Post-merge guardian review of #158 (P3-31), 2026-11-14: verdict sound, three lows
+
+- `src/lib/player/coordinator.ts:336`: a failed stop after "ended" stores `redactedErrorMessage(error)` (only `redactText`) in session state, so file paths and hosts can reach state. That contradicts P3-31 acceptance 5. The screen stays safe (`playbackErrorCopy` applies `safeReason`), and today's native stop errors are fixed strings. Fix: `errorReason(error, "The player did not finish shutting down.")`. The native "error" event path (`:304`) has the same issue, predating P3-31. S.
+- **Tighten the text filters, with canary tests.** Now that more native text reaches the screen, `redactText` and `safeReason` should catch these forms, all proven with a probe:
+  - credentials separated by a space (`PlaySessionId abc123`, `X-Emby-Token abc123`, `Authorization MediaBrowser Token abc123`; `src/lib/redact.ts:24-27` needs `:` or `=`);
+  - bare `host:port`;
+  - single-segment paths, Windows paths with forward slashes, and UNC paths (`src/features/player/safe-reason.ts:4-7`);
+  - IPv6 URLs, which leave the port and route visible.
+
+  Rust's `safe_error` collapses these on the native side today, but non-native engines and future native text can reach the filters. S to M.
+
+## Visual baseline accept script (found in P13-24, 2026-11-14)
+
+- `pnpm test:visual:accept <run-id>` also rewrote three captures that had not failed (`14-home-keyboard-focus`, `15-nav-keyboard-focus`, `85-ui-gallery-dialog-picker`); the agent reverted them by hand. Either the script copies every capture instead of only the failing ones, or those three render slightly differently between runs. Make accept copy only the failed captures, and investigate determinism for the three. S.
