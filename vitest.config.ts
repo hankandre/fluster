@@ -8,7 +8,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
-    include: ["src/**/*.test.{ts,tsx}", "tests/integration/**/*.test.ts"],
+    include: ["src/**/*.test.{ts,tsx}", "tests/integration/**/*.test.ts", "scripts/**/*.test.ts"],
     coverage: { reporter: ["text", "html"] },
   },
 });

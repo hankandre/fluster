@@ -19,7 +19,7 @@
     "test:tripwire": "tsx tests/integration/tripwire.ts",
     "fixture:down": "docker compose -f tests/integration/docker-compose.yml down -v",
     "tauri": "tauri",
-    "lint:boundaries": "depcruise src --config .dependency-cruiser.cjs --output-type err-long",
+    "lint:boundaries": "node scripts/lint-boundaries.mjs",
     "samples:generate": "bash scripts/generate-samples.sh",
     "dogfood": "bash scripts/dogfood.sh",
     "typecheck:integration": "tsc -p tsconfig.integration.json",
@@ -52,6 +52,7 @@
     "tailwindcss": "^4.3.4",
     "tsx": "4.23.15",
     "typescript": "~7.0.2",
+    "typescript-6": "npm:typescript@6.0.3",
     "vite": "^6.4.5",
     "vitest": "5.1.0"
   },
