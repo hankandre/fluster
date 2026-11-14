@@ -1,9 +1,11 @@
 use super::diagnostics::update_decode_label;
 use super::network::validate_playback_urls;
+use super::properties::{apply_property, RuntimeState};
 use super::test_support::launch_request;
 use super::MpvError;
 use crate::model::{PlaybackSnapshot, PlayerEvent};
 use crate::redaction::safe_error;
+use libmpv2::events::PropertyData;
 
 const CANARY: &str = "CANARY-7f3a9c1e5b";
 
@@ -122,9 +124,29 @@ fn redaction_canary_stays_out_of_serialized_snapshots_and_events() {
     let mut snapshot = PlaybackSnapshot::default();
     snapshot.diagnostics.hwdec_current = Some("no".into());
     update_decode_label(&mut snapshot);
+    // Apply every stream property with non-canary values, as libmpv would.
+    let mut state = RuntimeState::new();
+    state.snapshot = snapshot;
+    let stream_properties = [
+        ("video-params/gamma", PropertyData::Str("pq")),
+        ("audio-params/channel-count", PropertyData::Int64(6)),
+        ("audio-params/samplerate", PropertyData::Int64(48000)),
+        ("audio-out-params/format", PropertyData::Str("spdif-eac3")),
+        ("audio-out-params/channel-count", PropertyData::Int64(6)),
+        ("demuxer-cache-time", PropertyData::Double(12.5)),
+    ];
+    for (name, data) in stream_properties {
+        apply_property(&mut state, name, data);
+    }
+    let snapshot = state.snapshot;
+    assert!(snapshot.buffered_seconds.is_some());
     let events = [
         PlayerEvent::Loaded {
             snapshot: snapshot.clone(),
+        },
+        PlayerEvent::State {
+            snapshot: snapshot.clone(),
+            cause: None,
         },
         PlayerEvent::Ended {
             snapshot: snapshot.clone(),

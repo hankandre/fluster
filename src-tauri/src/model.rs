@@ -173,6 +173,45 @@ impl Default for PlaybackDiagnostics {
     }
 }
 
+/// The picture range the engine reports. A Dolby Vision profile reports the
+/// track's signalling, not proof that mpv rendered the enhancement layer.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum VideoRange {
+    #[default]
+    Unknown,
+    Sdr,
+    Pq,
+    Hlg,
+    DolbyVision,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VideoFacts {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub codec: Option<String>,
+    pub range: VideoRange,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dolby_vision_profile: Option<u64>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AudioFacts {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub codec: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub channel_count: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sample_rate: Option<u64>,
+    /// The sample format written to the audio device (`audio-out-params`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub output_format: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub output_channel_count: Option<u64>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PlaybackSnapshot {
@@ -186,6 +225,10 @@ pub struct PlaybackSnapshot {
     pub subtitle_track: Option<i64>,
     pub tracks: Vec<PlayerTrack>,
     pub diagnostics: PlaybackDiagnostics,
+    pub video: VideoFacts,
+    pub audio: AudioFacts,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub buffered_seconds: Option<f64>,
 }
 
 impl Default for PlaybackSnapshot {
@@ -201,6 +244,9 @@ impl Default for PlaybackSnapshot {
             subtitle_track: None,
             tracks: Vec::new(),
             diagnostics: PlaybackDiagnostics::default(),
+            video: VideoFacts::default(),
+            audio: AudioFacts::default(),
+            buffered_seconds: None,
         }
     }
 }
@@ -276,6 +322,46 @@ mod tests {
         }
         .validate()
         .is_err());
+    }
+
+    #[test]
+    fn default_snapshot_serializes_empty_stream_facts() {
+        let json = serde_json::to_string(&PlaybackSnapshot::default()).expect("serializes");
+        assert!(json.contains(r#""video":{"range":"unknown"}"#), "{json}");
+        assert!(json.contains(r#""audio":{}"#), "{json}");
+        assert!(!json.contains("bufferedSeconds"), "{json}");
+    }
+
+    #[test]
+    fn filled_snapshot_serializes_stream_facts_in_camel_case() {
+        let snapshot = PlaybackSnapshot {
+            video: VideoFacts {
+                codec: Some("hevc".into()),
+                range: VideoRange::DolbyVision,
+                dolby_vision_profile: Some(8),
+            },
+            audio: AudioFacts {
+                codec: Some("truehd".into()),
+                channel_count: Some(8),
+                sample_rate: Some(48000),
+                output_format: Some("floatp".into()),
+                output_channel_count: Some(8),
+            },
+            buffered_seconds: Some(42.5),
+            ..PlaybackSnapshot::default()
+        };
+        let json = serde_json::to_string(&snapshot).expect("serializes");
+        for needle in [
+            r#""range":"dolby-vision""#,
+            r#""dolbyVisionProfile":8"#,
+            r#""channelCount":8"#,
+            r#""sampleRate":48000"#,
+            r#""outputFormat":"floatp""#,
+            r#""outputChannelCount":8"#,
+            r#""bufferedSeconds":42.5"#,
+        ] {
+            assert!(json.contains(needle), "{needle} missing from {json}");
+        }
     }
 }
 

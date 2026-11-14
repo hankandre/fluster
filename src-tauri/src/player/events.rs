@@ -3,6 +3,7 @@
 use super::media::LaunchMedia;
 use super::native_trace;
 use super::properties::{apply_property, PropertyUpdate, RuntimeState};
+use super::stream_facts::read_current_codecs;
 use super::track_list::{apply_initial_selection, refresh_selected_streams};
 use crate::media_controls::{MediaControls, MediaUpdate};
 use crate::model::{PlaybackPlan, PlaybackSnapshot, PlayerEvent};
@@ -45,6 +46,7 @@ pub(super) fn run_event_loop(
                 apply_initial_selection(mpv, &tracks, plan);
                 state.snapshot.tracks = content.read_tracks(mpv, &added_externals);
                 refresh_selected_streams(&mut state.snapshot);
+                read_current_codecs(mpv, &mut state);
                 video_loaded.store(true, Ordering::Release);
                 let _ = app.emit(
                     "fluster://player-event",
@@ -82,6 +84,7 @@ pub(super) fn run_event_loop(
                 }
             }
             Some(Ok(Event::AudioReconfig | Event::VideoReconfig)) => {
+                let codecs_changed = read_current_codecs(mpv, &mut state);
                 let tracks = content.read_tracks(mpv, &added_externals);
                 if !tracks.is_empty() && tracks != state.snapshot.tracks {
                     state.snapshot.tracks = tracks;
@@ -93,6 +96,8 @@ pub(super) fn run_event_loop(
                         },
                     );
                     pending_state = false;
+                } else if codecs_changed {
+                    pending_state = true;
                 }
             }
             Some(Ok(Event::EndFile(reason))) => {

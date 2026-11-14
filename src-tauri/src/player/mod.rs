@@ -8,6 +8,7 @@ mod media;
 mod network;
 mod pending;
 mod properties;
+mod stream_facts;
 mod track_list;
 mod tracks;
 mod version;

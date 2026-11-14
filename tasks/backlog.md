@@ -200,3 +200,9 @@ The review is `docs/research/code-quality-review-2026-11-13.md` (commit `fb8d071
 - `e2e/back-keys.spec.ts` fails intermittently in full `pnpm test:e2e` runs, on task branches and on main (different tests each time: ":89 Backspace closes the unencrypted-connection dialog", ":20 Backspace and Escape go back from item detail"). Each passes 5/5 alone with `--repeat-each 5`. It looks load-dependent; the cause is unverified. Find the race (as P13-14 did for three journeys) and make each test wait for the state it depends on; never weaken an assertion. Evidence: the P0-14 runs in `tasks/prd.json`. S to M.
 - Also from the P0-14 runs: `FLUSTER_E2E_PORT` collides when port+1 is taken, because the web server uses both ports. Pick both ports free, or document it. S.
 - From the P0-14 review (lows): `scripts/lint-boundaries.mjs:82` passes the violation count as the exit code, so exactly 256 violations exit 0 (use `exitCode > 0 ? 1 : 0`). The success line's `n/n source files` restates the coverage check rather than measuring it. Whether the Dependabot ignore for the `typescript-6` alias applies is unverified. S each.
+
+## From P13-23 (Player Engine stream facts)
+
+- libmpv2 5.0.3 drops a `PropertyChange` whose format is `MPV_FORMAT_NONE` (`libmpv2-5.0.3/src/mpv/events.rs:267-270`), so an observed property that becomes unavailable (audio disabled, `demuxer-cache-time` after a cache reset) keeps its last value in the snapshot. The existing diagnostics already behave this way. Decide whether to clear stale values on `AudioReconfig`/`VideoReconfig` or patch the binding. S.
+- `diagnostics.videoCodec` (the long description) and the new `video.codec` (short name) overlap; so do `diagnostics.width`, `height`, and `bitDepth` against `video`. Merge them without breaking `src/lib/player/last-decode.test.ts`. S.
+- Show the Dolby Vision gamma next to the profile in the Info sheet if the human wants to tell "DV signalled" from "DV rendered". P13-23. S.

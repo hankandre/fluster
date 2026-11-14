@@ -2736,10 +2736,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual && cargo test --manifest-path src-tauri/Cargo.toml",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "Milestone 1 (native) done on branch task/P13-23: cargo test 192 passed, clippy -D warnings clean, command_allowlist unchanged. Milestone 2 (TypeScript, Info sheet, scrubber) pending."
         },
         {
           "id": "P13-21",

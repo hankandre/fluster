@@ -1,6 +1,7 @@
 //! Observed libmpv properties and how each one updates the playback snapshot.
 
 use super::diagnostics::update_decode_label;
+use super::stream_facts::apply_stream_property;
 use super::track_list::update_selected_track;
 use crate::model::PlaybackSnapshot;
 use libmpv2::events::PropertyData;
@@ -28,6 +29,12 @@ pub(super) fn observe_properties(mpv: &Mpv) -> libmpv2::Result<()> {
         ("height", Format::Int64),
         ("decoder-frame-drop-count", Format::Int64),
         ("vo-drop-frame-count", Format::Int64),
+        ("video-params/gamma", Format::String),
+        ("audio-params/channel-count", Format::Int64),
+        ("audio-params/samplerate", Format::Int64),
+        ("audio-out-params/format", Format::String),
+        ("audio-out-params/channel-count", Format::Int64),
+        ("demuxer-cache-time", Format::Double),
     ];
     for (id, (name, format)) in properties.into_iter().enumerate() {
         mpv.observe_property(name, format, id as u64 + 1)?;
@@ -40,6 +47,9 @@ pub(super) struct RuntimeState {
     decoder_drops: u64,
     output_drops: u64,
     seeking: bool,
+    /// The `video-params/gamma` name, kept so the range can be recomputed
+    /// when the Dolby Vision profile arrives.
+    pub(super) gamma: Option<String>,
 }
 
 impl RuntimeState {
@@ -49,6 +59,7 @@ impl RuntimeState {
             decoder_drops: 0,
             output_drops: 0,
             seeking: false,
+            gamma: None,
         }
     }
 }
@@ -193,7 +204,7 @@ pub(super) fn apply_property(
             }
             state.output_drops = value;
         }
-        _ => return None,
+        (name, data) => return apply_stream_property(state, name, data),
     }
     state.snapshot.diagnostics.dropped_frames = state.decoder_drops + state.output_drops;
     Some(PropertyUpdate::Ordinary)
