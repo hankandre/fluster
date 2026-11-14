@@ -2689,7 +2689,7 @@
           "status": "done",
           "owner": "implementer",
           "passes": true,
-          "evidence": "pnpm check exit 0 (2057 vitest tests, cargo test ok); pnpm test:e2e 166 passed; focus-return journeys stable at --repeat-each 8 (136 passed); pnpm test:visual 329 passed, 1 flaky sign-in capture passed on retry. Two existing TV assertions updated to the specified Back behaviour (tv/browse.spec.ts Home, tv/detail.spec.ts Series). Manual WebKitGTK checks from the spec are untested."
+          "evidence": "pnpm check exit 0 (2057 vitest tests, cargo test ok); pnpm test:e2e 166 passed; focus-return journeys stable at --repeat-each 8 (136 passed); pnpm test:visual 329 passed, 1 flaky sign-in capture passed on retry. Two existing TV assertions updated to the specified Back behaviour (tv/browse.spec.ts Home, tv/detail.spec.ts Series). Manual WebKitGTK checks from the spec are untested. CI: run 43561315300 failed only on the intended 44-detail-episode captures (strip now opens at Fog Signal); baselines accepted from it in ff0898e; green run https://github.com/hankandre/fluster/actions/runs/43563403216 (all jobs success)."
         },
         {
           "id": "P13-26",
