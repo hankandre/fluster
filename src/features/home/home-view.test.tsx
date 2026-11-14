@@ -339,7 +339,40 @@ describe("HomeView", () => {
     expect(await screen.findByRole("region", { name: "Resume me" })).toBeInTheDocument();
   });
 
-  it("resolves a series hero to its first episode", async () => {
+  it("resolves a series hero to its next episode, resuming it with the ring from Next Up", async () => {
+    const seasons = vi.fn();
+    const episodes = vi.fn();
+    const seriesNextUp = vi.fn().mockResolvedValue({
+      id: "ep2",
+      title: "Second",
+      seasonNumber: 1,
+      episodeNumber: 2,
+      resumePositionTicks: 13_200_000_000,
+      progress: 0.49,
+    });
+    await renderHome(fakeGateway({
+      resumeItems: vi.fn().mockResolvedValue([]),
+      nextUp: vi.fn().mockResolvedValue([]),
+      latestInLibrary: vi.fn().mockResolvedValue([card("s1", "A series", { kind: "Series", progress: 0.1 })]),
+      seriesNextUp,
+      seasons,
+      episodes,
+    }));
+    const hero = await screen.findByRole("region", { name: "A series" });
+    const resume = await within(hero).findByRole("link", { name: "Resume S1 · E2" });
+    expect(resume).toHaveAttribute("href", "#/next/play/ep2?start=13200000000");
+    expect(seriesNextUp).toHaveBeenCalledWith("s1", expect.any(AbortSignal));
+    expect(seasons).not.toHaveBeenCalled();
+    expect(episodes).not.toHaveBeenCalled();
+    // The ring is Next Up's progress, not the series card's.
+    const ring = resume.querySelector(".ui-progress-ring");
+    expect(ring).not.toBeNull();
+    const arc = ring?.querySelectorAll("circle")[1]?.getAttribute("stroke-dasharray");
+    expect(Number.parseFloat(arc ?? "")).toBeCloseTo(0.49 * 2 * Math.PI * 7, 3);
+    expect(within(hero).getByRole("link", { name: "More info" })).toHaveAttribute("href", "#/next/series/s1");
+  });
+
+  it("resolves a series hero without a next episode to the first episode of its first season", async () => {
     const seasons = vi.fn().mockResolvedValue([
       { id: "sp", name: "Specials", indexNumber: 0 },
       { id: "se1", name: "Season 1", indexNumber: 1 },
@@ -349,12 +382,14 @@ describe("HomeView", () => {
       resumeItems: vi.fn().mockResolvedValue([]),
       nextUp: vi.fn().mockResolvedValue([]),
       latestInLibrary: vi.fn().mockResolvedValue([card("s1", "A series", { kind: "Series" })]),
+      seriesNextUp: vi.fn().mockResolvedValue(undefined),
       seasons,
       episodes,
     }));
     const hero = await screen.findByRole("region", { name: "A series" });
     const play = await within(hero).findByRole("link", { name: "Play S1 · E1" });
     expect(play).toHaveAttribute("href", "#/next/play/ep1");
+    expect(play.querySelector(".ui-progress-ring")).toBeNull();
     expect(seasons).toHaveBeenCalledWith("s1", expect.any(AbortSignal));
     expect(episodes).toHaveBeenCalledWith("s1", "se1", expect.any(AbortSignal));
     expect(within(hero).getByRole("link", { name: "More info" })).toHaveAttribute("href", "#/next/series/s1");

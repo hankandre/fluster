@@ -1632,10 +1632,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "Implemented on task/P3-27: shared seriesPrimaryState drives Home hero and series page; pnpm check, test:e2e (179), test:visual pass locally; baselines for 19d-f and PR screenshots pending CI/ship."
         },
         {
           "id": "P3-28",

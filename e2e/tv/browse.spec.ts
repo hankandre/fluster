@@ -121,6 +121,25 @@ test("Home: on a platform that confirms, Back on Home asks Leave Fluster?", asyn
   expect(await leaves()).toBe(1);
 });
 
+test("Home: a series hero resumes its next episode inside the title-safe insets, and Escape leaves the player", async ({ page }) => {
+  await signInTv(page, {
+    homeLatestOnly: true,
+    hiddenFromLatest: new Set(["m1", "m2", "m3", "m4", "m5", "m6"]),
+    seriesNextUp: "resume",
+  });
+  const primary = page.locator(".hero-actions a").first();
+  await expect(primary).toBeFocused({ timeout: 10_000 });
+  await expect(primary).toHaveText("Resume S1 · E2");
+  await expectNoSmallText(page);
+  await expectTitleSafe(page, ".hero");
+
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/#\/next\/play\/ep-2\?start=13200000000$/);
+  // The player was opened from Home, so leaving it goes back through history to Home (leavePlayer).
+  await page.keyboard.press("Escape");
+  await expect(page).toHaveURL(/#\/next\/home$/, { timeout: 10_000 });
+});
+
 test("Home: Up from the hero reaches the nav, Right picks a library, Down returns; Escape focuses the nav", async ({ page }) => {
   await signInTv(page);
   await expect(page.locator(".hero-actions a").first()).toBeFocused({ timeout: 10_000 });

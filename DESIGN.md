@@ -204,6 +204,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 
 - Home's first viewport. It shows the first Continue Watching item, or else Next Up, or else the newest item.
 - Contents: the Logo or title, one facts line (`S2 · E4 · 38 min left`, or `2023 · 2 h 3 min · 4K · Dolby Vision`), at most two lines of overview, and the `ActionBar` (compact: Resume or Play, plus "More info").
+- A series offers its series page's primary action (§7.7) and names that episode in the facts line (`S1 · E2 · 2022 · Drama · Mystery`).
 - With no candidate (empty library), no hero is shown and the first row moves up.
 - The title the hero shows is not repeated as the first card of the row below it; the row starts with the next item (UX audit D2 B; P13-32).
 - On compact windows the hero's text sits below the art.
