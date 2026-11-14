@@ -5,6 +5,14 @@ import { Button } from "../../shared/ui";
 import { BURNED_IN_COPY, type ConversionIndicator } from "../conversion-copy";
 import type { ReadyPlayerStatus } from "../player-status";
 import { PlayerSheet } from "./player-sheet";
+import {
+  audioCodecLabel,
+  audioOutputLabel,
+  channelsLabel,
+  rangeLabel,
+  resolutionLabel,
+  videoCodecLabel,
+} from "./stream-facts";
 
 const PLAY_METHOD_LABEL: Record<PlayMethod, string> = {
   DirectPlay: "Direct play",
@@ -31,6 +39,13 @@ function decodeLine(snapshot: PlaybackSnapshot | undefined): string {
   const diagnostics = snapshot?.diagnostics;
   if (!diagnostics) return "Not playing yet";
   return plain(diagnostics.decodeLabel);
+}
+
+// One Video or Audio value: nothing to report before the first snapshot,
+// "Unknown" when the engine reported no such fact.
+function factLine(snapshot: PlaybackSnapshot | undefined, value: string | undefined): string {
+  if (!snapshot) return "Not playing yet";
+  return plain(value);
 }
 
 function hwdecLine(snapshot: PlaybackSnapshot | undefined): string {
@@ -82,6 +97,7 @@ export function InfoSheet({ id, status, snapshot, playMethod, indicator, playOri
       title="Info"
       onClose={onClose}
       closeRef={closeButton}
+      scrollLabel="Details"
       initialFocus={focusPlayOriginal && showButton ? playOriginalButton : "close"}
     >
       <section className="player-sheet-section">
@@ -115,6 +131,28 @@ export function InfoSheet({ id, status, snapshot, playMethod, indicator, playOri
           <Button ref={playOriginalButton} variant="secondary" onClick={play}>Play original</Button>
         )}
         {playOriginal?.stillConverting && <p role="status">The server still converts this.</p>}
+      </section>
+      <section className="player-sheet-section">
+        <h3>Video</h3>
+        <dl>
+          <dt>Codec</dt>
+          <dd>{factLine(snapshot, videoCodecLabel(snapshot?.video))}</dd>
+          <dt>Resolution</dt>
+          <dd>{factLine(snapshot, resolutionLabel(snapshot?.diagnostics))}</dd>
+          <dt>Range</dt>
+          <dd>{factLine(snapshot, rangeLabel(snapshot?.video, snapshot?.diagnostics.bitDepth))}</dd>
+        </dl>
+      </section>
+      <section className="player-sheet-section">
+        <h3>Audio</h3>
+        <dl>
+          <dt>Codec</dt>
+          <dd>{factLine(snapshot, audioCodecLabel(snapshot?.audio))}</dd>
+          <dt>Channels</dt>
+          <dd>{factLine(snapshot, channelsLabel(snapshot?.audio))}</dd>
+          <dt>Output</dt>
+          <dd>{factLine(snapshot, audioOutputLabel(snapshot?.audio))}</dd>
+        </dl>
       </section>
       <section className="player-sheet-section">
         <h3>Decoder</h3>

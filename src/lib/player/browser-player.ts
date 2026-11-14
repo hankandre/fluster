@@ -140,10 +140,20 @@ export class BrowserPlayerEngine implements PlayerEngine {
       muted: video?.muted ?? false,
       tracks: [],
       diagnostics: browserDiagnostics,
+      // An HTML video element reports no codec facts honestly, so only the buffered end is set.
+      bufferedSeconds: video ? bufferedEnd(video.buffered, video.currentTime) : undefined,
     };
   }
 
   private emit(event: PlayerEvent): void {
     for (const listener of this.listeners) listener(event);
   }
+}
+
+// The end of the buffered range that contains the playhead, if any.
+export function bufferedEnd(buffered: Pick<TimeRanges, "length" | "start" | "end">, currentTime: number): number | undefined {
+  for (let index = 0; index < buffered.length; index += 1) {
+    if (buffered.start(index) <= currentTime && currentTime <= buffered.end(index)) return buffered.end(index);
+  }
+  return undefined;
 }

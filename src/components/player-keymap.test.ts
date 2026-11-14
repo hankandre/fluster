@@ -154,6 +154,17 @@ describe("playerKeyAction", () => {
 });
 
 describe("playerKeyAction in the TV form", () => {
+  it("lets a focused scrolling region keep its scroll keys and yield the rest", () => {
+    const target = element('<div role="group" tabindex="0" data-key-scroll=""></div>');
+    for (const tv of [false, true]) {
+      for (const key of ["ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"]) {
+        expect(press(key, { target, tv })).toBeUndefined();
+      }
+    }
+    expect(press("m", { target })).toEqual({ kind: "toggle-mute" });
+    expect(press("Escape", { target })).toEqual({ kind: "escape" });
+  });
+
   it("wakes the chrome on an arrow from the player region and never changes the volume", () => {
     for (const key of ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"]) {
       expect(press(key, { tv: true })).toEqual({ kind: "wake" });

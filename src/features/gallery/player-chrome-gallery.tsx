@@ -6,6 +6,7 @@ import { InfoSheet } from "../player/chrome/info-sheet";
 import { Osd } from "../player/chrome/osd";
 import { CommandErrorPanel } from "../player/chrome/player-error";
 import { PlayerLoading } from "../player/chrome/player-loading";
+import { Scrubber } from "../player/chrome/scrubber";
 import { SkipButton } from "../player/chrome/skip-button";
 import { UpNextCard } from "../player/chrome/up-next-card";
 import { PlayerTopBar } from "../player/chrome/player-top-bar";
@@ -39,7 +40,10 @@ const SNAPSHOT: PlaybackSnapshot = {
   volume: 80,
   muted: false,
   tracks: [],
-  diagnostics: { decodeMode: "hardware", decodeLabel: "Hardware decoding", hwdecCurrent: "vaapi", hwdecInterop: "vaapi-egl", droppedFrames: 0 },
+  diagnostics: { decodeMode: "hardware", decodeLabel: "Hardware decoding", hwdecCurrent: "vaapi", hwdecInterop: "vaapi-egl", droppedFrames: 0, width: 3840, height: 2160, bitDepth: 10 },
+  video: { codec: "hevc", range: "dolby-vision", dolbyVisionProfile: 8 },
+  audio: { codec: "truehd", channelCount: 8, sampleRate: 48000, outputFormat: "floatp", outputChannelCount: 8 },
+  bufferedSeconds: 1500,
 };
 
 const REASON = CONVERSION_REASON_COPY.ContainerBitrateExceedsLimit;
@@ -81,6 +85,14 @@ export function PlayerChromeGallery() {
               onClose={() => setInfoOpen(false)}
             />
           )}
+        </Frame>
+        <Frame label="Scrubber with a buffered range">
+          <div className="player-chrome" data-visible="true">
+            <div className="player-shade" />
+            <div className="player-controls">
+              <Scrubber snapshot={SNAPSHOT} onSeek={() => undefined} />
+            </div>
+          </div>
         </Frame>
         <Frame label="Conversion notice">
           <Osd notice={{ text: INDICATOR.chip, kind: "notice", serial: 1 }} keyMessage={{ text: "+10 s", kind: "key", serial: 2 }} />

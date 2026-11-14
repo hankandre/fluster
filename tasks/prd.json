@@ -2739,7 +2739,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "Milestone 1 (native) done on branch task/P13-23: cargo test 192 passed, clippy -D warnings clean, command_allowlist unchanged. Milestone 2 (TypeScript, Info sheet, scrubber) pending."
+          "evidence": "Milestone 1 (native) done on branch task/P13-23: cargo test 192 passed, clippy -D warnings clean, command_allowlist unchanged. Milestone 2 (TypeScript, Info sheet, scrubber, TV scroll stop) done: pnpm check green, pnpm test:e2e 155 passed with 3 load flakes (playback-notices.spec.ts:42, player.spec.ts:57 and :74) that pass 120/120 alone with --repeat-each 5, pnpm test:visual 342 passed (3 flaky retried). Open: visual baselines via CI accept, fresh-context design review, real-video native gates."
         },
         {
           "id": "P13-21",

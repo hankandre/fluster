@@ -32,6 +32,26 @@ test("TV: a converted session shows its reason inside the safe area, and the chi
   await expect(chip).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("region", { name: "Player information" })).toContainText("the video format is not supported here");
+  // Populated Video and Audio rows (E2eHlsEngine) at the TV type size, inside the safe area.
+  const info = page.getByRole("region", { name: "Player information" });
+  await expect(info.getByRole("heading", { name: "Video" })).toBeVisible();
+  await expect(info.getByRole("heading", { name: "Audio" })).toBeVisible();
+  await expect(info).toContainText("HEVC");
+  await expect(info).toContainText("HDR (PQ)");
+  await expect(info).toContainText("AAC");
+  await expect(info).toContainText("Stereo · 48 kHz");
+  await expect(info).toContainText("PCM, Stereo");
+  await expectNoSmallText(page);
+  await expectTitleSafe(page);
+  // The body is a focus stop that scrolls with the arrow keys, so Renderer is reachable without a pointer.
+  const body = info.getByRole("group", { name: "Details" });
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("ArrowDown");
+  await expect(body).toBeFocused();
+  await page.keyboard.press("End");
+  await expect(info.getByRole("heading", { name: "Renderer" })).toBeInViewport();
+  await page.keyboard.press("Home");
+  await expect(info.getByRole("heading", { name: "Playback" })).toBeInViewport();
   await page.keyboard.press("Escape");
   await page.keyboard.press("Escape");
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);

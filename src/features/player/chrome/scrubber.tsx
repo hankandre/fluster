@@ -33,6 +33,12 @@ export function Scrubber({ snapshot, onSeek, onScrubHold, seekPreview, chapters,
   const chapterName = previewSeconds != null && chapters ? chapterAt(chapters, previewSeconds)?.name : undefined;
   const fill = duration > 0 ? Math.min(Math.max(position / duration, 0), 1) * 100 : 0;
 
+  const bufferedSeconds = snapshot?.bufferedSeconds;
+  // Drawn only ahead of the playhead; the TV scrub never moves it.
+  const buffered = duration > 0 && bufferedSeconds != null && bufferedSeconds > position
+    ? Math.min(bufferedSeconds / duration, 1) * 100
+    : undefined;
+
   const tvScrub = useTvScrub({ playhead: snapshot?.positionSeconds ?? 0, duration, setPending: setSeekValue, onSeek, onScrubHold });
 
   const commit = () => {
@@ -79,6 +85,7 @@ export function Scrubber({ snapshot, onSeek, onScrubHold, seekPreview, chapters,
   );
   const rail = (
     <div className="scrub-rail">
+      {buffered !== undefined && <div className="scrub-buffered" aria-hidden="true" style={{ width: `${buffered}%` }} />}
       <div className="scrub-fill" style={{ width: `${fill}%` }} />
       <span className="scrub-thumb" style={{ left: `${fill}%` }} />
       {duration > 0 && chapters?.map((chapter) => {

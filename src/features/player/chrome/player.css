@@ -126,6 +126,7 @@
   }
   .seek-row:hover .scrub-rail,
   .seek-row:focus-within .scrub-rail { height: var(--scrub-track-h-active); }
+  .scrub-buffered { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: var(--track-buffered); }
   .scrub-fill { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: var(--art-accent); }
   .scrub-thumb {
     position: absolute;

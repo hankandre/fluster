@@ -78,6 +78,9 @@ export class E2eHlsEngine implements PlayerEngine {
       subtitleTrack: selected("Subtitle"),
       tracks: this.tracks,
       diagnostics: { decodeMode: "unknown", decodeLabel: "E2E engine", droppedFrames: 0 },
+      video: { codec: "hevc", range: "pq" },
+      audio: { codec: "aac", channelCount: 2, sampleRate: 48000, outputFormat: "floatp", outputChannelCount: 2 },
+      bufferedSeconds: Math.min(this.positionSeconds + 30, 120),
     };
   }
 

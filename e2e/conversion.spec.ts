@@ -19,6 +19,10 @@ test("a direct stream shows the repackaging indicator and still reports Transcod
   expect(log.reports.find((report) => report.path === "/Sessions/Playing")?.body).toMatchObject({ PlayMethod: "Transcode" });
   await page.keyboard.press("i");
   await expect(page.getByRole("region", { name: "Player information" })).toContainText("Direct stream");
+  await expect(page.getByRole("region", { name: "Player information" })).toContainText("Video");
+  await expect(page.getByRole("region", { name: "Player information" })).toContainText("HEVC");
+  await expect(page.getByRole("region", { name: "Player information" })).toContainText("Audio");
+  await expect(page.getByRole("region", { name: "Player information" })).toContainText("AAC");
 
   await page.getByRole("button", { name: "Back", exact: true }).click();
   await expect.poll(() => log.reports.map((report) => report.path)).toContain("/Sessions/Playing/Stopped");

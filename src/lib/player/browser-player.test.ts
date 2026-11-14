@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it } from "vitest";
 import { UnsupportedDeliveryError, type PlaybackPlan } from "../../domain/playback";
-import { BROWSER_HLS_UNSUPPORTED_MESSAGE, BrowserPlayerEngine } from "./browser-player";
+import { BROWSER_HLS_UNSUPPORTED_MESSAGE, BrowserPlayerEngine, bufferedEnd } from "./browser-player";
 
 const plan: PlaybackPlan = {
   itemId: "item-1",
@@ -42,6 +42,18 @@ describe("BrowserPlayerEngine", () => {
     const engine = new BrowserPlayerEngine();
     const error = await engine.launch({ ...plan, delivery: "hls", playMethod: "DirectStream" }).catch((caught: unknown) => caught);
     expect(error).toBeInstanceOf(UnsupportedDeliveryError);
+  });
+
+  it("reports the end of the buffered range that contains the playhead", () => {
+    const ranges = (pairs: Array<[number, number]>) => ({
+      length: pairs.length,
+      start: (index: number) => pairs[index][0],
+      end: (index: number) => pairs[index][1],
+    });
+    expect(bufferedEnd(ranges([[0, 30], [100, 160]]), 120)).toBe(160);
+    expect(bufferedEnd(ranges([[0, 30]]), 12)).toBe(30);
+    expect(bufferedEnd(ranges([[0, 30]]), 50)).toBeUndefined();
+    expect(bufferedEnd(ranges([]), 0)).toBeUndefined();
   });
 
   it("adds no HLS dependency", () => {
