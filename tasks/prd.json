@@ -2830,7 +2830,7 @@
           "status": "in_progress",
           "owner": null,
           "passes": false,
-          "evidence": "Implemented on branch task/P13-29: pnpm check green; e2e and visual run in the verify step; ship pending."
+          "evidence": "Branch task/P13-29: pnpm check green; pnpm test:e2e 177 passed; pnpm test:visual 348 passed (local). Pending in Ship: accept CI visual baselines (88a, 59, 54b, 88), PR before/after screenshots, PR notes."
         },
         {
           "id": "P13-30",
