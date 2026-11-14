@@ -66,8 +66,9 @@ const REVIEW = {
       },
     },
     needsGuardian: { type: 'boolean' },
+    filesChanged: strings,
   },
-  required: ['findings'],
+  required: ['findings', 'filesChanged'],
 };
 const SHIP = {
   type: 'object',
@@ -75,6 +76,8 @@ const SHIP = {
   required: ['merged'],
 };
 
+// Paths whose change always needs a guardian review (AGENTS.md: policy, tokens, redaction, native, commands).
+const HIGH_RISK_PATH = /^(src-tauri\/|src\/lib\/jellyfin\/|src\/lib\/player\/|src\/lib\/redact|src\/lib\/transport-error|src\/lib\/.*lan-http|src\/domain\/playback|src\/domain\/policy|src\/app\/session|docs\/security\.md)/;
 const denied = (result) => (result && result.deniedCommands && result.deniedCommands.length ? result.deniedCommands : null);
 const numbered = (list) => list.map((item, i) => `${i + 1}. ${item}`).join('\n');
 const VERIFY_STEPS =
@@ -196,7 +199,7 @@ Return as open questions only product or design choices the human must make that
   if (!skipImpl) {
   const impl = await work(
     `Implement the approved spec.${specNotes.length ? `\nAlso resolve these spec-check notes, updating the spec where they change it:\n${specNotes.join('\n')}` : ''}
-Commit the spec with the work, one milestone per commit. Set the task's status to in_progress with evidence in tasks/prd.json. Do not push or open a PR. If an acceptance item can only be met with a pushed branch, an open PR, or CI runs (for example a throwaway commit that must fail CI, or baselines rendered on the CI host), do everything else, set done=true, and list each such step in ciSteps; the Ship phase does them. Return done=false with blockers if you cannot finish for any other reason.`,
+Commit the spec with the work, one milestone per commit. Set the task's status to in_progress with evidence in tasks/prd.json. Do not push or open a PR. If an acceptance item can only be met with a pushed branch, an open PR, or CI runs (for example a throwaway commit that must fail CI, or baselines rendered on the CI host), do everything else, set done=true, and list each such step in ciSteps; the Ship phase does them. Never list a review (guardian, design, or any other agent review) as a ciStep: reviews happen in the Review phase, and the Ship phase cannot start agents. Return done=false with blockers if you cannot finish for any other reason.`,
     `implement ${task}`,
     'Implement',
   );
@@ -210,11 +213,12 @@ Commit the spec with the work, one milestone per commit. Set the task's status t
   // 4. Review (one round)
   const review = await agent(
     `${common}
-Review git diff origin/main...${branch} against the spec, the task acceptance, and the hard rules. If the diff touches src/features/ or src/styles/, also do the design review: follow .claude/skills/change-review/references/design-checklist.md against DESIGN.md and look at the captures in visual-captures/ (run pnpm test:visual with FLUSTER_VISUAL_PORT set to a free port if they are missing). This is the only review round. Change no files. Return every finding with its severity, file:line, and a concrete failure scenario. Set needsGuardian=true if the diff touches src/lib/jellyfin/, src/lib/player/, redaction, tokens, PlaybackInfo or negotiation, a Tauri command, or src-tauri/.`,
+Review git diff origin/main...${branch} against the spec, the task acceptance, and the hard rules. If the diff touches src/features/ or src/styles/, also do the design review: follow .claude/skills/change-review/references/design-checklist.md against DESIGN.md and look at the captures in visual-captures/ (run pnpm test:visual with FLUSTER_VISUAL_PORT set to a free port if they are missing). This is the only review round. Change no files. Return every finding with its severity, file:line, and a concrete failure scenario. Return filesChanged: every path from git diff --name-only origin/main...${branch}. Set needsGuardian=true if the diff touches src/lib/jellyfin/, src/lib/player/, redaction, tokens, PlaybackInfo or negotiation, a Tauri command, or src-tauri/, or if the task's acceptance asks for a guardian review.`,
     { agentType: reviewAgent, model: reviewModel, schema: REVIEW, phase: 'Review', label: `review ${task}` },
   );
   if (!review) return result('failed', 'The reviewer returned nothing.');
-  if (review.needsGuardian && reviewAgent !== 'guardian') {
+  const riskyFiles = (review.filesChanged || []).filter((path) => HIGH_RISK_PATH.test(path));
+  if ((review.needsGuardian || riskyFiles.length) && reviewAgent !== 'guardian') {
     log(`${task}: the diff touches high-risk code; adding a guardian review`);
     const guard = await agent(
       `${common}
@@ -236,7 +240,9 @@ Then, if every acceptance item is met (the review above counts as the fresh-cont
   );
   if (!followUp) return result('failed', 'The follow-up agent returned nothing.');
   if (denied(followUp)) return result('denied', denied(followUp));
-  if (!followUp.done || !followUp.checksPassed) return result('blocked', (followUp.blockers || []).concat(followUp.failures || []));
+  // With CI steps pending, a not-done follow-up whose checks pass hands its blockers to Ship, which refuses to merge if it cannot clear them.
+  if (!followUp.checksPassed || (!followUp.done && !ciSteps.length)) return result('blocked', (followUp.blockers || []).concat(followUp.failures || []));
+  if (!followUp.done) ciSteps = ciSteps.concat(followUp.blockers || []);
   evidence = followUp.evidence || evidence;
   ciSteps = ciSteps.concat(followUp.ciSteps || []);
 
@@ -245,7 +251,7 @@ Then, if every acceptance item is met (the review above counts as the fresh-cont
 Ship with the ship skill: rebase onto origin/main if it moved (force-with-lease is allowed on this branch), push, open the PR if none exists, enable auto-merge with rebase, and wait for CI with gh pr checks --watch. The PR body must explain user impact, testing (use the evidence below), conversion and security implications, untested gates, and call out any change to invariants, docs/security.md, release signing, or CI. For a UI change, add a Screenshots section that links the visual-captures artifact from the PR's CI run (gh api repos/hankandre/fluster/actions/runs/<run>/artifacts) and names the captures that changed, plus a Design review notes section from the review. Change no source files. If CI is red, return merged=false with each failing check and its cause. After a merge, run git -C /home/handre/Code/fluster pull --ff-only and remove the worktree and branch.
 Evidence: ${evidence}
 Review: ${blocking.length} fixed, ${lows.length} low logged in the plan.${ciSteps.length ? `
-Before enabling auto-merge, do these CI-dependent acceptance steps on this PR branch. Temporary commits are allowed only when a step asks for one, and each must be reverted in a later commit. Record each run URL in the task's evidence. Then, if every acceptance item is met, set the task's status to done and passes to true, commit, and push. This is the one case where the Ship phase changes files:
+Before enabling auto-merge, do these CI-dependent acceptance steps on this PR branch. Temporary commits are allowed only when a step asks for one, and each must be reverted in a later commit. Record each run URL in the task's evidence. Then, if every acceptance item is met, set the task's status to done and passes to true, commit, and push. If any listed step cannot be completed (for example it needs a review or a human), do not enable auto-merge; return merged=false and put the reason in ciFailures. This is the one case where the Ship phase changes files:
 ${ciSteps.join('\n')}` : ''}`;
   const shipEffort = ciSteps.length ? 'medium' : 'low';
   let ship = await agent(shipPrompt, { model: 'sonnet', effort: shipEffort, schema: SHIP, phase: 'Ship', label: `ship ${task}` });
