@@ -313,19 +313,13 @@ describe("scroll", () => {
     expect(scrollTo.mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(document.activeElement!.scrollIntoView).mock.invocationCallOrder[0] ?? Infinity);
   });
 
-  it("focuses with preventScroll and scrolls into view only when the card is outside the viewport", () => {
+  it("focuses with preventScroll, then always scrolls nearest so scroll-padding and safe insets apply", () => {
     const home = leaveScrolled("b", 100);
     navigate("#/next/home", home, "traverse");
     const focus = vi.spyOn(el("b"), "focus");
     el("b").getBoundingClientRect = () => ({ top: 10, left: 10, bottom: 50, right: 50 }) as DOMRect;
     tryRestore();
     expect(focus).toHaveBeenCalledWith({ preventScroll: true });
-    expect(el("b").scrollIntoView).not.toHaveBeenCalled();
-
-    const again = leaveScrolled("b", 100);
-    navigate("#/next/home", again, "traverse");
-    el("b").getBoundingClientRect = () => ({ top: 2000, left: 10, bottom: 2040, right: 50 }) as DOMRect;
-    tryRestore();
     expect(el("b").scrollIntoView).toHaveBeenCalledWith({ block: "nearest", inline: "nearest" });
   });
 

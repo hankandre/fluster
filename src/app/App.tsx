@@ -14,7 +14,7 @@ import { useBackspaceAsEscape } from "../features/shell/use-backspace-as-escape"
 import { useFocusReturn } from "../features/shell/use-focus-return";
 import { PlayerFeatureView, PlayerRouteView } from "../features/player";
 import { parseCollectionRoute, parseLibraryRoute, parsePlayRoute, ROUTE_REPLACED_EVENT } from "../features/routes";
-import { markAccountDataStale } from "../features/query-scope";
+import { markAccountDataStale, markKeptDataStaleForReturn } from "../features/query-scope";
 import { resetAccountData } from "./account-data";
 import { createServices, type AppServices } from "./compose";
 import { PlayerServicesProvider, type PlayerServices } from "./player-services";
@@ -58,6 +58,13 @@ export function App() {
   useEffect(() => {
     if (!inApp) window.location.replace(HOME_HASH);
   }, [inApp]);
+
+  // Back and Forward show kept screens at once and refetch them in the background.
+  useEffect(() => {
+    const onPopState = () => markKeptDataStaleForReturn(queryClient);
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [queryClient]);
 
   useEffect(() => {
     // A hashchange can arrive after a quick second navigation; it names the same hash then, and is not a visit.

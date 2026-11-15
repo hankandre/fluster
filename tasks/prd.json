@@ -2890,7 +2890,7 @@
           "status": "in_progress",
           "owner": null,
           "passes": false,
-          "evidence": "Branch task/P13-31 (local), after the review fix (open screens refetch when marked stale): pnpm check green (2382 unit tests, build, boundaries, cargo test); pnpm test:e2e 188 passed; pnpm test:visual 369 passed, no baseline change. Earlier full e2e runs each failed e2e/tv/detail.spec.ts:46 under load; it passed alone with --repeat-each 10 and in later full runs (logged in tasks/backlog.md). CI run 43651972360 passed all checks (frontend, rust-checks, rust-audit, rust-release, tripwire, visual, dependency-review). Pending in Ship: PR with before/after screenshots at 1440x900 and 1920x1080 and the TV form, guardian review (query-scope rule change), design review."
+          "evidence": "Branch task/P13-31 (local), after guardian fix 1 and design lows: player keeps playing when a detail refetch fails; Back marks kept rows stale and refetches in the background (owner decision 2026-11-15); e2e 'Fallback: a card that is gone' restored to main; focusItem always scrolls nearest. pnpm check green (2384 unit tests, build, cargo test); pnpm test:e2e 188 passed; pnpm test:visual 368 passed plus 1 flaky retry (92-tv-player-chrome; passed 3 of 3 alone), no baseline change. Earlier CI run 43651972360 passed before this fix. Pending in Ship: PR with before/after screenshots at 1440x900 and 1920x1080 and the TV form (visual-captures link if images cannot be attached), guardian re-check of the fix diff, note in PR that sort/filter use replaceState so Back leaves rather than undoing a filter."
         },
         {
           "id": "P13-32",

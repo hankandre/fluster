@@ -283,3 +283,7 @@ Measured by the worst-case artwork captures; see `docs/design/contrast-report.md
 - `window.scrollTo({ behavior: "instant" })` in `focus-return.ts:141`: WebKitGTK support is unverified and a TypeError would lose the remembered scroll. Use `"auto"`, which behaves the same under `base.css:154` (P13-31 review).
 - Re-check `e2e/tv/detail.spec.ts:46`, which failed in two earlier full e2e runs under load and passed alone and in a third run; it may be a real race (P13-31 review).
 - Run the design checklist against fresh captures and compare them with the PR's before and after screenshots; the diff changes no markup or styles (P13-31 review).
+- A server event refetch can flicker an in-flight optimistic flag, because `markAccountDataStale` refetches the open detail while a toggle is pending (`use-flag-mutation.ts:55-56`) (P13-31 guardian).
+- An exact-card return falls back to the row index when the page is shorter after a resize; the card's own id is then not found until the pages load (P13-31 guardian).
+- `useFocusReturn` waits on `useIsFetching()`, which counts every query, so settling can wait up to `RETURN_WAIT_MS` behind an unrelated fetch (P13-31 design review).
+- Sort and filter changes use `replaceState`, so Back leaves the library instead of undoing a filter. Intentional; noted in the PR text (P13-31 design review).

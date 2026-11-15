@@ -7,3 +7,8 @@ class TestResizeObserver implements ResizeObserver {
 }
 
 globalThis.ResizeObserver = TestResizeObserver;
+
+// jsdom does not implement scrollIntoView.
+if (typeof Element !== "undefined" && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => undefined;
+}

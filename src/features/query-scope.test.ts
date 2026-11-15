@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { QueryClient, QueryObserver } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 import { fakeSessionGateway } from "../test/fake-session-gateway";
-import { ACCOUNT_GC_TIME, dropOtherAccounts, markAccountDataStale, scopeFor, scopeOfKey } from "./query-scope";
+import { ACCOUNT_GC_TIME, dropOtherAccounts, markAccountDataStale, markKeptDataStaleForReturn, scopeFor, scopeOfKey } from "./query-scope";
 
 const gatewayA = fakeSessionGateway();
 const gatewayB = fakeSessionGateway();
@@ -88,6 +88,27 @@ describe("markAccountDataStale", () => {
     markAccountDataStale(client);
     await vi.waitFor(() => expect(observer.getCurrentResult().data).toBe("new"));
     expect(queryFn).toHaveBeenCalledTimes(1);
+    unsubscribe();
+  });
+});
+
+describe("markKeptDataStaleForReturn", () => {
+  it("marks kept Home rows and browse, detail, and search data stale without fetching, even when open", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { staleTime: 60_000 } } });
+    const queryFn = vi.fn().mockResolvedValue("fresh");
+    for (const key of [["browse", 1, "x"], ["detail", 1, "y"], ["search", 1, "z"], ["home", 1, "latest", "l"], ["home", 1, "views"]]) {
+      await client.fetchQuery({ queryKey: key, queryFn, staleTime: 60_000 });
+    }
+    const open = new QueryObserver(client, { queryKey: ["detail", 1, "y"], queryFn });
+    const unsubscribe = open.subscribe(() => undefined);
+    queryFn.mockClear();
+    markKeptDataStaleForReturn(client);
+    await new Promise((r) => setTimeout(r, 0));
+    for (const key of [["browse", 1, "x"], ["detail", 1, "y"], ["search", 1, "z"], ["home", 1, "latest", "l"]]) {
+      expect(client.getQueryState(key)?.isInvalidated).toBe(true);
+    }
+    expect(client.getQueryState(["home", 1, "views"])?.isInvalidated).toBe(false);
+    expect(queryFn).not.toHaveBeenCalled();
     unsubscribe();
   });
 });
