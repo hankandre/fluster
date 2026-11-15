@@ -307,3 +307,12 @@ Measured by the worst-case artwork captures; see `docs/design/contrast-report.md
 ## Hooks lint follow-ups (P0-16)
 
 - The `typescript-6` alias and `scripts/typescript-6-resolve.mjs` now also serve `@typescript-eslint/parser` (peer `typescript <6.1.0` at 8.72.2); drop them only when both dependency-cruiser and typescript-eslint support the app's TypeScript 7 minor. Supersedes the P0-14 entry's condition. S (P0-16).
+
+## Detail page: cut the subtitle list down to the viewer's language (owner, 2026-11-15)
+
+- Seen on the dogfood server: "File and streams" (`src/features/detail/file-and-streams.tsx`) lists every subtitle track on its own line; a film with 52 subtitle tracks fills the screen.
+- Owner decisions:
+  - Show only the subtitle tracks in the viewer's Jellyfin preferred subtitle language (the user configuration's `SubtitleLanguagePreference`; Fluster does not read it today, so the gateway needs it, e.g. from `/Users/Me`).
+  - When no preference is set, or the file has no track in that language: show the file's default subtitle track if it has one, plus a line like "51 more in 32 languages"; with no default either, only the count line.
+  - A "Show all 52 subtitles" button expands the full list in place (keyboard and TV form included).
+- Open: whether the audio list gets the same rule (not asked yet). M.
