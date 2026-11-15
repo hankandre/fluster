@@ -51,25 +51,35 @@ const CARD_IMAGE_PARAMS = {
 const SEARCH_HINT_LIMIT = 8;
 const SEARCH_TYPES = "Movie,Series,Episode";
 
-const DEVICE_NAME = "Fluster Linux";
+// What the server shows for this client in its device list. The composition
+// root supplies both; the core reads no build or platform globals.
+export interface ClientIdentity {
+  version: string;
+  deviceName: string;
+}
+
+// Deliberately not a real version, so a path that forgets the identity is
+// visible on the server.
+const UNIDENTIFIED_CLIENT: ClientIdentity = { version: "0.0.0", deviceName: "Fluster" };
+
 // Jellyfin binds the Quick Connect token to the DeviceId sent with Initiate
 // (QuickConnectManager.cs:72-93, 154-163), before any user is known, so a
 // per-user id is impossible. The placeholder contains "#", which Jellyfin
 // rejects in usernames (UserManager.cs:119), so no real user can collide.
 const QUICK_CONNECT_DEVICE_USER = "#quick-connect";
 
-function createClient(deviceId: string): Jellyfin {
+function createClient(client: ClientIdentity, deviceId: string): Jellyfin {
   return new Jellyfin({
-    clientInfo: { name: "Fluster", version: "0.1.0" },
-    deviceInfo: { name: DEVICE_NAME, id: deviceId },
+    clientInfo: { name: "Fluster", version: client.version },
+    deviceInfo: { name: client.deviceName, id: deviceId },
   });
 }
 
-function buildAuthorizationHeader(serverUrl: string, deviceId: string, accessToken?: string): string {
-  return createClient(deviceId).createApi(serverUrl, accessToken).authorizationHeader;
+function buildAuthorizationHeader(client: ClientIdentity, serverUrl: string, deviceId: string, accessToken?: string): string {
+  return createClient(client, deviceId).createApi(serverUrl, accessToken).authorizationHeader;
 }
 
-function createSdkApi(serverUrl: string, deviceId: string, accessToken?: string): Api {
+function createSdkApi(client: ClientIdentity, serverUrl: string, deviceId: string, accessToken?: string): Api {
   // The SDK's generated APIs apply basePath and authorization through their
   // Configuration object. Fluster's narrow gateway uses the raw Axios client,
   // so it must provide those values on an isolated instance explicitly.
@@ -83,7 +93,7 @@ function createSdkApi(serverUrl: string, deviceId: string, accessToken?: string)
     adapter: "fetch",
     maxRedirects: 0,
   });
-  const api = createClient(deviceId).createApi(serverUrl, accessToken, axiosInstance);
+  const api = createClient(client, deviceId).createApi(serverUrl, accessToken, axiosInstance);
   axiosInstance.defaults.headers.common.Authorization = api.authorizationHeader;
   return api;
 }
@@ -199,6 +209,7 @@ export class JellyfinGateway {
     private readonly installId: string = crypto.randomUUID(),
     private readonly confirmations: LanHttpConfirmationStore = new MemoryLanHttpConfirmations(),
     private readonly streamingLimits: StreamingLimitStore = new MemoryStreamingLimits(),
+    private readonly client: ClientIdentity = UNIDENTIFIED_CLIENT,
   ) {
     const url = normalizeServerUrl(serverUrl);
     this.serverUrl = url.toString().replace(/\/$/, "");
@@ -207,7 +218,7 @@ export class JellyfinGateway {
     this.plainHttp = url.protocol === "http:";
     // Before login there is no user, so the unauthenticated API uses a
     // throwaway device id that is never sent with credentials.
-    this.api = transport ? undefined : createSdkApi(this.serverUrl, "fluster-unauthenticated");
+    this.api = transport ? undefined : createSdkApi(this.client, this.serverUrl, "fluster-unauthenticated");
     this.transport = transport ?? (this.api!.axiosInstance as HttpTransport);
   }
 
@@ -280,7 +291,7 @@ export class JellyfinGateway {
       Username: username,
       Pw: password,
     }, {
-      headers: { Authorization: buildAuthorizationHeader(this.serverUrl, deviceId) },
+      headers: { Authorization: buildAuthorizationHeader(this.client, this.serverUrl, deviceId) },
       signal,
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
@@ -300,7 +311,7 @@ export class JellyfinGateway {
     this.requireTransportConsent();
     const deviceId = await this.quickConnectDeviceId();
     const { data } = await this.post<QuickConnectResult>("/QuickConnect/Initiate", undefined, {
-      headers: { Authorization: buildAuthorizationHeader(this.serverUrl, deviceId) },
+      headers: { Authorization: buildAuthorizationHeader(this.client, this.serverUrl, deviceId) },
       signal,
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
@@ -315,7 +326,7 @@ export class JellyfinGateway {
     const deviceId = await this.quickConnectDeviceId();
     const { data } = await this.get<QuickConnectResult>("/QuickConnect/Connect", {
       params: { secret },
-      headers: { Authorization: buildAuthorizationHeader(this.serverUrl, deviceId) },
+      headers: { Authorization: buildAuthorizationHeader(this.client, this.serverUrl, deviceId) },
       signal,
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
@@ -328,7 +339,7 @@ export class JellyfinGateway {
     const { data } = await this.post<AuthenticationResult>("/Users/AuthenticateWithQuickConnect", {
       Secret: secret,
     }, {
-      headers: { Authorization: buildAuthorizationHeader(this.serverUrl, deviceId) },
+      headers: { Authorization: buildAuthorizationHeader(this.client, this.serverUrl, deviceId) },
       signal,
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
@@ -353,7 +364,7 @@ export class JellyfinGateway {
     this.userName = data.User.Name ?? fallbackName;
     this.deviceId = deviceId;
     if (this.api) {
-      this.api = createSdkApi(this.serverUrl, deviceId, data.AccessToken);
+      this.api = createSdkApi(this.client, this.serverUrl, deviceId, data.AccessToken);
       this.transport = this.api.axiosInstance as HttpTransport;
     }
     return { userId: data.User.Id, username: this.userName };
@@ -370,7 +381,7 @@ export class JellyfinGateway {
   authorizationHeader(): string {
     const { accessToken } = this.requireSession();
     if (!this.deviceId) throw new Error("Sign in before using the library.");
-    return buildAuthorizationHeader(this.serverUrl, this.deviceId, accessToken);
+    return buildAuthorizationHeader(this.client, this.serverUrl, this.deviceId, accessToken);
   }
 
   async logout(): Promise<void> {
@@ -382,13 +393,13 @@ export class JellyfinGateway {
     this.deviceId = undefined;
     const transport = this.transport;
     if (this.api) {
-      this.api = createSdkApi(this.serverUrl, "fluster-unauthenticated");
+      this.api = createSdkApi(this.client, this.serverUrl, "fluster-unauthenticated");
       this.transport = this.api.axiosInstance as HttpTransport;
     }
     if (!accessToken || !deviceId) return;
     try {
       refuseRedirect(await transport.post("/Sessions/Logout", undefined, {
-        headers: { Authorization: buildAuthorizationHeader(this.serverUrl, deviceId, accessToken) },
+        headers: { Authorization: buildAuthorizationHeader(this.client, this.serverUrl, deviceId, accessToken) },
         timeout: REPORT_REQUEST_TIMEOUT_MS,
       }));
     } catch (error) {

@@ -8,6 +8,7 @@ import {
   CONTROL_REQUEST_TIMEOUT_MS,
   PLAYBACK_INFO_FLAGS,
   JellyfinGateway,
+  type ClientIdentity,
   PUBLIC_HTTP_REFUSED_MESSAGE,
   REDIRECT_REFUSED_MESSAGE,
   REPORT_REQUEST_TIMEOUT_MS,
@@ -594,14 +595,16 @@ describe("playstate reports carry the plan's play method", () => {
   });
 });
 
-async function loginWith(installId: string, serverId: string, username: string) {
+const LINUX_CLIENT: ClientIdentity = { version: "0.1.0", deviceName: "Fluster Linux" };
+
+async function loginWith(installId: string, serverId: string, username: string, client?: ClientIdentity) {
   const transport = new FakeTransport();
   transport.responses.set("GET /System/Info/Public", { Version: "10.11.0", Id: serverId });
   transport.responses.set("POST /Users/AuthenticateByName", {
     AccessToken: "top-secret",
     User: { Id: "user-1", Name: username },
   });
-  const gateway = new JellyfinGateway("https://media.test", transport, installId);
+  const gateway = new JellyfinGateway("https://media.test", transport, installId, undefined, undefined, client);
   await gateway.connect();
   await gateway.login(username, "password");
   const login = transport.requests.find((request) => request.url === "/Users/AuthenticateByName")!;
@@ -611,12 +614,20 @@ async function loginWith(installId: string, serverId: string, username: string) 
 
 describe("JellyfinGateway device identity and logout", () => {
   it("sends a stable derived DeviceId on login and no token", async () => {
-    const first = await loginWith("install-1", "server-1", "Louise");
+    const first = await loginWith("install-1", "server-1", "Louise", LINUX_CLIENT);
     const again = await loginWith("install-1", "server-1", "louise");
     expect(first.deviceId).toMatch(/^[0-9a-f]{64}$/);
     expect(again.deviceId).toBe(first.deviceId);
+    expect(first.deviceId).toBe("07bce1a97d44b7008418adc02ad74694142287bef4bd4007377574dc451aaf78");
     expect(first.header).toContain('Device="Fluster%20Linux"');
     expect(first.header).toContain('Token=""');
+  });
+
+  it("sends the client identity it was given in the login and later headers", async () => {
+    const { gateway, header } = await loginWith("install-1", "server-1", "Louise", { version: "9.8.7", deviceName: "Fluster macOS" });
+    expect(header).toContain('Version="9.8.7"');
+    expect(header).toContain('Device="Fluster%20macOS"');
+    expect(gateway.authorizationHeader()).toContain('Version="9.8.7"');
   });
 
   it("derives different DeviceIds per install, server, and user", async () => {

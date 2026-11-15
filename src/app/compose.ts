@@ -1,6 +1,7 @@
 import type { RealtimeConnection } from "../domain/realtime";
 import type { ServerDiscovery } from "../domain/server-discovery";
 import type { PlayerServices } from "./player-services";
+import { clientIdentity } from "./client-identity";
 import { lanHttpConfirmations } from "../lib/browser-lan-http-confirmations";
 import { preferences, streamingLimits } from "../lib/browser-preference-store";
 import type { PreferenceStore } from "../lib/preference-store";
@@ -40,7 +41,7 @@ export function createServices(): AppServices {
   const native = isTauriRuntime();
   return {
     native,
-    createGateway: (serverUrl) => new JellyfinGateway(serverUrl, undefined, getInstallId(), lanHttpConfirmations, streamingLimits),
+    createGateway: (serverUrl) => new JellyfinGateway(serverUrl, undefined, getInstallId(), lanHttpConfirmations, streamingLimits, clientIdentity()),
     createPlayerEngine: () => {
       // Build-time only: the e2e dev server sets this; a production build
       // replaces it with undefined and drops the test engine.
