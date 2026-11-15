@@ -104,7 +104,8 @@ function PlayerLoader({ gateway, player, route, status, query }: {
       </PlayerMessage>
     );
   }
-  if (query.isError) {
+  // A failed refetch keeps the data it had: a server event or a reconnect must never end playback.
+  if (query.isError && query.data === undefined) {
     if (query.error instanceof ItemNotFoundError) {
       return (
         <NoticePage>

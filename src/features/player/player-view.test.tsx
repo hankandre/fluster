@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode, type ReactNode } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { markAccountDataStale } from "../query-scope";
 import { PlayerServicesProvider } from "../../app/player-services";
 import { SessionProvider, useSession, type SessionGateway } from "../../app/session";
 import type { ItemDetail } from "../../domain/catalog";
@@ -716,6 +717,20 @@ describe("System media controls", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "This item is no longer on the server" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Go home" })).toHaveAttribute("href", "#/next/home");
     expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+  });
+
+  it("keeps playing when a later refetch of the item fails (a server event must not end playback)", async () => {
+    const itemDetail = vi.fn().mockResolvedValueOnce(detail).mockRejectedValue(new Error("boom"));
+    const gateway = fakeGateway({ itemDetail });
+    const engine = new FakePlayerEngine();
+    const client = await renderPlayer(gateway, engine);
+    await startPlaying(engine);
+    markAccountDataStale(client);
+    await waitFor(() => expect(itemDetail).toHaveBeenCalledTimes(2));
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+    expect(screen.queryByRole("heading", { name: "Couldn't load this item" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "This item is no longer on the server" })).not.toBeInTheDocument();
+    expect(engine.stop).not.toHaveBeenCalled();
   });
 
   it("offers Retry when the item fails to load, and Retry asks again", async () => {

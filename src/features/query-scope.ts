@@ -45,3 +45,17 @@ export function markAccountDataStale(queryClient: QueryClient): void {
     refetchType: "active",
   });
 }
+
+// Back (a history traversal) shows kept data at once and refetches it in the background: marks kept Home rows
+// and browse, detail, and search data stale, and fetches nothing now. A screen that mounts finds its data
+// stale and refetches while showing what it kept. Open screens (the player's detail) are not touched.
+export function markKeptDataStaleForReturn(queryClient: QueryClient): void {
+  void queryClient.invalidateQueries({
+    predicate: (query) => {
+      const head = String(query.queryKey[0]);
+      if (head === "home") return query.queryKey[2] !== "views";
+      return KEPT_KEY_PREFIXES.includes(head);
+    },
+    refetchType: "none",
+  });
+}

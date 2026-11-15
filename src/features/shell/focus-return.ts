@@ -117,16 +117,15 @@ function inRow(row: string): HTMLElement | null {
   return document.querySelector("main")?.querySelector<HTMLElement>(`[data-focus-row="${CSS.escape(row)}"]`) ?? null;
 }
 
-// Focuses without scrolling, then scrolls only when the target is outside the viewport. Horizontal rows
-// need the inline part; "nearest" leaves a visible card where it is.
+// Focuses without scrolling, then scrolls "nearest", so scroll-padding, a sticky toolbar, and TV safe insets
+// are honoured. Horizontal rows need the inline part.
 function focusItem(item: Element | undefined, part: number): boolean {
   const targets = item?.querySelectorAll<HTMLElement>("[data-roving-item]");
   const target = targets?.[part] ?? targets?.[0];
   if (!target) return false;
   target.focus({ preventScroll: true });
-  const rect = target.getBoundingClientRect();
-  const inside = rect.top >= 0 && rect.left >= 0 && rect.bottom <= window.innerHeight && rect.right <= window.innerWidth;
-  if (!inside) target.scrollIntoView({ block: "nearest", inline: "nearest" });
+  // Always: "nearest" is a no-op for a visible target, but it honours scroll-padding and safe insets.
+  target.scrollIntoView({ block: "nearest", inline: "nearest" });
   return true;
 }
 

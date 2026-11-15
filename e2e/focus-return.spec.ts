@@ -254,12 +254,10 @@ test("Fallback: a card that is gone gives focus to the card now at its place", a
   await expect(itemCard(row, "m5")).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/#\/next\/item\/m5$/);
+  // Wait for the detail to load, so Home is gone and its rows are fetched afresh on the way back.
   await expect(page.getByRole("heading", { level: 1, name: "Glass Orchard" })).toBeVisible();
-  // The next fetch of the row leaves m5 out. Marking it watched makes the kept Home rows stale, so they are
-  // fetched again, in the background, on the way back.
+  // The next fetch of the row leaves m5 out.
   hidden.add("m5");
-  await page.getByRole("button", { name: "Watched" }).click();
-  await expect(page.getByText("Marked as watched.")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page).toHaveURL(/#\/next\/home$/);
   await expect(itemCard(row, "m5")).toHaveCount(0);
