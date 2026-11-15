@@ -57,8 +57,7 @@ export function PlayerSheet({ id, label, title, onClose, initialFocus, closeRef,
     return () => {
       if (opener && opener.isConnected && opener !== document.body) opener.focus();
     };
-    // Only on open: a later change of initialFocus must not steal focus back.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only on open: a later initialFocus must not steal focus back
   }, []);
 
   return (

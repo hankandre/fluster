@@ -176,10 +176,11 @@ export function PlayerView({
     const active = document.activeElement;
     if (active && region.current?.contains(active) && active !== region.current) region.current.focus();
   }, [tv, visibility.visible]);
+  const wakeChrome = visibility.wake;
   const wake = useCallback((target: "scrubber" | "play") => {
-    visibility.wake();
+    wakeChrome();
     focusChromeControl(region.current, target);
-  }, [visibility.wake]);
+  }, [wakeChrome]);
   const skip = segments && snapshot ? activeSegment(segments, snapshot.positionSeconds) : undefined;
 
   // A failed session replaces the chrome with a notice, so any open sheet closes.

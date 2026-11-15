@@ -303,3 +303,7 @@ Measured by the worst-case artwork captures; see `docs/design/contrast-report.md
 - Review lows (P16-01): `record-discovery-fixtures.mjs:334` `makeSave()` builds a new scrubber and resets the `id-N` counter mid-recording, so the Next Up new-episode files reuse numbers (`id-57` vs `id-1`, and `id-1` is an image tag in `discovery-similar-movie.json:25`). Keep one scrubber or add `item-episode-3` to its known-id map. S (P16-01).
 - Review lows (P16-01): `src/lib/jellyfin/discovery-fixtures.test.ts:100` credential scan is weaker than `fixture-recording.mjs:107`; match the saver's pattern with the `i` flag and `(?:=|%3D)`. S (P16-01).
 - Review lows (P16-01): `record-discovery-fixtures.mjs:338-342` `finally` calls `waitFor` unguarded and the final `resetUser()` at line 344 sits outside any `finally`; a killed run leaves `Synthetic Show S01E03.mkv` in `tests/samples/shows/` and watch state on `fluster-discovery`. Remove a leftover copy at recorder start. S (P16-01).
+
+## Hooks lint follow-ups (P0-16)
+
+- The `typescript-6` alias and `scripts/typescript-6-resolve.mjs` now also serve `@typescript-eslint/parser` (peer `typescript <6.1.0` at 8.72.2); drop them only when both dependency-cruiser and typescript-eslint support the app's TypeScript 7 minor. Supersedes the P0-14 entry's condition. S (P0-16).
