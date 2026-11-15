@@ -16,6 +16,8 @@ vi.mock("./media-controls", () => ({ createNativeMediaControls: () => undefined 
 import { lanHttpConfirmations } from "../lib/browser-lan-http-confirmations";
 import { preferences, streamingLimits } from "../lib/browser-preference-store";
 import { getInstallId } from "../lib/install-id";
+import { readFileSync } from "node:fs";
+import { deviceNameFor } from "./client-identity";
 import { createServices } from "./compose";
 
 describe("createServices", () => {
@@ -31,10 +33,12 @@ describe("createServices", () => {
     createServices().createGateway("https://other.test");
 
     expect(constructed).toHaveLength(2);
-    for (const [, , installId, confirmations, limits] of constructed) {
+    for (const [, , installId, confirmations, limits, client] of constructed) {
       expect(installId).toBe(getInstallId());
       expect(confirmations).toBe(lanHttpConfirmations);
       expect(limits).toBe(streamingLimits);
+      const { version } = JSON.parse(readFileSync("package.json", "utf8")) as { version: string };
+      expect(client).toEqual({ version, deviceName: deviceNameFor(navigator.userAgent) });
     }
     expect(createServices().streamingLimits).toBe(streamingLimits);
   });

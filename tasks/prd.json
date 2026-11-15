@@ -813,10 +813,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:tripwire",
-          "status": "todo",
+          "status": "in_progress",
           "owner": null,
           "passes": false,
-          "evidence": ""
+          "evidence": "Implemented on task/P2-07: pnpm check 182 files / 2347 tests pass; e2e 180 pass, 1 flaky focus-return passes 5/5 alone; tripwire and guardian review pending."
         },
         {
           "id": "P2-08",

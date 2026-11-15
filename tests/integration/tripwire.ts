@@ -364,7 +364,10 @@ async function runServer(server: (typeof SERVERS)[number], credentials: Record<s
     const account = sample.user === "restricted" ? restricted : main;
     if (!account.username || !account.password) throw new Error(`no credentials for ${sample.user ?? "the test user"}; rerun pnpm fixture:setup`);
     const limits = sample.limitMbps === undefined ? new MemoryStreamingLimits() : fixedLimit(sample.limitMbps);
-    const gateway = new JellyfinGateway(url, undefined, randomUUID(), new MemoryLanHttpConfirmations(), limits);
+    const gateway = new JellyfinGateway(url, undefined, randomUUID(), new MemoryLanHttpConfirmations(), limits, {
+      version: (JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as { version: string }).version,
+      deviceName: "Fluster Linux",
+    });
     const connection = await gateway.connect();
     result.version ??= connection.version;
     await gateway.login(account.username, account.password);
