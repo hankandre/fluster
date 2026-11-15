@@ -59,7 +59,7 @@ export function AmbientBackdrop({ imageKey, src, blurHash, strength = 1, childre
     setLayers((previous) => [...previous.slice(-1).filter((layer) => layer.key !== imageKey && (layer.src || layer.blurHash)), next]);
     const timer = window.setTimeout(() => setLayers([next]), ambientFadeMs());
     return () => window.clearTimeout(timer);
-  }, [imageKey, src]);
+  }, [imageKey, src, blurHash]);
 
   const tint = artTint(blurHash);
   const style = {
