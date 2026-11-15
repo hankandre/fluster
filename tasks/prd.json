@@ -813,10 +813,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:tripwire",
-          "status": "in_progress",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": "Implemented on task/P2-07: pnpm check 182 files / 2347 tests pass; e2e 180 pass, 1 flaky focus-return passes 5/5 alone; tripwire and guardian review pending."
+          "passes": true,
+          "evidence": "Implemented on task/P2-07 (PR #169). pnpm check exit 0: 182 files / 2347 Vitest tests pass, Rust 194 passed / 7 ignored. pnpm test:e2e: 181 passed. pnpm test:tripwire against both fixture servers: CI tripwire job passed in 7m58s on 9061fdd, https://github.com/hankandre/fluster/actions/runs/43660954435/job/132649941477. Guardian review (fresh-context headless guardian agent, read-only): no findings, verdict pass; routine review: 0 fixed, 5 low logged in the plan. Not run: native playback, GPU, Wayland compositors, macOS, AppImage."
         },
         {
           "id": "P2-08",
