@@ -3533,10 +3533,10 @@
             "Fixtures are scrubbed per the jellyfin-api contract-fixtures reference; no gateway method, playback request, or UI changes"
           ],
           "verify": "pnpm test -- fixtures && ls tests/fixtures/jellyfin/*/",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "Recorded 26 discovery-*.json fixtures per version on a fresh 10.11.7 and 12.4.0 pair with tests/integration/record-discovery-fixtures.mjs (shared helpers in fixture-recording.mjs; new user fluster-discovery in setup-servers.sh; scripts/generate-samples.sh adds NFOs, the Extras film with trailer and featurette, and a staged S01E03). pnpm exec vitest run src/lib/jellyfin/discovery-fixtures.test.ts: 122 passed. pnpm check: exit 0 (Vitest 186 files, 2530 tests passed; cargo test 194 passed). pnpm test:e2e: 188 passed. node --check on the three recorders and bash -n on both scripts pass; the CI generator command in jellyfin/jellyfin:10.11.7 ends with All samples verified. Scrub grep for 127.0.0.1, ports, fluster-test and 32-hex ids over discovery-*.json prints nothing. Findings in docs/research/discovery-api.md; proposal section 2 updated. Awaiting review; passes stays false until then."
+          "passes": true,
+          "evidence": "Recorded 26 discovery-*.json fixtures per version on a fresh 10.11.7 and 12.4.0 pair with tests/integration/record-discovery-fixtures.mjs (shared helpers in fixture-recording.mjs; new user fluster-discovery in setup-servers.sh; scripts/generate-samples.sh adds NFOs, the Extras film with trailer and featurette, and a staged S01E03). pnpm exec vitest run src/lib/jellyfin/discovery-fixtures.test.ts: 122 passed. pnpm check: exit 0 (Vitest 186 files, 2530 tests passed; cargo test 194 passed). pnpm test:e2e: 188 passed. node --check on the three recorders and bash -n on both scripts pass; the CI generator command in jellyfin/jellyfin:10.11.7 ends with All samples verified. Scrub grep for 127.0.0.1, ports, fluster-test and 32-hex ids over discovery-*.json prints nothing. Findings in docs/research/discovery-api.md; proposal section 2 updated. Review done: 6 lows logged in tasks/backlog.md; no fixes needed. Re-verified after review: pnpm check exit 0; pnpm test:e2e 188 passed."
         },
         {
           "id": "P16-02",
