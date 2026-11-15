@@ -88,7 +88,6 @@
   }
   .player-time { font-variant-numeric: tabular-nums; white-space: nowrap; }
   .seek-end { display: flex; align-items: baseline; justify-content: flex-end; gap: var(--space-3); }
-  .seek-ends-at { color: var(--text-3); }
   @media (max-width: 1279px) { .seek-ends-at { display: none; } }
 
   .seek-track { position: relative; grid-column: 2; grid-row: 1; display: grid; align-items: center; }

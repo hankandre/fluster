@@ -117,6 +117,33 @@ describe("hero contrast proofs (DESIGN.md §11.1)", () => {
   });
 });
 
+describe("player scrim proofs (DESIGN.md §11.1)", () => {
+  const tv = /:root\[data-form="tv"\] \{([\s\S]*?)\n\}/.exec(tokensCss)?.[1] ?? "";
+  const px = (block: string, name: string) => Number(new RegExp(`${name}:\\s*(\\d+)px`).exec(block)?.[1]);
+  // Text zone: px from the edge to the far side of the last text run (layout arithmetic in docs/specs/P13-33.md).
+  const edges = [
+    { name: "top", color: "--scrim-player-top", height: "--scrim-player-top-h", desktop: 101, tv: 198 },
+    { name: "bottom", color: "--scrim-player-bottom", height: "--scrim-player-bottom-h", desktop: 136, tv: 238 },
+  ];
+
+  const stopsOf = (color: string) =>
+    [...token(color).matchAll(/rgb\(0 0 0 \/ ([\d.]+)\) ([\d.]+)%/g)].map((m) => ({ alpha: Number(m[1]), at: Number(m[2]) }));
+
+  it.each(edges)("--text-2 on the $name band over white art meets 4.5:1", ({ color }) => {
+    const stops = stopsOf(color);
+    expect(stops.length).toBeGreaterThanOrEqual(3);
+    expect(stops[0].alpha).toBe(stops[1].alpha);
+    const bg = composite([0, 0, 0], stops[0].alpha, [255, 255, 255]);
+    expect(contrastRatio(solid("--text-2"), bg)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.each(edges)("the $name band covers the text zone on desktop and TV", ({ color, height, desktop, tv: tvZone }) => {
+    const band = stopsOf(color)[1].at;
+    expect((band / 100) * px(rootBlock, height)).toBeGreaterThanOrEqual(desktop);
+    expect((band / 100) * px(tv, height)).toBeGreaterThanOrEqual(tvZone);
+  });
+});
+
 describe("TV form type floor", () => {
   const tvBlock = /:root\[data-form="tv"\] \{([\s\S]*?)\n\}/.exec(tokensCss)?.[1] ?? "";
   const rootBlock = /:root \{([\s\S]*?)\n\}/.exec(tokensCss)?.[1] ?? "";

@@ -91,8 +91,8 @@
   --scrub-gap: 2px;
   --scrub-preview-w: 320px;
   --volume-slider-w: 110px;
-  --scrim-player-top-h: 160px;
-  --scrim-player-bottom-h: 240px;
+  --scrim-player-top-h: 200px;
+  --scrim-player-bottom-h: 260px;
 
   /* Shape */
   --radius-xs: 4px;
@@ -112,8 +112,8 @@
   --surface-0-glass: color-mix(in srgb, var(--surface-0) 92%, transparent);
   --scrim-nav: linear-gradient(180deg, rgb(11 12 14 / 0.85) 0%, rgb(11 12 14 / 0.85) 50%, rgb(11 12 14 / 0) 100%);
   --blur-nav: 16px;
-  --scrim-player-top: linear-gradient(180deg, rgb(0 0 0 / 0.72), rgb(0 0 0 / 0));
-  --scrim-player-bottom: linear-gradient(0deg, rgb(0 0 0 / 0.85), rgb(0 0 0 / 0));
+  --scrim-player-top: linear-gradient(180deg, rgb(0 0 0 / 0.85) 0%, rgb(0 0 0 / 0.85) 55%, rgb(0 0 0 / 0) 100%);
+  --scrim-player-bottom: linear-gradient(0deg, rgb(0 0 0 / 0.85) 0%, rgb(0 0 0 / 0.85) 55%, rgb(0 0 0 / 0) 100%);
 
   /* Motion */
   --dur-instant: 80ms;
@@ -139,6 +139,8 @@
 
 /* 10-foot: set by the TV shell on <html data-form="tv"> */
 :root[data-form="tv"] {
+  --scrim-player-top-h: 360px;
+  --scrim-player-bottom-h: 440px;
   --ui-scale: 1.5;
   --safe-x: 96px;
   --safe-y: 54px;

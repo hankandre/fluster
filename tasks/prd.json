@@ -2946,10 +2946,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "todo",
+          "status": "in_progress",
           "owner": null,
           "passes": false,
-          "evidence": ""
+          "evidence": "Implemented on task/P13-33: 500 ms Buffering delay (use-delayed-flag), --text-3 removed from Ends at, flat 85% player scrim bands (owner option A). pnpm check green (2355 tests); contrast report shows 0 failures for 104 and 105 at both sizes; e2e 179 passed, 2 load-flaky pass 10/10 alone. CI baselines accepted in Ship."
         },
         {
           "id": "P13-28",
