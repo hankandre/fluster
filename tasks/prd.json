@@ -392,7 +392,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "Implemented on task/P0-16: ESLint hooks rules, noUnusedLocals/noUnusedParameters, fixes, test. Throwaway CI break and CI run links are Ship-phase steps."
+          "evidence": "Local on task/P0-16: pnpm check exit 0 (187 files, 2531 tests; lint 0 errors; boundaries 240/240); pnpm audit no known vulnerabilities (minimatch override); e2e 187 passed, 1 load flake (tv/focus-return:76) passing 5/5 alone; visual 368 passed with 1 flaky retry. Pending CI: throwaway break commits, run links, green run."
         },
         {
           "id": "P0-17",
