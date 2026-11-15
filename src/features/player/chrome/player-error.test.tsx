@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { REPORT_FAILED_WARNING } from "../../../lib/player/playstate-reporter";
 import { CommandErrorPanel, PlayerWarnings } from "./player-error";
