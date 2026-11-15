@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const TEST_PATH = /\.test\.tsx?$|^src\/test\//;
 const MAX_NAMED = 20;
 const FIX_LINE =
-  "Fix: run pnpm install so the typescript-6 dev dependency is present. dependency-cruiser 18.7.2 needs TypeScript below 7 and loads it through scripts/depcruise-typescript-6.mjs. Do not loosen .dependency-cruiser.cjs. See docs/specs/P0-14.md.";
+  "Fix: run pnpm install so the typescript-6 dev dependency is present. dependency-cruiser 18.7.2 needs TypeScript below 7 and loads it through scripts/typescript-6-resolve.mjs. Do not loosen .dependency-cruiser.cjs. See docs/specs/P0-14.md.";
 
 /**
  * Returns error messages for a dependency-cruiser JSON result that did not read the code.
@@ -50,7 +50,7 @@ async function main() {
     process.execPath,
     [
       "--import",
-      "./scripts/depcruise-typescript-6.mjs",
+      "./scripts/typescript-6-resolve.mjs",
       "node_modules/dependency-cruiser/bin/dependency-cruiser.mjs",
       "src",
       "--config",

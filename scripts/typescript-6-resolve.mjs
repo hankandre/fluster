@@ -1,5 +1,5 @@
-// Sends dependency-cruiser's `typescript` imports to the typescript-6 alias; loaded only by scripts/lint-boundaries.mjs.
-// Remove with the typescript-6 alias when dependency-cruiser supports the app's TypeScript (P0-14).
+// Sends `typescript` imports to the typescript-6 alias for dependency-cruiser and ESLint's TypeScript parser, which do not support TypeScript 7.
+// Remove with the typescript-6 alias when both support the app's TypeScript (P0-14, P0-16).
 import { readFileSync } from "node:fs";
 import { createRequire, registerHooks } from "node:module";
 import { dirname, join, resolve } from "node:path";
