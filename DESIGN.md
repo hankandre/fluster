@@ -128,8 +128,8 @@ Rules: sentence case everywhere (no uppercase-tracked labels, no eyebrow or kick
 | `--up-next-surface` | `color-mix(in srgb, var(--surface-1) 96%, transparent)` | Up Next card |
 | `--up-next-fill` | `color-mix(in srgb, var(--on-light) 14%, transparent)` | Countdown fill on Play now |
 | `--surface-0-glass` | `color-mix(in srgb, var(--surface-0) 92%, transparent)` | Nav bar fill (blur is `--blur-nav`, P13-08) |
-| `--scrim-player-top` | `linear-gradient(180deg, rgb(0 0 0 / .72), rgb(0 0 0 / 0))` (160 px) | Player title zone |
-| `--scrim-player-bottom` | `linear-gradient(0deg, rgb(0 0 0 / .85), rgb(0 0 0 / 0))` (240 px) | Player controls zone |
+| `--scrim-player-top` | `linear-gradient(180deg, rgb(0 0 0 / .85) 0%, rgb(0 0 0 / .85) 55%, rgb(0 0 0 / 0) 100%)` (200 px; TV 360 px) | Player title zone: a flat 85% band behind the title block, then a fade into the picture, like `--scrim-nav` |
+| `--scrim-player-bottom` | `linear-gradient(0deg, rgb(0 0 0 / .85) 0%, rgb(0 0 0 / .85) 55%, rgb(0 0 0 / 0) 100%)` (260 px; TV 440 px) | Player controls zone: a flat 85% band behind the time row, then a fade into the picture |
 
 Player overlays use scrims and opaque surfaces, **never `backdrop-filter`**. The native video surface sits under a transparent WebView (`ARCHITECTURE.md` "Desktop composition"), so a blur has no video pixels to sample. This is inferred from the architecture and needs checking on the desktop build. Elsewhere, blur is allowed only on the nav bar over artwork.
 
@@ -457,7 +457,7 @@ Fluster remembers any number of accounts. An account is one user on one server. 
   --player-prompt-inset-chrome: calc(var(--space-5) * 2 + var(--hit-min) * 2 + var(--space-3) * 2); /* chrome visible: clears the footer */
   --scrub-track-h: 4px; --scrub-track-h-active: 8px; --scrub-thumb: 16px; --scrub-gap: 2px;
   --scrub-preview-w: 320px; --volume-slider-w: 110px;
-  --scrim-player-top-h: 160px; --scrim-player-bottom-h: 240px;
+  --scrim-player-top-h: 200px; --scrim-player-bottom-h: 260px; /* TV 360px / 440px */
 
   /* Shape */
   --radius-xs: 4px;
@@ -474,8 +474,8 @@ Fluster remembers any number of accounts. An account is one user on one server. 
   --surface-0-glass: color-mix(in srgb, var(--surface-0) 92%, transparent);
   --scrim-nav: linear-gradient(180deg, rgb(11 12 14 / 0.85) 0%, rgb(11 12 14 / 0.85) 50%, rgb(11 12 14 / 0) 100%);
   --blur-nav: 16px;
-  --scrim-player-top: linear-gradient(180deg, rgb(0 0 0 / 0.72), rgb(0 0 0 / 0));
-  --scrim-player-bottom: linear-gradient(0deg, rgb(0 0 0 / 0.85), rgb(0 0 0 / 0));
+  --scrim-player-top: linear-gradient(180deg, rgb(0 0 0 / 0.85) 0%, rgb(0 0 0 / 0.85) 55%, rgb(0 0 0 / 0) 100%);
+  --scrim-player-bottom: linear-gradient(0deg, rgb(0 0 0 / 0.85) 0%, rgb(0 0 0 / 0.85) 55%, rgb(0 0 0 / 0) 100%);
 
   /* Motion */
   --dur-instant: 80ms;

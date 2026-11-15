@@ -26,6 +26,10 @@ describe("player CSS", () => {
     }
   });
 
+  it("uses no --text-3 over video", () => {
+    expect(readFileSync(join(__dirname, "player.css"), "utf8")).not.toMatch(/var\(--text-3\)/);
+  });
+
   it("stops the control row at the sheet edge while a sheet is open", () => {
     const css = readFileSync(join(__dirname, "player.css"), "utf8");
     expect(css).toMatch(/\.player-controls\[data-sheet-open\]\s*\{[^}]*padding-right:[^}]*var\(--player-sheet-w\)/);

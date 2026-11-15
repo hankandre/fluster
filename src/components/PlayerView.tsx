@@ -24,6 +24,8 @@ import { TransportControls } from "../features/player/chrome/transport-controls"
 import { focusChromeControl, useTvChromeFocus } from "../features/player/chrome/use-tv-chrome-focus";
 import { useTvForm } from "../features/shared/use-tv-form";
 import { CHROME_ZONE_ATTRIBUTE, useChromeVisibility } from "../features/player/chrome/use-chrome-visibility";
+import { BUFFERING_STATUS_DELAY_MS } from "../features/player/chrome/timing";
+import { useDelayedFlag } from "../features/player/chrome/use-delayed-flag";
 import { useFullscreen } from "../features/player/chrome/use-fullscreen";
 import { useOsd } from "../features/player/chrome/use-osd";
 import { seekTarget, usePlayerKeys, type SheetName } from "../features/player/chrome/use-player-keys";
@@ -213,6 +215,7 @@ export function PlayerView({
   }, [session.firstFrameReady, noticeText, showOsd]);
 
   const chromeShown = session.firstFrameReady || Boolean(commandError);
+  const buffering = useDelayedFlag(chromeShown && Boolean(snapshot?.buffering), BUFFERING_STATUS_DELAY_MS);
   const backToDetails = () => void (onBackToDetails ?? onBack)();
 
   if (sessionError) {
@@ -284,7 +287,7 @@ export function PlayerView({
         </div>
       )}
 
-      {chromeShown && <PlayerStatus text={snapshot?.buffering ? "Buffering…" : undefined} />}
+      {chromeShown && <PlayerStatus text={buffering ? "Buffering…" : undefined} />}
       <Osd notice={osd.notice} keyMessage={osd.keyMessage} />
       {commandError && (
         <CommandErrorPanel

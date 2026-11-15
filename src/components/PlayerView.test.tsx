@@ -4,7 +4,7 @@ import type { PlaybackSnapshot, PlayerEngine } from "../domain/playback";
 import { HOLD_MS } from "../features/shared/hold-key";
 import { conversionIndicator } from "../features/player/conversion-copy";
 import type { ReadyPlayerStatus } from "../features/player/player-status";
-import { CHROME_IDLE_MS, OSD_MS, OSD_NOTICE_MS } from "../features/player/chrome/timing";
+import { BUFFERING_STATUS_DELAY_MS, CHROME_IDLE_MS, OSD_MS, OSD_NOTICE_MS } from "../features/player/chrome/timing";
 import type { PlaybackSessionState } from "../lib/player/session-state";
 import { PlayerView } from "./PlayerView";
 
@@ -836,19 +836,73 @@ describe("TV form scrub", () => {
 });
 
 describe("buffering status", () => {
+  const ui = (player: PlayerEngine, buffering: boolean, extra: Partial<PlaybackSnapshot> = {}, props: Partial<Parameters<typeof PlayerView>[0]> = {}) => (
+    <PlayerView item={movie} player={player} status={status} session={{ snapshot: { ...snapshot, buffering, ...extra }, firstFrameReady: true }} onRetry={vi.fn()} onBack={vi.fn()} {...props} />
+  );
+  const advance = (ms: number) => act(() => void vi.advanceTimersByTime(ms));
+
   it("keeps the live region mounted and empty between spells", () => {
+    vi.useFakeTimers();
     const player = fakePlayer();
-    const ui = (buffering: boolean) => (
-      <PlayerView item={movie} player={player} status={status} session={{ snapshot: { ...snapshot, buffering }, firstFrameReady: true }} onRetry={vi.fn()} onBack={vi.fn()} />
-    );
-    const { rerender } = render(ui(false));
+    const { rerender } = render(ui(player, false));
     const region = loadingStatus();
     expect(region).toBeEmptyDOMElement();
-    rerender(ui(true));
+    rerender(ui(player, true));
+    expect(region).toBeEmptyDOMElement();
+    advance(BUFFERING_STATUS_DELAY_MS);
     expect(loadingStatus()).toHaveTextContent("Buffering…");
-    rerender(ui(false));
+    rerender(ui(player, false));
     expect(loadingStatus()).toBe(region);
     expect(region).toBeEmptyDOMElement();
+  });
+
+  it("shows nothing for a stall under 500 ms", () => {
+    vi.useFakeTimers();
+    const player = fakePlayer();
+    const { rerender } = render(ui(player, false));
+    rerender(ui(player, true));
+    advance(BUFFERING_STATUS_DELAY_MS - 1);
+    expect(loadingStatus()).toBeEmptyDOMElement();
+    rerender(ui(player, false));
+    advance(1_000);
+    expect(loadingStatus()).toBeEmptyDOMElement();
+  });
+
+  it("announces once per stall", () => {
+    vi.useFakeTimers();
+    const player = fakePlayer();
+    const { rerender } = render(ui(player, false));
+    const observer = new MutationObserver(() => undefined);
+    observer.observe(loadingStatus(), { childList: true, characterData: true, subtree: true });
+    const inserted = () => observer.takeRecords().flatMap((record) => [...record.addedNodes].map((node) => node.textContent));
+    const stall = () => {
+      rerender(ui(player, true));
+      advance(BUFFERING_STATUS_DELAY_MS);
+      rerender(ui(player, true, { positionSeconds: 11 }));
+      advance(1_000);
+      rerender(ui(player, true, { positionSeconds: 12 }));
+      advance(1_000);
+      rerender(ui(player, false));
+    };
+    stall();
+    expect(inserted()).toEqual(["Buffering…"]);
+    stall();
+    expect(inserted()).toEqual(["Buffering…"]);
+    observer.disconnect();
+  });
+
+  it("does not delay the conversion notice or the chip", () => {
+    vi.useFakeTimers();
+    const converted = conversionIndicator({ delivery: "hls", playMethod: "Transcode", conversionReasons: ["ContainerBitrateExceedsLimit"] } as never);
+    render(ui(fakePlayer(), true, {}, { indicator: converted, playMethod: "Transcode" }));
+    expect(screen.getByRole("button", { name: /Converting on server/ })).toBeInTheDocument();
+    expect(osd()).toHaveTextContent("Converting on server: the file is over your streaming limit");
+    expect(loadingStatus()).toBeEmptyDOMElement();
+  });
+
+  it("keeps the loading text immediate before the first frame, even while buffering", () => {
+    renderView({ buffering: true }, { session: { snapshot: { ...snapshot, buffering: true }, firstFrameReady: false } });
+    expect(loadingStatus()).toHaveTextContent("Loading…");
   });
 });
 
