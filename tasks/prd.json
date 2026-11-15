@@ -392,7 +392,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "Local on task/P0-16: pnpm check exit 0 (187 files, 2531 tests; lint 0 errors; boundaries 240/240); pnpm audit no known vulnerabilities (minimatch override); e2e 187 passed, 1 load flake (tv/focus-return:76) passing 5/5 alone; visual 368 passed with 1 flaky retry. Pending CI: throwaway break commits, run links, green run."
+          "evidence": "Local on task/P0-16 at e0232cf: pnpm check exit 0 (187 files, 2531 tests; lint 0 errors; cargo 194 passed); pnpm audit no known vulnerabilities (minimatch override); pnpm test:e2e 188 passed; pnpm test:visual 369 passed. Acceptance 6 local dry run (working tree only, restored): break 1 (ambient-backdrop.tsx deps [imageKey, src] plus const unusedProbe) fails pnpm lint with react-hooks/exhaustive-deps missing blurHash at 62:6 and pnpm build with TS6133 at (46,9); break 2 (deps restored, local kept) passes lint and fails build with TS6133. Pending in Ship (CI): PR body sections, throwaway commits 1 and 2 with failing run URLs, reverts with green run URL, dependency-review job."
         },
         {
           "id": "P0-17",
