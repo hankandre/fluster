@@ -130,7 +130,7 @@ function CompactSettings({ label, sections, value, onChange, children }: Setting
       returnFocus.current = false;
       list.ref.current?.querySelector<HTMLElement>(`[data-section-id="${value}"]`)?.focus();
     }
-    // Runs on open and close only; `value` is read for the button to focus.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs on open and close only; value names the button to refocus
   }, [open]);
 
   if (open) {

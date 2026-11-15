@@ -87,8 +87,14 @@ export function useAutoPlayCountdown({ next, snapshot, outroStartSeconds, failed
     });
   }, [stopAndLeave]);
 
+  // The caller's advance changes every render; playNow keeps its identity and reads the latest one when it runs.
+  const latestAdvance = useRef(advance);
+  useEffect(() => {
+    latestAdvance.current = advance;
+  });
+
   const playNow = useCallback(() => {
-    if (next) go(() => advance(next));
+    if (next) go(() => latestAdvance.current(next));
   }, [go, next]);
 
   // Hide keeps playing and cancels the advance; the end of the file then

@@ -389,10 +389,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "Implemented on task/P0-16: ESLint hooks rules, noUnusedLocals/noUnusedParameters, fixes, test. Throwaway CI break and CI run links are Ship-phase steps."
         },
         {
           "id": "P0-17",
