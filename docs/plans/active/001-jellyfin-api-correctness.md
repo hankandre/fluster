@@ -78,6 +78,14 @@ Suggested model routing (see `WORKFLOW.md`): Opus pilots milestones 3–5 (polic
 - Milestone 5 follow-up (guardian review): plan tracks carry the Jellyfin `Codec`, Rust reads mpv `track-list/N/codec`, and `tracks.rs` verifies each mapping (see Surprises). `cargo test tracks`: 14 unit tests (new: dropped subtitle, builtin-demuxer shift, language and codec mismatch, identical same-language streams, externals numbered last, unloaded external audio, alias table) plus the real-handle test, whose real mpv codec names (`pcm_s16le`, `subrip`) pass verification. Live re-run on 8760fb9 (`live_fixture_server_playback`, real-gateway plans, 10.11.7 and 12.4.0 identical): every mpv track mapped with verification on, so the real codec pairs pass (Jellyfin `h264`/`hevc`/`av1`/`aac`/`ac3`/`ass`/`subrip` against the same mpv names). Sidecar: `aid 1`, `sid 1`, reported AudioStreamIndex 2, SubtitleStreamIndex 0. Multitrack: `aid 1` (English AAC, Jellyfin 1; Spanish AC-3 mapped to 2), `sid no`. ASS: `aid 1`, embedded ASS mapped to Jellyfin 2 but not selected (no default subtitle), `sid no`. HEVC HDR10 and AV1: `aid 1` (Jellyfin 1), `sid no`.
 - M8: SDK pinned to 1.0.2; `latest()` uses `GET /Items?userId=`; `Fields` is `Overview` only. pnpm audit, check, e2e, lint:boundaries pass.
 
+## Follow-ups (P2-07 review lows)
+
+- P2-07 stays in_progress: `pnpm test:tripwire` against both fixture servers (acceptance 2) and the guardian review (acceptance 9) are pending; record their evidence before marking done (`tasks/prd.json`).
+- `src/app/compose.test.ts:36-41`: `readFileSync("package.json")` sits inside the loop and uses a cwd-relative path, so vitest run outside the repo root throws ENOENT; the check also cannot catch a broken vite define.
+- `src/lib/jellyfin/gateway.ts:212`: the default `UNIDENTIFIED_CLIENT` (version "0.0.0") means a new construction site that omits the sixth argument sends Version=0.0.0 and Device=Fluster; only `compose.test.ts` guards compose.ts.
+- Spec P2-07 says `grep import.meta src/lib/jellyfin` returns nothing, but test files use `import.meta.glob`; production files are clean. Spec inaccuracy only.
+- `ARCHITECTURE.md:96`: says `Device` is `Fluster <platform>`, but `deviceNameFor` (`src/app/client-identity.ts:15-16`) and `UNIDENTIFIED_CLIENT` send a bare "Fluster" for unknown platforms. Document that.
+
 ## Outcome & retrospective
 
 _(fill in on completion)_
