@@ -389,10 +389,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "Local on task/P0-16 at e0232cf: pnpm check exit 0 (187 files, 2531 tests; lint 0 errors; cargo 194 passed); pnpm audit no known vulnerabilities (minimatch override); pnpm test:e2e 188 passed; pnpm test:visual 369 passed. Acceptance 6 local dry run (working tree only, restored): break 1 (ambient-backdrop.tsx deps [imageKey, src] plus const unusedProbe) fails pnpm lint with react-hooks/exhaustive-deps missing blurHash at 62:6 and pnpm build with TS6133 at (46,9); break 2 (deps restored, local kept) passes lint and fails build with TS6133. Pending in Ship (CI): PR body sections, throwaway commits 1 and 2 with failing run URLs, reverts with green run URL, dependency-review job."
+          "passes": true,
+          "evidence": "Local on task/P0-16 at e0232cf: pnpm check exit 0 (187 files, 2531 tests; lint 0 errors; cargo 194 passed); pnpm audit no known vulnerabilities (minimatch override); pnpm test:e2e 188 passed; pnpm test:visual 369 passed. Acceptance 6 local dry run (working tree only, restored): break 1 (ambient-backdrop.tsx deps [imageKey, src] plus const unusedProbe) fails pnpm lint with react-hooks/exhaustive-deps missing blurHash at 62:6 and pnpm build with TS6133 at (46,9); break 2 (deps restored, local kept) passes lint and fails build with TS6133. CI on PR 172 (acceptance 6 and 7): throwaway commit 1 (deps [imageKey, src] plus unused local) failed at pnpm lint: https://github.com/hankandre/fluster/actions/runs/43763305008 ; throwaway commit 2 (deps restored, unused local kept) failed at pnpm build with TS6133: https://github.com/hankandre/fluster/actions/runs/43763421070 ; both reverted by git revert (no force-push), green run with all jobs passing including dependency-review and visual: https://github.com/hankandre/fluster/actions/runs/43763677325 ; the first green run before the throwaway commits: https://github.com/hankandre/fluster/actions/runs/43760690880 (dependency-review pass for eslint, eslint-plugin-react-hooks, @typescript-eslint/parser, and the minimatch override)."
         },
         {
           "id": "P0-17",
