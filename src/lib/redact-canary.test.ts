@@ -138,7 +138,7 @@ describe("redaction canary: JellyfinGateway", () => {
       await gateway.login("Louise", "password");
       const messages = [
         await messageOf(() => gateway.connect()),
-        await messageOf(() => gateway.latest()),
+        await messageOf(() => gateway.resumeItems()),
         await messageOf(() => gateway.createPlaybackPlan(item)),
         await messageOf(() => gateway.reportStart({ ...planWith("x") }, snapshot)),
         await messageOf(() => gateway.reportProgress({ ...planWith("x") }, snapshot)),

@@ -396,40 +396,6 @@ export class JellyfinGateway {
     }
   }
 
-  async latest(signal?: AbortSignal): Promise<LibraryItem[]> {
-    this.requireSession();
-    const { data } = await this.get<{ Items?: BaseItemDto[] }>("/Items", {
-      params: {
-        userId: this.userId,
-        Recursive: true,
-        IncludeItemTypes: "Movie,Episode",
-        SortBy: "DateCreated",
-        SortOrder: "Descending",
-        Limit: 10,
-        Fields: "Overview",
-        EnableUserData: true,
-      },
-      signal,
-      timeout: CONTROL_REQUEST_TIMEOUT_MS,
-    });
-    return (data.Items ?? []).flatMap((item) => {
-      if (!item.Id || !item.Name || (item.Type !== "Movie" && item.Type !== "Episode")) return [];
-      return [{
-        id: item.Id,
-        name: item.Name,
-        type: item.Type,
-        seriesName: item.SeriesName,
-        season: item.ParentIndexNumber,
-        episode: item.IndexNumber,
-        productionYear: item.ProductionYear,
-        runTimeTicks: item.RunTimeTicks,
-        overview: item.Overview,
-        resumePositionTicks: Math.max(0, item.UserData?.PlaybackPositionTicks ?? 0),
-        played: Boolean(item.UserData?.Played),
-      } satisfies LibraryItem];
-    }).slice(0, 10);
-  }
-
   async userViews(signal?: AbortSignal): Promise<LibraryView[]> {
     const { userId } = this.requireSession();
     const { data } = await this.get<ItemsResult>("/UserViews", {
@@ -705,6 +671,7 @@ export class JellyfinGateway {
   // repeated query parameter, which Axios params would encode as `[]`, so it
   // is written into the URL. Callers check HasSegments first.
   async mediaSegments(itemId: string, signal?: AbortSignal): Promise<MediaSegment[]> {
+    this.requireSession();
     const { data } = await this.get<MediaSegmentsResponse>(
       `/MediaSegments/${encodeURIComponent(itemId)}?includeSegmentTypes=Intro&includeSegmentTypes=Outro`,
       { signal, timeout: CONTROL_REQUEST_TIMEOUT_MS },
@@ -825,7 +792,7 @@ export class JellyfinGateway {
       ...(mediaSourceId ? { MediaSourceId: mediaSourceId } : {}),
       DeviceProfile: { ...FLUSTER_PROFILE, MaxStreamingBitrate: maxStreamingBitrate },
     };
-    const { data } = await this.post<PlaybackInfoResponse>(`/Items/${itemId}/PlaybackInfo`, request, {
+    const { data } = await this.post<PlaybackInfoResponse>(`/Items/${encodeURIComponent(itemId)}/PlaybackInfo`, request, {
       params: { ...flags, UserId: userId, StartTimeTicks: startPositionTicks, MaxStreamingBitrate: maxStreamingBitrate, ...streams },
       signal,
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
@@ -901,10 +868,10 @@ export class JellyfinGateway {
     });
   }
 
-  private async get<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
+  private async send<T>(request: () => Promise<HttpResponse<T>>): Promise<HttpResponse<T>> {
     let response: HttpResponse<T>;
     try {
-      response = await this.transport.get<T>(url, config);
+      response = await request();
     } catch (error) {
       if (isRedirectError(error)) throw new SignInFailure("redirect", REDIRECT_REFUSED_MESSAGE);
       throw redactTransportError(error);
@@ -912,26 +879,16 @@ export class JellyfinGateway {
     return refuseRedirect(response);
   }
 
-  private async post<T>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
-    let response: HttpResponse<T>;
-    try {
-      response = await this.transport.post<T>(url, data, config);
-    } catch (error) {
-      if (isRedirectError(error)) throw new SignInFailure("redirect", REDIRECT_REFUSED_MESSAGE);
-      throw redactTransportError(error);
-    }
-    return refuseRedirect(response);
+  private get<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
+    return this.send(() => this.transport.get<T>(url, config));
   }
 
-  private async delete<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
-    let response: HttpResponse<T>;
-    try {
-      response = await this.transport.delete<T>(url, config);
-    } catch (error) {
-      if (isRedirectError(error)) throw new SignInFailure("redirect", REDIRECT_REFUSED_MESSAGE);
-      throw redactTransportError(error);
-    }
-    return refuseRedirect(response);
+  private post<T>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
+    return this.send(() => this.transport.post<T>(url, data, config));
+  }
+
+  private delete<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
+    return this.send(() => this.transport.delete<T>(url, config));
   }
 
   private requireSession(): { accessToken: string; userId: string } {
