@@ -6,9 +6,10 @@
 // Credentials come from tests/integration/.credentials and are never printed.
 // Scrubbing follows .claude/skills/jellyfin-api/references/contract-fixtures.md.
 // Conversion fixtures (P10-02, files named conversion-*) use the decision 0002 profile and flags.
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { call, makeSaver, makeScrubber, readCredentials, sleep } from "./fixture-recording.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const outRoot = join(here, "..", "fixtures", "jellyfin");
@@ -130,35 +131,6 @@ const CONVERSION_FLAGS = {
   AutoOpenLiveStream: false,
 };
 
-function readCredentials() {
-  const values = {};
-  for (const line of readFileSync(join(here, ".credentials"), "utf8").split("\n")) {
-    const at = line.indexOf("=");
-    if (at > 0) values[line.slice(0, at)] = line.slice(at + 1);
-  }
-  return values;
-}
-
-const CLIENT = 'MediaBrowser Client="Fluster Tests", Device="ci", DeviceId="fluster-fixtures", Version="0"';
-
-async function call(base, token, method, path, { query, body } = {}) {
-  const url = new URL(base + path);
-  for (const [key, value] of Object.entries(query ?? {})) url.searchParams.set(key, String(value));
-  const response = await fetch(url, {
-    method,
-    headers: {
-      Authorization: token ? `${CLIENT}, Token="${token}"` : CLIENT,
-      "Content-Type": "application/json",
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-  if (!response.ok) throw new Error(`${method} ${path} -> ${response.status}`);
-  const text = await response.text();
-  return text ? JSON.parse(text) : undefined;
-}
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
 // Refreshes the library and polls until every wanted path is indexed.
 async function findItems(base, token) {
   await call(base, token, "POST", "/Library/Refresh");
@@ -198,42 +170,6 @@ function conversionRequestFor(userId, target, mediaSourceId) {
   };
   if (mediaSourceId) body.MediaSourceId = mediaSourceId;
   return { body, query: { ...flags, UserId: userId, StartTimeTicks: 0, MaxStreamingBitrate: maxStreamingBitrate } };
-}
-
-// Scrubbing. Known ids get readable fake names; every other 32-character hex
-// value (tags, ETags, other ids) gets a numbered fake so references line up.
-function makeScrubber({ tokens, host, fakeUserIds, fakeServerId, knownIds, serverNames }) {
-  const fakes = new Map(knownIds);
-  let counter = 0;
-  const fake = (value) => {
-    if (!fakes.has(value)) fakes.set(value, `id-${(counter += 1)}`);
-    return fakes.get(value);
-  };
-  const scrubText = (text) => {
-    let result = text;
-    for (const token of tokens) result = result.split(token).join("REDACTED");
-    // Credential parameter values are replaced; names and every other parameter stay, so
-    // TranscodingUrl keeps TranscodeReasons, VideoCodec, and the rest (P10-02).
-    result = result.replace(/([?&](?:ApiKey|api_key|ApiToken|Token|AccessToken|access_token|X-Emby-Token)=)[^&"\s]*/gi, "$1REDACTED");
-    result = result.replace(/([?&]PlaySessionId=)[^&"\s]*/gi, "$1play-session-1");
-    result = result.split(host).join("jellyfin.test");
-    for (const name of serverNames) result = result.split(name).join("Fixture Server");
-    result = result.replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi, (m) => fake(m.replace(/-/g, "").toLowerCase()));
-    return result.replace(/\b[0-9a-f]{32}\b/gi, (m) => fake(m.toLowerCase()));
-  };
-  // Object keys can hold ids too (ImageBlurHashes is keyed by image tag).
-  const walk = (value, key) => {
-    if (Array.isArray(value)) return value.map((entry) => walk(entry, key));
-    if (value && typeof value === "object") {
-      return Object.fromEntries(Object.entries(value).map(([k, v]) => [scrubText(k), walk(v, k)]));
-    }
-    if (typeof value !== "string") return value;
-    if (key === "PlaySessionId") return "play-session-1";
-    return scrubText(value);
-  };
-  for (const id of fakeUserIds) fakes.set(id.real, id.fake);
-  fakes.set(fakeServerId.real, fakeServerId.fake);
-  return (data) => walk(data);
 }
 
 const credentials = readCredentials();
@@ -282,18 +218,7 @@ for (const server of servers) {
 
   const outDir = join(outRoot, server.folder);
   mkdirSync(outDir, { recursive: true });
-  const save = (file, data) => {
-    const text = JSON.stringify(scrub(data), null, 2) + "\n";
-    for (const secret of [token, restricted?.token].filter(Boolean)) {
-      if (text.includes(secret)) throw new Error(`token leaked into ${file}`);
-    }
-    // Every credential parameter value in a TranscodingUrl must be REDACTED.
-    if (/(?:ApiKey|api_key|ApiToken|AccessToken|access_token|X-Emby-Token|Token)(?:=|%3D)(?!REDACTED(?:&|$|"|%26))/i.test(text)) {
-      throw new Error(`unscrubbed key in ${file}`);
-    }
-    writeFileSync(join(outDir, `${file}.json`), text);
-    console.log(`  wrote ${server.folder}/${file}.json`);
-  };
+  const save = makeSaver({ outDir, folder: server.folder, scrub, secrets: [token, restricted?.token].filter(Boolean) });
 
   // userConfig cases change the user's configuration, then restore it.
   const originalConfig = (await call(base, token, "GET", `/Users/${userId}`)).Configuration;

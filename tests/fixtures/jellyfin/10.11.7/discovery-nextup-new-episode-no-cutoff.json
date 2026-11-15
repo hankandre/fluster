@@ -1,0 +1,44 @@
+{
+  "Items": [
+    {
+      "Name": "Synthetic Show S01E03",
+      "ServerId": "server-1011",
+      "Id": "item-episode-3",
+      "DateCreated": "2026-11-15T19:24:59.4891001Z",
+      "Container": "mkv",
+      "ChannelId": null,
+      "RunTimeTicks": 100210000,
+      "IndexNumber": 3,
+      "ParentIndexNumber": 1,
+      "IsFolder": false,
+      "Type": "Episode",
+      "UserData": {
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Played": false,
+        "Key": "74098ae7-4da9-10f4-c132-c1d51e73afb1001003",
+        "ItemId": "item-episode-3"
+      },
+      "SeriesName": "Synthetic Show",
+      "SeriesId": "series-synthetic",
+      "SeasonId": "id-1",
+      "PrimaryImageAspectRatio": 1.7777777777777777,
+      "SeasonName": "Season 1",
+      "VideoType": "VideoFile",
+      "ImageTags": {
+        "Primary": "id-2"
+      },
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {
+        "Primary": {
+          "id-2": "W~KUf+wVX2z6bI]}X8V@NyR-X7ocRlR.WCX5X8X7bHWXWoSyg0bs"
+        }
+      },
+      "LocationType": "FileSystem",
+      "MediaType": "Video"
+    }
+  ],
+  "TotalRecordCount": 0,
+  "StartIndex": 0
+}

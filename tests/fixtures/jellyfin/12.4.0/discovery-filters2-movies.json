@@ -1,0 +1,27 @@
+{
+  "Genres": [
+    {
+      "Name": "Comedy",
+      "Id": "genre-comedy"
+    },
+    {
+      "Name": "Documentary",
+      "Id": "id-40"
+    },
+    {
+      "Name": "Drama",
+      "Id": "genre-drama"
+    },
+    {
+      "Name": "Mystery",
+      "Id": "genre-mystery"
+    },
+    {
+      "Name": "Science Fiction",
+      "Id": "genre-science-fiction"
+    }
+  ],
+  "Tags": [],
+  "AudioLanguages": [],
+  "SubtitleLanguages": []
+}

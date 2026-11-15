@@ -1,0 +1,96 @@
+{
+  "Items": [
+    {
+      "Name": "Comedy",
+      "ServerId": "server-1011",
+      "Id": "genre-comedy",
+      "ChannelId": null,
+      "Type": "Genre",
+      "ImageTags": {
+        "Primary": "id-42"
+      },
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {
+        "Primary": {
+          "id-42": "e[KxM7wYfQxhj;kCayfQa_WqfQfQfQfQfQkCayfQa_WrWCW;fQW;ay"
+        }
+      },
+      "LocationType": "FileSystem",
+      "MediaType": "Unknown"
+    },
+    {
+      "Name": "Documentary",
+      "ServerId": "server-1011",
+      "Id": "id-29",
+      "ChannelId": null,
+      "Type": "Genre",
+      "ImageTags": {
+        "Primary": "id-43"
+      },
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {
+        "Primary": {
+          "id-43": "ejFGweI9fQDNMxTKadfQV?jFfQfQfQfQfQPBaJfQVYniOss:fQxani"
+        }
+      },
+      "LocationType": "FileSystem",
+      "MediaType": "Unknown"
+    },
+    {
+      "Name": "Drama",
+      "ServerId": "server-1011",
+      "Id": "genre-drama",
+      "ChannelId": null,
+      "Type": "Genre",
+      "ImageTags": {
+        "Primary": "id-44"
+      },
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {
+        "Primary": {
+          "id-44": "e@KnuQw=oJxhk7a#bFj?WVWXayjZfkjGa#j]a{f$axWYS4W:j?WXW:"
+        }
+      },
+      "LocationType": "FileSystem",
+      "MediaType": "Unknown"
+    },
+    {
+      "Name": "Mystery",
+      "ServerId": "server-1011",
+      "Id": "genre-mystery",
+      "ChannelId": null,
+      "Type": "Genre",
+      "ImageTags": {
+        "Primary": "id-45"
+      },
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {
+        "Primary": {
+          "id-45": "e[KxM7wYfQxhj;kCayfQa_WqfQfQfQfQfQkCayfQa_WrWCW;fQW;ay"
+        }
+      },
+      "LocationType": "FileSystem",
+      "MediaType": "Unknown"
+    },
+    {
+      "Name": "Science Fiction",
+      "ServerId": "server-1011",
+      "Id": "genre-science-fiction",
+      "ChannelId": null,
+      "Type": "Genre",
+      "ImageTags": {
+        "Primary": "id-46"
+      },
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {
+        "Primary": {
+          "id-46": "e[KxPDwYfQxhfzj[ayfQa{a#fQfQfQfQfQoLayfQa_WXS#a{fQWoSz"
+        }
+      },
+      "LocationType": "FileSystem",
+      "MediaType": "Unknown"
+    }
+  ],
+  "TotalRecordCount": 0,
+  "StartIndex": 0
+}

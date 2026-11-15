@@ -1,0 +1,114 @@
+{
+  "Items": [
+    {
+      "Name": "Synthetic Show S01E02",
+      "ServerId": "server-124",
+      "Id": "item-episode-2",
+      "Container": "mkv",
+      "ChannelId": null,
+      "RunTimeTicks": 100210000,
+      "IndexNumber": 2,
+      "ParentIndexNumber": 1,
+      "IsFolder": false,
+      "Type": "Episode",
+      "UserData": {
+        "PlayedPercentage": 40,
+        "PlaybackPositionTicks": 40084000,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "LastPlayedDate": "2026-06-03T13:00:00.0000000Z",
+        "Played": false,
+        "Key": "item-episode-2",
+        "ItemId": "item-episode-2"
+      },
+      "SeriesName": "Synthetic Show",
+      "SeriesId": "series-synthetic",
+      "SeasonId": "id-57",
+      "PrimaryImageAspectRatio": 1.7777777777777777,
+      "SeasonName": "Season 1",
+      "VideoType": "VideoFile",
+      "ImageTags": {
+        "Primary": "id-58"
+      },
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {
+        "Primary": {
+          "id-58": "W~KUf+wVX2z6bI]}W=V@NxR-X7ocRlR.WCX5X8X7bHWXWoSyf%bs"
+        }
+      },
+      "LocationType": "FileSystem",
+      "MediaType": "Video"
+    },
+    {
+      "Name": "Synthetic ASS (2024)",
+      "ServerId": "server-124",
+      "Id": "item-ass",
+      "HasSubtitles": true,
+      "Container": "mkv",
+      "ChannelId": null,
+      "RunTimeTicks": 100210000,
+      "ProductionYear": 2024,
+      "IsFolder": false,
+      "Type": "Movie",
+      "UserData": {
+        "PlayedPercentage": 40,
+        "PlaybackPositionTicks": 40084000,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "LastPlayedDate": "2026-06-02T12:00:00.0000000Z",
+        "Played": false,
+        "Key": "item-ass",
+        "ItemId": "item-ass"
+      },
+      "PrimaryImageAspectRatio": 1.7777777777777777,
+      "VideoType": "VideoFile",
+      "ImageTags": {
+        "Primary": "id-4"
+      },
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {
+        "Primary": {
+          "id-4": "W~KxVRxhXL*Zi%|Yt7awWXj0WVo0S#W-X7bFW.a}oyayayWDjJjZ"
+        }
+      },
+      "LocationType": "FileSystem",
+      "MediaType": "Video"
+    },
+    {
+      "Name": "Synthetic Multitrack (2024)",
+      "ServerId": "server-124",
+      "Id": "item-multitrack",
+      "Container": "mkv",
+      "ChannelId": null,
+      "RunTimeTicks": 100210000,
+      "ProductionYear": 2024,
+      "IsFolder": false,
+      "Type": "Movie",
+      "UserData": {
+        "PlayedPercentage": 40,
+        "PlaybackPositionTicks": 40084000,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "LastPlayedDate": "2026-06-01T12:00:00.0000000Z",
+        "Played": false,
+        "Key": "item-multitrack",
+        "ItemId": "item-multitrack"
+      },
+      "PrimaryImageAspectRatio": 1.7777777777777777,
+      "VideoType": "VideoFile",
+      "ImageTags": {
+        "Primary": "id-3"
+      },
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {
+        "Primary": {
+          "id-3": "W~KxVRxhXL*Zi%|Yt7awWXj0WVo0S#W-X7bFW.a}oyayayWDjJjZ"
+        }
+      },
+      "LocationType": "FileSystem",
+      "MediaType": "Video"
+    }
+  ],
+  "TotalRecordCount": 3,
+  "StartIndex": 0
+}
