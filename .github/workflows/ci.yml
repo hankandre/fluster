@@ -56,6 +56,7 @@ jobs:
       - run: pnpm audit --audit-level moderate
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm lint:boundaries
+      - run: pnpm lint
       - run: pnpm test:dogfood-redaction
       - run: pnpm test
       - run: pnpm build

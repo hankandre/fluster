@@ -20,11 +20,12 @@
     "fixture:down": "docker compose -f tests/integration/docker-compose.yml down -v",
     "tauri": "tauri",
     "lint:boundaries": "node scripts/lint-boundaries.mjs",
+    "lint": "node --import ./scripts/typescript-6-resolve.mjs node_modules/eslint/bin/eslint.js --max-warnings 0 src",
     "samples:generate": "bash scripts/generate-samples.sh",
     "dogfood": "bash scripts/dogfood.sh",
     "typecheck:integration": "tsc -p tsconfig.integration.json",
     "typecheck:core": "tsc -p tsconfig.core.json",
-    "check": "pnpm lint:boundaries && pnpm test:dogfood-redaction && pnpm test && pnpm build && pnpm test:no-test-engine && pnpm typecheck:integration && pnpm typecheck:core && cargo test --manifest-path src-tauri/Cargo.toml"
+    "check": "pnpm lint:boundaries && pnpm lint && pnpm test:dogfood-redaction && pnpm test && pnpm build && pnpm test:no-test-engine && pnpm typecheck:integration && pnpm typecheck:core && cargo test --manifest-path src-tauri/Cargo.toml"
   },
   "dependencies": {
     "@jellyfin/sdk": "1.0.2",
