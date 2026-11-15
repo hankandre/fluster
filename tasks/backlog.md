@@ -264,7 +264,7 @@ Measured by the worst-case artwork captures; see `docs/design/contrast-report.md
 
 ## Dependabot alert 34: glib 0.18 unsoundness (RUSTSEC-2024-0429), 2026-11-14
 
-- `glib 0.18.5` is pulled in by `gtk`, `gdk` and `webkit2gtk` 0.18 (Tauri 2's GTK3 stack on Linux). The fix is in glib 0.20, which needs the GTK4 stack; Fluster cannot bump it alone. Fluster does not call `glib::VariantStrIter` (grep of `src-tauri/src`, 2026-11-14), so the unsound path is not reached by our code; reach through Tauri or WebKitGTK is unverified. Revisit when Tauri moves to GTK4; decide whether to dismiss the alert with this reason (owner call). S.
+- `glib 0.18.5` is pulled in by `gtk`, `gdk` and `webkit2gtk` 0.18 (Tauri 2's GTK3 stack on Linux). The fix is in glib 0.20, which needs the GTK4 stack; Fluster cannot bump it alone. Fluster does not call `glib::VariantStrIter` (grep of `src-tauri/src`, 2026-11-14), so the unsound path is not reached by our code; reach through Tauri or WebKitGTK is unverified. Alert dismissed as "not used" by the owner on 2026-11-14; revisit when Tauri moves to GTK4. S.
 
 ## Flaky `rust-audit` on a Dependabot PR (#149, 2026-11-14)
 
