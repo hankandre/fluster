@@ -53,7 +53,7 @@ export function PlayerSheet({ id, label, title, onClose, initialFocus, closeRef,
     const target = initialFocus === "close"
       ? sheet.current?.querySelector<HTMLElement>(".player-sheet-head button")
       : initialFocus?.current ?? body?.querySelector<HTMLElement>(FOCUSABLE) ?? sheet.current?.querySelector<HTMLElement>(FOCUSABLE);
-    target?.focus();
+    target?.focus({ preventScroll: true });
     return () => {
       if (opener && opener.isConnected && opener !== document.body) opener.focus();
     };
