@@ -127,28 +127,6 @@ describe("JellyfinGateway direct-play contract", () => {
     expect(message).not.toContain("swordfish");
   });
 
-  it("maps Jellyfin resume position and played state", async () => {
-    const { gateway, transport } = await authenticatedGateway();
-    transport.responses.set("GET /Items", {
-      Items: [{
-        Id: "movie-1",
-        Name: "Arrival",
-        Type: "Movie",
-        UserData: { PlaybackPositionTicks: 987_000_000, Played: false },
-      }],
-    });
-
-    await expect(gateway.latest()).resolves.toEqual([expect.objectContaining({
-      id: "movie-1",
-      resumePositionTicks: 987_000_000,
-      played: false,
-    })]);
-    const request = transport.requests.at(-1);
-    expect(request?.url).toBe("/Items");
-    expect(request?.params?.userId).toBe("user-1");
-    expect(request?.params?.Fields).toBe("Overview");
-    expect(request?.params?.EnableUserData).toBe(true);
-  });
   it("configures an isolated SDK transport with the Jellyfin base URL and device authorization", async () => {
     const get = vi.fn().mockResolvedValue({ data: { ServerName: "Home", Version: "10.11.11" } });
     const isolatedAxios = {
@@ -217,13 +195,13 @@ describe("JellyfinGateway direct-play contract", () => {
   // Decision 0002 "Negotiation" table, in the body and the query string.
   it("sends the Fluster profile in the body and the decision 0002 flags in both body and query", async () => {
     const { gateway, transport } = await authenticatedGateway();
-    transport.responses.set("POST /Items/item/one/PlaybackInfo", {
+    transport.responses.set("POST /Items/item%2Fone/PlaybackInfo", {
       PlaySessionId: "play-1",
       MediaSources: [{ Id: "source-1", Path: "/media/movie.mkv", Protocol: "File", SupportsDirectPlay: true }],
     });
     await gateway.createPlaybackPlan(item, 42);
     const request = transport.requests.at(-1)!;
-    expect(request.url).toBe("/Items/item/one/PlaybackInfo");
+    expect(request.url).toBe("/Items/item%2Fone/PlaybackInfo");
     expect(request.data).toEqual({
       EnableDirectPlay: true,
       EnableDirectStream: true,
@@ -254,7 +232,7 @@ describe("JellyfinGateway direct-play contract", () => {
   // playing version (PlaybackInfoDto and getPostedPlaybackInfo, SDK 1.0.2).
   it("sends the chosen audio and subtitle streams with the version in both body and query", async () => {
     const { gateway, transport } = await authenticatedGateway();
-    transport.responses.set("POST /Items/item/one/PlaybackInfo", {
+    transport.responses.set("POST /Items/item%2Fone/PlaybackInfo", {
       PlaySessionId: "play-1",
       MediaSources: [{ Id: "source-1", Path: "/media/movie.mkv", Protocol: "File", SupportsDirectPlay: true, Bitrate: 8_000_000 }],
     });
@@ -270,7 +248,7 @@ describe("JellyfinGateway direct-play contract", () => {
 
   it("sends no stream index unless one was chosen, and never an invalid one", async () => {
     const { gateway, transport } = await authenticatedGateway();
-    transport.responses.set("POST /Items/item/one/PlaybackInfo", {
+    transport.responses.set("POST /Items/item%2Fone/PlaybackInfo", {
       PlaySessionId: "play-1",
       MediaSources: [{ Id: "source-1", Path: "/media/movie.mkv", Protocol: "File", SupportsDirectPlay: true }],
     });
@@ -284,7 +262,7 @@ describe("JellyfinGateway direct-play contract", () => {
 
   it("reports whether the chosen version has media segments", async () => {
     const { gateway, transport } = await authenticatedGateway();
-    transport.responses.set("POST /Items/item/one/PlaybackInfo", {
+    transport.responses.set("POST /Items/item%2Fone/PlaybackInfo", {
       PlaySessionId: "play-1",
       MediaSources: [
         { Id: "source-1", Path: "/media/a.mkv", Protocol: "File", SupportsDirectPlay: true, HasSegments: true },
@@ -315,9 +293,26 @@ describe("JellyfinGateway direct-play contract", () => {
     expect(JSON.stringify(request)).not.toContain("top-secret");
   });
 
+  it("encodes the item id in the PlaybackInfo path", async () => {
+    const { gateway, transport } = await authenticatedGateway();
+    transport.responses.set("POST /Items/a%3Fb%23c/PlaybackInfo", {
+      PlaySessionId: "play-1",
+      MediaSources: [{ Id: "source-1", Path: "/media/movie.mkv", Protocol: "File", SupportsDirectPlay: true }],
+    });
+    await gateway.createPlaybackPlan({ ...item, id: "a?b#c" }, 0);
+    expect(transport.requests.at(-1)?.url).toBe("/Items/a%3Fb%23c/PlaybackInfo");
+  });
+
+  it("refuses media segments before sending anything when signed out", async () => {
+    const transport = new FakeTransport();
+    const gateway = new JellyfinGateway("https://media.test", transport, "install-1");
+    await expect(gateway.mediaSegments("item-1")).rejects.toThrow("Sign in before using the library.");
+    expect(transport.requests).toHaveLength(0);
+  });
+
   it("requests and plays the chosen version by MediaSourceId", async () => {
     const { gateway, transport } = await authenticatedGateway();
-    transport.responses.set("POST /Items/item/one/PlaybackInfo", {
+    transport.responses.set("POST /Items/item%2Fone/PlaybackInfo", {
       PlaySessionId: "play-1",
       MediaSources: [
         { Id: "source-1", Path: "/media/a.mkv", Protocol: "File", SupportsDirectPlay: true },
@@ -342,7 +337,7 @@ describe("JellyfinGateway direct-play contract", () => {
 
   it("omits MediaSourceId when no version is chosen", async () => {
     const { gateway, transport } = await authenticatedGateway();
-    transport.responses.set("POST /Items/item/one/PlaybackInfo", {
+    transport.responses.set("POST /Items/item%2Fone/PlaybackInfo", {
       PlaySessionId: "play-1",
       MediaSources: [{ Id: "source-1", Path: "/media/movie.mkv", Protocol: "File", SupportsDirectPlay: true }],
     });
@@ -364,7 +359,7 @@ describe("JellyfinGateway direct-play contract", () => {
     [{ Id: "limited", Path: "/media/movie.mkv", Protocol: "File", SupportsDirectPlay: false }, "conversion-not-allowed"],
   ])("refuses %o with a typed reason", async (source, reason) => {
     const { gateway, transport } = await authenticatedGateway();
-    transport.responses.set("POST /Items/item/one/PlaybackInfo", { PlaySessionId: "play-1", MediaSources: [source] });
+    transport.responses.set("POST /Items/item%2Fone/PlaybackInfo", { PlaySessionId: "play-1", MediaSources: [source] });
     const error = await gateway.createPlaybackPlan(item).catch((caught: unknown) => caught);
     expect(error).toBeInstanceOf(PlaybackRefusedError);
     expect((error as PlaybackRefusedError).reason).toBe(reason);
@@ -372,7 +367,7 @@ describe("JellyfinGateway direct-play contract", () => {
 
   it("refuses a response without sources as no-sources, even without a play session", async () => {
     const { gateway, transport } = await authenticatedGateway();
-    transport.responses.set("POST /Items/item/one/PlaybackInfo", { MediaSources: [], ErrorCode: "NoCompatibleStream" });
+    transport.responses.set("POST /Items/item%2Fone/PlaybackInfo", { MediaSources: [], ErrorCode: "NoCompatibleStream" });
     const error = await gateway.createPlaybackPlan(item).catch((caught: unknown) => caught);
     expect(error).toBeInstanceOf(PlaybackRefusedError);
     expect((error as PlaybackRefusedError).reason).toBe("no-sources");
@@ -389,7 +384,7 @@ describe("JellyfinGateway direct-play contract", () => {
 
   it("keeps same-origin external subtitle URLs token-free and authenticates with the plan header", async () => {
     const { gateway, transport } = await authenticatedGateway();
-    transport.responses.set("POST /Items/item/one/PlaybackInfo", {
+    transport.responses.set("POST /Items/item%2Fone/PlaybackInfo", {
       PlaySessionId: "play-1",
       MediaSources: [{
         Id: "source-1",
@@ -419,7 +414,7 @@ describe("JellyfinGateway direct-play contract", () => {
 
   it("carries a stream's title, channels, and flags onto the plan's track, and leaves absent ones out", async () => {
     const { gateway, transport } = await authenticatedGateway();
-    transport.responses.set("POST /Items/item/one/PlaybackInfo", {
+    transport.responses.set("POST /Items/item%2Fone/PlaybackInfo", {
       PlaySessionId: "play-1",
       MediaSources: [{
         Id: "source-1",
@@ -442,7 +437,7 @@ describe("JellyfinGateway direct-play contract", () => {
 
   it("strips every server credential parameter from subtitle URLs", async () => {
     const { gateway, transport } = await authenticatedGateway();
-    transport.responses.set("POST /Items/item/one/PlaybackInfo", {
+    transport.responses.set("POST /Items/item%2Fone/PlaybackInfo", {
       PlaySessionId: "play-1",
       MediaSources: [{
         Id: "source-1",
@@ -470,7 +465,7 @@ describe("JellyfinGateway direct-play contract", () => {
     "file:///tmp/subtitle.srt",
   ])("rejects unsafe subtitle URLs without exposing them: %s", async (deliveryUrl) => {
     const { gateway, transport } = await authenticatedGateway();
-    transport.responses.set("POST /Items/item/one/PlaybackInfo", {
+    transport.responses.set("POST /Items/item%2Fone/PlaybackInfo", {
       PlaySessionId: "play-1",
       MediaSources: [{
         Id: "source-1",
@@ -642,7 +637,7 @@ describe("JellyfinGateway device identity and logout", () => {
     expect(logout.timeout).toBe(REPORT_REQUEST_TIMEOUT_MS);
     expect(logout.headers?.Authorization).toContain('Token="top-secret"');
     expect(logout.headers?.Authorization).toContain(`DeviceId="${deviceId}"`);
-    await expect(gateway.latest()).rejects.toThrow("Sign in");
+    await expect(gateway.resumeItems()).rejects.toThrow("Sign in");
   });
 
   it("exposes the display name only while signed in", async () => {
@@ -676,7 +671,7 @@ describe("JellyfinGateway device identity and logout", () => {
     await expect(gateway.logout()).resolves.toBeUndefined();
     expect(warn).toHaveBeenCalled();
     expect(JSON.stringify(warn.mock.calls)).not.toContain("top-secret");
-    await expect(gateway.latest()).rejects.toThrow("Sign in");
+    await expect(gateway.resumeItems()).rejects.toThrow("Sign in");
     warn.mockRestore();
   });
 
@@ -821,8 +816,8 @@ describe("JellyfinGateway device identity and logout", () => {
       const deviceId = (header?: string) => header?.match(/DeviceId="([^"]+)"/)?.[1];
       expect(deviceId(authenticate.headers?.Authorization)).toBe(deviceId(initiate.headers?.Authorization));
 
-      transport.responses.set("GET /Items", { Items: [] });
-      await expect(gateway.latest()).resolves.toEqual([]);
+      transport.responses.set("GET /UserItems/Resume", { Items: [] });
+      await expect(gateway.resumeItems()).resolves.toEqual([]);
     });
 
     it("does not leak the secret through errors", async () => {

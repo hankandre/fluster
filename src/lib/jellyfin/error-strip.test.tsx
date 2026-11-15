@@ -114,7 +114,7 @@ describe("errors leaving a signed-in gateway", () => {
       const gateway = new JellyfinGateway(SERVER, signedInTransport(axiosFailure(kind)));
       await gateway.login("Louise", "password");
       const calls: Array<() => Promise<unknown>> = [
-        () => gateway.latest(),
+        () => gateway.resumeItems(),
         () => gateway.reportStart(plan(), snapshot),
         () => gateway.stopActiveEncoding("p1"),
         () => gateway.createPlaybackPlan(item),
@@ -157,12 +157,12 @@ describe("a Query cache error from a gateway call", () => {
     await gateway.login("Louise", "password");
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     function Probe(): ReactNode {
-      useQuery({ queryKey: ["latest"], queryFn: () => gateway.latest() });
+      useQuery({ queryKey: ["resume"], queryFn: () => gateway.resumeItems() });
       return null;
     }
     render(<QueryClientProvider client={client}><Probe /></QueryClientProvider>);
-    await waitFor(() => expect(client.getQueryState(["latest"])?.status).toBe("error"));
-    expectStripped(client.getQueryState(["latest"])?.error, 401);
+    await waitFor(() => expect(client.getQueryState(["resume"])?.status).toBe("error"));
+    expectStripped(client.getQueryState(["resume"])?.error, 401);
   });
 });
 
