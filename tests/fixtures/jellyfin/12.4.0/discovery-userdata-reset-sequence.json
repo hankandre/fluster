@@ -1,0 +1,218 @@
+{
+  "steps": [
+    {
+      "step": "never played, in progress, before: read item",
+      "request": {
+        "method": "GET",
+        "path": "/Items/item-multitrack",
+        "query": {
+          "userId": "user-discovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "Id": "item-multitrack",
+        "Name": "Synthetic Multitrack (2024)",
+        "UserData": {
+          "PlayedPercentage": 40,
+          "PlaybackPositionTicks": 40084000,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "LastPlayedDate": "2026-06-01T12:00:00.0000000Z",
+          "Played": false,
+          "Key": "item-multitrack",
+          "ItemId": "item-multitrack"
+        }
+      }
+    },
+    {
+      "step": "never played, in progress, before: read Resume",
+      "request": {
+        "method": "GET",
+        "path": "/UserItems/Resume",
+        "query": {
+          "userId": "user-discovery",
+          "mediaTypes": "Video"
+        }
+      },
+      "status": 200,
+      "response": {
+        "Items": [
+          {
+            "Id": "item-multitrack",
+            "Name": "Synthetic Multitrack (2024)"
+          }
+        ]
+      }
+    },
+    {
+      "step": "never played: POST zero position",
+      "request": {
+        "method": "POST",
+        "path": "/UserItems/item-multitrack/UserData",
+        "query": {
+          "userId": "user-discovery"
+        },
+        "body": {
+          "PlaybackPositionTicks": 0
+        }
+      },
+      "status": 200,
+      "response": {
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "LastPlayedDate": "2026-06-01T12:00:00.0000000Z",
+        "Played": false,
+        "Key": "item-multitrack",
+        "ItemId": "item-multitrack"
+      }
+    },
+    {
+      "step": "never played, after: read item",
+      "request": {
+        "method": "GET",
+        "path": "/Items/item-multitrack",
+        "query": {
+          "userId": "user-discovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "Id": "item-multitrack",
+        "Name": "Synthetic Multitrack (2024)",
+        "UserData": {
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "LastPlayedDate": "2026-06-01T12:00:00.0000000Z",
+          "Played": false,
+          "Key": "item-multitrack",
+          "ItemId": "item-multitrack"
+        }
+      }
+    },
+    {
+      "step": "never played, after: read Resume",
+      "request": {
+        "method": "GET",
+        "path": "/UserItems/Resume",
+        "query": {
+          "userId": "user-discovery",
+          "mediaTypes": "Video"
+        }
+      },
+      "status": 200,
+      "response": {
+        "Items": []
+      }
+    },
+    {
+      "step": "previously played, in progress, before: read item",
+      "request": {
+        "method": "GET",
+        "path": "/Items/item-av1",
+        "query": {
+          "userId": "user-discovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "Id": "item-av1",
+        "Name": "Synthetic AV1 (2024)",
+        "UserData": {
+          "PlayedPercentage": 40,
+          "PlaybackPositionTicks": 40084000,
+          "PlayCount": 1,
+          "IsFavorite": false,
+          "LastPlayedDate": "2026-06-01T12:00:00.0000000Z",
+          "Played": false,
+          "Key": "item-av1",
+          "ItemId": "item-av1"
+        }
+      }
+    },
+    {
+      "step": "previously played, in progress, before: read Resume",
+      "request": {
+        "method": "GET",
+        "path": "/UserItems/Resume",
+        "query": {
+          "userId": "user-discovery",
+          "mediaTypes": "Video"
+        }
+      },
+      "status": 200,
+      "response": {
+        "Items": [
+          {
+            "Id": "item-av1",
+            "Name": "Synthetic AV1 (2024)"
+          }
+        ]
+      }
+    },
+    {
+      "step": "previously played: POST zero position",
+      "request": {
+        "method": "POST",
+        "path": "/UserItems/item-av1/UserData",
+        "query": {
+          "userId": "user-discovery"
+        },
+        "body": {
+          "PlaybackPositionTicks": 0
+        }
+      },
+      "status": 200,
+      "response": {
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 1,
+        "IsFavorite": false,
+        "LastPlayedDate": "2026-06-01T12:00:00.0000000Z",
+        "Played": false,
+        "Key": "item-av1",
+        "ItemId": "item-av1"
+      }
+    },
+    {
+      "step": "previously played, after: read item",
+      "request": {
+        "method": "GET",
+        "path": "/Items/item-av1",
+        "query": {
+          "userId": "user-discovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "Id": "item-av1",
+        "Name": "Synthetic AV1 (2024)",
+        "UserData": {
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 1,
+          "IsFavorite": false,
+          "LastPlayedDate": "2026-06-01T12:00:00.0000000Z",
+          "Played": false,
+          "Key": "item-av1",
+          "ItemId": "item-av1"
+        }
+      }
+    },
+    {
+      "step": "previously played, after: read Resume",
+      "request": {
+        "method": "GET",
+        "path": "/UserItems/Resume",
+        "query": {
+          "userId": "user-discovery",
+          "mediaTypes": "Video"
+        }
+      },
+      "status": 200,
+      "response": {
+        "Items": []
+      }
+    }
+  ]
+}

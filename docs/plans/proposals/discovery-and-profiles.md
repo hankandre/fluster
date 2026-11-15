@@ -107,11 +107,11 @@ What the routes can do, from the SDK Fluster pins and the server source:
 So:
 
 - For in-progress items Fluster filters in the client on `UserData.LastPlayedDate`. Because the server returns them newest first, Fluster can stop at the first item older than the window.
-- For next episodes Fluster can send `nextUpDateCutoff`, or filter in the client the same way. What the parameter does on 10.11.7 and 12.4.0 is **unverified** until P16-01.
+- For next episodes Fluster can send `nextUpDateCutoff`, or filter in the client the same way. What the parameter does on 10.11.7 and 12.4.0 is recorded by P16-01. Settled by P16-01, 2026-11-15: on both versions `nextUpDateCutoff` compares with the series' last play, not with the episode's creation date; a cutoff after the last play leaves the series out ([`docs/research/discovery-api.md`](../../research/discovery-api.md) §3). `/UserItems/Resume` has no date parameter on either version, which also confirms the table above.
 - jellyfin-web is reported to have a "Max days in Next Up" display setting with a default of one year. This comes from a search summary of forum.jellyfin.org that did not identify the thread: **unverified**. If it holds, a window is familiar to Jellyfin users, at a far longer length than the owner has in mind.
 - Nothing is lost when an item ages out. Its position stays on the server, its page still offers Resume, and other clients still list it.
 
-One case needs care. A viewer who is caught up on a series stops playing it because there is nothing left. When a new episode arrives a month later, a window measured only from the last play would hide it. A forum user is reported to say that Jellyfin does not bring a series back into Next Up when seasons are added later (the same search summary: **unverified**; P16-01 checks it). Whether a new episode should bring a series back is part of Q14.
+One case needs care. A viewer who is caught up on a series stops playing it because there is nothing left. When a new episode arrives a month later, a window measured only from the last play would hide it. A forum user is reported to say that Jellyfin does not bring a series back into Next Up when seasons are added later (the same search summary: **unverified**). Settled by P16-01, 2026-11-15, for a new episode in an existing season on 10.11.7 and 12.4.0: with no cutoff the new episode brings the series back; with a cutoff after the last play it does not, although the episode is newer than the cutoff, so Q14's "a new episode brings back a caught-up series" needs a client rule ([`docs/research/discovery-api.md`](../../research/discovery-api.md) §3). A new season is not recorded. Whether a new episode should bring a series back is part of Q14.
 
 No data was found on how the chance of resuming falls with time (Gripes §5, row 4). The length of the window is a judgement, and the owner's "like two weeks" is the only input.
 
@@ -137,7 +137,7 @@ Relayed by the coordinating agent. These are the words this proposal works from.
 
 Limits:
 
-- No Jellyfin route named here was called against a server for this proposal. What each returns on 10.11.7 and 12.4.0 is **unverified** until P16-01 records fixtures.
+- No Jellyfin route named here was called against a server for this proposal. What each returns on 10.11.7 and 12.4.0 is recorded by P16-01 (fixtures `tests/fixtures/jellyfin/<version>/discovery-*.json`, findings in [`docs/research/discovery-api.md`](../../research/discovery-api.md)).
 - `codebase-memory` has no index for this repository, so the code map came from `semble` and direct reads.
 - The research could not read Reddit or app-store reviews.
 
@@ -195,9 +195,9 @@ Rules 1 and 2 swap places compared with today's hero, which always prefers Conti
 
 What it needs:
 
-- Rule 1 and 2 need the last-played date on Resume and Next Up items, to order across the two lists. `UserData.LastPlayedDate` exists in the SDK's `UserItemDataDto`; whether `/Shows/NextUp` items carry a date that reflects the series' last play is **unverified** (P16-01).
+- Rule 1 and 2 need the last-played date on Resume and Next Up items, to order across the two lists. `UserData.LastPlayedDate` exists in the SDK's `UserItemDataDto`; whether `/Shows/NextUp` items carry a date that reflects the series' last play was an open question (P16-01). Settled by P16-01, 2026-11-15: they do not. An unplayed next episode has no `LastPlayedDate`; an in-progress episode (with `enableResumable=true`) carries its own. Resume items carry the date and come newest first, on both versions ([`docs/research/discovery-api.md`](../../research/discovery-api.md) §2).
 - `/Shows/NextUp` accepts `enableResumable`, which adds in-progress episodes to its own list (SDK `show-api.d.ts`). It does not cover films, so a merged row still needs `/UserItems/Resume`.
-- Rule 3 needs the collections an item belongs to. Jellyscale lists `/Items/{itemId}/Collections` as a stub; the pinned SDK has no method for that path, so its shape on Jellyfin is **unverified** (P16-01).
+- Rule 3 needs the collections an item belongs to. Jellyscale lists `/Items/{itemId}/Collections` as a stub; the pinned SDK has no method for that path, so its shape on Jellyfin was an open question (P16-01). Correction: `@jellyfin/sdk` 1.0.2 has `getItemCollections` for `/Items/{itemId}/Collections` (`library-api.js:269-272`). Settled by P16-01, 2026-11-15: 10.11.7 answers 404 for the route and 12.4.0 lists the item's collections; `GET /Items?parentId=<collection>` works on both ([`docs/research/discovery-api.md`](../../research/discovery-api.md) §5).
 - The rule is a pure function over cards. It belongs in `src/domain/` beside `hero-pick.ts`'s logic, with no React or HTTP import (`AGENTS.md` hard rule).
 
 A bug this exposes today: when the hero shows a series from a Latest row, Play starts its first episode, not the episode the series page would start (`tasks/backlog.md`, P13-10 follow-up). That needs no design choice and is task **P3-27** (§6.2).
@@ -261,14 +261,14 @@ Read from the pinned SDK and the server source. "Gives" means the route exists; 
 | In progress | `GET /UserItems/Resume` | The viewer's partly played items | **Yes.** In use. |
 | Next episode | `GET /Shows/NextUp` | The next unwatched episode per series; `enableResumable`, `enableRewatching`, and `nextUpDateCutoff` tune it (SDK `show-api.d.ts`) | **Yes.** In use. **A stub in Jellyscale** ("Next up and filters: not built. In scope."), so Fluster's Next Up row is empty there today. |
 | Newest | `GET /Items/Latest` | Recently added, per library | **Yes.** In use. |
-| Similar | `GET /Items/{itemId}/Similar` | On `master`, providers produce the list. Local providers are always on; remote ones "must be explicitly enabled". Results are filtered to libraries the user can see (https://raw.githubusercontent.com/jellyfin/jellyfin/master/Emby.Server.Implementations/Library/SimilarItems/SimilarItemsManager.cs) | **Probably.** It is per item, not per viewer, and it does not drop watched titles, so Fluster filters them. The 10.11 behaviour is **unverified**. |
+| Similar | `GET /Items/{itemId}/Similar` | On `master`, providers produce the list. Local providers are always on; remote ones "must be explicitly enabled". Results are filtered to libraries the user can see (https://raw.githubusercontent.com/jellyfin/jellyfin/master/Emby.Server.Implementations/Library/SimilarItems/SimilarItemsManager.cs) | **Probably.** It is per item, not per viewer, and it does not drop watched titles, so Fluster filters them. The 10.11 behaviour is recorded by P16-01 (2026-11-15): same shape as 12.4, 3 movies against 4 on the sample set, and watched titles stay in ([`docs/research/discovery-api.md`](../../research/discovery-api.md) §1). |
 | Film recommendations | `GET /Movies/Recommendations` | Rows built from the seven most recently played films and up to ten liked or favourite films: "similar to", "has director from", "has actor from" (same source file; SDK `RecommendationType`) | **Partly.** Films only; no series equivalent. Several rows, which N4 argues against. Useful as a source for one row. |
 | Suggestions | `GET /Items/Suggestions` | Random order: `OrderBy = new[] { (ItemSortBy.Random, SortOrder.Descending) }`, with no use of history (https://raw.githubusercontent.com/jellyfin/jellyfin/master/Jellyfin.Api/Controllers/SuggestionsController.cs) | **No.** It reshuffles on every call, against N2, and is not personal. |
 | Genres | `GET /Genres`; `GET /Items?genreIds=` | The genres in a library; items in a genre | **Yes.** |
 | People | `GET /Persons`; `GET /Items?personIds=` | People; a person's titles | **Yes.** |
 | Trailers, extras | `GET /Items/{itemId}/LocalTrailers`, `/SpecialFeatures` | Files the owner stored beside the film | **Yes**, when the library has them. |
 | History signals | `UserData` on every item: `Played`, `PlayCount`, `LastPlayedDate`, `PlaybackPositionTicks`, `PlayedPercentage`, `IsFavorite`, `Likes` (SDK `user-item-data-dto.d.ts`) | Per viewer, per item | **Yes** for rules. It is a summary, not a history: one last-played date per item, no list of sessions. |
-| Remove from Continue Watching | none | Requested since 2020 (1,740 votes). A flag is proposed upstream and lives on a fork (https://github.com/jellyfin/jellyfin-meta/discussions/136). A reported workaround resets the position with `POST /UserItems/{itemId}/UserData` (https://github.com/jellyfin/jellyfin-meta/discussions/50) | **Workaround only, unverified** on 10.11 and 12.4 (P16-01). It loses the resume position. |
+| Remove from Continue Watching | none | Requested since 2020 (1,740 votes). A flag is proposed upstream and lives on a fork (https://github.com/jellyfin/jellyfin-meta/discussions/136). A reported workaround resets the position with `POST /UserItems/{itemId}/UserData` (https://github.com/jellyfin/jellyfin-meta/discussions/50) | **Workaround only.** Settled by P16-01, 2026-11-15: a zero-position `POST /UserItems/{itemId}/UserData` takes the item out of Resume on 10.11.7 and 12.4.0 and keeps `PlayCount` and `LastPlayedDate` ([`docs/research/discovery-api.md`](../../research/discovery-api.md) §4). It loses the resume position. |
 | Watchlist | none | 1,306 votes; no server feature ([`jellyfin-clients.md`](../../research/jellyfin-clients.md) §5) | **No.** Favorites is the nearest thing (Q10). |
 
 ### 2.7 What needs new server-side work
@@ -596,7 +596,7 @@ Autoplaying previews are Netflix's most covered complaint (Gripes §2.1). Fluste
 - **Rec: A.** A personal library has no reason to compete for attention, and B is the setting Netflix was forced to add in reverse.
 
 **Q4. Removing a title from Continue Watching.**
-The most wanted missing feature among Jellyfin users that a client could attempt (1,740 votes). Jellyfin has no flag for it. The only known route resets the saved position (unverified until P16-01).
+The most wanted missing feature among Jellyfin users that a client could attempt (1,740 votes). Jellyfin has no flag for it. The only known route resets the saved position (confirmed on 10.11.7 and 12.4.0 by P16-01, 2026-11-15; see [`docs/research/discovery-api.md`](../../research/discovery-api.md) §4).
 - A: Build it now on the position reset, with a clear warning and Undo; switch to the server's flag when one exists.
 - B: Wait for a server flag that keeps the position.
 - C: Build it only for Jellyscale, once it has a flag.

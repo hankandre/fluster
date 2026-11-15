@@ -1,0 +1,92 @@
+{
+  "Items": [
+    {
+      "Name": "Ada Placeholder",
+      "ServerId": "server-124",
+      "Id": "person-ada",
+      "ChannelId": null,
+      "Type": "Person",
+      "UserData": {
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Played": false,
+        "Key": "Person-Ada Placeholder",
+        "ItemId": "person-ada"
+      },
+      "ImageTags": {},
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {},
+      "LocationType": "FileSystem",
+      "MediaType": "Unknown"
+    },
+    {
+      "Name": "Bo Example",
+      "ServerId": "server-124",
+      "Id": "person-bo",
+      "ChannelId": null,
+      "Type": "Person",
+      "UserData": {
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Played": false,
+        "Key": "Person-Bo Example",
+        "ItemId": "person-bo"
+      },
+      "ImageTags": {},
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {},
+      "LocationType": "FileSystem",
+      "MediaType": "Unknown"
+    },
+    {
+      "Name": "Cy Sample",
+      "ServerId": "server-124",
+      "Id": "person-cy",
+      "ChannelId": null,
+      "Type": "Person",
+      "UserData": {
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Played": false,
+        "Key": "Person-Cy Sample",
+        "ItemId": "person-cy"
+      },
+      "ImageTags": {},
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {},
+      "LocationType": "FileSystem",
+      "MediaType": "Unknown"
+    },
+    {
+      "Name": "Yoichiro Serizawa",
+      "ServerId": "server-124",
+      "Id": "id-38",
+      "ChannelId": null,
+      "Type": "Person",
+      "UserData": {
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Played": false,
+        "Key": "Person-Yoichiro Serizawa",
+        "ItemId": "id-38"
+      },
+      "ImageTags": {
+        "Primary": "id-39"
+      },
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {
+        "Primary": {
+          "id-39": "dCAl^A0MS#?GIp={fkNb57xtt6niOEIpsAazM|t6M|Rk"
+        }
+      },
+      "LocationType": "FileSystem",
+      "MediaType": "Unknown"
+    }
+  ],
+  "TotalRecordCount": 4,
+  "StartIndex": 0
+}

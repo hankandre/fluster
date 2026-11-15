@@ -1,0 +1,72 @@
+{
+  "Items": [
+    {
+      "Name": "Synthetic ASS (2024)",
+      "ServerId": "server-1011",
+      "Id": "item-ass",
+      "HasSubtitles": true,
+      "Container": "mkv",
+      "ChannelId": null,
+      "RunTimeTicks": 100210000,
+      "ProductionYear": 2024,
+      "IsFolder": false,
+      "Type": "Movie",
+      "UserData": {
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Played": false,
+        "Key": "item-ass",
+        "ItemId": "item-ass"
+      },
+      "PrimaryImageAspectRatio": 1.7777777777777777,
+      "VideoType": "VideoFile",
+      "ImageTags": {
+        "Primary": "id-3"
+      },
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {
+        "Primary": {
+          "id-3": "W~K-:.xhbV*Zi%|Ft7WTShj0Woo0WDW;aya|WXa#kVbEW.WDjbj?"
+        }
+      },
+      "LocationType": "FileSystem",
+      "MediaType": "Video"
+    },
+    {
+      "Name": "Synthetic H264 (2024)",
+      "ServerId": "server-1011",
+      "Id": "item-h264",
+      "Container": "mkv",
+      "ChannelId": null,
+      "RunTimeTicks": 100210000,
+      "ProductionYear": 2024,
+      "IsFolder": false,
+      "Type": "Movie",
+      "UserData": {
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 1,
+        "IsFavorite": true,
+        "LastPlayedDate": "2026-06-01T12:00:00.0000000Z",
+        "Played": true,
+        "Key": "item-h264",
+        "ItemId": "item-h264"
+      },
+      "PrimaryImageAspectRatio": 1.7777777777777777,
+      "VideoType": "VideoFile",
+      "ImageTags": {
+        "Primary": "id-23"
+      },
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {
+        "Primary": {
+          "id-23": "W~K-:.xhbV*Zi%|Ft7WTShj0Woo0WDW;aya|WXa#kVbEW.WDjbj?"
+        }
+      },
+      "LocationType": "FileSystem",
+      "MediaType": "Video"
+    }
+  ],
+  "TotalRecordCount": 2,
+  "StartIndex": 0
+}

@@ -1,0 +1,44 @@
+{
+  "Items": [
+    {
+      "Name": "Synthetic Show S01E02",
+      "ServerId": "server-1011",
+      "Id": "item-episode-2",
+      "DateCreated": "2026-11-15T18:58:50.1398939Z",
+      "Container": "mkv",
+      "ChannelId": null,
+      "RunTimeTicks": 100210000,
+      "IndexNumber": 2,
+      "ParentIndexNumber": 1,
+      "IsFolder": false,
+      "Type": "Episode",
+      "UserData": {
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Played": false,
+        "Key": "item-episode-2",
+        "ItemId": "item-episode-2"
+      },
+      "SeriesName": "Synthetic Show",
+      "SeriesId": "series-synthetic",
+      "SeasonId": "id-55",
+      "PrimaryImageAspectRatio": 1.7777777777777777,
+      "SeasonName": "Season 1",
+      "VideoType": "VideoFile",
+      "ImageTags": {
+        "Primary": "id-56"
+      },
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {
+        "Primary": {
+          "id-56": "W~KUf+wVX2z6bI]}X8V@NyR-X7ocRlR.WCX5X8X7bHWXWoSyg0bs"
+        }
+      },
+      "LocationType": "FileSystem",
+      "MediaType": "Video"
+    }
+  ],
+  "TotalRecordCount": 0,
+  "StartIndex": 0
+}

@@ -1,0 +1,35 @@
+{
+  "GET /UserItems/Resume": [
+    "userId",
+    "startIndex",
+    "limit",
+    "searchTerm",
+    "parentId",
+    "fields",
+    "mediaTypes",
+    "enableUserData",
+    "imageTypeLimit",
+    "enableImageTypes",
+    "excludeItemTypes",
+    "includeItemTypes",
+    "enableTotalRecordCount",
+    "enableImages",
+    "excludeActiveSessions"
+  ],
+  "GET /Shows/NextUp": [
+    "userId",
+    "startIndex",
+    "limit",
+    "fields",
+    "seriesId",
+    "parentId",
+    "enableImages",
+    "imageTypeLimit",
+    "enableImageTypes",
+    "enableUserData",
+    "nextUpDateCutoff",
+    "enableTotalRecordCount",
+    "enableResumable",
+    "enableRewatching"
+  ]
+}

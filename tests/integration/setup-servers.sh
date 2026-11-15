@@ -12,6 +12,9 @@ credentials_file="$script_dir/.credentials"
 user_name="fluster-test"
 # A second user whose policy forbids all conversion (P10-02, decision 0002 "conversion-not-allowed").
 restricted_user_name="fluster-noconv"
+# A third user for the discovery recorder (P16-01), so the watch state its scenes set never
+# mixes with fluster-test, whose positions the tripwire leaves behind.
+discovery_user_name="fluster-discovery"
 
 # Name and URL of each fixture server.
 servers=(
@@ -142,6 +145,29 @@ ensure_restricted_user() {
   log "  user $restricted_user_name ready (transcoding and remuxing disabled)"
 }
 
+# Creates the discovery user with default policy and a fresh random password. Idempotent like
+# ensure_restricted_user. Uses the admin header file.
+ensure_discovery_user() {
+  local url="$1" name="$2" password id
+  password="$(openssl rand -hex 16)"
+  id="$(curl -fsS -H @"$header_file" "$url/Users" | jq -r --arg n "$discovery_user_name" '.[] | select(.Name == $n) | .Id')"
+  if [ -z "$id" ]; then
+    printf '{"Name":"%s","Password":"%s"}' "$discovery_user_name" "$password" |
+      curl -fsS -o /dev/null -X POST -H @"$header_file" -H "Content-Type: application/json" -d @- "$url/Users/New"
+  else
+    printf '{"NewPw":"%s"}' "$password" |
+      curl -fsS -o /dev/null -X POST -H @"$header_file" -H "Content-Type: application/json" -d @- "$url/Users/$id/Password"
+  fi
+  grep -v "^${name}_discovery_" "$credentials_file" > "$credentials_file.tmp" || true
+  {
+    echo "${name}_discovery_username=${discovery_user_name}"
+    echo "${name}_discovery_password=${password}"
+  } >> "$credentials_file.tmp"
+  mv "$credentials_file.tmp" "$credentials_file"
+  chmod 600 "$credentials_file"
+  log "  user $discovery_user_name ready"
+}
+
 for server in "${servers[@]}"; do
   name="${server%% *}"
   url="${server##* }"
@@ -168,6 +194,7 @@ for server in "${servers[@]}"; do
   ensure_library "$url" "Movies" "movies" "/media/movies"
   ensure_library "$url" "Shows" "tvshows" "/media/shows"
   ensure_restricted_user "$url" "$name"
+  ensure_discovery_user "$url" "$name"
 done
 
 log "done, credentials in $credentials_file"

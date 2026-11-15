@@ -68,6 +68,33 @@ build() {
 h264_args=(-c:v libx264 -preset veryfast -crf 28 -pix_fmt yuv420p -profile:v high)
 aac_stereo=(-c:a aac -b:a 64k -ac 2)
 
+# Writes a Kodi-style NFO (Jellyfin reads it beside the video) from a title, then optional
+# <genre>, <actor>, <director>, and <set> lines. lockdata stops online matches from renaming
+# the title or replacing genres and people. The show's NFO has none: an episode added later
+# under a locked series is created locked, and the server then never reads its season and
+# episode numbers from the file name (seen on 10.11.7 and 12.4 in P16-01).
+# Arguments: path, root tag, title, extra lines...
+write_nfo() {
+  local out="$1" root="$2" title="$3"
+  shift 3
+  if ! needs "$out"; then
+    echo "skip   ${out#"$samples_dir"/}"
+    return 0
+  fi
+  mkdir -p "$(dirname "$out")"
+  {
+    printf '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<%s>\n' "$root"
+    printf '  <title>%s</title>\n  <year>2024</year>\n' "$title"
+    [ "$root" = tvshow ] || printf '  <lockdata>true</lockdata>\n'
+    printf '  %s\n' "$@"
+    printf '</%s>\n' "$root"
+  } > "$out"
+  echo "made   ${out#"$samples_dir"/}"
+}
+genre() { printf '<genre>%s</genre>' "$1"; }
+actor() { printf '<actor><name>%s</name><role>Placeholder</role></actor>' "$1"; }
+collection() { printf '<set><name>%s</name></set>' "$1"; }
+
 # ---- Movies -----------------------------------------------------------------
 
 h264="$movies_dir/Synthetic H264 (2024)/Synthetic H264 (2024).mkv"
@@ -143,6 +170,30 @@ build "$multi" \
   -c:a:0 aac -b:a:0 64k -ac:a:0 2 -metadata:s:a:0 language=eng -metadata:s:a:0 title="English stereo" \
   -c:a:1 ac3 -b:a:1 192k -ac:a:1 6 -metadata:s:a:1 language=spa -metadata:s:a:1 title="Spanish 5.1" \
   -disposition:a:0 default -disposition:a:1 0 -shortest
+
+# ---- Discovery metadata (P16-01) -----------------------------------------------
+# NFOs beside four movies and the show give the discovery routes genres, people, and a
+# collection. HEVC HDR10 and Versions get none: item-detail fixtures were recorded from them.
+write_nfo "${h264%.mkv}.nfo" movie "Synthetic H264 (2024)" \
+  "$(genre Drama)" "$(genre Mystery)" "$(actor 'Ada Placeholder')" "$(actor 'Bo Example')" \
+  '<director>Cy Sample</director>' "$(collection 'Synthetic Collection')"
+write_nfo "${av1%.mkv}.nfo" movie "Synthetic AV1 (2024)" \
+  "$(genre Drama)" "$(genre 'Science Fiction')" "$(actor 'Ada Placeholder')" "$(collection 'Synthetic Collection')"
+write_nfo "${multi%.mkv}.nfo" movie "Synthetic Multitrack (2024)" \
+  "$(genre Comedy)" "$(actor 'Bo Example')"
+write_nfo "${ass%.mkv}.nfo" movie "Synthetic ASS (2024)" "$(genre Mystery)"
+
+# A film with a local trailer (the -trailer suffix) and an extra (a featurettes folder).
+extras_dir="$movies_dir/Synthetic Extras (2024)"
+extras="$extras_dir/Synthetic Extras (2024).mkv"
+extras_trailer="$extras_dir/Synthetic Extras (2024)-trailer.mkv"
+extras_featurette="$extras_dir/featurettes/Synthetic Extras Featurette.mkv"
+for clip in "$extras" "$extras_trailer" "$extras_featurette"; do
+  build "$clip" \
+    -f lavfi -i "$(pattern 320x180)" -f lavfi -i "$(tone 440)" \
+    "${h264_args[@]}" "${aac_stereo[@]}" -metadata:s:a:0 language=eng -shortest
+done
+write_nfo "${extras%.mkv}.nfo" movie "Synthetic Extras (2024)" "$(genre Drama)" "$(actor 'Ada Placeholder')"
 
 # Multiple versions: two files in one movie folder, each starting with the folder
 # name plus " - <label>" (Jellyfin movie naming docs, "Multiple Versions"; labels
@@ -300,6 +351,11 @@ episode "$show_dir/Season 01/Synthetic Show S01E01.mkv" 330
 episode "$show_dir/Season 01/Synthetic Show S01E02.mkv" 392
 # Season 00 holds specials; the browse screen hides or defaults them (P3-06).
 episode "$show_dir/Season 00/Synthetic Show S00E01.mkv" 262
+write_nfo "$show_dir/tvshow.nfo" tvshow "Synthetic Show" "$(genre Drama)" "$(actor 'Ada Placeholder')"
+# A third episode staged outside both libraries (P16-01). The discovery recorder copies it into
+# Season 01 for one scene and removes it again; no server indexes it while it stays here.
+staged_episode="$samples_dir/staging/Synthetic Show S01E03.mkv"
+episode "$staged_episode" 440
 
 # ---- Verify -----------------------------------------------------------------
 
@@ -327,6 +383,10 @@ probe "$versions_720" "versions 720p"
 probe "$bd_stream" "bluray m2ts"
 [ "$conversion_samples" -eq 0 ] || probe "$dvdsub" "dvdsub"
 probe "$show_dir/Season 01/Synthetic Show S01E01.mkv" "show S01E01"
+probe "$extras" "extras film"
+probe "$extras_trailer" "extras trailer"
+probe "$extras_featurette" "extras featurette"
+probe "$staged_episode" "staged S01E03"
 
 # Fail loudly if the properties the samples exist for are missing.
 fail() { echo "verification failed: $1" >&2; exit 1; }
@@ -341,6 +401,12 @@ probe_value() { ffprobe -v error -select_streams "$2" -show_entries "$3" -of csv
 [ -f "$bd_dir/index.bdmv" ] || fail "BDMV index missing"
 [ "$(head -c 8 "$bd_dir/PLAYLIST/00000.mpls")" = MPLS0200 ] || fail "BDMV playlist missing"
 [ "$(head -c 8 "$bd_dir/CLIPINF/00000.clpi")" = HDMV0200 ] || fail "BDMV clip info missing"
+for clip in "$extras" "$extras_trailer" "$extras_featurette" "$staged_episode"; do
+  [ "$(probe_value "$clip" v:0 stream=codec_name)" = "h264" ] || fail "$clip is not H.264"
+done
+for nfo in "${h264%.mkv}.nfo" "${av1%.mkv}.nfo" "${multi%.mkv}.nfo" "${ass%.mkv}.nfo" "${extras%.mkv}.nfo" "$show_dir/tvshow.nfo"; do
+  [ -f "$nfo" ] || fail "$nfo missing"
+done
 [ "$conversion_samples" -eq 0 ] || [ "$(probe_value "$dvdsub" s:0 stream=codec_name)" = "dvd_subtitle" ] || fail "dvdsub track missing"
 echo
 echo "All samples verified."

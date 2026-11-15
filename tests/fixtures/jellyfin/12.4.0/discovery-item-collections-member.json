@@ -1,0 +1,31 @@
+{
+  "Items": [
+    {
+      "Name": "Synthetic Collection",
+      "ServerId": "server-124",
+      "Id": "collection-synthetic",
+      "ChannelId": null,
+      "ProductionYear": 2024,
+      "IsFolder": true,
+      "Type": "BoxSet",
+      "UserData": {
+        "PlayedPercentage": 0,
+        "UnplayedItemCount": 2,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Played": false,
+        "Key": "collection-synthetic",
+        "ItemId": "collection-synthetic"
+      },
+      "DisplayOrder": "PremiereDate",
+      "ImageTags": {},
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {},
+      "LocationType": "FileSystem",
+      "MediaType": "Unknown"
+    }
+  ],
+  "TotalRecordCount": 1,
+  "StartIndex": 0
+}

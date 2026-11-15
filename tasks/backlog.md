@@ -288,3 +288,12 @@ Measured by the worst-case artwork captures; see `docs/design/contrast-report.md
 - `useFocusReturn` waits on `useIsFetching()`, which counts every query, so settling can wait up to `RETURN_WAIT_MS` behind an unrelated fetch (P13-31 design review).
 - Sort and filter changes use `replaceState`, so Back leaves the library instead of undoing a filter. Intentional; noted in the PR text (P13-31 design review).
 - Local `pnpm test:visual` runs flake when the host network changes mid-run (Docker adds or removes a veth interface): Chromium aborts in-flight dev-server requests with `net::ERR_NETWORK_CHANGED`, the sign-in page never renders, and a random scenario times out at `e2e/visual/scenario-helpers.ts:28`, then passes on retry. Seen in three full runs on task/P13-31; traces and `journalctl` confirm. Consider launching the visual and e2e Chromium with network-change notification off, or running against a built preview. S (P13-31 verify).
+
+## Discovery fixtures follow-ups (P16-01, 2026-11-15)
+
+- Record `nextUpDateCutoff` for a series that gains a whole new season, not only a new episode in an existing season; P16-01 recorded the second case only. S (P16-01).
+- On 12.4.0 `POST /Collections?ids=` creates an empty collection; a client or recorder must follow it with `POST /Collections/{id}/Items`. Re-check on newer 12.x images and carry it into any collection-creating gateway code. S (P16-01).
+- 10.11.7 has no `GET /Items/{itemId}/Collections` (404); the sequel rule needs a client-side join of collections and their members there. Plan it in the sequel task (P16-01).
+- Make the recorders' numbered `id-N` fakes stable across recordings (seed them in a fixed order), so a re-record diffs cleanly. S (P16-01).
+- `pnpm test -- fixtures` runs the whole Vitest suite, because vitest receives `-- fixtures` as an argument it does not treat as a filter; the task's `verify` string passes but proves less than it reads. Use `pnpm exec vitest run <file>` or fix the script. S (P16-01).
+- Jellyfin's NFO reader skips season and episode numbers for an episode added under a series that has `lockdata`; Fluster's own library tests may meet the same. Unverified outside the fixture servers (P16-01).

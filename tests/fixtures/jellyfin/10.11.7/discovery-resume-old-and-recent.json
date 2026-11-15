@@ -1,0 +1,75 @@
+{
+  "Items": [
+    {
+      "Name": "Synthetic ASS (2024)",
+      "ServerId": "server-1011",
+      "Id": "item-ass",
+      "HasSubtitles": true,
+      "Container": "mkv",
+      "ChannelId": null,
+      "RunTimeTicks": 100210000,
+      "ProductionYear": 2024,
+      "IsFolder": false,
+      "Type": "Movie",
+      "UserData": {
+        "PlayedPercentage": 40,
+        "PlaybackPositionTicks": 40084000,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "LastPlayedDate": "2026-06-02T12:00:00.0000000Z",
+        "Played": false,
+        "Key": "item-ass",
+        "ItemId": "item-ass"
+      },
+      "PrimaryImageAspectRatio": 1.7777777777777777,
+      "VideoType": "VideoFile",
+      "ImageTags": {
+        "Primary": "id-3"
+      },
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {
+        "Primary": {
+          "id-3": "W~K-:.xhbV*Zi%|Ft7WTShj0Woo0WDW;aya|WXa#kVbEW.WDjbj?"
+        }
+      },
+      "LocationType": "FileSystem",
+      "MediaType": "Video"
+    },
+    {
+      "Name": "Synthetic Multitrack (2024)",
+      "ServerId": "server-1011",
+      "Id": "item-multitrack",
+      "Container": "mkv",
+      "ChannelId": null,
+      "RunTimeTicks": 100210000,
+      "ProductionYear": 2024,
+      "IsFolder": false,
+      "Type": "Movie",
+      "UserData": {
+        "PlayedPercentage": 40,
+        "PlaybackPositionTicks": 40084000,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "LastPlayedDate": "2026-01-05T12:00:00.0000000Z",
+        "Played": false,
+        "Key": "item-multitrack",
+        "ItemId": "item-multitrack"
+      },
+      "PrimaryImageAspectRatio": 1.7777777777777777,
+      "VideoType": "VideoFile",
+      "ImageTags": {
+        "Primary": "id-14"
+      },
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {
+        "Primary": {
+          "id-14": "W~K-:.xhbV*Zi%|Ft7WTShj0Woo0WDW;aya|WXa#kVbEW.WDjbj?"
+        }
+      },
+      "LocationType": "FileSystem",
+      "MediaType": "Video"
+    }
+  ],
+  "TotalRecordCount": 2,
+  "StartIndex": 0
+}

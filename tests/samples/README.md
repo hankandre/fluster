@@ -36,8 +36,34 @@ The dvdsub and ISO samples (P10-02) are opt-in, because they need `python3` and 
 | `movies/Synthetic BluRay (2024)/BDMV/` | BluRay folder layout: placeholder `index.bdmv` and `MovieObject.bdmv`, `PLAYLIST/00000.mpls` and `CLIPINF/00000.clpi` naming the one clip (10 s, H.264 720p24 PID 0x1011, AC-3 stereo PID 0x1100), and `STREAM/00000.m2ts` (H.264 plus AC-3 in MPEG-TS) |
 | `movies/Synthetic DVDSub (2024)/Synthetic DVDSub (2024).mkv` | H.264 plus a graphical DVD subtitle (S_VOBSUB, eng) built by `scripts/make-vobsub.py` |
 | `movies/Synthetic ISO (2024)/Synthetic ISO (2024).iso` | ISO 9660 image holding the BluRay sample's `BDMV` tree (xorriso, so not UDF); built with a local `xorriso`/`genisoimage`/`mkisofs` or an Alpine container with docker |
+| `movies/Synthetic Extras (2024)/Synthetic Extras (2024).mkv` | The film that owns a local trailer and an extra (P16-01); H.264 and AAC, 320x180 |
+| `movies/Synthetic Extras (2024)/Synthetic Extras (2024)-trailer.mkv` | Local trailer, found by the `-trailer` suffix; both servers list it as a `Trailer` |
+| `movies/Synthetic Extras (2024)/featurettes/Synthetic Extras Featurette.mkv` | An extra in a `featurettes` folder; both servers list it as a `Featurette` special feature |
+| `movies/*/<name>.nfo` for H264, AV1, Multitrack, ASS, and Extras; `shows/Synthetic Show/tvshow.nfo` | Kodi-style NFO files giving genres, people, and a collection name (see below) |
+| `staging/Synthetic Show S01E03.mkv` | A third episode outside both libraries; the discovery recorder copies it into `Season 01` for one scene and removes it |
 | `shows/Synthetic Show/Season 01/Synthetic Show S01E01.mkv`, `S01E02.mkv` | Two regular episodes |
 | `shows/Synthetic Show/Season 00/Synthetic Show S00E01.mkv` | A special, for the specials default in the browse screen |
+
+## Discovery metadata
+
+P16-01 records discovery routes (`docs/research/discovery-api.md`, `tests/integration/record-discovery-fixtures.mjs`). The generator writes these files with `printf`; no third-party media or real names are used. Every NFO except the show's has `<lockdata>true</lockdata>`, so an online match cannot rename the title or replace genres and people.
+
+| NFO | Genres | People |
+| --- | --- | --- |
+| Synthetic H264 | Drama, Mystery | Actors Ada Placeholder and Bo Example, director Cy Sample; `<set>` Synthetic Collection |
+| Synthetic AV1 | Drama, Science Fiction | Actor Ada Placeholder; `<set>` Synthetic Collection |
+| Synthetic Multitrack | Comedy | Actor Bo Example |
+| Synthetic ASS | Mystery | none |
+| Synthetic Extras | Drama | Actor Ada Placeholder |
+| Synthetic Show (`tvshow.nfo`) | Drama | Actor Ada Placeholder |
+
+HEVC HDR10 and Versions have no NFO, because item-detail fixtures were recorded from them.
+
+- The show's NFO has no `lockdata`: an episode added later under a locked series is created locked, and the server then never reads its season and episode numbers from the file name (seen on 10.11.7 and 12.4.0).
+- Neither server turns the `<set>` tag into a collection. The recorder creates "Synthetic Collection" with `POST /Collections` (admin user) and, on 12.4.0, adds the two films with `POST /Collections/{id}/Items`, because the call created it empty there.
+- The `-trailer` suffix and a `featurettes` folder are both read by the two pinned servers; no `trailers/` folder was needed.
+- Collections and the watch state the recorder sets live in the server config volume, not in this folder. `pnpm fixture:down && pnpm fixture:up && pnpm fixture:setup` starts clean; NFOs are read on the first scan.
+- If a recording is killed during the new-episode scene, `shows/Synthetic Show/Season 01/Synthetic Show S01E03.mkv` is left behind. Delete it by hand and refresh the library.
 
 Jellyfin classifies a movie folder as BluRay when it contains a directory named `BDMV` (case-insensitive); see `IsBluRayDirectory` in `Emby.Server.Implementations/Library/Resolvers/BaseVideoResolver.cs` and its use in `MovieResolver.FindMovie` (jellyfin `release-10.11.z`). The Jellyfin docs note that `BDMV` folders do not support multiple versions, parts, or external subtitle and audio tracks.
 
