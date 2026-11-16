@@ -3620,10 +3620,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "in_progress",
+          "status": "done",
           "owner": "claude",
-          "passes": false,
-          "evidence": "Implemented on task/P16-02 (docs/specs/P16-02.md). pnpm check exit 0 (189 files, 2620 tests); pnpm test:e2e 193 passed; pnpm test:visual 381 captures passed. Open for Ship: visual baselines from CI (pnpm test:visual:accept), PR screenshots at 1440x900 and 1920x1080, design review."
+          "passes": true,
+          "evidence": "Implemented on task/P16-02 (docs/specs/P16-02.md). pnpm check exit 0 (189 files, 2620 tests); pnpm test:e2e 193 passed; pnpm test:visual 381 captures passed locally. CI visual job compared against the old baselines and failed as expected on the re-rendered Home, Settings, and worst-art scenarios: https://github.com/hankandre/fluster/actions/runs/43801703696 ; baselines accepted from that run with pnpm test:visual:accept; CI on the baseline commit is green (frontend, visual, rust, tripwire): https://github.com/hankandre/fluster/actions/runs/43805249615 . PR https://github.com/hankandre/fluster/pull/180 carries before (baseline diffs from b298c7c) and after captures at 1440x900, 1920x1080 and the TV form. Design review: 0 fixed, 5 lows logged in docs/plans/active/002-transcoding-fallback-and-parity.md."
         },
         {
           "id": "P16-04",
