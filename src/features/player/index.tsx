@@ -249,6 +249,7 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
         onChangeConvertedTrack={playback.changeTrack}
         playMethod={playback.plan?.playMethod}
         indicator={indicator}
+        audioPickNotApplied={playback.audioPickNotApplied}
         playOriginal={{
           available: Boolean(playback.plan?.playOriginalAvailable) && !playback.retrying,
           stillConverting: playback.playOriginalRequested && playback.plan?.delivery === "hls" && !playback.retrying,

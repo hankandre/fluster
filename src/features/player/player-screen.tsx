@@ -9,7 +9,8 @@ import type { ReadyPlayerStatus } from "./player-status";
 import { errorReason } from "./safe-reason";
 import { ChapterList } from "./chrome/chapter-list";
 import { InfoSheet, type PlayOriginalState } from "./chrome/info-sheet";
-import { conversionCopy } from "./chrome/osd-copy";
+import { AUDIO_PICK_NOT_APPLIED_COPY, conversionCopy } from "./chrome/osd-copy";
+import { OSD_NOTICE_MS } from "./chrome/timing";
 import { Osd } from "./chrome/osd";
 import { CommandErrorPanel, PlayerWarnings } from "./chrome/player-error";
 import { PlayerLoading, type LoadingBackdrop } from "./chrome/player-loading";
@@ -61,6 +62,7 @@ export function PlayerView({
   retryLabel = "Retry",
   playMethod,
   indicator,
+  audioPickNotApplied,
   playOriginal,
   backdrop,
   prompt,
@@ -97,6 +99,8 @@ export function PlayerView({
   // From the plan; absent until the server has answered.
   playMethod?: PlayMethod;
   indicator?: ConversionIndicator;
+  // The audio track the viewer picked on the title's page was not the one the player started with.
+  audioPickNotApplied?: boolean;
   playOriginal?: PlayOriginalState;
   // The art shown while loading.
   backdrop?: LoadingBackdrop;
@@ -214,6 +218,16 @@ export function PlayerView({
   useEffect(() => {
     if (session.firstFrameReady && noticeText) showOsd(noticeText, "notice");
   }, [session.firstFrameReady, noticeText, showOsd]);
+
+  // One line at the start of a session whose audio pick was not applied. A conversion line due at the same
+  // first frame shows first and is never cut short.
+  const noticeShown = useRef(noticeText);
+  noticeShown.current = noticeText;
+  useEffect(() => {
+    if (!session.firstFrameReady || !audioPickNotApplied) return;
+    const timer = window.setTimeout(() => showOsd(AUDIO_PICK_NOT_APPLIED_COPY, "notice"), noticeShown.current ? OSD_NOTICE_MS : 0);
+    return () => window.clearTimeout(timer);
+  }, [session.firstFrameReady, audioPickNotApplied, showOsd]);
 
   const chromeShown = session.firstFrameReady || Boolean(commandError);
   const buffering = useDelayedFlag(chromeShown && Boolean(snapshot?.buffering), BUFFERING_STATUS_DELAY_MS);
