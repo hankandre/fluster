@@ -299,7 +299,7 @@ test("Settings: arrows reach the sections and rows; the limit picker is a sheet;
 
   await page.keyboard.press("ArrowLeft");
   await expect(page.getByRole("tab", { name: "Playback" }).or(page.getByRole("button", { name: "Playback" }))).toBeFocused();
-  await key(page, "ArrowDown", "ArrowDown");
+  await key(page, "ArrowDown", "ArrowDown", "ArrowDown");
   await expect(page.getByRole("tab", { name: "Account" }).or(page.getByRole("button", { name: "Account" }))).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(nav(page).getByRole("link", { name: "Settings" })).toBeFocused();

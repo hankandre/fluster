@@ -56,7 +56,7 @@ async function mockHomeServer(page: Page) {
   return requests;
 }
 
-test("signing in shows Continue watching, Next up, and Latest rows with cards", async ({ page }) => {
+test("signing in shows one Continue watching row holding in-progress items and next episodes, and Latest rows with cards", async ({ page }) => {
   const requests = await mockHomeServer(page);
 
   await page.goto("/#/next/sign-in");
@@ -68,8 +68,9 @@ test("signing in shows Continue watching, Next up, and Latest rows with cards", 
   await expect(page.getByRole("heading", { name: "Continue watching" })).toBeVisible();
   await expect(main.getByRole("link", { name: "Half Watched, 2016, 1 minute left" })).toBeVisible();
 
-  await expect(page.getByRole("heading", { name: "Next up" })).toBeVisible();
-  await expect(main.getByRole("link", { name: "Great Show, S1 · E2 · Pilot" })).toBeVisible();
+  // The next episode sits in the same row, and there is no Next up row.
+  await expect(page.getByRole("region", { name: "Continue watching" }).getByRole("link", { name: "Great Show, S1 · E2 · Pilot" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Next up" })).toHaveCount(0);
 
   await expect(page.getByRole("heading", { name: "Latest in Movies" })).toBeVisible();
   await expect(main.getByRole("link", { name: "Brand New, 2016" })).toBeVisible();

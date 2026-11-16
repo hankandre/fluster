@@ -214,10 +214,12 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
         if (mounted && session.current === active) setPlan(confirmed);
       },
       onSessionEnded: (reason: PlaybackEndReason) => {
-        callbacks.current.onSessionEnded();
         // The engine has stopped. The Stopped report drains in the background:
         // the next session and the window close wait for it, leaving does not.
-        rememberStop(engine, coordinator.flush());
+        const drained = coordinator.flush();
+        rememberStop(engine, drained);
+        // Home and the detail page refetch once the server has the Stopped report, so they see the new watched state.
+        void drained.catch(() => undefined).then(() => callbacks.current.onSessionEnded());
         // An error keeps the player open with Retry and Back.
         if (mounted && reason !== "error") leave(reason);
       },

@@ -154,6 +154,33 @@ describe("Player feature", () => {
     expect(gateway.reportStopped).toHaveBeenCalledWith(plan(), snapshot, expect.any(AbortSignal), false);
   });
 
+  it("refreshes Home rows only after the Stopped report is sent, so they see the new watched state", async () => {
+    let finishReport!: () => void;
+    const order: string[] = [];
+    const gateway = fakeGateway({
+      reportStopped: vi.fn(() => new Promise<void>((resolve) => {
+        finishReport = () => { order.push("stopped sent"); resolve(); };
+      })),
+    });
+    const engine = new FakePlayerEngine();
+    const client = await renderPlayer(gateway, engine);
+    client.setQueryData(["home", 1, "resume"], []);
+    const original = client.invalidateQueries.bind(client);
+    vi.spyOn(client, "invalidateQueries").mockImplementation((filters, options) => {
+      if ((filters as { queryKey?: unknown[] } | undefined)?.queryKey?.[0] === "home") order.push("home refreshed");
+      return original(filters, options);
+    });
+    await startPlaying(engine);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    });
+    await waitFor(() => expect(gateway.reportStopped).toHaveBeenCalled());
+    expect(order).toEqual([]);
+    await act(async () => finishReport());
+    await waitFor(() => expect(order).toEqual(["stopped sent", "home refreshed"]));
+  });
+
   it("returns to the detail view and refreshes it when the file ends", async () => {
     const gateway = fakeGateway();
     const engine = new FakePlayerEngine();
