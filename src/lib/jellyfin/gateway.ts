@@ -5,6 +5,7 @@ import { ItemNotFoundError } from "../../domain/catalog";
 import type { RecentPlays } from "../../domain/up-next";
 import type { PlaybackDelivery, PlaybackPlan, PlaybackPlanOptions, PlaybackSnapshot, ServerPlayMethod } from "../../domain/playback";
 import { PlaybackRefusedError, secondsToTicks } from "../../domain/playback";
+import type { AccountLanguages, LanguageCulture } from "../../domain/languages";
 import { classifyHost, type HostClass } from "../../domain/host-class";
 import type { ServerConnection } from "../../domain/server-connection";
 import { SignInFailure } from "../../domain/sign-in-failure";
@@ -19,6 +20,7 @@ import { stripCredentialQuery } from "./credential-query";
 import { deriveDeviceId } from "./device-id";
 import { limitIsOnlyReason } from "./client-limit";
 import { FLUSTER_PROFILE, MAX_BITRATE } from "./device-profile";
+import { toAccountLanguages, toLanguageCultures } from "./account-languages";
 import { toItemDetail } from "./item-detail";
 import { toMediaSegments, type MediaSegmentsResponse } from "./media-segments";
 import { findSessionPlayMethod, type SessionDto } from "./session-play-method";
@@ -33,7 +35,9 @@ import type {
   PlaybackInfoResponse,
   QuickConnectResult,
   SearchHintResult,
+  CultureDto,
   ServerInfo,
+  UserDto,
 } from "./types";
 
 export const CONTROL_REQUEST_TIMEOUT_MS = 15_000;
@@ -710,6 +714,20 @@ export class JellyfinGateway {
     const detail = toItemDetail(data);
     if (!detail) throw new Error("Jellyfin returned an item without an ID or name.");
     return detail;
+  }
+
+  // The account's language settings from GET /Users/Me. Display only: the server picks default tracks itself.
+  async accountLanguages(signal?: AbortSignal): Promise<AccountLanguages> {
+    this.requireSession();
+    const { data } = await this.get<UserDto>("/Users/Me", { signal, timeout: CONTROL_REQUEST_TIMEOUT_MS });
+    return toAccountLanguages(data);
+  }
+
+  // The server's language table (GET /Localization/Cultures): which codes name the same language.
+  async languageCultures(signal?: AbortSignal): Promise<LanguageCulture[]> {
+    this.requireSession();
+    const { data } = await this.get<CultureDto[]>("/Localization/Cultures", { signal, timeout: CONTROL_REQUEST_TIMEOUT_MS });
+    return toLanguageCultures(data);
   }
 
   // GET /Videos/{itemId}/Trickplay/{width}/{index}.jpg needs the Authorization

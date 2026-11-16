@@ -1,4 +1,5 @@
 import type { BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, NextEpisode, LibraryItem, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season, SeriesNextUp } from "../domain/catalog";
+import type { AccountLanguages, LanguageCulture } from "../domain/languages";
 import type { MediaSegment } from "../domain/media-segments";
 import type { HostClass } from "../domain/host-class";
 import type { PlaybackPlan, PlaybackPlanOptions, PlaybackSnapshot, ServerPlayMethod } from "../domain/playback";
@@ -44,6 +45,10 @@ export interface SessionGateway {
   seriesNextUp(seriesId: string, signal?: AbortSignal): Promise<SeriesNextUp | undefined>;
   episodes(seriesId: string, seasonId: string, signal?: AbortSignal): Promise<EpisodeCard[]>;
   itemDetail(itemId: string, signal?: AbortSignal): Promise<ItemDetail>;
+  // The account's language settings, for display only.
+  accountLanguages(signal?: AbortSignal): Promise<AccountLanguages>;
+  // The server's language table: which codes name one language.
+  languageCultures(signal?: AbortSignal): Promise<LanguageCulture[]>;
   // The episode after this one in its series, or undefined for the last one.
   nextEpisode(seriesId: string, episodeId: string, signal?: AbortSignal): Promise<NextEpisode | undefined>;
   trickplayTile(itemId: string, mediaSourceId: string, width: number, index: number, signal?: AbortSignal): Promise<Blob>;

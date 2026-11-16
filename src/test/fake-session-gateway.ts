@@ -34,6 +34,8 @@ export function fakeSessionGateway(overrides: Partial<SessionGateway> = {}): Ses
     seriesNextUp: vi.fn(),
     episodes: vi.fn(),
     itemDetail: vi.fn(),
+    accountLanguages: vi.fn().mockResolvedValue({}),
+    languageCultures: vi.fn().mockResolvedValue([]),
     nextEpisode: vi.fn().mockResolvedValue(undefined),
     trickplayTile: vi.fn(),
     setPlayed: vi.fn().mockResolvedValue(undefined),
