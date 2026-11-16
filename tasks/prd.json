@@ -3901,10 +3901,10 @@
             "Fixtures are scrubbed per the jellyfin-api contract-fixtures reference; no gateway method, playback request, setting, or UI changes"
           ],
           "verify": "pnpm exec vitest run src/lib/jellyfin/account-language-fixtures.test.ts && ls docs/research/account-languages-api.md",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "Recorded 6 account-language fixtures per version; account-language-fixtures.test.ts 72 passed; sample verified locally and in the jellyfin-ffmpeg CI form; recorder restore check and SIGINT clean-up run; see docs/research/account-languages-api.md. CI steps remain."
         },
         {
           "id": "P17-02",

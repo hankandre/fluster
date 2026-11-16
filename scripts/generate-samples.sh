@@ -357,6 +357,45 @@ write_nfo "$show_dir/tvshow.nfo" tvshow "Synthetic Show" "$(genre Drama)" "$(act
 staged_episode="$samples_dir/staging/Synthetic Show S01E03.mkv"
 episode "$staged_episode" 440
 
+# A film with four audio and twelve subtitle tracks, staged outside both libraries (P17-01). The
+# account-language recorder copies it into movies/ for one run and removes it again. Every language
+# tag and disposition is set explicitly; the German subtitle is tagged deu on s:4 and ger on s:5, and
+# s:11 has no language tag. Track entries: language|title|disposition.
+languages_dir="$samples_dir/staging/Synthetic Languages (2024)"
+languages="$languages_dir/Synthetic Languages (2024).mkv"
+audio_tracks=("eng|English|default" "deu|German|0" "fra|French|0" "jpn|Japanese|0")
+subtitle_tracks=(
+  "eng|English|default" "fra|French|0" "fra|French forced|forced" "fra|French SDH|hearing_impaired"
+  "deu|German (deu)|0" "ger|German (ger)|0" "spa|Spanish|0" "ita|Italian|0"
+  "jpn|Japanese|0" "por|Portuguese|0" "nld|Dutch|0" "|Untagged|0"
+)
+if needs "$languages"; then
+  lang_args=(-f lavfi -i "$(pattern 320x180)")
+  for freq in 440 494 523 587; do lang_args+=(-f lavfi -i "$(tone "$freq")"); done
+  lang_maps=(-map 0:v:0)
+  lang_meta=()
+  for n in 0 1 2 3; do
+    IFS='|' read -r lang title disposition <<< "${audio_tracks[$n]}"
+    lang_maps+=(-map "$((n + 1)):a:0")
+    lang_meta+=("-metadata:s:a:$n" "language=$lang" "-metadata:s:a:$n" "title=$title" "-disposition:a:$n" "$disposition")
+  done
+  n=0
+  for track in "${subtitle_tracks[@]}"; do
+    IFS='|' read -r lang title disposition <<< "$track"
+    printf '1\n00:00:01,000 --> 00:00:05,000\n%s subtitle track %s\n' "$title" "$n" > "$work_dir/lang-$n.srt"
+    lang_args+=(-f srt -i "$work_dir/lang-$n.srt")
+    lang_maps+=(-map "$((n + 5)):s:0")
+    [ -z "$lang" ] || lang_meta+=("-metadata:s:s:$n" "language=$lang")
+    lang_meta+=("-metadata:s:s:$n" "title=$title" "-disposition:s:$n" "$disposition")
+    n=$((n + 1))
+  done
+  build "$languages" "${lang_args[@]}" "${lang_maps[@]}" \
+    "${h264_args[@]}" "${aac_stereo[@]}" -c:s srt "${lang_meta[@]}" -shortest
+else
+  echo "skip   ${languages#"$samples_dir"/}"
+fi
+write_nfo "${languages%.mkv}.nfo" movie "Synthetic Languages (2024)"
+
 # ---- Verify -----------------------------------------------------------------
 
 echo
@@ -387,6 +426,7 @@ probe "$extras" "extras film"
 probe "$extras_trailer" "extras trailer"
 probe "$extras_featurette" "extras featurette"
 probe "$staged_episode" "staged S01E03"
+probe "$languages" "staged languages"
 
 # Fail loudly if the properties the samples exist for are missing.
 fail() { echo "verification failed: $1" >&2; exit 1; }
@@ -408,5 +448,21 @@ for nfo in "${h264%.mkv}.nfo" "${av1%.mkv}.nfo" "${multi%.mkv}.nfo" "${ass%.mkv}
   [ -f "$nfo" ] || fail "$nfo missing"
 done
 [ "$conversion_samples" -eq 0 ] || [ "$(probe_value "$dvdsub" s:0 stream=codec_name)" = "dvd_subtitle" ] || fail "dvdsub track missing"
+# Lists one value per stream of a type; a stream without a language tag prints "-".
+lang_tags() {
+  ffprobe -v error -select_streams "$1" -show_entries stream=index:stream_tags=language -of compact "$languages" \
+    | sed -e 's/^stream|index=[0-9]*//' -e 's/^|tag:language=//' -e 's/^$/-/' | tr '\n' ' '
+}
+lang_flags() {
+  ffprobe -v error -select_streams "$1" -show_entries "stream_disposition=$2" -of csv=p=0 "$languages" | tr '\n' ' '
+}
+[ "$(probe_value "$languages" s stream=codec_name | tr '\n' ' ')" = "subrip subrip subrip subrip subrip subrip subrip subrip subrip subrip subrip subrip " ] || fail "language sample needs twelve subrip tracks"
+[ "$(lang_tags a)" = "eng deu fra jpn " ] || fail "language sample audio tags are not eng deu fra jpn: $(lang_tags a)"
+[ "$(lang_tags s)" = "eng fra fra fra deu ger spa ita jpn por nld - " ] || fail "language sample subtitle tags changed: $(lang_tags s)"
+[ "$(lang_flags a default)" = "1 0 0 0 " ] || fail "language sample default audio flags changed"
+[ "$(lang_flags s default)" = "1 0 0 0 0 0 0 0 0 0 0 0 " ] || fail "language sample default subtitle flags changed"
+[ "$(lang_flags s forced)" = "0 0 1 0 0 0 0 0 0 0 0 0 " ] || fail "language sample forced flags changed"
+[ "$(lang_flags s hearing_impaired)" = "0 0 0 1 0 0 0 0 0 0 0 0 " ] || fail "language sample hearing_impaired flags changed"
+[ -f "${languages%.mkv}.nfo" ] || fail "language sample NFO missing"
 echo
 echo "All samples verified."

@@ -41,6 +41,7 @@ The dvdsub and ISO samples (P10-02) are opt-in, because they need `python3` and 
 | `movies/Synthetic Extras (2024)/featurettes/Synthetic Extras Featurette.mkv` | An extra in a `featurettes` folder; both servers list it as a `Featurette` special feature |
 | `movies/*/<name>.nfo` for H264, AV1, Multitrack, ASS, and Extras; `shows/Synthetic Show/tvshow.nfo` | Kodi-style NFO files giving genres, people, and a collection name (see below) |
 | `staging/Synthetic Show S01E03.mkv` | A third episode outside both libraries; the discovery recorder copies it into `Season 01` for one scene and removes it |
+| `staging/Synthetic Languages (2024)/Synthetic Languages (2024).mkv` and `.nfo` | One H.264 video, four audio tracks, and twelve SRT subtitle tracks in eight languages (P17-01), outside both libraries; the account-language recorder copies the folder into `movies/` for one run and removes it (see below) |
 | `shows/Synthetic Show/Season 01/Synthetic Show S01E01.mkv`, `S01E02.mkv` | Two regular episodes |
 | `shows/Synthetic Show/Season 00/Synthetic Show S00E01.mkv` | A special, for the specials default in the browse screen |
 
@@ -72,3 +73,35 @@ The playlist and clip info are written byte by byte by `scripts/generate-samples
 PGS subtitles are intentionally absent: ffmpeg cannot encode PGS, and no third-party media is allowed (decision 2026-11-07).
 
 `pnpm test:tripwire` checks every sample against the decision 0002 rules (`docs/validation.md`, gates 1 and 2): every playable sample must direct play with only ranged `/Videos/{id}/stream?Static=true` and external subtitle requests, `PlayMethod: DirectPlay`, and no Jellyfin encoding job; the BluRay folder, the ISO, and a forced-limit run of the H.264 sample must convert over same-origin, credential-free HLS with `EnableTrickplay=false`, agree with `/Sessions`, and leave no job 10 s after the stopped report; the `fluster-noconv` user must get `conversion-not-allowed` for the BluRay folder.
+
+## Language sample
+
+`staging/Synthetic Languages (2024)/` holds the sample for the account-language fixtures (P17-01, `docs/research/account-languages-api.md`, `tests/integration/record-account-language-fixtures.mjs`). It is built from lavfi sources and `printf` SRT text, and the NFO is locked like the others. `scripts/generate-samples.sh` checks every tag and flag below with ffprobe.
+
+Audio (ff order after the video):
+
+| Track | Language tag | Title | Flag |
+| --- | --- | --- | --- |
+| a:0 | `eng` | English | default |
+| a:1 | `deu` | German | none |
+| a:2 | `fra` | French | none |
+| a:3 | `jpn` | Japanese | none |
+
+Subtitles (all text, `subrip`):
+
+| Track | Language tag | Title | Flag |
+| --- | --- | --- | --- |
+| s:0 | `eng` | English | default |
+| s:1 | `fra` | French | none |
+| s:2 | `fra` | French forced | forced |
+| s:3 | `fra` | French SDH | hearing_impaired |
+| s:4 | `deu` | German (deu) | none |
+| s:5 | `ger` | German (ger) | none |
+| s:6 | `spa` | Spanish | none |
+| s:7 | `ita` | Italian | none |
+| s:8 | `jpn` | Japanese | none |
+| s:9 | `por` | Portuguese | none |
+| s:10 | `nld` | Dutch | none |
+| s:11 | none | Untagged | none |
+
+The recorder removes its copy in `movies/` when it ends. If a run was killed and cannot be rerun, delete `tests/samples/movies/Synthetic Languages (2024)/` and refresh the library, or the tripwire and discovery fixtures see an extra film.
