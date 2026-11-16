@@ -27,7 +27,7 @@ export function toLanguageCultures(data: unknown): LanguageCulture[] {
       : [];
     if (!names.includes(threeLetterName)) names.push(threeLetterName);
     const two = typeof entry.TwoLetterISOLanguageName === "string" ? entry.TwoLetterISOLanguageName.trim().toLowerCase() : "";
-    const displayName = entry.DisplayName ?? entry.Name ?? threeLetterName;
+    const displayName = [entry.DisplayName, entry.Name].find((name): name is string => typeof name === "string" && name !== "") ?? threeLetterName;
     cultures.push({ displayName, threeLetterName, threeLetterNames: names, ...(two ? { twoLetterName: two } : {}) });
   }
   return cultures;

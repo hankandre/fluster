@@ -106,8 +106,51 @@ describe("media info", () => {
     expect(within(info).getByText("English · E-AC-3 5.1 · default")).toBeInTheDocument();
     expect(within(info).getByText("French · AAC Stereo")).toBeInTheDocument();
     expect(within(info).getByText("English · SRT · default")).toBeInTheDocument();
+    fireEvent.click(within(info).getByRole("button", { name: "Show all 2 subtitles" }));
     expect(within(info).getByText("French · PGS · external · forced")).toBeInTheDocument();
     expect(within(info).getByText("MKV · 12.0 GB")).toBeInTheDocument();
+  });
+
+  it("lists the default track, a count, and a button in a spatial row when no language is set", async () => {
+    await renderDetail(fakeGateway());
+    const info = await screen.findByRole("region", { name: "Media info for 4K HDR" });
+    expect(within(info).getByText("English · SRT · default")).toBeInTheDocument();
+    expect(within(info).getByText("1 more in 1 language")).toBeInTheDocument();
+    expect(within(info).queryByText("French · PGS · external · forced")).toBeNull();
+    expect(within(info).getByRole("button", { name: "Show all 2 subtitles" }).closest("[data-spatial-row]")).not.toBeNull();
+  });
+
+  it("lists only the account's language when one is set, and recomputes for another version", async () => {
+    const gateway = fakeGateway({ accountLanguages: vi.fn().mockResolvedValue({ subtitleLanguage: "fra" }) });
+    await renderDetail(gateway);
+    const info = await screen.findByRole("region", { name: "Media info for 4K HDR" });
+    await waitFor(() => expect(within(info).getByText("French · PGS · external · forced")).toBeInTheDocument());
+    expect(within(info).queryByText("English · SRT · default")).toBeNull();
+    expect(within(info).getByRole("button", { name: "Show all 2 subtitles" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /^Version/ }));
+    await userEvent.click(screen.getByRole("option", { name: /^1080p/ }));
+    const hd = screen.getByRole("region", { name: "Media info for 1080p" });
+    expect(within(hd).getByText("Subtitles").nextElementSibling).toHaveTextContent("None");
+  });
+
+  it("is not held back by a language read that never answers, and shows no error for it", async () => {
+    const gateway = fakeGateway({ accountLanguages: vi.fn().mockReturnValue(new Promise(() => undefined)) });
+    await renderDetail(gateway);
+    expect(await screen.findByRole("heading", { level: 1, name: "Arrival" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Play/ })).toBeInTheDocument();
+    const info = screen.getByRole("region", { name: "Media info for 4K HDR" });
+    expect(within(info).getByText("1 more in 1 language")).toBeInTheDocument();
+    expect(within(info).queryByRole("alert")).toBeNull();
+  });
+
+  it("shows the summary and no error when the language read fails", async () => {
+    const gateway = fakeGateway({ accountLanguages: vi.fn().mockRejectedValue(new Error("status code 401")) });
+    await renderDetail(gateway);
+    const info = await screen.findByRole("region", { name: "Media info for 4K HDR" });
+    await waitFor(() => expect(gateway.accountLanguages).toHaveBeenCalled());
+    expect(within(info).getByText("1 more in 1 language")).toBeInTheDocument();
+    expect(screen.queryByText(/401/)).toBeNull();
+    expect(within(info).queryByRole("alert")).toBeNull();
   });
 
   it("shows overview, genres, year, runtime, and cast", async () => {
