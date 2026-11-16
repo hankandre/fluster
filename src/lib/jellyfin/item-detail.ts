@@ -78,11 +78,14 @@ function toVideo(stream: MediaStreamDto): VideoInfo {
 
 function toAudio(stream: MediaStreamDto): AudioInfo {
   return {
+    ...(typeof stream.Index === "number" ? { index: stream.Index } : {}),
     ...(stream.Language ? { language: stream.Language } : {}),
     ...(stream.Codec ? { codec: stream.Codec } : {}),
     ...(stream.Channels ? { channels: stream.Channels } : {}),
     ...(stream.ChannelLayout ? { channelLayout: stream.ChannelLayout } : {}),
     ...(stream.DisplayTitle ? { title: stream.DisplayTitle } : {}),
+    ...(stream.Title ? { streamTitle: stream.Title } : {}),
+    ...(stream.IsExternal ? { isExternal: true as const } : {}),
     isDefault: Boolean(stream.IsDefault),
   };
 }
@@ -156,6 +159,7 @@ function toVersion(source: MediaSourceDto, position: number, trickplay: BaseItem
     ...(source.Size ? { sizeBytes: source.Size } : {}),
     ...(video ? { video: toVideo(video) } : {}),
     audio: streams.filter((stream) => stream.Type === "Audio").map(toAudio),
+    ...(typeof source.DefaultAudioStreamIndex === "number" ? { defaultAudioStreamIndex: source.DefaultAudioStreamIndex } : {}),
     subtitles: streams.filter((stream) => stream.Type === "Subtitle").map(toSubtitle),
     ...(preview ? { trickplay: preview } : {}),
   };

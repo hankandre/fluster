@@ -72,8 +72,20 @@ describe.each([
     const steps = load<{ steps: { step: string; configuration: Record<string, unknown> }[] }>(version, "configuration-sequence").steps;
     const step = steps.find((candidate) => candidate.step === "whole object, two language fields changed");
     transport.responses.set("GET /Users/Me", { Id: "user-1", Configuration: step?.configuration });
-    await expect(gateway.accountLanguages()).resolves.toEqual({ subtitleLanguage: step?.configuration.SubtitleLanguagePreference });
+    const audio = step?.configuration.AudioLanguagePreference;
+    await expect(gateway.accountLanguages()).resolves.toEqual({
+      subtitleLanguage: step?.configuration.SubtitleLanguagePreference,
+      ...(typeof audio === "string" && audio !== "" ? { audioLanguage: audio } : {}),
+    });
     expect(step?.configuration.SubtitleLanguagePreference).toBe("fra");
+  });
+
+  it("reads the audio language preference, and an OriginalLanguage setting as it is", async () => {
+    const { gateway, transport } = await signedIn();
+    transport.responses.set("GET /Users/Me", { Configuration: { AudioLanguagePreference: " spa ", SubtitleLanguagePreference: "" } });
+    await expect(gateway.accountLanguages()).resolves.toEqual({ audioLanguage: "spa" });
+    transport.responses.set("GET /Users/Me", { Configuration: { AudioLanguagePreference: "OriginalLanguage" } });
+    await expect(gateway.accountLanguages()).resolves.toEqual({ audioLanguage: "OriginalLanguage" });
   });
 
   it("reads GET /Localization/Cultures and maps every culture", async () => {

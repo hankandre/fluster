@@ -719,7 +719,8 @@ export class JellyfinGateway {
     return detail;
   }
 
-  // The account's language settings from GET /Users/Me. Display only: the server picks default tracks itself.
+  // The account's language settings from GET /Users/Me. The subtitle language is display only; the audio
+  // language orders the title page's audio Picker. The server still picks the track a play with no pick starts.
   async accountLanguages(signal?: AbortSignal): Promise<AccountLanguages> {
     this.requireSession();
     const { data } = await this.get<UserDto>("/Users/Me", { signal, timeout: CONTROL_REQUEST_TIMEOUT_MS });

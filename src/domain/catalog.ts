@@ -184,11 +184,16 @@ export interface VideoInfo {
 }
 
 export interface AudioInfo {
+  // The stream's Jellyfin index, which an audio pick names.
+  index?: number;
   language?: string;
   codec?: string;
   channels?: number;
   channelLayout?: string;
   title?: string;
+  // The stream's own Title; `title` is the server's DisplayTitle.
+  streamTitle?: string;
+  isExternal?: true;
   isDefault: boolean;
 }
 
@@ -227,6 +232,8 @@ export interface ItemVersion {
   sizeBytes?: number;
   video?: VideoInfo;
   audio: AudioInfo[];
+  // The audio stream the server starts with for this account (MediaSources[].DefaultAudioStreamIndex).
+  defaultAudioStreamIndex?: number;
   subtitles: SubtitleInfo[];
   trickplay?: TrickplayInfo;
 }
