@@ -3979,7 +3979,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "M1 done 2026-11-16: fixtures recorded on 10.11.7 and 12.4.0, both keep direct play with AudioStreamIndex=2 (audio-pick-fixtures.test.ts, 8 passed)."
+          "evidence": "2026-11-16, 8 milestone commits on task/P17-08. pnpm check passed (2892 vitest, cargo 194). Tripwire (FLUSTER_CONVERSION_SAMPLES=1) multitrack-audio-pick PASS on 10.11.7 and 12.4.0: DirectPlay, no ffmpeg, no TranscodingInfo. test:visual 406 passed locally (baselines to accept from CI). test:e2e 207 passed, 1 failing: e2e/detail.spec.ts:191 'keeps its action bar on one row at 1440px' (deterministic, 5/5 with --repeat-each 5; 1920px passes): Resume, Version, Audio, Start over, Watched, Favorite need about 970 px, the bar has 806 px. Needs a design decision (backlog P17-08 follow-up d); the test is not weakened. Open: guardian and design review, CI baselines, PR."
         },
         {
           "id": "P17-03",
