@@ -152,6 +152,8 @@ export const scenarios: Scenario[] = [
   { name: "19d-home-hero-series-resume", opts: { homeLatestOnly: true, hiddenFromLatest: HIDDEN_MOVIES, seriesNextUp: "resume" }, run: async (page) => { await signIn(page); await page.waitForTimeout(1_200); } },
   { name: "19e-home-hero-series-next", opts: { homeLatestOnly: true, hiddenFromLatest: HIDDEN_MOVIES, seriesNextUp: "next" }, run: async (page) => { await signIn(page); await page.waitForTimeout(1_200); } },
   { name: "19f-home-hero-series-watched", opts: { homeLatestOnly: true, hiddenFromLatest: HIDDEN_MOVIES, seriesNextUp: "none" }, run: async (page) => { await signIn(page); await page.waitForTimeout(1_200); } },
+  { name: "19g-home-continue-merged", run: async (page) => { await signIn(page); await page.waitForTimeout(1_200); } },
+  { name: "19h-home-aged-out", opts: { allAgedOut: true }, run: async (page) => { await signIn(page); await page.waitForTimeout(1_200); } },
   { name: "19b-home-ambient-follow", run: async (page) => {
     await signIn(page);
     await page.waitForTimeout(800);
@@ -467,6 +469,18 @@ export const scenarios: Scenario[] = [
     await page.getByRole("option", { name: "10 Mbps", exact: true }).click();
     await page.getByText("Remote limit set to 10 Mbps.").waitFor();
     await page.waitForTimeout(400);
+  } },
+  { name: "74-settings-home", run: async (page) => {
+    await openSettings(page);
+    await page.getByRole("tab", { name: "Home" }).click();
+    await page.getByRole("heading", { level: 2, name: "Home" }).waitFor();
+  } },
+  { name: "74a-settings-home-window-open", run: async (page) => {
+    await openSettings(page);
+    await page.getByRole("tab", { name: "Home" }).click();
+    await page.getByRole("button", { name: /^How long Continue watching keeps a title/ }).click();
+    await page.getByRole("listbox").waitFor();
+    await page.waitForTimeout(300);
   } },
   { name: "71-settings-subtitles", run: async (page) => {
     await openSettings(page);

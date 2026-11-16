@@ -70,7 +70,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 **Owns:**
 - libraries (UserViews)
 - browse queries, sorting, filters, and search
-- home rows (Continue Watching, Next Up, Latest)
+- home rows (one Continue watching row merging in-progress items and next episodes, then Latest) and the Up next hero pick (`src/domain/up-next.ts`)
 - the series → season → episode hierarchy
 - item detail and multiple versions as *display* data
 - image URL construction and caching by tag
