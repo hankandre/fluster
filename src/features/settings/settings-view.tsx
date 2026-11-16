@@ -2,11 +2,13 @@ import { useState } from "react";
 import { SettingsPage } from "../shared/ui";
 import { AboutSection } from "./about-section";
 import { AccountSection } from "./account-section";
+import { HomeSection } from "./home-section";
 import { PlaybackSection } from "./playback-section";
 import { SubtitlesSection } from "./subtitles-section";
 
 const SECTIONS = [
   { id: "playback", label: "Playback" },
+  { id: "home", label: "Home" },
   { id: "subtitles", label: "Subtitles" },
   { id: "account", label: "Account" },
   { id: "about", label: "About & diagnostics" },
@@ -14,6 +16,8 @@ const SECTIONS = [
 
 function panelFor(section: string) {
   switch (section) {
+    case "home":
+      return <HomeSection />;
     case "subtitles":
       return <SubtitlesSection />;
     case "account":

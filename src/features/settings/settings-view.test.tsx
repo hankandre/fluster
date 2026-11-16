@@ -66,7 +66,7 @@ async function renderSettings({ store = new MemoryStreamingLimits(), preferenceS
       fireEvent.click(screen.getByRole("button", { name: "test sign in" }));
     });
   }
-  return { store, gateway: sessionGateway, ...result };
+  return { store, preferenceStore, gateway: sessionGateway, ...result };
 }
 
 const tab = (name: string) => screen.getByRole("tab", { name });
@@ -89,13 +89,13 @@ function engineWith(caps: PlayerCapabilities | Error) {
 
 // Sections
 
-it("lists the four sections in order and shows each one's heading", async () => {
+it("lists the five sections in order and shows each one's heading", async () => {
   await renderSettings();
   const list = screen.getByRole("tablist", { name: "Settings sections" });
-  expect(within(list).getAllByRole("tab").map((t) => t.textContent)).toEqual(["Playback", "Subtitles", "Account", "About & diagnostics"]);
+  expect(within(list).getAllByRole("tab").map((t) => t.textContent)).toEqual(["Playback", "Home", "Subtitles", "Account", "About & diagnostics"]);
   expect(screen.getByRole("heading", { level: 1, name: "Settings" })).toBeInTheDocument();
   expect(tab("Playback")).toHaveAttribute("aria-selected", "true");
-  for (const name of ["Playback", "Subtitles", "Account", "About & diagnostics"]) {
+  for (const name of ["Playback", "Home", "Subtitles", "Account", "About & diagnostics"]) {
     fireEvent.click(tab(name));
     expect(screen.getByRole("heading", { level: 2, name })).toBeInTheDocument();
   }
@@ -151,6 +151,38 @@ it("confirms each change with a toast, and says nothing when the value is the sa
   await choose(local(), "80 Mbps");
   expect(set).toHaveBeenCalledTimes(3);
   expect(screen.getAllByText(/limit/).filter((node) => node.closest(".ui-toast"))).toHaveLength(3);
+});
+
+// Home
+
+it("offers the Continue watching window in a Home section after Playback, with 14 days by default", async () => {
+  await renderSettings();
+  fireEvent.click(tab("Home"));
+  const trigger = screen.getByRole("button", { name: /^How long Continue watching keeps a title/ });
+  expect(trigger).toHaveTextContent("14 days");
+  expect(trigger).toHaveAttribute("aria-haspopup", "listbox");
+  expect(screen.getByText("Continue watching")).toBeInTheDocument();
+  expect(trigger).toHaveAccessibleDescription("Titles you haven't played for this long leave the row. Their place is kept.");
+  await userEvent.setup().click(trigger);
+  expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual(["7 days", "14 days", "30 days", "Keep everything"]);
+});
+
+it("saves the window, confirms with the recorded toast, and says nothing when it is unchanged", async () => {
+  const { preferenceStore } = await renderSettings();
+  fireEvent.click(tab("Home"));
+  const trigger = () => screen.getByRole("button", { name: /^How long Continue watching keeps a title/ });
+  await choose(trigger(), "30 days");
+  expect(preferenceStore.get().continueWindow).toBe("30");
+  expect(await screen.findByText("Continue watching keeps 30 days.")).toBeInTheDocument();
+  await choose(trigger(), "Keep everything");
+  expect(preferenceStore.get().continueWindow).toBe("all");
+  expect(await screen.findByText("Continue watching keeps everything.")).toBeInTheDocument();
+  await choose(trigger(), "7 days");
+  expect(preferenceStore.get().continueWindow).toBe("7");
+  expect(await screen.findByText("Continue watching keeps 7 days.")).toBeInTheDocument();
+  const set = vi.spyOn(preferenceStore, "update");
+  await choose(trigger(), "7 days");
+  expect(set).not.toHaveBeenCalled();
 });
 
 // Unavailable rows and Subtitles
