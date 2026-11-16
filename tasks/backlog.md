@@ -28,6 +28,7 @@ Jellyscale (direction update, 2026-11-12).
   - Trickplay and library and metadata work are also listed as not built.
   - Found on 2026-11-12 by the discovery pass (`docs/plans/proposals/discovery-and-profiles.md` §3.4), from `compat/endpoints.yaml` and `docs/status.md` at `93a0f3f`: `/Shows/NextUp` is a stub, so Fluster's Next up row is empty there; `/Search/Hints` answers 404 and Fluster's search suggestions call it; media segments are not built, so Skip intro has no data; likes and ratings answer 404; `/Items/Suggestions` is "implemented" in one file and "not built" in the other.
   - Size: M for the test pass; fixes are separate tasks.
+  - 2026-11-15: the pinned jellyscale fixture server and its CI job are P17-04, and the tripwire against it is in P17-06. The compatibility test pass across sign-in, browse, and the routes above stays here.
 
 No decision yet.
 
@@ -197,8 +198,8 @@ The review is `docs/research/code-quality-review-2026-11-13.md` (commit `fb8d071
 
 ## Flaky e2e: Back keys (found 2026-11-13)
 
-- `e2e/back-keys.spec.ts` fails intermittently in full `pnpm test:e2e` runs, on task branches and on main (different tests each time: ":89 Backspace closes the unencrypted-connection dialog", ":20 Backspace and Escape go back from item detail"). Each passes 5/5 alone with `--repeat-each 5`. It looks load-dependent; the cause is unverified. Find the race (as P13-14 did for three journeys) and make each test wait for the state it depends on; never weaken an assertion. Evidence: the P0-14 runs in `tasks/prd.json`. S to M.
-- Also from the P0-14 runs: `FLUSTER_E2E_PORT` collides when port+1 is taken, because the web server uses both ports. Pick both ports free, or document it. S.
+- ~~`e2e/back-keys.spec.ts` fails intermittently in full `pnpm test:e2e` runs, on task branches and on main (different tests each time: ":89 Backspace closes the unencrypted-connection dialog", ":20 Backspace and Escape go back from item detail"). Each passes 5/5 alone with `--repeat-each 5`. It looks load-dependent; the cause is unverified. Find the race (as P13-14 did for three journeys) and make each test wait for the state it depends on; never weaken an assertion. Evidence: the P0-14 runs in `tasks/prd.json`. S to M.~~ Taken by P0-18.
+- ~~Also from the P0-14 runs: `FLUSTER_E2E_PORT` collides when port+1 is taken, because the web server uses both ports. Pick both ports free, or document it. S.~~ Taken by P0-18.
 - From the P0-14 review (lows): `scripts/lint-boundaries.mjs:82` passes the violation count as the exit code, so exactly 256 violations exit 0 (use `exitCode > 0 ? 1 : 0`). The success line's `n/n source files` restates the coverage check rather than measuring it. Whether the Dependabot ignore for the `typescript-6` alias applies is unverified. S each.
 
 ## From P13-23 (Player Engine stream facts)
@@ -242,17 +243,17 @@ Measured by the worst-case artwork captures; see `docs/design/contrast-report.md
 
 - The `Picker` trigger and rows elsewhere (the "English · TrueHD 7.1 ▾" trigger of DESIGN.md §7.10); there is no track Picker trigger in the player today. (P13-29)
 - The OSD line for `c` (`Subtitles: {title}`, `use-player-keys.ts`) still uses the raw title; it could use `trackRow().name` and detail. (P13-29)
-- Carry the audio and subtitle choice to the next episode (P15-07). (P13-29)
+- ~~Carry the audio and subtitle choice to the next episode (P15-07). (P13-29)~~ Already P15-07.
 - DESIGN.md §11 wording for spoken slider values (audit A11); waits for the owner. (P13-29)
 - Add DESIGN.md §10 copy rows for "Loading tracks…" and "No audio tracks to choose from." for the docs sync. (P13-29)
 - Add codec, channels, and flags to `PlayerTrack` in Rust for unmapped mpv tracks (a native change). (P13-29)
-- Audio-description labels (wishes W27, decision D6). (P13-29)
+- ~~Audio-description labels (wishes W27, decision D6). (P13-29)~~ Already P15-12.
 - After a converted track choice renegotiates, keyboard focus does not return to the Audio & Subtitles trigger on Escape (seen in the TV e2e). (P13-29)
 
 ## Post-merge guardian review of #158 (P3-31), 2026-11-14: verdict sound, three lows
 
-- `src/lib/player/coordinator.ts:336`: a failed stop after "ended" stores `redactedErrorMessage(error)` (only `redactText`) in session state, so file paths and hosts can reach state. That contradicts P3-31 acceptance 5. The screen stays safe (`playbackErrorCopy` applies `safeReason`), and today's native stop errors are fixed strings. Fix: `errorReason(error, "The player did not finish shutting down.")`. The native "error" event path (`:304`) has the same issue, predating P3-31. S.
-- **Tighten the text filters, with canary tests.** Now that more native text reaches the screen, `redactText` and `safeReason` should catch these forms, all proven with a probe:
+- ~~`src/lib/player/coordinator.ts:336`: a failed stop after "ended" stores `redactedErrorMessage(error)` (only `redactText`) in session state, so file paths and hosts can reach state. That contradicts P3-31 acceptance 5. The screen stays safe (`playbackErrorCopy` applies `safeReason`), and today's native stop errors are fixed strings. Fix: `errorReason(error, "The player did not finish shutting down.")`. The native "error" event path (`:304`) has the same issue, predating P3-31. S.~~ Taken by P0-19.
+- ~~**Tighten the text filters, with canary tests.** Now that more native text reaches the screen, `redactText` and `safeReason` should catch these forms, all proven with a probe:~~ Taken by P0-19, with the four forms listed below.
   - credentials separated by a space (`PlaySessionId abc123`, `X-Emby-Token abc123`, `Authorization MediaBrowser Token abc123`; `src/lib/redact.ts:24-27` needs `:` or `=`);
   - bare `host:port`;
   - single-segment paths, Windows paths with forward slashes, and UNC paths (`src/features/player/safe-reason.ts:4-7`);
@@ -262,7 +263,7 @@ Measured by the worst-case artwork captures; see `docs/design/contrast-report.md
 
 ## Visual baseline accept script (found in P13-24, 2026-11-14)
 
-- `pnpm test:visual:accept <run-id>` also rewrote three captures that had not failed (`14-home-keyboard-focus`, `15-nav-keyboard-focus`, `85-ui-gallery-dialog-picker`); the agent reverted them by hand. Either the script copies every capture instead of only the failing ones, or those three render slightly differently between runs. Make accept copy only the failed captures, and investigate determinism for the three. S.
+- ~~`pnpm test:visual:accept <run-id>` also rewrote three captures that had not failed (`14-home-keyboard-focus`, `15-nav-keyboard-focus`, `85-ui-gallery-dialog-picker`); the agent reverted them by hand. Either the script copies every capture instead of only the failing ones, or those three render slightly differently between runs. Make accept copy only the failed captures, and investigate determinism for the three. S.~~ Taken by P0-18.
 
 ## Dependabot alert 34: glib 0.18 unsoundness (RUSTSEC-2024-0429), 2026-11-14
 
@@ -281,13 +282,13 @@ Measured by the worst-case artwork captures; see `docs/design/contrast-report.md
 - `useAccountChanged` resets in an effect after the new gateway renders, so a direct account A to B swap briefly renders B's screens with A's data still cached (B uses its own scope, so nothing crosses; read, not run). Reset before render (P13-31 review).
 - The account reset runs only when the gateway object changes. A future re-auth or switcher path (P3-02, P3-20, P13-21) that logs in another user on the same gateway would skip it; document that a gateway is single-user or also key the drop on the user id (P13-31 review).
 - `window.scrollTo({ behavior: "instant" })` in `focus-return.ts:141`: WebKitGTK support is unverified and a TypeError would lose the remembered scroll. Use `"auto"`, which behaves the same under `base.css:154` (P13-31 review).
-- Re-check `e2e/tv/detail.spec.ts:46`, which failed in two earlier full e2e runs under load and passed alone and in a third run; it may be a real race (P13-31 review).
+- ~~Re-check `e2e/tv/detail.spec.ts:46`, which failed in two earlier full e2e runs under load and passed alone and in a third run; it may be a real race (P13-31 review).~~ Taken by P0-18.
 - Run the design checklist against fresh captures and compare them with the PR's before and after screenshots; the diff changes no markup or styles (P13-31 review).
 - A server event refetch can flicker an in-flight optimistic flag, because `markAccountDataStale` refetches the open detail while a toggle is pending (`use-flag-mutation.ts:55-56`) (P13-31 guardian).
 - An exact-card return falls back to the row index when the page is shorter after a resize; the card's own id is then not found until the pages load (P13-31 guardian).
 - `useFocusReturn` waits on `useIsFetching()`, which counts every query, so settling can wait up to `RETURN_WAIT_MS` behind an unrelated fetch (P13-31 design review).
 - Sort and filter changes use `replaceState`, so Back leaves the library instead of undoing a filter. Intentional; noted in the PR text (P13-31 design review).
-- Local `pnpm test:visual` runs flake when the host network changes mid-run (Docker adds or removes a veth interface): Chromium aborts in-flight dev-server requests with `net::ERR_NETWORK_CHANGED`, the sign-in page never renders, and a random scenario times out at `e2e/visual/scenario-helpers.ts:28`, then passes on retry. Seen in three full runs on task/P13-31; traces and `journalctl` confirm. Consider launching the visual and e2e Chromium with network-change notification off, or running against a built preview. S (P13-31 verify).
+- ~~Local `pnpm test:visual` runs flake when the host network changes mid-run (Docker adds or removes a veth interface): Chromium aborts in-flight dev-server requests with `net::ERR_NETWORK_CHANGED`, the sign-in page never renders, and a random scenario times out at `e2e/visual/scenario-helpers.ts:28`, then passes on retry. Seen in three full runs on task/P13-31; traces and `journalctl` confirm. Consider launching the visual and e2e Chromium with network-change notification off, or running against a built preview. S (P13-31 verify).~~ Taken by P0-18.
 
 ## Discovery fixtures follow-ups (P16-01, 2026-11-15)
 
@@ -310,9 +311,28 @@ Measured by the worst-case artwork captures; see `docs/design/contrast-report.md
 
 ## Detail page: cut the subtitle list down to the viewer's language (owner, 2026-11-15)
 
-- Seen on the dogfood server: "File and streams" (`src/features/detail/file-and-streams.tsx`) lists every subtitle track on its own line; a film with 52 subtitle tracks fills the screen.
+- ~~Seen on the dogfood server: "File and streams" (`src/features/detail/file-and-streams.tsx`) lists every subtitle track on its own line; a film with 52 subtitle tracks fills the screen.~~ Taken by P17-02.
 - Owner decisions:
-  - Show only the subtitle tracks in the viewer's Jellyfin preferred subtitle language (the user configuration's `SubtitleLanguagePreference`; Fluster does not read it today, so the gateway needs it, e.g. from `/Users/Me`).
-  - When no preference is set, or the file has no track in that language: show the file's default subtitle track if it has one, plus a line like "51 more in 32 languages"; with no default either, only the count line.
-  - A "Show all 52 subtitles" button expands the full list in place (keyboard and TV form included).
-- Open: whether the audio list gets the same rule (not asked yet). M.
+  - ~~Show only the subtitle tracks in the viewer's Jellyfin preferred subtitle language (the user configuration's `SubtitleLanguagePreference`; Fluster does not read it today, so the gateway needs it, e.g. from `/Users/Me`).~~ Taken by P17-02 (the read) and P17-03 (setting it in Fluster).
+  - ~~When no preference is set, or the file has no track in that language: show the file's default subtitle track if it has one, plus a line like "51 more in 32 languages"; with no default either, only the count line.~~ Taken by P17-02.
+  - ~~A "Show all 52 subtitles" button expands the full list in place (keyboard and TV form included).~~ Taken by P17-02.
+- Open: whether the audio list gets the same rule (not asked yet). M. Asked as L1 in the 2026-11-15 product-review pass; P17-02 leaves the audio list as it is until the owner answers.
+
+## Product review pass (2026-11-15)
+
+The triage of every entry added since 2026-11-13, issue #178, and the detail-page subtitle decisions is in `docs/plans/proposals/product-review.md`, "Product review pass, 2026-11-15".
+
+- Tasks now: P0-18 (repeatable end-to-end and visual runs), P0-19 (text filters and a failed stop's reason), P17-01 (account-language fixtures), P17-02 (the detail page's subtitle list).
+- Tasks that wait: P17-03 (languages in Settings; the owner's answers to L3 and L4), P17-04 (a pinned jellyscale server; jellyscale's JS-116 to JS-120 and a published image), then P17-05, P17-06, and P17-07 behind it (P17-07 also waits for L5 and L7).
+- Notes for specs, which edit no task. Each stays an entry above until its task's pull request closes it:
+  - P3-20 (switch accounts): the account reset runs only when the gateway object changes, and `dropOtherAccounts` and `useAccountChanged` have the three P13-31 review lows above. P3-20's acceptance already says no screen shows the previous account's data; its spec should name these.
+  - P2-06 (libmpv2 7): re-check whether a `PropertyChange` with `MPV_FORMAT_NONE` is still dropped before deciding the P13-23 entry above.
+  - P2-12 (track selector and poisoned lock): bound `PlayerSurfaceFrame::validate` in the same native pass (PR #165 low above), and consider the unmapped-track fields from P13-29.
+  - P13-19 (design audit and docs sync): the `.ui-dialog-title` literal size, the two P13-33 contrast lows, the DESIGN.md §10 rows from P13-29, the spoken-slider wording, and the P13-31 "fresh visit" check are all its kind of finding.
+  - P16-11 (wish-list fixtures): it uses the same recorder; take the P16-01 recorder lows above (one scrubber, stable `id-N`, the `finally` cleanup, the `Path` allow-list) while it is open. Its `verify` string has the `pnpm test -- fixtures` weakness; the new fixture tasks name their test file instead.
+  - P15-07 (remember tracks per series) and P15-12 (audio description): both read "the preferred language". After P17-03 that is the language set in Fluster; on jellyscale a remembered or described track may be hidden, and P17-07 always lists the playing track. P15-07's acceptance says "Jellyfin account preferences"; that wording still holds, because P17-03 saves to the account.
+- Found by this pass:
+  - Ask jellyscale for a partial update of the user configuration, or a version check that refuses a stale save. `POST /Users/Configuration` replaces the whole object, so two apps saving at once can overwrite each other; P17-03 narrows the window with a fresh read but cannot close it. Asked in a comment on hankandre/fluster#178; not yet filed in jellyscale's tracker. S (P17-03).
+  - Ask jellyscale for a published, versioned image and the Babel Film fixture in a form Fluster's CI can fetch or generate. `scripts/generate-samples.sh` cannot make its PGS track, because ffmpeg cannot encode PGS (P0-03). Not yet filed. S (P17-04).
+  - If the owner answers L1 with "the same rule for audio", the detail page's audio list needs a follow-up task; P17-02 does subtitles only. S.
+  - P17-02 fixes a problem the owner saw on the dogfood server. Adding it to P4-01's `depends_on` edits an existing task, so it is the owner's or the coordinator's call. S.
