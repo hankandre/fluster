@@ -1,0 +1,270 @@
+{
+  "item": "item-languages",
+  "cells": [
+    {
+      "cell": "A1",
+      "fields": {},
+      "saveStatus": 204,
+      "readBack": {
+        "AudioLanguagePreference": "absent",
+        "PlayDefaultAudioTrack": true,
+        "SubtitleLanguagePreference": "",
+        "SubtitleMode": "Default"
+      },
+      "defaultAudioStreamIndex": 1,
+      "defaultSubtitleStreamIndex": 5
+    },
+    {
+      "cell": "A2",
+      "fields": {
+        "AudioLanguagePreference": "fra",
+        "PlayDefaultAudioTrack": true,
+        "SubtitleLanguagePreference": "",
+        "SubtitleMode": "Default"
+      },
+      "saveStatus": 204,
+      "readBack": {
+        "AudioLanguagePreference": "fra",
+        "PlayDefaultAudioTrack": true,
+        "SubtitleLanguagePreference": "",
+        "SubtitleMode": "Default"
+      },
+      "defaultAudioStreamIndex": 1,
+      "defaultSubtitleStreamIndex": 5
+    },
+    {
+      "cell": "A3",
+      "fields": {
+        "AudioLanguagePreference": "fra",
+        "PlayDefaultAudioTrack": false,
+        "SubtitleLanguagePreference": "",
+        "SubtitleMode": "Default"
+      },
+      "saveStatus": 204,
+      "readBack": {
+        "AudioLanguagePreference": "fra",
+        "PlayDefaultAudioTrack": false,
+        "SubtitleLanguagePreference": "",
+        "SubtitleMode": "Default"
+      },
+      "defaultAudioStreamIndex": 3,
+      "defaultSubtitleStreamIndex": 5
+    },
+    {
+      "cell": "A4",
+      "fields": {
+        "AudioLanguagePreference": "ger",
+        "PlayDefaultAudioTrack": false,
+        "SubtitleLanguagePreference": "",
+        "SubtitleMode": "Default"
+      },
+      "saveStatus": 204,
+      "readBack": {
+        "AudioLanguagePreference": "ger",
+        "PlayDefaultAudioTrack": false,
+        "SubtitleLanguagePreference": "",
+        "SubtitleMode": "Default"
+      },
+      "defaultAudioStreamIndex": 2,
+      "defaultSubtitleStreamIndex": 5
+    },
+    {
+      "cell": "A5",
+      "fields": {
+        "AudioLanguagePreference": "deu",
+        "PlayDefaultAudioTrack": false,
+        "SubtitleLanguagePreference": "",
+        "SubtitleMode": "Default"
+      },
+      "saveStatus": 204,
+      "readBack": {
+        "AudioLanguagePreference": "deu",
+        "PlayDefaultAudioTrack": false,
+        "SubtitleLanguagePreference": "",
+        "SubtitleMode": "Default"
+      },
+      "defaultAudioStreamIndex": 2,
+      "defaultSubtitleStreamIndex": 5
+    },
+    {
+      "cell": "A6",
+      "fields": {
+        "AudioLanguagePreference": "OriginalLanguage",
+        "PlayDefaultAudioTrack": false,
+        "SubtitleLanguagePreference": "",
+        "SubtitleMode": "Default"
+      },
+      "saveStatus": 204,
+      "readBack": {
+        "AudioLanguagePreference": "OriginalLanguage",
+        "PlayDefaultAudioTrack": false,
+        "SubtitleLanguagePreference": "",
+        "SubtitleMode": "Default"
+      },
+      "defaultAudioStreamIndex": 1,
+      "defaultSubtitleStreamIndex": 5
+    },
+    {
+      "cell": "A7",
+      "fields": {
+        "AudioLanguagePreference": "OriginalLanguage",
+        "PlayDefaultAudioTrack": true,
+        "SubtitleLanguagePreference": "",
+        "SubtitleMode": "Default"
+      },
+      "saveStatus": 204,
+      "readBack": {
+        "AudioLanguagePreference": "OriginalLanguage",
+        "PlayDefaultAudioTrack": true,
+        "SubtitleLanguagePreference": "",
+        "SubtitleMode": "Default"
+      },
+      "defaultAudioStreamIndex": 1,
+      "defaultSubtitleStreamIndex": 5
+    },
+    {
+      "cell": "S1",
+      "fields": {
+        "AudioLanguagePreference": "eng",
+        "PlayDefaultAudioTrack": true,
+        "SubtitleLanguagePreference": "fra",
+        "SubtitleMode": "Default"
+      },
+      "saveStatus": 204,
+      "readBack": {
+        "AudioLanguagePreference": "eng",
+        "PlayDefaultAudioTrack": true,
+        "SubtitleLanguagePreference": "fra",
+        "SubtitleMode": "Default"
+      },
+      "defaultAudioStreamIndex": 1,
+      "defaultSubtitleStreamIndex": 5
+    },
+    {
+      "cell": "S2",
+      "fields": {
+        "AudioLanguagePreference": "eng",
+        "PlayDefaultAudioTrack": true,
+        "SubtitleLanguagePreference": "fra",
+        "SubtitleMode": "Always"
+      },
+      "saveStatus": 204,
+      "readBack": {
+        "AudioLanguagePreference": "eng",
+        "PlayDefaultAudioTrack": true,
+        "SubtitleLanguagePreference": "fra",
+        "SubtitleMode": "Always"
+      },
+      "defaultAudioStreamIndex": 1,
+      "defaultSubtitleStreamIndex": 6
+    },
+    {
+      "cell": "S3",
+      "fields": {
+        "AudioLanguagePreference": "eng",
+        "PlayDefaultAudioTrack": true,
+        "SubtitleLanguagePreference": "fra",
+        "SubtitleMode": "OnlyForced"
+      },
+      "saveStatus": 204,
+      "readBack": {
+        "AudioLanguagePreference": "eng",
+        "PlayDefaultAudioTrack": true,
+        "SubtitleLanguagePreference": "fra",
+        "SubtitleMode": "OnlyForced"
+      },
+      "defaultAudioStreamIndex": 1,
+      "defaultSubtitleStreamIndex": 7
+    },
+    {
+      "cell": "S4",
+      "fields": {
+        "AudioLanguagePreference": "eng",
+        "PlayDefaultAudioTrack": true,
+        "SubtitleLanguagePreference": "fra",
+        "SubtitleMode": "None"
+      },
+      "saveStatus": 204,
+      "readBack": {
+        "AudioLanguagePreference": "eng",
+        "PlayDefaultAudioTrack": true,
+        "SubtitleLanguagePreference": "fra",
+        "SubtitleMode": "None"
+      },
+      "defaultAudioStreamIndex": 1,
+      "defaultSubtitleStreamIndex": "absent"
+    },
+    {
+      "cell": "S5",
+      "fields": {
+        "AudioLanguagePreference": "eng",
+        "PlayDefaultAudioTrack": true,
+        "SubtitleLanguagePreference": "fra",
+        "SubtitleMode": "Smart"
+      },
+      "saveStatus": 204,
+      "readBack": {
+        "AudioLanguagePreference": "eng",
+        "PlayDefaultAudioTrack": true,
+        "SubtitleLanguagePreference": "fra",
+        "SubtitleMode": "Smart"
+      },
+      "defaultAudioStreamIndex": 1,
+      "defaultSubtitleStreamIndex": 6
+    },
+    {
+      "cell": "S6",
+      "fields": {
+        "AudioLanguagePreference": "fra",
+        "PlayDefaultAudioTrack": false,
+        "SubtitleLanguagePreference": "fra",
+        "SubtitleMode": "Smart"
+      },
+      "saveStatus": 204,
+      "readBack": {
+        "AudioLanguagePreference": "fra",
+        "PlayDefaultAudioTrack": false,
+        "SubtitleLanguagePreference": "fra",
+        "SubtitleMode": "Smart"
+      },
+      "defaultAudioStreamIndex": 3,
+      "defaultSubtitleStreamIndex": 7
+    },
+    {
+      "cell": "S7",
+      "fields": {
+        "AudioLanguagePreference": "eng",
+        "PlayDefaultAudioTrack": true,
+        "SubtitleLanguagePreference": "ger",
+        "SubtitleMode": "Always"
+      },
+      "saveStatus": 204,
+      "readBack": {
+        "AudioLanguagePreference": "eng",
+        "PlayDefaultAudioTrack": true,
+        "SubtitleLanguagePreference": "ger",
+        "SubtitleMode": "Always"
+      },
+      "defaultAudioStreamIndex": 1,
+      "defaultSubtitleStreamIndex": 9
+    },
+    {
+      "cell": "S8",
+      "fields": {
+        "AudioLanguagePreference": "eng",
+        "PlayDefaultAudioTrack": true,
+        "SubtitleLanguagePreference": "deu",
+        "SubtitleMode": "Always"
+      },
+      "saveStatus": 204,
+      "readBack": {
+        "AudioLanguagePreference": "eng",
+        "PlayDefaultAudioTrack": true,
+        "SubtitleLanguagePreference": "deu",
+        "SubtitleMode": "Always"
+      },
+      "defaultAudioStreamIndex": 1,
+      "defaultSubtitleStreamIndex": 9
+    }
+  ]
+}

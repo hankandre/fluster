@@ -372,3 +372,10 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 - `player-sheet.tsx:58` returns focus to the opener with a plain `focus()`; with `.player-page` clipped it can no longer scroll the page, but other scroll containers on that path would still be scrolled. Consider `preventScroll` there too. S.
 - `e2e/` is outside ESLint's scope ("File ignored because no matching configuration"), so specs are never linted. S.
 - The e2e mock marks every episode 1 played (`e2e/support/mock-server.ts:185`), so Home's Next up card for "Perigee" shows a played checkmark in `19g-home-continue-merged`. Fix the fixture, and decide whether Continue watching cards should ever show the played badge (a Next up episode marked played can come from a rewatch). S (P16-02).
+
+## Account-language fixtures follow-ups (P17-01, 2026-11-16)
+
+- Split `scripts/generate-samples.sh` (about 470 lines) by sample family (movies, shows, staging, verify) so CI's sample step stays readable. S (P17-01).
+- `record-fixtures.mjs` and `record-discovery-fixtures.mjs` do not reproduce the committed fixtures on a fresh server (numbered `id-N` values, online-matched titles, `DateCreated`); even two runs in a row differ in `DateCreated` of the staged episode and in the online-matched title of the HEVC film (`discovery-suggestions`, because that film has no locked NFO). Lock the HEVC sample with an NFO or normalize the dates in the scrubber so a re-record can be diffed. S (P17-01).
+- The recorders log a user in on a fixed device id, so a second login as the same user ends the first token (seen when the language recorder logged `fluster-test` in twice). Note it in `tests/integration/` or give each login its own device id. S (P17-01).
+- `ARCHITECTURE.md` §3 line 187 holds on both versions (recorded A2); no change needed. It could add that `OriginalLanguage` gives the file's default audio track on plain Jellyfin and that a `ger` preference matches audio tagged `deu`. S (P17-01).

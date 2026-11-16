@@ -1,0 +1,216 @@
+{
+  "steps": [
+    {
+      "step": "non-language fields changed",
+      "request": {
+        "method": "POST",
+        "path": "/Users/Configuration",
+        "query": {},
+        "body": {
+          "PlayDefaultAudioTrack": false,
+          "SubtitleLanguagePreference": "eng",
+          "DisplayMissingEpisodes": true,
+          "GroupedFolders": [],
+          "SubtitleMode": "Always",
+          "DisplayCollectionsView": false,
+          "EnableLocalPassword": false,
+          "OrderedViews": [],
+          "LatestItemsExcludes": [],
+          "MyMediaExcludes": [],
+          "HidePlayedInLatest": false,
+          "RememberAudioSelections": false,
+          "RememberSubtitleSelections": false,
+          "EnableNextEpisodeAutoPlay": false,
+          "CastReceiverId": "F007D354",
+          "AudioLanguagePreference": "eng"
+        }
+      },
+      "status": 204,
+      "configuration": {
+        "AudioLanguagePreference": "eng",
+        "PlayDefaultAudioTrack": false,
+        "SubtitleLanguagePreference": "eng",
+        "DisplayMissingEpisodes": true,
+        "GroupedFolders": [],
+        "SubtitleMode": "Always",
+        "DisplayCollectionsView": false,
+        "EnableLocalPassword": false,
+        "OrderedViews": [],
+        "LatestItemsExcludes": [],
+        "MyMediaExcludes": [],
+        "HidePlayedInLatest": false,
+        "RememberAudioSelections": false,
+        "RememberSubtitleSelections": false,
+        "EnableNextEpisodeAutoPlay": false,
+        "CastReceiverId": "F007D354"
+      }
+    },
+    {
+      "step": "whole object, two language fields changed",
+      "request": {
+        "method": "POST",
+        "path": "/Users/Configuration",
+        "query": {},
+        "body": {
+          "AudioLanguagePreference": "deu",
+          "PlayDefaultAudioTrack": false,
+          "SubtitleLanguagePreference": "fra",
+          "DisplayMissingEpisodes": true,
+          "GroupedFolders": [],
+          "SubtitleMode": "Always",
+          "DisplayCollectionsView": false,
+          "EnableLocalPassword": false,
+          "OrderedViews": [],
+          "LatestItemsExcludes": [],
+          "MyMediaExcludes": [],
+          "HidePlayedInLatest": false,
+          "RememberAudioSelections": false,
+          "RememberSubtitleSelections": false,
+          "EnableNextEpisodeAutoPlay": false,
+          "CastReceiverId": "F007D354"
+        }
+      },
+      "status": 204,
+      "configuration": {
+        "AudioLanguagePreference": "deu",
+        "PlayDefaultAudioTrack": false,
+        "SubtitleLanguagePreference": "fra",
+        "DisplayMissingEpisodes": true,
+        "GroupedFolders": [],
+        "SubtitleMode": "Always",
+        "DisplayCollectionsView": false,
+        "EnableLocalPassword": false,
+        "OrderedViews": [],
+        "LatestItemsExcludes": [],
+        "MyMediaExcludes": [],
+        "HidePlayedInLatest": false,
+        "RememberAudioSelections": false,
+        "RememberSubtitleSelections": false,
+        "EnableNextEpisodeAutoPlay": false,
+        "CastReceiverId": "F007D354"
+      }
+    },
+    {
+      "step": "only the language fields",
+      "request": {
+        "method": "POST",
+        "path": "/Users/Configuration",
+        "query": {},
+        "body": {
+          "AudioLanguagePreference": "spa",
+          "SubtitleLanguagePreference": "ita"
+        }
+      },
+      "status": 204,
+      "configuration": {
+        "AudioLanguagePreference": "spa",
+        "PlayDefaultAudioTrack": true,
+        "SubtitleLanguagePreference": "ita",
+        "DisplayMissingEpisodes": false,
+        "GroupedFolders": [],
+        "SubtitleMode": "Default",
+        "DisplayCollectionsView": false,
+        "EnableLocalPassword": false,
+        "OrderedViews": [],
+        "LatestItemsExcludes": [],
+        "MyMediaExcludes": [],
+        "HidePlayedInLatest": true,
+        "RememberAudioSelections": true,
+        "RememberSubtitleSelections": true,
+        "EnableNextEpisodeAutoPlay": true,
+        "CastReceiverId": "F007D354"
+      }
+    },
+    {
+      "step": "whole object restored",
+      "request": {
+        "method": "POST",
+        "path": "/Users/Configuration",
+        "query": {},
+        "body": {
+          "AudioLanguagePreference": "deu",
+          "PlayDefaultAudioTrack": false,
+          "SubtitleLanguagePreference": "fra",
+          "DisplayMissingEpisodes": true,
+          "GroupedFolders": [],
+          "SubtitleMode": "Always",
+          "DisplayCollectionsView": false,
+          "EnableLocalPassword": false,
+          "OrderedViews": [],
+          "LatestItemsExcludes": [],
+          "MyMediaExcludes": [],
+          "HidePlayedInLatest": false,
+          "RememberAudioSelections": false,
+          "RememberSubtitleSelections": false,
+          "EnableNextEpisodeAutoPlay": false,
+          "CastReceiverId": "F007D354"
+        }
+      },
+      "status": 204,
+      "configuration": {
+        "AudioLanguagePreference": "deu",
+        "PlayDefaultAudioTrack": false,
+        "SubtitleLanguagePreference": "fra",
+        "DisplayMissingEpisodes": true,
+        "GroupedFolders": [],
+        "SubtitleMode": "Always",
+        "DisplayCollectionsView": false,
+        "EnableLocalPassword": false,
+        "OrderedViews": [],
+        "LatestItemsExcludes": [],
+        "MyMediaExcludes": [],
+        "HidePlayedInLatest": false,
+        "RememberAudioSelections": false,
+        "RememberSubtitleSelections": false,
+        "EnableNextEpisodeAutoPlay": false,
+        "CastReceiverId": "F007D354"
+      }
+    },
+    {
+      "step": "whole object plus an unknown field",
+      "request": {
+        "method": "POST",
+        "path": "/Users/Configuration",
+        "query": {},
+        "body": {
+          "AudioLanguagePreference": "deu",
+          "PlayDefaultAudioTrack": false,
+          "SubtitleLanguagePreference": "spa",
+          "DisplayMissingEpisodes": true,
+          "GroupedFolders": [],
+          "SubtitleMode": "Always",
+          "DisplayCollectionsView": false,
+          "EnableLocalPassword": false,
+          "OrderedViews": [],
+          "LatestItemsExcludes": [],
+          "MyMediaExcludes": [],
+          "HidePlayedInLatest": false,
+          "RememberAudioSelections": false,
+          "RememberSubtitleSelections": false,
+          "EnableNextEpisodeAutoPlay": false,
+          "CastReceiverId": "F007D354",
+          "FlusterUnknownField": "fixture"
+        }
+      },
+      "status": 204,
+      "configuration": {
+        "AudioLanguagePreference": "deu",
+        "PlayDefaultAudioTrack": false,
+        "SubtitleLanguagePreference": "spa",
+        "DisplayMissingEpisodes": true,
+        "GroupedFolders": [],
+        "SubtitleMode": "Always",
+        "DisplayCollectionsView": false,
+        "EnableLocalPassword": false,
+        "OrderedViews": [],
+        "LatestItemsExcludes": [],
+        "MyMediaExcludes": [],
+        "HidePlayedInLatest": false,
+        "RememberAudioSelections": false,
+        "RememberSubtitleSelections": false,
+        "EnableNextEpisodeAutoPlay": false,
+        "CastReceiverId": "F007D354"
+      }
+    }
+  ]
+}
