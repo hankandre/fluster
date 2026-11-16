@@ -30,9 +30,12 @@ async function signIn(page: Page): Promise<void> {
   await page.getByRole("heading", { name: "Home" }).waitFor({ timeout: 10_000 });
 }
 
-async function openItem(page: Page, hash: string): Promise<void> {
+// Waits for the detail's own heading: Home's hidden "Home" heading and the loading state's hidden "Loading details"
+// heading are also level 1, so waiting on any h1 can return before the detail has rendered.
+async function openItem(page: Page, hash: string, title = "The Long Quiet"): Promise<void> {
   await page.evaluate((target) => { window.location.hash = target; }, hash);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
 }
 
 test("Escape goes back from item detail; Backspace does nothing on desktop", async ({ page }) => {
@@ -132,6 +135,8 @@ test("Escape closes the unencrypted-connection dialog; Backspace does not", asyn
   await page.getByLabel("Server URL").fill(LAN);
   await page.keyboard.press("Enter");
   await expect(page.getByRole("alertdialog")).toBeVisible();
+  // The dialog adds its Escape listener in the same effect that focuses Cancel, so focus shows the listener exists.
+  await expect(page.getByRole("button", { name: "Cancel" })).toBeFocused();
   await page.keyboard.press("Backspace");
   await expect(page.getByRole("alertdialog")).toBeVisible();
   await page.keyboard.press("Escape");
