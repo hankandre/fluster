@@ -386,3 +386,4 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 - Add a "Show fewer" control after the full subtitle list is expanded. Not asked for. S (P17-02).
 - Split `src/lib/jellyfin/gateway.ts` along domain lines; it was over 1000 lines before P17-02 and gained two short reads. S (P17-02).
 - Tracks that jellyscale hides (L6) are covered by P17-05 to P17-07; the detail list counts only the tracks the server listed (P17-02).
+- Detail subtitle list design lows: the expanded list's focus ring is a viewport-tall box; the quiet "Show all N subtitles" button's padding misaligns it by about 25px; the unreachable "Show 1 subtitle" branch in `format.ts`; no test for a failed `/Localization/Cultures` read in `account-languages.ts`. S (P17-02, see its spec "Review follow-ups").
