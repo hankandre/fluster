@@ -915,7 +915,7 @@ Out of scope today. Seven of nine rivals have it.
 
 ## Product review pass, 2026-11-15
 
-Status: **L1 to L4 answered 2026-11-15; L5 to L8 open.** The answers are below, as relayed by the coordinating agent. The tasks they settle are changed in the same pull request; they are all tasks this pass added, so no existing task is edited. The question texts further down are kept as asked.
+Status: **L1 to L4 and L8 answered 2026-11-15; L5 to L7 open.** The answers are below, as relayed by the coordinating agent. The tasks they settle are changed in the same pull request; they are all tasks this pass added, so no existing task is edited. The question texts further down are kept as asked.
 
 ### Answers (owner, 2026-11-15)
 
@@ -925,6 +925,9 @@ Status: **L1 to L4 answered 2026-11-15; L5 to L8 open.** The answers are below, 
 | L2 | A: always, one rule. | P17-02 |
 | L3 | A: a new Languages section. | P17-03, now `todo`; P17-05 sits with it |
 | L4 | A: one plain-words picker per kind that sets both fields. Choosing an audio language turns "Play default audio track" off and the row says so. The exact choices are fixed after P17-01. | P17-03 |
+| L8 | A: the pick lasts while the title's page is open, including Back from the player; nothing is stored. | P17-08 (already written for A) |
+| P4-01 | The owner approved adding P17-02 to P4-01's dependencies (the dogfood week waits for the shorter subtitle list). The only edit to an existing task in this pass. | P4-01 `depends_on` |
+| Jellyscale | The owner approved filing two `from:fluster` requests: a partial or version-checked user-configuration save, and a published versioned image with the Babel Film fixture. | jellyscale issues |
 | L5 to L7 | Not answered yet. | P17-07 still waits for L5 and L7 |
 
 **P17-08, "Choose the audio track on a title's page, and play with it".** A new task and not a rewrite of P17-02, because the two differ in risk. P17-02 changes one component and one read. P17-08 sends a viewer's choice into Playback Negotiation, so it is Opus with a Fable spec and **needs a `guardian` review**.
@@ -933,7 +936,7 @@ Status: **L1 to L4 answered 2026-11-15; L5 to L8 open.** The answers are below, 
 - **The hard rules it carries:** the index goes in the body and the query; only Playback Negotiation builds the request; with no pick every request is byte-for-byte what it is today; no Tauri command is added.
 - **It builds no new component.** `DESIGN.md` §7.10 already defines the Picker for Version, Audio, and Subtitles with the "English · TrueHD 7.1 ▾" trigger, and P13-29 the two-line label.
 - **Place and priority:** P17, after P17-02. High, as part of the same owner-seen page, but after P17-02, which is smaller and safer. It waits for P17-01, P17-02, P13-09, P10-03, P10-08, P10-09, and P13-29, all done except the first two.
-- **One new question, L8,** on how long the pick lasts. The task is not blocked by it: it is written for the narrowest reading.
+- **L8** (how long the pick lasts) is answered: A.
 
 **L8. How long does an audio pick on a title's page last?** The answer says "for that title only" and "not saved to the account".
 - A: While the page is open, including Back from the player. Leaving the page forgets it.
