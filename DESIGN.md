@@ -257,6 +257,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 ### 7.8 Action bar (`ActionBar`)
 
 - Order: **Primary** (`Resume 41:00` with a small progress ring, or `Play`), then the version `Picker` pill (only with two or more versions), then the audio `Picker` pill (only when the chosen version has two or more audio tracks), then `Start over` (secondary, only when resuming), then icon toggles `Watched` and `Favorite` (each `aria-pressed`, label visible on desktop, tooltip plus accessible name on TV). Last comes `More` (from P15-02; Q7 A left it out of P13-09): a `Menu` (§7.10) holding File and streams, Go to series (on episodes), and Mark season watched. The version picker is not in it (Q6 A).
+- The bar may run wider than the text column, up to the page's content width, so the six controls (Resume, version, audio, Start over, Watched, Favorite) share one row at 1440 px. Labels stay as they are and the synopsis keeps its line length (five of twelve columns). The bar wraps only when the window is too narrow (owner decision, 2026-11-16).
 - The primary button gets initial focus when the screen opens (TV and keyboard). On desktop, focus goes to the `h1` first for screen readers (as today), and one Tab reaches Play.
 - When the player cannot start (`usePlayerStatus` unavailable), the primary button stays enabled. An `InlineNotice` under the bar explains, and "Check again" sits beside it (as today, restyled).
 
