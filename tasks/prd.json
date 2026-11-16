@@ -3937,7 +3937,7 @@
           "status": "in_progress",
           "owner": null,
           "passes": false,
-          "evidence": "Implemented on branch task/P17-02 (spec docs/specs/P17-02.md, owner answers of 2026-11-16 in its Decision log). Unit, view, and Playwright journeys pass locally; visual baselines and the CI run are pending in the Ship phase."
+          "evidence": "Implemented on branch task/P17-02 (spec docs/specs/P17-02.md, owner answers of 2026-11-16 in its Decision log). Local verify 2026-11-16 at 765bbad: pnpm check exit 0 (vitest 198 files, 2812 tests; cargo 194 passed, 7 ignored), pnpm test:e2e 205 passed, pnpm test:visual 396 passed. One review round found five lows and nothing to fix; they are logged in the spec's Review follow-ups. Visual baselines, PR screenshots, and the CI run are pending in the Ship phase."
         },
         {
           "id": "P17-08",
