@@ -1,6 +1,6 @@
 # Product review: edge, gaps, multi-server, backlog
 
-Status: **Answered 2026-11-12.** (A later pass, with seven questions still open, is at the end: "Product review pass, 2026-11-15".) The owner's answers are in "Answers" below, as relayed by the coordinating agent. The changes they approve are applied in the same pull request, except two rule changes that wait for the owner's own confirmation. Sections 1 to 5 keep the original proposal text for the record; where an answer differs from a recommendation, the answer wins.
+Status: **Answered 2026-11-12.** (A later pass, with four questions still open, is at the end: "Product review pass, 2026-11-15".) The owner's answers are in "Answers" below, as relayed by the coordinating agent. The changes they approve are applied in the same pull request, except two rule changes that wait for the owner's own confirmation. Sections 1 to 5 keep the original proposal text for the record; where an answer differs from a recommendation, the answer wins.
 
 ## Direction update (owner, 2026-11-12)
 
@@ -915,7 +915,33 @@ Out of scope today. Seven of nine rivals have it.
 
 ## Product review pass, 2026-11-15
 
-Status: **tasks added; seven questions open (L1 to L7).** Nothing below is answered yet.
+Status: **L1 to L4 answered 2026-11-15; L5 to L8 open.** The answers are below, as relayed by the coordinating agent. The tasks they settle are changed in the same pull request; they are all tasks this pass added, so no existing task is edited. The question texts further down are kept as asked.
+
+### Answers (owner, 2026-11-15)
+
+| # | Answer | Applied in |
+|---|---|---|
+| L1 | **Own words (differs from every option).** "Typically there's a dropdown where you select the language track. It should default to your preferred language and elevate it to the top and then sort it alphabetically otherwise." Follow-up: Play uses it. Picking an audio track there makes Play and Resume start with that track, as Plex and Jellyfin's web page do; the pick lasts for that title only and is not saved to the account. | **P17-08**, added. P17-02 keeps to subtitles. |
+| L2 | A: always, one rule. | P17-02 |
+| L3 | A: a new Languages section. | P17-03, now `todo`; P17-05 sits with it |
+| L4 | A: one plain-words picker per kind that sets both fields. Choosing an audio language turns "Play default audio track" off and the row says so. The exact choices are fixed after P17-01. | P17-03 |
+| L5 to L7 | Not answered yet. | P17-07 still waits for L5 and L7 |
+
+**P17-08, "Choose the audio track on a title's page, and play with it".** A new task and not a rewrite of P17-02, because the two differ in risk. P17-02 changes one component and one read. P17-08 sends a viewer's choice into Playback Negotiation, so it is Opus with a Fable spec and **needs a `guardian` review**.
+
+- **The risk is invariant I1.** `ARCHITECTURE.md` §3 sends `AudioStreamIndex` on renegotiation only. Whether Jellyfin still offers direct play when a first PlaybackInfo names an audio track that is not the default, with Fluster's profile, is **unverified**. The acceptance records it from both versions first, requires that a pick never turns a direct play into a conversion, and says what Fluster does if a server would: direct play without the index and select the track in mpv, then stop for the human. The tripwire gains a case.
+- **The hard rules it carries:** the index goes in the body and the query; only Playback Negotiation builds the request; with no pick every request is byte-for-byte what it is today; no Tauri command is added.
+- **It builds no new component.** `DESIGN.md` §7.10 already defines the Picker for Version, Audio, and Subtitles with the "English · TrueHD 7.1 ▾" trigger, and P13-29 the two-line label.
+- **Place and priority:** P17, after P17-02. High, as part of the same owner-seen page, but after P17-02, which is smaller and safer. It waits for P17-01, P17-02, P13-09, P10-03, P10-08, P10-09, and P13-29, all done except the first two.
+- **One new question, L8,** on how long the pick lasts. The task is not blocked by it: it is written for the narrowest reading.
+
+**L8. How long does an audio pick on a title's page last?** The answer says "for that title only" and "not saved to the account".
+- A: While the page is open, including Back from the player. Leaving the page forgets it.
+- B: Until the app closes or the account changes.
+- C: Kept on this computer for that title, across restarts.
+- **Rec: A.** It is the narrowest reading of the answer and stores nothing. For a series, P15-07 already remembers the track across episodes on this computer; a film is usually played once. P17-08 is written for A.
+
+**Not decided by these answers, and left as it is:** the audio lines in "File and streams" stay a whole list. The answer asks for a dropdown; it does not ask for the facts list to change.
 
 This is a Fable 5.2 product-review pass under the `AGENTS.md` "Tasks" rule. It adds tasks, strikes the backlog entries they take, and edits no existing task.
 
@@ -937,7 +963,8 @@ Acceptance is in `tasks/prd.json`, which is the source of truth. Priority is thi
 | P0-19 | Tighten the text filters and redact a failed stop's reason | High | P0, after P0-18 | P3-31 (done) | Sonnet, `guardian` review | todo |
 | P17-01 | Record account-language contract fixtures for 10.11 and 12.x | High | P17 (new, after P16), first | P0-02, P0-03 (done) | Sonnet | todo |
 | P17-02 | List only the viewer's subtitle language on a title's page | High | P17 | P17-01, P13-09 | Sonnet | todo |
-| P17-03 | Choose audio and subtitle languages in Settings | Medium | P17 | P17-01, P17-02, P13-17, P13-20; **L3, L4** | Sonnet, `guardian` review | blocked: owner |
+| P17-08 | Choose the audio track on a title's page, and play with it (added after L1) | High; **high risk** | P17, after P17-02 | P17-01, P17-02, P13-09, P10-03, P10-08, P10-09, P13-29 | Opus; Fable spec; `guardian` review | todo |
+| P17-03 | Choose audio and subtitle languages in Settings | Medium | P17 | P17-01, P17-02, P13-17, P13-20; the owner confirms the exact choices in the spec | Sonnet, `guardian` review | todo (was blocked on L3, L4) |
 | P17-04 | Run a pinned jellyscale server beside the Jellyfin fixtures | Medium | P17 | P0-02, P0-03, P17-01; **jellyscale** | Sonnet | blocked: jellyscale |
 | P17-05 | Hide tracks in other languages: the jellyscale settings | Medium | P17 | P17-03, P17-04 | Sonnet | todo, behind its dependencies |
 | P17-06 | Negotiate playback through jellyscale's playback-info route | Medium; **high risk** | P17 | P17-04, P10-03, P10-09; a decision record the human approves | Opus; Fable spec; `guardian` review | todo, behind its dependencies |
@@ -990,7 +1017,7 @@ Every section added since 2026-11-13. "Stays" means the entry is left where it i
 | `net::ERR_NETWORK_CHANGED` in local visual runs (P13-31) | **P0-18** | Seen in three full runs, with traces. |
 | The visual accept script rewrites captures that passed | **P0-18** | It weakens the gate it serves. |
 | #158 `guardian` lows: a failed stop's reason; the text filters | **P0-19** | Invariant I4; proven with a probe. |
-| Detail page subtitle list (owner, #173) | **P17-02**; the audio list is **L1** | Decided by the owner. |
+| Detail page subtitle list (owner, #173) | **P17-02**; the audio question (L1) is **P17-08** | Decided by the owner. |
 | P13-29: carry the choice to the next episode; audio-description labels | Already **P15-07** and **P15-12** | Struck as duplicates. |
 | P13-31: account reset keyed on the gateway object; `dropOtherAccounts`; `useAccountChanged` | Stays; **note for P3-20's spec** | They matter only once accounts switch. P3-20's acceptance already covers the outcome. |
 | P13-23: libmpv2 drops `MPV_FORMAT_NONE` changes | Stays; **note for P2-06** | The binding is about to be upgraded from 5 to 7. |
@@ -1006,7 +1033,7 @@ Every section added since 2026-11-13. "Stays" means the entry is left where it i
 | P3-22 preference-store lows | Stays | The second is already tied to P3-23, P3-24, or P3-26. The first needs blocked storage and a legacy key together. |
 | PR #165: one-frame resize, GTK default size, the `DrawingArea` stand-in | Stays | Cosmetic, or a hardware gate the PR already lists. |
 | P0-14 lows (`lint-boundaries` exit code at 256 violations); the `typescript-6` alias | Stays | Cannot happen at this size; the alias waits for upstream releases. |
-| glib 0.18 advisory | Stays | Cannot be fixed before Tauri moves to GTK4. Dismissing the alert is the owner's call. |
+| glib 0.18 advisory | Stays | Cannot be fixed before Tauri moves to GTK4. The owner dismissed the alert on 2026-11-14 (relayed by the coordinating agent); the entry stays as the reminder to revisit then. |
 | Flaky `rust-audit` | Stays | Seen once. The entry already says what to do if it recurs. |
 | "Test Fluster against Jellyscale" (2026-11-12) | Stays, with a note | P17-04 is its fixture server and P17-06 its tripwire. The pass across sign-in and browse is still unowned. |
 
@@ -1022,11 +1049,12 @@ No invariant changes. These are the ones the new tasks must hold, and each is an
 - "Send the same PlaybackInfo flags in the body and the query" and "send the Fluster DeviceProfile with every PlaybackInfo request": P17-06 extends both to the second route by sharing the builder.
 - "Treat every new Tauri command as an architecture change": P17-07, as above.
 - **CI changes:** P0-18 (possibly), P17-04 (a new job, not required), P17-06 (makes it required and widens the tripwire).
-- **`DESIGN.md`:** §7.9 (P17-02), §7.18 (P17-03, P17-05; replaces Q23 A for Subtitles), §7.10 and §7.14 (P17-07).
+- **I1 again, and the body-and-query rule:** P17-08 sends `AudioStreamIndex` on a first negotiation when the viewer picked a track. See "Answers" above.
+- **`DESIGN.md`:** §7.9 (P17-02), §7.8 and §7.10 (P17-08), §7.18 (P17-03, P17-05; replaces Q23 A for Subtitles), §7.10 and §7.14 (P17-07).
 
 ### Questions for the owner
 
-Two batches. Batch 1 is needed now; batch 2 only when jellyscale ships its side. Streaming-service convention is the default unless there is a reason against it.
+Two batches. **Batch 1 is answered** (see "Answers" above; the text below is as asked). Batch 2 is open and is needed only when jellyscale ships its side. L8 is open and is asked under "Answers". Streaming-service convention is the default unless there is a reason against it.
 
 #### Batch 1: the detail page and Settings
 
@@ -1072,7 +1100,7 @@ Two batches. Batch 1 is needed now; batch 2 only when jellyscale ships its side.
 
 ### What this pass did not do
 
-- It did not edit an existing task. Three suggestions are left for the owner or the coordinator: add P17-02 to P4-01's `depends_on`; carry the notes above into the specs of P3-20, P2-06, P2-12, P13-19, and P16-11; and change P16-11's `verify` string, which runs the whole suite.
+- It did not edit an existing task. Three suggestions are left for the owner or the coordinator: add P17-02 to P4-01's `depends_on`; carry the notes in the triage table into the specs of P3-20, P2-06, P2-12, P13-19, and P16-11; and change P16-11's `verify` string, which runs the whole suite.
 - It filed nothing in jellyscale's tracker. Two requests are in the backlog: a partial or version-checked configuration save, and a published image with the Babel Film fixture.
 - It did not change `DESIGN.md`, `ARCHITECTURE.md`, or `PRODUCT.md`. Each task changes the document it affects.
 - It did not run a competing client or a server.
