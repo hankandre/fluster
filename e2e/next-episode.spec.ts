@@ -155,6 +155,9 @@ test("the countdown near the end of an episode starts the next one with a fresh 
     EnableDirectStream: true,
     EnableTranscoding: true,
   });
+  // A viewer's audio pick on a title's page is never carried to the next episode (P17-08).
+  expect(log.playbackInfo[1].body).not.toHaveProperty("AudioStreamIndex");
+  expect(log.playbackInfo[1].body).not.toHaveProperty("MediaSourceId");
   await expect.poll(() => log.stopped.length).toBeGreaterThanOrEqual(1);
   expect(log.stopped[0]).toMatchObject({ PlaySessionId: "play-ep-1-1", Failed: false });
 });

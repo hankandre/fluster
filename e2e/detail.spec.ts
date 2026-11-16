@@ -197,7 +197,9 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1920, height: 108
     await expect(page.getByRole("link", { name: /^Resume from/ })).toBeVisible();
     await expect(page.getByRole("button", { name: /^Version/ })).toBeVisible();
     const tops = await bar.locator("a, button").evaluateAll((nodes) => nodes.map((node) => Math.round(node.getBoundingClientRect().top)));
-    expect(tops.length).toBe(5);
+    // Resume, Version, Audio (P17-08), Start over, Watched, Favorite.
+    await expect(page.getByRole("button", { name: /^Audio/ })).toBeVisible();
+    expect(tops.length).toBe(6);
     expect(new Set(tops).size).toBe(1);
   });
 }

@@ -353,6 +353,17 @@ export const scenarios: Scenario[] = [
     await page.getByRole("button", { name: /^Version/ }).click();
     await page.waitForTimeout(300);
   } },
+  { name: "46a-detail-audio-picker", run: async (page) => {
+    await signedInAt(page, "#/next/item/m1", 1_000);
+    await page.getByRole("button", { name: /^Audio/ }).click();
+    await page.waitForTimeout(300);
+  } },
+  { name: "46b-detail-audio-preferred", opts: { audioLanguage: "fra" }, run: async (page) => {
+    await signedInAt(page, "#/next/item/m1", 1_000);
+    await page.getByRole("button", { name: /^Audio French/ }).waitFor();
+    await page.getByRole("button", { name: /^Audio/ }).click();
+    await page.waitForTimeout(300);
+  } },
   { name: "47-detail-loading", opts: { detailDelayMs: 6_000 }, run: async (page) => {
     await signIn(page);
     await page.evaluate(() => { window.location.hash = "#/next/item/m1"; });
@@ -736,6 +747,15 @@ export const scenarios: Scenario[] = [
   { name: "93-tv-picker-sheet", tvOnly: true, run: async (page) => {
     await signedInAt(page, "#/next/browse/lib-movies", 1_000);
     await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+    await page.getByRole("listbox").waitFor();
+    await page.waitForTimeout(300);
+  } },
+  { name: "93a-tv-audio-sheet", tvOnly: true, run: async (page) => {
+    await signedInAt(page, "#/next/item/m1", 1_000);
+    await page.getByRole("link", { name: /^(Play|Resume)/ }).focus();
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("ArrowRight");
     await page.keyboard.press("Enter");
     await page.getByRole("listbox").waitFor();
     await page.waitForTimeout(300);
