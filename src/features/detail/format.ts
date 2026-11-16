@@ -102,9 +102,13 @@ export function subtitleCountLine(remaining: number, languages: number, afterDef
   return `${count} in ${languages} ${languages === 1 ? "language" : "languages"}`;
 }
 
-// "Show all 52 subtitles"; "Show 1 subtitle" when the total is 1.
+// "Show all 52 subtitles". A single track is always listed, so the button never sees a total of 1.
 export function showAllSubtitlesLabel(total: number): string {
-  return total === 1 ? "Show 1 subtitle" : `Show all ${total} subtitles`;
+  return `Show all ${total} subtitles`;
+}
+
+export function showFewerSubtitlesLabel(): string {
+  return "Show fewer subtitles";
 }
 
 // A playback position as a clock: 12:34, or 1:02:03 past an hour.

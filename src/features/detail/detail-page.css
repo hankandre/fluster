@@ -98,6 +98,11 @@
     margin-top: var(--space-2);
   }
 
+  /* The quiet button keeps its padding for the hover and focus fill; the margin pulls the label onto the track column. */
+  .subtitle-list-row .ui-button {
+    margin-inline-start: calc(-1 * var(--space-5));
+  }
+
   @media (max-width: 719px) {
     .media-info dl {
       grid-template-columns: 1fr;

@@ -34,8 +34,16 @@ test("the viewer's language is listed first, and arrows and Enter expand the ful
   await page.keyboard.press("Enter");
 
   await expect(subtitleItems(page)).toHaveCount(52);
-  await expect(button).toHaveCount(0);
-  await expect(hdrInfo(page).getByRole("list", { name: "All 52 subtitles" })).toBeFocused();
+  const fewer = hdrInfo(page).getByRole("button", { name: "Show fewer subtitles" });
+  await expect(fewer).toBeFocused();
+  await expect(fewer).toHaveAttribute("aria-expanded", "true");
+
+  await page.keyboard.press("Enter");
+  await expect(button).toBeFocused();
+  await expect(button).toHaveAttribute("aria-expanded", "false");
+  await expect(subtitleItems(page)).toHaveCount(3);
+  await page.keyboard.press("Enter");
+  await expect(subtitleItems(page)).toHaveCount(52);
 
   for (let press = 0; press < 3; press += 1) {
     await page.keyboard.press("ArrowUp");

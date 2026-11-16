@@ -82,12 +82,37 @@ describe("SubtitleList", () => {
     await userEvent.keyboard("{Enter}");
     const list = screen.getByRole("list", { name: "All 4 subtitles" });
     expect(list.querySelectorAll("li")).toHaveLength(4);
-    expect(screen.queryByRole("button", { name: /Show all/ })).toBeNull();
     expect(screen.queryByText("3 more in 2 languages")).toBeNull();
-    expect(list).toHaveFocus();
+    expect(screen.getByRole("button", { name: "Show fewer subtitles" })).toHaveFocus();
 
-    fireEvent.keyDown(list, { key: "ArrowUp" });
+    fireEvent.keyDown(document.activeElement as Element, { key: "ArrowUp" });
     expect(play).toHaveFocus();
+  });
+
+  it("toggles in place: label, aria-expanded, aria-controls, and focus stay on the button", async () => {
+    render(<SubtitleList subtitles={mixed} preference={undefined} cultures={undefined} />);
+    const more = screen.getByRole("button", { name: "Show all 4 subtitles" });
+    expect(more).toHaveAttribute("aria-expanded", "false");
+    more.focus();
+
+    await userEvent.keyboard("{Enter}");
+    const fewer = screen.getByRole("button", { name: "Show fewer subtitles" });
+    expect(fewer).toBe(more);
+    expect(fewer).toHaveAttribute("aria-expanded", "true");
+    expect(fewer).toHaveFocus();
+    const list = screen.getByRole("list", { name: "All 4 subtitles" });
+    expect(list).toHaveAttribute("id", fewer.getAttribute("aria-controls"));
+    expect(list).not.toHaveAttribute("tabindex");
+    expect(list.compareDocumentPosition(fewer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    await userEvent.keyboard("{Enter}");
+    const again = screen.getByRole("button", { name: "Show all 4 subtitles" });
+    expect(again).toHaveAttribute("aria-expanded", "false");
+    expect(again).toHaveFocus();
+    expect(screen.queryByRole("list", { name: "All 4 subtitles" })).toBeNull();
+    expect(screen.getAllByRole("listitem")).toHaveLength(1);
+    expect(screen.getByText("3 more in 2 languages")).toBeInTheDocument();
+    expect(document.getElementById(again.getAttribute("aria-controls") ?? "")).not.toBeNull();
   });
 
   it("goes back to the short form for another version", () => {
