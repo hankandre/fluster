@@ -1,5 +1,5 @@
 import { useEffect, useRef, type MutableRefObject } from "react";
-import { playerKeyAction } from "../../../components/player-keymap";
+import { playerKeyAction } from "../player-keymap";
 import type { PlaybackSnapshot, PlayerEngine } from "../../../domain/playback";
 import { nextSourceSubtitle, type TrackKind } from "../../../domain/track-choice";
 import { END_COPY, fractionCopy, MUTED_COPY, seekCopy, START_COPY, subtitleCopy, volumeCopy } from "./osd-copy";

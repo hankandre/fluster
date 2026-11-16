@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
-import type { PlayerEngine, PlayerSurfaceFrame } from "../domain/playback";
-import { errorReason } from "../features/player/safe-reason";
+import type { PlayerEngine, PlayerSurfaceFrame } from "../../domain/playback";
+import { errorReason } from "./safe-reason";
 
 function sameFrame(left: PlayerSurfaceFrame | undefined, right: PlayerSurfaceFrame): boolean {
   return left?.x === right.x

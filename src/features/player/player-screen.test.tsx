@@ -1,12 +1,12 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PlaybackSnapshot, PlayerEngine } from "../domain/playback";
-import { HOLD_MS } from "../features/shared/hold-key";
-import { conversionIndicator } from "../features/player/conversion-copy";
-import type { ReadyPlayerStatus } from "../features/player/player-status";
-import { BUFFERING_STATUS_DELAY_MS, CHROME_IDLE_MS, OSD_MS, OSD_NOTICE_MS } from "../features/player/chrome/timing";
-import type { PlaybackSessionState } from "../lib/player/session-state";
-import { PlayerView } from "./PlayerView";
+import type { PlaybackSnapshot, PlayerEngine } from "../../domain/playback";
+import { HOLD_MS } from "../shared/hold-key";
+import { conversionIndicator } from "./conversion-copy";
+import type { ReadyPlayerStatus } from "./player-status";
+import { BUFFERING_STATUS_DELAY_MS, CHROME_IDLE_MS, OSD_MS, OSD_NOTICE_MS } from "./chrome/timing";
+import type { PlaybackSessionState } from "../../lib/player/session-state";
+import { PlayerView } from "./player-screen";
 
 afterEach(() => {
   vi.useRealTimers();

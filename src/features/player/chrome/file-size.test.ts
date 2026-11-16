@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 // built from small parts. use-playback-session.ts is outside this task and is
 // not measured.
 const chromeDir = __dirname;
-const componentsDir = join(__dirname, "../../../components");
+const playerDir = join(__dirname, "..");
 const MAX_LINES = 400;
 
 function sourceFiles(dir: string): string[] {
@@ -20,7 +20,7 @@ function sourceFiles(dir: string): string[] {
 const lines = (file: string) => readFileSync(file, "utf8").split("\n").length;
 
 describe("player chrome file size", () => {
-  const files = [...sourceFiles(chromeDir), join(componentsDir, "PlayerView.tsx"), join(componentsDir, "player-keymap.ts")];
+  const files = [...sourceFiles(chromeDir), join(playerDir, "player-screen.tsx"), join(playerDir, "player-keymap.ts")];
 
   for (const file of files) {
     it(`${file.slice(file.indexOf("src/") + 4)} has at most ${MAX_LINES} lines`, () => {

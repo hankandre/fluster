@@ -13,7 +13,7 @@ module.exports = {
       from: { path: "^src/domain/", pathNot: tests },
       to: {
         path:
-          "^src/(lib|components|features|app)/|node_modules/(react|react-dom|@jellyfin/sdk|@tauri-apps|axios)/",
+          "^src/(lib|features|app)/|node_modules/(react|react-dom|@jellyfin/sdk|@tauri-apps|axios)/",
       },
     },
     {
@@ -27,7 +27,7 @@ module.exports = {
       },
       to: {
         path:
-          "node_modules/(react|react-dom|@tanstack|@tauri-apps)/|^src/(components|features|app)/|^src/lib/(player/(browser-player|native-player)|realtime/|discovery/|install-id|browser-)",
+          "node_modules/(react|react-dom|@tanstack|@tauri-apps)/|^src/(features|app)/|^src/lib/(player/(browser-player|native-player)|realtime/|discovery/|install-id|browser-)",
       },
     },
     {
@@ -35,7 +35,7 @@ module.exports = {
       severity: "error",
       comment:
         "DOMAINS.md > Dependency rules 3: only the composition root constructs gateways and engines. Receive them via props or context from src/app/compose.ts.",
-      from: { path: "^src/(components|features)/", pathNot: tests },
+      from: { path: "^src/features/", pathNot: tests },
       to: {
         path: "^src/lib/(jellyfin/gateway|player/native-player|player/browser-player|realtime/|discovery/)",
       },
@@ -47,8 +47,31 @@ module.exports = {
         "DOMAINS.md > Dependency rules 2: adapters never import UI or application code. Pass what the adapter needs in as arguments instead.",
       from: { path: "^src/lib/", pathNot: tests },
       to: {
-        path: "^src/(components|features|app)/|node_modules/react/",
+        path: "^src/(features|app)/|node_modules/react/",
       },
+    },
+    {
+      name: "no-components-directory",
+      severity: "error",
+      comment:
+        "DOMAINS.md > Dependency rules: UI lives under src/features/. src/components/ was removed in P2-09; put player UI in src/features/player/ and shared UI in src/features/shared/ui/.",
+      from: {},
+      to: { path: "^src/components/" },
+    },
+    {
+      name: "no-components-directory-imports",
+      severity: "error",
+      comment: "Same rule as no-components-directory, for a module under src/components/ that imports something.",
+      from: { path: "^src/components/" },
+      to: {},
+    },
+    {
+      name: "no-components-orphan",
+      severity: "error",
+      comment:
+        "Same rule as no-components-directory, for a module under src/components/ that imports nothing and is imported by nothing.",
+      from: { orphan: true, path: "^src/components/" },
+      to: {},
     },
     {
       name: "no-circular",
