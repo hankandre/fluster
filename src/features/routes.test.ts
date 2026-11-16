@@ -14,7 +14,20 @@ describe("play route", () => {
     expect(parsePlayRoute("#/next/play/m1")).toEqual({ itemId: "m1", mediaSourceId: undefined, startTicks: 0 });
   });
 
+  it("carries an audio pick only with a version, and only as digits", () => {
+    const route = { itemId: "m1", mediaSourceId: "src", startTicks: 0, audioStreamIndex: 2 };
+    expect(playRoute(route)).toBe("#/next/play/m1?source=src&audio=2");
+    expect(parsePlayRoute(playRoute(route))).toEqual(route);
+    expect(playRoute({ itemId: "m1", startTicks: 0, audioStreamIndex: 2 })).toBe("#/next/play/m1");
+    expect(parsePlayRoute("#/next/play/m1?audio=2")).toEqual({ itemId: "m1", mediaSourceId: undefined, startTicks: 0 });
+    expect(parsePlayRoute("#/next/play/m1?source=src&audio=0")).toMatchObject({ audioStreamIndex: 0 });
+  });
+
   it.each([
+    "#/next/play/m1?source=src&audio=-1",
+    "#/next/play/m1?source=src&audio=abc",
+    "#/next/play/m1?source=src&audio=12345",
+    "#/next/play/m1?source=src&audio=",
     "#/next/play/",
     "#/next/play/?start=5",
     "#/next/play/m1/extra",

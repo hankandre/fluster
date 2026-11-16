@@ -158,6 +158,7 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
     player,
     item,
     mediaSourceId: route.mediaSourceId,
+    audioStreamIndex: route.audioStreamIndex,
     startTicks: route.startTicks,
     streamingLimits: preferences?.streamingLimits,
     onSessionEnded: () => {

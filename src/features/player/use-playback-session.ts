@@ -62,10 +62,11 @@ function playbackGatewayFor(
           ignoreStreamingLimit: ignoreLimit.current,
         });
       }
-      const { mediaSourceId: playing, ...streams } = selection;
+      const { mediaSourceId: playing, keepDirectPlay, ...streams } = selection;
       return gateway.createPlaybackPlan(item, startPositionTicks, signal, playing, {
         ignoreStreamingLimit: ignoreLimit.current,
         ...streams,
+        ...(keepDirectPlay ? { keepDirectPlay: true } : {}),
       });
     },
     reportStart: (plan, snapshot, signal) => gateway.reportStart(plan, snapshot, signal),
@@ -127,6 +128,8 @@ export interface PlaybackSessionOptions {
   player: PlayerServices;
   item: LibraryItem;
   mediaSourceId: string | undefined;
+  // The audio track the viewer picked on the title's page, with `mediaSourceId` naming its version.
+  audioStreamIndex?: number | undefined;
   startTicks: number;
   // The user's streaming limits. A change to the one for this server while
   // playing renegotiates when it can change the delivery. Optional: without
@@ -142,13 +145,14 @@ export interface PlaybackSessionOptions {
 // Runs one playback from negotiation to teardown: one coordinator per session, retry in place, and Back stops
 // before leaving.
 export function usePlaybackSession(options: PlaybackSessionOptions) {
-  const { gateway, player, item, mediaSourceId, startTicks, streamingLimits } = options;
+  const { gateway, player, item, mediaSourceId, audioStreamIndex, startTicks, streamingLimits } = options;
   const { engine, watchWindowClose, watchMediaControls } = player;
   const [state, dispatch] = useReducer(playbackSessionReducer, initialPlaybackSessionState);
   const [retrying, setRetrying] = useState(false);
   const [refusal, setRefusal] = useState<PlaybackRefusal>();
   const [unsupported, setUnsupported] = useState(false);
   const [plan, setPlan] = useState<PlaybackPlan>();
+  const [audioPickNotApplied, setAudioPickNotApplied] = useState(false);
   const session = useRef<ActiveSession | undefined>(undefined);
   const ignoreLimit = useRef(false);
   const [playOriginalRequested, setPlayOriginalRequested] = useState(false);
@@ -213,6 +217,9 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
       onPlanConfirmed: (confirmed) => {
         if (mounted && session.current === active) setPlan(confirmed);
       },
+      onAudioPickNotApplied: () => {
+        if (mounted && session.current === active) setAudioPickNotApplied(true);
+      },
       onSessionEnded: (reason: PlaybackEndReason) => {
         // The engine has stopped. The Stopped report drains in the background:
         // the next session and the window close wait for it, leaving does not.
@@ -230,6 +237,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     setRefusal(undefined);
     setUnsupported(false);
     setPlan(undefined);
+    setAudioPickNotApplied(false);
 
     const choice: PlaybackStartChoice = startTicks > 0
       ? { kind: "resume", startPositionTicks: startTicks }
@@ -239,7 +247,10 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
       // Back or close may have come while the previous stop was running.
       if (!mounted || active.stopping || session.current !== active) return;
       active.started = true;
-      coordinator.start(item, choice).then((started) => {
+      const starting = audioStreamIndex !== undefined && mediaSourceId !== undefined
+        ? coordinator.start(item, choice, { mediaSourceId, audioStreamIndex })
+        : coordinator.start(item, choice);
+      starting.then((started) => {
         if (mounted) setPlan((current) => keepConfirmed(current, started));
       }).catch((error: unknown) => {
         if (mounted) handleFailure(error);
@@ -260,7 +271,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
       if (session.current === active) session.current = undefined;
       if (!active.stopping) void stopSession(engine, active).catch(() => undefined);
     };
-  }, [gateway, engine, watchWindowClose, item, mediaSourceId, startTicks, leave, handleFailure]);
+  }, [gateway, engine, watchWindowClose, item, mediaSourceId, audioStreamIndex, startTicks, leave, handleFailure]);
 
   // Runs a new attempt for the same item in place: Retry, Play original, and
   // track and limit renegotiations. Never once the session is leaving or the
@@ -278,6 +289,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     setRefusal(undefined);
     setUnsupported(false);
     setPlan(undefined);
+    setAudioPickNotApplied(false);
     setRetrying(true);
     try {
       const retried = await run(active.coordinator);
@@ -422,6 +434,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     retrying,
     refusal,
     unsupported,
+    audioPickNotApplied,
     retry,
     playOriginal,
     playOriginalRequested,

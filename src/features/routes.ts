@@ -112,20 +112,24 @@ export interface PlayRoute {
   mediaSourceId?: string;
   // Where playback starts. Zero starts from the beginning.
   startTicks: number;
+  // The audio track the viewer picked on the title's page (the Jellyfin stream index of `mediaSourceId`'s
+  // version). Only the page's own play links set it; it is never carried to another title.
+  audioStreamIndex?: number;
 }
 
 const PLAY_PREFIX = "#/next/play/";
 
-export function playRoute({ itemId, mediaSourceId, startTicks }: PlayRoute): string {
+export function playRoute({ itemId, mediaSourceId, startTicks, audioStreamIndex }: PlayRoute): string {
   const params = new URLSearchParams();
   if (mediaSourceId) params.set("source", mediaSourceId);
+  if (mediaSourceId && audioStreamIndex !== undefined) params.set("audio", String(audioStreamIndex));
   if (startTicks > 0) params.set("start", String(startTicks));
   const query = params.toString();
   return `${PLAY_PREFIX}${encodeURIComponent(itemId)}${query ? `?${query}` : ""}`;
 }
 
-// Reads #/next/play/<itemId>?source=<mediaSourceId>&start=<ticks>.
-// A malformed id or start position is not a route.
+// Reads #/next/play/<itemId>?source=<mediaSourceId>&audio=<index>&start=<ticks>.
+// A malformed id, start position, or audio index is not a route; an audio index without a source is dropped.
 export function parsePlayRoute(hash: string): PlayRoute | undefined {
   if (!hash.startsWith(PLAY_PREFIX)) return undefined;
   const rest = hash.slice(PLAY_PREFIX.length);
@@ -144,7 +148,14 @@ export function parsePlayRoute(hash: string): PlayRoute | undefined {
   const start = params.get("start") ?? "0";
   if (!/^\d{1,18}$/.test(start)) return undefined;
   const source = params.get("source");
-  return { itemId, mediaSourceId: source || undefined, startTicks: Number(start) };
+  const audio = params.get("audio");
+  if (audio !== null && !/^\d{1,4}$/.test(audio)) return undefined;
+  return {
+    itemId,
+    mediaSourceId: source || undefined,
+    startTicks: Number(start),
+    ...(source && audio !== null ? { audioStreamIndex: Number(audio) } : {}),
+  };
 }
 
 const ITEM_PREFIX = "#/next/item/";
