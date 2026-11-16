@@ -78,6 +78,8 @@ interface Sample {
   user?: "restricted";
   limitMbps?: number;
   optIn?: boolean;
+  // P17-08: play with the second audio track picked, through the gateway's audio pick options.
+  audioPick?: "second";
 }
 
 const BLURAY = "/media/movies/Synthetic BluRay (2024)";
@@ -92,6 +94,8 @@ const SAMPLES: Sample[] = [
   { name: "ass", path: "/media/movies/Synthetic ASS (2024)/Synthetic ASS (2024).mkv", expect: DIRECT },
   { name: "sidecar-srt", path: "/media/movies/Synthetic Sidecar (2024)/Synthetic Sidecar (2024).mkv", expect: { kind: "direct-play", externalSubtitle: true } },
   { name: "multitrack", path: "/media/movies/Synthetic Multitrack (2024)/Synthetic Multitrack (2024).mkv", expect: DIRECT },
+  // P17-08: a viewer's audio pick on the first negotiation must still direct play (I1) and select no job.
+  { name: "multitrack-audio-pick", path: "/media/movies/Synthetic Multitrack (2024)/Synthetic Multitrack (2024).mkv", expect: DIRECT, audioPick: "second" },
   { name: "versions", path: "/media/movies/Synthetic Versions (2024)/Synthetic Versions (2024) - 1080p.mkv", expect: DIRECT },
   { name: "dvdsub", path: "/media/movies/Synthetic DVDSub (2024)/Synthetic DVDSub (2024).mkv", expect: DIRECT, optIn: true },
   { name: "show-s01e01", path: "/media/shows/Synthetic Show/Season 01/Synthetic Show S01E01.mkv", expect: DIRECT },
@@ -154,6 +158,19 @@ interface ServerContext {
   gatewayFor(sample: Sample): Promise<JellyfinGateway>;
 }
 
+// The first media source's id and the Jellyfin index of its second audio stream: what the title page sends
+// when the viewer picks the second track. Fails the sample unless the plan is a static one for that track.
+async function planWithAudioPick(gateway: JellyfinGateway, item: ItemDto, result: SampleResult): Promise<PlaybackPlan> {
+  const source = (item.MediaSources?.[0] ?? {}) as { Id?: string; MediaStreams?: { Type?: string; Index?: number }[] };
+  const audio = (source.MediaStreams ?? []).filter((stream) => stream.Type === "Audio" && typeof stream.Index === "number");
+  const audioStreamIndex = audio[1]?.Index;
+  if (!source.Id || audioStreamIndex === undefined) throw new Error("the multitrack sample has no second audio stream");
+  const plan = await gateway.createPlaybackPlan(toLibraryItem(item), 0, undefined, source.Id, { audioStreamIndex, keepDirectPlay: true });
+  if (plan.delivery !== "static") fail(result, "I1", "the audio pick turned a direct play into a conversion");
+  else if (plan.defaultAudioStreamIndex !== audioStreamIndex) fail(result, "playback", "the plan does not carry the picked audio track");
+  return plan;
+}
+
 async function playSample(server: ServerContext, sample: Sample, item: ItemDto): Promise<SampleResult> {
   const startedAt = Date.now();
   const result: SampleResult = {
@@ -171,7 +188,9 @@ async function playSample(server: ServerContext, sample: Sample, item: ItemDto):
   try {
     const gateway = await server.gatewayFor(sample);
     try {
-      plan = await gateway.createPlaybackPlan(toLibraryItem(item));
+      plan = sample.audioPick
+        ? await planWithAudioPick(gateway, item, result)
+        : await gateway.createPlaybackPlan(toLibraryItem(item));
     } catch (error) {
       if (!(error instanceof PlaybackRefusedError)) throw error;
       result.refusal = error.reason;
