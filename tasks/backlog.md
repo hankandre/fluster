@@ -387,3 +387,8 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 - Split `src/lib/jellyfin/gateway.ts` along domain lines; it was over 1000 lines before P17-02 and gained two short reads. S (P17-02).
 - Tracks that jellyscale hides (L6) are covered by P17-05 to P17-07; the detail list counts only the tracks the server listed (P17-02).
 - Detail subtitle list design lows: the expanded list's focus ring is a viewport-tall box; the quiet "Show all N subtitles" button's padding misaligns it by about 25px; the unreachable "Show 1 subtitle" branch in `format.ts`; no test for a failed `/Localization/Cultures` read in `account-languages.ts`. S (P17-02, see its spec "Review follow-ups").
+
+## P17-02 follow-up review lows (#192, 2026-11-16)
+
+- `.ui-button`'s 1px transparent border (`controls.css:14`) has no token, so `detail-page.css` repeats `1px` to align the quiet subtitles button. Add a border-width token and use it in both places. S.
+- `e2e/tv/detail.spec.ts`: after collapsing and expanding the subtitle list again, the test does not re-run `expectTitleSafe`. S.
