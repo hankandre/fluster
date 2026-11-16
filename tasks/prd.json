@@ -441,10 +441,10 @@
             "The PR calls out any change to CI or to the visual gate"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "todo",
+          "status": "in_progress",
           "owner": null,
           "passes": false,
-          "evidence": ""
+          "evidence": "Implemented on task/P0-18 (not pushed): port sentence (scripts/e2e-ports.mjs), accept copies only failed captures from results.json (scripts/visual-accept.mjs), additive waits in e2e/back-keys.spec.ts and e2e/tv/detail.spec.ts, scripts/netns.sh for ERR_NETWORK_CHANGED. Local: pnpm check exit 0; 10 e2e runs in a row each 193 passed through scripts/netns.sh; pnpm test:visual 381 passed 0 flaky. Pending in CI: 3 green CI runs with 0 flaky, determinism of 14/15/85."
         },
         {
           "id": "P0-19",
