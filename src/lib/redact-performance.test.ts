@@ -31,6 +31,8 @@ function adversarial(size: number): string[] {
     `token ${"a".repeat(size)}`,
     " 1.1.1.1".repeat(size / 8),
     `http://${"[".repeat(size)}`,
+    'a://["'.repeat(size / 6),
+    "a://[)".repeat(size / 6),
     "\\".repeat(size),
   ];
 }

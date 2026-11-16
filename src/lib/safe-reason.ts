@@ -3,7 +3,7 @@ import { redactText, redactedErrorMessage } from "./redact";
 const MAX_LENGTH = 300;
 // Each pattern starts only at a token start (a lookbehind, not \b) so matching
 // stays linear on long input.
-const ADDRESS = /(?<![a-z0-9+.-])[a-z][a-z0-9+.-]*:\/\/(?:[^\s"')\[\]]*\[[^\]\s]*\])?(?:\[redacted\]|[^\s"')\]])*/gi;
+const ADDRESS = /(?<![a-z0-9+.-])[a-z][a-z0-9+.-]*:\/\/(?:[^\s"')\[\]]*\[[^\]\s"')]*\])?(?:\[redacted\]|[^\s"')\]])*/gi;
 const UNC_PATH = /\\\\[^\s"'),;]+/g;
 const WINDOWS_PATH = /\b[A-Za-z]:[\\/][^\s"'),;]*/g;
 const HOME_PATH = /~\/[^\s"'),;]*/g;
