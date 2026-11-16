@@ -151,6 +151,22 @@ export interface PlaybackInfoResponse {
   PlaySessionId?: string;
 }
 
+// The wire shapes of GET /Users/Me and GET /Localization/Cultures. Only the fields Fluster reads.
+export interface UserConfigurationDto {
+  SubtitleLanguagePreference?: string | null;
+  [key: string]: unknown;
+}
+export interface UserDto {
+  Configuration?: UserConfigurationDto | null;
+}
+export interface CultureDto {
+  Name?: string;
+  DisplayName?: string;
+  TwoLetterISOLanguageName?: string;
+  ThreeLetterISOLanguageName?: string;
+  ThreeLetterISOLanguageNames?: string[];
+}
+
 export interface HttpRequestConfig {
   responseType?: "blob";
   headers?: Record<string, string>;
