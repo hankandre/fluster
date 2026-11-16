@@ -1,9 +1,11 @@
 import { createContext, useContext, type ReactNode } from "react";
+import type { ContinueWindowStore } from "../lib/preference-store";
 import type { StreamingLimitStore } from "../lib/streaming-limits";
 
 // Non-secret user preferences the composition root hands to features.
 export interface Preferences {
   streamingLimits: StreamingLimitStore;
+  continueWindow: ContinueWindowStore;
 }
 
 const PreferencesContext = createContext<Preferences | undefined>(undefined);

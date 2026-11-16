@@ -3,8 +3,8 @@ import type { ServerDiscovery } from "../domain/server-discovery";
 import type { PlayerServices } from "./player-services";
 import { clientIdentity } from "./client-identity";
 import { lanHttpConfirmations } from "../lib/browser-lan-http-confirmations";
-import { preferences, streamingLimits } from "../lib/browser-preference-store";
-import type { PreferenceStore } from "../lib/preference-store";
+import { continueWindow, preferences, streamingLimits } from "../lib/browser-preference-store";
+import type { ContinueWindowStore, PreferenceStore } from "../lib/preference-store";
 import type { StreamingLimitStore } from "../lib/streaming-limits";
 import { getInstallId } from "../lib/install-id";
 import { JellyfinGateway } from "../lib/jellyfin/gateway";
@@ -27,6 +27,8 @@ export type AppServices = {
   preferences: PreferenceStore;
   // The user's streaming limits: a view of the preferences store.
   streamingLimits: StreamingLimitStore;
+  // How long Home's Continue watching row keeps a title: a view of the preferences store.
+  continueWindow: ContinueWindowStore;
   // LAN server discovery; desktop only, because a browser cannot send UDP.
   discovery?: ServerDiscovery;
   // Lets playback stop and report before the desktop window closes.
@@ -50,6 +52,7 @@ export function createServices(): AppServices {
     },
     preferences,
     streamingLimits,
+    continueWindow,
     realtime: native ? new NativeRealtime() : new NoOpRealtime(),
     discovery: native ? new NativeServerDiscovery() : undefined,
     watchWindowClose: native ? watchNativeWindowClose : undefined,

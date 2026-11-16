@@ -5,6 +5,7 @@ import {
   MemoryPreferenceStore,
   parseStoredPreferences,
   storedPreferences,
+  continueWindowOf,
   streamingLimitsOf,
   type PreferenceStore,
   type PreferenceValues,
@@ -91,3 +92,4 @@ export class BrowserPreferenceStore implements PreferenceStore {
 // One store per app launch, so the in-memory fallback outlives a gateway.
 export const preferences = new BrowserPreferenceStore();
 export const streamingLimits = streamingLimitsOf(preferences);
+export const continueWindow = continueWindowOf(preferences);

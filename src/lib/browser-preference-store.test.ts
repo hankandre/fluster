@@ -30,7 +30,7 @@ describe("browser preference store", () => {
     store.update("accessToken" as never, CANARY as never);
     const raw = window.localStorage.getItem(KEY)!;
     expect(raw).not.toContain(CANARY);
-    expect(JSON.parse(raw)).toEqual({ version: 1, streamingLimits: { localMbps: 40, remoteMbps: 8 } });
+    expect(JSON.parse(raw)).toEqual({ version: 1, streamingLimits: { localMbps: 40, remoteMbps: 8 }, continueWindow: "14" });
     expect(limitsOf(new BrowserPreferenceStore()).get()).toEqual({ localMbps: 40, remoteMbps: 8 });
   });
 
@@ -92,6 +92,7 @@ describe("migrating the streaming limits", () => {
     expect(JSON.parse(window.localStorage.getItem(KEY)!)).toEqual({
       version: 1,
       streamingLimits: { localMbps: 40, remoteMbps: 8 },
+      continueWindow: "14",
     });
     expect(window.localStorage.getItem(LEGACY)).toBeNull();
     expect(limitsOf(new BrowserPreferenceStore()).get()).toEqual({ localMbps: 40, remoteMbps: 8 });
@@ -128,5 +129,14 @@ describe("migrating the streaming limits", () => {
     });
     expect(limitsOf(new BrowserPreferenceStore()).get()).toEqual({ localMbps: 40 });
     expect(window.localStorage.getItem(LEGACY)).not.toBeNull();
+  });
+
+  it("stores the Continue watching window and reads it back; an invalid stored value reads as 14 days", () => {
+    const store = new BrowserPreferenceStore();
+    store.update("continueWindow", "7");
+    expect(JSON.parse(window.localStorage.getItem(KEY)!)).toMatchObject({ version: 1, continueWindow: "7" });
+    expect(new BrowserPreferenceStore().get().continueWindow).toBe("7");
+    window.localStorage.setItem(KEY, JSON.stringify({ version: 1, continueWindow: "99" }));
+    expect(new BrowserPreferenceStore().get().continueWindow).toBe("14");
   });
 });
