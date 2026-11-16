@@ -365,3 +365,10 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 - Check the Chromium source for revision 1254 (158.0.8127.18) for a switch or feature that stops `NetworkChangeNotifier` from aborting loopback requests, so local runs would not need `scripts/netns.sh`. The binary's strings show no such switch; this is unverified. S (P0-18).
 - The visual `results.json` records `config.argv` and attachment paths, which are runner-local paths. They hold no tokens, but strip them in `scripts/visual-accept.mjs` consumers or the reporter if the artifact is ever shared outside the repo. S (P0-18).
 - Harden the e2e and visual tooling lows from the P0-18 review: confirm every `openItem` caller in `e2e/back-keys.spec.ts` passes its item's title; make `scripts/visual-accept.mjs` refuse positional-file, `--project`, and two-token `--grep-invert` runs; probe `::1` and `0.0.0.0` in `scripts/e2e-ports.mjs`; clear `FLUSTER_E2E_PORTS_CHECKED` after the config's first use and ignore an inherited value. S (P0-18).
+
+## Player page clip fix and Home checkmark follow-ups (2026-11-16)
+
+- CI cannot run Playwright WebKit (the host lacks libicu74 and libxml2), so `e2e/player-sheet-scroll.spec.ts` runs in Chromium and imitates WebKit's late scroll-to-focus. Add a WebKit project, or a WebKitGTK smoke job, so the real engine is checked. S.
+- `player-sheet.tsx:58` returns focus to the opener with a plain `focus()`; with `.player-page` clipped it can no longer scroll the page, but other scroll containers on that path would still be scrolled. Consider `preventScroll` there too. S.
+- `e2e/` is outside ESLint's scope ("File ignored because no matching configuration"), so specs are never linted. S.
+- The e2e mock marks every episode 1 played (`e2e/support/mock-server.ts:185`), so Home's Next up card for "Perigee" shows a played checkmark in `19g-home-continue-merged`. Fix the fixture, and decide whether Continue watching cards should ever show the played badge (a Next up episode marked played can come from a rewatch). S (P16-02).
