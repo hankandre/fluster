@@ -358,3 +358,9 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 - The `core-is-shell-neutral` rule's `from` list in `.dependency-cruiser.cjs` names neither `src/lib/safe-reason.ts` nor `src/lib/redact.ts`, so lint would not stop a later shell import there. S (P0-19).
 - `safeReason` shows part of an IPv6 zone-id address or a credential: `connect [fe80::1%eth0]:8096 failed` is unchanged (the bracket class has no letters past hex, so `eth0` cannot match); a bare `fe80::1%eth0:8096` becomes `fe80::1%[address]`; a bare `user:pass@host:8096` with no scheme becomes `user:pass@[address]`, still showing the credential. S (P0-19).
 - `safeReason` hides only part of a path that contains a space: `cannot open /home/u/My Movie.mkv now` becomes `cannot open [path] Movie.mkv now`, and `c:\Program Files\x` becomes `[path] Files\x`, so filename fragments reach the screen. `origin/main` already behaved this way. S (P0-19).
+
+
+## E2E and visual repeatability follow-ups (P0-18, 2026-11-16)
+
+- Check the Chromium source for revision 1254 (158.0.8127.18) for a switch or feature that stops `NetworkChangeNotifier` from aborting loopback requests, so local runs would not need `scripts/netns.sh`. The binary's strings show no such switch; this is unverified. S (P0-18).
+- The visual `results.json` records `config.argv` and attachment paths, which are runner-local paths. They hold no tokens, but strip them in `scripts/visual-accept.mjs` consumers or the reporter if the artifact is ever shared outside the repo. S (P0-18).
