@@ -6,6 +6,7 @@ import type { HttpRequestConfig, HttpTransport } from "./jellyfin/types";
 import { PlaybackCoordinator, type PlaybackGateway } from "./player/coordinator";
 import { diagnosticsText } from "../features/settings/diagnostics";
 import { redactError, redactText, redactUrl } from "./redact";
+import { safeReason } from "./safe-reason";
 
 const CANARY = "CANARY-7f3a9c1e5b";
 const SERVER = "https://media.test/jellyfin";
@@ -48,6 +49,9 @@ function errorTexts(): string[] {
     `password=${CANARY}`,
     `/Videos/1/stream?PlaySessionId=${CANARY}`,
     `header x-emby-token=${CANARY}`,
+    `PlaySessionId ${CANARY}`,
+    `X-Emby-Token ${CANARY}`,
+    `Authorization MediaBrowser Token ${CANARY}`,
   );
   return texts;
 }
@@ -93,6 +97,21 @@ describe("redaction canary: redact helpers", () => {
       expectClean(`redactUrl(${url})`, redactUrl(url));
     }
     expectClean("redactUrl fallback", redactUrl(`not a url?api_key=${CANARY}`));
+  });
+});
+
+describe("redaction canary: safeReason", () => {
+  it("hides a canary carried inside each address or path form", () => {
+    const texts = [
+      `connect to ${CANARY}.test:8096 failed`,
+      `cannot open /${CANARY}`,
+      `cannot open C:/Users/${CANARY}/x.dll`,
+      `cannot open \\\\${CANARY}\\share\\x.mkv`,
+      `GET http://[::1]:8096/${CANARY}/index.html failed`,
+    ];
+    for (const text of texts) {
+      expectClean(`safeReason(${text})`, safeReason(text));
+    }
   });
 });
 
