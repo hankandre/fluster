@@ -225,6 +225,9 @@ export interface PlaybackPlanOptions extends StreamSelection {
   // Negotiate without the user's streaming limit. Used by Play original for
   // one session; never stored.
   ignoreStreamingLimit?: boolean;
+  // Set for a session that started from a viewer's audio pick. An answer that names the audio index is
+  // used only if it direct plays, or if the same request without the index does not (I1). Never sent.
+  keepDirectPlay?: boolean;
 }
 
 export interface PlayerCapabilities {
