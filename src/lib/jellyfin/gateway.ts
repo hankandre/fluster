@@ -33,6 +33,7 @@ import type {
   HttpResponse,
   HttpTransport,
   ItemsResult,
+  MediaSourceDto,
   PlaybackInfoResponse,
   QuickConnectResult,
   SearchHintResult,
@@ -832,13 +833,35 @@ export class JellyfinGateway {
       playSessionId: answer.PlaySessionId,
     });
     const streams = streamIndices(options);
+    // A viewer's audio pick (P17-08): the index, only when the session started from a pick and names its version.
+    const picked = options.keepDirectPlay === true && mediaSourceId ? streams.AudioStreamIndex : undefined;
     let data = await this.playbackInfo(item.id, startPositionTicks, signal, mediaSourceId, true, limit, streams);
     let decision = selectSource(data.MediaSources, context(data), mediaSourceId);
+    // Whether the answer in use was asked for with the pick.
+    let carriesPick = streams.AudioStreamIndex !== undefined;
+    if (picked !== undefined && decision.kind !== "force-fallback"
+      && !(decision.kind === "direct-play" && hasEmbeddedAudio(decision.source, picked))) {
+      // The same request without the index. A pick never costs a direct play (ARCHITECTURE.md §3, I1):
+      // the index's answer is used for a conversion only when this one converts too.
+      const { AudioStreamIndex: _dropped, ...plainStreams } = streams;
+      const plain = await this.playbackInfo(item.id, startPositionTicks, signal, mediaSourceId, true, limit, plainStreams);
+      const plainDecision = selectSource(plain.MediaSources, context(plain), mediaSourceId);
+      if (plainDecision.kind === "direct-play") {
+        data = plain;
+        decision = plainDecision;
+        carriesPick = false;
+      } else if (decision.kind !== "convert") {
+        data = plain;
+        decision = plainDecision;
+        carriesPick = false;
+      }
+    }
     if (decision.kind === "force-fallback") {
       // Rule 4: a disc folder or ISO the server offered for direct play. Ask
       // once more for that source without direct play, and never loop.
       const { reason, source } = decision;
       data = await this.playbackInfo(item.id, startPositionTicks, signal, source.Id, false, limit, streams);
+      carriesPick = streams.AudioStreamIndex !== undefined;
       decision = selectSource(data.MediaSources, context(data), source.Id);
       if (decision.kind === "force-fallback") {
         decision = { kind: "refused", reason, detail: "direct play offered again" };
@@ -890,7 +913,9 @@ export class JellyfinGateway {
           ...(track.IsHearingImpaired ? { isHearingImpaired: true } : {}),
         }];
       }),
-      defaultAudioStreamIndex: source.DefaultAudioStreamIndex ?? undefined,
+      defaultAudioStreamIndex: picked !== undefined && (carriesPick || decision.kind === "direct-play") && hasEmbeddedAudio(source, picked)
+        ? picked
+        : source.DefaultAudioStreamIndex ?? undefined,
       defaultSubtitleStreamIndex: source.DefaultSubtitleStreamIndex ?? undefined,
     };
   }
@@ -1034,6 +1059,12 @@ export class JellyfinGateway {
     if (!this.accessToken || !this.userId) throw new Error("Sign in before using the library.");
     return { accessToken: this.accessToken, userId: this.userId };
   }
+}
+
+// True when the source has an embedded audio stream at the index. An external audio file is never
+// loaded by the player, so a pick of one cannot be applied.
+function hasEmbeddedAudio(source: MediaSourceDto, index: number): boolean {
+  return (source.MediaStreams ?? []).some((stream) => stream.Type === "Audio" && stream.Index === index && stream.IsExternal !== true);
 }
 
 interface StreamIndexParams {
