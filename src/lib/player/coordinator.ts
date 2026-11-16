@@ -24,6 +24,14 @@ export const PLAY_METHOD_CHECKS_MS = [3_000, 10_000] as const;
 // stream indices only to the source named by mediaSourceId.
 export interface PlaybackSelection extends StreamSelection {
   mediaSourceId: string;
+  // Set when the session started from a viewer's audio pick (P17-08): the gateway then keeps direct play.
+  keepDirectPlay?: boolean;
+}
+
+// A viewer's audio pick for the title's chosen version.
+export interface AudioPick {
+  mediaSourceId: string;
+  audioStreamIndex: number;
 }
 
 export interface PlaybackGateway extends PlaystateGateway {
@@ -49,6 +57,8 @@ export interface CoordinatorCallbacks {
   onSessionEnded?(reason: PlaybackEndReason): void;
   // A converted session's plan after the server confirmed copy or encode.
   onPlanConfirmed?(plan: PlaybackPlan): void;
+  // The picked audio track is not the one the player started with. Called once per attempt.
+  onAudioPickNotApplied?(): void;
 }
 
 export class PlaybackCancelledError extends Error {
@@ -77,6 +87,10 @@ export class PlaybackCoordinator {
   // fails before its own first frame still retries from here.
   private firstFrameShown = false;
   private lastPlayedTicks?: number;
+  // The Jellyfin index of the audio track playing at the last first-frame or later snapshot. A retry of a
+  // session that started from a pick asks for it, so the track that was playing keeps playing.
+  private lastPlayedAudio?: number;
+  private audioPickReported = false;
   private attemptController?: AbortController;
   private attemptTask?: Promise<PlaybackPlan>;
   // The stop that cancelled a pending launch. Every later stop waits for it,
@@ -100,6 +114,7 @@ export class PlaybackCoordinator {
   start(
     item: LibraryItem,
     choice: PlaybackStartChoice = startOverChoice(),
+    pick?: AudioPick,
   ): Promise<PlaybackPlan> {
     if (this.attemptTask || this.plan || this.unsubscribe) {
       return Promise.reject(new Error("Another item is already playing."));
@@ -107,8 +122,9 @@ export class PlaybackCoordinator {
     this.operation += 1;
     this.item = item;
     this.choice = choice;
-    this.selection = undefined;
+    this.selection = pick ? { ...pick, keepDirectPlay: true } : undefined;
     this.lastPlayedTicks = undefined;
+    this.lastPlayedAudio = undefined;
     return this.runAttempt(item, choice, false);
   }
 
@@ -138,7 +154,7 @@ export class PlaybackCoordinator {
       "renegotiate",
       startPositionTicks,
       { ...this.selection, ...streams, mediaSourceId },
-      fallback && { ...fallback, mediaSourceId },
+      fallback && { ...fallback, mediaSourceId, ...(this.selection?.keepDirectPlay ? { keepDirectPlay: true } : {}) },
     );
   }
 
@@ -165,6 +181,10 @@ export class PlaybackCoordinator {
       : { kind: "resume", startPositionTicks: Math.max(0, Math.floor(position)) };
     this.choice = choice;
     if (selection) this.selection = selection;
+    else if (reason === "retry" && this.selection?.keepDirectPlay && this.lastPlayedAudio !== undefined) {
+      // A session that started from a pick keeps the track that was playing.
+      this.selection = { ...this.selection, audioStreamIndex: this.lastPlayedAudio };
+    }
     // Retry, Play original, and track and limit changes start a new play
     // session, so a converting one's server encode is stopped first. The new
     // attempt waits for it (bounded) before negotiating; Stop or Back cancels
@@ -186,6 +206,7 @@ export class PlaybackCoordinator {
     this.item = undefined;
     this.choice = undefined;
     this.lastPlayedTicks = undefined;
+    this.lastPlayedAudio = undefined;
   }
 
   async flush(): Promise<void> {
@@ -307,6 +328,7 @@ export class PlaybackCoordinator {
     if (event.kind === "first-frame") this.firstFrameShown = true;
     if (this.firstFrameShown && this.snapshot) {
       this.lastPlayedTicks = secondsToTicks(this.snapshot.positionSeconds);
+      if (this.snapshot.audioTrack !== undefined) this.lastPlayedAudio = this.snapshot.audioTrack;
     }
     const plan = this.plan;
     if (!plan) return;
@@ -314,6 +336,7 @@ export class PlaybackCoordinator {
     switch (event.kind) {
       case "loaded":
         this.reporter.start(plan, event.snapshot, () => this.snapshot, () => this.plan);
+        this.reportUnappliedAudioPick(event.snapshot);
         break;
       case "tracks-changed":
         this.reporter.progress(plan, event.snapshot);
@@ -347,6 +370,16 @@ export class PlaybackCoordinator {
       case "error":
         break;
     }
+  }
+
+  // A session that started from a pick says so once when the player's chosen audio track is not the pick
+  // (the gateway could not apply it, the engine could not map it, or the conversion did not carry it).
+  private reportUnappliedAudioPick(snapshot: PlaybackSnapshot): void {
+    const asked = this.selection;
+    if (this.audioPickReported || !asked?.keepDirectPlay || asked.audioStreamIndex === undefined) return;
+    if (snapshot.audioTrack === undefined || snapshot.audioTrack === asked.audioStreamIndex) return;
+    this.audioPickReported = true;
+    this.callbacks.onAudioPickNotApplied?.();
   }
 
   // Asks the server's session whether the conversion copies or encodes, at
@@ -435,6 +468,7 @@ export class PlaybackCoordinator {
         this.previousPlan = undefined;
         this.selection = undefined;
         this.lastPlayedTicks = undefined;
+        this.lastPlayedAudio = undefined;
     }
   }
 
@@ -452,6 +486,7 @@ export class PlaybackCoordinator {
     this.cancelPlayMethodCheck();
     this.snapshot = undefined;
     this.firstFrameShown = false;
+    this.audioPickReported = false;
     this.reporter.reset();
   }
 
