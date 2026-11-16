@@ -3623,7 +3623,7 @@
           "status": "in_progress",
           "owner": "claude",
           "passes": false,
-          "evidence": "Owner answers Q1-Q4 recorded (docs/specs/decisions-P16-02.md); milestones in progress."
+          "evidence": "Implemented on task/P16-02 (docs/specs/P16-02.md). pnpm check exit 0 (189 files, 2620 tests); pnpm test:e2e 193 passed; pnpm test:visual 381 captures passed. Open for Ship: visual baselines from CI (pnpm test:visual:accept), PR screenshots at 1440x900 and 1920x1080, design review."
         },
         {
           "id": "P16-04",
