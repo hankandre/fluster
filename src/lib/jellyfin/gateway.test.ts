@@ -913,7 +913,7 @@ describe("JellyfinGateway home calls", () => {
     });
   });
 
-  it("requests Next Up without rewatching", async () => {
+  it("requests Next Up without rewatching or resumable episodes, with DateCreated", async () => {
     const { gateway, transport } = await authenticatedGateway();
     transport.responses.set("GET /Shows/NextUp", {
       Items: [{ Id: "ep-2", Name: "Second", Type: "Episode", SeriesName: "Show", SeriesId: "series-1", SeriesPrimaryImageTag: "s-tag" }],
@@ -929,8 +929,10 @@ describe("JellyfinGateway home calls", () => {
       userId: "user-1",
       limit: 16,
       enableRewatching: false,
+      enableResumable: false,
       enableTotalRecordCount: false,
       ...cardParams,
+      fields: "PrimaryImageAspectRatio,DateCreated",
     });
   });
 

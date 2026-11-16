@@ -1,3 +1,4 @@
+import type { PlayedEntry, RecentPlays } from "../../domain/up-next";
 import type { BrowseCard, CardImageType, EpisodeCard, ImageRef, LibraryView, MediaCard, NextEpisode, SearchCard, SeriesNextUp, SearchHint, SearchKind, Season } from "../../domain/catalog";
 import type { BaseItemDto, SearchHintDto } from "./types";
 
@@ -119,7 +120,23 @@ export function toMediaCard(item: BaseItemDto): MediaCard | undefined {
     ...(fraction !== undefined ? { progress: fraction, remainingTicks: remainingTicks(item) } : {}),
     ...(item.UserData?.Played === true ? { played: true } : {}),
     ...(item.Type === "Series" && unplayed > 0 ? { unplayedCount: unplayed } : {}),
+    ...(item.UserData?.LastPlayedDate ? { lastPlayedAt: item.UserData.LastPlayedDate } : {}),
+    ...(item.DateCreated ? { addedAt: item.DateCreated } : {}),
+    ...(isEpisode && item.SeriesId ? { seriesId: item.SeriesId } : {}),
   };
+}
+
+// The recently-played list as plain entries, newest first. `limit` is what the request asked for: a shorter
+// list means the server has no more finished plays.
+export function toRecentPlays(items: BaseItemDto[] | undefined, limit: number): RecentPlays {
+  const entries = (items ?? []).flatMap((item): PlayedEntry[] => {
+    const playedAt = item.UserData?.LastPlayedDate;
+    if (!item.Id || !playedAt || Number.isNaN(Date.parse(playedAt))) return [];
+    if (item.Type !== "Movie" && item.Type !== "Episode") return [];
+    return [{ id: item.Id, kind: item.Type, playedAt, ...(item.Type === "Episode" && item.SeriesId ? { seriesId: item.SeriesId } : {}) }];
+  });
+  entries.sort((a, b) => Date.parse(b.playedAt) - Date.parse(a.playedAt));
+  return { entries, complete: (items ?? []).length < limit };
 }
 
 export function toMediaCards(items: BaseItemDto[] | undefined): MediaCard[] {

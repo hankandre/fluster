@@ -32,6 +32,7 @@ export interface ChapterInfoDto {
 export interface BaseItemDto {
   Id?: string;
   Name?: string;
+  DateCreated?: string | null;
   Type?: string;
   SeriesName?: string;
   SeasonId?: string | null;
@@ -69,6 +70,7 @@ export interface BaseItemDto {
     Played?: boolean;
     IsFavorite?: boolean;
     UnplayedItemCount?: number;
+    LastPlayedDate?: string | null;
   };
 }
 
