@@ -1,10 +1,15 @@
 import { defineConfig, devices } from "@playwright/test";
+import { checkE2ePorts, e2ePorts } from "./scripts/e2e-ports.mjs";
 
 // Each run starts its own dev servers and never reuses one already listening:
 // a server left running from another worktree would serve different code.
-// Set FLUSTER_E2E_PORT to run several worktrees side by side.
-const port = Number(process.env.FLUSTER_E2E_PORT ?? 1420);
-const fakeHlsPort = port + 1;
+// Set FLUSTER_E2E_PORT to run several worktrees side by side; the fake-HLS
+// server takes the next port. The check runs once, in the process that starts
+// the servers; workers inherit the marker and must not probe ports the servers now hold.
+const { app: port, fakeHls: fakeHlsPort } = process.env.FLUSTER_E2E_PORTS_CHECKED
+  ? e2ePorts(process.env.FLUSTER_E2E_PORT)
+  : await checkE2ePorts(process.env.FLUSTER_E2E_PORT);
+process.env.FLUSTER_E2E_PORTS_CHECKED = "1";
 
 export default defineConfig({
   testDir: "./e2e",

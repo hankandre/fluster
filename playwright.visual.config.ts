@@ -22,7 +22,8 @@ export default defineConfig({
   updateSnapshots: compare ? "none" : "missing",
   expect: { toMatchSnapshot: { threshold: 0.2, maxDiffPixels: 0 } },
   timeout: 60_000,
-  reporter: "list",
+  // results.json goes into the visual-captures artifact so `pnpm test:visual:accept` can copy only the captures that failed.
+  reporter: [["list"], ["json", { outputFile: "visual-captures/results.json" }]],
   use: {
     baseURL: `http://127.0.0.1:${port}`,
     colorScheme: "dark",
