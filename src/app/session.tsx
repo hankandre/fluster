@@ -3,6 +3,7 @@ import type { MediaSegment } from "../domain/media-segments";
 import type { HostClass } from "../domain/host-class";
 import type { PlaybackPlan, PlaybackPlanOptions, PlaybackSnapshot, ServerPlayMethod } from "../domain/playback";
 import type { RealtimeConnection, ServerEvent } from "../domain/realtime";
+import type { RecentPlays } from "../domain/up-next";
 import type { ServerConnection } from "../domain/server-connection";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
@@ -28,6 +29,12 @@ export interface SessionGateway {
   userViews(signal?: AbortSignal): Promise<LibraryView[]>;
   resumeItems(signal?: AbortSignal): Promise<MediaCard[]>;
   nextUp(signal?: AbortSignal): Promise<MediaCard[]>;
+  // Finished films and episodes, newest first.
+  recentlyPlayed(signal?: AbortSignal): Promise<RecentPlays>;
+  similarItems(itemId: string, signal?: AbortSignal): Promise<MediaCard[]>;
+  // The item's collections, or undefined when the server has no such route.
+  itemCollections(itemId: string, signal?: AbortSignal): Promise<MediaCard[] | undefined>;
+  collectionItems(collectionId: string, signal?: AbortSignal): Promise<MediaCard[]>;
   latestInLibrary(parentId: string, signal?: AbortSignal): Promise<MediaCard[]>;
   libraryItems(parentId: string, query: BrowseQuery, signal?: AbortSignal): Promise<BrowsePage>;
   searchHints(term: string, signal?: AbortSignal): Promise<SearchHint[]>;

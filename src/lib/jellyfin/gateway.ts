@@ -2,6 +2,7 @@ import { Jellyfin, type Api } from "@jellyfin/sdk";
 import axios from "axios";
 import type { BrowseCard, BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, LibraryItem, LibraryView, MediaCard, NextEpisode, SearchHint, SearchPage, SearchQuery, Season, SeriesNextUp } from "../../domain/catalog";
 import { ItemNotFoundError } from "../../domain/catalog";
+import type { RecentPlays } from "../../domain/up-next";
 import type { PlaybackDelivery, PlaybackPlan, PlaybackPlanOptions, PlaybackSnapshot, ServerPlayMethod } from "../../domain/playback";
 import { PlaybackRefusedError, secondsToTicks } from "../../domain/playback";
 import { classifyHost, type HostClass } from "../../domain/host-class";
@@ -13,7 +14,7 @@ import { MemoryLanHttpConfirmations, type LanHttpConfirmationStore } from "../la
 import { limitMbpsFor, mbpsToBitsPerSecond, MemoryStreamingLimits, type StreamingLimitStore } from "../streaming-limits";
 import { redactText } from "../redact";
 import { redactTransportError } from "../transport-error";
-import { toBrowseCards, toEpisodeCards, toNextEpisode, toHomeLibraries, toMediaCards, toSearchCards, toSearchHints, toSeasons, toSeriesNextUp } from "./cards";
+import { toBrowseCards, toEpisodeCards, toNextEpisode, toHomeLibraries, toMediaCards, toRecentPlays, toSearchCards, toSearchHints, toSeasons, toSeriesNextUp } from "./cards";
 import { stripCredentialQuery } from "./credential-query";
 import { deriveDeviceId } from "./device-id";
 import { limitIsOnlyReason } from "./client-limit";
@@ -42,6 +43,9 @@ export const HOME_ROW_LIMIT = 16;
 // The only ItemFields a card needs. ProductionYear and RunTimeTicks are
 // always returned and are not valid values here.
 const CARD_FIELDS = "PrimaryImageAspectRatio";
+const NEXT_UP_FIELDS = "PrimaryImageAspectRatio,DateCreated";
+const RECENTLY_PLAYED_LIMIT = 100;
+const SIMILAR_LIMIT = 12;
 const CARD_IMAGE_PARAMS = {
   fields: CARD_FIELDS,
   imageTypeLimit: 1,
@@ -441,6 +445,86 @@ export class JellyfinGateway {
         userId,
         limit: HOME_ROW_LIMIT,
         enableRewatching: false,
+        // A series whose next episode is in progress is in Resume, so it is not listed twice.
+        enableResumable: false,
+        enableTotalRecordCount: false,
+        ...CARD_IMAGE_PARAMS,
+        // DateCreated dates a new episode. No nextUpDateCutoff: it would hide a caught-up series
+        // whose new episode arrived after the cutoff (docs/research/discovery-api.md section 3).
+        fields: NEXT_UP_FIELDS,
+      },
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    return toMediaCards(data.Items);
+  }
+
+  // Finished films and episodes, newest first, with no images. It dates a next episode by its series'
+  // last play, and gives the "last thing finished" the hero's sequel and similar rules start from.
+  async recentlyPlayed(signal?: AbortSignal): Promise<RecentPlays> {
+    const { userId } = this.requireSession();
+    const { data } = await this.get<ItemsResult>("/Items", {
+      params: {
+        userId,
+        recursive: true,
+        includeItemTypes: "Movie,Episode",
+        filters: "IsPlayed",
+        sortBy: "DatePlayed",
+        sortOrder: "Descending",
+        limit: RECENTLY_PLAYED_LIMIT,
+        enableUserData: true,
+        enableImages: false,
+        enableTotalRecordCount: false,
+      },
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    return toRecentPlays(data.Items, RECENTLY_PLAYED_LIMIT);
+  }
+
+  // Titles like this one, watched ones included: the caller drops them.
+  async similarItems(itemId: string, signal?: AbortSignal): Promise<MediaCard[]> {
+    const { userId } = this.requireSession();
+    const { data } = await this.get<ItemsResult>(`/Items/${encodeURIComponent(itemId)}/Similar`, {
+      params: {
+        userId,
+        limit: SIMILAR_LIMIT,
+        enableUserData: true,
+        enableTotalRecordCount: false,
+        ...CARD_IMAGE_PARAMS,
+      },
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    return toMediaCards(data.Items);
+  }
+
+  // The collections an item belongs to, or undefined when the server has no such route (Jellyfin 10.11 answers 404).
+  async itemCollections(itemId: string, signal?: AbortSignal): Promise<MediaCard[] | undefined> {
+    const { userId } = this.requireSession();
+    try {
+      const { data } = await this.get<ItemsResult>(`/Items/${encodeURIComponent(itemId)}/Collections`, {
+        params: { userId, ...CARD_IMAGE_PARAMS },
+        signal,
+        timeout: CONTROL_REQUEST_TIMEOUT_MS,
+      });
+      return toMediaCards(data.Items);
+    } catch (error) {
+      if ((error as { response?: { status?: unknown } } | null)?.response?.status === 404) return undefined;
+      throw error;
+    }
+  }
+
+  // A collection's films in release order.
+  async collectionItems(collectionId: string, signal?: AbortSignal): Promise<MediaCard[]> {
+    const { userId } = this.requireSession();
+    const { data } = await this.get<ItemsResult>("/Items", {
+      params: {
+        userId,
+        parentId: collectionId,
+        sortBy: "PremiereDate,ProductionYear,SortName",
+        sortOrder: "Ascending",
+        enableUserData: true,
         enableTotalRecordCount: false,
         ...CARD_IMAGE_PARAMS,
       },
