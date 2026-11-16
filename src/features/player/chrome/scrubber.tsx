@@ -1,6 +1,6 @@
 import { useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import type { PlaybackSnapshot } from "../../../domain/playback";
-import { SEEK_STEP_SECONDS } from "../../../components/player-keymap";
+import { SEEK_STEP_SECONDS } from "../player-keymap";
 import { useTvForm } from "../../shared/use-tv-form";
 import { chapterAt, clock, endsAt, remaining, scrubberValueText, type SeekChapter } from "./player-time";
 import { ScrubPreview } from "./scrub-preview";

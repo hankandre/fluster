@@ -1,7 +1,7 @@
 import { act, render, waitFor } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
-import type { PlayerEngine, PlayerSurfaceFrame } from "../domain/playback";
-import { NativeVideoSurface } from "./NativeVideoSurface";
+import type { PlayerEngine, PlayerSurfaceFrame } from "../../domain/playback";
+import { NativeVideoSurface } from "./native-video-surface";
 
 it("keeps one surface update in flight and sends only the latest pending frame", async () => {
   let resize: ResizeObserverCallback = () => undefined;

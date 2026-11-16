@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Captions, Info, ListVideo, Maximize, Minimize, Pause, Play, RotateCcw, RotateCw, Volume2, VolumeX } from "lucide-react";
 import type { PlaybackSnapshot } from "../../../domain/playback";
-import { SEEK_STEP_SECONDS } from "../../../components/player-keymap";
+import { SEEK_STEP_SECONDS } from "../player-keymap";
 import { Button } from "../../shared/ui";
 import { useTvForm } from "../../shared/use-tv-form";
 

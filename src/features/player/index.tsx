@@ -3,7 +3,7 @@ import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-q
 import { usePlayerServices, type PlayerServices } from "../../app/player-services";
 import { useOptionalPreferences } from "../../app/preferences";
 import { useSession, type SessionGateway } from "../../app/session";
-import { PlayerView } from "../../components/PlayerView";
+import { PlayerView } from "./player-screen";
 import { ItemNotFoundError, type ItemDetail, type NextEpisode } from "../../domain/catalog";
 import { imageUrlFor, WIDE_IMAGE_WIDTH } from "../card-view";
 import { detailKey } from "../detail/detail-key";
