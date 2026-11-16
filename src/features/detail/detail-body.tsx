@@ -11,6 +11,7 @@ import { EpisodeStrip } from "./episode-strip";
 import { FileAndStreams } from "./file-and-streams";
 import { mediaBadges } from "./media-badges";
 import { Overview } from "./overview";
+import { useSubtitlePreference } from "../shared/account-languages";
 import { useFlagMutation } from "./use-flag-mutation";
 import { useHeaderArt } from "./use-header-art";
 
@@ -29,6 +30,7 @@ export function DetailBody({ gateway, item, onArt, headingRef }: DetailBodyProps
   const favorite = useFlagMutation(gateway, item.id, "favorite");
   const imageUrl = imageUrlFor(gateway);
   const { inlineArt } = useHeaderArt(item, gateway, onArt);
+  const { preference, cultures } = useSubtitlePreference(gateway);
   const logo = item.type === "Movie" && item.logo ? { src: imageUrl(item.logo, 800) } : undefined;
   const seriesName = item.seriesName;
 
@@ -49,7 +51,7 @@ export function DetailBody({ gateway, item, onArt, headingRef }: DetailBodyProps
       <div className="detail-body">
         <PersonRow people={item.cast} />
         <EpisodeStrip gateway={gateway} item={item} />
-        <FileAndStreams versions={item.versions} selected={selected} />
+        <FileAndStreams versions={item.versions} selected={selected} preference={preference} cultures={cultures} />
       </div>
     </>
   );

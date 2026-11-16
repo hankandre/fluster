@@ -1,9 +1,16 @@
 import { useId } from "react";
 import type { ItemVersion } from "../../domain/catalog";
-import { audioLabel, sizeLabel, subtitleLabel, videoLabel } from "./format";
+import type { LanguageCulture } from "../../domain/languages";
+import { audioLabel, sizeLabel, videoLabel } from "./format";
+import { SubtitleList } from "./subtitle-list";
 
 // The chosen version's file and streams (DESIGN.md 7.9). The version Picker lives in the action bar.
-export function FileAndStreams({ versions, selected }: { versions: ItemVersion[]; selected: ItemVersion | undefined }) {
+interface SubtitleLanguageProps {
+  preference?: string | undefined;
+  cultures?: LanguageCulture[] | undefined;
+}
+
+export function FileAndStreams({ versions, selected, preference, cultures }: { versions: ItemVersion[]; selected: ItemVersion | undefined } & SubtitleLanguageProps) {
   const headingId = useId();
   return (
     <section aria-labelledby={headingId} className="file-and-streams">
@@ -11,7 +18,7 @@ export function FileAndStreams({ versions, selected }: { versions: ItemVersion[]
       {selected ? (
         <>
           {versions.length > 1 ? <p className="file-and-streams-version">Version: {selected.name}</p> : null}
-          <MediaInfo version={selected} />
+          <MediaInfo version={selected} preference={preference} cultures={cultures} />
         </>
       ) : (
         <p>No media information for this item.</p>
@@ -20,7 +27,7 @@ export function FileAndStreams({ versions, selected }: { versions: ItemVersion[]
   );
 }
 
-export function MediaInfo({ version }: { version: ItemVersion }) {
+export function MediaInfo({ version, preference, cultures }: { version: ItemVersion } & SubtitleLanguageProps) {
   const file = [version.container?.toUpperCase(), sizeLabel(version.sizeBytes)].filter(Boolean).join(" · ");
   return (
     <section className="media-info" aria-label={`Media info for ${version.name}`}>
@@ -42,9 +49,7 @@ export function MediaInfo({ version }: { version: ItemVersion }) {
         </dd>
         <dt>Subtitles</dt>
         <dd>
-          {version.subtitles.length === 0 ? "None" : (
-            <ul>{version.subtitles.map((subtitle, index) => <li key={index}>{subtitleLabel(subtitle)}</li>)}</ul>
-          )}
+          <SubtitleList key={version.id} subtitles={version.subtitles} preference={preference} cultures={cultures} />
         </dd>
       </dl>
     </section>

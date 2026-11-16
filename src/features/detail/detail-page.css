@@ -88,6 +88,16 @@
     list-style: none;
   }
 
+  .subtitle-count {
+    margin: var(--space-2) 0;
+    color: var(--text-2);
+    font: var(--type-mono);
+  }
+
+  .subtitle-list-row {
+    margin-top: var(--space-2);
+  }
+
   @media (max-width: 719px) {
     .media-info dl {
       grid-template-columns: 1fr;
