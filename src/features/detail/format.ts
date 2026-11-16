@@ -95,6 +95,18 @@ export function subtitleLabel(subtitle: SubtitleInfo): string {
   return [languageName(subtitle.language), codecName(subtitle.codec), ...flags].filter(Boolean).join(" · ");
 }
 
+// "51 more in 32 languages", "52 in 32 languages", "1 more in 1 language", "2 more with no language".
+export function subtitleCountLine(remaining: number, languages: number, afterDefault: boolean): string {
+  const count = `${remaining}${afterDefault ? " more" : ""}`;
+  if (languages === 0) return `${count} with no language`;
+  return `${count} in ${languages} ${languages === 1 ? "language" : "languages"}`;
+}
+
+// "Show all 52 subtitles"; "Show 1 subtitle" when the total is 1.
+export function showAllSubtitlesLabel(total: number): string {
+  return total === 1 ? "Show 1 subtitle" : `Show all ${total} subtitles`;
+}
+
 // A playback position as a clock: 12:34, or 1:02:03 past an hour.
 export function positionLabel(ticks: number): string {
   const totalSeconds = Math.floor(ticks / 10_000_000);
