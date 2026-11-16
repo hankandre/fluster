@@ -379,3 +379,10 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 - `record-fixtures.mjs` and `record-discovery-fixtures.mjs` do not reproduce the committed fixtures on a fresh server (numbered `id-N` values, online-matched titles, `DateCreated`); even two runs in a row differ in `DateCreated` of the staged episode and in the online-matched title of the HEVC film (`discovery-suggestions`, because that film has no locked NFO). Lock the HEVC sample with an NFO or normalize the dates in the scrubber so a re-record can be diffed. S (P17-01).
 - The recorders log a user in on a fixed device id, so a second login as the same user ends the first token (seen when the language recorder logged `fluster-test` in twice). Note it in `tests/integration/` or give each login its own device id. S (P17-01).
 - `ARCHITECTURE.md` §3 line 187 holds on both versions (recorded A2); no change needed. It could add that `OriginalLanguage` gives the file's default audio track on plain Jellyfin and that a `ger` preference matches audio tagged `deu`. S (P17-01).
+
+## Detail subtitle list follow-ups (P17-02, 2026-11-16)
+
+- Mark hearing-impaired tracks in the detail labels: `SubtitleInfo` has no hearing-impaired flag, so such tracks match by language and read like any other. The player's two-line labels (P13-29) already say "hard of hearing". S (P17-02).
+- Add a "Show fewer" control after the full subtitle list is expanded. Not asked for. S (P17-02).
+- Split `src/lib/jellyfin/gateway.ts` along domain lines; it was over 1000 lines before P17-02 and gained two short reads. S (P17-02).
+- Tracks that jellyscale hides (L6) are covered by P17-05 to P17-07; the detail list counts only the tracks the server listed (P17-02).

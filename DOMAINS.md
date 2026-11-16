@@ -78,7 +78,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 
 **Language.** Library (UserView), Item, Movie, Series, Season, Episode, Collection, Card, Row, Resume position, Played, Favorite, Image tag.
 
-**Code today.** `JellyfinGateway.latest`, the `LibraryItem` type in `src/domain/catalog.ts`, and the home and browse views in `src/features/home/` and `src/features/browse/`.
+**Code today.** `JellyfinGateway.latest`, the `LibraryItem` type in `src/domain/catalog.ts`, the home and browse views in `src/features/home/` and `src/features/browse/`, and the detail subtitle list in `src/domain/subtitle-list.ts` and `src/domain/languages.ts`.
 
 **Rules.**
 - Catalog code never builds stream URLs or decides playability. It hands an `itemId` (and optionally a `mediaSourceId`) to Playback Negotiation.

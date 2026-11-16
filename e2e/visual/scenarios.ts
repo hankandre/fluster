@@ -47,6 +47,13 @@ async function searchHints(page: Page): Promise<void> {
   await page.waitForTimeout(300);
 }
 
+// The detail page with its File and streams section scrolled into view.
+async function subtitlesInView(page: Page, id = "m1"): Promise<void> {
+  await signedInAt(page, `#/next/item/${id}`, 1_000);
+  await page.getByRole("heading", { name: "File and streams" }).scrollIntoViewIfNeeded();
+  await page.waitForTimeout(300);
+}
+
 export const scenarios: Scenario[] = [
   // Sign-in
   { name: "01-signin-server", run: (page) => go(page, "#/next/sign-in") },
@@ -281,6 +288,18 @@ export const scenarios: Scenario[] = [
   { name: "40-detail-movie", run: (page) => signedInAt(page, "#/next/item/m1", 1_000) },
   { name: "41-detail-movie-fullpage", fullPage: true, run: (page) => signedInAt(page, "#/next/item/m1", 1_000) },
   { name: "42-detail-resume", run: (page) => signedInAt(page, "#/next/item/m2", 1_000) },
+  { name: "41a-detail-subtitles-preferred", opts: { manySubtitles: "default", subtitleLanguage: "eng" }, run: (page) => subtitlesInView(page) },
+  { name: "41b-detail-subtitles-summary", opts: { manySubtitles: "default" }, run: (page) => subtitlesInView(page) },
+  { name: "41c-detail-subtitles-no-default", opts: { manySubtitles: "no-default" }, run: (page) => subtitlesInView(page) },
+  { name: "41d-detail-subtitles-expanded", opts: { manySubtitles: "default", subtitleLanguage: "eng" }, run: async (page) => {
+    await subtitlesInView(page);
+    await page.getByRole("button", { name: "Show all 52 subtitles" }).focus();
+    await page.keyboard.press("Enter");
+    await page.getByRole("list", { name: "All 52 subtitles" }).waitFor();
+    await page.getByRole("list", { name: "All 52 subtitles" }).scrollIntoViewIfNeeded();
+    await page.waitForTimeout(300);
+  } },
+  { name: "41e-detail-subtitles-single", run: (page) => subtitlesInView(page, "m4") },
   { name: "43-detail-played-favorite", run: (page) => signedInAt(page, "#/next/item/m3", 1_000) },
   { name: "43a-detail-watched-toast", run: async (page) => {
     await signedInAt(page, "#/next/item/m1", 1_000);
