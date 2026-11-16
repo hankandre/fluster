@@ -76,8 +76,15 @@ test("Movie detail: Down reaches Show all subtitles, Enter expands the list, Up 
   await page.keyboard.press("Enter");
   const list = page.getByRole("list", { name: "All 52 subtitles" });
   await expect(list.locator("li")).toHaveCount(52);
-  await expect(list).toBeFocused();
+  const fewer = page.getByRole("button", { name: "Show fewer subtitles" });
+  await expect(fewer).toBeFocused();
+  await expect(fewer).toHaveAttribute("aria-expanded", "true");
   await expectTitleSafe(page);
+  await page.keyboard.press("Enter");
+  await expect(button).toBeFocused();
+  await expect(list).toHaveCount(0);
+  await page.keyboard.press("Enter");
+  await expect(list.locator("li")).toHaveCount(52);
   for (let press = 0; press < 3; press += 1) {
     await page.keyboard.press("ArrowUp");
     if (await page.evaluate(() => Boolean(document.activeElement?.closest('[role="group"][aria-label="Actions"]')))) break;

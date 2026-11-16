@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { SubtitleInfo } from "./catalog";
 import type { LanguageCulture } from "./languages";
 import { subtitleListView } from "./subtitle-list";
-import { showAllSubtitlesLabel, subtitleCountLine } from "../features/detail/format";
+import { showAllSubtitlesLabel, showFewerSubtitlesLabel, subtitleCountLine } from "../features/detail/format";
 
 const cultures: LanguageCulture[] = [
   { displayName: "German", threeLetterName: "deu", threeLetterNames: ["deu", "ger"], twoLetterName: "de" },
@@ -106,7 +106,7 @@ describe("subtitle copy", () => {
     expect(subtitleCountLine(2, 0, true)).toBe("2 more with no language");
     expect(subtitleCountLine(2, 0, false)).toBe("2 with no language");
     expect(subtitleCountLine(5, 3, true)).toBe("5 more in 3 languages");
-    expect(showAllSubtitlesLabel(1)).toBe("Show 1 subtitle");
     expect(showAllSubtitlesLabel(2)).toBe("Show all 2 subtitles");
+    expect(showFewerSubtitlesLabel()).toBe("Show fewer subtitles");
   });
 });

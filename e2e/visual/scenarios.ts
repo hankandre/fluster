@@ -296,7 +296,16 @@ export const scenarios: Scenario[] = [
     await page.getByRole("button", { name: "Show all 52 subtitles" }).focus();
     await page.keyboard.press("Enter");
     await page.getByRole("list", { name: "All 52 subtitles" }).waitFor();
-    await page.getByRole("list", { name: "All 52 subtitles" }).scrollIntoViewIfNeeded();
+    await page.getByRole("button", { name: "Show fewer subtitles" }).scrollIntoViewIfNeeded();
+    await page.waitForTimeout(300);
+  } },
+  { name: "41f-detail-subtitles-collapsed-again", opts: { manySubtitles: "default", subtitleLanguage: "eng" }, run: async (page) => {
+    await subtitlesInView(page);
+    await page.getByRole("button", { name: "Show all 52 subtitles" }).focus();
+    await page.keyboard.press("Enter");
+    await page.getByRole("button", { name: "Show fewer subtitles" }).waitFor();
+    await page.keyboard.press("Enter");
+    await page.getByRole("button", { name: "Show all 52 subtitles" }).waitFor();
     await page.waitForTimeout(300);
   } },
   { name: "41e-detail-subtitles-single", run: (page) => subtitlesInView(page, "m4") },
