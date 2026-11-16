@@ -396,6 +396,7 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 - `.dependency-cruiser.cjs:53-75`: the three `no-components-*` rules overlap (import into, import out of, orphan). Collapse them if one rule can cover all three; probes show each fails `lint:boundaries` today, so there is no defect. S (P2-09).
 - P17-01 recorder: add a "no matching track" cell for audio and subtitles (a chosen language the file lacks; `PlayDefaultAudioTrack: false` with no language; Smart or Always with no language). Settings shows those reads as "Set in another Jellyfin app" until recorded. S (P17-03).
 - TV Picker sheet: page-wise jumps (PageUp/PageDown or letter rows) for the 486-language list on 12.4.0 and the doubled subtitle list. S (P17-03).
+- P17-08 follow-ups: (a) a retry in a session that started with no audio pick does not keep an audio track switched in mpv; (b) when Rust cannot map an embedded pick, mpv's own choice plays, which is the server's default only when the account uses "Play default audio track" (fixing it needs native work); (c) external audio files are never loaded, so picking one direct plays the default track and shows the notice; (d) at 1440 px the action bar of a resuming item with two versions and three audio tracks needs about 970 px against 806 px of room, so it wraps to a second row (found by `e2e/detail.spec.ts` "keeps its action bar on one row"); needs a design decision.
 
 ## Settings in the player (owner request, 2026-11-16)
 

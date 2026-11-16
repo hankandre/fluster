@@ -93,6 +93,8 @@ export interface MockOptions {
   flagError?: boolean;
   // The account's SubtitleLanguagePreference on /Users/Me ("" or absent: none).
   subtitleLanguage?: string;
+  // The account's AudioLanguagePreference on /Users/Me ("" or absent: none).
+  audioLanguage?: string;
   // The 4K version of m1 (only) lists 52 subtitle tracks; "no-default" leaves English without the default flag.
   manySubtitles?: "default" | "no-default";
   // POST /Users/Configuration answers 403 ("refuse") or 500 ("fail") and stores nothing.
@@ -111,7 +113,7 @@ type Dto = Record<string, any>;
 
 const stream = (extra: Dto): Dto => ({ IsExternal: false, IsDefault: false, IsForced: false, ...extra });
 const hdrSource: Dto = {
-  Id: "src-4k", Name: "4K HDR", Container: "mkv", Size: 58 * 1024 ** 3, Path: "/media/long-quiet-4k.mkv", Protocol: "File", SupportsDirectPlay: true,
+  Id: "src-4k", Name: "4K HDR", Container: "mkv", Size: 58 * 1024 ** 3, Path: "/media/long-quiet-4k.mkv", Protocol: "File", SupportsDirectPlay: true, DefaultAudioStreamIndex: 1,
   MediaStreams: [
     stream({ Index: 0, Type: "Video", Codec: "hevc", Profile: "Main 10", Width: 3840, Height: 2160, BitDepth: 10, VideoRange: "HDR", VideoRangeType: "DOVIWithHDR10", IsDefault: true }),
     stream({ Index: 1, Type: "Audio", Codec: "truehd", Language: "eng", Channels: 8, IsDefault: true, Title: "TrueHD Atmos 7.1" }),
@@ -122,7 +124,7 @@ const hdrSource: Dto = {
   ],
 };
 const sdrSource: Dto = {
-  Id: "src-hd", Name: "1080p", Container: "mp4", Size: 9 * 1024 ** 3, Path: "/media/long-quiet.mp4", Protocol: "File", SupportsDirectPlay: true,
+  Id: "src-hd", Name: "1080p", Container: "mp4", Size: 9 * 1024 ** 3, Path: "/media/long-quiet.mp4", Protocol: "File", SupportsDirectPlay: true, DefaultAudioStreamIndex: 1,
   MediaStreams: [
     stream({ Index: 0, Type: "Video", Codec: "h264", Width: 1920, Height: 1080, BitDepth: 8, VideoRange: "SDR", VideoRangeType: "SDR", IsDefault: true }),
     stream({ Index: 1, Type: "Audio", Codec: "aac", Language: "eng", Channels: 2, IsDefault: true }),
@@ -278,7 +280,7 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
   // Episodes finished while this page was open (opts.finishOnStop), with the time they were finished.
   const finishedNow = new Map<string, number>();
   // The account's Configuration. A save replaces the whole object, as Jellyfin does.
-  let configuration: Record<string, unknown> = { ...cultureConfiguration, SubtitleLanguagePreference: opts.subtitleLanguage ?? "" };
+  let configuration: Record<string, unknown> = { ...cultureConfiguration, SubtitleLanguagePreference: opts.subtitleLanguage ?? "", AudioLanguagePreference: opts.audioLanguage ?? "" };
   await stubMediaElement(page, opts);
   for (const origin of [SERVER, LAN]) {
     await page.route(`${origin}/**`, async (route) => {

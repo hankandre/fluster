@@ -35,10 +35,10 @@ export default defineConfig({
     },
   ],
   projects: [
-    { name: "chromium", testIgnore: [/conversion\.spec\.ts/, /visual\//], use: { ...devices["Desktop Chrome"] } },
+    { name: "chromium", testIgnore: [/conversion\.spec\.ts/, /detail-audio\.spec\.ts/, /visual\//], use: { ...devices["Desktop Chrome"] } },
     {
       name: "chromium-fake-hls",
-      testMatch: /conversion\.spec\.ts/,
+      testMatch: [/conversion\.spec\.ts/, /detail-audio\.spec\.ts/],
       use: { ...devices["Desktop Chrome"], baseURL: `http://127.0.0.1:${fakeHlsPort}` },
     },
   ],

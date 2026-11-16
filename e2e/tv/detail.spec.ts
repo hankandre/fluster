@@ -43,6 +43,32 @@ test("Movie detail: the primary takes focus; Right reaches the version sheet and
   await expect(page).toHaveURL(/#\/next\/home$/);
 });
 
+test("Movie detail: Right reaches the audio sheet, Enter opens it inside the safe inset, Down and Enter choose, Escape closes", async ({ page }) => {
+  await openDetail(page, "#/next/item/m1");
+  await expect(play(page)).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByRole("button", { name: /^Version/ })).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  const audio = page.getByRole("button", { name: /^Audio/ });
+  await expect(audio).toBeFocused();
+  await page.keyboard.press("Enter");
+  const list = page.getByRole("listbox");
+  await expect(list).toHaveClass(/ui-picker-list--sheet/);
+  await expectNoSmallText(page);
+  await expectTitleSafe(page, "[role='listbox']");
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Enter");
+  await expect(list).toBeHidden();
+  await expect(audio).toBeFocused();
+  await expect(play(page)).toHaveAttribute("href", /&audio=2$/);
+  await page.keyboard.press("Enter");
+  await expect(list).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(list).toBeHidden();
+  await expect(audio).toBeFocused();
+  await expect(page).toHaveURL(/#\/next\/item\/m1$/);
+});
+
 test("Episode detail: Up reaches the series link, Down returns and enters the strip", async ({ page }) => {
   await openDetail(page, "#/next/item/ep-2");
   await expect(play(page)).toBeFocused();

@@ -512,3 +512,24 @@ test("nothing in the player blurs the video, with the chrome and each sheet open
   await expect(page.getByRole("region", { name: "Audio and subtitles" })).toBeVisible();
   expect(await blurred()).toEqual([]);
 });
+
+// P17-08: a viewer's audio pick on the title's page reaches the first negotiation; with no pick nothing is added.
+test("a pick sends one PlaybackInfo with the index, and no pick sends none", async ({ page }) => {
+  const log = await mockPlayerServer(page, { audioStreams: true });
+  await openArrival(page);
+  await page.getByRole("link", { name: "Play" }).click();
+  await expect.poll(() => reportPaths(log)).toContain("/Sessions/Playing");
+  expect(log.playbackInfo).toHaveLength(1);
+  expect(log.playbackInfo[0]).not.toHaveProperty("AudioStreamIndex");
+  expect(log.playbackInfoQueries[0].has("AudioStreamIndex")).toBe(false);
+  await page.getByRole("button", { name: "Back", exact: true }).click();
+  await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
+
+  await page.getByRole("button", { name: /^Audio/ }).click();
+  await page.getByRole("option", { name: /^French/ }).click();
+  await page.getByRole("link", { name: "Play" }).click();
+  await expect.poll(() => log.playbackInfo.length).toBe(2);
+  expect(log.playbackInfo[1]).toMatchObject({ AudioStreamIndex: 2, MediaSourceId: "src-hd" });
+  expect(log.playbackInfoQueries[1].get("AudioStreamIndex")).toBe("2");
+  expect(log.playbackInfoQueries[1].get("Static")).toBeNull();
+});
