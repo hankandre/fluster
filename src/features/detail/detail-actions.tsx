@@ -6,7 +6,7 @@ import { usePlayerStatus } from "../player/player-status";
 import { safeReason } from "../player/safe-reason";
 import { playRoute, type PlayRoute } from "../routes";
 import { useRovingFocus } from "../roving-focus";
-import { ActionBar, Button, ButtonLink, Picker, ProgressRing, ToggleButton } from "../shared/ui";
+import { ActionBar, Button, ButtonLink, Picker, ProgressRing, ToggleButton, type PickerOption } from "../shared/ui";
 import { useTvPrimaryRef } from "../shared/use-tv-form";
 import { positionLabel } from "./format";
 import { versionSummary } from "./media-badges";
@@ -18,16 +18,23 @@ interface DetailActionsProps {
   item: ItemDetail;
   selected: ItemVersion | undefined;
   onVersion(id: string): void;
+  // The audio Picker for the chosen version, when it has two or more audio tracks (P17-08).
+  audio?: { options: PickerOption[]; value: string; onChange(value: string): void; routeIndex: number | undefined };
   played: FlagMutation;
   favorite: FlagMutation;
 }
 
-// Resume or Play, the version Picker (two or more versions), Start over, then the Watched and Favorite toggles
+// Resume or Play, the version Picker (two or more versions), the audio Picker (two or more audio tracks), Start over, then the Watched and Favorite toggles
 // (DESIGN.md 7.8 as amended by Q6 A and Q7 A). Each opens the player for the selected version.
-export function DetailActions({ item, selected, onVersion, played, favorite }: DetailActionsProps) {
+export function DetailActions({ item, selected, onVersion, audio, played, favorite }: DetailActionsProps) {
   const primaryRef = useTvPrimaryRef();
   const resumeTicks = resumeTicksOf(item);
-  const startOver: PlayRoute = { itemId: item.id, mediaSourceId: selected?.id, startTicks: 0 };
+  const startOver: PlayRoute = {
+    itemId: item.id,
+    mediaSourceId: selected?.id,
+    startTicks: 0,
+    ...(audio?.routeIndex !== undefined ? { audioStreamIndex: audio.routeIndex } : {}),
+  };
   const primaryRoute: PlayRoute = resumeTicks === undefined ? startOver : { ...startOver, startTicks: resumeTicks };
   const fraction = resumeTicks !== undefined && item.runTimeTicks ? resumeTicks / item.runTimeTicks : undefined;
 
@@ -52,6 +59,17 @@ export function DetailActions({ item, selected, onVersion, played, favorite }: D
           options={item.versions.map((version) => ({ value: version.id, label: version.name, description: versionSummary(version) }))}
           value={selected?.id}
           onChange={onVersion}
+        />
+      ) : null}
+      {audio ? (
+        <Picker
+          label="Audio"
+          hideLabel
+          appearance="pill"
+          rovingItem
+          options={audio.options}
+          value={audio.value}
+          onChange={audio.onChange}
         />
       ) : null}
       {resumeTicks !== undefined ? (

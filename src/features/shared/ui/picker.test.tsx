@@ -27,6 +27,21 @@ const trigger = () => screen.getByRole("button", { name: /Streaming limit/ });
 afterEach(cleanup);
 
 describe("Picker", () => {
+  it("shows an option's triggerLabel in the trigger and its label in the list", async () => {
+    render(
+      <Picker
+        label="Audio"
+        options={[{ value: "a", label: "English", triggerLabel: "English · AAC Stereo" }, { value: "b", label: "Spanish" }]}
+        value="a"
+        onChange={() => undefined}
+      />,
+    );
+    const button = screen.getByRole("button", { name: /Audio/ });
+    expect(button).toHaveTextContent("English · AAC Stereo");
+    await userEvent.click(button);
+    expect(screen.getByRole("option", { name: "English" })).toBeInTheDocument();
+  });
+
   it("shows the current value and is not a native select", () => {
     const { container } = render(<Harness />);
     expect(trigger()).toHaveTextContent("20 Mbps");
