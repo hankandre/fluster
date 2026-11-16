@@ -343,11 +343,6 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 
 - Jellyfin 10.11 has no `GET /Items/{id}/Collections`, so Home's sequel rule (Up next rule 2) is skipped there and the hero falls to Similar. Add a client-side join (list collections, fetch each one's members until the finished film is found; up to N + 1 extra requests on an empty-row Home, one more recorded fixture). S (P16-02, owner Q3 A).
 
-  - Show only the subtitle tracks in the viewer's Jellyfin preferred subtitle language (the user configuration's `SubtitleLanguagePreference`; Fluster does not read it today, so the gateway needs it, e.g. from `/Users/Me`).
-  - When no preference is set, or the file has no track in that language: show the file's default subtitle track if it has one, plus a line like "51 more in 32 languages"; with no default either, only the count line.
-  - A "Show all 52 subtitles" button expands the full list in place (keyboard and TV form included).
-- Open: whether the audio list gets the same rule (not asked yet). M.
-
 ## Player sheet focus fix (#174) review lows, 2026-11-15
 
 - `player-sheet.tsx:47`: the TV-form Up/Down step calls `next.focus()` without `preventScroll`; pressing Down within the slide-in could repeat the sideways jump. A scrolling focus may be what brings the next row into view, so check before changing. S.
