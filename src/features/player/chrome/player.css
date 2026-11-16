@@ -1,7 +1,8 @@
 @layer features {
   /* The page: a transparent stage over the native video surface. */
   .app-shell.has-player { height: 100vh; min-height: 0; overflow: hidden; background: transparent; }
-  .player-page { position: relative; flex: 1; min-height: 0; overflow: hidden; background: transparent; isolation: isolate; }
+  /* clip, not hidden: a hidden box still scrolls, and WebKit scrolled it sideways to a sheet sliding in. */
+  .player-page { position: relative; flex: 1; min-height: 0; overflow: clip; background: transparent; isolation: isolate; }
   .native-video-surface { position: absolute; inset: 0; z-index: 0; background: transparent; }
   .player-cover { position: absolute; inset: 0; z-index: 1; background: var(--void); }
 
