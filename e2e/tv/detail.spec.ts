@@ -61,6 +61,32 @@ test("Episode detail: Up reaches the series link, Down returns and enters the st
   await expect(page).toHaveURL(/#\/next\/home$/);
 });
 
+test("Movie detail: Down reaches Show all subtitles, Enter expands the list, Up returns to the action bar", async ({ page }) => {
+  await signInTv(page, { manySubtitles: "default", subtitleLanguage: "eng" }, "#/next/item/m1");
+  await expect(play(page)).toBeFocused({ timeout: 10_000 });
+  const button = page.getByRole("button", { name: "Show all 52 subtitles" });
+  await expect(button).toBeVisible();
+  for (let press = 0; press < 4; press += 1) {
+    await page.keyboard.press("ArrowDown");
+    if (await button.evaluate((node) => node === document.activeElement)) break;
+  }
+  await expect(button).toBeFocused();
+  await expectTitleSafe(page);
+  await expectNoSmallText(page);
+  await page.keyboard.press("Enter");
+  const list = page.getByRole("list", { name: "All 52 subtitles" });
+  await expect(list.locator("li")).toHaveCount(52);
+  await expect(list).toBeFocused();
+  await expectTitleSafe(page);
+  for (let press = 0; press < 3; press += 1) {
+    await page.keyboard.press("ArrowUp");
+    if (await page.evaluate(() => Boolean(document.activeElement?.closest('[role="group"][aria-label="Actions"]')))) break;
+  }
+  await expect(page.getByRole("group", { name: "Actions" }).locator(":focus")).toHaveCount(1);
+  await page.keyboard.press("Escape");
+  await expect(page).toHaveURL(/#\/next\/home$/);
+});
+
 test("Series: season tabs, a horizontal episode row with the overview under it, Menu opens details, Enter plays", async ({ page }) => {
   await openDetail(page, "#/next/series/s1");
   await expect(page.getByRole("link", { name: /^(Play|Resume)/ })).toBeFocused();

@@ -9,6 +9,11 @@ export const SERVER = "http://127.0.0.1:8096";
 export const LAN = "http://192.168.50.10:8096";
 
 const here = dirname(fileURLToPath(import.meta.url));
+const fixtureDir = join(here, "..", "..", "tests", "fixtures", "jellyfin");
+let culturesCache: unknown;
+const cultures = (): unknown => (culturesCache ??= JSON.parse(readFileSync(join(fixtureDir, "12.4.0", "account-language-cultures.json"), "utf8")));
+// The Configuration a new account has (10.11.7 fixture); the mock sets only the subtitle language.
+const cultureConfiguration: Record<string, unknown> = (JSON.parse(readFileSync(join(fixtureDir, "10.11.7", "account-language-users-me-new-user.json"), "utf8")) as { Configuration: Record<string, unknown> }).Configuration;
 const artDir = join(here, "..", "fixtures", "art");
 const artCache = new Map<string, Buffer>();
 const art = (name: string): Buffer => {
@@ -86,6 +91,10 @@ export interface MockOptions {
   longSearch?: boolean;
   // POST/DELETE on /UserPlayedItems/ and /UserFavoriteItems/ answer 500 (the Watched and Favorite failure toast).
   flagError?: boolean;
+  // The account's SubtitleLanguagePreference on /Users/Me ("" or absent: none).
+  subtitleLanguage?: string;
+  // The 4K version of m1 (only) lists 52 subtitle tracks; "no-default" leaves English without the default flag.
+  manySubtitles?: "default" | "no-default";
 }
 
 export const ticks = (seconds: number): number => Math.round(seconds * 1e7);
@@ -119,6 +128,23 @@ const simpleSource = (id: string): Dto => ({
     stream({ Index: 2, Type: "Subtitle", Codec: "subrip", Language: "eng" }),
   ],
 });
+// 52 subtitle tracks in 32 languages, 3 of them English (one forced, one hearing-impaired), one untagged. The 32
+// languages are eng plus 31 others; the German one is tagged ger, and a second German track is tagged deu.
+const manyLanguages = ["eng", "fra", "spa", "ger", "ita", "por", "rus", "jpn", "kor", "zho", "ara", "hin", "tur", "pol", "nld", "swe", "nor", "dan", "fin", "ces", "hun", "ron", "ell", "heb", "tha", "vie", "ind", "ukr", "bul", "hrv", "srp", "slk"];
+function manySubtitleStreams(mode: "default" | "no-default", firstIndex: number): Dto[] {
+  const tracks: Dto[] = manyLanguages.map((language, i) => stream({
+    Index: firstIndex + i, Type: "Subtitle", Codec: "subrip", Language: language, IsDefault: language === "eng" && mode === "default",
+  }));
+  const extra: Dto[] = [
+    { Language: "eng", IsForced: true },
+    { Language: "eng", IsHearingImpaired: true, Title: "English SDH" },
+    { Language: "deu" },
+    ...manyLanguages.slice(1, 17).map((Language) => ({ Language })),
+    {},
+  ];
+  extra.forEach((fields, i) => tracks.push(stream({ Index: firstIndex + manyLanguages.length + i, Type: "Subtitle", Codec: "subrip", ...fields })));
+  return tracks;
+}
 const discSource: Dto = { Id: "src-disc", Name: "Blu-ray", Path: "/media/Disc/BDMV", Protocol: "File", VideoType: "BluRay", SupportsDirectPlay: true, MediaStreams: [] };
 
 const people = [
@@ -158,7 +184,12 @@ function movieDto(id: string, opts: MockOptions): Dto {
       BackdropImageTags: [`bd-${id}`],
       ImageBlurHashes: { Backdrop: { [`bd-${id}`]: backdropHashes[m.backdrop] ?? backdropHashes.b1 } },
     }),
-    MediaSources: opts.disc && id === "m1" ? [discSource] : (m.MediaSources ?? [simpleSource(id)]).map((s: Dto) => ({ ...s, HasSegments: Boolean(opts.segments) })),
+    MediaSources: opts.disc && id === "m1" ? [discSource] : (m.MediaSources ?? [simpleSource(id)]).map((s: Dto) => ({
+      ...(opts.manySubtitles && id === "m1" && s.Id === "src-4k"
+        ? { ...s, MediaStreams: [...s.MediaStreams.filter((x: Dto) => x.Type !== "Subtitle"), ...manySubtitleStreams(opts.manySubtitles, 4)] }
+        : s),
+      HasSegments: Boolean(opts.segments),
+    })),
     ...(m.Trickplay && opts.trickplay ? { Trickplay: { "src-4k": { 320: { Width: 320, Height: 180, TileWidth: 5, TileHeight: 2, ThumbnailCount: 10, Interval: 738000 } } } } : {}),
     ...(m.Chapters && (opts.trickplay || opts.chapters) ? { Chapters: [
       { StartPositionTicks: 0, Name: "Station" }, { StartPositionTicks: ticks(1500), Name: "The Signal" }, { StartPositionTicks: ticks(3600), Name: "Winter" }, { StartPositionTicks: ticks(5800), Name: "Thaw" },
@@ -303,6 +334,10 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
         return json({});
       }
       switch (p) {
+        case "/Users/Me":
+          return json({ Id: "user-1", Name: "Sam", Configuration: { ...cultureConfiguration, SubtitleLanguagePreference: opts.subtitleLanguage ?? "" } });
+        case "/Localization/Cultures":
+          return json(cultures());
         case "/System/Info/Public":
           return json({ ServerName: "Hearth", Version: "10.11.7", Id: "server-1" });
         case "/QuickConnect/Enabled":
