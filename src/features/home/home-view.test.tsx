@@ -1,7 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { PreferencesProvider } from "../../app/preferences";
 import { SessionProvider, useSession, type SessionGateway } from "../../app/session";
+import { continueWindowOf, MemoryPreferenceStore } from "../../lib/preference-store";
+import { MemoryStreamingLimits } from "../../lib/streaming-limits";
 import type { ItemDetail, MediaCard } from "../../domain/catalog";
 import { FakeRealtime } from "../../test/fake-realtime";
 import { HomeView, refreshHomeRows } from "./index";
@@ -15,11 +18,16 @@ function card(id: string, title: string, overrides: Partial<MediaCard> = {}): Me
   return { id, title, aspectRatio: 2 / 3, ...overrides };
 }
 
+// The series of the default Next up card, finished a moment ago, so its next episode is inside the window.
+const SERIES = "series-n1";
+const recentPlays = () => ({ entries: [{ id: "played-1", kind: "Episode" as const, seriesId: SERIES, playedAt: new Date().toISOString() }], complete: true });
+
 function fakeGateway(overrides: Partial<SessionGateway> = {}): SessionGateway {
   return fakeSessionGateway({
+    recentlyPlayed: vi.fn().mockImplementation(() => Promise.resolve(recentPlays())),
     userViews: vi.fn().mockResolvedValue([{ id: "lib-1", name: "Movies", collectionType: "movies" }]),
     resumeItems: vi.fn().mockResolvedValue([card("r1", "Resume me", { progress: 0.4, remainingTicks: 22_800_000_000 })]),
-    nextUp: vi.fn().mockResolvedValue([card("n1", "Up next")]),
+    nextUp: vi.fn().mockResolvedValue([card("n1", "Up next", { seriesId: SERIES })]),
     latestInLibrary: vi.fn().mockResolvedValue([card("l1", "Fresh movie")]),
     itemDetail: vi.fn().mockRejectedValue(new Error("x")),
     imageUrl: vi.fn((itemId: string, type: string, tag: string) => `https://media.test/${itemId}/${type}/${tag}.webp`),
@@ -76,18 +84,20 @@ describe("HomeView", () => {
     expect(screen.queryByRole("link", { name: "Back to features" })).not.toBeInTheDocument();
   });
 
-  it("renders Continue watching, Next up, and a Latest row per library", async () => {
+  it("renders one Continue watching row and a Latest row per library, with no Next up row", async () => {
     await renderHome(fakeGateway({
       userViews: vi.fn().mockResolvedValue([{ id: "lib-1", name: "Movies" }, { id: "lib-2", name: "Shows" }]),
     }));
     expect(await screen.findByRole("heading", { name: "Continue watching" })).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { name: "Next up" })).toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "Latest in Movies" })).toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "Latest in Shows" })).toBeInTheDocument();
-    expect(screen.getByRole("article", { name: "Resume me, 38 minutes left" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Next up" })).not.toBeInTheDocument();
+    const row = screen.getByRole("region", { name: "Continue watching" });
+    expect(within(row).getByRole("article", { name: "Resume me, 38 minutes left" })).toBeInTheDocument();
+    expect(within(row).getByRole("article", { name: "Up next" })).toBeInTheDocument();
   });
 
-  it("shows thumb cards in Continue Watching and Next Up and poster cards in Latest", async () => {
+  it("shows thumb cards in Continue watching and poster cards in Latest", async () => {
     await renderHome(fakeGateway());
     expect(await screen.findByRole("article", { name: "Resume me, 38 minutes left" })).toHaveAttribute("data-variant", "thumb");
     expect(screen.getByRole("article", { name: "Up next" })).toHaveAttribute("data-variant", "thumb");
@@ -130,26 +140,27 @@ describe("HomeView", () => {
   });
 
   it("hides rows that have no items", async () => {
-    await renderHome(fakeGateway({ resumeItems: vi.fn().mockResolvedValue([]) }));
-    expect(await screen.findByRole("heading", { name: "Next up" })).toBeInTheDocument();
+    await renderHome(fakeGateway({ resumeItems: vi.fn().mockResolvedValue([]), nextUp: vi.fn().mockResolvedValue([]) }));
+    expect(await screen.findByRole("heading", { name: "Latest in Movies" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Continue watching" })).not.toBeInTheDocument();
   });
 
-  it("shows a per-row error that retries without disturbing other rows", async () => {
+  it("shows a row error that retries only the failed list and leaves the Latest rows alone", async () => {
     const nextUp = vi.fn()
       .mockRejectedValueOnce(new Error("boom"))
-      .mockResolvedValue([card("n1", "Up next")]);
+      .mockResolvedValue([card("n1", "Up next", { seriesId: SERIES })]);
     const gateway = fakeGateway({ nextUp });
     await renderHome(gateway);
 
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("Couldn't load Next up.");
-    expect(await screen.findByRole("article", { name: "Resume me, 38 minutes left" })).toBeInTheDocument();
+    expect(alert).toHaveTextContent("Couldn't load Continue watching.");
+    expect(await screen.findByRole("article", { name: "Fresh movie" })).toBeInTheDocument();
 
     await act(async () => {
       fireEvent.click(within(alert).getByRole("button", { name: "Retry" }));
     });
     expect(await screen.findByRole("article", { name: "Up next" })).toBeInTheDocument();
+    expect(await screen.findByRole("article", { name: "Resume me, 38 minutes left" })).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(gateway.resumeItems).toHaveBeenCalledTimes(1);
   });
@@ -159,7 +170,7 @@ describe("HomeView", () => {
     await renderHome(fakeGateway({
       resumeItems: vi.fn().mockResolvedValue([card("r1", "With hash", { image })]),
       nextUp: vi.fn().mockResolvedValue([
-        card("n1", "No hash", { image: { itemId: "n1", type: "Primary", tag: "t2" } }),
+        card("n1", "No hash", { seriesId: SERIES, image: { itemId: "n1", type: "Primary", tag: "t2" } }),
       ]),
       userViews: vi.fn().mockResolvedValue([]),
     }));
@@ -177,10 +188,10 @@ describe("HomeView", () => {
     expect(plain).toHaveAttribute("data-placeholder", "neutral");
   });
 
-  it("links Continue watching and Next up cards to play and Latest cards to details by kind", async () => {
+  it("links Continue watching cards to play and Latest cards to details by kind", async () => {
     await renderHome(fakeGateway({
       resumeItems: vi.fn().mockResolvedValue([card("m1", "A movie", { kind: "Movie" })]),
-      nextUp: vi.fn().mockResolvedValue([card("e1", "An episode", { kind: "Episode" })]),
+      nextUp: vi.fn().mockResolvedValue([card("e1", "An episode", { kind: "Episode", seriesId: SERIES })]),
       latestInLibrary: vi.fn().mockResolvedValue([card("s1", "A series", { kind: "Series" })]),
     }));
     expect(await screen.findByRole("link", { name: "A movie" })).toHaveAttribute("href", "#/next/play/m1");
@@ -195,7 +206,7 @@ describe("HomeView", () => {
     expect(screen.getAllByRole("link", { name: /^See all/ })).toHaveLength(1);
     expect(within(screen.getByRole("region", { name: "Latest in Movies" })).getByRole("link", { name: /^See all/ })).toBe(tile);
     expect(within(screen.getByRole("region", { name: "Continue watching" })).queryByRole("link", { name: /^See all/ })).toBeNull();
-    expect(within(screen.getByRole("region", { name: "Next up" })).queryByRole("link", { name: /^See all/ })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Next up" })).not.toBeInTheDocument();
     const last = await screen.findByRole("link", { name: "Fresh movie" });
     last.focus();
     fireEvent.keyDown(last, { key: "ArrowRight" });
@@ -285,14 +296,14 @@ describe("HomeView", () => {
     expect(window.location.hash).toBe("#/next/item/r1");
   });
 
-  it("plays a Next up card from the start and opens its details with i", async () => {
+  it("plays a next episode in Continue watching from the start and opens its details with i", async () => {
     await renderHome(fakeGateway({
       resumeItems: vi.fn().mockResolvedValue([]),
-      nextUp: vi.fn().mockResolvedValue([card("n1", "Up next", { kind: "Episode" })]),
+      nextUp: vi.fn().mockResolvedValue([card("n1", "Up next", { kind: "Episode", seriesId: SERIES })]),
       latestInLibrary: vi.fn().mockResolvedValue([]),
     }));
-    const nextUpRegion = await screen.findByRole("region", { name: "Next up" });
-    const link = within(nextUpRegion).getByRole("link", { name: "Up next" });
+    const row = await screen.findByRole("region", { name: "Continue watching" });
+    const link = within(row).getByRole("link", { name: "Up next" });
     expect(link).toHaveAttribute("href", "#/next/play/n1");
     fireEvent.keyDown(link, { key: "i" });
     expect(window.location.hash).toBe("#/next/item/n1");
@@ -311,7 +322,7 @@ describe("HomeView", () => {
   it("falls to a Next up hero when Resume is empty, and a Latest hero when both are empty", async () => {
     await renderHome(fakeGateway({
       resumeItems: vi.fn().mockResolvedValue([]),
-      nextUp: vi.fn().mockResolvedValue([card("n1", "Up next", { kind: "Episode", seasonNumber: 1, episodeNumber: 3 })]),
+      nextUp: vi.fn().mockResolvedValue([card("n1", "Up next", { kind: "Episode", seasonNumber: 1, episodeNumber: 3, seriesId: SERIES })]),
     }));
     const hero = await screen.findByRole("region", { name: "Up next" });
     expect(within(hero).getByRole("link", { name: "Play S1 · E3" })).toBeInTheDocument();
@@ -326,17 +337,18 @@ describe("HomeView", () => {
     expect(within(latest).getByRole("link", { name: "Play" })).toHaveAttribute("href", "#/next/play/l1");
   });
 
-  it("waits for Resume before choosing a hero, even when Next up resolved", async () => {
+  it("waits for Resume before choosing a hero or showing the row, even when Next up resolved", async () => {
     const resume = deferred<MediaCard[]>();
     await renderHome(fakeGateway({
       resumeItems: vi.fn().mockReturnValue(resume.promise),
-      nextUp: vi.fn().mockResolvedValue([card("n1", "Up next", { kind: "Episode" })]),
+      nextUp: vi.fn().mockResolvedValue([card("n1", "Up next", { kind: "Episode", seriesId: SERIES })]),
     }));
-    await screen.findByRole("region", { name: "Next up" });
+    await screen.findByRole("heading", { name: "Latest in Movies" });
     expect(screen.queryByRole("region", { name: "Up next" })).not.toBeInTheDocument();
     expect(document.querySelector(".hero[aria-busy=true]")).not.toBeNull();
     await act(async () => resume.resolve([card("r1", "Resume me", { kind: "Movie" })]));
-    expect(await screen.findByRole("region", { name: "Resume me" })).toBeInTheDocument();
+    // The next episode's series was finished a moment ago, so it leads the merged row and the hero.
+    expect(await screen.findByRole("region", { name: "Up next" })).toBeInTheDocument();
   });
 
   it("resolves a series hero to its next episode, resuming it with the ring from Next Up", async () => {
@@ -535,5 +547,199 @@ describe("HomeView", () => {
     await renderHome(fakeGateway());
     await screen.findByRole("article", { name: "Resume me, 38 minutes left" });
     expect(screen.queryByRole("heading", { name: "Nothing to watch yet" })).not.toBeInTheDocument();
+  });
+
+  describe("Up next and the Continue watching window", () => {
+    const PINNED = "2026-06-10T12:00:00Z";
+    // Every row has loaded: no skeleton is left.
+    const settled = async () => {
+      await screen.findByRole("heading", { name: "Latest in Shows" });
+      await waitFor(() => expect(screen.queryAllByTestId("card-skeleton")).toHaveLength(0));
+    };
+    const regionNames = () => screen.getAllByRole("heading", { level: 2 }).map((node) => node.textContent ?? "").filter((name) => name === "Continue watching" || name.startsWith("Latest in"));
+    const cardNames = (region: string) => within(screen.getByRole("region", { name: region })).getAllByRole("link").map((node) => node.getAttribute("aria-label"));
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date(PINNED));
+    });
+    afterEach(() => vi.useRealTimers());
+
+    const gatewayWith = (overrides: Partial<SessionGateway> = {}) =>
+      fakeGateway({
+        userViews: vi.fn().mockResolvedValue([{ id: "lib-1", name: "Movies", collectionType: "movies" }, { id: "lib-2", name: "Shows", collectionType: "tvshows" }]),
+        resumeItems: vi.fn().mockResolvedValue([
+          card("old", "Old film", { kind: "Movie", lastPlayedAt: "2026-01-05T12:00:00Z", resumePositionTicks: 5 }),
+          card("recent", "Recent film", { kind: "Movie", lastPlayedAt: "2026-06-02T12:00:00Z", resumePositionTicks: 5 }),
+        ]),
+        nextUp: vi.fn().mockResolvedValue([card("e2", "Show", { kind: "Episode", seriesId: "show-1", subtitle: "S1 · E2" })]),
+        recentlyPlayed: vi.fn().mockResolvedValue({ entries: [{ id: "e1", kind: "Episode", seriesId: "show-1", playedAt: "2026-06-03T12:00:00Z" }], complete: true }),
+        latestInLibrary: vi.fn().mockImplementation((id: string) => Promise.resolve([card(`${id}-new`, id === "lib-1" ? "New movie" : "New show", { kind: "Movie" })])),
+        ...overrides,
+      });
+
+    it("lists one Continue watching row, then Latest in each library, in the same order for two accounts", async () => {
+      await renderHome(gatewayWith());
+      await settled();
+      const first = regionNames();
+      expect(first).toEqual(["Continue watching", "Latest in Movies", "Latest in Shows"]);
+      cleanup();
+      await renderHome(gatewayWith());
+      await settled();
+      expect(regionNames()).toEqual(first);
+    });
+
+    it("loads Home twice with the same fixtures and shows the same rows and cards in the same order", async () => {
+      const snapshot = async () => {
+        await renderHome(gatewayWith());
+        await settled();
+        const rows = regionNames().map((name) => [name, ...cardNames(name)]);
+        cleanup();
+        return rows;
+      };
+      const once = await snapshot();
+      const twice = await snapshot();
+      expect(twice).toEqual(once);
+      // The next episode (series finished 3 June) comes before the film played 2 June.
+      expect(once[0]).toEqual(["Continue watching", "Show, S1 · E2", "Recent film"]);
+    });
+
+    it("keeps the same cards when an item sits exactly on the 14-day boundary", async () => {
+      const boundary = new Date(Date.parse(PINNED) - 14 * 86_400_000).toISOString();
+      const overrides = { resumeItems: vi.fn().mockResolvedValue([card("edge", "Edge film", { kind: "Movie", lastPlayedAt: boundary, resumePositionTicks: 5 })]) };
+      const names = async () => {
+        await renderHome(gatewayWith(overrides));
+        await settled();
+        const result = cardNames("Continue watching");
+        cleanup();
+        return result;
+      };
+      expect(await names()).toEqual(await names());
+      expect(await names()).toContain("Edge film");
+    });
+
+    it("leaves an item last played before the window out of the row, and never makes it the hero", async () => {
+      await renderHome(gatewayWith({
+        nextUp: vi.fn().mockResolvedValue([]),
+        resumeItems: vi.fn().mockResolvedValue([card("old", "Old film", { kind: "Movie", lastPlayedAt: "2026-01-05T12:00:00Z", resumePositionTicks: 5 })]),
+        latestInLibrary: vi.fn().mockResolvedValue([card("old", "Old film", { kind: "Movie" }), card("fresh", "Fresh film", { kind: "Movie" })]),
+      }));
+      await settled();
+      expect(screen.queryByRole("region", { name: "Continue watching" })).not.toBeInTheDocument();
+      expect(await screen.findByRole("region", { name: "Fresh film" })).toBeInTheDocument();
+      expect(screen.queryByRole("region", { name: "Old film" })).not.toBeInTheDocument();
+    });
+
+    it("hides the row and keeps the Latest rows in order when everything aged out", async () => {
+      await renderHome(gatewayWith({
+        nextUp: vi.fn().mockResolvedValue([]),
+        resumeItems: vi.fn().mockResolvedValue([card("old", "Old film", { kind: "Movie", lastPlayedAt: "2026-01-05T12:00:00Z", resumePositionTicks: 5 })]),
+      }));
+      await settled();
+      expect(regionNames()).toEqual(["Latest in Movies", "Latest in Shows"]);
+    });
+
+    it("makes the hero the row's first card", async () => {
+      await renderHome(gatewayWith());
+      const hero = await screen.findByRole("region", { name: "Show" });
+      expect(within(hero).getByRole("link", { name: "More info" })).toHaveAttribute("href", "#/next/item/e2");
+      expect(cardNames("Continue watching")[0]).toContain("Show");
+    });
+
+    it("waits for the recently-played list before showing the row or the hero", async () => {
+      const plays = deferred<{ entries: never[]; complete: boolean }>();
+      await renderHome(gatewayWith({ recentlyPlayed: vi.fn().mockReturnValue(plays.promise) }));
+      await screen.findByRole("heading", { name: "Latest in Shows" });
+      expect(screen.queryByRole("link", { name: /^Show/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: "Recent film" })).not.toBeInTheDocument();
+      expect(document.querySelector(".hero[aria-busy=true]")).not.toBeNull();
+      await act(async () => plays.resolve({ entries: [], complete: false }));
+      expect(await screen.findByRole("region", { name: "Continue watching" })).toBeInTheDocument();
+    });
+
+    it("still shows the row, in server order, when the recently-played request fails", async () => {
+      await renderHome(gatewayWith({ recentlyPlayed: vi.fn().mockRejectedValue(new Error("down")) }));
+      await settled();
+      expect(cardNames("Continue watching")).toEqual(["Recent film", "Show, S1 · E2"]);
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+
+    it("applies the window the viewer chose in Settings", async () => {
+      const store = new MemoryPreferenceStore();
+      const gateway = gatewayWith();
+      render(
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <SessionProvider createGateway={() => gateway}>
+            <PreferencesProvider preferences={{ streamingLimits: new MemoryStreamingLimits(), continueWindow: continueWindowOf(store) }}>
+              <SignIn gateway={gateway} />
+              <HomeView />
+            </PreferencesProvider>
+          </SessionProvider>
+        </QueryClientProvider>,
+      );
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "test sign in" }));
+      });
+      await settled();
+      expect(cardNames("Continue watching")).toEqual(["Show, S1 · E2", "Recent film"]);
+      // The film was played 8 days ago, the series 7: only the series stays with 7 days. No new request is made.
+      act(() => continueWindowOf(store).set("7"));
+      expect(cardNames("Continue watching")).toEqual(["Show, S1 · E2"]);
+      act(() => continueWindowOf(store).set("30"));
+      expect(cardNames("Continue watching")).toEqual(["Show, S1 · E2", "Recent film"]);
+      act(() => continueWindowOf(store).set("all"));
+      expect(cardNames("Continue watching")).toEqual(["Show, S1 · E2", "Recent film", "Old film"]);
+      expect(gateway.resumeItems).toHaveBeenCalledTimes(1);
+      expect(gateway.nextUp).toHaveBeenCalledTimes(1);
+    });
+
+    describe("with an empty row", () => {
+      const empty = { resumeItems: vi.fn().mockResolvedValue([]), nextUp: vi.fn().mockResolvedValue([]) };
+      const filmPlays = (playedAt: string) => ({ entries: [{ id: "seen", kind: "Movie" as const, playedAt }], complete: true });
+      const latest = vi.fn().mockResolvedValue([card("n", "Newest film", { kind: "Movie" })]);
+
+      it("offers the sequel of the last finished film, when the server lists collections", async () => {
+        const itemCollections = vi.fn().mockResolvedValue([card("box", "Trilogy", { kind: "BoxSet" })]);
+        const collectionItems = vi.fn().mockResolvedValue([
+          card("seen", "Part 1", { kind: "Movie", played: true }),
+          card("part2", "Part 2", { kind: "Movie" }),
+        ]);
+        await renderHome(gatewayWith({ ...empty, latestInLibrary: latest, recentlyPlayed: vi.fn().mockResolvedValue(filmPlays("2026-06-08T12:00:00Z")), itemCollections, collectionItems }));
+        expect(await screen.findByRole("region", { name: "Part 2" })).toBeInTheDocument();
+        expect(itemCollections).toHaveBeenCalledWith("seen", expect.any(AbortSignal));
+        expect(collectionItems).toHaveBeenCalledWith("box", expect.any(AbortSignal));
+      });
+
+      it("falls through to a similar title when the collections route answers 404", async () => {
+        const similarItems = vi.fn().mockResolvedValue([card("s1", "Seen already", { kind: "Movie", played: true }), card("s2", "Like it", { kind: "Movie" })]);
+        await renderHome(gatewayWith({ ...empty, latestInLibrary: latest, recentlyPlayed: vi.fn().mockResolvedValue(filmPlays("2026-06-08T12:00:00Z")), itemCollections: vi.fn().mockResolvedValue(undefined), similarItems }));
+        expect(await screen.findByRole("region", { name: "Like it" })).toBeInTheDocument();
+        expect(similarItems).toHaveBeenCalledWith("seen", expect.any(AbortSignal));
+      });
+
+      it("uses the series for an episode anchor", async () => {
+        const similarItems = vi.fn().mockResolvedValue([card("s2", "Like it", { kind: "Series" })]);
+        const plays = { entries: [{ id: "ep", kind: "Episode" as const, seriesId: "show-9", playedAt: "2026-06-08T12:00:00Z" }], complete: true };
+        await renderHome(gatewayWith({ ...empty, latestInLibrary: latest, recentlyPlayed: vi.fn().mockResolvedValue(plays), similarItems }));
+        expect(await screen.findByRole("region", { name: "Like it" })).toBeInTheDocument();
+        expect(similarItems).toHaveBeenCalledWith("show-9", expect.any(AbortSignal));
+      });
+
+      it("makes the hero the newest addition when the last finished title is outside the window, and asks for nothing extra", async () => {
+        const similarItems = vi.fn().mockResolvedValue([card("s2", "Like it", { kind: "Movie" })]);
+        const itemCollections = vi.fn().mockResolvedValue([]);
+        await renderHome(gatewayWith({ ...empty, latestInLibrary: latest, recentlyPlayed: vi.fn().mockResolvedValue(filmPlays("2026-03-01T12:00:00Z")), similarItems, itemCollections }));
+        expect(await screen.findByRole("region", { name: "Newest film" })).toBeInTheDocument();
+        expect(similarItems).not.toHaveBeenCalled();
+        expect(itemCollections).not.toHaveBeenCalled();
+      });
+
+      it("makes no extra request when the row has cards", async () => {
+        const similarItems = vi.fn().mockResolvedValue([]);
+        await renderHome(gatewayWith({ similarItems }));
+        await settled();
+        expect(similarItems).not.toHaveBeenCalled();
+      });
+    });
   });
 });
