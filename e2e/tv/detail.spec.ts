@@ -52,9 +52,10 @@ test("Episode detail: Up reaches the series link, Down returns and enters the st
   await page.keyboard.press("ArrowDown");
   await expect(play(page)).toBeFocused();
   // ArrowDown enters the strip only once its cards exist.
-  await expect(page.locator(".media-card").first()).toBeVisible();
+  const strip = page.locator(".media-row", { has: page.getByRole("heading", { name: /^More from/ }) });
+  await expect(strip.locator(".media-card").first()).toBeVisible();
   await page.keyboard.press("ArrowDown");
-  await expect(page.locator(".media-card:focus")).toHaveCount(1);
+  await expect(strip.locator(".media-card:focus")).toHaveCount(1);
   await expectTitleSafe(page);
   await page.keyboard.press("Backspace");
   await expect(page).toHaveURL(/#\/next\/home$/);

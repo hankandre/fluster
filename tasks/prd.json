@@ -444,7 +444,7 @@
           "status": "in_progress",
           "owner": null,
           "passes": false,
-          "evidence": "Implemented on task/P0-18 (not pushed): port sentence (scripts/e2e-ports.mjs), accept copies only failed captures from results.json (scripts/visual-accept.mjs), additive waits in e2e/back-keys.spec.ts and e2e/tv/detail.spec.ts, scripts/netns.sh for ERR_NETWORK_CHANGED. Local: pnpm check exit 0; 10 e2e runs in a row each 193 passed through scripts/netns.sh; pnpm test:visual 381 passed 0 flaky. Pending in CI: 3 green CI runs with 0 flaky, determinism of 14/15/85."
+          "evidence": "Implemented on task/P0-18 (not pushed): port sentence (scripts/e2e-ports.mjs), accept copies only failed captures from results.json (scripts/visual-accept.mjs), additive waits in e2e/back-keys.spec.ts and e2e/tv/detail.spec.ts, scripts/netns.sh for ERR_NETWORK_CHANGED. Local: pnpm check exit 0; 10 e2e runs in a row each 193 passed through scripts/netns.sh; pnpm test:visual 381 passed 0 flaky. Causes: net::ERR_NETWORK_CHANGED (reproduced with docker network churn: 17 of 40 failed outside the namespace, 40 of 40 passed inside; see docs/specs/P0-18.md decision log; original traces gone, so the cause of the original failures is unverified; the Chromium-switch fix is unverified; the additive waits cover leads that did not reproduce, 300 of 300 isolated). The 10 local runs went through scripts/netns.sh, which hides the cause, so they do not by themselves show the fix works on a plain host. Pending in CI: 3 green CI runs with 0 flaky, determinism of 14/15/85, and the Causes, Determinism, and CI and visual gate PR sections."
         },
         {
           "id": "P0-19",
