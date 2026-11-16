@@ -57,6 +57,11 @@ export interface MediaCard {
   played?: boolean;
   // Unwatched episodes of a series. Present only when above zero.
   unplayedCount?: number;
+  // ISO dates the server sent, for Home's window. Display-free.
+  lastPlayedAt?: string;
+  addedAt?: string;
+  // Episodes only: the series the episode belongs to.
+  seriesId?: string;
 }
 
 export interface LibraryView {
