@@ -3976,10 +3976,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual && pnpm test:tripwire",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "M1 done 2026-11-16: fixtures recorded on 10.11.7 and 12.4.0, both keep direct play with AudioStreamIndex=2 (audio-pick-fixtures.test.ts, 8 passed)."
         },
         {
           "id": "P17-03",
