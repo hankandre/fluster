@@ -110,7 +110,10 @@ Keep the domain, Jellyfin gateway, playback policy, and coordinator **framework-
 | Libraries | `GET /UserViews` (filter by `CollectionType`) |
 | Browse / search | `GET /Items?parentId=&includeItemTypes=&recursive=true&sortBy=&sortOrder=&startIndex=&limit=&fields=&searchTerm=&enableImageTypes=Primary,Backdrop,Thumb,Logo&imageTypeLimit=1&enableTotalRecordCount=false` (`true` on the first library page only, `startIndex=0`, for the toolbar count) |
 | Continue Watching | `GET /UserItems/Resume?mediaTypes=Video&limit=` |
-| Next Up | `GET /Shows/NextUp?limit=&enableRewatching=false`; series form (series page): `GET /Shows/NextUp?seriesId=&limit=1&enableUserData=true&enableResumable=true&enableRewatching=false&enableImages=false&enableTotalRecordCount=false` |
+| Next Up (Home, merged into Continue watching) | `GET /Shows/NextUp?limit=&enableRewatching=false&enableResumable=false&fields=PrimaryImageAspectRatio,DateCreated` with no `nextUpDateCutoff`: a cutoff after a series' last play keeps a caught-up series out even when its new episode is newer (`docs/research/discovery-api.md` §3); the window is applied in `src/domain/up-next.ts`. Series form (series page): `GET /Shows/NextUp?seriesId=&limit=1&enableUserData=true&enableResumable=true&enableRewatching=false&enableImages=false&enableTotalRecordCount=false` |
+| Recently played (dates next episodes, anchors the hero) | `GET /Items?recursive=true&includeItemTypes=Movie,Episode&filters=IsPlayed&sortBy=DatePlayed&sortOrder=Descending&limit=100&enableUserData=true&enableImages=false&enableTotalRecordCount=false` |
+| Similar (hero rule 3) | `GET /Items/{id}/Similar?limit=12&enableUserData=true` |
+| Item collections (hero rule 2) | `GET /Items/{id}/Collections`; answers 404 on Jellyfin 10.11 (the rule is skipped there). Members: `GET /Items?parentId={collection}&sortBy=PremiereDate,ProductionYear,SortName&sortOrder=Ascending` |
 | Latest per library | `GET /Items/Latest?parentId=&limit=&groupItems=true` (returns an array, not a QueryResult) |
 | Series | `GET /Shows/{id}/Seasons`, `GET /Shows/{id}/Episodes?seasonId=` |
 | Next episode | `GET /Shows/{id}/Episodes?adjacentTo={episodeId}` (the entry after the current one) |
@@ -224,7 +227,7 @@ With several versions, the first DirectPlay source wins, then the first DirectSt
   4. `POST /Sessions/Capabilities/Full`.
   5. Open the socket (M5).
 - **Relaunch:** load the credential, then `GET /Users/Me`. On 401, sign in again.
-- **Home:** in parallel, `/UserViews`, `/UserItems/Resume`, `/Shows/NextUp`, and `/Items/Latest` per view.
+- **Home:** in parallel, `/UserViews`, `/UserItems/Resume`, `/Shows/NextUp`, the recently-played list, and `/Items/Latest` per view. With Continue watching empty, the hero may also fetch a finished film's collections and similar titles.
 - **Play:**
   1. Item detail.
   2. PlaybackInfo with the profile.

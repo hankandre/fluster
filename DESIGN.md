@@ -202,7 +202,12 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 
 ### 7.3 Hero (`Hero`)
 
-- Home's first viewport. It shows the first Continue Watching item, or else Next Up, or else the newest item.
+- Home's first viewport. The hero is the Up next pick, by the first rule that matches (P16-02):
+  1. The first card of the Continue watching row.
+  2. With that row empty and a title finished inside the window: the next unplayed film after it in its collection (where the server can list a film's collections; Jellyfin 10.11 cannot, so that rule is skipped there).
+  3. Otherwise the first unplayed title the server lists as similar to that finished title (for an episode, similar to its series).
+  4. Otherwise the newest addition: the first film, episode, or series of the first non-empty "Latest in {library}" row.
+  A title that has aged out of Continue watching is never the hero, and neither is its series. A finished title older than the window is not used by rules 2 and 3 (with "Keep everything" it has no age limit). The hero and the row come from the same rules, so they never disagree.
 - Contents: the Logo or title, one facts line (`S2 · E4 · 38 min left`, or `2023 · 2 h 3 min · 4K · Dolby Vision`), at most two lines of overview, and the `ActionBar` (compact: Resume or Play, plus "More info").
 - A series offers its series page's primary action (§7.7) and names that episode in the facts line (`S1 · E2 · 2022 · Drama · Mystery`).
 - With no candidate (empty library), no hero is shown and the first row moves up.
@@ -211,17 +216,20 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 
 ### 7.4 Media row (`MediaRow`)
 
-- Title (`--type-heading`, sentence case). Below it, a horizontal list of `MediaCard`s. A "Latest in {library}" row ends with a "See all" tile (not a card: bordered, no art, the size of the row's cards) that opens the library sorted "Newest added first". It is the last item of the row, reached with Right past the last card or End; its accessible name is "See all in {library}". Continue watching and Next up have none. There is no title-line link, so Up and Down between rows stay unchanged.
+- Title (`--type-heading`, sentence case). Below it, a horizontal list of `MediaCard`s. A "Latest in {library}" row ends with a "See all" tile (not a card: bordered, no art, the size of the row's cards) that opens the library sorted "Newest added first". It is the last item of the row, reached with Right past the last card or End; its accessible name is "See all in {library}". Continue watching has none. There is no title-line link, so Up and Down between rows stay unchanged.
 - Desktop pointer: a previous or next arrow button appears on the row's edge on hover, and pages one viewport.
 - Keyboard: Left and Right move within the row (roving tabindex, as today). Up and Down move to the nearest card in the adjacent row by horizontal centre (spatial). The focused card scrolls so it keeps `--gutter` from the edge.
 - States: skeleton (cards of the right variant), error (`InlineError` in place of cards), and hidden when empty (as today).
+- Order on Home, the same on every visit and for every account: the hero, **Continue watching**, then one "Latest in {library}" row per library in the server's library order. An empty row is hidden and the others keep their order. The order never depends on data or ranking. Later rows (Because you watched, Favorites) take places their own tasks set.
+- **Continue watching** is one row: in-progress films and episodes together with each series' next episode, most recently played first. A next episode is dated by its series' last finished play. It holds at most 16 cards. There is no separate Next up row.
+- **The window**: a title last played longer ago than the window leaves the row. The window is 14 days by default, and Settings > Home offers 7, 14, or 30 days or Keep everything (§7.18). Nothing is deleted: the saved position stays on the server and the title's own page still offers Resume. A series the viewer had caught up on returns to the row when a new episode arrives, for a window after it arrived, even if its last play is older. The row waits for its data before showing, so it never reshuffles after the first paint.
 
 ### 7.5 Media card (`MediaCard`)
 
 | Variant | Frame | Under the art | Primary action (Enter or click) |
 |---|---|---|---|
 | `poster` | 2:3, `--poster-w` | Title (1 line), year | Open detail or series |
-| `thumb` (Continue Watching, Next Up) | 16:9, `--thumb-w`, Thumb, then Backdrop, then Primary | Series or title, then "S1 · E2 · 38 min left" | **Resume or play** (one activation). The `i` key, Menu on TV, or right-click opens details (decision 1). On TV, holding OK also opens details, so a remote with no Menu key can reach them (UX audit D15 B; P13-34) |
+| `thumb` (Continue watching) | 16:9, `--thumb-w`, Thumb, then Backdrop, then Primary | Series or title, then "S1 · E2 · 38 min left" | **Resume or play** (one activation). The `i` key, Menu on TV, or right-click opens details (decision 1). On TV, holding OK also opens details, so a remote with no Menu key can reach them (UX audit D15 B; P13-34) |
 | `episode` | 16:9 inside `EpisodeRow` | n/a | Play the episode |
 | `library` | 16:9, library image | Library name | Open the library |
 
@@ -327,11 +335,12 @@ Idle: the chrome hides 3 s after the last input while playing. It never hides wh
 
 ### 7.18 Settings (`SettingsPage`, `SettingsSection`, `SettingsRow`)
 
-A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings/settings-view.tsx`). P13-17 rebuilt it as the shell below and ships Playback (the streaming limits, with Audio passthrough as an unavailable row), Subtitles, Account, and About & diagnostics. Each later row arrives with the task that builds its behaviour: the preferences store (P3-22), auto-play (P3-23), skip (P3-24), accounts (P13-21), subtitle styling (P5-05), and audio passthrough (P5-03). Settings are one set per computer, not per account.
+A Settings screen exists since P10-05 (`#/next/settings`, `src/features/settings/settings-view.tsx`). P13-17 rebuilt it as the shell below and ships Playback (the streaming limits, with Audio passthrough as an unavailable row), Home (P16-02), Subtitles, Account, and About & diagnostics. Each later row arrives with the task that builds its behaviour: the preferences store (P3-22), auto-play (P3-23), skip (P3-24), accounts (P13-21), subtitle styling (P5-05), and audio passthrough (P5-03). Settings are one set per computer, not per account.
 
 - Layout: a vertical `role="tablist"` of sections on the left (`--settings-nav-w`) and the selected section's panel on the right (`--settings-panel-max`). Up and Down select a section (Home and End jump), Right enters the rows, and Left returns to the section list. Escape does nothing here. Under 720 px a list of sections drills in: Enter opens one and focuses its heading, and Escape or "Back to settings" returns with focus on that section. The route stays `#/next/settings`; the section is screen state.
 - Sections:
   - **Playback**: streaming limit, local and remote (same values and storage as P10-05), each a `Picker` of "No limit" and presets (Q21 A; no custom value). A changed limit confirms with a toast, because the change is otherwise invisible. Play next episode automatically (on by default) and its countdown (5, 10, or 15 s; default 10) arrive with P3-23. Intros and Credits, each with three choices: "Show a Skip button" (default), "Skip automatically", or "Do nothing", arrive with P3-24. Audio passthrough shows as unavailable until P5-03.
+  - **Home** (P16-02, listed after Playback): one row. Label "Continue watching", description "Titles you haven't played for this long leave the row. Their place is kept.", and a `Picker` of "7 days", "14 days" (default), "30 days", and "Keep everything". A change confirms with a toast, "Continue watching keeps 30 days." (with the chosen number) or "Continue watching keeps everything.", because the effect shows only on Home. It applies on the next render of Home with no refetch. Later Home rows' own settings join this section.
   - **Subtitles**: one sentence saying that languages follow the Jellyfin account (Q23 A; no link, no server read, nothing focusable). Styling comes in M2 (P5-05).
   - **Account** (P13-17): server name, address (Mono), and user. Stay signed in shows as unavailable until P3-02, P13-21, and P13-27 (per-account stay-signed-in in Settings > Accounts). Sign out is a `danger` button that signs out at once and ends on the sign-in screen with a "Signed out" toast; there is no confirm. From P13-21 the section becomes **Accounts**: every saved account as "name · server" with its stay-signed-in state, Sign out, and Remove, then "Add account". There is no launch setting: two or more signed-in accounts always show "Who's watching?" (§7.21). There is no "Change server" in Settings; adding an account never signs anyone out.
   - **About & diagnostics**: version, player and libmpv version, renderer, Jellyfin server version, and "Copy diagnostics" (redacted). The copy is seven lines: the app version, OS, player and libmpv version, renderer, decode mode, Jellyfin server version, and host class, and nothing else (Q24 B). It goes to the clipboard with a "Diagnostics copied" toast. If the clipboard refuses, an alert says so and the same text shows in a focused, selected block to copy by hand.
@@ -601,7 +610,7 @@ Fluster talks like a knowledgeable friend running the projector: calm, brief, pl
 | Library, not available | This library isn't available | It may have been removed, or this account can't see it. | Go home |
 | Libraries, error | n/a | Couldn't load your libraries. | Retry |
 | Library, later page error | n/a | Couldn't load more items. | Retry |
-| Row error | n/a | Couldn't load {row}. | Retry |
+| Row error | n/a | Couldn't load {row}. For the merged row, "Couldn't load Continue watching." when either of its lists fails; Retry reloads only the failed list. | Retry |
 | Search, error | n/a | Couldn't load search results. | Retry |
 | Search, more results error | n/a | Couldn't load more results. | Retry |
 | Sign-in, 401 | n/a | That username and password didn't work. | n/a |

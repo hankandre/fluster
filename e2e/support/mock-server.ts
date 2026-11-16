@@ -51,6 +51,9 @@ export interface MockOptions {
   homeLatestOnly?: boolean;
   // The in-progress film Saltwater Hours was last played 30 days ago, so Home leaves it out of Continue watching.
   agedOutFilm?: boolean;
+  // Everything the viewer played, and every in-progress item, was last played over 60 days ago, so Home leaves the
+  // Continue watching row out and the hero is the newest addition.
+  allAgedOut?: boolean;
   // A stopped session marks its item as finished now: Resume drops it, the recently-played list gains it, and the
   // next episode of its series leads Next up.
   finishOnStop?: boolean;
@@ -321,8 +324,9 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
           ] });
         case "/UserItems/Resume": {
           if (opts.empty || opts.homeLatestOnly) return json({ Items: [] });
-          const film = playedOn(movieDto("m2", opts), opts.agedOutFilm ? 30 : opts.worstCaseArt ? 2 : 1);
-          const inProgress = playedOn(episodeDto("ep-2"), opts.worstCaseArt ? 1 : 2);
+          const old = opts.allAgedOut ? 60 : 0;
+          const film = playedOn(movieDto("m2", opts), opts.agedOutFilm ? 30 : old + (opts.worstCaseArt ? 2 : 1));
+          const inProgress = playedOn(episodeDto("ep-2"), old + (opts.worstCaseArt ? 1 : 2));
           const items = (opts.worstCaseArt ? [inProgress, film] : [film, inProgress]).filter((dto) => !finishedNow.has(dto.Id));
           return json({ Items: items });
         }
@@ -351,8 +355,8 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
             const done = (dto: Dto, days: number, extra: Dto = {}): Dto => ({ ...playedOn({ ...dto, ...extra }, days), UserData: { Played: true, LastPlayedDate: daysAgo(days) } });
             const entries = [
               ...[...finishedNow].map(([id, at]) => ({ ...episodeDto(id), UserData: { Played: true, LastPlayedDate: new Date(at).toISOString() } })),
-              done(episodeDto("ep-1"), 3),
-              done(episodeDto("ep-1"), 9, { Id: "ep-s2-1", SeriesId: "s2", SeriesName: "Quiet Orbit" }),
+              done(episodeDto("ep-1"), (opts.allAgedOut ? 60 : 0) + 3),
+              done(episodeDto("ep-1"), (opts.allAgedOut ? 60 : 0) + 9, { Id: "ep-s2-1", SeriesId: "s2", SeriesName: "Quiet Orbit" }),
             ];
             return json({ Items: entries, TotalRecordCount: entries.length });
           }

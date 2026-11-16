@@ -338,3 +338,7 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
   - How long an audio pick on a title's page lasts is question L8; P17-08 is written for "while the page is open". S.
   - The glib 0.18 alert (entry above) was dismissed by the owner on 2026-11-14; only the revisit when Tauri moves to GTK4 remains.
   - P17-02 fixes a problem the owner saw on the dogfood server. Adding it to P4-01's `depends_on` edits an existing task, so it is the owner's or the coordinator's call. S.
+
+## Home window follow-ups (P16-02, 2026-11-15)
+
+- Jellyfin 10.11 has no `GET /Items/{id}/Collections`, so Home's sequel rule (Up next rule 2) is skipped there and the hero falls to Similar. Add a client-side join (list collections, fetch each one's members until the finished film is found; up to N + 1 extra requests on an empty-row Home, one more recorded fixture). S (P16-02, owner Q3 A).
