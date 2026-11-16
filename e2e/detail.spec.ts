@@ -107,6 +107,7 @@ test("open a movie, read its media info, switch version, and favorite it", async
   await expect(hdrInfo.getByText("HDR10", { exact: true })).toBeVisible();
   await expect(hdrInfo.getByText("English · E-AC-3 5.1 · default")).toBeVisible();
   await expect(hdrInfo.getByText("English · SRT · default")).toBeVisible();
+  await hdrInfo.getByRole("button", { name: "Show all 2 subtitles" }).click();
   await expect(hdrInfo.getByText("French · PGS · external")).toBeVisible();
 
   await page.getByRole("button", { name: /^Version/ }).click();
