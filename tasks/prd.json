@@ -3979,7 +3979,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "2026-11-16, 8 milestone commits on task/P17-08. pnpm check passed (2892 vitest, cargo 194). Tripwire (FLUSTER_CONVERSION_SAMPLES=1) multitrack-audio-pick PASS on 10.11.7 and 12.4.0: DirectPlay, no ffmpeg, no TranscodingInfo. test:visual 406 passed locally (baselines to accept from CI). test:e2e 207 passed, 1 failing: e2e/detail.spec.ts:191 'keeps its action bar on one row at 1440px' (deterministic, 5/5 with --repeat-each 5; 1920px passes): Resume, Version, Audio, Start over, Watched, Favorite need about 970 px, the bar has 806 px. Needs a design decision (backlog P17-08 follow-up d); the test is not weakened. Open: guardian and design review, CI baselines, PR."
+          "evidence": "2026-11-16, 10 commits on task/P17-08, rebased onto origin/main c0b7061 (P2-09: PlayerView edits moved to src/features/player/player-screen.tsx). Owner chose Wider bar for the action bar (spec decision 13, DESIGN.md 7.8, backlog d removed). Open for Ship/Review: guardian and design review, CI baselines, PR stating acceptance 10 retry scope."
         },
         {
           "id": "P17-03",
