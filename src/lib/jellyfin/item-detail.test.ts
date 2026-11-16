@@ -114,10 +114,31 @@ describe("toItemDetail", () => {
     ],
   };
 
+  it("maps an audio stream's own title, external flag, and the version's default audio index", () => {
+    const detail = toItemDetail({
+      Id: "m1",
+      Name: "Film",
+      Type: "Movie",
+      MediaSources: [{
+        Id: "s1",
+        DefaultAudioStreamIndex: 2,
+        MediaStreams: [
+          { Index: 1, Type: "Audio", Codec: "aac", Language: "eng", Title: "Commentary", DisplayTitle: "English - AAC", IsDefault: true },
+          { Index: 2, Type: "Audio", Codec: "ac3", Language: "spa", IsExternal: true },
+        ],
+      }],
+    })!;
+    expect(detail.versions[0].defaultAudioStreamIndex).toBe(2);
+    expect(detail.versions[0].audio).toEqual([
+      { index: 1, language: "eng", codec: "aac", title: "English - AAC", streamTitle: "Commentary", isDefault: true },
+      { index: 2, language: "spa", codec: "ac3", isExternal: true, isDefault: false },
+    ]);
+  });
+
   it("maps audio and subtitle streams with their flags", () => {
     const detail = toItemDetail({ Id: "m1", Name: "Film", Type: "Movie", MediaSources: [source] })!;
     expect(detail.versions[0].video?.hdr).toBe("Dolby Vision / HDR10");
-    expect(detail.versions[0].audio).toEqual([{ language: "eng", codec: "truehd", channels: 8, isDefault: true }]);
+    expect(detail.versions[0].audio).toEqual([{ index: 1, language: "eng", codec: "truehd", channels: 8, isDefault: true }]);
     expect(detail.versions[0].subtitles).toEqual([
       { language: "fra", codec: "subrip", isExternal: true, isDefault: false, isForced: true },
       { language: "eng", codec: "pgssub", isExternal: false, isDefault: true, isForced: false },

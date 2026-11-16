@@ -6,12 +6,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-// Reads one field of GET /Users/Me: Configuration.SubtitleLanguagePreference. "", null, or absent means none.
+function preferenceOf(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() !== "" ? value.trim() : undefined;
+}
+
+// Reads two fields of GET /Users/Me: Configuration.SubtitleLanguagePreference and
+// Configuration.AudioLanguagePreference. "", null, or absent means none.
 export function toAccountLanguages(data: unknown): AccountLanguages {
   if (!isRecord(data) || !isRecord(data.Configuration)) return {};
-  const preference = data.Configuration.SubtitleLanguagePreference;
-  if (typeof preference !== "string" || preference.trim() === "") return {};
-  return { subtitleLanguage: preference.trim() };
+  const subtitle = preferenceOf(data.Configuration.SubtitleLanguagePreference);
+  const audio = preferenceOf(data.Configuration.AudioLanguagePreference);
+  return { ...(subtitle ? { subtitleLanguage: subtitle } : {}), ...(audio ? { audioLanguage: audio } : {}) };
 }
 
 export function isPlainRecord(value: unknown): value is Record<string, unknown> {

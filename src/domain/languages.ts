@@ -1,4 +1,5 @@
-// Language codes as languages, for display only. Nothing here decides what plays.
+// Language codes as languages. The subtitle language is for display only; the audio language orders the
+// title page's audio Picker (P17-08), and the server still picks the track a play with no pick starts with.
 export interface LanguageCulture {
   displayName: string;
   threeLetterName: string; // ThreeLetterISOLanguageName, lowercased
@@ -8,6 +9,8 @@ export interface LanguageCulture {
 
 export interface AccountLanguages {
   subtitleLanguage?: string;
+  // Configuration.AudioLanguagePreference: a code, or "OriginalLanguage", which matches no track.
+  audioLanguage?: string;
 }
 
 const lookups = new WeakMap<readonly LanguageCulture[], Map<string, string>>();
