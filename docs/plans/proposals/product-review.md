@@ -1,6 +1,6 @@
 # Product review: edge, gaps, multi-server, backlog
 
-Status: **Answered 2026-11-12.** The owner's answers are in "Answers" below, as relayed by the coordinating agent. The changes they approve are applied in the same pull request, except two rule changes that wait for the owner's own confirmation. Sections 1 to 5 keep the original proposal text for the record; where an answer differs from a recommendation, the answer wins.
+Status: **Answered 2026-11-12.** (A later pass, with seven questions still open, is at the end: "Product review pass, 2026-11-15".) The owner's answers are in "Answers" below, as relayed by the coordinating agent. The changes they approve are applied in the same pull request, except two rule changes that wait for the owner's own confirmation. Sections 1 to 5 keep the original proposal text for the record; where an answer differs from a recommendation, the answer wins.
 
 ## Direction update (owner, 2026-11-12)
 
@@ -910,3 +910,169 @@ Out of scope today. Seven of nine rivals have it.
 - A: Stays out until after M2; `PRODUCT.md` says so plainly.
 - B: Write the decision record now.
 - **Rec: A.**
+
+---
+
+## Product review pass, 2026-11-15
+
+Status: **tasks added; seven questions open (L1 to L7).** Nothing below is answered yet.
+
+This is a Fable 5.2 product-review pass under the `AGENTS.md` "Tasks" rule. It adds tasks, strikes the backlog entries they take, and edits no existing task.
+
+### Inputs
+
+- `tasks/backlog.md`: every entry added after the last pass that added tasks (`b6587cb`, 2026-11-13), read from `git diff b6587cb origin/main -- tasks/backlog.md`.
+- Issue [#178](https://github.com/hankandre/fluster/issues/178), "Track languages", and its one comment. The server side is jellyscale-org/jellyscale#154, merged 2026-11-16 UTC as a plan: its tasks JS-116 to JS-122 and JS-041 are all `todo` in jellyscale's `tasks/prd.json` on main (read 2026-11-15).
+- The owner's decisions for the detail page's subtitle list, in pull request #173's backlog entry. #173 was open when this pass ran, so its one commit is cherry-picked onto this branch unchanged; whichever of the two merges second drops it on rebase.
+
+Limits. Nothing was run against a server. What Jellyfin does with a partial `POST /Users/Configuration`, whether 10.11 accepts `OriginalLanguage`, and the shape of `/Localization/Cultures` are **unverified**; P17-01 records them before anything is built on them. No jellyscale build with these routes exists to test.
+
+### Tasks added
+
+Acceptance is in `tasks/prd.json`, which is the source of truth. Priority is this pass's; place is the position in the file.
+
+| Id | Title | Priority | Place | Waits for | Model | State |
+|---|---|---|---|---|---|---|
+| P0-18 | Make the end-to-end and visual runs repeatable | High | P0, after P0-17 | P13-31 (done) | Sonnet | todo |
+| P0-19 | Tighten the text filters and redact a failed stop's reason | High | P0, after P0-18 | P3-31 (done) | Sonnet, `guardian` review | todo |
+| P17-01 | Record account-language contract fixtures for 10.11 and 12.x | High | P17 (new, after P16), first | P0-02, P0-03 (done) | Sonnet | todo |
+| P17-02 | List only the viewer's subtitle language on a title's page | High | P17 | P17-01, P13-09 | Sonnet | todo |
+| P17-03 | Choose audio and subtitle languages in Settings | Medium | P17 | P17-01, P17-02, P13-17, P13-20; **L3, L4** | Sonnet, `guardian` review | blocked: owner |
+| P17-04 | Run a pinned jellyscale server beside the Jellyfin fixtures | Medium | P17 | P0-02, P0-03, P17-01; **jellyscale** | Sonnet | blocked: jellyscale |
+| P17-05 | Hide tracks in other languages: the jellyscale settings | Medium | P17 | P17-03, P17-04 | Sonnet | todo, behind its dependencies |
+| P17-06 | Negotiate playback through jellyscale's playback-info route | Medium; **high risk** | P17 | P17-04, P10-03, P10-09; a decision record the human approves | Opus; Fable spec; `guardian` review | todo, behind its dependencies |
+| P17-07 | Leave hidden tracks out of the player's menus, and show them on request | Medium | P17, last | P17-06, P10-08, P13-29; **L5, L7** | Opus, `guardian` review if the coordinator or Rust changes | todo, behind its dependencies |
+
+Why these priorities:
+
+- **P0-18, high.** The same journeys failed without a code cause in the P0-14 runs, on main, and in three P13-31 runs. Fluster merges on green, so a check that fails at random is paid for in reruns and teaches agents to distrust a red result. The accept script rewriting captures that did not fail weakens the visual gate the same way.
+- **P0-19, high.** The post-merge `guardian` review of #158 found a path where a done task's acceptance does not hold (P3-31, item 5: a failed stop's reason reaches state through `redactText` only, `src/lib/player/coordinator.ts:336`), and proved with a probe that a credential written `PlaySessionId abc123` passes `redactText` (`src/lib/redact.ts:24-27` needs `:` or `=`). Rust's `safe_error` covers native text today; the TypeScript filter is the only guard for everything else. This is invariant I4.
+- **P17-01 and P17-02, high.** The owner saw the problem on the dogfood server: a film with 52 subtitle tracks fills the page. The decisions are made, the change is confined to one component and one read, and nothing in it waits for jellyscale. Whether P4-01 should wait for P17-02 is the owner's or the coordinator's call, because it edits an existing task.
+- **P17-03, medium.** The owner asked for it in #178, and it is what streaming services do: language is chosen in the app. It replaces a sentence, not a broken feature, and two design calls are open.
+- **P17-04 to P17-07, medium, and not startable.** They wait for a server that does not have the routes yet. They are written now so that the acceptance jellyscale builds against (#154) and the acceptance Fluster builds against say the same thing.
+
+### Issue #178: how it is split
+
+**On any server: P17-01, P17-03.** Read `Configuration` from `GET /Users/Me`, save with `POST /Users/Configuration`, list languages from `GET /Localization/Cultures`.
+
+- The save is a write to the viewer's account that every other app reads. Jellyfin replaces the whole object, so a client that posts two fields may reset the other fourteen. P17-03's acceptance therefore requires a fresh read, a change to only its own fields, and every other field posted back as read, an unknown one included. P17-01 records what a partial body really does, so the test is against the server's behaviour and not this paragraph.
+- Two apps saving at the same moment can still overwrite each other. Only the server can close that; the request to jellyscale is in the backlog.
+- `ARCHITECTURE.md` §3 records that with `PlayDefaultAudioTrack` on, which is the server's default, the file's default audio track wins over `AudioLanguagePreference`. An audio language chosen in Fluster would then change nothing. That is question L4.
+- P3-13 stays as it is: the server derives the default tracks from the account and Fluster adds no preference logic. No PlaybackInfo request changes in P17-03.
+- `DESIGN.md` §7.18 says settings are one set per computer. These two are the account's. P17-03 requires the rows to say so in words. It also replaces decision Q23 A for the Subtitles section, which P13-17 built as specified; the owner asked for the change in #178.
+
+**On jellyscale only: P17-04 to P17-07.**
+
+- **P17-04, the server.** A pinned, published image in `tests/integration/docker-compose.yml`, the Babel Film fixture, contract fixtures for both new routes, and a CI job. It also records the two playback answers side by side and fails if they differ in anything but the marks. That turns jellyscale's promise in JS-120 ("everything else is PlaybackInfo's answer for the same body and query") into a check Fluster owns. It is blocked: no such build exists, and Fluster's sample generator cannot make the fixture's PGS track.
+- **P17-05, the settings.** The rows appear only when `GET /jellyscale/v1/track-preferences` answers. The order the issue describes (language first, then "Keep any other languages?", then save) and the 409 handling are acceptance items.
+- **P17-06, the negotiation. High risk.** A second route into Playback Negotiation. It needs a decision record the human approves, a Fable spec, and a `guardian` review. Its acceptance holds the route to every existing rule: one request builder for both routes, the same source decision and URL rebuild, the forced fallback and every renegotiation on the same route, a single fallback to standard PlaybackInfo when the route itself is missing or failing, and the tripwire run against jellyscale. It changes no menu, so it can be verified alone: the plan gains `hidden` and `originalLanguage`, and nothing else differs.
+- **P17-07, the player.** The menus leave hidden tracks out and bring them back. The issue's acceptance (2 and 4, then 4 and 10, on Babel Film) is carried over. One thing in it may need the human: no player command adds a subtitle after launch today (the 13 commands in `src-tauri/src/command_allowlist.rs`), so showing a hidden subtitle file later either relaunches or needs a new command, which is an architecture change. The acceptance says the spec stops and asks.
+
+**Not taken from #178:** hiding by Fluster's own rule on a real Jellyfin. The issue rules it out, and so does this pass: the rule lives on the server so every app agrees.
+
+### How the detail page's list and the language setting relate
+
+They share one value and nothing else.
+
+- The detail list (P17-02) reads the account's `SubtitleLanguagePreference`. The settings rows (P17-03) write it. P17-02 comes first and brings the read; P17-03 depends on it and must show that the list follows a change without a restart.
+- P17-02 does not wait for P17-03. Until the rows exist, the value is whatever the viewer set in Jellyfin, which is what the owner's decision says.
+- They are different kinds of rule. The detail list is a **shorter view of the file's facts** in Fluster, on any server, with every track one press away. Hiding on jellyscale is **the server's rule for the menus in every app**. P17-02 therefore applies its rule to whatever tracks the server lists and guesses nothing about tracks it left out. Whether the page should also offer the hidden ones is question L6.
+- The comparison of languages (`ger` is `deu`) is needed by P17-02 on any server. jellyscale does its own on the server (JS-117). Fluster's is for display only and never decides what plays.
+
+### Backlog triage
+
+Every section added since 2026-11-13. "Stays" means the entry is left where it is, with the reason.
+
+| Entry | Verdict | Why |
+|---|---|---|
+| Flaky Back-key journeys; `FLUSTER_E2E_PORT` | **P0-18** | Repeated on main and on branches. |
+| `e2e/tv/detail.spec.ts:46` under load (P13-31) | **P0-18** | The same kind of failure, seen twice. |
+| `net::ERR_NETWORK_CHANGED` in local visual runs (P13-31) | **P0-18** | Seen in three full runs, with traces. |
+| The visual accept script rewrites captures that passed | **P0-18** | It weakens the gate it serves. |
+| #158 `guardian` lows: a failed stop's reason; the text filters | **P0-19** | Invariant I4; proven with a probe. |
+| Detail page subtitle list (owner, #173) | **P17-02**; the audio list is **L1** | Decided by the owner. |
+| P13-29: carry the choice to the next episode; audio-description labels | Already **P15-07** and **P15-12** | Struck as duplicates. |
+| P13-31: account reset keyed on the gateway object; `dropOtherAccounts`; `useAccountChanged` | Stays; **note for P3-20's spec** | They matter only once accounts switch. P3-20's acceptance already covers the outcome. |
+| P13-23: libmpv2 drops `MPV_FORMAT_NONE` changes | Stays; **note for P2-06** | The binding is about to be upgraded from 5 to 7. |
+| PR #165: `PlayerSurfaceFrame::validate` has no upper bound | Stays; **note for P2-12** | Only the trusted WebView sends frames; fix it in the next native pass. Native work stays serial. |
+| `.ui-dialog-title` literal size; P13-33 contrast lows; P13-29 copy rows; spoken-slider wording; the "fresh visit" check | Stays; **note for P13-19** | The design audit exists to close exactly these. |
+| P16-01 recorder lows | Stays; **note for P16-11** | The same recorder is open again there. |
+| P13-24 follow-ups (focus on the hero and action bar, after auto-play next, scroll without a card, the TV scroll inset) | Stays | No evidence from use yet. The dogfood protocol has a timed Back task; P4-02 triages what the week shows. The scroll inset needs a design call with the TV shell. |
+| P13-31: kept data never expires or is capped; the optimistic flag flicker; `useIsFetching` | Stays | Costs that show in a long session. The dogfood week is the measurement. |
+| P13-31: return to the sending route after sign-in | Stays | Belongs with P3-21 (sign in again), whose spec can take it. |
+| P13-31: `scrollTo({ behavior: "instant" })` on WebKitGTK | Stays | Unverified either way; a one-word change for whoever next edits `focus-return.ts`. |
+| P13-23: `diagnostics` and `video` overlap; the Dolby Vision gamma | Stays | A tidy-up with no user effect; the gamma line waits for P5-01's Dolby Vision decision. |
+| P13-29: the Picker trigger, the `c` OSD line, unmapped-track fields, focus after a converted track choice | Stays | Small, and no report of friction. The focus one goes to P13-28's screen-reader audit if it shows there. |
+| P3-22 preference-store lows | Stays | The second is already tied to P3-23, P3-24, or P3-26. The first needs blocked storage and a legacy key together. |
+| PR #165: one-frame resize, GTK default size, the `DrawingArea` stand-in | Stays | Cosmetic, or a hardware gate the PR already lists. |
+| P0-14 lows (`lint-boundaries` exit code at 256 violations); the `typescript-6` alias | Stays | Cannot happen at this size; the alias waits for upstream releases. |
+| glib 0.18 advisory | Stays | Cannot be fixed before Tauri moves to GTK4. Dismissing the alert is the owner's call. |
+| Flaky `rust-audit` | Stays | Seen once. The entry already says what to do if it recurs. |
+| "Test Fluster against Jellyscale" (2026-11-12) | Stays, with a note | P17-04 is its fixture server and P17-06 its tripwire. The pass across sign-in and browse is still unowned. |
+
+### Invariants and rules this pass touches
+
+No invariant changes. These are the ones the new tasks must hold, and each is an acceptance item:
+
+- **I1** (never convert what can direct play; show every conversion): P17-06 keeps one source decision for both routes and adds the tripwire against jellyscale.
+- **I2** and **I6** (only two URL shapes; validated subtitle URLs): P17-06 sends the jellyscale answer through the same rebuild and validation. P17-07 must not fetch a hidden subtitle file at launch and must validate it when it is shown.
+- **I3** (fixed command list): P17-07 may need a command to add a subtitle after launch. If so, the spec stops for the human.
+- **I4** (no tokens in logs, errors, or URLs): P0-19 tightens the filters. P17-03, P17-05, and P17-06 each carry the line.
+- **I8** (only the gateway talks to the server): the capability probe, the configuration save, and both jellyscale routes live in `gateway.ts`.
+- "Send the same PlaybackInfo flags in the body and the query" and "send the Fluster DeviceProfile with every PlaybackInfo request": P17-06 extends both to the second route by sharing the builder.
+- "Treat every new Tauri command as an architecture change": P17-07, as above.
+- **CI changes:** P0-18 (possibly), P17-04 (a new job, not required), P17-06 (makes it required and widens the tripwire).
+- **`DESIGN.md`:** §7.9 (P17-02), §7.18 (P17-03, P17-05; replaces Q23 A for Subtitles), §7.10 and §7.14 (P17-07).
+
+### Questions for the owner
+
+Two batches. Batch 1 is needed now; batch 2 only when jellyscale ships its side. Streaming-service convention is the default unless there is a reason against it.
+
+#### Batch 1: the detail page and Settings
+
+**L1. Does the audio list on a title's page get the same rule as subtitles?** (Left open in #173.)
+- A: No. The audio list stays whole.
+- B: Yes. Only the preferred audio language, with "Show all N audio tracks".
+- C: Only when a file has more than some number of audio tracks.
+- **Rec: A.** The complaint was 52 subtitles; no file with a long audio list has been reported. Audio facts (TrueHD 7.1 against AC-3) are what the home-theater viewer reads before pressing Play, and `PRODUCT.md` promises them there. Revisit if a real file shows the problem. P17-02 is written for A.
+
+**L2. Does the subtitle rule apply to short lists too?** The decision as written applies at any count, so a file with English and Spanish shows one line and "Show all 2 subtitles".
+- A: Always, as decided. One rule.
+- B: Only above a threshold (say six tracks); shorter lists show whole.
+- **Rec: A.** A list that sometimes filters and sometimes does not is harder to predict, and the button costs one line. P17-02 is written for A; B would be one acceptance edit.
+
+**L3. Where do the language rows sit in Settings?**
+- A: A new **Languages** section: audio language, subtitle language, and on jellyscale the hide switches, keep lists, and Show all tracks. Subtitles keeps styling and the caption switches.
+- B: Audio language under Playback, subtitle language under Subtitles; the jellyscale rows split the same way.
+- **Rec: A.** It is the issue's wording, streaming services group language in one place, and the jellyscale flow ("turn on hiding, be asked for a language, then what else to keep") stays on one panel. These are also the only settings that belong to the account and not the computer, and one section can say that once.
+
+**L4. What does choosing a language do to Jellyfin's two companion settings?** With "Play default audio track" on, which is Jellyfin's default, the file's default track wins and an audio language changes nothing (`ARCHITECTURE.md` §3). The subtitle language likewise acts only through the account's subtitle mode.
+- A: One picker per kind that sets both fields, in plain words. Audio: "The file's default", "Original language", or a language; choosing a language turns "Play default audio track" off. Subtitles: "Off", "Only when the audio is in another language", or "Always", beside the language. The row says what it changed.
+- B: Show Jellyfin's own settings as extra rows (a "Play default audio track" switch and a five-value subtitle mode), as jellyfin-web does.
+- C: The two language rows only. Nothing else on the account changes, and an audio choice may do nothing.
+- **Rec: A**, with the exact choices fixed after P17-01 records what each mode does. C breaks "it just works": a setting that does nothing is the finagling `PRODUCT.md` rules out. B hands the viewer the server's vocabulary. A changes a field the viewer did not name, which is why the acceptance requires the row to say so.
+
+#### Batch 2: jellyscale only (not needed until P17-04 unblocks)
+
+**L5. What does "Show all tracks" in the player do?** (Raised in the comment on #178.)
+- A: It shows every track for this play only. The account's switch lives in Settings.
+- B: It turns on the account's switch, as #178 is written. Every app then shows every track until it is turned off.
+- C: Both: the menu item is for this play, with a second line "Always show all" that opens Settings.
+- **Rec: A.** A choice made in one film's menu should not change what the viewer sees in every other app. Players on streaming services do not change account settings from the track menu.
+
+**L6. On jellyscale with hiding on, does a title's page still let the viewer see the hidden tracks?** jellyscale also leaves hidden subtitle tracks out of the item's details (JS-119).
+- A: No. The page lists what the server lists. The viewer chose to hide them.
+- B: Yes. "File and streams" asks for the full list and offers it under the same "Show all" button, marked as hidden.
+- **Rec: A** for now. B needs one more request per page for a viewer who asked for less. "Honest about the file" is kept by the Settings switch and the player's Show all tracks. P17-02 is written for A.
+
+**L7. Is the film's original language labelled in the audio menu?** #178 says it "can be".
+- A: Yes: "Original" on the audio tracks in that language.
+- B: No.
+- **Rec: A**, if P17-04's fixtures show the value is right for the test films. jellyscale derives it from the file's default audio track, so a film whose only audio is a dub is labelled with the dub's language (JS-117 says so). If that proves common on the owner's library, choose B.
+
+### What this pass did not do
+
+- It did not edit an existing task. Three suggestions are left for the owner or the coordinator: add P17-02 to P4-01's `depends_on`; carry the notes above into the specs of P3-20, P2-06, P2-12, P13-19, and P16-11; and change P16-11's `verify` string, which runs the whole suite.
+- It filed nothing in jellyscale's tracker. Two requests are in the backlog: a partial or version-checked configuration save, and a published image with the Babel Film fixture.
+- It did not change `DESIGN.md`, `ARCHITECTURE.md`, or `PRODUCT.md`. Each task changes the document it affects.
+- It did not run a competing client or a server.

@@ -1,6 +1,6 @@
 {
   "product": "Fluster",
-  "updated": "2026-11-13",
+  "updated": "2026-11-15",
   "rules": [
     "Pick the first task whose status is todo and whose depends_on tasks all pass.",
     "Skip tasks with human set to true; set them to blocked and state in evidence what the person must do.",
@@ -416,6 +416,57 @@
             "The PR calls out the CI change and lists the untested macOS gates (rendering, VideoToolbox, Now Playing)"
           ],
           "verify": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings && pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P0-18",
+          "title": "Make the end-to-end and visual runs repeatable",
+          "domain": "Distribution",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P13-31"
+          ],
+          "acceptance": [
+            "The cause of each intermittent failure logged in tasks/backlog.md is found and written in the PR: e2e/back-keys.spec.ts (:20 and :89), e2e/tv/detail.spec.ts:46, and the net::ERR_NETWORK_CHANGED timeouts in local pnpm test:visual runs; a cause that cannot be found is said to be unverified, with what was tried",
+            "Each of those tests waits for the state it depends on; no assertion is removed or weakened, no retry count is raised, and no fixed sleep is added",
+            "pnpm test:e2e passes 10 times in a row on this computer and the full suite passes 3 times in a row in CI; the run links are in the evidence",
+            "pnpm test:visual:accept <run-id> copies only the captures that failed in that run; a test or a dry run shows a passing capture is left untouched, and the PR says whether 14-home-keyboard-focus, 15-nav-keyboard-focus, and 85-ui-gallery-dialog-picker render the same on two runs",
+            "FLUSTER_E2E_PORT no longer fails when the next port is taken: both ports are chosen free, or the run stops with a sentence that names the second port",
+            "No application code under src/ changes except to fix a race the tests exposed; any such change has its own unit test and is listed in the PR",
+            "The PR calls out any change to CI or to the visual gate"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P0-19",
+          "title": "Tighten the text filters and redact a failed stop's reason",
+          "domain": "Playback Session",
+          "model": "sonnet",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "P3-31"
+          ],
+          "acceptance": [
+            "redactText (src/lib/redact.ts) redacts a credential that follows its name after a space as well as after : or =: PlaySessionId abc123, X-Emby-Token abc123, and Authorization MediaBrowser Token abc123 (post-merge guardian review of #158, tasks/backlog.md)",
+            "safeReason (src/features/player/safe-reason.ts) hides a bare host:port, a single-segment path, a Windows path written with forward slashes, a UNC path, and an IPv6 URL including its port and route",
+            "A failed stop after the end of playback, and the native error event, store their reason in session state through errorReason, so no file path or host reaches state (src/lib/player/coordinator.ts, the two sites the review names); a coordinator test for each fails without the change",
+            "The redaction canary tests gain one case per form above, and each fails without the change; no existing canary is deleted or weakened",
+            "Ordinary player messages keep their meaning: a test shows a time such as 12:30, a ratio such as 16:9, and a sentence that contains the word token without a value are left as they are",
+            "Matching stays linear on long input: a test runs each filter on a 1 MB string within the existing time bound, or adds one",
+            "Nothing under src-tauri/ changes and no Tauri command is added or changed",
+            "A guardian review passes, because the change is on the redaction path (invariant I4)"
+          ],
+          "verify": "pnpm check",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -3808,6 +3859,242 @@
             "DESIGN.md §7.12 matches what ships",
             "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone (once P13-18 lands)",
             "Before and after screenshots of every affected state at 1440×900 and 1920×1080 are attached to the PR (and the TV form once P13-18 lands)",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "P17",
+      "name": "Track languages",
+      "goal": "A viewer chooses their audio and subtitle languages in Fluster, a title's page lists the subtitles they read instead of every track in the file, and on a jellyscale server the tracks in other languages leave the menus (issue #178; docs/plans/proposals/product-review.md, \"Product review pass, 2026-11-15\").",
+      "exit": [
+        "All P17 tasks pass"
+      ],
+      "tasks": [
+        {
+          "id": "P17-01",
+          "title": "Record account-language contract fixtures for 10.11 and 12.x",
+          "domain": "Server Connection & Identity",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P0-02",
+            "P0-03"
+          ],
+          "acceptance": [
+            "Fixtures from Jellyfin 10.11.7 and 12.4.0 show the Configuration object of GET /Users/Me for a new user, and GET /Localization/Cultures: its shape, the count of entries, and every two-letter and three-letter name each entry carries",
+            "A recorded sequence on a throwaway user shows what POST /Users/Configuration does on each version with the whole object and two language fields changed, with a body that holds only the language fields (merged, or every other field reset), and with a field the server does not know (kept, dropped, or refused), each followed by GET /Users/Me",
+            "Fixtures show whether each version accepts the value OriginalLanguage as AudioLanguagePreference and what DefaultAudioStreamIndex PlaybackInfo then answers",
+            "Fixtures show DefaultAudioStreamIndex for PlayDefaultAudioTrack on and off with an audio language set, and DefaultSubtitleStreamIndex for each SubtitleMode with a subtitle language set, on a sample with several audio and subtitle languages; they show whether a preference of ger selects a track tagged deu",
+            "The synthetic sample set gains one file with at least 12 text subtitle tracks in at least 6 languages: one flagged default, one untagged, a forced and a hearing-impaired track in one language, and the same language tagged ger on one track and deu on another; tests/samples/README.md lists it and no third-party media is used",
+            "The recorder restores the fixture users' configuration when it ends, also after a failed run, so the PlaybackInfo and discovery fixtures re-record unchanged",
+            "docs/research/account-languages-api.md states, per route and version, what was observed, and beside it the route's status in jellyscale (its tasks JS-116 to JS-121); every claim in issue #178 about these routes that the fixtures settle is confirmed or corrected there",
+            "Fixtures are scrubbed per the jellyfin-api contract-fixtures reference; no gateway method, playback request, setting, or UI changes"
+          ],
+          "verify": "pnpm exec vitest run src/lib/jellyfin/account-language-fixtures.test.ts && ls docs/research/account-languages-api.md",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P17-02",
+          "title": "List only the viewer's subtitle language on a title's page",
+          "domain": "Catalog",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P17-01",
+            "P13-09"
+          ],
+          "acceptance": [
+            "The gateway reads the account's SubtitleLanguagePreference from the Configuration of GET /Users/Me (owner, 2026-11-15; tasks/backlog.md \"Detail page: cut the subtitle list down\"); nothing outside src/lib/jellyfin/gateway.ts calls the server, and a gateway test asserts the mapping against the P17-01 fixtures from 10.11.7 and 12.4.0",
+            "When the chosen version has subtitle tracks in that language, File and streams lists only those tracks, forced and hearing-impaired ones included, and a button reading Show all N subtitles, where N is every subtitle track of the version",
+            "When no preference is set, or no track is in that language, it lists the file's default subtitle track if it has one, then a line of the form \"51 more in 32 languages\"; with no default track it shows only that line (\"52 in 32 languages\" in the same form); the button follows",
+            "The button expands the full list in place, keeps keyboard focus on the screen, and is reachable and operable with arrows and Enter alone; when every subtitle track is already listed there is no button and no count line",
+            "Languages are compared as languages, not spellings: a preference of ger lists a track tagged deu, using the names /Localization/Cultures gives (P17-01); a track with no language tag matches no preference and is counted as a track but not as a language",
+            "A preference that is still loading or could not be read is treated as no preference; no error is shown for it and the page is never held back by it",
+            "Choosing another version recomputes the list; the audio list, the media badges, the player's menus, and every playback request are unchanged",
+            "On a server that leaves tracks out of GET /Items/{itemId} for this viewer, the counts are of the tracks the server listed; nothing is guessed about tracks it did not list",
+            "Unit tests cover: a match, no preference, a preference with no match, no default track, one subtitle track, ger against deu, and an untagged track; a Playwright journey opens a title with 52 subtitle tracks, finds the short list, and expands it with the keyboard",
+            "DESIGN.md §7.9 and the §10 copy table match what ships",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080, and of the TV form, are attached to the PR",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P17-03",
+          "title": "Choose audio and subtitle languages in Settings",
+          "domain": "Server Connection & Identity",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P17-01",
+            "P17-02",
+            "P13-17",
+            "P13-20"
+          ],
+          "acceptance": [
+            "The owner's answers to L3 and L4 (docs/plans/proposals/product-review.md, \"Product review pass, 2026-11-15\") are recorded in the spec before implementation; the spec parks until they are",
+            "Settings has an audio language and a subtitle language control, each a Picker of the languages GET /Localization/Cultures lists with the account's saved value shown; where the two rows sit follows the answer to L3 (issue #178)",
+            "The audio choices include Original language (the value OriginalLanguage) on a server that the P17-01 fixtures show accepts it, and leave it out on one that does not",
+            "A change is saved to the account with POST /Users/Configuration: the gateway reads the Configuration fresh from GET /Users/Me immediately before, changes only the fields this task owns, and posts every other field back exactly as read, including a field Fluster does not know; it never posts a partial object. Gateway tests assert the request against the P17-01 fixtures from 10.11.7 and 12.4.0, with an unknown field in the read",
+            "What a language choice does to PlayDefaultAudioTrack and SubtitleMode follows the answer to L4; whatever is changed besides the two language fields is named in the row's own words, so nothing on the account changes unseen",
+            "The rows say in words that these belong to the account and follow the viewer to other apps, because every other setting is kept per computer (DESIGN.md §7.18); the values are not kept in the P3-22 store or in any WebView storage",
+            "A failed save puts the control back to the saved value and says so in plain copy; no transport error text is shown, and a server that refuses the save shows the rows as unavailable with a reason",
+            "After a save, the next play starts with the tracks the server now chooses (P3-13 is unchanged: Fluster adds no preference logic and no playback request changes), and the P17-02 list on a title's page follows the new subtitle language without a restart",
+            "The sentence \"Subtitle languages follow your Jellyfin account; change them in Jellyfin\" is gone; DESIGN.md §7.18 and the §10 copy table match what ships, and the PR calls out that this replaces decision Q23 A for Subtitles",
+            "A Playwright journey changes both languages with the keyboard alone and finds them saved after a reload; unit tests cover a failed save and a save that races a changed read",
+            "No token appears in a URL, a log, or WebView storage; a guardian review passes for the gateway's write to the account",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080, and of the TV form, are attached to the PR",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "blocked",
+          "owner": null,
+          "passes": false,
+          "evidence": "Needs the owner: answer L3 (where the language rows sit) and L4 (what a language choice does to Jellyfin's two companion settings) in docs/plans/proposals/product-review.md, \"Product review pass, 2026-11-15\". Then set status to todo."
+        },
+        {
+          "id": "P17-04",
+          "title": "Run a pinned jellyscale server beside the Jellyfin fixtures",
+          "domain": "Server Connection & Identity",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P0-02",
+            "P0-03",
+            "P17-01"
+          ],
+          "acceptance": [
+            "tests/integration/docker-compose.yml starts a jellyscale server on its own port from a published image pinned by version or digest that includes jellyscale's JS-116 to JS-120; never a floating tag and never a build from a local checkout",
+            "A script creates its test users without committing credentials, and its libraries hold the synthetic samples and the Babel Film fixture with the 15 streams jellyscale's JS-119 lists (4 audio, 8 subtitles in the file, 2 subtitle files beside it); no third-party media is used or committed, and tests/samples/README.md lists the file and how it is made or fetched",
+            "GET /System/Info/Public succeeds, and the evidence records what Fluster's version gate and sign-in do with the answer; a route Fluster's sign-in or playback needs that jellyscale answers differently is appended to tasks/backlog.md, not fixed here",
+            "Contract fixtures are recorded from it: GET and PUT /jellyscale/v1/track-preferences (the defaults, a saved document, the 409 that names a missing language, and a 400), and POST /jellyscale/v1/items/{itemId}/playback-info beside POST /Items/{itemId}/PlaybackInfo for the same body and query, for Babel Film with a viewer whose audio and subtitle language are English and both switches on, as a direct play and as a conversion",
+            "A test over those fixtures fails unless the two playback answers agree on the play decision, the TranscodingUrl apart from its play session, and both default stream indexes, and differ only in the Hidden marks, OriginalLanguage, and the placeholder streams",
+            "docs/research/jellyscale-track-api.md states what was observed for each route, with the jellyscale version it was observed on",
+            "A CI job starts the server and runs the fixture tests; it is not a required check until P17-06 lands, docs/validation.md says so, and the PR calls out the CI change",
+            "Fixtures are scrubbed per the jellyfin-api contract-fixtures reference; no gateway method, playback request, setting, or UI changes"
+          ],
+          "verify": "pnpm fixture:up && pnpm fixture:setup && pnpm exec vitest run src/lib/jellyfin/jellyscale-fixtures.test.ts && ls docs/research/jellyscale-track-api.md",
+          "status": "blocked",
+          "owner": null,
+          "passes": false,
+          "evidence": "Needs jellyscale: its tasks JS-116 to JS-120 are todo (jellyscale-org/jellyscale tasks/prd.json on main, read 2026-11-15; plan in jellyscale-org/jellyscale#154), and a published, versioned image with the Babel Film fixture is not known to exist (asked for in the comment on hankandre/fluster#178; unverified). Set status to todo when both exist."
+        },
+        {
+          "id": "P17-05",
+          "title": "Hide tracks in other languages: the jellyscale settings",
+          "domain": "Server Connection & Identity",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P17-03",
+            "P17-04"
+          ],
+          "acceptance": [
+            "The gateway asks GET /jellyscale/v1/track-preferences once per sign-in; the rows below appear only when it answers 200. On a server that answers 404 they are absent, nothing says they are missing, and no other /jellyscale/ request is made; the server's name or version is never used to decide (issue #178)",
+            "Two switches, Hide audio in other languages and Hide subtitles in other languages, both off until the viewer turns one on",
+            "Turning one on with no language chosen for that kind asks for the language first and saves it through the P17-03 path, then asks \"Keep any other languages?\" with none chosen, then saves the switch; a 409 from the server is answered by asking for the language it names and is never shown as an error",
+            "An Also keep list for audio and one for subtitles, each chosen from the same languages as P17-03; the server's limit of 20 and its 400 answers map to plain copy",
+            "A Show all tracks switch for the account; its row says it follows the viewer to other apps",
+            "Every save reads the document fresh and sends all five fields, because PUT replaces the document and an absent field takes its default; a gateway test asserts each request against the P17-04 fixtures",
+            "The rows sit with the P17-03 language rows and say the server hides the tracks, in every app; the values are not kept in the P3-22 store or in any WebView storage",
+            "Against the Jellyfin 12.4 fixture the language rows of P17-03 work and none of these rows is shown; a gateway test asserts that only the one detection request is made",
+            "A Playwright journey turns Hide subtitles on from nothing chosen, through the language and keep questions, with the keyboard alone",
+            "No token appears in a URL or a log; DESIGN.md §7.18 and the §10 copy table match what ships",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080, and of the TV form, are attached to the PR",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P17-06",
+          "title": "Negotiate playback through jellyscale's playback-info route",
+          "domain": "Playback Negotiation",
+          "model": "opus",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P17-04",
+            "P10-03",
+            "P10-09"
+          ],
+          "acceptance": [
+            "A decision record in docs/decisions/ states why Fluster uses a second negotiation route, what must be equal between the two, and what happens when the route fails; the human approves it before implementation, and ARCHITECTURE.md §3 and DOMAINS.md §3 describe the route in the same pull request",
+            "On a server where the P17-05 detection answered 200, Playback Negotiation sends POST /jellyscale/v1/items/{itemId}/playback-info with the same body and query as PlaybackInfo: the same flags in both, the Fluster DeviceProfile, the streaming limit, and the UserId. One request builder serves both routes, and a test fails if the two requests differ in anything but the path",
+            "The answer goes through the same decideSource and selectSource, the same HLS URL rebuild, and the same subtitle URL validation as a PlaybackInfo answer; no rule is copied or forked, a TranscodingUrl is used only after it is validated and rebuilt, and Rust's validation is unchanged",
+            "The forced-fallback second request for a disc source and every renegotiation (track, limit, Play original, retry) use the same route as the first request of that session",
+            "If the route answers 404 or a server error, the same request goes once to POST /Items/{itemId}/PlaybackInfo, which lists every track; a refusal the route gives as PlaybackInfo would (401, 400, a missing item, RateLimitExceeded) is not retried there",
+            "Against Jellyfin 10.11.7 and 12.4.0 every request is byte-for-byte what it is today: the existing gateway, fixture, and negotiation tests pass unchanged and no /jellyscale/ request is made",
+            "The plan's tracks carry hidden and each source its originalLanguage, in src/domain/ with no SDK, React, Tauri, or HTTP import; a stream of a type Fluster does not know is ignored and never shifts another track's index",
+            "No menu changes in this task: every track is still listed, hidden or not (P17-07 changes the menus)",
+            "Negotiation tests over the P17-04 fixtures show the same play method, stream URL, and default tracks from the jellyscale answer as from the PlaybackInfo answer, for a direct play and a conversion",
+            "pnpm test:tripwire also plays every synthetic sample through the gateway against the pinned jellyscale server: every sample the server offers for direct play direct plays with no server job, and a conversion sample makes only same-origin, credential-free HLS requests; the CI job of P17-04 becomes required",
+            "No token, authenticated URL, or play-session id appears in a URL, a log, or an error from the new route; the redaction canaries gain a case for it",
+            "No Tauri command is added or changed; the DeviceProfile gains no codec or container condition",
+            "A guardian review passes; the PR explains the direct-play, conversion, and security implications and lists every untested gate"
+          ],
+          "verify": "pnpm check && pnpm test:tripwire",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P17-07",
+          "title": "Leave hidden tracks out of the player's menus, and show them on request",
+          "domain": "Playback Session",
+          "model": "opus",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "P17-06",
+            "P10-08",
+            "P13-29"
+          ],
+          "acceptance": [
+            "The owner's answers to L5 and L7 (docs/plans/proposals/product-review.md, \"Product review pass, 2026-11-15\") are recorded in the spec before implementation; the spec parks until they are",
+            "In direct play and in a converted session, the Audio and Subtitles menus leave out a track whose mapped stream is marked hidden; the mpv mapping still uses the full list, and an mpv track that maps to no stream is shown as today: Fluster never guesses (issue #178)",
+            "The track that is playing is always listed, hidden or not, and Off stays in the subtitle menu",
+            "Against the Babel Film fixture with audio and subtitles English and both switches on, the menus show 2 audio tracks and 4 subtitles in direct play and in a converted session",
+            "Show all tracks sits at the foot of the Audio & Subtitles menu when at least one track is hidden; with it on, Babel Film shows 4 audio tracks and 10 subtitles. Whether it changes the account's switch or only this play follows the answer to L5",
+            "Choosing a hidden track once shown plays it: in mpv for direct play, and by renegotiation through P17-06 when converted",
+            "A hidden subtitle file beside the film is not fetched or added at launch. If showing it later needs a player command that does not exist, the spec stops and asks the human, because a new Tauri command is an architecture change; otherwise the command allowlist test is unchanged",
+            "Whether the film's original language is labelled in the audio menu follows the answer to L7",
+            "Against Jellyfin 12.4 the menus are what they are today, and Show all tracks is absent",
+            "Unit tests cover the menu rule for each kind in both session types, a playing hidden track, and an unmapped mpv track; a Playwright journey shows all tracks and plays a hidden subtitle",
+            "DESIGN.md §7.10 and §7.14 and the §10 copy table match what ships",
+            "A guardian review passes if the coordinator, the launch request, or anything under src-tauri/ changes",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080, and of the TV form, are attached to the PR",
             "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
             "No e2e journey is skipped, deleted, or weakened"
           ],
