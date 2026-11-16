@@ -40,8 +40,15 @@ export function HomeView() {
 function HomeContent({ gateway }: { gateway: SessionGateway }) {
   const hintId = useId();
   const data = useHomeData(gateway);
-  const { scope, resume, nextUp, views, latest } = data;
-  const hero = pickHero(resume, nextUp, views, latest.map(({ query }) => query));
+  const { scope, continueRow, views, latest } = data;
+  const hero = pickHero({
+    row: { status: continueRow.isPending ? "pending" : continueRow.isSuccess ? "success" : "error", data: continueRow.data },
+    agedOutIds: data.agedOutIds,
+    sequel: data.sequel,
+    similar: data.similar,
+    views,
+    latest: latest.map(({ query }) => query),
+  });
   const empty = isHomeEmpty(data);
 
   // Focus rests on a card for 300 ms before the ambient art follows it (DESIGN.md 9).
@@ -49,10 +56,10 @@ function HomeContent({ gateway }: { gateway: SessionGateway }) {
   const [focused, setFocused] = useState<MediaCard | undefined>();
   const cards = useMemo(() => {
     const byId = new Map<string, MediaCard>();
-    const lists = [resume.data, nextUp.data, ...latest.map(({ query }) => query.data)];
+    const lists = [data.rowCards, ...latest.map(({ query }) => query.data)];
     for (const list of lists) for (const card of list ?? []) if (!byId.has(card.id)) byId.set(card.id, card);
     return byId;
-  }, [resume.data, nextUp.data, latest]);
+  }, [data.rowCards, latest]);
   const queryClient = useQueryClient();
   // After the same dwell, a Movie or Episode card's detail is fetched so opening it is instant (DESIGN.md 9).
   // A Series card leads to the series page, so it is not prefetched.
@@ -101,8 +108,7 @@ function HomeContent({ gateway }: { gateway: SessionGateway }) {
           <HomeEmpty gateway={gateway} scope={scope} />
         ) : (
           <>
-            <HomeRow title="Continue watching" query={resume} gateway={gateway} playable hintId={hintId} onItemFocus={onItemFocus} />
-            <HomeRow title="Next up" query={nextUp} gateway={gateway} playable hintId={hintId} onItemFocus={onItemFocus} />
+            <HomeRow title="Continue watching" query={continueRow} gateway={gateway} playable hintId={hintId} onItemFocus={onItemFocus} />
             {views.isPending ? <MediaRow label="Latest" variant="poster" status="pending" /> : null}
             {views.isError ? (
               <MediaRow label="Latest" variant="poster" status="error" errorMessage="Couldn't load your libraries." onRetry={() => void views.refetch()} />
