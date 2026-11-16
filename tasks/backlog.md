@@ -316,14 +316,14 @@ Measured by the worst-case artwork captures; see `docs/design/contrast-report.md
   - ~~Show only the subtitle tracks in the viewer's Jellyfin preferred subtitle language (the user configuration's `SubtitleLanguagePreference`; Fluster does not read it today, so the gateway needs it, e.g. from `/Users/Me`).~~ Taken by P17-02 (the read) and P17-03 (setting it in Fluster).
   - ~~When no preference is set, or the file has no track in that language: show the file's default subtitle track if it has one, plus a line like "51 more in 32 languages"; with no default either, only the count line.~~ Taken by P17-02.
   - ~~A "Show all 52 subtitles" button expands the full list in place (keyboard and TV form included).~~ Taken by P17-02.
-- Open: whether the audio list gets the same rule (not asked yet). M. Asked as L1 in the 2026-11-15 product-review pass; P17-02 leaves the audio list as it is until the owner answers.
+- Open: whether the audio list gets the same rule (not asked yet). M. Asked as L1 in the 2026-11-15 product-review pass and answered the same day: an audio dropdown on the page that Play uses. Taken by P17-08.
 
 ## Product review pass (2026-11-15)
 
 The triage of every entry added since 2026-11-13, issue #178, and the detail-page subtitle decisions is in `docs/plans/proposals/product-review.md`, "Product review pass, 2026-11-15".
 
-- Tasks now: P0-18 (repeatable end-to-end and visual runs), P0-19 (text filters and a failed stop's reason), P17-01 (account-language fixtures), P17-02 (the detail page's subtitle list).
-- Tasks that wait: P17-03 (languages in Settings; the owner's answers to L3 and L4), P17-04 (a pinned jellyscale server; jellyscale's JS-116 to JS-120 and a published image), then P17-05, P17-06, and P17-07 behind it (P17-07 also waits for L5 and L7).
+- Tasks now: P0-18 (repeatable end-to-end and visual runs), P0-19 (text filters and a failed stop's reason), P17-01 (account-language fixtures), P17-02 (the detail page's subtitle list), P17-08 (an audio Picker on a title's page that Play uses; owner, L1), P17-03 (languages in Settings; owner, L3 A and L4 A).
+- Tasks that wait: P17-04 (a pinned jellyscale server; jellyscale's JS-116 to JS-120 and a published image), then P17-05, P17-06, and P17-07 behind it (P17-07 also waits for L5 and L7).
 - Notes for specs, which edit no task. Each stays an entry above until its task's pull request closes it:
   - P3-20 (switch accounts): the account reset runs only when the gateway object changes, and `dropOtherAccounts` and `useAccountChanged` have the three P13-31 review lows above. P3-20's acceptance already says no screen shows the previous account's data; its spec should name these.
   - P2-06 (libmpv2 7): re-check whether a `PropertyChange` with `MPV_FORMAT_NONE` is still dropped before deciding the P13-23 entry above.
@@ -334,5 +334,7 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 - Found by this pass:
   - Ask jellyscale for a partial update of the user configuration, or a version check that refuses a stale save. `POST /Users/Configuration` replaces the whole object, so two apps saving at once can overwrite each other; P17-03 narrows the window with a fresh read but cannot close it. Asked in a comment on hankandre/fluster#178; not yet filed in jellyscale's tracker. S (P17-03).
   - Ask jellyscale for a published, versioned image and the Babel Film fixture in a form Fluster's CI can fetch or generate. `scripts/generate-samples.sh` cannot make its PGS track, because ffmpeg cannot encode PGS (P0-03). Not yet filed. S (P17-04).
-  - If the owner answers L1 with "the same rule for audio", the detail page's audio list needs a follow-up task; P17-02 does subtitles only. S.
+  - ~~If the owner answers L1 with "the same rule for audio", the detail page's audio list needs a follow-up task; P17-02 does subtitles only. S.~~ Answered 2026-11-15 in the owner's own words: an audio dropdown that Play uses. Taken by P17-08. The audio lines in "File and streams" stay whole.
+  - How long an audio pick on a title's page lasts is question L8; P17-08 is written for "while the page is open". S.
+  - The glib 0.18 alert (entry above) was dismissed by the owner on 2026-11-14; only the revisit when Tauri moves to GTK4 remains.
   - P17-02 fixes a problem the owner saw on the dogfood server. Adding it to P4-01's `depends_on` edits an existing task, so it is the owner's or the coordinator's call. S.

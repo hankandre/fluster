@@ -3918,12 +3918,12 @@
           ],
           "acceptance": [
             "The gateway reads the account's SubtitleLanguagePreference from the Configuration of GET /Users/Me (owner, 2026-11-15; tasks/backlog.md \"Detail page: cut the subtitle list down\"); nothing outside src/lib/jellyfin/gateway.ts calls the server, and a gateway test asserts the mapping against the P17-01 fixtures from 10.11.7 and 12.4.0",
-            "When the chosen version has subtitle tracks in that language, File and streams lists only those tracks, forced and hearing-impaired ones included, and a button reading Show all N subtitles, where N is every subtitle track of the version",
+            "When the chosen version has subtitle tracks in that language, File and streams lists only those tracks, forced and hearing-impaired ones included, and a button reading Show all N subtitles, where N is every subtitle track of the version; the rule applies at any count, short lists included (owner, L2 A)",
             "When no preference is set, or no track is in that language, it lists the file's default subtitle track if it has one, then a line of the form \"51 more in 32 languages\"; with no default track it shows only that line (\"52 in 32 languages\" in the same form); the button follows",
             "The button expands the full list in place, keeps keyboard focus on the screen, and is reachable and operable with arrows and Enter alone; when every subtitle track is already listed there is no button and no count line",
             "Languages are compared as languages, not spellings: a preference of ger lists a track tagged deu, using the names /Localization/Cultures gives (P17-01); a track with no language tag matches no preference and is counted as a track but not as a language",
             "A preference that is still loading or could not be read is treated as no preference; no error is shown for it and the page is never held back by it",
-            "Choosing another version recomputes the list; the audio list, the media badges, the player's menus, and every playback request are unchanged",
+            "Choosing another version recomputes the list; the audio list in File and streams, the media badges, the player's menus, and every playback request are unchanged (the audio Picker is P17-08; owner, L1)",
             "On a server that leaves tracks out of GET /Items/{itemId} for this viewer, the counts are of the tracks the server listed; nothing is guessed about tracks it did not list",
             "Unit tests cover: a match, no preference, a preference with no match, no default track, one subtitle track, ger against deu, and an untagged track; a Playwright journey opens a title with 52 subtitle tracks, finds the short list, and expands it with the keyboard",
             "DESIGN.md §7.9 and the §10 copy table match what ships",
@@ -3933,6 +3933,48 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "P17-08",
+          "title": "Choose the audio track on a title's page, and play with it",
+          "domain": "Playback Negotiation",
+          "model": "opus",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "P17-01",
+            "P17-02",
+            "P13-09",
+            "P10-03",
+            "P10-08",
+            "P10-09",
+            "P13-29"
+          ],
+          "acceptance": [
+            "A title's page has an audio Picker (DESIGN.md §7.10) for the chosen version when it has two or more audio tracks, with the version Picker in the action bar (§7.8). It opens on the track in the account's preferred audio language; that language's tracks are listed first and the rest follow in alphabetical order of language name (owner, L1, 2026-11-15: \"It should default to your preferred language and elevate it to the top and then sort it alphabetically otherwise\")",
+            "The gateway reads AudioLanguagePreference with the read P17-02 added; languages are compared as P17-02 compares them. With no preference, or no track in that language, the Picker opens on the track the server would start with, and nothing is elevated",
+            "Rows use the two-line track label of P13-29; a track with no language tag is listed last under the label the player's menu gives it",
+            "Play, Resume, and Start over start with the picked track (owner, L1 follow-up: as Plex and Jellyfin's web page do). The pick holds for that title only, is never carried to another title, and is never written to the account, the P3-22 store, or WebView storage. How long it holds after the viewer leaves the page follows the answer to L8; until then it holds while the page is open, Back from the player included",
+            "With no pick, every playback request is byte-for-byte what it is today: a test fails if AudioStreamIndex appears in a first negotiation the viewer did not ask for",
+            "With a pick, the audio stream index reaches Playback Negotiation through the existing PlaybackPlanOptions and is sent as AudioStreamIndex in both the body and the query, with the chosen MediaSourceId in the body; no other domain builds a request or a URL, and ARCHITECTURE.md §3 no longer says the index is for renegotiation only",
+            "A pick never turns a direct play into a conversion (invariant I1). Observed first: fixtures from 10.11.7 and 12.4.0 record PlaybackInfo with AudioStreamIndex naming a track that is not the default, on the multi-audio sample, with the Fluster DeviceProfile. If either version stops offering direct play because of the index, Fluster direct plays without sending it and selects the track in mpv, and the spec stops for the human before any other approach",
+            "In direct play the picked track is selected in mpv at launch through the existing typed track selection and the Jellyfin-to-mpv mapping; a pick that cannot be mapped plays the server's default and says so in plain copy. No Tauri command is added or changed",
+            "In a converted session the conversion carries the picked track, the indicator and its reason are shown as for any conversion, and the player's audio menu shows the picked track as selected in both session types; playstate reports carry its Jellyfin index",
+            "Choosing another version resets the pick to that version's opening track; a retry (P3-30) and a renegotiation keep the track that is playing",
+            "pnpm test:tripwire gains a case per server: the multi-audio sample played with the second audio track picked starts no server job and makes only Static=true requests",
+            "Negotiation and coordinator tests cover: no pick, a pick in direct play, a pick in a conversion, a pick on a second version, and an unmappable pick; a Playwright journey picks a track with the keyboard and finds it selected in the player",
+            "DESIGN.md §7.8 and §7.10 and the §10 copy table match what ships",
+            "A guardian review passes, because the change is in Playback Negotiation; the PR explains the direct-play, conversion, and security implications",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080, and of the TV form, are attached to the PR",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual && pnpm test:tripwire",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -3952,11 +3994,11 @@
             "P13-20"
           ],
           "acceptance": [
-            "The owner's answers to L3 and L4 (docs/plans/proposals/product-review.md, \"Product review pass, 2026-11-15\") are recorded in the spec before implementation; the spec parks until they are",
-            "Settings has an audio language and a subtitle language control, each a Picker of the languages GET /Localization/Cultures lists with the account's saved value shown; where the two rows sit follows the answer to L3 (issue #178)",
+            "Settings has a new Languages section (owner, L3 A) holding an audio language row and a subtitle language row, each a Picker with the account's saved value shown and its languages taken from GET /Localization/Cultures; the Subtitles section keeps styling and the caption switches (issue #178)",
             "The audio choices include Original language (the value OriginalLanguage) on a server that the P17-01 fixtures show accepts it, and leave it out on one that does not",
             "A change is saved to the account with POST /Users/Configuration: the gateway reads the Configuration fresh from GET /Users/Me immediately before, changes only the fields this task owns, and posts every other field back exactly as read, including a field Fluster does not know; it never posts a partial object. Gateway tests assert the request against the P17-01 fixtures from 10.11.7 and 12.4.0, with an unknown field in the read",
-            "What a language choice does to PlayDefaultAudioTrack and SubtitleMode follows the answer to L4; whatever is changed besides the two language fields is named in the row's own words, so nothing on the account changes unseen",
+            "The exact choices of each Picker and their wording are written in the spec from what P17-01 recorded for each PlayDefaultAudioTrack value and each SubtitleMode, and the owner confirms the list before implementation (owner, L4 A: \"exact choices fixed after P17-01\"); a choice whose effect the fixtures do not show is not offered",
+            "Each row is one plain-words Picker that sets both of its account fields (owner, L4 A): the audio row sets AudioLanguagePreference and PlayDefaultAudioTrack, and the subtitle row sets SubtitleLanguagePreference and SubtitleMode. Choosing an audio language turns Play default audio track off, and the row says so; nothing else on the account changes unseen",
             "The rows say in words that these belong to the account and follow the viewer to other apps, because every other setting is kept per computer (DESIGN.md §7.18); the values are not kept in the P3-22 store or in any WebView storage",
             "A failed save puts the control back to the saved value and says so in plain copy; no transport error text is shown, and a server that refuses the save shows the rows as unavailable with a reason",
             "After a save, the next play starts with the tracks the server now chooses (P3-13 is unchanged: Fluster adds no preference logic and no playback request changes), and the P17-02 list on a title's page follows the new subtitle language without a restart",
@@ -3969,10 +4011,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "blocked",
+          "status": "todo",
           "owner": null,
           "passes": false,
-          "evidence": "Needs the owner: answer L3 (where the language rows sit) and L4 (what a language choice does to Jellyfin's two companion settings) in docs/plans/proposals/product-review.md, \"Product review pass, 2026-11-15\". Then set status to todo."
+          "evidence": ""
         },
         {
           "id": "P17-04",
@@ -4083,7 +4125,7 @@
           "acceptance": [
             "The owner's answers to L5 and L7 (docs/plans/proposals/product-review.md, \"Product review pass, 2026-11-15\") are recorded in the spec before implementation; the spec parks until they are",
             "In direct play and in a converted session, the Audio and Subtitles menus leave out a track whose mapped stream is marked hidden; the mpv mapping still uses the full list, and an mpv track that maps to no stream is shown as today: Fluster never guesses (issue #178)",
-            "The track that is playing is always listed, hidden or not, and Off stays in the subtitle menu",
+            "The track that is playing is always listed, hidden or not, and Off stays in the subtitle menu; the audio Picker on a title's page (P17-08) lists what the server lists for that viewer",
             "Against the Babel Film fixture with audio and subtitles English and both switches on, the menus show 2 audio tracks and 4 subtitles in direct play and in a converted session",
             "Show all tracks sits at the foot of the Audio & Subtitles menu when at least one track is hidden; with it on, Babel Film shows 4 audio tracks and 10 subtitles. Whether it changes the account's switch or only this play follows the answer to L5",
             "Choosing a hidden track once shown plays it: in mpv for direct play, and by renegotiation through P17-06 when converted",
