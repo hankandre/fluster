@@ -3901,10 +3901,10 @@
             "Fixtures are scrubbed per the jellyfin-api contract-fixtures reference; no gateway method, playback request, setting, or UI changes"
           ],
           "verify": "pnpm exec vitest run src/lib/jellyfin/account-language-fixtures.test.ts && ls docs/research/account-languages-api.md",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "Recorded 6 account-language fixtures per version; account-language-fixtures.test.ts 72 passed; sample verified locally and in the jellyfin-ffmpeg CI form; recorder restore check and SIGINT clean-up run; see docs/research/account-languages-api.md. CI steps remain."
+          "passes": true,
+          "evidence": "Recorded 6 account-language fixtures per version; account-language-fixtures.test.ts 72 passed; sample verified locally and in the jellyfin-ffmpeg CI form; recorder restore check and SIGINT clean-up run; see docs/research/account-languages-api.md. CI run https://github.com/hankandre/fluster/actions/runs/43833581894: the tripwire job step \"Generate samples with jellyfin-ffmpeg\" (the language-sample verify block in scripts/generate-samples.sh) passed; frontend ran account-language-fixtures.test.ts (72 tests) within pnpm check (194 files, 2761 tests passed); tripwire, rust-release, and linux-wayland-beta passed after reruns of runner-side snapshot.ubuntu.com 502/503 failures."
         },
         {
           "id": "P17-02",
