@@ -6,6 +6,7 @@ import { PreferencesProvider } from "../../app/preferences";
 import { SessionProvider, useSession, type SessionGateway } from "../../app/session";
 import type { ItemDetail } from "../../domain/catalog";
 import type { MediaTrack, PlaybackPlan, PlaybackSnapshot, PlayerTrack } from "../../domain/playback";
+import { continueWindowOf, MemoryPreferenceStore } from "../../lib/preference-store";
 import { MemoryStreamingLimits } from "../../lib/streaming-limits";
 import { FakePlayerEngine } from "../../test/fake-player-engine";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
@@ -110,7 +111,7 @@ async function renderPlayer(gateway: SessionGateway, engine: FakePlayerEngine, l
     <QueryClientProvider client={client}>
       <SessionProvider createGateway={() => gateway}>
         <PlayerServicesProvider services={{ engine }}>
-          <PreferencesProvider preferences={{ streamingLimits: limits }}>
+          <PreferencesProvider preferences={{ streamingLimits: limits, continueWindow: continueWindowOf(new MemoryPreferenceStore()) }}>
             <SignIn gateway={gateway} />
             <PlayerRouteView itemId="m1" mediaSourceId="src-hd" startTicks={0} />
           </PreferencesProvider>

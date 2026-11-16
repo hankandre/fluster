@@ -6,6 +6,7 @@
 // Rule for every field added here: it is a typed, validated value with a
 // default, and it is never a token, credential, URL, play-session ID, user
 // id, or anything derived from them (ARCHITECTURE.md I4).
+import { DEFAULT_CONTINUE_WINDOW, type ContinueWindow } from "../domain/up-next";
 import {
   LimitListeners,
   NO_STREAMING_LIMITS,
@@ -18,18 +19,27 @@ export const PREFERENCES_VERSION = 1;
 
 export interface PreferenceValues {
   streamingLimits: StreamingLimits;
+  // How long a title stays in Home's Continue watching row after its last play.
+  continueWindow: ContinueWindow;
 }
 
 export const DEFAULT_PREFERENCES: PreferenceValues = Object.freeze({
   streamingLimits: NO_STREAMING_LIMITS,
+  continueWindow: DEFAULT_CONTINUE_WINDOW,
 });
+
+const CONTINUE_WINDOWS: readonly ContinueWindow[] = ["7", "14", "30", "all"];
+
+export function sanitizeContinueWindow(value: unknown): ContinueWindow {
+  return CONTINUE_WINDOWS.find((option) => option === value) ?? DEFAULT_CONTINUE_WINDOW;
+}
 
 // Validates each known field on its own and falls back to its default.
 // Unknown keys are dropped.
 export function sanitizePreferences(value: unknown): PreferenceValues {
   if (typeof value !== "object" || value === null) return DEFAULT_PREFERENCES;
   const record = value as Record<string, unknown>;
-  return { streamingLimits: sanitizeLimits(record.streamingLimits) };
+  return { streamingLimits: sanitizeLimits(record.streamingLimits), continueWindow: sanitizeContinueWindow(record.continueWindow) };
 }
 
 // For adapters reading a stored record: a version 1 object is sanitized;
@@ -83,6 +93,21 @@ export function streamingLimitsOf(store: PreferenceStore): StreamingLimitStore {
   return {
     get: () => store.get().streamingLimits,
     set: (limits) => store.update("streamingLimits", sanitizeLimits(limits)),
+    subscribe: (listener) => store.subscribe(listener),
+  };
+}
+
+export interface ContinueWindowStore {
+  get(): ContinueWindow;
+  set(window: ContinueWindow): void;
+  subscribe(listener: () => void): () => void;
+}
+
+// The Continue watching window view of a preference store.
+export function continueWindowOf(store: PreferenceStore): ContinueWindowStore {
+  return {
+    get: () => store.get().continueWindow,
+    set: (window) => store.update("continueWindow", sanitizeContinueWindow(window)),
     subscribe: (listener) => store.subscribe(listener),
   };
 }

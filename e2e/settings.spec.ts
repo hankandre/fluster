@@ -153,7 +153,7 @@ test("streaming limits default to no limit, apply by host class, and persist", a
 
   // Only the allowlisted preference fields are stored, never a token.
   const stored = await page.evaluate(() => window.localStorage.getItem("fluster.preferences"));
-  expect(JSON.parse(stored!)).toEqual({ version: 1, streamingLimits: { localMbps: 20, remoteMbps: 4 } });
+  expect(JSON.parse(stored!)).toEqual({ version: 1, streamingLimits: { localMbps: 20, remoteMbps: 4 }, continueWindow: "14" });
   const legacy = await page.evaluate(() => window.localStorage.getItem("fluster.streamingLimits"));
   expect(legacy).toBeNull();
 });

@@ -8,6 +8,7 @@ import { PreferencesProvider } from "../../app/preferences";
 import { SessionProvider, useSession, type SessionGateway } from "../../app/session";
 import type { PlayerCapabilities } from "../../domain/playback";
 import type { ServerConnection } from "../../domain/server-connection";
+import { continueWindowOf, MemoryPreferenceStore } from "../../lib/preference-store";
 import { MemoryStreamingLimits } from "../../lib/streaming-limits";
 import { FakePlayerEngine } from "../../test/fake-player-engine";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
@@ -36,12 +37,13 @@ function SignIn({ gateway }: { gateway: SessionGateway }) {
 
 interface Options {
   store?: MemoryStreamingLimits;
+  preferenceStore?: MemoryPreferenceStore;
   gateway?: SessionGateway;
   engine?: FakePlayerEngine;
   signedIn?: boolean;
 }
 
-async function renderSettings({ store = new MemoryStreamingLimits(), gateway, engine, signedIn = false }: Options = {}) {
+async function renderSettings({ store = new MemoryStreamingLimits(), preferenceStore = new MemoryPreferenceStore(), gateway, engine, signedIn = false }: Options = {}) {
   const sessionGateway = gateway ?? fakeSessionGateway({ connect: vi.fn().mockResolvedValue(SERVER) });
   let tree: ReactNode = (
     <>
@@ -54,7 +56,7 @@ async function renderSettings({ store = new MemoryStreamingLimits(), gateway, en
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <ToastProvider>
         <SessionProvider createGateway={() => sessionGateway}>
-          <PreferencesProvider preferences={{ streamingLimits: store }}>{tree}</PreferencesProvider>
+          <PreferencesProvider preferences={{ streamingLimits: store, continueWindow: continueWindowOf(preferenceStore) }}>{tree}</PreferencesProvider>
         </SessionProvider>
       </ToastProvider>
     </QueryClientProvider>,

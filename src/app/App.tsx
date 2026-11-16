@@ -42,7 +42,7 @@ export function App() {
     }),
     [services],
   );
-  const preferences = useMemo(() => ({ streamingLimits: services.streamingLimits }), [services]);
+  const preferences = useMemo(() => ({ streamingLimits: services.streamingLimits, continueWindow: services.continueWindow }), [services]);
   const queryClient = useQueryClient();
   const refreshRows = useCallback(() => {
     void refreshHomeRows(queryClient);
