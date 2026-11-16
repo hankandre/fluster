@@ -66,6 +66,10 @@ const conversionCases = [
     enableDirectPlay: false,
   })),
   // A user whose policy disables video transcoding, audio transcoding, and remuxing.
+  // P17-08: the multi-audio sample with a viewer's audio pick (index 2 is the second audio stream; 9 names no stream).
+  { ...sample("multitrack"), file: "conversion-multitrack-audio-pick", audioStreamIndex: 2, namesSource: true },
+  { ...sample("multitrack"), file: "conversion-multitrack-audio-pick-force-fallback", audioStreamIndex: 2, namesSource: true, enableDirectPlay: false },
+  { ...sample("multitrack"), file: "conversion-multitrack-audio-pick-missing", audioStreamIndex: 9, namesSource: true },
   { ...sample("bluray-folder"), file: "conversion-bluray-folder-no-conversion-user", restricted: true },
   { ...sample("h264"), file: "conversion-h264-no-conversion-user", restricted: true },
   { ...sample("h264"), file: "conversion-h264-limited-no-conversion-user", restricted: true, maxStreamingBitrate: LIMITED_BITRATE },
@@ -169,7 +173,13 @@ function conversionRequestFor(userId, target, mediaSourceId) {
     DeviceProfile: CONVERSION_PROFILE,
   };
   if (mediaSourceId) body.MediaSourceId = mediaSourceId;
-  return { body, query: { ...flags, UserId: userId, StartTimeTicks: 0, MaxStreamingBitrate: maxStreamingBitrate } };
+  const query = { ...flags, UserId: userId, StartTimeTicks: 0, MaxStreamingBitrate: maxStreamingBitrate };
+  // P17-08: a viewer's audio pick goes in the body and the query, as the gateway sends it.
+  if (target.audioStreamIndex !== undefined) {
+    body.AudioStreamIndex = target.audioStreamIndex;
+    query.AudioStreamIndex = target.audioStreamIndex;
+  }
+  return { body, query };
 }
 
 const credentials = readCredentials();
@@ -231,7 +241,7 @@ for (const server of servers) {
       continue;
     }
     if (target.file.startsWith("conversion-")) {
-      const request = conversionRequestFor(userId, target);
+      const request = conversionRequestFor(userId, target, target.namesSource ? target.item.MediaSources?.[0]?.Id : undefined);
       save(target.file, await call(base, token, "POST", `/Items/${target.item.Id}/PlaybackInfo`, request));
       continue;
     }
@@ -250,10 +260,26 @@ for (const server of servers) {
     }
   }
   // The detail view's request: userId only, no fields parameter.
-  for (const [file, fakeId] of [["item-detail-no-fields-multi-version", "item-versions"], ["item-detail-no-fields-hevc-hdr10", "item-hevc"]]) {
+  for (const [file, fakeId, userConfig] of [
+    ["item-detail-no-fields-multi-version", "item-versions"],
+    ["item-detail-no-fields-hevc-hdr10", "item-hevc"],
+    // P17-08: the multi-audio item, then again under a Spanish audio preference.
+    ["item-detail-no-fields-multitrack", "item-multitrack"],
+    ["item-detail-no-fields-multitrack-prefer-spanish", "item-multitrack", { AudioLanguagePreference: "spa", PlayDefaultAudioTrack: false }],
+  ]) {
     if (!wanted(file)) continue;
     const target = targets.find((t) => t.fakeId === fakeId);
-    save(file, await call(base, token, "GET", `/Items/${target.item.Id}`, { query: { userId } }));
+    try {
+      if (userConfig) await setConfig({ ...originalConfig, ...userConfig });
+      save(file, await call(base, token, "GET", `/Items/${target.item.Id}`, { query: { userId } }));
+    } finally {
+      if (userConfig) {
+        await setConfig(originalConfig).catch((error) => {
+          console.error(`  could not restore the user configuration after ${file}`);
+          throw error;
+        });
+      }
+    }
   }
   if (wanted("item-multi-version")) {
     const detail = await call(base, token, "GET", `/Items/${versionsItem.Id}`, { query: { userId, fields: "MediaSources" } });
