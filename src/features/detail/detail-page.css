@@ -100,7 +100,7 @@
 
   /* The quiet button keeps its padding for the hover and focus fill; the margin pulls the label onto the track column. */
   .subtitle-list-row .ui-button {
-    margin-inline-start: calc(-1 * var(--space-5));
+    margin-inline-start: calc(-1 * (var(--space-5) + 1px)); /* + the 1px border in controls.css */
   }
 
   @media (max-width: 719px) {
