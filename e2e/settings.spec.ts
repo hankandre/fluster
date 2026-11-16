@@ -170,7 +170,7 @@ test("Settings sections work with the keyboard alone", async ({ page }) => {
 
   const playback = page.getByRole("tab", { name: "Playback" });
   await playback.focus();
-  for (const name of ["Subtitles", "Account", "About & diagnostics"]) {
+  for (const name of ["Home", "Subtitles", "Account", "About & diagnostics"]) {
     await page.keyboard.press("ArrowDown");
     await expect(page.getByRole("tab", { name })).toBeFocused();
     await expect(page.getByRole("heading", { level: 2, name })).toBeVisible();

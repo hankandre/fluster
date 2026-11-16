@@ -343,7 +343,11 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
         case "/Items/Latest": {
           if (opts.empty) return json([]);
           const parent = url.searchParams.get("parentId") ?? url.searchParams.get("ParentId");
-          if (parent === "lib-shows") return json([seriesDto("s1"), seriesDto("s2")]);
+          if (parent === "lib-shows") {
+            // Six series, so the row has more cards than the See all tile can be mistaken for.
+            const shows = [seriesDto("s1"), seriesDto("s2")];
+            return json([...shows, ...shows.map((m) => ({ ...m, Id: `${m.Id}-b` })), ...shows.map((m) => ({ ...m, Id: `${m.Id}-c` }))]);
+          }
           const latest = ["m1", "m4", "m5", "m6", "m3", "m2"].filter((id) => !opts.hiddenFromLatest?.has(id)).map((id) => movieDto(id, opts));
           if (opts.longRows) return json([...latest, ...latest.map((m) => ({ ...m, Id: `${m.Id}-b` })), ...latest.map((m) => ({ ...m, Id: `${m.Id}-c` }))]);
           return json(latest);
