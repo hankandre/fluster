@@ -20,7 +20,8 @@
     "src/lib/player/session-state.ts",
     "src/lib/preference-store.ts",
     "src/lib/streaming-limits.ts",
-    "src/lib/redact.ts"
+    "src/lib/redact.ts",
+    "src/lib/safe-reason.ts"
   ],
   "exclude": ["**/*.test.ts", "**/*.test.tsx", "src/test/**"]
 }

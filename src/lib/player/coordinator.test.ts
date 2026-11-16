@@ -627,6 +627,66 @@ describe("PlaybackCoordinator", () => {
     expect(errorEvent.message).not.toContain("SECRET-TOKEN");
   });
 
+  function plainGateway(): PlaybackGateway {
+    return {
+      createPlaybackPlan: vi.fn(async () => plan),
+      reportStart: vi.fn(async () => undefined),
+      reportProgress: vi.fn(async () => undefined),
+      reportStopped: vi.fn(async () => undefined),
+      authorizationHeader: () => "test-header",
+      stopActiveEncoding: vi.fn(async () => undefined),
+    } as PlaybackGateway;
+  }
+
+  it("hides a file path and host in a failed stop after the end", async () => {
+    const gateway = plainGateway();
+    const player = new FakePlayer();
+    player.stop.mockRejectedValueOnce(new Error("mpv did not stop: cannot open /video.mkv on media.local:8096"));
+    const onEvent = vi.fn();
+    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent, onReportingError: vi.fn() });
+    await coordinator.start(item);
+    player.listener?.({ kind: "loaded", snapshot });
+    await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
+    player.listener?.({ kind: "ended", snapshot, reason: "eof" });
+
+    await vi.waitFor(() => expect(onEvent).toHaveBeenCalledWith(expect.objectContaining({ kind: "error" })));
+    const errorEvent = onEvent.mock.calls.map(([event]) => event).find((event) => event.kind === "error");
+    expect(errorEvent.message).toContain("mpv did not stop");
+    expect(errorEvent.message).toContain("[path]");
+    expect(errorEvent.message).toContain("[address]");
+    expect(errorEvent.message).not.toContain("video.mkv");
+    expect(errorEvent.message).not.toContain("media.local");
+  });
+
+  it("hides a file path and host in the native error event", async () => {
+    const player = new FakePlayer();
+    const onEvent = vi.fn();
+    const coordinator = new PlaybackCoordinator(plainGateway(), player, { onEvent, onReportingError: vi.fn() });
+    await coordinator.start(item);
+    player.listener?.({
+      kind: "error",
+      message: "libmpv reported a playback error: C:/Users/u/x.mkv at 192.168.1.10:8096",
+    });
+
+    await vi.waitFor(() => expect(onEvent).toHaveBeenCalledWith(expect.objectContaining({ kind: "error" })));
+    const errorEvent = onEvent.mock.calls.map(([event]) => event).find((event) => event.kind === "error");
+    expect(errorEvent.message).toContain("libmpv reported a playback error");
+    expect(errorEvent.message).not.toContain("Users");
+    expect(errorEvent.message).not.toContain("192.168");
+  });
+
+  it("gives plain copy for an error event with a blank message", async () => {
+    const player = new FakePlayer();
+    const onEvent = vi.fn();
+    const coordinator = new PlaybackCoordinator(plainGateway(), player, { onEvent, onReportingError: vi.fn() });
+    await coordinator.start(item);
+    player.listener?.({ kind: "error", message: "" });
+
+    await vi.waitFor(() =>
+      expect(onEvent).toHaveBeenCalledWith({ kind: "error", message: "Something went wrong." }),
+    );
+  });
+
   it("keeps the fixed shutdown copy when a failed stop has no text", async () => {
     const gateway = {
       createPlaybackPlan: vi.fn(async () => plan),

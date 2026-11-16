@@ -10,7 +10,8 @@ import type {
   StreamSelection,
 } from "../../domain/playback";
 import { secondsToTicks, startOverChoice } from "../../domain/playback";
-import { redactError, redactText, redactedErrorMessage } from "../redact";
+import { redactError } from "../redact";
+import { errorReason } from "../safe-reason";
 import { redactTransportError } from "../transport-error";
 import { confirmedPlan } from "./confirm-play-method";
 import { PlaystateReporter, type PlaystateGateway } from "./playstate-reporter";
@@ -301,7 +302,7 @@ export class PlaybackCoordinator {
 
   private async handleEvent(attempt: number, event: PlayerEvent): Promise<void> {
     if (attempt !== this.attempt) return;
-    this.callbacks.onEvent(event.kind === "error" ? { ...event, message: redactText(event.message) } : event);
+    this.callbacks.onEvent(event.kind === "error" ? { ...event, message: errorReason(event.message, "Something went wrong.") } : event);
     if ("snapshot" in event && event.snapshot) this.snapshot = event.snapshot;
     if (event.kind === "first-frame") this.firstFrameShown = true;
     if (this.firstFrameShown && this.snapshot) {
@@ -333,7 +334,7 @@ export class PlaybackCoordinator {
         } catch (error) {
           this.callbacks.onEvent({
             kind: "error",
-            message: redactedErrorMessage(error) || "The player did not finish shutting down.",
+            message: errorReason(error, "The player did not finish shutting down."),
           });
           await this.finish("error", event.snapshot ?? this.snapshot);
           break;

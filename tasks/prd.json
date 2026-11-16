@@ -467,10 +467,10 @@
             "A guardian review passes, because the change is on the redaction path (invariant I4)"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "Implemented on task/P0-19; pnpm check exit 0 (190 files, 2660 tests; lint:boundaries and typecheck:core clean); pnpm test:e2e 193 passed; src-tauri diff empty; guardian review pending in the Review phase."
         }
       ]
     },

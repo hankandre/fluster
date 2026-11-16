@@ -40,3 +40,29 @@ describe("redactedErrorMessage", () => {
     }
   });
 });
+
+describe("credentials after a space", () => {
+  it.each(["PlaySessionId abc123", "X-Emby-Token abc123", "Authorization MediaBrowser Token abc123"])(
+    "redacts %s",
+    (input) => {
+      const output = redactText(input);
+      expect(output).not.toContain("abc123");
+      expect(output).toContain("[redacted]");
+    },
+  );
+
+  it.each(['token "abc123"', "token token abc123"])("redacts %s", (input) => {
+    expect(redactText(input)).not.toContain("abc123");
+  });
+
+  it.each([
+    "The token expired at 12:30",
+    "Invalid token",
+    "token was rejected by the server",
+    "aspect 16:9 token missing",
+    "Authorization failed for the request",
+    "password is required",
+  ])("leaves %s as it is", (input) => {
+    expect(redactText(input)).toBe(input);
+  });
+});

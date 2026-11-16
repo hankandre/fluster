@@ -18,13 +18,21 @@ export function redactUrl(value: string): string {
 // paths, bare query strings, headers, and JSON bodies. Key names may carry a
 // prefix (auth_token, sessionToken, X-MediaBrowser-Token) and be quoted.
 // The prefix is anchored and bounded so matching stays linear on long input.
+const KEY = String.raw`(?:[\w-]{0,40}?(?:api[_-]?key|access[_-]?token|token|password|secret|playsessionid)|pw)`;
+const VALUE = String.raw`[^&\s",}]`;
+// A key followed by whitespace is a credential pair only when the value holds
+// a digit or has 20 or more characters, so "The token expired" stays intact.
+// The lookahead (not a replacer) keeps "token token abc123" matching the
+// real value.
+const AUTHORIZATION =
+  /(authorization"?(?:\s*[:=]\s*|\s+(?=(?:MediaBrowser|Emby|Bearer|Basic|Digest)\b)))[^\n]*/gi;
+const CREDENTIAL = new RegExp(
+  String.raw`(\b${KEY}"?(?:\s*[:=]\s*|\s+(?="?(?:${VALUE}*\d|${VALUE}{20}))))"?${VALUE}+"?`,
+  "gi",
+);
+
 function redactCredentialPairs(value: string): string {
-  return value
-    .replace(/(authorization"?\s*[:=]\s*)[^\n]*/gi, "$1[redacted]")
-    .replace(
-      /(\b(?:[\w-]{0,40}?(?:api[_-]?key|access[_-]?token|token|password|secret|playsessionid)|pw)"?\s*[:=]\s*)"?[^&\s",}]+"?/gi,
-      "$1[redacted]",
-    );
+  return value.replace(AUTHORIZATION, "$1[redacted]").replace(CREDENTIAL, "$1[redacted]");
 }
 
 export function redactText(value: string): string {

@@ -349,3 +349,10 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 - `info-sheet.tsx:89`: `closeButton.current?.focus()` after "Play original" has no `preventScroll`; harmless after the slide, but inconsistent. S.
 - `player-sheet.test.tsx`: the test checks that some focus call used `preventScroll`, so a second, scrolling `focus()` would not fail it; the `initialFocus` ref path is untested. A Playwright check that `.player-page` `scrollLeft` stays 0 while a sheet opens would cover the real jump. S.
 - The UI gallery page (`88-ui-gallery-player`) is 1754 px wide at a 1440 px viewport, so it overflows sideways. The old baseline also showed the sheet focus scrolling it 59 px (the fixed "Browser development mode" badge moved); #174 accepted the corrected capture. S.
+## Text filter follow-ups (P0-19, 2026-11-15)
+
+- A secret with no digit and under 20 characters after a space (`password hunter`) is not redacted; redacting it would also redact "token expired". S (P0-19).
+- Over-redaction by the new filters: "Invalid token (401)" becomes "Invalid token [redacted]", and any `word:NNNN` or `word:NNNNN` becomes `[address]` (`pts:12345`, `bitrate:8000`, `code:12345`, `Failed to open file.mkv:1234`). A single-label host with a one- to three-digit port (`nas:80`) stays visible. S (P0-19).
+- `safeReason` does not hide a bare host or IP address with no port, or a path that follows a colon with no space (`open failed:/home/u/x`). S (P0-19).
+- The reporting warning reaches state through `redactText` only (`use-playback-session.ts:209`); the screen filters it with `safeReason`. Route it through `errorReason`. S (P0-19).
+- The `core-is-shell-neutral` rule's `from` list in `.dependency-cruiser.cjs` names neither `src/lib/safe-reason.ts` nor `src/lib/redact.ts`, so lint would not stop a later shell import there. S (P0-19).
