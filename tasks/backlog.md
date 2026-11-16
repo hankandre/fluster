@@ -393,3 +393,4 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 - `.ui-button`'s 1px transparent border (`controls.css:14`) has no token, so `detail-page.css` repeats `1px` to align the quiet subtitles button. Add a border-width token and use it in both places. S.
 - `e2e/tv/detail.spec.ts`: after collapsing and expanding the subtitle list again, the test does not re-run `expectTitleSafe`. S.
 - Drop the dead `"components"` entry from the scanned directories in `src/features/sign-out-reach.test.ts:20` and the `src/components/` path in `.claude/skills/change-review/SKILL.md:22` (P2-09 removed the directory; agent-config pass).
+- `.dependency-cruiser.cjs:53-75`: the three `no-components-*` rules overlap (import into, import out of, orphan). Collapse them if one rule can cover all three; probes show each fails `lint:boundaries` today, so there is no defect. S (P2-09).
