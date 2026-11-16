@@ -66,6 +66,7 @@ const fixtureFiles = [
   "item-collections-non-member",
   "collection-items",
   "openapi-date-params",
+  "recently-played",
 ];
 
 function path(version: string, name: string): string {
@@ -78,7 +79,7 @@ const names = (list: WireList | WireItem[]): string[] => (Array.isArray(list) ? 
 
 describe.each(versions)("discovery fixtures, Jellyfin %s", (version) => {
   it("has every fixture, and each one parses", () => {
-    expect(fixtureFiles).toHaveLength(26);
+    expect(fixtureFiles).toHaveLength(27);
     for (const name of fixtureFiles) {
       expect(existsSync(path(version, name)), `${version}/discovery-${name}.json`).toBe(true);
       expect(() => load(version, name)).not.toThrow();
@@ -342,6 +343,17 @@ describe.each(versions)("discovery fixtures, Jellyfin %s", (version) => {
 
     it("Items with the collection as parentId lists its members on both versions", () => {
       expect(names(load<WireList>(version, "collection-items")).sort()).toEqual(["Synthetic AV1 (2024)", "Synthetic H264 (2024)"]);
+    });
+  });
+
+  describe("recently played", () => {
+    it("GET /Items sorted by DatePlayed lists finished films and episodes newest first, without the in-progress film", () => {
+      const list = load<WireList & { Items: (WireItem & { SeriesId?: string })[] }>(version, "recently-played");
+      expect(names(list)).toEqual(["Synthetic Show S01E01", "Synthetic ASS (2024)", "Synthetic H264 (2024)"]);
+      expect(list.Items.map((i) => i.UserData?.LastPlayedDate?.slice(0, 10))).toEqual(["2026-06-03", "2026-06-02", "2026-01-05"]);
+      expect(list.Items.every((i) => i.UserData?.Played === true)).toBe(true);
+      expect(list.Items[0]?.SeriesId).toBe("series-synthetic");
+      expect(names(list)).not.toContain("Synthetic Multitrack (2024)");
     });
   });
 });

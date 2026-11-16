@@ -313,6 +313,25 @@ for (const server of servers) {
     "GET /Shows/NextUp": queryNames("/Shows/NextUp"),
   });
 
+  // ---- Scene F: recently played (P16-02) ----------------------------------------
+  // The newest-first list of finished films and episodes that dates a next episode by its series' last play.
+  await resetUser();
+  await setState("item-h264", { played: true, date: OLD });
+  await setState("item-ass", { played: true, date: RECENT_2 });
+  await setState("item-episode-1", { played: true, date: RECENT_3 });
+  await setState("item-multitrack", { progress: 0.4, date: RECENT_1 });
+  await recordList("discovery-recently-played", "/Items", {
+    recursive: true,
+    includeItemTypes: "Movie,Episode",
+    filters: "IsPlayed",
+    sortBy: "DatePlayed",
+    sortOrder: "Descending",
+    limit: 100,
+    enableUserData: true,
+    enableImages: false,
+    enableTotalRecordCount: false,
+  });
+
   // ---- Scene C2: a new episode after the cutoff -----------------------------------
   const episodeIndexed = async () => (await listItems("Episode")).find((i) => i.Path?.endsWith("Synthetic Show S01E03.mkv"));
   // The episode is useful to Next Up only once the server has read its season and episode numbers.
