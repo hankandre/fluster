@@ -47,8 +47,13 @@ export interface MockOptions {
   longRows?: boolean;
   // Ids that /Items/Latest leaves out. The test adds to the set while it runs, to make a card disappear.
   hiddenFromLatest?: Set<string>;
-  // Continue watching and Next up are empty, so the Home hero is the newest item.
+  // Continue watching is empty, so the Home hero is the newest item.
   homeLatestOnly?: boolean;
+  // The in-progress film Saltwater Hours was last played 30 days ago, so Home leaves it out of Continue watching.
+  agedOutFilm?: boolean;
+  // A stopped session marks its item as finished now: Resume drops it, the recently-played list gains it, and the
+  // next episode of its series leads Next up.
+  finishOnStop?: boolean;
   // /Items/{id} answers after this delay (the detail loading state).
   detailDelayMs?: number;
   // /Items/{id} answers 500 (the detail error state).
@@ -199,6 +204,13 @@ function imageFor(id: string, type: string, opts: MockOptions = {}): string {
 const LONG_SEARCH_COUNT = 60;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Dates are relative to now, so Home's window never ages the mock's items out as time passes.
+const DAY_MS = 86_400_000;
+const daysAgo = (days: number): string => new Date(Date.now() - days * DAY_MS).toISOString();
+const playedOn = (dto: Dto, days: number): Dto => ({ ...dto, UserData: { ...dto.UserData, LastPlayedDate: daysAgo(days) } });
+// A next episode carries the date it was added, long ago, so it is not "new".
+const addedLongAgo = (dto: Dto): Dto => ({ ...dto, DateCreated: daysAgo(90) });
+
 // Stubs the media element so the browser player reaches "playing" without media.
 async function stubMediaElement(page: Page, opts: MockOptions): Promise<void> {
   await page.addInitScript(({ fail, duration }) => {
@@ -221,6 +233,8 @@ async function stubMediaElement(page: Page, opts: MockOptions): Promise<void> {
 // Returns the mock's 404 log (method and path) so a capture run can fail on drift.
 export async function installMockServer(page: Page, opts: MockOptions = {}): Promise<string[]> {
   const notFound: string[] = [];
+  // Episodes finished while this page was open (opts.finishOnStop), with the time they were finished.
+  const finishedNow = new Map<string, number>();
   await stubMediaElement(page, opts);
   for (const origin of [SERVER, LAN]) {
     await page.route(`${origin}/**`, async (route) => {
@@ -234,6 +248,10 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
       };
       const json = (body: unknown) => route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify(body) });
       if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+      if (p === "/Sessions/Playing/Stopped" && opts.finishOnStop) {
+        const stopped = request.postDataJSON() as { ItemId?: string } | null;
+        if (stopped?.ItemId) finishedNow.set(stopped.ItemId, Date.now());
+      }
       if (p.startsWith("/Sessions/Playing")) return route.fulfill({ status: 204, headers: cors });
       const img = /^\/Items\/([^/]+)\/Images\/(\w+)$/.exec(p);
       if (img) return route.fulfill({ status: 200, headers: cors, contentType: "image/png", body: art(imageFor(img[1], img[2], opts)) });
@@ -301,8 +319,13 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
             { Id: "lib-shows", Name: "Shows", CollectionType: "tvshows", ImageTags: { Primary: "tag-lib2" } },
             ...(opts.manyLibraries ? MORE_LIBRARIES.map((Name) => ({ Id: `lib-${Name.toLowerCase().replace(/ /g, "-")}`, Name, CollectionType: "movies", ImageTags: { Primary: "tag-lib1" } })) : []),
           ] });
-        case "/UserItems/Resume":
-          return json({ Items: opts.empty || opts.homeLatestOnly ? [] : opts.worstCaseArt ? [episodeDto("ep-2"), movieDto("m2", opts)] : [movieDto("m2", opts), episodeDto("ep-2")] });
+        case "/UserItems/Resume": {
+          if (opts.empty || opts.homeLatestOnly) return json({ Items: [] });
+          const film = playedOn(movieDto("m2", opts), opts.agedOutFilm ? 30 : opts.worstCaseArt ? 2 : 1);
+          const inProgress = playedOn(episodeDto("ep-2"), opts.worstCaseArt ? 1 : 2);
+          const items = (opts.worstCaseArt ? [inProgress, film] : [film, inProgress]).filter((dto) => !finishedNow.has(dto.Id));
+          return json({ Items: items });
+        }
         case "/Shows/NextUp": {
           const seriesId = url.searchParams.get("seriesId") ?? url.searchParams.get("SeriesId");
           if (seriesId) {
@@ -310,7 +333,8 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
             if (seriesId !== "s1" || mode === "none") return json({ Items: [] });
             return json({ Items: [episodeDto(mode === "next" ? "ep-3" : "ep-2", opts)] });
           }
-          return json({ Items: opts.empty || opts.homeLatestOnly ? [] : [episodeDto("ep-3"), { ...episodeDto("ep-1"), SeriesId: "s2", SeriesName: "Quiet Orbit", Name: "Perigee" }] });
+          if (opts.empty || opts.homeLatestOnly) return json({ Items: [] });
+          return json({ Items: [addedLongAgo(episodeDto("ep-3")), addedLongAgo({ ...episodeDto("ep-1"), SeriesId: "s2", SeriesName: "Quiet Orbit", Name: "Perigee" })] });
         }
         case "/Items/Latest": {
           if (opts.empty) return json([]);
@@ -321,6 +345,17 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
           return json(latest);
         }
         case "/Items": {
+          // The viewer's finished films and episodes, newest first (Home dates next episodes by their series' last play).
+          if (url.searchParams.get("sortBy") === "DatePlayed") {
+            if (opts.empty || opts.homeLatestOnly) return json({ Items: [], TotalRecordCount: 0 });
+            const done = (dto: Dto, days: number, extra: Dto = {}): Dto => ({ ...playedOn({ ...dto, ...extra }, days), UserData: { Played: true, LastPlayedDate: daysAgo(days) } });
+            const entries = [
+              ...[...finishedNow].map(([id, at]) => ({ ...episodeDto(id), UserData: { Played: true, LastPlayedDate: new Date(at).toISOString() } })),
+              done(episodeDto("ep-1"), 3),
+              done(episodeDto("ep-1"), 9, { Id: "ep-s2-1", SeriesId: "s2", SeriesName: "Quiet Orbit" }),
+            ];
+            return json({ Items: entries, TotalRecordCount: entries.length });
+          }
           const term = url.searchParams.get("searchTerm");
           if (term) {
             if (opts.searchDelayMs) await sleep(opts.searchDelayMs);

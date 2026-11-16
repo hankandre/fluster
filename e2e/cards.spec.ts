@@ -205,18 +205,18 @@ test("Up and Down move between rows to the nearest card", async ({ page }) => {
   const second = row("Continue watching").nth(1);
   await focusByKeyboard(page, second);
   await page.keyboard.press("ArrowDown");
-  const nextUp = await nearest("Next up", await centre(second));
-  await expect(row("Next up").nth(nextUp)).toBeFocused();
+  const latestMovies = await nearest("Latest in Movies", await centre(second));
+  await expect(row("Latest in Movies").nth(latestMovies)).toBeFocused();
 
-  const fromNextUp = await centre(row("Next up").nth(nextUp));
+  const fromMovies = await centre(row("Latest in Movies").nth(latestMovies));
   await page.keyboard.press("ArrowDown");
-  const latest = await nearest("Latest in Movies", fromNextUp);
-  await expect(row("Latest in Movies").nth(latest)).toBeFocused();
+  const latestShows = await nearest("Latest in Shows", fromMovies);
+  await expect(row("Latest in Shows").nth(latestShows)).toBeFocused();
 
-  const fromLatest = await centre(row("Latest in Movies").nth(latest));
+  const fromShows = await centre(row("Latest in Shows").nth(latestShows));
   await page.keyboard.press("ArrowUp");
-  const back = await nearest("Next up", fromLatest);
-  await expect(row("Next up").nth(back)).toBeFocused();
+  const back = await nearest("Latest in Movies", fromShows);
+  await expect(row("Latest in Movies").nth(back)).toBeFocused();
 
   // Up from the first row reaches a hero action, with arrow keys alone.
   await focusByKeyboard(page, second);
