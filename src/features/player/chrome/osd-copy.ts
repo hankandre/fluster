@@ -28,6 +28,9 @@ export function fractionCopy(fraction: number): string {
   return `${Math.round(fraction * 100)}%`;
 }
 
+// Said once at the start of a session whose audio pick could not be applied (P17-08).
+export const AUDIO_PICK_NOT_APPLIED_COPY = "Couldn't switch to the audio track you picked. Playing the default track.";
+
 // The conversion line shown at the start of a converted session.
 export function conversionCopy(chip: string, subtitlesBurnedIn: boolean): string {
   return subtitlesBurnedIn ? `${chip} \u00b7 ${BURNED_IN_COPY}` : chip;

@@ -62,14 +62,14 @@ function SignIn({ gateway }: { gateway: SessionGateway }) {
   return <button onClick={() => session.signIn(gateway)}>test sign in</button>;
 }
 
-async function renderPlayer(gateway: SessionGateway, engine: FakePlayerEngine, startTicks = 0) {
+async function renderPlayer(gateway: SessionGateway, engine: FakePlayerEngine, startTicks = 0, audioStreamIndex?: number) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
       <SessionProvider createGateway={() => gateway}>
         <PlayerServicesProvider services={{ engine }}>
           <SignIn gateway={gateway} />
-          <PlayerRouteView itemId="m1" mediaSourceId="src-hd" startTicks={startTicks} />
+          <PlayerRouteView itemId="m1" mediaSourceId="src-hd" startTicks={startTicks} audioStreamIndex={audioStreamIndex} />
         </PlayerServicesProvider>
       </SessionProvider>
     </QueryClientProvider>,
@@ -1008,6 +1008,39 @@ describe("System media controls", () => {
       await renderPlayer(gateway, next);
       await waitFor(() => expect(next.launch).toHaveBeenCalled());
       expect(vi.mocked(gateway.createPlaybackPlan).mock.calls[2][4]).toEqual({ ignoreStreamingLimit: false });
+    });
+  });
+
+  describe("audio pick not applied (P17-08)", () => {
+    const COPY = "Couldn't switch to the audio track you picked. Playing the default track.";
+
+    async function startWithAudio(engine: FakePlayerEngine, audioTrack: number) {
+      await waitFor(() => expect(engine.launch).toHaveBeenCalled());
+      await act(async () => {
+        engine.emit({ kind: "loaded", snapshot: { ...snapshot, audioTrack } });
+        engine.emit({ kind: "first-frame" });
+      });
+    }
+
+    it("says so in one line when the player started with another track", async () => {
+      const engine = new FakePlayerEngine();
+      await renderPlayer(fakeGateway(), engine, 0, 2);
+      await startWithAudio(engine, 1);
+      expect(await screen.findByText(COPY)).toBeInTheDocument();
+    });
+
+    it("says nothing when the pick is the track that started", async () => {
+      const engine = new FakePlayerEngine();
+      await renderPlayer(fakeGateway(), engine, 0, 2);
+      await startWithAudio(engine, 2);
+      expect(screen.getByRole("status", { name: "Player message" })).toBeEmptyDOMElement();
+    });
+
+    it("says nothing when no track was picked", async () => {
+      const engine = new FakePlayerEngine();
+      await renderPlayer(fakeGateway(), engine);
+      await startWithAudio(engine, 1);
+      expect(screen.getByRole("status", { name: "Player message" })).toBeEmptyDOMElement();
     });
   });
 
