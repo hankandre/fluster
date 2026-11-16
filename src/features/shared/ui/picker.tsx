@@ -11,6 +11,8 @@ export interface PickerOption {
   label: string;
   // A second line, such as codec and channels.
   description?: string;
+  // Shown in the trigger in place of `label` when this option is selected. Rows keep `label`.
+  triggerLabel?: string;
   disabled?: boolean;
 }
 
@@ -182,7 +184,7 @@ export function Picker({ label, hideLabel, options, value, onChange, placeholder
         onClick={() => (open ? close(false) : openAt(undefined))}
         onKeyDown={onTriggerKeyDown}
       >
-        <span className="ui-picker-value" data-placeholder={current ? undefined : "true"}>{current?.label ?? placeholder}</span>
+        <span className="ui-picker-value" data-placeholder={current ? undefined : "true"}>{current?.triggerLabel ?? current?.label ?? placeholder}</span>
         <ChevronDown aria-hidden="true" size={18} />
       </button>
       {open ? createPortal(
