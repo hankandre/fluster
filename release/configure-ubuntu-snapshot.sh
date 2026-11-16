@@ -23,3 +23,7 @@ printf 'Package: *\nPin: release o=Ubuntu\nPin-Priority: 1001\n' \
 # Apply to every later apt-get call, including ones made by other tools.
 printf 'APT::Get::allow-downgrades "true";\n' \
   > /etc/apt/apt.conf.d/99-ubuntu-snapshot-downgrades
+# The snapshot service returns 502/503 at times. Retry each failed download
+# (indexes and packages) before failing the job.
+printf 'Acquire::Retries "5";\nAcquire::http::Timeout "60";\nAcquire::https::Timeout "60";\n' \
+  > /etc/apt/apt.conf.d/99-ubuntu-snapshot-retries
