@@ -3934,10 +3934,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "in_progress",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": "Implemented on branch task/P17-02 (spec docs/specs/P17-02.md, owner answers of 2026-11-16 in its Decision log). Local verify 2026-11-16 at 765bbad: pnpm check exit 0 (vitest 198 files, 2812 tests; cargo 194 passed, 7 ignored), pnpm test:e2e 205 passed, pnpm test:visual 396 passed. One review round found five lows and nothing to fix; they are logged in the spec's Review follow-ups. Visual baselines, PR screenshots, and the CI run are pending in the Ship phase."
+          "passes": true,
+          "evidence": "Implemented on branch task/P17-02 (spec docs/specs/P17-02.md, owner answers of 2026-11-16 in its Decision log). Local verify 2026-11-16 at 765bbad: pnpm check exit 0 (vitest 198 files, 2812 tests; cargo 194 passed, 7 ignored), pnpm test:e2e 205 passed, pnpm test:visual 396 passed. One review round found five lows and nothing to fix; they are logged in the spec's Review follow-ups. Visual baselines, PR screenshots, and the CI run are pending in the Ship phase. CI run https://github.com/hankandre/fluster/actions/runs/43938629788 green on PR 191 (frontend, visual, rust-checks, rust-release, rust-audit, tripwire, dependency-review, linux-wayland-beta) after baselines accepted from visual run 43933243406."
         },
         {
           "id": "P17-08",
