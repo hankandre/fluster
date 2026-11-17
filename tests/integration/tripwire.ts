@@ -165,7 +165,22 @@ async function planWithAudioPick(gateway: JellyfinGateway, item: ItemDto, result
   const audio = (source.MediaStreams ?? []).filter((stream) => stream.Type === "Audio" && typeof stream.Index === "number");
   const audioStreamIndex = audio[1]?.Index;
   if (!source.Id || audioStreamIndex === undefined) throw new Error("the multitrack sample has no second audio stream");
-  const plan = await gateway.createPlaybackPlan(toLibraryItem(item), 0, undefined, source.Id, { audioStreamIndex, keepDirectPlay: true });
+  // Counts the PlaybackInfo requests the plan took. The gateway's guard retries without the index when the
+  // server converts because of it; that silent retry must fail the sample (acceptance 7: stop for the human).
+  const transport = gateway as unknown as { post: (url: string, ...rest: unknown[]) => Promise<unknown> };
+  const originalPost = transport.post;
+  let playbackInfoRequests = 0;
+  transport.post = function counted(this: unknown, url: string, ...rest: unknown[]) {
+    if (/\/PlaybackInfo$/.test(url)) playbackInfoRequests += 1;
+    return originalPost.call(this, url, ...rest);
+  };
+  let plan: PlaybackPlan;
+  try {
+    plan = await gateway.createPlaybackPlan(toLibraryItem(item), 0, undefined, source.Id, { audioStreamIndex, keepDirectPlay: true });
+  } finally {
+    transport.post = originalPost;
+  }
+  if (playbackInfoRequests !== 1) fail(result, "I1", `the audio pick took ${playbackInfoRequests} PlaybackInfo requests, not one: the server converted because of the index and the guard retried`);
   if (plan.delivery !== "static") fail(result, "I1", "the audio pick turned a direct play into a conversion");
   else if (plan.defaultAudioStreamIndex !== audioStreamIndex) fail(result, "playback", "the plan does not carry the picked audio track");
   return plan;
