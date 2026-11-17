@@ -492,6 +492,17 @@ export const scenarios: Scenario[] = [
     await page.getByRole("complementary", { name: "Up next" }).waitFor({ timeout: 8_000 });
     await page.waitForTimeout(300);
   } },
+  { name: "55c-player-next-episode-autoplay-off", opts: { duration: 25, short: true, preferences: { autoPlay: { enabled: false, countdownSeconds: 10 } } }, run: async (page) => {
+    await play(page, "#/next/item/ep-1");
+    await page.getByRole("complementary", { name: "Up next" }).waitFor({ timeout: 8_000 });
+    await page.waitForTimeout(300);
+  } },
+  { name: "55d-player-next-episode-15s-reduced-motion", opts: { duration: 25, short: true, preferences: { autoPlay: { enabled: true, countdownSeconds: 15 } } }, run: async (page) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await play(page, "#/next/item/ep-1");
+    await page.getByRole("complementary", { name: "Up next" }).waitFor({ timeout: 8_000 });
+    await page.waitForTimeout(300);
+  } },
   { name: "56-player-loading", opts: { playbackDelayMs: 20_000 }, run: async (page) => {
     await signedInAt(page, "#/next/item/m4");
     await page.getByRole("link", { name: "Play" }).click();
@@ -564,6 +575,26 @@ export const scenarios: Scenario[] = [
     await page.getByRole("option", { name: "Skip automatically" }).click();
     await page.getByText("Intros: Skip automatically.").waitFor();
     await page.waitForTimeout(400);
+  } },
+  { name: "70f-settings-autoplay-off", run: async (page) => {
+    await openSettings(page);
+    await page.getByRole("switch", { name: "Play next episode automatically" }).click();
+    await page.getByText("Next episodes won't play automatically.").waitFor();
+    await page.waitForTimeout(400);
+  } },
+  { name: "70g-settings-countdown-open", run: async (page) => {
+    await openSettings(page);
+    await page.getByRole("button", { name: /^Countdown before the next episode/ }).click();
+    await page.getByRole("listbox").waitFor();
+    await page.waitForTimeout(300);
+  } },
+  { name: "70h-settings-autoplay-focus", run: async (page) => {
+    await openSettings(page);
+    await page.getByRole("tab", { name: "Playback" }).focus();
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowDown");
+    await page.waitForTimeout(300);
   } },
   { name: "74-settings-home", run: async (page) => {
     await openSettings(page);

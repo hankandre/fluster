@@ -42,6 +42,8 @@ export interface MockOptions {
   // PlaybackInfo offers an HLS conversion instead of the file (the browser engine refuses it as desktop-only).
   converted?: boolean;
   short?: boolean;
+  // Seeds the fluster.preferences record before the page loads, only when the page has none yet.
+  preferences?: Record<string, unknown>;
   trickplay?: boolean;
   // Serves the movie's chapters without trickplay (trickplay serves both).
   chapters?: boolean;
@@ -286,6 +288,11 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
   // The account's Configuration. A save replaces the whole object, as Jellyfin does.
   let configuration: Record<string, unknown> = { ...cultureConfiguration, SubtitleLanguagePreference: opts.subtitleLanguage ?? "", AudioLanguagePreference: opts.audioLanguage ?? "" };
   await stubMediaElement(page, opts);
+  if (opts.preferences) {
+    await page.addInitScript((record) => {
+      if (window.localStorage.getItem("fluster.preferences") === null) window.localStorage.setItem("fluster.preferences", JSON.stringify({ version: 1, ...record }));
+    }, opts.preferences);
+  }
   for (const origin of [SERVER, LAN]) {
     await page.route(`${origin}/**`, async (route) => {
       const request = route.request();

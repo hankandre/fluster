@@ -183,14 +183,15 @@ export interface AutoPlayStore {
   subscribe(listener: () => void): () => void;
 }
 
-// The auto-play view of a preference store.
+// The auto-play view of a preference store. get() keeps its identity while the
+// values are unchanged, even when the store parses a fresh object on every read,
+// because useSyncExternalStore needs a cached snapshot.
 export function autoPlayOf(store: PreferenceStore): AutoPlayStore {
-  // A browser store parses storage on every read; a stable object keeps useSyncExternalStore from looping.
   let last = store.get().autoPlay;
   return {
     get: () => {
-      const next = store.get().autoPlay;
-      if (next.enabled !== last.enabled || next.countdownSeconds !== last.countdownSeconds) last = next;
+      const current = store.get().autoPlay;
+      if (current.enabled !== last.enabled || current.countdownSeconds !== last.countdownSeconds) last = current;
       return last;
     },
     set: (value) => store.update("autoPlay", sanitizeAutoPlay(value)),
