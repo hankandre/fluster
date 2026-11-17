@@ -16,7 +16,7 @@ import { DesktopOnlyNotice, ItemGoneScreen, ItemLoadNotice, NoticePage, PlayerUn
 import { toPlayableItem } from "./playable-item";
 import { useMediaSegments } from "./use-media-segments";
 import { UpNextCard } from "./chrome/up-next-card";
-import { AUTO_PLAY_SECONDS } from "./auto-play-next";
+import { DEFAULT_AUTO_PLAY } from "../../lib/preference-store";
 import { creditsStart, leaveToNext, leaveToSeries, useAutoPlayCountdown, useNextEpisode } from "./use-auto-play-next";
 import { usePlaybackSession, whenPlaybackStopped } from "./use-playback-session";
 import { useServerName } from "./use-server-name";
@@ -133,6 +133,8 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
   const preferences = useOptionalPreferences();
   // Fixed for the whole session: a refetch of the detail must not restart playback.
   const [item] = useState(() => toPlayableItem(detail));
+  // Read once per session, like the item: a change cannot restart or cancel a running countdown.
+  const [autoPlay] = useState(() => preferences?.autoPlay.get() ?? DEFAULT_AUTO_PLAY);
 
   const seekProps = useSeekPreview(gateway, detail, route.mediaSourceId);
   const next = useNextEpisode(gateway, detail);
@@ -162,12 +164,12 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
       void refreshHomeRows(queryClient);
     },
     // A file that plays to its end goes straight to the next episode, unless
-    // Hide dismissed the card: then it opens the series page. upNext is
+    // Hide dismissed the card or auto-play is off: then it opens the series page. upNext is
     // declared below; this runs after render and reads it through the closure
     // (use-playback-session refreshes its callbacks on every render).
     onLeave: (reason) => {
-      if (reason === "eof" && next && upNext.dismissed && detail.seriesId) leaveToSeries(detail.seriesId);
-      else if (reason === "eof" && next && !upNext.dismissed) advanceTo(next);
+      if (reason === "eof" && next && (upNext.dismissed || !autoPlay.enabled) && detail.seriesId) leaveToSeries(detail.seriesId);
+      else if (reason === "eof" && next && autoPlay.enabled && !upNext.dismissed) advanceTo(next);
       else if (leaveTarget.current === "details") leaveToDetails(route.itemId);
       else leavePlayer(route.itemId);
     },
@@ -184,12 +186,12 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
     next,
     snapshot: playback.state.snapshot,
     outroStartSeconds: creditsStart(segments),
+    autoPlay,
     failed: Boolean(playback.state.error),
     advance: advanceTo,
     stopAndLeave: playback.stopAndLeave,
   });
 
-  // Up Next takes the place of Skip credits when a next episode exists (Q19 A).
   // The server's name for error copy, asked (unauthenticated probe) only once a failure or warning shows.
   const needsServerName = Boolean(playback.state.errorKind) || Boolean(playback.state.reportingWarning);
   const serverName = useServerName(gateway, needsServerName);
@@ -197,7 +199,7 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
   const skipModes = useSkipModes();
   const hasNext = Boolean(next);
   const offered = useMemo(() => offeredSegments(segments, skipModes, hasNext), [segments, skipModes, hasNext]);
-  const showCard = Boolean(next) && upNext.secondsLeft !== undefined && !playback.state.error;
+  const showCard = Boolean(next) && upNext.shown && !playback.state.error;
 
   const backToDetails = async () => {
     leaveTarget.current = "details";
@@ -255,12 +257,12 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
           onPlay: () => void playback.playOriginal(),
         }}
         backdrop={backdrop}
-        prompt={showCard && next && upNext.secondsLeft !== undefined ? (
+        prompt={showCard && next ? (
           <UpNextCard
             next={next}
             stillSrc={next.image ? imageUrlFor(gateway)(next.image, WIDE_IMAGE_WIDTH) : undefined}
             secondsLeft={upNext.secondsLeft}
-            totalSeconds={AUTO_PLAY_SECONDS}
+            totalSeconds={autoPlay.enabled ? autoPlay.countdownSeconds : undefined}
             paused={playback.state.snapshot?.paused ?? false}
             onPlayNow={upNext.playNow}
             onHide={upNext.hide}

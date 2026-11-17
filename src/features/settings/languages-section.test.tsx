@@ -9,7 +9,7 @@ import { SessionProvider, useSession, type SessionGateway } from "../../app/sess
 import type { AccountLanguageSettings } from "../../domain/account-language-choices";
 import type { ServerConnection } from "../../domain/server-connection";
 import { toLanguageCultures } from "../../lib/jellyfin/account-languages";
-import { continueWindowOf, MemoryPreferenceStore, skipModesOf } from "../../lib/preference-store";
+import { autoPlayOf, continueWindowOf, MemoryPreferenceStore, skipModesOf } from "../../lib/preference-store";
 import { MemoryStreamingLimits } from "../../lib/streaming-limits";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
 import { accountLanguageSettingsKey, accountLanguagesKey } from "../shared/account-languages";
@@ -51,7 +51,7 @@ async function renderLanguages({ settings = { playDefaultAudioTrack: true, subti
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <SessionProvider createGateway={() => gateway}>
-          <PreferencesProvider preferences={{ streamingLimits: limits, continueWindow: continueWindowOf(preferenceStore), skipModes: skipModesOf(preferenceStore) }}>
+          <PreferencesProvider preferences={{ streamingLimits: limits, continueWindow: continueWindowOf(preferenceStore), skipModes: skipModesOf(preferenceStore), autoPlay: autoPlayOf(preferenceStore) }}>
             <SignIn gateway={gateway} />
             <LanguagesSection />
           </PreferencesProvider>

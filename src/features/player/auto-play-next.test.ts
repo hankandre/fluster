@@ -23,6 +23,30 @@ describe("cardStartSeconds", () => {
   });
 });
 
+describe("the chosen countdown length", () => {
+  it("moves the latest card start with the length", () => {
+    expect(cardStartSeconds(1200, 1195, 15)).toBe(1185);
+    expect(cardStartSeconds(1200, 1195, 5)).toBe(1195);
+    expect(cardStartSeconds(1200, 1100, 15)).toBe(1100);
+  });
+
+  it("opens the end window by the chosen length", () => {
+    expect(inEndWindow(1184, 1200, 1195, 15)).toBe(false);
+    expect(inEndWindow(1185, 1200, 1195, 15)).toBe(true);
+    expect(inEndWindow(1190, 1200, 1195, 5)).toBe(false);
+    expect(inEndWindow(1195, 1200, 1195, 5)).toBe(true);
+  });
+
+  it("starts the countdown from the given length, and again after seeking back", () => {
+    for (const seconds of [5, 15]) {
+      const start = autoPlayReducer({ secondsLeft: undefined, dismissed: false }, { type: "window", inWindow: true, countdownSeconds: seconds });
+      expect(start.secondsLeft).toBe(seconds);
+      const out = autoPlayReducer(start, { type: "window", inWindow: false });
+      expect(autoPlayReducer(out, { type: "window", inWindow: true, countdownSeconds: seconds }).secondsLeft).toBe(seconds);
+    }
+  });
+});
+
 describe("credits data", () => {
   it("ignores an Outro at zero or before the middle of the video", () => {
     expect(cardStartSeconds(1200, 0)).toBe(1170);

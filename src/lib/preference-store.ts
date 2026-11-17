@@ -18,18 +18,32 @@ import {
 
 export const PREFERENCES_VERSION = 1;
 
+export const COUNTDOWN_CHOICES_SECONDS = [5, 10, 15] as const;
+export type CountdownSeconds = (typeof COUNTDOWN_CHOICES_SECONDS)[number];
+
+// Auto-play next: whether the next episode starts by itself, and how long the
+// Up next card counts down first.
+export interface AutoPlayPreference {
+  enabled: boolean;
+  countdownSeconds: CountdownSeconds;
+}
+
+export const DEFAULT_AUTO_PLAY: AutoPlayPreference = Object.freeze({ enabled: true, countdownSeconds: 10 });
+
 export interface PreferenceValues {
   streamingLimits: StreamingLimits;
   // How long a title stays in Home's Continue watching row after its last play.
   continueWindow: ContinueWindow;
   // What happens at an intro and at the credits.
   skipModes: SkipModes;
+  autoPlay: AutoPlayPreference;
 }
 
 export const DEFAULT_PREFERENCES: PreferenceValues = Object.freeze({
   streamingLimits: NO_STREAMING_LIMITS,
   continueWindow: DEFAULT_CONTINUE_WINDOW,
   skipModes: DEFAULT_SKIP_MODES,
+  autoPlay: DEFAULT_AUTO_PLAY,
 });
 
 const CONTINUE_WINDOWS: readonly ContinueWindow[] = ["7", "14", "30", "all"];
@@ -48,6 +62,17 @@ export function sanitizeSkipModes(value: unknown): SkipModes {
   return { intro: sanitizeSkipMode(record.intro), credits: sanitizeSkipMode(record.credits) };
 }
 
+// Each subfield falls back on its own; unknown subkeys are dropped.
+export function sanitizeAutoPlay(value: unknown): AutoPlayPreference {
+  if (typeof value !== "object" || value === null) return DEFAULT_AUTO_PLAY;
+  const record = value as Record<string, unknown>;
+  return {
+    enabled: typeof record.enabled === "boolean" ? record.enabled : DEFAULT_AUTO_PLAY.enabled,
+    countdownSeconds:
+      COUNTDOWN_CHOICES_SECONDS.find((seconds) => seconds === record.countdownSeconds) ?? DEFAULT_AUTO_PLAY.countdownSeconds,
+  };
+}
+
 // Validates each known field on its own and falls back to its default.
 // Unknown keys are dropped.
 export function sanitizePreferences(value: unknown): PreferenceValues {
@@ -57,6 +82,7 @@ export function sanitizePreferences(value: unknown): PreferenceValues {
     streamingLimits: sanitizeLimits(record.streamingLimits),
     continueWindow: sanitizeContinueWindow(record.continueWindow),
     skipModes: sanitizeSkipModes(record.skipModes),
+    autoPlay: sanitizeAutoPlay(record.autoPlay),
   };
 }
 
@@ -147,6 +173,27 @@ export function skipModesOf(store: PreferenceStore): SkipModeStore {
       return last;
     },
     set: (kind, mode) => store.update("skipModes", sanitizeSkipModes({ ...store.get().skipModes, [kind]: mode })),
+    subscribe: (listener) => store.subscribe(listener),
+  };
+}
+
+export interface AutoPlayStore {
+  get(): AutoPlayPreference;
+  set(value: AutoPlayPreference): void;
+  subscribe(listener: () => void): () => void;
+}
+
+// The auto-play view of a preference store.
+export function autoPlayOf(store: PreferenceStore): AutoPlayStore {
+  // A browser store parses storage on every read; a stable object keeps useSyncExternalStore from looping.
+  let last = store.get().autoPlay;
+  return {
+    get: () => {
+      const next = store.get().autoPlay;
+      if (next.enabled !== last.enabled || next.countdownSeconds !== last.countdownSeconds) last = next;
+      return last;
+    },
+    set: (value) => store.update("autoPlay", sanitizeAutoPlay(value)),
     subscribe: (listener) => store.subscribe(listener),
   };
 }

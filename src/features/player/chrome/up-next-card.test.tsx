@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { NextEpisode } from "../../../domain/catalog";
-import { countdownText, UpNextCard, upNextAnnouncement } from "./up-next-card";
+import { countdownText, UpNextCard, upNextAnnouncement, upNextTitleAnnouncement } from "./up-next-card";
 
 const next: NextEpisode = {
   id: "e2",
@@ -97,7 +97,39 @@ describe("UpNextCard", () => {
   });
 });
 
+describe("UpNextCard length and no countdown", () => {
+  it.each([5, 15])("sets the fill duration to %i seconds", (seconds) => {
+    const { container } = render(card({ secondsLeft: seconds, totalSeconds: seconds }).element);
+    expect((container.querySelector(".up-next-card") as HTMLElement).style.getPropertyValue("--up-next-seconds")).toBe(`${seconds}s`);
+  });
+
+  it("without a countdown draws no fill and no countdown text, and speaks the title once", () => {
+    const { element, props } = card({ secondsLeft: undefined, totalSeconds: undefined });
+    const { container } = render(element);
+    expect(container.querySelector(".up-next-fill")).toBeNull();
+    expect(container.querySelector(".up-next-countdown")).toBeNull();
+    expect((container.querySelector(".up-next-card") as HTMLElement).style.getPropertyValue("--up-next-seconds")).toBe("");
+    expect(screen.getByRole("status")).toHaveTextContent("Up next: Second");
+    expect(screen.getByRole("status")).not.toHaveTextContent("playing in");
+    fireEvent.click(screen.getByRole("button", { name: "Play now" }));
+    fireEvent.click(screen.getByRole("button", { name: "Hide" }));
+    expect(props.onPlayNow).toHaveBeenCalledTimes(1);
+    expect(props.onHide).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("up next text", () => {
+  it("announces the title alone without a countdown", () => {
+    expect(upNextTitleAnnouncement("Second")).toBe("Up next: Second");
+  });
+
+  it("announces a 15 second countdown as 15 then 5, and a 5 second one once", () => {
+    expect(upNextAnnouncement("Second", 15, 15)).toBe("Up next: Second, playing in 15 seconds");
+    expect(upNextAnnouncement("Second", 6, 15)).toBe("Up next: Second, playing in 15 seconds");
+    expect(upNextAnnouncement("Second", 5, 15)).toBe("Up next: Second, playing in 5 seconds");
+    for (const left of [5, 4, 3, 2, 1, 0]) expect(upNextAnnouncement("Second", left, 5)).toBe("Up next: Second, playing in 5 seconds");
+  });
+
   it("counts in the singular at one second", () => {
     expect(countdownText(1)).toBe("Playing in 1 second");
     expect(countdownText(2)).toBe("Playing in 2 seconds");

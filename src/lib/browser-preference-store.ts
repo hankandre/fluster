@@ -5,6 +5,7 @@ import {
   MemoryPreferenceStore,
   parseStoredPreferences,
   storedPreferences,
+  autoPlayOf,
   continueWindowOf,
   skipModesOf,
   streamingLimitsOf,
@@ -95,3 +96,4 @@ export const preferences = new BrowserPreferenceStore();
 export const streamingLimits = streamingLimitsOf(preferences);
 export const continueWindow = continueWindowOf(preferences);
 export const skipModes = skipModesOf(preferences);
+export const autoPlay = autoPlayOf(preferences);

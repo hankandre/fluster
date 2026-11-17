@@ -30,7 +30,7 @@ describe("browser preference store", () => {
     store.update("accessToken" as never, CANARY as never);
     const raw = window.localStorage.getItem(KEY)!;
     expect(raw).not.toContain(CANARY);
-    expect(JSON.parse(raw)).toEqual({ version: 1, streamingLimits: { localMbps: 40, remoteMbps: 8 }, continueWindow: "14", skipModes: { intro: "button", credits: "button" } });
+    expect(JSON.parse(raw)).toEqual({ version: 1, streamingLimits: { localMbps: 40, remoteMbps: 8 }, continueWindow: "14", skipModes: { intro: "button", credits: "button" }, autoPlay: { enabled: true, countdownSeconds: 10 } });
     expect(limitsOf(new BrowserPreferenceStore()).get()).toEqual({ localMbps: 40, remoteMbps: 8 });
   });
 
@@ -94,6 +94,7 @@ describe("migrating the streaming limits", () => {
       streamingLimits: { localMbps: 40, remoteMbps: 8 },
       continueWindow: "14",
       skipModes: { intro: "button", credits: "button" },
+      autoPlay: { enabled: true, countdownSeconds: 10 },
     });
     expect(window.localStorage.getItem(LEGACY)).toBeNull();
     expect(limitsOf(new BrowserPreferenceStore()).get()).toEqual({ localMbps: 40, remoteMbps: 8 });
@@ -154,6 +155,45 @@ describe("migrating the streaming limits", () => {
       streamingLimits: { localMbps: 20 },
       continueWindow: "30",
       skipModes: { intro: "button", credits: "button" },
+      autoPlay: { enabled: true, countdownSeconds: 10 },
     });
+  });
+
+  it("stores auto-play, reads it back, drops unknown subkeys, and reads a record without it as the default", () => {
+    const store = new BrowserPreferenceStore();
+    store.update("autoPlay", { enabled: false, countdownSeconds: 5, token: CANARY } as never);
+    const raw = window.localStorage.getItem(KEY)!;
+    expect(raw).not.toContain(CANARY);
+    expect(JSON.parse(raw).autoPlay).toEqual({ enabled: false, countdownSeconds: 5 });
+    expect(new BrowserPreferenceStore().get().autoPlay).toEqual({ enabled: false, countdownSeconds: 5 });
+    window.localStorage.setItem(KEY, JSON.stringify({ version: 1, continueWindow: "7" }));
+    expect(new BrowserPreferenceStore().get().autoPlay).toEqual({ enabled: true, countdownSeconds: 10 });
+  });
+
+  it("keeps two fields changed in a row when storage is blocked", () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    const store = new BrowserPreferenceStore();
+    store.update("autoPlay", { enabled: false, countdownSeconds: 15 });
+    store.update("continueWindow", "7");
+    expect(store.get().autoPlay).toEqual({ enabled: false, countdownSeconds: 15 });
+    expect(store.get().continueWindow).toBe("7");
+  });
+
+  it("stores skip modes and auto-play together, and a record with one invalid keeps the other", () => {
+    const store = new BrowserPreferenceStore();
+    store.update("skipModes", { intro: "auto", credits: "none" });
+    store.update("autoPlay", { enabled: false, countdownSeconds: 5 });
+    const read = new BrowserPreferenceStore().get();
+    expect(read.skipModes).toEqual({ intro: "auto", credits: "none" });
+    expect(read.autoPlay).toEqual({ enabled: false, countdownSeconds: 5 });
+    window.localStorage.setItem(KEY, JSON.stringify({ version: 1, skipModes: "bogus", autoPlay: { enabled: false, countdownSeconds: 15 } }));
+    expect(new BrowserPreferenceStore().get()).toMatchObject({ skipModes: { intro: "button", credits: "button" }, autoPlay: { enabled: false, countdownSeconds: 15 } });
+    window.localStorage.setItem(KEY, JSON.stringify({ version: 1, skipModes: { intro: "auto", credits: "auto" }, autoPlay: 3 }));
+    expect(new BrowserPreferenceStore().get()).toMatchObject({ skipModes: { intro: "auto", credits: "auto" }, autoPlay: { enabled: true, countdownSeconds: 10 } });
   });
 });
