@@ -1,10 +1,11 @@
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Volume2 } from "lucide-react";
 import type { OsdMessage } from "./use-osd";
 
 function Pill({ message }: { message: OsdMessage }) {
   return (
     <p key={message.serial} className="player-osd-pill" data-kind={message.kind}>
       {message.kind === "notice" && <RefreshCw size={15} aria-hidden="true" />}
+      {message.kind === "audio" && <Volume2 size={15} aria-hidden="true" />}
       <span>{message.text}</span>
     </p>
   );
