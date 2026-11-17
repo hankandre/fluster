@@ -12,8 +12,9 @@ import { SignedInChrome } from "../features/shell";
 import { useTvArrowFallback } from "../features/shell/use-tv-arrow-fallback";
 import { useBackspaceAsEscape } from "../features/shell/use-backspace-as-escape";
 import { useFocusReturn } from "../features/shell/use-focus-return";
+import { SignInGuard } from "../features/shell/sign-in-guard";
 import { PlayerRouteView } from "../features/player";
-import { type AppRoute, FEATURE_INDEX_ROUTE, GALLERY_ROUTE, HOME_ROUTE, isAppHash, isPlayerHash, parseAppRoute, ROUTE_REPLACED_EVENT, SIGN_IN_ROUTE } from "../features/routes";
+import { type AppRoute, FEATURE_INDEX_ROUTE, GALLERY_ROUTE, HOME_ROUTE, isAppHash, isOpenRoute, isPlayerHash, parseAppRoute, ROUTE_REPLACED_EVENT, SIGN_IN_ROUTE } from "../features/routes";
 import { markAccountDataStale, markKeptDataStaleForReturn } from "../features/query-scope";
 import { resetAccountData } from "./account-data";
 import { createServices, type AppServices } from "./compose";
@@ -115,7 +116,8 @@ function chromeFor(hash: string): "nav" | "none" {
 
 function renderWithChrome(hash: string, visit: number, services: AppServices) {
   const route = parseAppRoute(hash);
-  const page = route ? renderRoute(route, hash, visit, services) : <NotFoundView />;
+  const view = route ? renderRoute(route, hash, visit, services) : <NotFoundView />;
+  const page = route && !isOpenRoute(route) ? <SignInGuard hash={hash}>{view}</SignInGuard> : view;
   if (chromeFor(hash) === "none") return page;
   return <SignedInChrome hash={hash}>{page}</SignedInChrome>;
 }

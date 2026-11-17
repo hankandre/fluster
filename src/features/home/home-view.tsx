@@ -7,7 +7,7 @@ import { backdropWidth, heroArtFor } from "../card-view";
 import { AmbientBackdrop } from "../shared/ambient-backdrop";
 import { Hero, MediaRow } from "../shared/ui";
 import { detailKey } from "../detail/detail-key";
-import { libraryRoute, SIGN_IN_ROUTE } from "../routes";
+import { libraryRoute } from "../routes";
 import { deferDefaultFocus } from "../shell/focus-return";
 import { HomeEmpty } from "./home-empty";
 import { HomeHero } from "./home-hero";
@@ -23,10 +23,6 @@ const PREFETCH_MS = 30_000;
 
 export function HomeView() {
   const { gateway } = useSession();
-
-  useEffect(() => {
-    if (!gateway) window.location.hash = SIGN_IN_ROUTE;
-  }, [gateway]);
 
   return (
     <main className="home-page">

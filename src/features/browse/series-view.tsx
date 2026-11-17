@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ItemNotFoundError } from "../../domain/catalog";
 import { useSession, type SessionGateway } from "../../app/session";
@@ -10,16 +9,11 @@ import { DetailLoadError, DetailSkeleton, ItemGoneNotice } from "../detail/detai
 import { useHeadingFocus } from "../detail/use-heading-focus";
 import "../detail/detail-page.css";
 import { SeriesBody } from "./series-body";
-import { SIGN_IN_ROUTE } from "../routes";
 import "./series.css";
 
 // The series page (DESIGN.md 7.7): the name or Logo over the backdrop, the next episode to play, then the seasons.
 export function SeriesView({ seriesId }: { seriesId: string }) {
   const { gateway } = useSession();
-
-  useEffect(() => {
-    if (!gateway) window.location.hash = SIGN_IN_ROUTE;
-  }, [gateway]);
 
   return (
     <main className="detail-page">

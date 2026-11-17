@@ -11,6 +11,7 @@ import { fakeSessionGateway } from "../../test/fake-session-gateway";
 import { armReturn } from "../../test/arm-return";
 import { resetFocusReturn } from "../shell/focus-return";
 import { libraryRoute, parseLibraryRoute, replaceRoute, ROUTE_REPLACED_EVENT } from "../routes";
+import { SignInGuard } from "../shell/sign-in-guard";
 
 vi.mock("../home/blurhash", () => ({
   blurhashToDataUrl: (hash: string) => `data:image/png;base64,${hash}`,
@@ -429,11 +430,14 @@ describe("collection", () => {
 describe("signed out", () => {
   it("redirects to sign-in", () => {
     const gateway = fakeGateway();
-    render(
+    const { container } = render(
       <QueryClientProvider client={new QueryClient()}>
-        <SessionProvider createGateway={() => gateway}><BrowseView libraryId="lib-1" /></SessionProvider>
+        <SessionProvider createGateway={() => gateway}>
+          <SignInGuard hash={window.location.hash}><BrowseView libraryId="lib-1" /></SignInGuard>
+        </SessionProvider>
       </QueryClientProvider>,
     );
     expect(window.location.hash).toBe("#/next/sign-in");
+    expect(container.querySelector("main")).toBeNull();
   });
 });

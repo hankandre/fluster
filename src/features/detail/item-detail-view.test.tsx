@@ -9,6 +9,7 @@ import { ItemNotFoundError, type EpisodeCard, type ItemDetail, type ItemVersion 
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
 import { ToastProvider } from "../shared/ui";
 import { ItemDetailView } from "./index";
+import { SignInGuard } from "../shell/sign-in-guard";
 
 vi.mock("../home/blurhash", () => ({
   blurhashToDataUrl: (hash: string) => `data:image/png;base64,${hash}`,
@@ -500,16 +501,17 @@ describe("route behavior", () => {
   });
 
   it("redirects to sign-in when signed out", () => {
-    render(
+    const { container } = render(
       <ToastProvider>
         <QueryClientProvider client={new QueryClient()}>
           <SessionProvider createGateway={() => fakeGateway()}>
-            <ItemDetailView itemId="m1" />
+            <SignInGuard hash={window.location.hash}><ItemDetailView itemId="m1" /></SignInGuard>
           </SessionProvider>
         </QueryClientProvider>
       </ToastProvider>,
     );
     expect(window.location.hash).toBe("#/next/sign-in");
+    expect(container.querySelector("main")).toBeNull();
   });
 });
 
