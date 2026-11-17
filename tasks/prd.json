@@ -1611,10 +1611,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "Implemented on task/P3-24: pnpm check green (201 files, 2909 tests), e2e green except load flakes that pass alone x5, pnpm test:visual 435 passed. Baselines for 70, 70a-e, 54c need a CI run."
+          "passes": true,
+          "evidence": "Implemented on task/P3-24: pnpm check green (201 files, 2909 tests), e2e green except load flakes that pass alone x5, pnpm test:visual 435 passed. Baselines for 70, 70a-e, 54c need a CI run. | 2026-11-16 ship: PR #197. Owner answers Q1 A and Q2 A in docs/specs/P3-24.md. Review: no medium or higher beyond the CI-only baselines; lows in plan 002. pnpm check passed (2909 tests). Baselines (54c, 70, 70a-e, 74a) accepted from CI run 44016450522; merge gated on the final green CI run."
         },
         {
           "id": "P3-25",
