@@ -4012,10 +4012,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "Implemented on task/P17-03: Languages section, gateway read and whole-object save, unit and e2e tests; CI baselines and guardian and design reviews pending."
+          "passes": true,
+          "evidence": "Languages section with account audio and subtitle Pickers; gateway fresh read and whole-object POST /Users/Configuration with fixture tests (10.11.7, 12.4.0, unknown field); pnpm check exit 0 (2884 tests, Rust 194); e2e 209 passed; visual 426 passed locally; review 0 fixed, 5 low logged in plan 002. Baselines accepted from CI visual run https://github.com/hankandre/fluster/actions/runs/43988947164 (new 75-75h, refreshed 70-74, phone list, 71). PR https://github.com/hankandre/fluster/pull/195."
         },
         {
           "id": "P17-04",
