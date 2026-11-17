@@ -1585,7 +1585,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "M1 in progress: preference store autoPlay field, countdown length in timing and hook, player obeys setting (2026-11-16)."
+          "evidence": "2026-11-16 implementer: autoPlay preference (enabled, countdown 5/10/15), shared Switch, two Playback rows, player reads the setting once per session; off shows the card without countdown and the end opens the series page (owner Q1-Q4 in docs/specs/P3-23.md). pnpm check exit 0 (vitest 202 files, 2915 tests; cargo test ok). pnpm test:e2e 215 passed, 1 failed (e2e/tv/settings-languages.spec.ts:28, flaky: disabled Audio language trigger while it loads; fails 1 of 5 alone with my change and 2 of 10 on origin/main). pnpm test:visual 440 passed, 1 flaky retry (54a). Not done: CI baselines for new and changed scenarios (70, 70b, 70d-f, 55c, 55d, gallery) via pnpm test:visual:accept, fresh-context design review, PR screenshots, manual native mpv EOF check with auto-play off. passes stays false until those finish."
         },
         {
           "id": "P3-24",
