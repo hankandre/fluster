@@ -188,7 +188,7 @@ Unowned follow-ups are indexed in [`tasks/backlog.md`](../../tasks/backlog.md) s
 - P13-08 sign-off items (review, low): PR screenshots at 1440x900 and 1920x1080, and the Jellyfin 10.11 checks above, are recorded in the Ship phase, not in this commit.
 - History marker name (P13-08 review, low): `playerFromDetail` in `src/features/routes.ts` (openPlayer and leavePlayer) now also covers Home; rename it to a neutral name.
 - Deferred from P13-09 (item detail): the `More` menu (Q7 A; needs a Menu primitive, and "Mark season watched" needs a new gateway call). Proposed new task for the human to add to `tasks/prd.json`; agents may not add tasks.
-- Person images and ratings on the cast cards (Q8 A): proposed as one later gateway task.
+- ~~Person images and ratings on the cast cards (Q8 A): proposed as one later gateway task.~~ Done in P15-03.
 - Watched and favourite feedback as a `Toast` (DESIGN.md §7.16): needs a `ToastProvider` at the app root. Done in P13-20: the provider is mounted in `App`, and Detail shows both outcomes as toasts.
 - Card subtitle "S1E2 · Pilot" to "S1 · E2" in `cards.ts` `episodeLabel`: done in P13-10.
 - Episode strip positioned at the current episode, and focus restored to it after Back; the series page header (P13-10); the TV form, initial focus on the primary action, and the Menu key (P13-18); the Notice over the dimmed item backdrop for playback states (P13-15).

@@ -48,7 +48,30 @@ describe("item detail gateway calls", () => {
     const detail = await gateway.itemDetail("movie/1", signal);
     expect(detail.versions).toEqual([{ id: "s1", name: "1080p", audio: [], subtitles: [] }]);
     expect(transport.calls).toHaveLength(1);
-    expect(transport.calls[0]).toMatchObject({ method: "GET", url: "/Items/movie%2F1", config: { params: { userId: "user-1" }, signal } });
+    expect(transport.calls[0]).toMatchObject({ method: "GET", url: "/Items/movie%2F1", config: { signal } });
+    expect(transport.calls[0].config?.params).toEqual({ userId: "user-1" });
+  });
+
+  it("maps person images and both ratings from the full item", async () => {
+    const { gateway, transport } = await signedIn();
+    transport.responses.set("GET /Items/movie%2F1", {
+      Id: "movie/1",
+      Name: "Film",
+      Type: "Movie",
+      CommunityRating: 7.8,
+      CriticRating: 91,
+      People: [
+        { Id: "p1", Name: "Amy Adams", Type: "Actor", PrimaryImageTag: "t1" },
+        { Id: "p2", Name: "Cher", Type: "Actor" },
+      ],
+    });
+    const detail = await gateway.itemDetail("movie/1");
+    expect(detail.communityRating).toBe(7.8);
+    expect(detail.criticRating).toBe(91);
+    expect(detail.cast).toEqual([
+      { name: "Amy Adams", image: { itemId: "p1", type: "Primary", tag: "t1" } },
+      { name: "Cher" },
+    ]);
   });
 
   it("reports a 404 as ItemNotFoundError and passes other failures through", async () => {

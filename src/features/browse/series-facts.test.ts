@@ -20,6 +20,10 @@ const seasons: Season[] = [
 ];
 
 describe("seriesFacts", () => {
+  it("puts the ratings after the season count and before the genres", () => {
+    expect(seriesFacts({ ...series, communityRating: 8.1, criticRating: 88 }, seasons)).toBe("2022–2024 · 2 seasons · 8.1/10 · 88% critics · Drama · Mystery");
+  });
+
   it("joins the year range, the season count without Specials, and two genres", () => {
     expect(seriesFacts(series, seasons)).toBe("2022–2024 · 2 seasons · Drama · Mystery");
   });

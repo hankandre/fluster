@@ -241,6 +241,8 @@ export interface ItemVersion {
 export interface CastMember {
   name: string;
   role?: string;
+  // The person's Primary picture; absent when the server has none.
+  image?: ImageRef;
 }
 
 export interface ItemUserData {
@@ -285,6 +287,9 @@ export interface ItemDetail {
   overview?: string;
   genres: string[];
   cast: CastMember[];
+  // Community rating on a 0-10 scale and critic rating on 0-100; each absent when the server has none.
+  communityRating?: number;
+  criticRating?: number;
   userData: ItemUserData;
   versions: ItemVersion[];
   chapters?: Chapter[];

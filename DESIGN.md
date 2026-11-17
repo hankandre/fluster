@@ -246,11 +246,11 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 
 ### 7.7 Detail header (`DetailHeader`)
 
-- A full-bleed `AmbientBackdrop` at full strength. Over it, in the left five columns: the Logo or title (`h1`), a facts line (genres join it; the rating joins it when the server has one, from P15-03), `MediaBadges`, the `ActionBar`, and a three-line overview with a "More" disclosure.
-- `PersonRow` cards show the name and the role, with initials in place of a picture (Q8 A). From P15-03 they show the person's image, with initials as the fallback. They are not interactive.
+- A full-bleed `AmbientBackdrop` at full strength. Over it, in the left five columns: the Logo or title (`h1`), a facts line ("2023 · 2 h 3 min · 7.8/10 · 91% critics · Drama": year, runtime, the community and critic ratings in plain words each only when the server has it, then genres; no logo and no star), `MediaBadges`, the `ActionBar`, and a three-line overview with a "More" disclosure.
+- `PersonRow` cards show the name and the role, and the person's image, with initials as the fallback (no image, still loading, or failed). They are not interactive.
 - Variants:
   - **movie**
-  - **series**: facts are the year range, the season count, and genres (no rating). The primary action is "Resume S1 · E2" or "Play S1 · E3". Season tabs and the episode list sit below.
+  - **series**: facts are the year range, the season count, the ratings, and genres ("2019–2023 · 4 seasons · 8.4/10 · 88% critics · Drama"). The primary action is "Resume S1 · E2" or "Play S1 · E3". Season tabs and the episode list sit below.
   - **episode**: the series name is a link above the title. Facts read "S1 · E2 · 45 min". The episode still replaces the backdrop when the episode has no backdrop. A "More from Season 1" episode strip sits below and opens positioned at the current episode.
 - Compact windows stack poster (or still), then title, then actions, then overview.
 

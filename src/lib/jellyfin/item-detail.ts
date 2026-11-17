@@ -171,6 +171,13 @@ function image(itemId: string, type: "Primary" | "Backdrop", tag: string | null 
   return blurHash ? { itemId, type, tag, blurHash } : { itemId, type, tag };
 }
 
+// Jellyfin rates 0-10 (community) and 0-100 (critics); 0 or absent means none. A critic score of 0 is real.
+function ratingWithin(value: number | null | undefined, allowZero: boolean, max: number): number | undefined {
+  if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
+  if (value > max || value < 0 || (value === 0 && !allowZero)) return undefined;
+  return value;
+}
+
 function yearOf(date: string | null | undefined): number | undefined {
   if (!date) return undefined;
   const time = new Date(date).getTime();
@@ -186,7 +193,12 @@ export function toItemDetail(item: BaseItemDto): ItemDetail | undefined {
   const cast = (item.People ?? [])
     .filter((person) => person.Name && person.Type === "Actor")
     .slice(0, CAST_LIMIT)
-    .map((person) => ({ name: person.Name!, ...(person.Role ? { role: person.Role } : {}) }));
+    .map((person) => {
+      const picture = person.Id ? image(person.Id, "Primary", person.PrimaryImageTag, person.ImageBlurHashes) : undefined;
+      return { name: person.Name!, ...(person.Role ? { role: person.Role } : {}), ...(picture ? { image: picture } : {}) };
+    });
+  const communityRating = ratingWithin(item.CommunityRating, false, 10);
+  const criticRating = ratingWithin(item.CriticRating, true, 100);
   const chapters = toChapters(item.Chapters);
   const endYear = item.Type === "Series" ? yearOf(item.EndDate) : undefined;
   return {
@@ -204,6 +216,8 @@ export function toItemDetail(item: BaseItemDto): ItemDetail | undefined {
     ...(item.Overview ? { overview: item.Overview } : {}),
     genres: item.Genres ?? [],
     cast,
+    ...(communityRating !== undefined ? { communityRating } : {}),
+    ...(criticRating !== undefined ? { criticRating } : {}),
     userData: {
       played: Boolean(item.UserData?.Played),
       favorite: Boolean(item.UserData?.IsFavorite),

@@ -15,7 +15,7 @@ export { MediaBadges } from "./media-badges";
 export { MediaCard, type MediaCardProps, type MediaCardVariant } from "./media-card";
 export { MediaRow, type MediaRowProps } from "./media-row";
 export { Notice } from "./notice";
-export { initials, PersonRow, type Person } from "./person-row";
+export { initials, PERSON_IMAGE_WIDTH, PersonRow, type Person } from "./person-row";
 export { OptionList, type OptionListOption } from "./option-list";
 export { Menu, type MenuItem } from "./menu";
 export { Picker, type PickerOption } from "./picker";

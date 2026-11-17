@@ -187,6 +187,18 @@ test("a missing item shows a notice with Go home", async ({ page }) => {
   await expect(page).toHaveURL(/#\/next\/home$/);
 });
 
+test("the facts line shows the ratings and the cast shows pictures with initials as the fallback", async ({ page }) => {
+  await installMockServer(page);
+  await signIn(page, "#/next/item/m1");
+
+  await expect(page.locator(".detail-facts")).toContainText("7.8/10 · 91% critics");
+  const cast = page.getByRole("region", { name: "Cast" });
+  await expect(cast.getByRole("listitem").filter({ hasText: "Mara Ellison" }).locator("img")).toHaveCount(1);
+  const junie = cast.getByRole("listitem").filter({ hasText: "Junie Park" });
+  await expect(junie.locator("img")).toHaveCount(0);
+  await expect(junie).toContainText("JP");
+});
+
 for (const viewport of [{ width: 1440, height: 900 }, { width: 1920, height: 1080 }]) {
   test(`a resuming item with two versions keeps its action bar on one row at ${viewport.width}px`, async ({ page }) => {
     await page.setViewportSize(viewport);

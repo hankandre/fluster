@@ -163,10 +163,14 @@ const discSource: Dto = { Id: "src-disc", Name: "Blu-ray", Path: "/media/Disc/BD
 
 const people = [
   ["Mara Ellison", "Ines Varga"], ["Theo Akande", "Rafe"], ["Junie Park", "Dr. Holm"], ["Callum Reyes", "The Pilot"], ["Odette Lindqvist", "Sabine"],
-].map(([Name, Role]) => ({ Name, Role, Type: "Actor" }));
+].map(([Name, Role], index) => ({
+  Id: `person-${index + 1}`, Name, Role, Type: "Actor",
+  // Persons 1, 2, and 4 have a picture; the others fall back to initials.
+  ...([1, 2, 4].includes(index + 1) ? { PrimaryImageTag: `tag-person-${index + 1}` } : {}),
+}));
 
 const movies: Record<string, Dto> = {
-  m1: { Name: "The Long Quiet", ProductionYear: 2023, poster: "p1", backdrop: "b1", RunTimeTicks: ticks(7380), Genres: ["Drama", "Science Fiction"], OfficialRating: "PG-13", CommunityRating: 7.8,
+  m1: { Name: "The Long Quiet", ProductionYear: 2023, poster: "p1", backdrop: "b1", RunTimeTicks: ticks(7380), Genres: ["Drama", "Science Fiction"], OfficialRating: "PG-13", CommunityRating: 7.8, CriticRating: 91,
     Overview: "A radio astronomer on a remote island station picks up a signal that repeats every nineteen minutes, and has one winter to decide who to tell.",
     People: people, MediaSources: [hdrSource, sdrSource], Trickplay: true, Chapters: true },
   m2: { Name: "Saltwater Hours", ProductionYear: 2021, poster: "p2", backdrop: "b2", RunTimeTicks: ticks(6300), Genres: ["Drama"], Overview: "Two sisters reopen their late father's ferry for one last summer.", People: people.slice(1, 4), resume: ticks(2460), MediaSources: [hdrSource, sdrSource] },
@@ -192,7 +196,7 @@ function movieDto(id: string, opts: MockOptions): Dto {
   const m = movies[id];
   return {
     Id: id, Name: m.Name, Type: "Movie", ProductionYear: m.ProductionYear, RunTimeTicks: m.RunTimeTicks, Overview: m.Overview, Genres: m.Genres,
-    OfficialRating: m.OfficialRating, CommunityRating: m.CommunityRating, People: m.People ?? [],
+    OfficialRating: m.OfficialRating, CommunityRating: m.CommunityRating, CriticRating: m.CriticRating, People: m.People ?? [],
     ImageTags: { Primary: `tag-${id}`, Logo: `logo-${id}` }, PrimaryImageAspectRatio: 2 / 3,
     ...(opts.noBackdrop ? {} : {
       BackdropImageTags: [`bd-${id}`],
@@ -217,7 +221,7 @@ function seriesDto(id: string): Dto {
   const s = series[id];
   return {
     Id: id, Name: s.Name, Type: "Series", ProductionYear: s.ProductionYear, ImageTags: { Primary: `tag-${id}` }, BackdropImageTags: [`bd-${id}`], PrimaryImageAspectRatio: 2 / 3,
-    ...(id === "s1" ? { Overview: "A lighthouse keeper's daughter uncovers the harbor's oldest secret.", Genres: ["Drama", "Mystery"], EndDate: "2024-11-01T00:00:00.0000000Z" } : {}),
+    ...(id === "s1" ? { Overview: "A lighthouse keeper's daughter uncovers the harbor's oldest secret.", Genres: ["Drama", "Mystery"], CommunityRating: 8.1, EndDate: "2024-11-01T00:00:00.0000000Z" } : {}),
     ...(id === "s2" ? { UserData: { UnplayedItemCount: 3 } } : {}),
   };
 }
@@ -245,6 +249,8 @@ function imageFor(id: string, type: string, opts: MockOptions = {}): string {
     if (id === "s1") return type === "Backdrop" || type === "Thumb" ? "worst-backdrop" : "worst-poster";
     if (episodes[id]) return "worst-still";
   }
+  const person = /^person-(\d)$/.exec(id);
+  if (person) return `p${person[1]}`;
   if (movies[id]) return type === "Backdrop" ? movies[id].backdrop : type === "Thumb" ? movies[id].backdrop : movies[id].poster;
   if (series[id]) return type === "Backdrop" || type === "Thumb" ? series[id].backdrop : series[id].poster;
   if (episodes[id]) return episodes[id].thumb;
