@@ -843,7 +843,7 @@ export class JellyfinGateway {
     if (picked !== undefined && decision.kind !== "force-fallback"
       && !(decision.kind === "direct-play" && hasEmbeddedAudio(decision.source, picked))) {
       // The same request without the index. A pick never costs a direct play (ARCHITECTURE.md §3, I1):
-      // the index's answer is used for a conversion only when this one converts too.
+      // a plain answer that direct plays wins; otherwise the index's answer is kept unless it was refused.
       const { AudioStreamIndex: _dropped, ...plainStreams } = streams;
       const plain = await this.playbackInfo(item.id, startPositionTicks, signal, mediaSourceId, true, limit, plainStreams);
       const plainDecision = selectSource(plain.MediaSources, context(plain), mediaSourceId);
