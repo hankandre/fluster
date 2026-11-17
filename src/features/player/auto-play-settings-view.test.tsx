@@ -29,7 +29,6 @@ function episode(id: string, title: string): ItemDetail {
   };
 }
 
-const movie: ItemDetail = { ...episode("m1", "Arrival"), type: "Movie", seriesId: undefined };
 const second: NextEpisode = { id: "e2", title: "Second", label: "S1 · E2" };
 
 function plan(itemId: string, playSessionId: string): PlaybackPlan {
@@ -132,12 +131,6 @@ async function loadedAt(engine: FakePlayerEngine, position: number, launches = 1
   await act(async () => {
     engine.emit({ kind: "loaded", snapshot: snapshotAt(position) });
     engine.emit({ kind: "first-frame" });
-  });
-}
-
-async function moveTo(engine: FakePlayerEngine, position: number) {
-  await act(async () => {
-    engine.emit({ kind: "state", snapshot: snapshotAt(position), cause: "seek" });
   });
 }
 

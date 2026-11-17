@@ -150,6 +150,16 @@ export function PlayerChromeGallery() {
             />
           </div>
         </Frame>
+        <Frame label="Up next, auto-play off">
+          <div className="player-prompt" data-chrome-visible="false">
+            <UpNextCard
+              next={{ id: "gallery-next", title: "The Lamp Room", label: "S1 · E3" }}
+              paused={false}
+              onPlayNow={() => undefined}
+              onHide={() => undefined}
+            />
+          </div>
+        </Frame>
         <Frame label="Loading a conversion">
           <PlayerLoading title="S1 · E2 The Keeper's Log" seriesLine="Harbor Lights" text={`${INDICATOR.chip}…`} onBack={() => undefined} />
         </Frame>

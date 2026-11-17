@@ -13,6 +13,7 @@ import {
   SegmentedTabs,
   Skeleton,
   TextField,
+  Switch,
   ToggleChip,
   SettingsRow,
   SettingsSection,
@@ -84,6 +85,7 @@ function Gallery() {
   const [manualSeason, setManualSeason] = useState("s1");
   const [watched, setWatched] = useState(true);
   const [unwatched, setUnwatched] = useState(false);
+  const [autoPlay, setAutoPlay] = useState(true);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const cancel = useRef<HTMLButtonElement>(null);
   const choose = (label: string) => toast.show({ message: `Chose ${label}.` });
@@ -141,6 +143,12 @@ function Gallery() {
           <SegmentedTabs label="Settings sections (manual)" items={SEASONS} value={manualSeason} onChange={setManualSeason} activation="manual" idBase="gallery-manual" />
           <SegmentedTabPanel idBase="gallery-manual" id={manualSeason}>Section {manualSeason}</SegmentedTabPanel>
         </div>
+      </Section>
+
+      <Section title="Switch">
+        <Switch label="Play next episode automatically" checked={autoPlay} onCheckedChange={setAutoPlay} />
+        <Switch label="Gallery switch, off" checked={false} onCheckedChange={() => undefined} />
+        <Switch label="Gallery switch, on" checked onCheckedChange={() => undefined} />
       </Section>
 
       <Section title="Toggle chips">

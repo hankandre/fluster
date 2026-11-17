@@ -72,6 +72,8 @@
   --control-h: 48px;
   --icon-button: 44px;
   --hit-min: 44px;
+  --switch-w: 44px;
+  --switch-h: 24px;
   --search-field-h: 64px;
   --suggestion-art-w: 40px;
   --player-sheet-w: 420px;
@@ -151,6 +153,8 @@
   --control-h: 72px;
   --icon-button: 64px;
   --hit-min: 64px;
+  --switch-w: 64px;
+  --switch-h: 36px;
   --search-field-h: 96px;
   --suggestion-art-w: 60px;
   --player-sheet-w: 33vw;

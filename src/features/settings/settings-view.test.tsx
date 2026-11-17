@@ -153,6 +153,55 @@ it("confirms each change with a toast, and says nothing when the value is the sa
   expect(screen.getAllByText(/limit/).filter((node) => node.closest(".ui-toast"))).toHaveLength(3);
 });
 
+// Auto-play next
+
+const autoSwitch = () => screen.getByRole("switch", { name: "Play next episode automatically" });
+const countdown = () => screen.getByRole("button", { name: /^Countdown before the next episode/ });
+
+it("shows auto-play on and a 10 second countdown by default, in order after the limits", async () => {
+  await renderSettings();
+  expect(autoSwitch()).toHaveAttribute("aria-checked", "true");
+  expect(autoSwitch()).toHaveTextContent("On");
+  expect(autoSwitch()).toHaveAccessibleDescription("At the end of an episode, play the next one after a countdown.");
+  expect(countdown()).toHaveTextContent("10 seconds");
+  expect(countdown()).toHaveAccessibleDescription("How long Up next waits before playing.");
+  const items = [local(), remote(), autoSwitch(), countdown()];
+  expect(items.map((item) => item.hasAttribute("data-roving-item"))).toEqual([true, true, true, true]);
+  const all = Array.from(screen.getByRole("tabpanel").querySelectorAll("[data-roving-item]"));
+  expect(all).toEqual(items);
+  await userEvent.setup().click(countdown());
+  expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual(["5 seconds", "10 seconds", "15 seconds"]);
+});
+
+it("toggles auto-play with Space and Enter and confirms with a toast", async () => {
+  const { preferenceStore } = await renderSettings();
+  const user = userEvent.setup();
+  autoSwitch().focus();
+  await user.keyboard(" ");
+  expect(preferenceStore.get().autoPlay).toEqual({ enabled: false, countdownSeconds: 10 });
+  expect(await screen.findByText("Next episodes won't play automatically.")).toBeInTheDocument();
+  expect(autoSwitch()).toHaveAttribute("aria-checked", "false");
+  expect(autoSwitch()).toHaveTextContent("Off");
+  await user.keyboard("{Enter}");
+  expect(preferenceStore.get().autoPlay.enabled).toBe(true);
+  expect(await screen.findByText("Next episodes play automatically.")).toBeInTheDocument();
+});
+
+it("saves the countdown, keeps it while auto-play is off, and says nothing when unchanged", async () => {
+  const { preferenceStore } = await renderSettings();
+  await choose(countdown(), "15 seconds");
+  expect(preferenceStore.get().autoPlay).toEqual({ enabled: true, countdownSeconds: 15 });
+  expect(await screen.findByText("Countdown set to 15 seconds.")).toBeInTheDocument();
+  await userEvent.setup().click(autoSwitch());
+  expect(countdown()).toBeEnabled();
+  expect(countdown()).toHaveTextContent("15 seconds");
+  await choose(countdown(), "5 seconds");
+  expect(preferenceStore.get().autoPlay).toEqual({ enabled: false, countdownSeconds: 5 });
+  const set = vi.spyOn(preferenceStore, "update");
+  await choose(countdown(), "5 seconds");
+  expect(set).not.toHaveBeenCalled();
+});
+
 // Home
 
 it("offers the Continue watching window in a Home section after Playback, with 14 days by default", async () => {

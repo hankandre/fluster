@@ -129,6 +129,61 @@
     opacity: 0.5;
   }
 
+  /* Switch (DESIGN.md 7.18): a pill track and a round thumb, with On or Off written beside it. */
+  .ui-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    box-sizing: border-box;
+    min-height: var(--hit-min);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text-1);
+    font: var(--type-label);
+  }
+
+  .ui-switch-state {
+    min-inline-size: 3ch;
+    text-align: end;
+  }
+
+  .ui-switch-track {
+    position: relative;
+    flex: none;
+    box-sizing: border-box;
+    inline-size: var(--switch-w);
+    block-size: var(--switch-h);
+    border-radius: var(--radius-pill);
+    background: var(--surface-3);
+    transition: background-color var(--dur-quick) var(--ease-out);
+  }
+
+  .ui-switch-thumb {
+    position: absolute;
+    inset-block: var(--space-1);
+    inset-inline-start: var(--space-1);
+    aspect-ratio: 1;
+    border-radius: var(--radius-pill);
+    background: var(--text-2);
+    transition:
+      transform var(--dur-quick) var(--ease-out),
+      background-color var(--dur-quick) var(--ease-out);
+  }
+
+  .ui-switch[aria-checked="true"] .ui-switch-track {
+    background: var(--text-1);
+  }
+
+  .ui-switch[aria-checked="true"] .ui-switch-thumb {
+    background: var(--on-light);
+    transform: translateX(calc(var(--switch-w) - var(--switch-h)));
+  }
+
+  .ui-switch:dir(rtl)[aria-checked="true"] .ui-switch-thumb {
+    transform: translateX(calc(var(--switch-h) - var(--switch-w)));
+  }
+
   /* Text field (DESIGN.md 7.19) */
   .ui-field {
     display: grid;
