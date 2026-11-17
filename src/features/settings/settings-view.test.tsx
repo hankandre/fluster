@@ -158,7 +158,7 @@ it("confirms each change with a toast, and says nothing when the value is the sa
 const autoSwitch = () => screen.getByRole("switch", { name: "Play next episode automatically" });
 const countdown = () => screen.getByRole("button", { name: /^Countdown before the next episode/ });
 
-it("shows auto-play on and a 10 second countdown by default, in order after the limits", async () => {
+it("shows auto-play on and a 10 second countdown by default, in order after the limits and before Intros", async () => {
   await renderSettings();
   expect(autoSwitch()).toHaveAttribute("aria-checked", "true");
   expect(autoSwitch()).toHaveTextContent("On");
@@ -168,7 +168,11 @@ it("shows auto-play on and a 10 second countdown by default, in order after the 
   const items = [local(), remote(), autoSwitch(), countdown()];
   expect(items.map((item) => item.hasAttribute("data-roving-item"))).toEqual([true, true, true, true]);
   const all = Array.from(screen.getByRole("tabpanel").querySelectorAll("[data-roving-item]"));
-  expect(all).toEqual(items);
+  // Intros and Credits (P3-24) follow the auto-play rows, and nothing else in the panel takes the roving focus.
+  expect(all).toEqual([...items, intros(), credits()]);
+  const text = screen.getByRole("tabpanel").textContent ?? "";
+  expect(text.indexOf("Remote")).toBeLessThan(text.indexOf("Play next episode automatically"));
+  expect(text.indexOf("Countdown")).toBeLessThan(text.indexOf("Intros"));
   await userEvent.setup().click(countdown());
   expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual(["5 seconds", "10 seconds", "15 seconds"]);
 });
