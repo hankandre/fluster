@@ -364,6 +364,10 @@ export const scenarios: Scenario[] = [
     await page.getByRole("button", { name: /^Audio/ }).click();
     await page.waitForTimeout(300);
   } },
+  { name: "46c-detail-audio-long-title", opts: { longAudioTitle: true }, run: async (page) => {
+    await signedInAt(page, "#/next/item/m2", 1_000);
+    await page.getByRole("button", { name: /^Audio English · Director's commentary/ }).waitFor();
+  } },
   { name: "47-detail-loading", opts: { detailDelayMs: 6_000 }, run: async (page) => {
     await signIn(page);
     await page.evaluate(() => { window.location.hash = "#/next/item/m1"; });
@@ -413,6 +417,18 @@ export const scenarios: Scenario[] = [
     await page.keyboard.press("ArrowRight");
     await page.getByRole("status", { name: "Player message" }).getByText("+10 s").waitFor();
     await page.waitForTimeout(150);
+  } },
+  { name: "59f-player-audio-pick-not-applied", audioPickIgnored: true, run: async (page) => {
+    await signIn(page);
+    await go(page, "#/next/play/m1?source=src-4k&audio=3", 800);
+    await page.getByRole("status", { name: "Player message" }).getByText(/Couldn't switch to the audio track you picked/).waitFor();
+    await page.waitForTimeout(300);
+  } },
+  { name: "59g-phone-player-audio-pick-not-applied", phone: true, audioPickIgnored: true, run: async (page) => {
+    await signIn(page);
+    await go(page, "#/next/play/m1?source=src-4k&audio=3", 800);
+    await page.getByRole("status", { name: "Player message" }).getByText(/Couldn't switch to the audio track you picked/).waitFor();
+    await page.waitForTimeout(300);
   } },
   { name: "59b-player-paused", run: async (page) => {
     await play(page, "#/next/item/m1");
@@ -710,6 +726,10 @@ export const scenarios: Scenario[] = [
   // Phone
   { name: "62-phone-home", phone: true, run: async (page) => { await signIn(page); await page.waitForTimeout(900); } },
   { name: "63-phone-detail", phone: true, fullPage: true, run: (page) => signedInAt(page, "#/next/item/m1", 1_000) },
+  { name: "63a-phone-detail-audio-long-title", phone: true, fullPage: true, opts: { longAudioTitle: true }, run: async (page) => {
+    await signedInAt(page, "#/next/item/m2", 1_000);
+    await page.getByRole("button", { name: /^Audio English · Director's commentary/ }).waitFor();
+  } },
   { name: "64-phone-series", phone: true, fullPage: true, run: (page) => signedInAt(page, "#/next/series/s1", 1_000) },
   { name: "65-phone-library", phone: true, run: (page) => signedInAt(page, "#/next/browse/lib-movies", 1_000) },
   { name: "66-phone-nav-fade", phone: true, opts: { manyLibraries: true }, run: (page) => signedInAt(page, "#/next/home", 1_000) },

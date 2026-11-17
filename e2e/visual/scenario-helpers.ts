@@ -11,6 +11,8 @@ export interface Scenario {
   tvOnly?: boolean;
   // Skipped in the TV pass: the state needs a pointer or a desktop-only key (the TV has neither).
   desktopOnly?: boolean;
+  // Runs against the dev server whose test engine ignores the audio pick (see playwright.visual.config.ts).
+  audioPickIgnored?: boolean;
   // Set when the scenario deliberately provokes a 404 from the mock server.
   expect404?: boolean;
   // Measure the contrast of every text run in the capture (see contrast-measure.ts).
