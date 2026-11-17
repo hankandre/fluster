@@ -3,10 +3,14 @@ import { useEffect, useState } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PlayerServicesProvider, type PlayerServices } from "../../app/player-services";
+import { PreferencesProvider } from "../../app/preferences";
 import { SessionProvider, useSession, type SessionGateway } from "../../app/session";
 import type { ItemDetail, NextEpisode } from "../../domain/catalog";
 import type { LibraryItem } from "../../domain/catalog";
 import type { PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
+import type { SkipModes } from "../../domain/media-segments";
+import { MemoryPreferenceStore, continueWindowOf, skipModesOf } from "../../lib/preference-store";
+import { MemoryStreamingLimits } from "../../lib/streaming-limits";
 import { FakePlayerEngine } from "../../test/fake-player-engine";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
 import { parsePlayRoute } from "../routes";
@@ -98,15 +102,25 @@ function Routes() {
   return route ? <PlayerRouteView key={hash} {...route} /> : <p>{hash}</p>;
 }
 
-async function renderPlayer(gateway: SessionGateway, engine: FakePlayerEngine, services: Partial<PlayerServices> = {}) {
+async function renderPlayer(
+  gateway: SessionGateway,
+  engine: FakePlayerEngine,
+  services: Partial<PlayerServices> = {},
+  modes?: Partial<SkipModes>,
+) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const store = new MemoryPreferenceStore();
+  store.update("skipModes", { intro: "button", credits: "button", ...modes });
+  const preferences = { streamingLimits: new MemoryStreamingLimits(), continueWindow: continueWindowOf(store), skipModes: skipModesOf(store) };
   render(
     <QueryClientProvider client={client}>
       <SessionProvider createGateway={() => gateway}>
-        <PlayerServicesProvider services={{ engine, ...services }}>
-          <SignIn gateway={gateway} />
-          <Router />
-        </PlayerServicesProvider>
+        <PreferencesProvider preferences={preferences}>
+          <PlayerServicesProvider services={{ engine, ...services }}>
+            <SignIn gateway={gateway} />
+            <Router />
+          </PlayerServicesProvider>
+        </PreferencesProvider>
       </SessionProvider>
     </QueryClientProvider>,
   );
@@ -319,6 +333,23 @@ describe("Auto-play the next episode", () => {
       fireEvent.click(screen.getByRole("button", { name: "Hide" }));
     });
     expect(screen.queryByRole("button", { name: "Skip credits" })).not.toBeInTheDocument();
+  });
+
+  it.each(["auto", "none"] as const)("keeps Up Next at the credits and never seeks past them with Credits set to %s", async (credits) => {
+    const gateway = fakeGateway([episode("e1", "Pilot")], second, {
+      createPlaybackPlan: vi.fn(async (item: LibraryItem) => ({ ...plan(item.id, "play-e1-1"), hasSegments: true })),
+      mediaSegments: vi.fn().mockResolvedValue([{ kind: "Outro", startSeconds: 1000, endSeconds: 1200 }]),
+    });
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine, {}, { credits });
+    await loadedAt(engine, 500);
+    await waitFor(() => expect(gateway.mediaSegments).toHaveBeenCalled());
+    await act(async () => undefined);
+
+    await moveTo(engine, 1010);
+    expect(await screen.findByLabelText("Up next")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Skip credits" })).not.toBeInTheDocument();
+    expect(engine.seek).not.toHaveBeenCalled();
   });
 
   it("goes straight to the next episode when the file ends", async () => {
@@ -720,5 +751,48 @@ describe("Leaving does not wait for playstate reports", () => {
     });
     await waitFor(() => expect(window.location.hash).toBe("#/next/item/e1"));
     expect(engine.stop).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("Skip modes", () => {
+  const segmentsGateway = () => fakeGateway([episode("e1", "Pilot")], undefined, {
+    createPlaybackPlan: vi.fn(async (item: LibraryItem) => ({ ...plan(item.id, "play-e1-1"), hasSegments: true })),
+    mediaSegments: vi.fn().mockResolvedValue([{ kind: "Intro", startSeconds: 10, endSeconds: 70 }]),
+  });
+
+  it("Skip automatically seeks past the intro once, says so, and never shows a button", async () => {
+    const gateway = segmentsGateway();
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine, {}, { intro: "auto" });
+    await loadedAt(engine, 0);
+    await waitFor(() => expect(gateway.mediaSegments).toHaveBeenCalled());
+    await act(async () => undefined);
+
+    await moveTo(engine, 30);
+    await waitFor(() => expect(engine.seek).toHaveBeenCalledWith(70));
+    expect(await screen.findByText("Skipped intro")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Skip intro" })).not.toBeInTheDocument();
+
+    await moveTo(engine, 30);
+    await act(async () => undefined);
+    expect(engine.seek).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("button", { name: "Skip intro" })).not.toBeInTheDocument();
+  });
+
+  it("Do nothing shows no button and the s key does not seek", async () => {
+    const gateway = segmentsGateway();
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine, {}, { intro: "none" });
+    await loadedAt(engine, 0);
+    await waitFor(() => expect(gateway.mediaSegments).toHaveBeenCalled());
+    await act(async () => undefined);
+
+    await moveTo(engine, 30);
+    await act(async () => undefined);
+    expect(screen.queryByRole("button", { name: "Skip intro" })).not.toBeInTheDocument();
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "s" });
+    });
+    expect(engine.seek).not.toHaveBeenCalled();
   });
 });

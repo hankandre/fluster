@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   continueWindowOf,
+  skipModesOf,
   DEFAULT_PREFERENCES,
   MemoryPreferenceStore,
   parseStoredPreferences,
@@ -17,12 +18,13 @@ describe("preference store", () => {
     expect(sanitizePreferences(null)).toEqual(DEFAULT_PREFERENCES);
     expect(sanitizePreferences(5)).toEqual(DEFAULT_PREFERENCES);
     expect(sanitizePreferences([])).toEqual(DEFAULT_PREFERENCES);
-    expect(sanitizePreferences({ streamingLimits: 5 })).toEqual({ streamingLimits: {}, continueWindow: "14" });
+    expect(sanitizePreferences({ streamingLimits: 5 })).toEqual({ streamingLimits: {}, continueWindow: "14", skipModes: { intro: "button", credits: "button" } });
     expect(sanitizePreferences({ streamingLimits: { localMbps: 7, remoteMbps: 4 } })).toEqual({
       streamingLimits: { remoteMbps: 4 },
       continueWindow: "14",
+      skipModes: { intro: "button", credits: "button" },
     });
-    expect(sanitizePreferences({ streamingLimits: {}, other: 1 })).toEqual({ streamingLimits: {}, continueWindow: "14" });
+    expect(sanitizePreferences({ streamingLimits: {}, other: 1 })).toEqual({ streamingLimits: {}, continueWindow: "14", skipModes: { intro: "button", credits: "button" } });
   });
 
   it("reads a stored record only at version 1", () => {
@@ -30,7 +32,7 @@ describe("preference store", () => {
     expect(parseStoredPreferences({ streamingLimits: limits })).toEqual(DEFAULT_PREFERENCES);
     expect(parseStoredPreferences({ version: 2, streamingLimits: limits })).toEqual(DEFAULT_PREFERENCES);
     expect(parseStoredPreferences({ version: "1", streamingLimits: limits })).toEqual(DEFAULT_PREFERENCES);
-    expect(parseStoredPreferences({ version: 1, streamingLimits: limits })).toEqual({ streamingLimits: limits, continueWindow: "14" });
+    expect(parseStoredPreferences({ version: 1, streamingLimits: limits })).toEqual({ streamingLimits: limits, continueWindow: "14", skipModes: { intro: "button", credits: "button" } });
   });
 
   it("notifies once after an update, once get() returns it, until unsubscribed", () => {
@@ -69,5 +71,30 @@ describe("preference store", () => {
     window.set("nope" as never);
     expect(store.get().continueWindow).toBe("14");
     expect(seen).toEqual(["30", "14"]);
+  });
+
+  it("defaults both skip modes to a button and reads each field on its own", () => {
+    expect(DEFAULT_PREFERENCES.skipModes).toEqual({ intro: "button", credits: "button" });
+    expect(sanitizePreferences({ skipModes: { intro: "auto", credits: 7 } }).skipModes).toEqual({ intro: "auto", credits: "button" });
+    expect(sanitizePreferences({ skipModes: { intro: "AUTO", credits: "none" } }).skipModes).toEqual({ intro: "button", credits: "none" });
+    expect(sanitizePreferences({ skipModes: "auto" }).skipModes).toEqual({ intro: "button", credits: "button" });
+    expect(sanitizePreferences({ continueWindow: "7" })).toMatchObject({ continueWindow: "7", skipModes: { intro: "button", credits: "button" } });
+  });
+
+  it("gives the skip modes as a store that writes one kind and keeps the other", () => {
+    const store = new MemoryPreferenceStore();
+    const modes = skipModesOf(store);
+    const seen: unknown[] = [];
+    modes.subscribe(() => seen.push(modes.get()));
+    modes.set("intro", "auto");
+    modes.set("credits", "none");
+    modes.set("intro", "nope" as never);
+    expect(modes.get()).toBe(modes.get());
+    expect(store.get().skipModes).toEqual({ intro: "button", credits: "none" });
+    expect(seen).toEqual([
+      { intro: "auto", credits: "button" },
+      { intro: "auto", credits: "none" },
+      { intro: "button", credits: "none" },
+    ]);
   });
 });

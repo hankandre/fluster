@@ -35,3 +35,8 @@ export const AUDIO_PICK_NOT_APPLIED_COPY = "Couldn't switch to the audio track y
 export function conversionCopy(chip: string, subtitlesBurnedIn: boolean): string {
   return subtitlesBurnedIn ? `${chip} \u00b7 ${BURNED_IN_COPY}` : chip;
 }
+
+// The line shown after Skip automatically seeks past a segment.
+export function skippedCopy(kind: "Intro" | "Outro"): string {
+  return kind === "Intro" ? "Skipped intro" : "Skipped credits";
+}

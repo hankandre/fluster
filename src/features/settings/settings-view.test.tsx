@@ -8,7 +8,7 @@ import { PreferencesProvider } from "../../app/preferences";
 import { SessionProvider, useSession, type SessionGateway } from "../../app/session";
 import type { PlayerCapabilities } from "../../domain/playback";
 import type { ServerConnection } from "../../domain/server-connection";
-import { continueWindowOf, MemoryPreferenceStore } from "../../lib/preference-store";
+import { continueWindowOf, MemoryPreferenceStore, skipModesOf } from "../../lib/preference-store";
 import { MemoryStreamingLimits } from "../../lib/streaming-limits";
 import { FakePlayerEngine } from "../../test/fake-player-engine";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
@@ -56,7 +56,7 @@ async function renderSettings({ store = new MemoryStreamingLimits(), preferenceS
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <ToastProvider>
         <SessionProvider createGateway={() => sessionGateway}>
-          <PreferencesProvider preferences={{ streamingLimits: store, continueWindow: continueWindowOf(preferenceStore) }}>{tree}</PreferencesProvider>
+          <PreferencesProvider preferences={{ streamingLimits: store, continueWindow: continueWindowOf(preferenceStore), skipModes: skipModesOf(preferenceStore) }}>{tree}</PreferencesProvider>
         </SessionProvider>
       </ToastProvider>
     </QueryClientProvider>,
@@ -183,6 +183,48 @@ it("saves the window, confirms with the recorded toast, and says nothing when it
   const set = vi.spyOn(preferenceStore, "update");
   await choose(trigger(), "7 days");
   expect(set).not.toHaveBeenCalled();
+});
+
+// Skip modes
+
+const intros = () => screen.getByRole("button", { name: /^What happens at an intro/ });
+const credits = () => screen.getByRole("button", { name: /^What happens at the credits/ });
+
+it("offers Intros and Credits in Playback after the limits and before Audio passthrough, defaulting to a Skip button", async () => {
+  const { container } = await renderSettings();
+  const panel = screen.getByRole("tabpanel");
+  const text = panel.textContent ?? "";
+  expect(text.indexOf("Remote")).toBeLessThan(text.indexOf("Intros"));
+  expect(text.indexOf("Intros")).toBeLessThan(text.indexOf("Credits"));
+  expect(text.indexOf("Credits")).toBeLessThan(text.indexOf("Audio passthrough"));
+  expect(intros()).toHaveTextContent("Show a Skip button");
+  expect(credits()).toHaveTextContent("Show a Skip button");
+  expect(intros()).toHaveAccessibleDescription("When the server has marked an intro.");
+  expect(credits()).toHaveAccessibleDescription("When the server has marked the credits. If a next episode is ready, Up Next shows instead.");
+  await userEvent.setup().click(intros());
+  expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual(["Show a Skip button", "Skip automatically", "Do nothing"]);
+  expect(container.querySelector("select")).toBeNull();
+});
+
+it("saves a skip mode, confirms with a toast, keeps the other kind, and says nothing when unchanged", async () => {
+  const { preferenceStore } = await renderSettings();
+  await choose(intros(), "Skip automatically");
+  expect(preferenceStore.get().skipModes).toEqual({ intro: "auto", credits: "button" });
+  expect(await screen.findByText("Intros: Skip automatically.")).toBeInTheDocument();
+  await choose(credits(), "Do nothing");
+  expect(preferenceStore.get().skipModes).toEqual({ intro: "auto", credits: "none" });
+  expect(await screen.findByText("Credits: Do nothing.")).toBeInTheDocument();
+  const update = vi.spyOn(preferenceStore, "update");
+  await choose(credits(), "Do nothing");
+  expect(update).not.toHaveBeenCalled();
+});
+
+it("shows a saved skip mode again on a remount", async () => {
+  const preferenceStore = new MemoryPreferenceStore();
+  preferenceStore.update("skipModes", { intro: "none", credits: "auto" });
+  await renderSettings({ preferenceStore });
+  expect(intros()).toHaveTextContent("Do nothing");
+  expect(credits()).toHaveTextContent("Skip automatically");
 });
 
 // Unavailable rows and Subtitles

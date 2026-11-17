@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { usePlayerServices, type PlayerServices } from "../../app/player-services";
 import { useOptionalPreferences } from "../../app/preferences";
 import { useSession, type SessionGateway } from "../../app/session";
 import { PlayerView } from "./player-screen";
+import { DEFAULT_SKIP_MODES, offeredSegments } from "../../domain/media-segments";
 import { ItemNotFoundError, type ItemDetail, type NextEpisode } from "../../domain/catalog";
 import { imageUrlFor, WIDE_IMAGE_WIDTH } from "../card-view";
 import { detailKey } from "../detail/detail-key";
@@ -38,6 +39,15 @@ export function PlayerFeatureView() {
     </main>
   );
 }
+
+// The viewer's skip modes; the defaults when no preferences are provided.
+function useSkipModes() {
+  const store = useOptionalPreferences()?.skipModes;
+  return useSyncExternalStore(store?.subscribe ?? NO_SUBSCRIPTION, store?.get ?? defaultSkipModes);
+}
+
+const NO_SUBSCRIPTION = () => () => undefined;
+const defaultSkipModes = () => DEFAULT_SKIP_MODES;
 
 // #/next/play/<itemId>: loads the item, then plays it. Leaving returns to the
 // item's detail view (see leavePlayer).
@@ -198,7 +208,9 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
   const needsServerName = Boolean(playback.state.errorKind) || Boolean(playback.state.reportingWarning);
   const serverName = useServerName(gateway, needsServerName);
 
-  const offeredSegments = next ? segments.filter((segment) => segment.kind !== "Outro") : segments;
+  const skipModes = useSkipModes();
+  const hasNext = Boolean(next);
+  const offered = useMemo(() => offeredSegments(segments, skipModes, hasNext), [segments, skipModes, hasNext]);
   const showCard = Boolean(next) && upNext.secondsLeft !== undefined && !playback.state.error;
 
   const backToDetails = async () => {
@@ -238,7 +250,8 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
         player={player.engine}
         session={playback.state}
         status={status}
-        segments={offeredSegments}
+        segments={offered.button}
+        autoSkipSegments={offered.auto}
         retrying={playback.retrying}
         onRetry={playback.retry}
         onBack={playback.back}

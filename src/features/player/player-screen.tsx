@@ -12,6 +12,7 @@ import { InfoSheet, type PlayOriginalState } from "./chrome/info-sheet";
 import { AUDIO_PICK_NOT_APPLIED_COPY, conversionCopy } from "./chrome/osd-copy";
 import { OSD_NOTICE_MS } from "./chrome/timing";
 import { Osd } from "./chrome/osd";
+import { useAutoSkip } from "./use-auto-skip";
 import { CommandErrorPanel, PlayerWarnings } from "./chrome/player-error";
 import { PlayerLoading, type LoadingBackdrop } from "./chrome/player-loading";
 import { PlayerStatus } from "./chrome/player-status";
@@ -49,6 +50,7 @@ export function PlayerView({
   session,
   status,
   segments,
+  autoSkipSegments,
   serverName = UNKNOWN_SERVER_NAME,
   retrying,
   onRetry,
@@ -75,6 +77,8 @@ export function PlayerView({
   status: ReadyPlayerStatus;
   // Intro and outro segments to offer a skip button for. Empty or absent shows none.
   segments?: MediaSegment[];
+  // Segments to seek past without a button (Skip automatically). Empty or absent skips none.
+  autoSkipSegments?: MediaSegment[];
   // The server's display name for error copy.
   serverName?: string;
   retrying?: boolean;
@@ -186,6 +190,14 @@ export function PlayerView({
     focusChromeControl(region.current, target);
   }, [wakeChrome]);
   const skip = segments && snapshot ? activeSegment(segments, snapshot.positionSeconds) : undefined;
+  useAutoSkip({
+    itemId: item.id,
+    segments: autoSkipSegments,
+    positionSeconds: snapshot?.positionSeconds,
+    ready: session.firstFrameReady && !sessionError,
+    seek: (seconds) => execute(() => player.seek(seconds)),
+    showOsd: osd.show,
+  });
 
   // A failed session replaces the chrome with a notice, so any open sheet closes.
   useEffect(() => {

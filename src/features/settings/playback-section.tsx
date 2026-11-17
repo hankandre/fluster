@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { usePreferences } from "../../app/preferences";
 import { isLimitChoice, STREAMING_LIMIT_CHOICES_MBPS, type StreamingLimits } from "../../lib/streaming-limits";
+import { SkipRows } from "./skip-rows";
 import { Picker, SettingsRow, SettingsSection, useSettingsRow, useToast, type PickerOption } from "../shared/ui";
 
 const NO_LIMIT = "none";
@@ -41,6 +42,7 @@ export function PlaybackSection() {
       <SettingsRow label="Remote" description="Servers on the internet.">
         <LimitPicker label="Remote maximum bitrate" value={limits.remoteMbps} onChange={(raw) => change("remoteMbps", raw)} />
       </SettingsRow>
+      <SkipRows />
       <SettingsRow label="Audio passthrough" unavailable="P5-03" />
     </SettingsSection>
   );

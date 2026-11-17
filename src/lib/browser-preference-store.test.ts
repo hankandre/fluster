@@ -6,7 +6,7 @@ import {
   preferences,
   streamingLimits,
 } from "./browser-preference-store";
-import { streamingLimitsOf } from "./preference-store";
+import { skipModesOf, streamingLimitsOf } from "./preference-store";
 
 const CANARY = "CANARY-7f3a9c1e5b";
 
@@ -30,7 +30,7 @@ describe("browser preference store", () => {
     store.update("accessToken" as never, CANARY as never);
     const raw = window.localStorage.getItem(KEY)!;
     expect(raw).not.toContain(CANARY);
-    expect(JSON.parse(raw)).toEqual({ version: 1, streamingLimits: { localMbps: 40, remoteMbps: 8 }, continueWindow: "14" });
+    expect(JSON.parse(raw)).toEqual({ version: 1, streamingLimits: { localMbps: 40, remoteMbps: 8 }, continueWindow: "14", skipModes: { intro: "button", credits: "button" } });
     expect(limitsOf(new BrowserPreferenceStore()).get()).toEqual({ localMbps: 40, remoteMbps: 8 });
   });
 
@@ -93,6 +93,7 @@ describe("migrating the streaming limits", () => {
       version: 1,
       streamingLimits: { localMbps: 40, remoteMbps: 8 },
       continueWindow: "14",
+      skipModes: { intro: "button", credits: "button" },
     });
     expect(window.localStorage.getItem(LEGACY)).toBeNull();
     expect(limitsOf(new BrowserPreferenceStore()).get()).toEqual({ localMbps: 40, remoteMbps: 8 });
@@ -138,5 +139,21 @@ describe("migrating the streaming limits", () => {
     expect(new BrowserPreferenceStore().get().continueWindow).toBe("7");
     window.localStorage.setItem(KEY, JSON.stringify({ version: 1, continueWindow: "99" }));
     expect(new BrowserPreferenceStore().get().continueWindow).toBe("14");
+  });
+
+  it("stores the skip modes, and a record written before them reads its other fields unchanged", () => {
+    const store = new BrowserPreferenceStore();
+    store.update("skipModes", { intro: "auto", credits: "none" });
+    expect(JSON.parse(window.localStorage.getItem(KEY)!)).toMatchObject({ version: 1, skipModes: { intro: "auto", credits: "none" } });
+    expect(new BrowserPreferenceStore().get().skipModes).toEqual({ intro: "auto", credits: "none" });
+    // A read that parses storage again still gives the same object, as useSyncExternalStore needs.
+    const view = skipModesOf(store);
+    expect(view.get()).toBe(view.get());
+    window.localStorage.setItem(KEY, JSON.stringify({ version: 1, streamingLimits: { localMbps: 20 }, continueWindow: "30" }));
+    expect(new BrowserPreferenceStore().get()).toEqual({
+      streamingLimits: { localMbps: 20 },
+      continueWindow: "30",
+      skipModes: { intro: "button", credits: "button" },
+    });
   });
 });
