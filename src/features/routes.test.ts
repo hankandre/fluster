@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { waitFor } from "@testing-library/react";
-import { collectionRoute, itemRoute, leavePlayer, leaveToDetails, libraryRoute, openPlayer, parseCollectionRoute, parseItemRoute, parseLibraryRoute, parsePlayRoute, playRoute, replaceRoute, ROUTE_REPLACED_EVENT } from "./routes";
+import { collectionRoute, FEATURE_INDEX_LINKS, FEATURE_INDEX_ROUTE, GALLERY_ROUTE, HOME_ROUTE, isAppHash, isOpenRoute, isPlayerHash, itemRoute, parseAppRoute, searchResultsRoute, SEARCH_ROUTE, SETTINGS_ROUTE, seriesRoute, SIGN_IN_ROUTE, leavePlayer, leaveToDetails, libraryRoute, openPlayer, parseCollectionRoute, parseItemRoute, parseLibraryRoute, parsePlayRoute, playRoute, replaceRoute, ROUTE_REPLACED_EVENT } from "./routes";
 
 describe("play route", () => {
   it("round-trips the item, version, and start position", () => {
@@ -206,5 +206,77 @@ describe("replaceRoute", () => {
     replaceRoute("#/next/browse/lib-1");
     window.removeEventListener(ROUTE_REPLACED_EVENT, heard);
     expect(heard).not.toHaveBeenCalled();
+  });
+});
+
+describe("route table", () => {
+  it.each([
+    [FEATURE_INDEX_ROUTE, "#/next"],
+    [SIGN_IN_ROUTE, "#/next/sign-in"],
+    [HOME_ROUTE, "#/next/home"],
+    [SEARCH_ROUTE, "#/next/search"],
+    [SETTINGS_ROUTE, "#/next/settings"],
+    [GALLERY_ROUTE, "#/next/gallery"],
+    [searchResultsRoute("a b"), "#/next/search/a%20b"],
+    [itemRoute("a/b"), "#/next/item/a%2Fb"],
+    [seriesRoute("s1"), "#/next/series/s1"],
+    [libraryRoute("lib-1"), "#/next/browse/lib-1"],
+    [collectionRoute("box-1"), "#/next/collection/box-1"],
+  ])("builds %s", (built, literal) => {
+    expect(built).toBe(literal);
+  });
+
+  it("links the developer index to routes that exist", () => {
+    expect(FEATURE_INDEX_LINKS.map((link) => link.name)).toEqual(["sign-in", "home", "search", "settings"]);
+    for (const link of FEATURE_INDEX_LINKS) expect(parseAppRoute(link.href)).toBeDefined();
+  });
+
+  it("tells app hashes and player hashes apart", () => {
+    expect(isAppHash("#/next")).toBe(true);
+    expect(isAppHash("#/next/home")).toBe(true);
+    expect(isAppHash("#/nextly")).toBe(false);
+    expect(isAppHash("")).toBe(false);
+    expect(isPlayerHash("#/next/play/m1")).toBe(true);
+    expect(isPlayerHash("#/next/player")).toBe(false);
+  });
+});
+
+describe("parseAppRoute", () => {
+  it.each([
+    ["#/next", { kind: "feature-index" }],
+    ["#/next/sign-in", { kind: "sign-in" }],
+    ["#/next/gallery", { kind: "gallery" }],
+    ["#/next/home", { kind: "home" }],
+    ["#/next/settings", { kind: "settings" }],
+    ["#/next/search", { kind: "search" }],
+    ["#/next/search/dune", { kind: "search", term: "dune" }],
+    ["#/next/item/m1", { kind: "item", itemId: "m1" }],
+    ["#/next/item/m1?x", { kind: "item", itemId: "m1?x" }],
+    ["#/next/series/s%201", { kind: "series", seriesId: "s 1" }],
+    ["#/next/browse/lib-1", { kind: "library", libraryId: "lib-1", filters: [] }],
+    ["#/next/collection/box-1", { kind: "collection", collectionId: "box-1", filters: [] }],
+    ["#/next/play/m1", { kind: "play", itemId: "m1", mediaSourceId: undefined, startTicks: 0 }],
+  ])("reads %s", (hash, route) => {
+    expect(parseAppRoute(hash)).toEqual(route);
+  });
+
+  it("keeps the source and audio of a play route", () => {
+    expect(parseAppRoute("#/next/play/m1?source=s1&audio=2&start=5")).toEqual({
+      kind: "play", itemId: "m1", mediaSourceId: "s1", startTicks: 5, audioStreamIndex: 2,
+    });
+  });
+
+  it.each([
+    "#/next/detail", "#/next/player", "#/next/item/", "#/next/item/a/b", "#/next/item/%E0%A4%A", "#/next/browse/",
+    "#/next/play/", "#/next/play/m1?start=x", "#/next/unknown/x", "#/next/series",
+  ])("does not read %s", (hash) => {
+    expect(parseAppRoute(hash)).toBeUndefined();
+  });
+
+  it("opens only the sign-in, gallery, and developer index routes", () => {
+    const open = ["#/next", "#/next/sign-in", "#/next/gallery"];
+    const guarded = ["#/next/home", "#/next/settings", "#/next/search", "#/next/search/x", "#/next/play/m1", "#/next/browse/l", "#/next/collection/c", "#/next/item/i", "#/next/series/s"];
+    for (const hash of open) expect(isOpenRoute(parseAppRoute(hash)!)).toBe(true);
+    for (const hash of guarded) expect(isOpenRoute(parseAppRoute(hash)!)).toBe(false);
   });
 });

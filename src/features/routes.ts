@@ -1,12 +1,46 @@
 import type { BrowseFilter, MediaCard } from "../domain/catalog";
 import { DEFAULT_LIBRARY_SORT, LIBRARY_FILTERS, parseLibrarySort, type LibrarySortId } from "./browse/library-sort";
 
+// The app lives under one prefix. Every route string is spelled here and nowhere else (P2-10).
+export const FEATURE_INDEX_ROUTE = "#/next";
+export const SIGN_IN_ROUTE = "#/next/sign-in";
+export const HOME_ROUTE = "#/next/home";
+export const SEARCH_ROUTE = "#/next/search";
+export const SETTINGS_ROUTE = "#/next/settings";
+export const GALLERY_ROUTE = "#/next/gallery";
+
+const ITEM_PREFIX = "#/next/item/";
+const SERIES_PREFIX = "#/next/series/";
+
+// The search field with the results for a term.
+export function searchResultsRoute(term: string): string {
+  return `${SEARCH_ROUTE}/${encodeURIComponent(term)}`;
+}
+
+// True for the app's own hashes: the developer index and everything under it.
+export function isAppHash(hash: string): boolean {
+  return hash === FEATURE_INDEX_ROUTE || hash.startsWith(`${FEATURE_INDEX_ROUTE}/`);
+}
+
+// Routes that show the player, where the OSD speaks and no toast shows. Add any new player route here.
+export function isPlayerHash(hash: string): boolean {
+  return hash.startsWith(PLAY_PREFIX);
+}
+
+// The developer index links, in display order (browser development only).
+export const FEATURE_INDEX_LINKS: readonly { name: string; href: string }[] = [
+  { name: "sign-in", href: SIGN_IN_ROUTE },
+  { name: "home", href: HOME_ROUTE },
+  { name: "search", href: SEARCH_ROUTE },
+  { name: "settings", href: SETTINGS_ROUTE },
+];
+
 export function itemRoute(id: string): string {
-  return `#/next/item/${encodeURIComponent(id)}`;
+  return `${ITEM_PREFIX}${encodeURIComponent(id)}`;
 }
 
 export function seriesRoute(id: string): string {
-  return `#/next/series/${encodeURIComponent(id)}`;
+  return `${SERIES_PREFIX}${encodeURIComponent(id)}`;
 }
 
 const LIBRARY_PREFIX = "#/next/browse/";
@@ -158,8 +192,6 @@ export function parsePlayRoute(hash: string): PlayRoute | undefined {
   };
 }
 
-const ITEM_PREFIX = "#/next/item/";
-
 // Reads #/next/item/<itemId>. A malformed or empty id is not a route.
 export function parseItemRoute(hash: string): string | undefined {
   if (!hash.startsWith(ITEM_PREFIX)) return undefined;
@@ -201,4 +233,93 @@ export function leaveToDetails(itemId: string): void {
   const state = playerState();
   if (state.playerFromDetail === itemId && state.playerOpenedFromItem === true) window.history.back();
   else window.location.replace(itemRoute(itemId));
+}
+
+export type AppRoute =
+  | { kind: "feature-index" }
+  | { kind: "sign-in" }
+  | { kind: "gallery" }
+  | { kind: "home" }
+  | { kind: "settings" }
+  | { kind: "search"; term?: string }
+  | ({ kind: "play" } & PlayRoute)
+  | ({ kind: "library" } & LibraryRoute)
+  | ({ kind: "collection" } & CollectionRoute)
+  | { kind: "item"; itemId: string }
+  | { kind: "series"; seriesId: string };
+
+// Reads any app hash. A hash that is not a route, including a malformed id, gives undefined (Not found).
+export function parseAppRoute(hash: string): AppRoute | undefined {
+  switch (hash) {
+    case FEATURE_INDEX_ROUTE:
+      return { kind: "feature-index" };
+    case SIGN_IN_ROUTE:
+      return { kind: "sign-in" };
+    case GALLERY_ROUTE:
+      return { kind: "gallery" };
+    case HOME_ROUTE:
+      return { kind: "home" };
+    case SETTINGS_ROUTE:
+      return { kind: "settings" };
+    case SEARCH_ROUTE:
+      return { kind: "search" };
+    default:
+      break;
+  }
+  if (hash.startsWith(PLAY_PREFIX)) {
+    const route = parsePlayRoute(hash);
+    return route ? { kind: "play", ...route } : undefined;
+  }
+  if (hash.startsWith(LIBRARY_PREFIX)) {
+    const route = parseLibraryRoute(hash);
+    return route ? { kind: "library", ...route } : undefined;
+  }
+  if (hash.startsWith(COLLECTION_PREFIX)) {
+    const route = parseCollectionRoute(hash);
+    return route ? { kind: "collection", ...route } : undefined;
+  }
+  const [, , section, id, ...extra] = hash.split("/");
+  if (!id || extra.length > 0) return undefined;
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(id);
+  } catch {
+    return undefined;
+  }
+  switch (section) {
+    case "item":
+      return { kind: "item", itemId: decoded };
+    case "series":
+      return { kind: "series", seriesId: decoded };
+    case "search":
+      return { kind: "search", term: decoded };
+    default:
+      return undefined;
+  }
+}
+
+// Routes a signed-out viewer may open. Every other route sends them to sign-in.
+export const OPEN_ROUTE_KINDS = ["feature-index", "sign-in", "gallery"] as const;
+export type GuardedRouteKind = Exclude<AppRoute["kind"], (typeof OPEN_ROUTE_KINDS)[number]>;
+
+export function isOpenRoute(route: AppRoute): boolean {
+  switch (route.kind) {
+    case "feature-index":
+    case "sign-in":
+    case "gallery":
+      return true;
+    case "home":
+    case "settings":
+    case "search":
+    case "play":
+    case "library":
+    case "collection":
+    case "item":
+    case "series":
+      return false;
+    default: {
+      const unreachable: never = route;
+      return unreachable;
+    }
+  }
 }
