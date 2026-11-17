@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { usePreferences } from "../../app/preferences";
+import { COUNTDOWN_CHOICES_SECONDS } from "../../lib/preference-store";
 import { isLimitChoice, STREAMING_LIMIT_CHOICES_MBPS, type StreamingLimits } from "../../lib/streaming-limits";
 import { SkipRows } from "./skip-rows";
-import { Picker, SettingsRow, SettingsSection, useSettingsRow, useToast, type PickerOption } from "../shared/ui";
+import { Picker, SettingsRow, SettingsSection, Switch, useSettingsRow, useToast, type PickerOption } from "../shared/ui";
 
 const NO_LIMIT = "none";
 
@@ -11,12 +12,15 @@ const OPTIONS: PickerOption[] = [
   ...STREAMING_LIMIT_CHOICES_MBPS.map((mbps) => ({ value: String(mbps), label: `${mbps} Mbps` })),
 ];
 
+const COUNTDOWN_OPTIONS: PickerOption[] = COUNTDOWN_CHOICES_SECONDS.map((seconds) => ({ value: String(seconds), label: `${seconds} seconds` }));
+
 type Field = keyof StreamingLimits;
 
 const FIELD_NAME: Record<Field, string> = { localMbps: "Local network", remoteMbps: "Remote" };
 
 export function PlaybackSection() {
-  const { streamingLimits } = usePreferences();
+  const { streamingLimits, autoPlay } = usePreferences();
+  const autoPlayValue = useSyncExternalStore(autoPlay.subscribe, autoPlay.get);
   const toast = useToast();
   const [limits, setLimits] = useState<StreamingLimits>(() => streamingLimits.get());
 
@@ -31,6 +35,18 @@ export function PlaybackSection() {
     toast.show({ tone: "ok", message: choice === undefined ? `${name} limit removed.` : `${name} limit set to ${choice} Mbps.` });
   }
 
+  function toggleAutoPlay(enabled: boolean) {
+    autoPlay.set({ ...autoPlayValue, enabled });
+    toast.show({ tone: "ok", message: enabled ? "Next episodes play automatically." : "Next episodes won't play automatically." });
+  }
+
+  function changeCountdown(raw: string) {
+    const seconds = COUNTDOWN_CHOICES_SECONDS.find((choice) => String(choice) === raw);
+    if (seconds === undefined || seconds === autoPlayValue.countdownSeconds) return;
+    autoPlay.set({ ...autoPlayValue, countdownSeconds: seconds });
+    toast.show({ tone: "ok", message: `Countdown set to ${seconds} seconds.` });
+  }
+
   return (
     <SettingsSection
       title="Playback"
@@ -41,6 +57,12 @@ export function PlaybackSection() {
       </SettingsRow>
       <SettingsRow label="Remote" description="Servers on the internet.">
         <LimitPicker label="Remote maximum bitrate" value={limits.remoteMbps} onChange={(raw) => change("remoteMbps", raw)} />
+      </SettingsRow>
+      <SettingsRow label="Play next episode automatically" description="At the end of an episode, play the next one after a countdown.">
+        <AutoPlaySwitch checked={autoPlayValue.enabled} onChange={toggleAutoPlay} />
+      </SettingsRow>
+      <SettingsRow label="Countdown" description="How long Up next waits before playing.">
+        <CountdownPicker value={autoPlayValue.countdownSeconds} onChange={changeCountdown} />
       </SettingsRow>
       <SkipRows />
       <SettingsRow label="Audio passthrough" unavailable="P5-03" />
@@ -56,6 +78,27 @@ function LimitPicker({ label, value, onChange }: { label: string; value: number 
       hideLabel
       options={OPTIONS}
       value={value === undefined ? NO_LIMIT : String(value)}
+      onChange={onChange}
+      rovingItem
+      openOnArrow={false}
+      describedBy={descriptionId}
+    />
+  );
+}
+
+function AutoPlaySwitch({ checked, onChange }: { checked: boolean; onChange(checked: boolean): void }) {
+  const { descriptionId } = useSettingsRow();
+  return <Switch label="Play next episode automatically" checked={checked} onCheckedChange={onChange} rovingItem describedBy={descriptionId} />;
+}
+
+function CountdownPicker({ value, onChange }: { value: number; onChange(raw: string): void }) {
+  const { descriptionId } = useSettingsRow();
+  return (
+    <Picker
+      label="Countdown before the next episode"
+      hideLabel
+      options={COUNTDOWN_OPTIONS}
+      value={String(value)}
       onChange={onChange}
       rovingItem
       openOnArrow={false}
