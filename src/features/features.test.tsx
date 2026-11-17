@@ -38,16 +38,7 @@ it("logs out the previous gateway once when another one signs in", () => {
   expect(second.logout).not.toHaveBeenCalled();
 });
 
-it.each([
-  ["Detail", DetailView],
-  ["Player", PlayerFeatureView],
-])("renders the %s placeholder with no link to the feature index", (name, View) => {
-  render(<SessionProvider createGateway={() => stubGateway()}><View /></SessionProvider>);
-  expect(screen.getByRole("heading", { name })).toBeInTheDocument();
-  expect(screen.queryAllByRole("link").filter((link) => link.getAttribute("href") === "#/next")).toEqual([]);
-});
-
 it("lists every feature", () => {
   render(<SessionProvider createGateway={() => stubGateway()}><FeatureIndex /></SessionProvider>);
-  expect(screen.getAllByRole("link")).toHaveLength(6);
+  expect(screen.getAllByRole("link")).toHaveLength(4);
 });

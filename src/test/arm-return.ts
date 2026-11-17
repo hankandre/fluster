@@ -1,4 +1,5 @@
 import { rememberForReturn, resetFocusReturn } from "../features/shell/focus-return";
+import { itemRoute } from "../features/routes";
 
 // Leaves the current history entry from a card, as the user would, and comes back to it by a traversal, so a
 // focus return to this entry is pending. `slots` are what the screen kept for it. Call after the hash is set
@@ -22,7 +23,7 @@ export function armReturnNow(slots: Record<string, unknown> = {}, scrollY?: numb
   document.body.append(probe);
   probe.querySelector("a")?.focus();
   Object.entries(slots).forEach(([slot, value]) => rememberForReturn(slot, value));
-  window.history.pushState(null, "", "#/next/item/away");
+  window.history.pushState(null, "", itemRoute("away"));
   window.dispatchEvent(new PopStateEvent("popstate", { state: null }));
   window.dispatchEvent(new HashChangeEvent("hashchange"));
   probe.remove();

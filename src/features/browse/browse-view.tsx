@@ -7,7 +7,7 @@ import { ButtonLink, InlineError, Notice } from "../shared/ui";
 import { LibraryGrid } from "./library-grid";
 import { LibraryPage } from "./library-page";
 import { LibraryPagePending, PendingTitle } from "./library-states";
-import { libraryRoute, replaceRoute } from "../routes";
+import { HOME_ROUTE, libraryRoute, replaceRoute } from "../routes";
 import { DEFAULT_LIBRARY_SORT, type LibrarySortId } from "./library-sort";
 
 // A library: its name as the page title, then the toolbar and the grid.
@@ -50,7 +50,7 @@ function LibraryContent({ gateway, libraryId, sort, filters }: { gateway: Sessio
       <Notice
         title="This library isn't available"
         headingRef={heading}
-        actions={<ButtonLink variant="primary" href="#/next/home">Go home</ButtonLink>}
+        actions={<ButtonLink variant="primary" href={HOME_ROUTE}>Go home</ButtonLink>}
       >
         It may have been removed, or this account can't see it.
       </Notice>

@@ -7,7 +7,7 @@ import { backdropWidth, heroArtFor } from "../card-view";
 import { AmbientBackdrop } from "../shared/ambient-backdrop";
 import { Hero, MediaRow } from "../shared/ui";
 import { detailKey } from "../detail/detail-key";
-import { libraryRoute } from "../routes";
+import { libraryRoute, SIGN_IN_ROUTE } from "../routes";
 import { deferDefaultFocus } from "../shell/focus-return";
 import { HomeEmpty } from "./home-empty";
 import { HomeHero } from "./home-hero";
@@ -17,7 +17,6 @@ import { HomeRow } from "./media-row";
 import { useFocusDwell } from "./use-focus-dwell";
 import "./home.css";
 
-const SIGN_IN_ROUTE = "#/next/sign-in";
 const AMBIENT_DWELL_MS = 300;
 const AMBIENT_STRENGTH = 0.35;
 const PREFETCH_MS = 30_000;

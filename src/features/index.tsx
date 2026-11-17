@@ -1,13 +1,13 @@
-const features = ["sign-in", "home", "search", "detail", "player", "settings"];
+import { FEATURE_INDEX_LINKS } from "./routes";
 
 export function FeatureIndex() {
   return (
     <main>
       <h1>Features</h1>
       <ul>
-        {features.map((name) => (
+        {FEATURE_INDEX_LINKS.map(({ name, href }) => (
           <li key={name}>
-            <a href={`#/next/${name}`}>{name}</a>
+            <a href={href}>{name}</a>
           </li>
         ))}
       </ul>

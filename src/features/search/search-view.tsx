@@ -3,11 +3,10 @@ import { useSession } from "../../app/session";
 import { SearchBox } from "./search-box";
 import { SearchResults } from "./search-results";
 import { SearchStart } from "./search-states";
+import { SIGN_IN_ROUTE } from "../routes";
 import "./search.css";
 
-const SIGN_IN_ROUTE = "#/next/sign-in";
-
-// #/next/search shows the search field; #/next/search/<term> adds the results.
+// The search route shows the search field; the search route with a term adds the results.
 // The view keeps its instance between the two routes, so the field keeps focus and its text.
 export function SearchView({ term: routeTerm }: { term?: string }) {
   const { gateway } = useSession();

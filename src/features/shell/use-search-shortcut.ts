@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { SEARCH_ROUTE } from "../search/search-route";
+import { SEARCH_ROUTE } from "../routes";
 import { TEXT_FIELDS } from "../use-escape-key";
 
 const EDITABLE = '[contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]';

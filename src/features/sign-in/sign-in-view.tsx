@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useSession, type SessionGateway } from "../../app/session";
 import type { ServerDiscovery } from "../../domain/server-discovery";
+import { HOME_ROUTE } from "../routes";
 import { PasswordStep } from "./password-step";
 import { QuickConnectStep } from "./quick-connect-step";
 import { ServerStep } from "./server-step";
@@ -9,7 +10,6 @@ import { useServerDiscovery } from "./use-server-discovery";
 
 export { QUICK_CONNECT_POLL_MS } from "./quick-connect-step";
 
-const HOME_ROUTE = "#/next/home";
 
 // `discovery` is present only in the desktop shell. The search lives here so
 // its result survives moving between steps.

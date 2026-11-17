@@ -6,6 +6,7 @@ import { safeReason } from "./safe-reason";
 import { playbackErrorCopy } from "./error-copy";
 import type { TransportErrorKind } from "../../lib/transport-error";
 import type { LibraryItem } from "../../domain/catalog";
+import { HOME_ROUTE } from "../routes";
 
 interface Art {
   // The item title line, once the item is known.
@@ -86,7 +87,7 @@ export function ItemGoneScreen({ onBack }: { onBack(): void }) {
   return (
     <PlaybackNotice
       title="This item is no longer on the server"
-      back={{ label: "Go home", href: "#/next/home" }}
+      back={{ label: "Go home", href: HOME_ROUTE }}
       onEscape={onBack}
     >
       It may have been removed or renamed.

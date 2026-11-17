@@ -1,10 +1,10 @@
 import { useEffect, useRef } from "react";
 import { currentNavEntry } from "../shared/ui/app-nav";
 import { isTvForm } from "../shared/tv-form";
+import { HOME_ROUTE } from "../routes";
 import { isTextTarget } from "../use-escape-key";
 import { currentTvPlatform, exitRule, leaveApp } from "./leave-app";
 
-const HOME_HASH = "#/next/home";
 export const MODAL_LAYER = '[role="dialog"][aria-modal="true"], [role="alertdialog"], .ui-picker-list[role="listbox"], .ui-picker-list[role="menu"]';
 const NAV_CURRENT = 'nav[aria-label="Main"] [aria-current="page"], nav[aria-label="Main"] [data-roving-item][tabindex="0"]';
 
@@ -40,7 +40,7 @@ export function useBackKey(onConfirmLeave?: () => void): void {
         if (!isTvForm()) return;
         const nav = document.querySelector<HTMLElement>('nav[aria-label="Main"]');
         if (nav?.contains(document.activeElement)) {
-          if (hash !== HOME_HASH) return;
+          if (hash !== HOME_ROUTE) return;
           event.preventDefault();
           switch (exitRule(currentTvPlatform())) {
             case "leave":
@@ -60,7 +60,7 @@ export function useBackKey(onConfirmLeave?: () => void): void {
       }
       event.preventDefault();
       if (navigatedInApp) window.history.back();
-      else window.location.hash = HOME_HASH;
+      else window.location.hash = HOME_ROUTE;
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);

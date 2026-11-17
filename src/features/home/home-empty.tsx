@@ -3,6 +3,7 @@ import { Clapperboard } from "lucide-react";
 import type { SessionGateway } from "../../app/session";
 import { ACCOUNT_GC_TIME } from "../query-scope";
 import { ButtonLink, EmptyState } from "../shared/ui";
+import { SETTINGS_ROUTE } from "../routes";
 
 function hostOf(origin: string): string {
   try {
@@ -27,7 +28,7 @@ export function HomeEmpty({ gateway, scope }: { gateway: SessionGateway; scope: 
     <EmptyState
       icon={Clapperboard}
       title="Nothing to watch yet"
-      action={<ButtonLink variant="primary" href="#/next/settings">Open settings</ButtonLink>}
+      action={<ButtonLink variant="primary" href={SETTINGS_ROUTE}>Open settings</ButtonLink>}
     >
       {`Your libraries on ${name} don't have any movies or shows. Add media in Jellyfin, then come back.`}
     </EmptyState>
