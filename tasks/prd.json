@@ -948,10 +948,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "todo",
+          "status": "in_progress",
           "owner": null,
           "passes": false,
-          "evidence": ""
+          "evidence": "Implemented on task/P2-10 (spec docs/specs/P2-10.md): routes.ts holds every route, SignInGuard guards App routes, placeholder pages removed, dev index drops detail/player (owner option B). pnpm check passes; e2e and visual pending Ship (60-features-index baselines re-accepted from CI)."
         },
         {
           "id": "P2-11",
