@@ -2,6 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { NextEpisode } from "../../domain/catalog";
 import type { PlaybackSnapshot } from "../../domain/playback";
+import { DEFAULT_AUTO_PLAY, type AutoPlayPreference } from "../../lib/preference-store";
 import { AUTO_PLAY_SECONDS } from "./auto-play-next";
 import { useAutoPlayCountdown } from "./use-auto-play-next";
 
@@ -31,7 +32,7 @@ it("keeps counting when advance is new every render and calls only the latest on
   function freshProps() {
     const advance = vi.fn<(next: NextEpisode) => void>();
     advances.push(advance);
-    return { next, snapshot, failed: false, advance, stopAndLeave };
+    return { next, snapshot, autoPlay: DEFAULT_AUTO_PLAY, failed: false, advance, stopAndLeave };
   }
 
   const { result, rerender } = renderHook((props) => useAutoPlayCountdown(props), { initialProps: freshProps() });
@@ -56,4 +57,61 @@ it("keeps counting when advance is new every render and calls only the latest on
   expect(latestCalls[0]).toHaveBeenCalledTimes(1);
   expect(latestCalls[0]).toHaveBeenCalledWith(next);
   expect(advances[0]).not.toHaveBeenCalled();
+});
+
+function setup(autoPlay: AutoPlayPreference, position = 1180) {
+  const stopAndLeave = vi.fn(async (destination: () => void) => {
+    destination();
+    return true;
+  });
+  const advance = vi.fn<(next: NextEpisode) => void>();
+  const props = { next, snapshot: { ...snapshot, positionSeconds: position }, autoPlay, failed: false, advance, stopAndLeave };
+  return { ...renderHook(() => useAutoPlayCountdown(props)), advance, stopAndLeave };
+}
+
+it.each([5, 15] as const)("counts %i seconds, then advances once", async (seconds) => {
+  const { result, advance } = setup({ enabled: true, countdownSeconds: seconds }, 1190);
+  expect(result.current.shown).toBe(true);
+  expect(result.current.secondsLeft).toBe(seconds);
+  for (let left = seconds - 1; left >= 0; left -= 1) {
+    expect(advance).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(1000));
+    expect(result.current.secondsLeft).toBe(left);
+  }
+  await act(async () => {
+    await Promise.resolve();
+  });
+  expect(advance).toHaveBeenCalledTimes(1);
+});
+
+it("with auto-play off shows the card without a countdown and never advances by itself", async () => {
+  const { result, advance, stopAndLeave } = setup({ enabled: false, countdownSeconds: 10 });
+  expect(result.current.shown).toBe(true);
+  expect(result.current.secondsLeft).toBeUndefined();
+  act(() => vi.advanceTimersByTime(20_000));
+  await act(async () => {
+    await Promise.resolve();
+  });
+  expect(stopAndLeave).not.toHaveBeenCalled();
+  expect(advance).not.toHaveBeenCalled();
+});
+
+it("with auto-play off hides the card before the window", () => {
+  const { result } = setup({ enabled: false, countdownSeconds: 10 }, 100);
+  expect(result.current.shown).toBe(false);
+});
+
+it("with auto-play off Play now still advances once, and Hide removes the card", async () => {
+  const { result, advance } = setup({ enabled: false, countdownSeconds: 10 });
+  act(() => result.current.playNow());
+  await act(async () => {
+    await Promise.resolve();
+  });
+  expect(advance).toHaveBeenCalledTimes(1);
+  expect(advance).toHaveBeenCalledWith(next);
+
+  const hidden = setup({ enabled: false, countdownSeconds: 10 });
+  act(() => hidden.result.current.hide());
+  expect(hidden.result.current.shown).toBe(false);
+  expect(hidden.result.current.dismissed).toBe(true);
 });

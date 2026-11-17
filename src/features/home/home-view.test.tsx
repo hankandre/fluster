@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PreferencesProvider } from "../../app/preferences";
 import { SessionProvider, useSession, type SessionGateway } from "../../app/session";
-import { continueWindowOf, MemoryPreferenceStore, skipModesOf } from "../../lib/preference-store";
+import { autoPlayOf, continueWindowOf, MemoryPreferenceStore, skipModesOf } from "../../lib/preference-store";
 import { MemoryStreamingLimits } from "../../lib/streaming-limits";
 import type { ItemDetail, MediaCard } from "../../domain/catalog";
 import { FakeRealtime } from "../../test/fake-realtime";
@@ -670,7 +670,7 @@ describe("HomeView", () => {
       render(
         <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
           <SessionProvider createGateway={() => gateway}>
-            <PreferencesProvider preferences={{ streamingLimits: new MemoryStreamingLimits(), continueWindow: continueWindowOf(store), skipModes: skipModesOf(store) }}>
+            <PreferencesProvider preferences={{ streamingLimits: new MemoryStreamingLimits(), continueWindow: continueWindowOf(store), skipModes: skipModesOf(store), autoPlay: autoPlayOf(store) }}>
               <SignIn gateway={gateway} />
               <HomeView />
             </PreferencesProvider>

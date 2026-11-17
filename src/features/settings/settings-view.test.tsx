@@ -8,7 +8,7 @@ import { PreferencesProvider } from "../../app/preferences";
 import { SessionProvider, useSession, type SessionGateway } from "../../app/session";
 import type { PlayerCapabilities } from "../../domain/playback";
 import type { ServerConnection } from "../../domain/server-connection";
-import { continueWindowOf, MemoryPreferenceStore, skipModesOf } from "../../lib/preference-store";
+import { autoPlayOf, continueWindowOf, MemoryPreferenceStore, skipModesOf } from "../../lib/preference-store";
 import { MemoryStreamingLimits } from "../../lib/streaming-limits";
 import { FakePlayerEngine } from "../../test/fake-player-engine";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
@@ -56,7 +56,7 @@ async function renderSettings({ store = new MemoryStreamingLimits(), preferenceS
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <ToastProvider>
         <SessionProvider createGateway={() => sessionGateway}>
-          <PreferencesProvider preferences={{ streamingLimits: store, continueWindow: continueWindowOf(preferenceStore), skipModes: skipModesOf(preferenceStore) }}>{tree}</PreferencesProvider>
+          <PreferencesProvider preferences={{ streamingLimits: store, continueWindow: continueWindowOf(preferenceStore), skipModes: skipModesOf(preferenceStore), autoPlay: autoPlayOf(preferenceStore) }}>{tree}</PreferencesProvider>
         </SessionProvider>
       </ToastProvider>
     </QueryClientProvider>,

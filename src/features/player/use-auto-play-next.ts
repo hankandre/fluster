@@ -4,6 +4,7 @@ import type { SessionGateway } from "../../app/session";
 import type { ItemDetail, NextEpisode } from "../../domain/catalog";
 import type { MediaSegment } from "../../domain/media-segments";
 import type { PlaybackSnapshot } from "../../domain/playback";
+import { type AutoPlayPreference } from "../../lib/preference-store";
 import { scopeFor } from "../query-scope";
 import { playRoute, seriesRoute } from "../routes";
 import {
@@ -45,7 +46,10 @@ export function leaveToSeries(seriesId: string): void {
 }
 
 export interface AutoPlayCountdown {
-  // Undefined while the card is hidden.
+  // True while the card is on screen: in the end window and not hidden. With
+  // auto-play off it shows without a countdown.
+  shown: boolean;
+  // Undefined while the card is hidden, and always with auto-play off.
   secondsLeft: number | undefined;
   // True after Hide: no card and no advance for the rest of the session.
   dismissed: boolean;
@@ -56,11 +60,13 @@ export interface AutoPlayCountdown {
 // Shows the card near the end of an episode and counts down one second at a
 // time (a timeout per tick, cleared on every change). Playing counts; paused
 // holds the countdown. At zero it advances.
-export function useAutoPlayCountdown({ next, snapshot, outroStartSeconds, failed, advance, stopAndLeave }: {
+export function useAutoPlayCountdown({ next, snapshot, outroStartSeconds, autoPlay, failed, advance, stopAndLeave }: {
   next: NextEpisode | undefined;
   snapshot: PlaybackSnapshot | undefined;
   // Where the credits start, from the Outro media segment, when there is one.
   outroStartSeconds?: number;
+  // The viewer's choice, fixed for the session. Off: the card shows, nothing counts or advances.
+  autoPlay: AutoPlayPreference;
   // Any playback error or refusal: no card and no advance, so the viewer can
   // read the error and choose Retry or Back.
   failed: boolean;
@@ -73,11 +79,12 @@ export function useAutoPlayCountdown({ next, snapshot, outroStartSeconds, failed
   const position = snapshot?.positionSeconds ?? 0;
   const duration = snapshot?.durationSeconds;
   const paused = snapshot?.paused ?? false;
-  const inWindow = Boolean(next) && !failed && inEndWindow(position, duration, outroStartSeconds);
+  const inWindow = Boolean(next) && !failed && inEndWindow(position, duration, outroStartSeconds, autoPlay.countdownSeconds);
 
   useEffect(() => {
-    dispatch({ type: "window", inWindow });
-  }, [inWindow]);
+    // With auto-play off no countdown state exists: the card follows inWindow alone.
+    dispatch({ type: "window", inWindow: inWindow && autoPlay.enabled, countdownSeconds: autoPlay.countdownSeconds });
+  }, [inWindow, autoPlay.enabled, autoPlay.countdownSeconds]);
 
   const go = useCallback((destination: () => void) => {
     if (leaving.current) return;
@@ -101,7 +108,8 @@ export function useAutoPlayCountdown({ next, snapshot, outroStartSeconds, failed
   // leaves for the series page (see onLeave in the player).
   const hide = useCallback(() => dispatch({ type: "hide" }), []);
 
-  const secondsLeft = next && !failed ? state.secondsLeft : undefined;
+  const secondsLeft = next && !failed && autoPlay.enabled ? state.secondsLeft : undefined;
+  const shown = Boolean(next) && !failed && !state.dismissed && (autoPlay.enabled ? secondsLeft !== undefined : inWindow);
   useEffect(() => {
     if (secondsLeft === undefined || paused) return;
     if (secondsLeft === 0) {
@@ -112,5 +120,5 @@ export function useAutoPlayCountdown({ next, snapshot, outroStartSeconds, failed
     return () => window.clearTimeout(timer);
   }, [secondsLeft, paused, playNow]);
 
-  return { secondsLeft, dismissed: state.dismissed, playNow, hide };
+  return { shown, secondsLeft, dismissed: state.dismissed, playNow, hide };
 }
