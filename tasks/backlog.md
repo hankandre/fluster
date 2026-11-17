@@ -410,8 +410,8 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
   - The Continue watching window only affects Home and does not belong in the player sheet. Auto-play next and skip intros have no Settings rows yet (P3-23, P3-24). Once they exist they apply live, with no refresh.
   - Open design questions for the owner: which settings appear in the sheet, how it opens (button, key, TV remote), what the viewer sees during a refresh, and whether the full Settings page stays as it is.
   - Depends on P3-23 and P3-24 for the live settings. M to L.
+- `parseItemRoute` (used by `openPlayer`) drops a `?query` from an item id, but the route table keeps it as part of the id; pick one. Found in P2-10.
 
 ## P3-24 ship notes (2026-11-16)
 
 - `e2e/visual/scenarios.ts` `54c-player-auto-skip-osd` captures 150 ms after "Skipped intro" while the seek's Buffering panel is up (CI run 44016450522 shows it at all three desktop sizes). Its 500 ms delay makes the capture timing-dependent; wait for the buffering status to clear (or for playback to resume) before the screenshot. S.
-- `parseItemRoute` (used by `openPlayer`) drops a `?query` from an item id, but the route table keeps it as part of the id; pick one. Found in P2-10.
