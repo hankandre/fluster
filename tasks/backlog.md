@@ -421,3 +421,18 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 ## P3-23 ship notes (2026-11-16)
 
 - P3-23 flake: `e2e/tv/settings-languages.spec.ts:28` fails intermittently (the Audio language trigger is disabled while it loads); 1 of 5 alone with P3-23 and 2 of 10 on origin/main, so it predates the change. Wait for the trigger to enable before the key press. S.
+
+## Personal ratings and top-rated lists (owner request, 2026-11-17)
+
+- Owner: rate your own films, and get lists of your top-rated ones, "above four stars or in the top 25% of movies that they've rated". Findings from 2026-11-17 (SDK 1.0.2 and Jellyfin source):
+  - Jellyfin stores a per-user 0-10 `UserItemData.Rating`, separate from the community and critic ratings. `Likes` is derived from it: Rating >= 6.5 counts as liked, setting like stores 10, setting dislike stores 1 (`MediaBrowser.Controller/Entities/UserItemData.cs`).
+  - A rating is set with `POST /UserItems/{id}/UserData` carrying `Rating`; the server saves it (`Emby.Server.Implementations/Library/UserDataManager.cs`). Thumbs use `POST`/`DELETE /UserItems/{id}/Rating?likes=`.
+  - The server has no sort by the user's rating (`ItemSortBy` has CommunityRating, CriticRating, IsFavoriteOrLiked) and no threshold filter beyond `Likes` (>= 6.5). So "4 stars and up" (>= 8/10) and "top 25% of what you rated" must be computed in Fluster from one request for the user's rated items.
+  - Unverified: which other Jellyfin clients set a numeric rating. Fluster may be where most ratings come from.
+  - Open design questions for the owner:
+    - how you rate (5 stars, half stars, or thumbs);
+    - where you rate (the title page, and/or a prompt at the end of a film);
+    - where the lists live (a Home row, a library filter, or both);
+    - the cutoff (4 stars and up, the top 25%, or both), and a minimum number of rated titles before a top-25% list shows.
+  - Possible Jellyscale request (from:fluster): server-side sort and threshold filter by the user's own rating.
+  - M.
