@@ -1,9 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { SessionProvider, useSession, type SessionGateway } from "../app/session";
-import { DetailView } from "./detail";
 import { FeatureIndex } from "./index";
-import { PlayerFeatureView } from "./player";
 import { fakeSessionGateway } from "../test/fake-session-gateway";
 
 afterEach(cleanup);

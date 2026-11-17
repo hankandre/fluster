@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import { afterEach, describe, expect, it } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { App } from "./App";
+import type { GuardedRouteKind } from "../features/routes";
 
 afterEach(cleanup);
 
@@ -99,5 +100,43 @@ describe("App entry", () => {
     });
     expect(document.querySelectorAll(".ui-toast-region")).toHaveLength(1);
     expect(document.querySelector(".ui-toast-region")).not.toHaveTextContent("Couldn't update watched state");
+  });
+});
+
+function renderApp() {
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <App />
+    </QueryClientProvider>,
+  );
+}
+
+const GUARDED_SAMPLES: Record<GuardedRouteKind, string> = {
+  home: "#/next/home",
+  search: "#/next/search/dune",
+  settings: "#/next/settings",
+  library: "#/next/browse/lib-1",
+  collection: "#/next/collection/box-1",
+  item: "#/next/item/m1",
+  series: "#/next/series/s1",
+  play: "#/next/play/m1",
+};
+
+describe("sign-in guard", () => {
+  it.each([...Object.entries(GUARDED_SAMPLES), ["search (bare)", "#/next/search"]])("sends a signed-out viewer from the %s route to sign-in", async (_kind, hash) => {
+    window.location.hash = hash;
+    renderApp();
+    await waitFor(() => expect(window.location.hash).toBe("#/next/sign-in"));
+  });
+
+  it.each([
+    ["sign-in", "#/next/sign-in"],
+    ["gallery", "#/next/gallery"],
+    ["developer index", "#/next"],
+  ])("leaves a signed-out viewer on the %s route", async (_kind, hash) => {
+    window.location.hash = hash;
+    renderApp();
+    await screen.findByRole("main");
+    expect(window.location.hash).toBe(hash);
   });
 });

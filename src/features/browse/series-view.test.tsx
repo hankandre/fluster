@@ -73,7 +73,7 @@ async function renderSeries(gateway: SessionGateway, seriesId = "series-1", retu
     </QueryClientProvider>,
   );
   if (returning) {
-    // The signed-out view redirects to sign-in, which clears returns; come back to the series route first.
+    // Reset the entry before arming a return, so the return starts from the series route.
     window.history.replaceState(null, "", `#/next/series/${seriesId}`);
     await armReturn(returning);
   }

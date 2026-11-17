@@ -1,15 +1,10 @@
-import { useEffect, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useSession, type SessionGateway } from "../../app/session";
-import { SIGN_IN_ROUTE } from "../routes";
 import "./library.css";
 
-// The frame of a library or collection page. Signed-out visitors go to sign-in.
+// The frame of a library or collection page.
 export function LibraryPage({ children }: { children: (gateway: SessionGateway) => ReactNode }) {
   const { gateway } = useSession();
-
-  useEffect(() => {
-    if (!gateway) window.location.hash = SIGN_IN_ROUTE;
-  }, [gateway]);
 
   return <main className="library-page">{gateway ? children(gateway) : null}</main>;
 }

@@ -50,7 +50,7 @@ async function renderView(gateway: SessionGateway, term?: string, returning?: Re
     </QueryClientProvider>,
   );
   if (returning) {
-    // The signed-out view redirects to sign-in, which clears returns; come back to the route first.
+    // Reset the entry before arming a return, so the return starts from the route.
     window.history.replaceState(null, "", "#/next/search");
     armReturnNow(returning);
   }

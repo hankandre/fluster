@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ItemNotFoundError } from "../../domain/catalog";
 import { useSession, type SessionGateway } from "../../app/session";
@@ -9,15 +8,10 @@ import { DetailBackdrop } from "./detail-backdrop";
 import { detailKey } from "./detail-key";
 import { DetailLoadError, DetailSkeleton, ItemGoneNotice } from "./detail-states";
 import { useHeadingFocus } from "./use-heading-focus";
-import { SIGN_IN_ROUTE } from "../routes";
 import "./detail-page.css";
 
 export function ItemDetailView({ itemId }: { itemId: string }) {
   const { gateway } = useSession();
-
-  useEffect(() => {
-    if (!gateway) window.location.hash = SIGN_IN_ROUTE;
-  }, [gateway]);
 
   return (
     <main className="detail-page">

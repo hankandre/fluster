@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { usePlayerServices, type PlayerServices } from "../../app/player-services";
 import { useOptionalPreferences } from "../../app/preferences";
@@ -9,7 +9,7 @@ import { ItemNotFoundError, type ItemDetail, type NextEpisode } from "../../doma
 import { imageUrlFor, WIDE_IMAGE_WIDTH } from "../card-view";
 import { detailKey } from "../detail/detail-key";
 import { refreshHomeRows } from "../home";
-import { itemRoute, leavePlayer, leaveToDetails, type PlayRoute, SIGN_IN_ROUTE } from "../routes";
+import { itemRoute, leavePlayer, leaveToDetails, type PlayRoute } from "../routes";
 import { REFUSAL_COPY } from "./refusal-copy";
 import { detailArt, noticeBackdrop } from "./playback-notice";
 import { DesktopOnlyNotice, ItemGoneScreen, ItemLoadNotice, NoticePage, PlayerUnavailableNotice, RefusalNotice } from "./playback-notices";
@@ -44,10 +44,6 @@ const defaultSkipModes = () => DEFAULT_SKIP_MODES;
 export function PlayerRouteView(route: PlayRoute) {
   const { gateway } = useSession();
   const player = usePlayerServices();
-
-  useEffect(() => {
-    if (!gateway) window.location.hash = SIGN_IN_ROUTE;
-  }, [gateway]);
 
   if (!gateway) return null;
   return <PlayerGate gateway={gateway} player={player} route={route} />;

@@ -9,6 +9,7 @@ import type { ItemDetail, MediaCard } from "../../domain/catalog";
 import { FakeRealtime } from "../../test/fake-realtime";
 import { HomeView, refreshHomeRows } from "./index";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
+import { SignInGuard } from "../shell/sign-in-guard";
 
 vi.mock("./blurhash", () => ({
   blurhashToDataUrl: (hash: string) => `data:image/png;base64,${hash}`,
@@ -69,12 +70,15 @@ afterEach(cleanup);
 describe("HomeView", () => {
   it("redirects to sign-in when signed out", () => {
     const gateway = fakeGateway();
-    render(
+    const { container } = render(
       <QueryClientProvider client={new QueryClient()}>
-        <SessionProvider createGateway={() => gateway}><HomeView /></SessionProvider>
+        <SessionProvider createGateway={() => gateway}>
+          <SignInGuard hash={window.location.hash}><HomeView /></SignInGuard>
+        </SessionProvider>
       </QueryClientProvider>,
     );
     expect(window.location.hash).toBe("#/next/sign-in");
+    expect(container.querySelector("main")).toBeNull();
     expect(gateway.resumeItems).not.toHaveBeenCalled();
   });
 
