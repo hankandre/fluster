@@ -411,6 +411,8 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
   - Open design questions for the owner: which settings appear in the sheet, how it opens (button, key, TV remote), what the viewer sees during a refresh, and whether the full Settings page stays as it is.
   - Depends on P3-23 and P3-24 for the live settings. M to L.
 - `parseItemRoute` (used by `openPlayer`) drops a `?query` from an item id, but the route table keeps it as part of the id; pick one. Found in P2-10.
+- `src/features/shell/sign-in-guard.tsx` re-sets `location.hash` on every hash change while signed out, as each view did before; harmless but repeated. Found in P2-10 review (low).
+- The `60-features-index` visual baselines must be re-accepted from the PR's CI run before merge, since the developer index now shows 4 links; do not mark P2-10 passing before they land. Found in P2-10 review (low).
 
 ## P3-24 ship notes (2026-11-16)
 
