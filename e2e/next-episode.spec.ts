@@ -10,7 +10,11 @@ function source(id: string) {
     Path: `/media/${id}.mp4`,
     Protocol: "File",
     SupportsDirectPlay: true,
-    MediaStreams: [{ Index: 0, Type: "Video", Codec: "h264", DisplayTitle: "H.264", IsExternal: false, IsDefault: true, IsForced: false }],
+    MediaStreams: [
+      { Index: 0, Type: "Video", Codec: "h264", DisplayTitle: "H.264", IsExternal: false, IsDefault: true, IsForced: false },
+      { Index: 1, Type: "Audio", Codec: "aac", Language: "eng", DisplayTitle: "English AAC", Channels: 2, IsExternal: false, IsDefault: true, IsForced: false },
+      { Index: 2, Type: "Audio", Codec: "ac3", Language: "fre", DisplayTitle: "French AC3", Channels: 6, IsExternal: false, IsDefault: false, IsForced: false },
+    ],
   };
 }
 
@@ -125,19 +129,21 @@ async function mockServer(page: Page): Promise<ServerLog> {
   return log;
 }
 
-async function playFirstEpisode(page: Page) {
+async function playFirstEpisode(page: Page, route = "ep-1") {
   await page.goto("/#/next/sign-in");
   await page.getByLabel("Server URL").fill(serverUrl);
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { name: "Home" })).toBeVisible({ timeout: 8_000 });
-  await page.evaluate(() => { window.location.hash = "#/next/play/ep-1"; });
+  await page.evaluate((hash) => { window.location.hash = `#/next/play/${hash}`; }, route);
   await expect(page.getByRole("heading", { name: "Pilot", level: 1 })).toBeVisible();
 }
 
 test("the countdown near the end of an episode starts the next one with a fresh play session", async ({ page }) => {
   test.setTimeout(45_000);
   const log = await mockServer(page);
-  await playFirstEpisode(page);
+  // Episode 1 starts from a route that carries a pick, so episode 2 not carrying it is a real check.
+  await playFirstEpisode(page, "ep-1?source=src-ep-1&audio=2");
+  expect(log.playbackInfo[0].body).toMatchObject({ AudioStreamIndex: 2, MediaSourceId: "src-ep-1" });
 
   const card = page.getByLabel("Up next");
   await expect(card).toContainText("Up next · S1 · E2");
