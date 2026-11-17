@@ -394,3 +394,5 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 - `e2e/tv/detail.spec.ts`: after collapsing and expanding the subtitle list again, the test does not re-run `expectTitleSafe`. S.
 - Drop the dead `"components"` entry from the scanned directories in `src/features/sign-out-reach.test.ts:20` and the `src/components/` path in `.claude/skills/change-review/SKILL.md:22` (P2-09 removed the directory; agent-config pass).
 - `.dependency-cruiser.cjs:53-75`: the three `no-components-*` rules overlap (import into, import out of, orphan). Collapse them if one rule can cover all three; probes show each fails `lint:boundaries` today, so there is no defect. S (P2-09).
+- P17-01 recorder: add a "no matching track" cell for audio and subtitles (a chosen language the file lacks; `PlayDefaultAudioTrack: false` with no language; Smart or Always with no language). Settings shows those reads as "Set in another Jellyfin app" until recorded. S (P17-03).
+- TV Picker sheet: page-wise jumps (PageUp/PageDown or letter rows) for the 486-language list on 12.4.0 and the doubled subtitle list. S (P17-03).

@@ -1,4 +1,5 @@
 import type { BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, NextEpisode, LibraryItem, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season, SeriesNextUp } from "../domain/catalog";
+import type { AccountLanguageChange, AccountLanguageSettings } from "../domain/account-language-choices";
 import type { AccountLanguages, LanguageCulture } from "../domain/languages";
 import type { MediaSegment } from "../domain/media-segments";
 import type { HostClass } from "../domain/host-class";
@@ -47,6 +48,10 @@ export interface SessionGateway {
   itemDetail(itemId: string, signal?: AbortSignal): Promise<ItemDetail>;
   // The account's language settings, for display only.
   accountLanguages(signal?: AbortSignal): Promise<AccountLanguages>;
+  // The account's four language fields, for the Languages rows in Settings.
+  accountLanguageSettings(signal?: AbortSignal): Promise<AccountLanguageSettings>;
+  // Reads the account Configuration fresh, changes only the row's fields, and saves the whole object.
+  saveAccountLanguages(change: AccountLanguageChange): Promise<AccountLanguageSettings>;
   // The server's language table: which codes name one language.
   languageCultures(signal?: AbortSignal): Promise<LanguageCulture[]>;
   // The episode after this one in its series, or undefined for the last one.

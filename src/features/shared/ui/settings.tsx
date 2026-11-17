@@ -202,16 +202,19 @@ interface SettingsRowProps {
   children?: ReactNode;
   // The task that builds this row. The row shows disabled, with no control, until then.
   unavailable?: string;
+  // Shows the row disabled, with no control, and this text in place of "Not available yet.". For a row that
+  // exists but cannot be used, such as one the server refuses.
+  unavailableReason?: string;
 }
 
-export function SettingsRow({ label, description, value, children, unavailable }: SettingsRowProps) {
+export function SettingsRow({ label, description, value, children, unavailable, unavailableReason }: SettingsRowProps) {
   const descriptionId = useId();
-  if (unavailable) {
+  if (unavailable || unavailableReason) {
     return (
-      <div className="settings-row" aria-disabled="true" data-unbuilt={unavailable}>
+      <div className="settings-row" aria-disabled="true" {...(unavailable ? { "data-unbuilt": unavailable } : {})}>
         <div className="settings-row-text">
           <span className="settings-row-label">{label}</span>
-          <span className="settings-row-description">Not available yet.</span>
+          <span className="settings-row-description">{unavailableReason ?? "Not available yet."}</span>
         </div>
       </div>
     );

@@ -5,6 +5,7 @@ import { ItemNotFoundError } from "../../domain/catalog";
 import type { RecentPlays } from "../../domain/up-next";
 import type { PlaybackDelivery, PlaybackPlan, PlaybackPlanOptions, PlaybackSnapshot, ServerPlayMethod } from "../../domain/playback";
 import { PlaybackRefusedError, secondsToTicks } from "../../domain/playback";
+import type { AccountLanguageChange, AccountLanguageSettings } from "../../domain/account-language-choices";
 import type { AccountLanguages, LanguageCulture } from "../../domain/languages";
 import { classifyHost, type HostClass } from "../../domain/host-class";
 import type { ServerConnection } from "../../domain/server-connection";
@@ -20,7 +21,7 @@ import { stripCredentialQuery } from "./credential-query";
 import { deriveDeviceId } from "./device-id";
 import { limitIsOnlyReason } from "./client-limit";
 import { FLUSTER_PROFILE, MAX_BITRATE } from "./device-profile";
-import { toAccountLanguages, toLanguageCultures } from "./account-languages";
+import { AccountConfigurationUnreadable, isPlainRecord, toAccountLanguages, toAccountLanguageSettings, toLanguageCultures, withLanguageChange } from "./account-languages";
 import { toItemDetail } from "./item-detail";
 import { toMediaSegments, type MediaSegmentsResponse } from "./media-segments";
 import { findSessionPlayMethod, type SessionDto } from "./session-play-method";
@@ -203,6 +204,7 @@ export class JellyfinGateway {
   readonly origin: string;
   readonly hostClass: HostClass;
   private readonly plainHttp: boolean;
+  private accountWrite: Promise<unknown> = Promise.resolve();
   private transport: HttpTransport;
   private api?: Api;
   private accessToken?: string;
@@ -721,6 +723,30 @@ export class JellyfinGateway {
     this.requireSession();
     const { data } = await this.get<UserDto>("/Users/Me", { signal, timeout: CONTROL_REQUEST_TIMEOUT_MS });
     return toAccountLanguages(data);
+  }
+
+  // The account's four language fields for Settings, from GET /Users/Me.
+  async accountLanguageSettings(signal?: AbortSignal): Promise<AccountLanguageSettings> {
+    this.requireSession();
+    const { data } = await this.get<UserDto>("/Users/Me", { signal, timeout: CONTROL_REQUEST_TIMEOUT_MS });
+    return toAccountLanguageSettings(isPlainRecord(data) ? data.Configuration : undefined);
+  }
+
+  // Jellyfin replaces the whole Configuration on save (P17-01), so read it fresh, change only the row's fields,
+  // and post every other field back as read. Saves run one at a time. No signal: leaving Settings must not
+  // abandon a write half-way. The raw body stays in this method; only the four mapped fields leave it.
+  saveAccountLanguages(change: AccountLanguageChange): Promise<AccountLanguageSettings> {
+    const run = this.accountWrite.then(async () => {
+      this.requireSession();
+      const { data } = await this.get<UserDto>("/Users/Me", { timeout: CONTROL_REQUEST_TIMEOUT_MS });
+      const configuration = isPlainRecord(data) ? data.Configuration : undefined;
+      if (!isPlainRecord(configuration)) throw new AccountConfigurationUnreadable("Jellyfin returned no account configuration.");
+      const next = withLanguageChange(configuration, change);
+      await this.post("/Users/Configuration", next, { timeout: CONTROL_REQUEST_TIMEOUT_MS });
+      return toAccountLanguageSettings(next);
+    });
+    this.accountWrite = run.catch(() => undefined);
+    return run;
   }
 
   // The server's language table (GET /Localization/Cultures): which codes name the same language.

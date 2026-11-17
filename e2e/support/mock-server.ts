@@ -95,6 +95,14 @@ export interface MockOptions {
   subtitleLanguage?: string;
   // The 4K version of m1 (only) lists 52 subtitle tracks; "no-default" leaves English without the default flag.
   manySubtitles?: "default" | "no-default";
+  // POST /Users/Configuration answers 403 ("refuse") or 500 ("fail") and stores nothing.
+  configurationSave?: "refuse" | "fail";
+  // Receives every POST /Users/Configuration body, in order, as the server got it.
+  configurationLog?: Record<string, unknown>[];
+  // /Users/Me answers after this delay (the Languages loading state).
+  languagesDelayMs?: number;
+  // /Users/Me answers 500 (the Languages read-failed state).
+  languagesError?: boolean;
 }
 
 export const ticks = (seconds: number): number => Math.round(seconds * 1e7);
@@ -269,6 +277,8 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
   const notFound: string[] = [];
   // Episodes finished while this page was open (opts.finishOnStop), with the time they were finished.
   const finishedNow = new Map<string, number>();
+  // The account's Configuration. A save replaces the whole object, as Jellyfin does.
+  let configuration: Record<string, unknown> = { ...cultureConfiguration, SubtitleLanguagePreference: opts.subtitleLanguage ?? "" };
   await stubMediaElement(page, opts);
   for (const origin of [SERVER, LAN]) {
     await page.route(`${origin}/**`, async (route) => {
@@ -333,9 +343,18 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
         if (opts.flagError) return route.fulfill({ status: 500, headers: cors });
         return json({});
       }
+      if (p === "/Users/Configuration" && request.method() === "POST") {
+        if (opts.configurationSave === "refuse") return route.fulfill({ status: 403, headers: cors });
+        if (opts.configurationSave === "fail") return route.fulfill({ status: 500, headers: cors });
+        configuration = request.postDataJSON() as Record<string, unknown>;
+        opts.configurationLog?.push(configuration);
+        return route.fulfill({ status: 204, headers: cors });
+      }
       switch (p) {
         case "/Users/Me":
-          return json({ Id: "user-1", Name: "Sam", Configuration: { ...cultureConfiguration, SubtitleLanguagePreference: opts.subtitleLanguage ?? "" } });
+          if (opts.languagesDelayMs) await sleep(opts.languagesDelayMs);
+          if (opts.languagesError) return route.fulfill({ status: 500, headers: cors });
+          return json({ Id: "user-1", Name: "Sam", Configuration: configuration });
         case "/Localization/Cultures":
           return json(cultures());
         case "/System/Info/Public":

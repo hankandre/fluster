@@ -153,7 +153,10 @@ export interface PlaybackInfoResponse {
 
 // The wire shapes of GET /Users/Me and GET /Localization/Cultures. Only the fields Fluster reads.
 export interface UserConfigurationDto {
+  AudioLanguagePreference?: string | null;
+  PlayDefaultAudioTrack?: boolean;
   SubtitleLanguagePreference?: string | null;
+  SubtitleMode?: string;
   [key: string]: unknown;
 }
 export interface UserDto {
