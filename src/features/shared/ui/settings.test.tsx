@@ -166,6 +166,21 @@ describe("SettingsRow", () => {
     expect(row.querySelector("button, a, input, [tabindex]")).toBeNull();
   });
 
+  it("shows a row's own reason in place of Not available yet., with no control", () => {
+    render(
+      <SettingsSection title="Languages">
+        <SettingsRow label="Audio" unavailableReason="Your server didn't accept this change from Fluster.">
+          <button type="button">Hidden</button>
+        </SettingsRow>
+      </SettingsSection>,
+    );
+    const row = screen.getByText("Audio").closest(".settings-row")!;
+    expect(row).toHaveAttribute("aria-disabled", "true");
+    expect(row).toHaveTextContent("Your server didn't accept this change from Fluster.");
+    expect(row).not.toHaveTextContent("Not available yet.");
+    expect(row.querySelector("button, a, input, [tabindex]")).toBeNull();
+  });
+
   it("moves between row controls with ArrowDown and ArrowUp, and opens a Picker with Enter only", async () => {
     const user = userEvent.setup();
     render(<Harness />);

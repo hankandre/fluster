@@ -7,6 +7,11 @@ export function accountLanguagesKey(gateway: SessionGateway) {
   return ["account", scopeFor(gateway), "languages"] as const;
 }
 
+// The account's four language fields for the Languages rows in Settings.
+export function accountLanguageSettingsKey(gateway: SessionGateway) {
+  return ["account", scopeFor(gateway), "language-settings"] as const;
+}
+
 export function languageCulturesKey(gateway: SessionGateway) {
   return ["account", scopeFor(gateway), "cultures"] as const;
 }

@@ -89,13 +89,13 @@ function engineWith(caps: PlayerCapabilities | Error) {
 
 // Sections
 
-it("lists the five sections in order and shows each one's heading", async () => {
+it("lists the six sections in order and shows each one's heading", async () => {
   await renderSettings();
   const list = screen.getByRole("tablist", { name: "Settings sections" });
-  expect(within(list).getAllByRole("tab").map((t) => t.textContent)).toEqual(["Playback", "Home", "Subtitles", "Account", "About & diagnostics"]);
+  expect(within(list).getAllByRole("tab").map((t) => t.textContent)).toEqual(["Playback", "Home", "Languages", "Subtitles", "Account", "About & diagnostics"]);
   expect(screen.getByRole("heading", { level: 1, name: "Settings" })).toBeInTheDocument();
   expect(tab("Playback")).toHaveAttribute("aria-selected", "true");
-  for (const name of ["Playback", "Home", "Subtitles", "Account", "About & diagnostics"]) {
+  for (const name of ["Playback", "Home", "Languages", "Subtitles", "Account", "About & diagnostics"]) {
     fireEvent.click(tab(name));
     expect(screen.getByRole("heading", { level: 2, name })).toBeInTheDocument();
   }
@@ -196,16 +196,18 @@ it("shows Audio passthrough disabled in Playback", async () => {
   expect(row).toHaveAttribute("aria-disabled", "true");
 });
 
-it("shows one sentence in Subtitles with no link, no focusable element, and no server call", async () => {
-  const { gateway } = await renderSettings({ signedIn: true });
-  const calls = () => Object.values(gateway).filter((value) => vi.isMockFunction(value)).map((value) => (value as ReturnType<typeof vi.fn>).mock.calls.length);
-  const before = calls();
+it("Subtitles no longer says languages follow the account, and shows one unavailable row", async () => {
+  const { gateway, container } = await renderSettings({ signedIn: true });
+  const before = Object.values(gateway).filter((value) => vi.isMockFunction(value)).map((value) => (value as ReturnType<typeof vi.fn>).mock.calls.length);
   fireEvent.click(tab("Subtitles"));
   const panel = screen.getByRole("tabpanel");
-  expect(panel).toHaveTextContent(/^SubtitlesSubtitle languages follow your Jellyfin account; change them in Jellyfin\.$/);
+  expect(container).not.toHaveTextContent("follow your Jellyfin account");
+  expect(panel).toHaveTextContent(/^SubtitlesSubtitle styleNot available yet\.$/);
+  const row = panel.querySelector<HTMLElement>('[data-unbuilt="P5-05"]')!;
+  expect(row).toHaveAttribute("aria-disabled", "true");
   expect(panel.querySelector("a, button, input, [tabindex]:not([tabindex='-1'])")).toBeNull();
-  expect(calls()).toEqual(before);
-  expect(gateway.connect).not.toHaveBeenCalled();
+  const after = Object.values(gateway).filter((value) => vi.isMockFunction(value)).map((value) => (value as ReturnType<typeof vi.fn>).mock.calls.length);
+  expect(after).toEqual(before);
 });
 
 // Account

@@ -31,6 +31,24 @@ async function startConnect(page: Page, url: string): Promise<void> {
   await page.keyboard.press("Enter");
 }
 
+// Opens Settings > Languages and waits for both pickers to be ready.
+async function openLanguages(page: Page): Promise<void> {
+  await openSettings(page);
+  await page.getByRole("tab", { name: "Languages" }).click();
+  await page.getByRole("heading", { level: 2, name: "Languages" }).waitFor();
+}
+
+async function languagesReady(page: Page): Promise<void> {
+  await openLanguages(page);
+  await page.getByRole("button", { name: /^Audio language/ }).and(page.locator(":enabled")).waitFor();
+}
+
+// Chooses an audio language by clicking.
+async function chooseAudioFrench(page: Page): Promise<void> {
+  await page.getByRole("button", { name: /^Audio language/ }).click();
+  await page.getByRole("option", { name: "French", exact: true }).click();
+}
+
 // Moves the browser player's clock and tells the app.
 async function seekPlayerTo(page: Page, seconds: number): Promise<void> {
   await page.locator("video").evaluate((video, position) => {
@@ -508,6 +526,56 @@ export const scenarios: Scenario[] = [
     await page.getByRole("tab", { name: "Home" }).click();
     await page.getByRole("button", { name: /^How long Continue watching keeps a title/ }).click();
     await page.getByRole("listbox").waitFor();
+    await page.waitForTimeout(300);
+  } },
+  { name: "75-settings-languages", run: async (page) => {
+    await languagesReady(page);
+    await page.waitForTimeout(300);
+  } },
+  { name: "75a-settings-languages-audio-open", run: async (page) => {
+    await languagesReady(page);
+    await page.getByRole("button", { name: /^Audio language/ }).click();
+    await page.getByRole("listbox").waitFor();
+    await page.waitForTimeout(300);
+  } },
+  { name: "75b-settings-languages-subtitles-open", run: async (page) => {
+    await languagesReady(page);
+    await page.getByRole("button", { name: /^Subtitle language/ }).click();
+    await page.getByRole("listbox").waitFor();
+    await page.waitForTimeout(300);
+  } },
+  { name: "75c-settings-languages-chosen", run: async (page) => {
+    await languagesReady(page);
+    await chooseAudioFrench(page);
+    await page.getByText(/Play default audio track is off/).waitFor();
+    await page.waitForTimeout(300);
+  } },
+  { name: "75d-settings-languages-saved-toast", run: async (page) => {
+    await languagesReady(page);
+    await chooseAudioFrench(page);
+    await page.getByText("Audio set to French.").waitFor();
+    await page.waitForTimeout(400);
+  } },
+  { name: "75e-settings-languages-failed", opts: { configurationSave: "fail" }, run: async (page) => {
+    await languagesReady(page);
+    await chooseAudioFrench(page);
+    await page.getByText("Couldn't save your audio language. Try again.").waitFor();
+    await page.waitForTimeout(400);
+  } },
+  { name: "75f-settings-languages-refused", opts: { configurationSave: "refuse" }, run: async (page) => {
+    await languagesReady(page);
+    await chooseAudioFrench(page);
+    await page.getByText("Your server didn't accept this change from Fluster. Change it in Jellyfin.").first().waitFor();
+    await page.waitForTimeout(400);
+  } },
+  { name: "75g-settings-languages-read-failed", opts: { languagesError: true }, run: async (page) => {
+    await openLanguages(page);
+    await page.getByText("Couldn't load your languages.").waitFor();
+    await page.waitForTimeout(300);
+  } },
+  { name: "75h-settings-languages-loading", opts: { languagesDelayMs: 30_000 }, run: async (page) => {
+    await openLanguages(page);
+    await page.getByText("Loading").first().waitFor();
     await page.waitForTimeout(300);
   } },
   { name: "71-settings-subtitles", run: async (page) => {

@@ -52,10 +52,11 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 - the stable DeviceId
 - the access token lifecycle (hold, validate via `/Users/Me`, revoke via `/Sessions/Logout`)
 - the optional credential vault (M1)
+- the account's language settings (read and whole-object save)
 
 **Language.** Server, ServerId, User, Session, DeviceId, Access token, Quick Connect code, Server capabilities.
 
-**Code today.** `JellyfinGateway.connect/login`, `normalizeServerUrl`, `createSdkApi` in `src/lib/jellyfin/gateway.ts`; the sign-in UI in `src/features/sign-in/`; LAN discovery in `src-tauri/src/discovery.rs` (`discover_servers`), the `ServerDiscovery` port in `src/domain/server-discovery.ts`, and its desktop adapter in `src/lib/discovery/native-discovery.ts`.
+**Code today.** `JellyfinGateway.connect/login`, `JellyfinGateway.saveAccountLanguages`, `normalizeServerUrl`, `createSdkApi` in `src/lib/jellyfin/gateway.ts`; the Languages rows in `src/features/settings/languages-section.tsx`; the sign-in UI in `src/features/sign-in/`; LAN discovery in `src-tauri/src/discovery.rs` (`discover_servers`), the `ServerDiscovery` port in `src/domain/server-discovery.ts`, and its desktop adapter in `src/lib/discovery/native-discovery.ts`.
 
 **Rules.**
 - The token is held only by the gateway (and later by the Rust-owned vault). It is never in React state, Query caches, or WebView storage.

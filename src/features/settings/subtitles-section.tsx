@@ -1,6 +1,10 @@
-import { SettingsSection } from "../shared/ui";
+import { SettingsRow, SettingsSection } from "../shared/ui";
 
-// Languages come from the Jellyfin account (Q23 A). There is no link, no server read, and nothing to focus.
+// Subtitle languages are in Languages. Styling arrives with P5-05, so the one row waits (Q23 A pattern).
 export function SubtitlesSection() {
-  return <SettingsSection title="Subtitles" intro="Subtitle languages follow your Jellyfin account; change them in Jellyfin." />;
+  return (
+    <SettingsSection title="Subtitles">
+      <SettingsRow label="Subtitle style" unavailable="P5-05" />
+    </SettingsSection>
+  );
 }
