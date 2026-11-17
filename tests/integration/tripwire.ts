@@ -180,7 +180,7 @@ async function planWithAudioPick(gateway: JellyfinGateway, item: ItemDto, result
   } finally {
     transport.post = originalPost;
   }
-  if (playbackInfoRequests !== 1) fail(result, "I1", `the audio pick took ${playbackInfoRequests} PlaybackInfo requests, not one: the server converted because of the index and the guard retried`);
+  if (playbackInfoRequests !== 1) fail(result, "I1", `the audio pick took ${playbackInfoRequests} PlaybackInfo requests, not one: the guard sent a second request (the server converted because of the index, the picked track is not embedded, or the source needs the forced fallback)`);
   if (plan.delivery !== "static") fail(result, "I1", "the audio pick turned a direct play into a conversion");
   else if (plan.defaultAudioStreamIndex !== audioStreamIndex) fail(result, "playback", "the plan does not carry the picked audio track");
   return plan;
