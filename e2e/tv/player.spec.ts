@@ -212,6 +212,29 @@ test("Player: OK skips a visible Skip while the chrome is hidden", async ({ page
   await expect.poll(() => videoTime(page)).toBe(70);
 });
 
+test("Player: Skip automatically seeks past the intro with keys only and says so", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("fluster.preferences", JSON.stringify({ version: 1, skipModes: { intro: "auto", credits: "button" } }));
+  });
+  await mockPlayerServer(page, {
+    hasSegments: true,
+    segments: [{ Id: "seg-1", Type: "Intro", StartTicks: 100_000_000, EndTicks: 700_000_000 }],
+  });
+  await stubMedia(page);
+  await openArrivalTv(page);
+  await page.keyboard.press("Enter");
+  await expect(slider(page)).toBeEnabled();
+  await page.locator("video").evaluate((video: HTMLVideoElement) => {
+    video.currentTime = 30;
+    video.dispatchEvent(new Event("timeupdate"));
+  });
+  await expect.poll(() => videoTime(page)).toBe(70);
+  await expect(page.getByText("Skipped intro")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Skip intro" })).toHaveCount(0);
+  await expectNoSmallText(page);
+  await expectTitleSafe(page);
+});
+
 test("Playback notices: arrows reach Retry and Back to details; Escape leaves", async ({ page }) => {
   await mockPlayerServer(page, { disc: true });
   await openArrivalTv(page);

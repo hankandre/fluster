@@ -153,7 +153,7 @@ test("streaming limits default to no limit, apply by host class, and persist", a
 
   // Only the allowlisted preference fields are stored, never a token.
   const stored = await page.evaluate(() => window.localStorage.getItem("fluster.preferences"));
-  expect(JSON.parse(stored!)).toEqual({ version: 1, streamingLimits: { localMbps: 20, remoteMbps: 4 }, continueWindow: "14" });
+  expect(JSON.parse(stored!)).toEqual({ version: 1, streamingLimits: { localMbps: 20, remoteMbps: 4 }, continueWindow: "14", skipModes: { intro: "button", credits: "button" } });
   const legacy = await page.evaluate(() => window.localStorage.getItem("fluster.streamingLimits"));
   expect(legacy).toBeNull();
 });
@@ -213,4 +213,30 @@ test("Copy diagnostics holds versions and no server identity", async ({ page, co
   }
   expect(copied.split("\n")).toHaveLength(7);
   for (const secret of ["127.0.0.1", "Testfin", "Tester", "test-token", "play-"]) expect(copied).not.toContain(secret);
+});
+
+test("Intros and Credits default to a Skip button, change with a toast, and persist", async ({ page }) => {
+  await mockServer(page);
+  await signIn(page);
+  await openSettings(page);
+
+  const intros = page.getByRole("button", { name: /^What happens at an intro/ });
+  const credits = page.getByRole("button", { name: /^What happens at the credits/ });
+  await expect(intros).toHaveText("Show a Skip button");
+  await expect(credits).toHaveText("Show a Skip button");
+
+  await intros.click();
+  await page.getByRole("option", { name: "Skip automatically" }).click();
+  await expect(page.getByText("Intros: Skip automatically.")).toBeVisible();
+  await credits.click();
+  await page.getByRole("option", { name: "Do nothing" }).click();
+  await expect(page.getByText("Credits: Do nothing.")).toBeVisible();
+
+  await page.reload();
+  await signIn(page);
+  await openSettings(page);
+  await expect(page.getByRole("button", { name: /^What happens at an intro/ })).toHaveText("Skip automatically");
+  await expect(page.getByRole("button", { name: /^What happens at the credits/ })).toHaveText("Do nothing");
+  const stored = await page.evaluate(() => window.localStorage.getItem("fluster.preferences"));
+  expect(JSON.parse(stored!)).toMatchObject({ version: 1, skipModes: { intro: "auto", credits: "none" } });
 });

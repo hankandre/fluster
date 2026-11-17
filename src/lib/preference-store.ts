@@ -6,6 +6,7 @@
 // Rule for every field added here: it is a typed, validated value with a
 // default, and it is never a token, credential, URL, play-session ID, user
 // id, or anything derived from them (ARCHITECTURE.md I4).
+import { DEFAULT_SKIP_MODES, SKIP_MODES, type SkipMode, type SkipModes } from "../domain/media-segments";
 import { DEFAULT_CONTINUE_WINDOW, type ContinueWindow } from "../domain/up-next";
 import {
   LimitListeners,
@@ -21,11 +22,14 @@ export interface PreferenceValues {
   streamingLimits: StreamingLimits;
   // How long a title stays in Home's Continue watching row after its last play.
   continueWindow: ContinueWindow;
+  // What happens at an intro and at the credits.
+  skipModes: SkipModes;
 }
 
 export const DEFAULT_PREFERENCES: PreferenceValues = Object.freeze({
   streamingLimits: NO_STREAMING_LIMITS,
   continueWindow: DEFAULT_CONTINUE_WINDOW,
+  skipModes: DEFAULT_SKIP_MODES,
 });
 
 const CONTINUE_WINDOWS: readonly ContinueWindow[] = ["7", "14", "30", "all"];
@@ -34,12 +38,26 @@ export function sanitizeContinueWindow(value: unknown): ContinueWindow {
   return CONTINUE_WINDOWS.find((option) => option === value) ?? DEFAULT_CONTINUE_WINDOW;
 }
 
+function sanitizeSkipMode(value: unknown): SkipMode {
+  return SKIP_MODES.find((mode) => mode === value) ?? "button";
+}
+
+export function sanitizeSkipModes(value: unknown): SkipModes {
+  if (typeof value !== "object" || value === null) return DEFAULT_SKIP_MODES;
+  const record = value as Record<string, unknown>;
+  return { intro: sanitizeSkipMode(record.intro), credits: sanitizeSkipMode(record.credits) };
+}
+
 // Validates each known field on its own and falls back to its default.
 // Unknown keys are dropped.
 export function sanitizePreferences(value: unknown): PreferenceValues {
   if (typeof value !== "object" || value === null) return DEFAULT_PREFERENCES;
   const record = value as Record<string, unknown>;
-  return { streamingLimits: sanitizeLimits(record.streamingLimits), continueWindow: sanitizeContinueWindow(record.continueWindow) };
+  return {
+    streamingLimits: sanitizeLimits(record.streamingLimits),
+    continueWindow: sanitizeContinueWindow(record.continueWindow),
+    skipModes: sanitizeSkipModes(record.skipModes),
+  };
 }
 
 // For adapters reading a stored record: a version 1 object is sanitized;
@@ -108,6 +126,27 @@ export function continueWindowOf(store: PreferenceStore): ContinueWindowStore {
   return {
     get: () => store.get().continueWindow,
     set: (window) => store.update("continueWindow", sanitizeContinueWindow(window)),
+    subscribe: (listener) => store.subscribe(listener),
+  };
+}
+
+export interface SkipModeStore {
+  get(): SkipModes;
+  set(kind: keyof SkipModes, mode: SkipMode): void;
+  subscribe(listener: () => void): () => void;
+}
+
+// The skip modes view of a preference store.
+export function skipModesOf(store: PreferenceStore): SkipModeStore {
+  // A browser store parses storage on every read; a stable object keeps useSyncExternalStore from looping.
+  let last = store.get().skipModes;
+  return {
+    get: () => {
+      const next = store.get().skipModes;
+      if (next.intro !== last.intro || next.credits !== last.credits) last = next;
+      return last;
+    },
+    set: (kind, mode) => store.update("skipModes", sanitizeSkipModes({ ...store.get().skipModes, [kind]: mode })),
     subscribe: (listener) => store.subscribe(listener),
   };
 }

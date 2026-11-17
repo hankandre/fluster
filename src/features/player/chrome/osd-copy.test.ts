@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { conversionCopy, fractionCopy, seekCopy, subtitleCopy, volumeCopy } from "./osd-copy";
+import { conversionCopy, fractionCopy, seekCopy, skippedCopy, subtitleCopy, volumeCopy } from "./osd-copy";
 
 describe("osd copy", () => {
   it("writes seeks with a signed number of seconds", () => {
@@ -27,5 +27,10 @@ describe("osd copy", () => {
   it("adds the burned-in line to the conversion notice", () => {
     expect(conversionCopy("Converting on server: x", false)).toBe("Converting on server: x");
     expect(conversionCopy("Converting on server: x", true)).toBe("Converting on server: x · Subtitles are burned in");
+  });
+
+  it("says what Skip automatically skipped", () => {
+    expect(skippedCopy("Intro")).toBe("Skipped intro");
+    expect(skippedCopy("Outro")).toBe("Skipped credits");
   });
 });

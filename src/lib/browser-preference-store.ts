@@ -6,6 +6,7 @@ import {
   parseStoredPreferences,
   storedPreferences,
   continueWindowOf,
+  skipModesOf,
   streamingLimitsOf,
   type PreferenceStore,
   type PreferenceValues,
@@ -93,3 +94,4 @@ export class BrowserPreferenceStore implements PreferenceStore {
 export const preferences = new BrowserPreferenceStore();
 export const streamingLimits = streamingLimitsOf(preferences);
 export const continueWindow = continueWindowOf(preferences);
+export const skipModes = skipModesOf(preferences);

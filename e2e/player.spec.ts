@@ -306,6 +306,46 @@ test("skip buttons appear inside the intro and the credits and seek to the segme
   await expect(page.getByRole("button", { name: /Skip/ })).toHaveCount(0);
 });
 
+// Seeds the skip modes the way Settings stores them, before the app loads.
+async function seedSkipModes(page: Page, skipModes: { intro: string; credits: string }) {
+  await page.addInitScript((modes) => {
+    window.localStorage.setItem("fluster.preferences", JSON.stringify({ version: 1, skipModes: modes }));
+  }, skipModes);
+}
+
+test("Skip automatically seeks past the intro and the credits once, says so, and shows no button", async ({ page }) => {
+  await seedSkipModes(page, { intro: "auto", credits: "auto" });
+  await startWithSegments(page);
+
+  await moveTo(page, 30);
+  await expect.poll(() => currentTime(page)).toBe(70);
+  await expect(page.getByText("Skipped intro")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Skip/ })).toHaveCount(0);
+
+  // Back into the intro: no second skip and no button.
+  await moveTo(page, 30);
+  await page.waitForTimeout(300);
+  expect(await currentTime(page)).toBe(30);
+  await expect(page.getByRole("button", { name: /Skip/ })).toHaveCount(0);
+
+  await moveTo(page, 105);
+  await expect.poll(() => currentTime(page)).toBe(119);
+  await expect(page.getByText("Skipped credits")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Skip/ })).toHaveCount(0);
+});
+
+test("Do nothing offers no Skip button and does not skip", async ({ page }) => {
+  await seedSkipModes(page, { intro: "none", credits: "none" });
+  await startWithSegments(page);
+  await moveTo(page, 30);
+  await page.waitForTimeout(300);
+  expect(await currentTime(page)).toBe(30);
+  await expect(page.getByRole("button", { name: /Skip/ })).toHaveCount(0);
+  await page.keyboard.press("s");
+  await page.waitForTimeout(300);
+  expect(await currentTime(page)).toBe(30);
+});
+
 function startWithSegments(page: Page) {
   return startArrival(page, true, { hasSegments: true, segments: introAndOutro });
 }

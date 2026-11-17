@@ -449,6 +449,15 @@ export const scenarios: Scenario[] = [
     await page.getByRole("button", { name: "Skip intro" }).waitFor();
     await page.waitForTimeout(300);
   } },
+  { name: "54c-player-auto-skip-osd", opts: { segments: intro }, run: async (page) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem("fluster.preferences", JSON.stringify({ version: 1, skipModes: { intro: "auto", credits: "button" } }));
+    });
+    await play(page, "#/next/item/m4");
+    await seekPlayerTo(page, 20);
+    await page.getByRole("status", { name: "Player message" }).getByText("Skipped intro").waitFor();
+    await page.waitForTimeout(150);
+  } },
   { name: "55-player-next-episode", opts: { duration: 25, short: true }, run: async (page) => {
     await play(page, "#/next/item/ep-1");
     await page.getByRole("complementary", { name: "Up next" }).waitFor({ timeout: 8_000 });
@@ -541,6 +550,19 @@ export const scenarios: Scenario[] = [
     await page.getByRole("button", { name: /^Remote maximum bitrate/ }).click();
     await page.getByRole("option", { name: "10 Mbps", exact: true }).click();
     await page.getByText("Remote limit set to 10 Mbps.").waitFor();
+    await page.waitForTimeout(400);
+  } },
+  { name: "70d-settings-intros-open", run: async (page) => {
+    await openSettings(page);
+    await page.getByRole("button", { name: /^What happens at an intro/ }).click();
+    await page.getByRole("listbox").waitFor();
+    await page.waitForTimeout(300);
+  } },
+  { name: "70e-settings-skip-toast", run: async (page) => {
+    await openSettings(page);
+    await page.getByRole("button", { name: /^What happens at an intro/ }).click();
+    await page.getByRole("option", { name: "Skip automatically" }).click();
+    await page.getByText("Intros: Skip automatically.").waitFor();
     await page.waitForTimeout(400);
   } },
   { name: "74-settings-home", run: async (page) => {
