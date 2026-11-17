@@ -3979,7 +3979,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "2026-11-16, 10 commits on task/P17-08, rebased onto origin/main c0b7061 (P2-09: PlayerView edits moved to src/features/player/player-screen.tsx). Owner chose Wider bar for the action bar (spec decision 13, DESIGN.md 7.8, backlog d removed). Review round 1 fixed (gateway guard keeps a direct-play first answer); lows logged in plan 002. Open for Ship/Review: guardian and design review, CI baselines, PR stating acceptance 10 retry scope."
+          "evidence": "2026-11-16, 10 commits on task/P17-08, rebased onto origin/main c0b7061 (P2-09: PlayerView edits moved to src/features/player/player-screen.tsx). Owner chose Wider bar for the action bar (spec decision 13, DESIGN.md 7.8, backlog d removed). Review round 1 fixed (gateway guard keeps a direct-play first answer); lows logged in plan 002. Baselines accepted from CI run https://github.com/hankandre/fluster/actions/runs/43986222662 (PR 194; tripwire passed in that run). Retry scope stated in the PR. Still open: guardian review and fresh-context design review."
         },
         {
           "id": "P17-03",
