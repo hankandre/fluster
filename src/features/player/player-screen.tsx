@@ -225,7 +225,7 @@ export function PlayerView({
   noticeShown.current = noticeText;
   useEffect(() => {
     if (!session.firstFrameReady || !audioPickNotApplied) return;
-    const timer = window.setTimeout(() => showOsd(AUDIO_PICK_NOT_APPLIED_COPY, "notice"), noticeShown.current ? OSD_NOTICE_MS : 0);
+    const timer = window.setTimeout(() => showOsd(AUDIO_PICK_NOT_APPLIED_COPY, "audio"), noticeShown.current ? OSD_NOTICE_MS : 0);
     return () => window.clearTimeout(timer);
   }, [session.firstFrameReady, audioPickNotApplied, showOsd]);
 

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { OSD_MS, OSD_NOTICE_MS } from "./timing";
 
-export type OsdKind = "key" | "notice";
+// "notice" is the conversion line and "audio" is the audio-pick line; both use the notice slot.
+export type OsdKind = "key" | "notice" | "audio";
 
 export interface OsdMessage {
   text: string;
@@ -16,7 +17,7 @@ export interface OsdMessage {
 export function useOsd() {
   const [notice, setNotice] = useState<OsdMessage>();
   const [keyMessage, setKeyMessage] = useState<OsdMessage>();
-  const timers = useRef<Record<OsdKind, number | undefined>>({ key: undefined, notice: undefined });
+  const timers = useRef<Record<"key" | "notice", number | undefined>>({ key: undefined, notice: undefined });
   const serial = useRef(0);
 
   useEffect(() => {
@@ -28,11 +29,12 @@ export function useOsd() {
   }, []);
 
   const show = useCallback((text: string, kind: OsdKind = "key") => {
-    window.clearTimeout(timers.current[kind]);
+    const slot = kind === "key" ? "key" : "notice";
+    window.clearTimeout(timers.current[slot]);
     serial.current += 1;
-    const set = kind === "notice" ? setNotice : setKeyMessage;
+    const set = slot === "notice" ? setNotice : setKeyMessage;
     set({ text, kind, serial: serial.current });
-    timers.current[kind] = window.setTimeout(() => set(undefined), kind === "notice" ? OSD_NOTICE_MS : OSD_MS);
+    timers.current[slot] = window.setTimeout(() => set(undefined), slot === "notice" ? OSD_NOTICE_MS : OSD_MS);
   }, []);
 
   return { notice, keyMessage, show };

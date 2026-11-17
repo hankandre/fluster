@@ -19,7 +19,7 @@ afterEach(() => {
 function setup() {
   let show!: ReturnType<typeof useOsd>["show"];
   render(<Harness onShow={(value) => { show = value; }} />);
-  return { show: (text: string, kind?: "key" | "notice") => act(() => show(text, kind)) };
+  return { show: (text: string, kind?: "key" | "notice" | "audio") => act(() => show(text, kind)) };
 }
 
 describe("Osd", () => {
@@ -67,5 +67,24 @@ describe("Osd", () => {
     expect(status).not.toHaveTextContent("Muted");
     act(() => vi.advanceTimersByTime(OSD_NOTICE_MS - 1000 - OSD_MS - 100 + 50));
     expect(status).toBeEmptyDOMElement();
+  });
+
+  it("gives the audio notice its own speaker icon, not the conversion icon", () => {
+    const { show } = setup();
+    show("Converting on server: x", "notice");
+    const conversion = screen.getByText("Converting on server: x").closest("p")!;
+    const conversionIcon = conversion.querySelector("svg")!.getAttribute("class");
+    expect(conversionIcon).toContain("lucide-refresh-cw");
+    act(() => vi.advanceTimersByTime(OSD_NOTICE_MS + 10));
+
+    show("Couldn't switch to the audio track you picked. Playing the default track.", "audio");
+    const audio = screen.getByText(/audio track you picked/).closest("p")!;
+    expect(audio).toHaveAttribute("data-kind", "audio");
+    const icon = audio.querySelector("svg");
+    expect(icon).not.toBeNull();
+    expect(icon!.getAttribute("class")).toContain("lucide-volume-2");
+    expect(icon!.getAttribute("class")).not.toContain("lucide-refresh-cw");
+    act(() => vi.advanceTimersByTime(OSD_NOTICE_MS + 10));
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
   });
 });
