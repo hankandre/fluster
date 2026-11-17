@@ -97,6 +97,8 @@ export interface MockOptions {
   audioLanguage?: string;
   // The 4K version of m1 (only) lists 52 subtitle tracks; "no-default" leaves English without the default flag.
   manySubtitles?: "default" | "no-default";
+  // The 4K version of m1 and m2 opens on a long audio title: "English · Director's commentary with cast · AC-3 Stereo".
+  longAudioTitle?: boolean;
   // POST /Users/Configuration answers 403 ("refuse") or 500 ("fail") and stores nothing.
   configurationSave?: "refuse" | "fail";
   // Receives every POST /Users/Configuration body, in order, as the server got it.
@@ -197,7 +199,9 @@ function movieDto(id: string, opts: MockOptions): Dto {
     MediaSources: opts.disc && id === "m1" ? [discSource] : (m.MediaSources ?? [simpleSource(id)]).map((s: Dto) => ({
       ...(opts.manySubtitles && id === "m1" && s.Id === "src-4k"
         ? { ...s, MediaStreams: [...s.MediaStreams.filter((x: Dto) => x.Type !== "Subtitle"), ...manySubtitleStreams(opts.manySubtitles, 4)] }
-        : s),
+        : opts.longAudioTitle && (id === "m1" || id === "m2") && s.Id === "src-4k"
+          ? { ...s, MediaStreams: s.MediaStreams.map((x: Dto) => x.Index === 1 ? { ...x, Codec: "ac3", Channels: 2, Title: "Director's commentary with cast" } : x) }
+          : s),
       HasSegments: Boolean(opts.segments),
     })),
     ...(m.Trickplay && opts.trickplay ? { Trickplay: { "src-4k": { 320: { Width: 320, Height: 180, TileWidth: 5, TileHeight: 2, ThumbnailCount: 10, Interval: 738000 } } } } : {}),

@@ -203,3 +203,64 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1920, height: 108
     expect(new Set(tops).size).toBe(1);
   });
 }
+
+// P17-08, owner decision 2026-11-16: the audio pill always shows the full track label on one line; a bar that
+// cannot fit it wraps.
+const LONG_AUDIO = "English · Director's commentary with cast · AC-3 Stereo";
+for (const viewport of [{ width: 1440, height: 900 }, { width: 1920, height: 1080 }, { width: 390, height: 844 }]) {
+  test(`a long audio title shows in full and the action bar never overlaps at ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await installMockServer(page, { longAudioTitle: true });
+    await signIn(page, "#/next/item/m2");
+
+    const trigger = page.getByRole("button", { name: /^Audio/ });
+    await expect(trigger).toBeVisible();
+    const value = trigger.locator(".ui-picker-value");
+    await expect(value).toHaveText(LONG_AUDIO);
+
+    const facts = await value.evaluate((node) => {
+      const style = getComputedStyle(node);
+      const box = node.getBoundingClientRect();
+      const lineHeight = parseFloat(style.lineHeight);
+      return {
+        textOverflow: style.textOverflow,
+        overflow: style.overflow,
+        maxWidth: style.maxWidth,
+        clipped: node.scrollWidth > node.clientWidth,
+        lines: Math.round(box.height / lineHeight),
+      };
+    });
+    expect(facts.textOverflow).toBe("clip");
+    expect(facts.overflow).toBe("visible");
+    expect(facts.maxWidth).toBe("none");
+    expect(facts.clipped).toBe(false);
+    // One line whenever the label fits in the window. At 390 px it is wider than the window, so it wraps
+    // inside its pill rather than scroll the page sideways (recorded in docs/specs/P17-08.md decision 16).
+    if (viewport.width > 390) expect(facts.lines).toBe(1);
+
+    // The whole label sits inside its pill, and the pill inside the window.
+    const pill = await trigger.boundingBox();
+    const text = await value.boundingBox();
+    expect(pill && text && text.x >= pill.x && text.x + text.width <= pill.x + pill.width).toBe(true);
+    expect(pill!.x + pill!.width).toBeLessThanOrEqual(viewport.width);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+    // No two controls in the bar overlap.
+    const boxes = await page.locator(".ui-action-bar").locator("a, button").evaluateAll((nodes) => nodes.map((node) => {
+      const { left, right, top, bottom } = node.getBoundingClientRect();
+      return { left, right, top, bottom };
+    }));
+    for (let i = 0; i < boxes.length; i += 1) {
+      for (let j = i + 1; j < boxes.length; j += 1) {
+        const a = boxes[i];
+        const b = boxes[j];
+        const overlaps = a.left < b.right - 0.5 && b.left < a.right - 0.5 && a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5;
+        expect(overlaps, `controls ${i} and ${j} overlap`).toBe(false);
+      }
+    }
+    // The six controls share one row where they fit (1440 px and wider), and the bar wraps where they do not.
+    const rows = new Set(boxes.map((box) => Math.round(box.top))).size;
+    if (viewport.width > 390) expect(rows).toBe(1);
+    else expect(rows).toBeGreaterThan(1);
+  });
+}
