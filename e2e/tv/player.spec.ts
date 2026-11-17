@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mockPlayerServer } from "../support/player-server";
-import { expectNoSmallText, expectTitleSafe, openArrivalTv, stubMedia, videoTime } from "./support";
+import { expectNoSmallText, expectTitleSafe, openArrivalTv, signInTv, stubMedia, videoTime } from "./support";
 
 const chrome = (page: import("@playwright/test").Page) => page.locator(".player-chrome");
 const slider = (page: import("@playwright/test").Page) => page.getByRole("slider", { name: "Playback position" });
@@ -249,4 +249,15 @@ test("Playback notices: arrows reach Retry and Back to details; Escape leaves", 
   await expect(page.getByRole("button", { name: "Back to details" })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
+});
+
+test("Player: with auto-play off the Up next card shows and OK with the chrome hidden plays the next episode", async ({ page }) => {
+  await signInTv(page, { duration: 25, short: true, preferences: { autoPlay: { enabled: false, countdownSeconds: 10 } } }, "#/next/play/ep-1");
+  const card = page.getByRole("complementary", { name: "Up next" });
+  await expect(card).toBeVisible({ timeout: 10_000 });
+  await expect(card.getByRole("button", { name: "Play now" })).toBeVisible();
+  await expect(card.getByText(/playing in/i)).toHaveCount(0);
+  await expect(chrome(page)).toHaveAttribute("data-visible", "false", { timeout: 8_000 });
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/#\/next\/play\/ep-2$/);
 });

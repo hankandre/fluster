@@ -129,6 +129,15 @@ async function mockServer(page: Page): Promise<ServerLog> {
   return log;
 }
 
+// Seeds the auto-play preference, only when the page has no stored record yet.
+async function seedAutoPlay(page: Page, value: { enabled: boolean; countdownSeconds: 5 | 10 | 15 }) {
+  await page.addInitScript((autoPlay) => {
+    if (window.localStorage.getItem("fluster.preferences") === null) {
+      window.localStorage.setItem("fluster.preferences", JSON.stringify({ version: 1, autoPlay }));
+    }
+  }, value);
+}
+
 async function playFirstEpisode(page: Page, route = "ep-1") {
   await page.goto("/#/next/sign-in");
   await page.getByLabel("Server URL").fill(serverUrl);
@@ -225,4 +234,57 @@ test("with reduced motion the countdown is text only", async ({ page }) => {
 
   await expect(card.getByText(/^Playing in \d+ seconds?$/)).toBeVisible();
   expect(await card.locator(".up-next-fill").evaluate((element) => getComputedStyle(element).display)).toBe("none");
+});
+
+for (const seconds of [5, 15] as const) {
+  test(`the countdown of ${seconds} seconds starts the next episode with a fresh play session`, async ({ page }) => {
+    test.setTimeout(45_000);
+    await seedAutoPlay(page, { enabled: true, countdownSeconds: seconds });
+    const log = await mockServer(page);
+    await playFirstEpisode(page);
+
+    const card = page.getByLabel("Up next");
+    await expect(card.getByRole("status")).toContainText(new RegExp(`playing in ${seconds} seconds`, "i"));
+
+    await expect(page).toHaveURL(/#\/next\/play\/ep-2$/, { timeout: 25_000 });
+    await expect(page.getByRole("heading", { name: "Second", level: 1 })).toBeVisible();
+    expect(log.playbackInfo.map((entry) => entry.itemId)).toEqual(["ep-1", "ep-2"]);
+    expect(log.playbackInfo[1].body).toMatchObject({ EnableDirectPlay: true, EnableDirectStream: true, EnableTranscoding: true });
+    await expect.poll(() => log.stopped.length).toBeGreaterThanOrEqual(1);
+    expect(log.stopped[0]).toMatchObject({ PlaySessionId: "play-ep-1-1", Failed: false });
+  });
+}
+
+test("with auto-play off the card offers Play now and nothing advances", async ({ page }) => {
+  test.setTimeout(45_000);
+  await seedAutoPlay(page, { enabled: false, countdownSeconds: 10 });
+  const log = await mockServer(page);
+  await playFirstEpisode(page);
+
+  const card = page.getByLabel("Up next");
+  await expect(card.getByRole("button", { name: "Play now" })).toBeVisible();
+  await expect(card.getByRole("button", { name: "Hide" })).toBeVisible();
+  await expect(card.getByText(/playing in/i)).toHaveCount(0);
+  await expect(card.getByRole("status")).toHaveText("Up next: Second");
+
+  await page.waitForTimeout(17_000);
+  await expect(page).toHaveURL(/#\/next\/play\/ep-1$/);
+  expect(log.stopped).toHaveLength(0);
+
+  await page.locator("video").dispatchEvent("ended");
+  await expect(page).toHaveURL(/#\/next\/series\/series-1$/);
+  expect(log.playbackInfo.map((entry) => entry.itemId)).toEqual(["ep-1"]);
+});
+
+test("with auto-play off Play now starts the next episode with a fresh play session", async ({ page }) => {
+  await seedAutoPlay(page, { enabled: false, countdownSeconds: 10 });
+  const log = await mockServer(page);
+  await playFirstEpisode(page);
+
+  await page.getByLabel("Up next").getByRole("button", { name: "Play now" }).click();
+
+  await expect(page).toHaveURL(/#\/next\/play\/ep-2$/);
+  await expect.poll(() => log.playbackInfo.map((entry) => entry.itemId)).toEqual(["ep-1", "ep-2"]);
+  await expect.poll(() => log.stopped.length).toBeGreaterThanOrEqual(1);
+  expect(log.stopped[0]).toMatchObject({ PlaySessionId: "play-ep-1-1" });
 });

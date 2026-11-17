@@ -6,7 +6,7 @@ import {
   preferences,
   streamingLimits,
 } from "./browser-preference-store";
-import { skipModesOf, streamingLimitsOf } from "./preference-store";
+import { autoPlayOf, skipModesOf, streamingLimitsOf } from "./preference-store";
 
 const CANARY = "CANARY-7f3a9c1e5b";
 
@@ -195,5 +195,14 @@ describe("migrating the streaming limits", () => {
     expect(new BrowserPreferenceStore().get()).toMatchObject({ skipModes: { intro: "button", credits: "button" }, autoPlay: { enabled: false, countdownSeconds: 15 } });
     window.localStorage.setItem(KEY, JSON.stringify({ version: 1, skipModes: { intro: "auto", credits: "auto" }, autoPlay: 3 }));
     expect(new BrowserPreferenceStore().get()).toMatchObject({ skipModes: { intro: "auto", credits: "auto" }, autoPlay: { enabled: true, countdownSeconds: 10 } });
+  });
+
+  it("gives the auto-play view a stable snapshot while the values are unchanged", () => {
+    const view = autoPlayOf(new BrowserPreferenceStore());
+    expect(view.get()).toBe(view.get());
+    const before = view.get();
+    view.set({ enabled: false, countdownSeconds: 10 });
+    expect(view.get()).not.toBe(before);
+    expect(view.get()).toBe(view.get());
   });
 });

@@ -158,6 +158,37 @@ test("streaming limits default to no limit, apply by host class, and persist", a
   expect(legacy).toBeNull();
 });
 
+test("auto-play next: both rows change, confirm with toasts, and survive a reload", async ({ page }) => {
+  await mockServer(page);
+  await signIn(page);
+  await openSettings(page);
+  const autoPlay = page.getByRole("switch", { name: "Play next episode automatically" });
+  const countdown = page.getByRole("button", { name: /^Countdown before the next episode/ });
+  await expect(autoPlay).toHaveAttribute("aria-checked", "true");
+  await expect(autoPlay).toHaveText("On");
+  await expect(countdown).toHaveText("10 seconds");
+
+  await autoPlay.click();
+  await expect(page.getByText("Next episodes won't play automatically.")).toBeVisible();
+  await expect(autoPlay).toHaveAttribute("aria-checked", "false");
+  await countdown.click();
+  await page.getByRole("option", { name: "15 seconds", exact: true }).click();
+  await expect(page.getByText("Countdown set to 15 seconds.")).toBeVisible();
+
+  await page.reload();
+  await signIn(page);
+  await openSettings(page);
+  await expect(page.getByRole("switch", { name: "Play next episode automatically" })).toHaveAttribute("aria-checked", "false");
+  await expect(page.getByRole("button", { name: /^Countdown before the next episode/ })).toHaveText("15 seconds");
+  const stored = await page.evaluate(() => window.localStorage.getItem("fluster.preferences"));
+  expect(JSON.parse(stored!)).toEqual({
+    version: 1,
+    streamingLimits: {},
+    continueWindow: "14",
+    autoPlay: { enabled: false, countdownSeconds: 15 },
+  });
+});
+
 async function openSettings(page: Page) {
   await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Settings" }).click();
   await expect(page).toHaveURL(/#\/next\/settings$/);
