@@ -3976,10 +3976,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual && pnpm test:tripwire",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "2026-11-16, 10 commits on task/P17-08, rebased onto origin/main c0b7061 (P2-09: PlayerView edits moved to src/features/player/player-screen.tsx). Owner chose Wider bar for the action bar (spec decision 13, DESIGN.md 7.8, backlog d removed). Review round 1 fixed (gateway guard keeps a direct-play first answer); lows logged in plan 002. Baselines accepted from CI run https://github.com/hankandre/fluster/actions/runs/43986222662 (PR 194; tripwire passed in that run). Retry scope stated in the PR. Still open: guardian review and fresh-context design review."
+          "passes": true,
+          "evidence": "2026-11-16, 10 commits on task/P17-08, rebased onto origin/main c0b7061 (P2-09: PlayerView edits moved to src/features/player/player-screen.tsx). Owner chose Wider bar for the action bar (spec decision 13, DESIGN.md 7.8, backlog d removed). Review round 1 fixed (gateway guard keeps a direct-play first answer); lows logged in plan 002. Baselines accepted from CI run https://github.com/hankandre/fluster/actions/runs/43986222662 (PR 194; tripwire passed in that run). Retry scope stated in the PR. Still open: guardian review and fresh-context design review. | 2026-11-16 close-out: guardian review round 1 (merge, 4 lows) and round 2 on the fix commits (merge; medium ARCHITECTURE.md drift fixed in aac4f8b, comments and tripwire message corrected, remaining lows in tasks/backlog.md); fresh-context design review (3 mediums fixed: player-notice baselines 59f/59g, own audio icon, full-label rule with long-title baselines 46c/63a; owner chose two lines on phones); fix-commit review merge. CI run 44006761053 green on all jobs (frontend, rust-checks, rust-release, rust-audit, tripwire, visual, linux-wayland-beta, dependency-review); baselines accepted from run 44001319142. Retry scope (acceptance 10): only sessions that started from a pick, stated in the PR."
         },
         {
           "id": "P17-03",
