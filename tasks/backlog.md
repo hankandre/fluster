@@ -413,7 +413,7 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 
 ## P3-24 ship notes (2026-11-16)
 
-- `e2e/visual/scenarios.ts` `54c-player-auto-skip-osd` captures 150 ms after "Skipped intro" while the seek's Buffering panel is up (CI run 44016450522 shows it at all three desktop sizes). Its 500 ms delay makes the capture timing-dependent; wait for the buffering status to clear (or for playback to resume) before the screenshot. S.
+- `e2e/visual/scenarios.ts` `54c-player-auto-skip-osd` captures 150 ms after "Skipped intro" while the seek's Buffering panel is up (CI run 44016450522 shows it at all three desktop sizes). Its 500 ms delay makes the capture timing-dependent; wait for the buffering status to clear (or for playback to resume) before the screenshot. `55c-player-next-episode-autoplay-off` has the same Buffering panel in CI run 44027024212; fix both together. S.
 
 ## P3-23 ship notes (2026-11-16)
 
