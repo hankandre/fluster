@@ -948,10 +948,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "in_progress",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": "Implemented on task/P2-10 (spec docs/specs/P2-10.md): routes.ts holds every route, SignInGuard guards App routes, placeholder pages removed, dev index drops detail/player (owner option B). pnpm check passes; e2e and visual pending Ship (60-features-index baselines re-accepted from CI)."
+          "passes": true,
+          "evidence": "Implemented on task/P2-10 (spec docs/specs/P2-10.md): routes.ts holds every route, SignInGuard guards App routes, placeholder pages removed, dev index drops detail/player (owner option B). pnpm check passes locally. CI run https://github.com/hankandre/fluster/actions/runs/44023708906 (PR 198): frontend job passed including pnpm test:e2e and e2e/detail.spec.ts; the visual job failed only on the three 60-features-index captures (owner-approved exception to item 6), which were re-accepted from that run; every other baseline unchanged."
         },
         {
           "id": "P2-11",
