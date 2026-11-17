@@ -400,6 +400,8 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 - P17-08 Guardian L3: Play original after an in-mpv audio switch on a converted stream restores the first pick (`coordinator.ts:151-156`).
 - P17-08 Guardian L4: no notice when mpv's fallback track is unmapped (`coordinator.ts:380`).
 - P17-08 design lows: the selected picker row repeats the codec; the TV audio sheet is tall and mostly empty; the phone "More" button indent should be checked against the old baseline.
+- P17-08 guardian (second pass) lows: for a direct-played pick that is not an embedded track, the plan's `defaultAudioStreamIndex` is the echoed pick (fixtures show `DefaultAudioStreamIndex: 2` for pick 2), so mpv falls back to its own choice, not necessarily the file's flagged default that the notice names; set it to the source's flagged default in that branch. The visual config always starts a second Vite on port+1, so two worktrees with adjacent `FLUSTER_VISUAL_PORT`s collide. S.
+
 
 
 ## Settings in the player (owner request, 2026-11-16)
