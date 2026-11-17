@@ -1,10 +1,14 @@
-import { useId } from "react";
+import { useId, useState } from "react";
 import "./detail.css";
 
 export interface Person {
   name: string;
   role?: string;
+  imageSrc?: string;
 }
+
+// The width asked of the server for a person picture: three times the 64 px disc.
+export const PERSON_IMAGE_WIDTH = 192;
 
 // The first letters of the first and last words, upper-cased: "Amy Adams" gives "AA", "Cher" gives "C".
 export function initials(name: string): string {
@@ -15,7 +19,20 @@ export function initials(name: string): string {
   return `${first}${last}`.toUpperCase();
 }
 
-// The cast as initials cards (Q8 A). The cards are not interactive, so the grid wraps instead of scrolling.
+// The initials sit under the picture, so they show while it loads and when it fails.
+function PersonDisc({ name, imageSrc }: { name: string; imageSrc?: string }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <span className="ui-person-disc" aria-hidden="true">
+      {initials(name)}
+      {imageSrc && !failed ? (
+        <img className="ui-person-image" src={imageSrc} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} />
+      ) : null}
+    </span>
+  );
+}
+
+// The cast as picture cards with initials as the fallback; not interactive (Q8 A). So the grid wraps instead of scrolling.
 export function PersonRow({ title = "Cast", people }: { title?: string; people: Person[] }) {
   const headingId = useId();
   if (people.length === 0) return null;
@@ -25,7 +42,7 @@ export function PersonRow({ title = "Cast", people }: { title?: string; people: 
       <ul className="ui-person-row">
         {people.map((person, index) => (
           <li key={index} className="ui-person">
-            <span className="ui-person-disc" aria-hidden="true">{initials(person.name)}</span>
+            <PersonDisc key={person.imageSrc ?? ""} name={person.name} {...(person.imageSrc ? { imageSrc: person.imageSrc } : {})} />
             <span className="ui-person-name">{person.name}</span>
             {person.role ? <span className="ui-person-role">{person.role}</span> : null}
           </li>

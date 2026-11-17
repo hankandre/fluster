@@ -5,7 +5,7 @@ import type { ItemDetail } from "../../domain/catalog";
 import { imageUrlFor } from "../card-view";
 import { scopeFor } from "../query-scope";
 import { seriesRoute } from "../routes";
-import { DetailHeader, MediaBadges, PersonRow } from "../shared/ui";
+import { DetailHeader, MediaBadges, PERSON_IMAGE_WIDTH, PersonRow } from "../shared/ui";
 import type { ArtSource } from "./art-source";
 import { DetailActions, DetailMessages } from "./detail-actions";
 import { detailFacts } from "./detail-facts";
@@ -86,7 +86,13 @@ export function DetailBody({ gateway, item, onArt, headingRef }: DetailBodyProps
         headingRef={headingRef}
       />
       <div className="detail-body">
-        <PersonRow people={item.cast} />
+        <PersonRow
+          people={item.cast.map((member) => ({
+            name: member.name,
+            ...(member.role ? { role: member.role } : {}),
+            ...(member.image ? { imageSrc: imageUrl(member.image, PERSON_IMAGE_WIDTH) } : {}),
+          }))}
+        />
         <EpisodeStrip gateway={gateway} item={item} />
         <FileAndStreams versions={item.versions} selected={selected} preference={preference} cultures={cultures} />
       </div>

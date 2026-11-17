@@ -60,7 +60,16 @@ export interface BaseItemDto {
   ParentBackdropImageTags?: string[] | null;
   ImageBlurHashes?: Record<string, Record<string, string | null> | undefined> | null;
   Genres?: string[] | null;
-  People?: { Name?: string | null; Role?: string | null; Type?: string }[] | null;
+  People?: {
+    Id?: string;
+    Name?: string | null;
+    Role?: string | null;
+    Type?: string;
+    PrimaryImageTag?: string | null;
+    ImageBlurHashes?: Record<string, Record<string, string | null> | undefined> | null;
+  }[] | null;
+  CommunityRating?: number | null;
+  CriticRating?: number | null;
   MediaSources?: MediaSourceDto[] | null;
   Chapters?: ChapterInfoDto[] | null;
   // Keyed by MediaSourceId, then by thumbnail width in pixels.

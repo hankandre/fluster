@@ -117,7 +117,7 @@ Keep the domain, Jellyfin gateway, playback policy, and coordinator **framework-
 | Latest per library | `GET /Items/Latest?parentId=&limit=&groupItems=true` (returns an array, not a QueryResult) |
 | Series | `GET /Shows/{id}/Seasons`, `GET /Shows/{id}/Episodes?seasonId=` |
 | Next episode | `GET /Shows/{id}/Episodes?adjacentTo={episodeId}` (the entry after the current one) |
-| Detail | `GET /Items/{id}?userId=` with no `fields`: the SDK's `getItem` takes only a user id, and recordings on 10.11.7 and 12.4.0 (`item-detail-no-fields-*.json`) show the full item, including `MediaSources`, `MediaStreams`, `People`, `Genres`, and `UserData` (+ `/Similar`, `/SpecialFeatures`) |
+| Detail | `GET /Items/{id}?userId=` with no `fields`: the SDK's `getItem` takes only a user id, and recordings on 10.11.7 and 12.4.0 (`item-detail-no-fields-*.json`) show the full item, including `MediaSources`, `MediaStreams`, `People` (with `Id` and `PrimaryImageTag`), `CommunityRating`, `CriticRating`, `Genres`, and `UserData` (+ `/Similar`, `/SpecialFeatures`) |
 | Account subtitle language (detail list only) | `GET /Users/Me` → `Configuration.SubtitleLanguagePreference` (`""` or absent = none; display only, never sent into negotiation; P17-01 fixtures) |
 | Account languages (Settings) | `GET /Users/Me`, then `POST /Users/Configuration` with the whole `Configuration` as read and only the row's two fields changed, no `userId`; saves run one at a time. A partial body resets the other fields (P17-01) |
 | Language codes | `GET /Localization/Cultures` (192 entries on 10.11.7, 494 on 12.4.0; `ThreeLetterISOLanguageNames` pairs codes such as `deu`/`ger`) |

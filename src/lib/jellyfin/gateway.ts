@@ -700,7 +700,7 @@ export class JellyfinGateway {
 
   // GET /Items/{id} takes only a user id in @jellyfin/sdk 1.0.2 (library-api
   // getItem), so there is no fields parameter. The server returns media
-  // sources, streams, genres, people, and user data in the full item.
+  // sources, streams, genres, people (with image tags), ratings, and user data in the full item.
   async itemDetail(itemId: string, signal?: AbortSignal): Promise<ItemDetail> {
     const { userId } = this.requireSession();
     let data: BaseItemDto;

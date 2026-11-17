@@ -234,3 +234,41 @@ describe("trickplay and chapters", () => {
     ]);
   });
 });
+
+describe("toItemDetail cast pictures and ratings", () => {
+  const base: BaseItemDto = { Id: "m1", Name: "Film", Type: "Movie" };
+
+  it("maps a person picture with its BlurHash", () => {
+    const detail = toItemDetail({
+      ...base,
+      People: [{ Id: "p1", Name: "Amy Adams", Type: "Actor", PrimaryImageTag: "t1", ImageBlurHashes: { Primary: { t1: "LKO2" } } }],
+    })!;
+    expect(detail.cast[0].image).toEqual({ itemId: "p1", type: "Primary", tag: "t1", blurHash: "LKO2" });
+  });
+
+  it("leaves the picture out without an id or a tag, and keeps filtering and the limit", () => {
+    const people = [
+      { Id: "p1", Name: "No Tag", Type: "Actor" },
+      { Name: "No Id", Type: "Actor", PrimaryImageTag: "t" },
+      { Id: "d1", Name: "Director", Type: "Director", PrimaryImageTag: "t" },
+      ...Array.from({ length: 10 }, (_, index) => ({ Id: `x${index}`, Name: `Extra ${index}`, Type: "Actor", PrimaryImageTag: "t" })),
+    ];
+    const detail = toItemDetail({ ...base, People: people })!;
+    expect(detail.cast).toHaveLength(8);
+    expect(detail.cast[0].image).toBeUndefined();
+    expect(detail.cast[1].image).toBeUndefined();
+    expect(detail.cast.map((member) => member.name)).not.toContain("Director");
+  });
+
+  it("maps valid ratings and drops invalid ones", () => {
+    const rated = toItemDetail({ ...base, CommunityRating: 7.8, CriticRating: 91 })!;
+    expect([rated.communityRating, rated.criticRating]).toEqual([7.8, 91]);
+    for (const bad of [0, -1, Number.NaN, Number.POSITIVE_INFINITY, null, 11]) {
+      expect(toItemDetail({ ...base, CommunityRating: bad })!.communityRating).toBeUndefined();
+    }
+    for (const bad of [-1, Number.NaN, Number.POSITIVE_INFINITY, null, 101]) {
+      expect(toItemDetail({ ...base, CriticRating: bad })!.criticRating).toBeUndefined();
+    }
+    expect(toItemDetail({ ...base, CriticRating: 0 })!.criticRating).toBe(0);
+  });
+});

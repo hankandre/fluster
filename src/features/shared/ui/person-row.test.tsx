@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { initials, PersonRow } from "./person-row";
 
@@ -25,6 +25,24 @@ describe("PersonRow", () => {
     expect(within(region).getByText("Louise")).toBeInTheDocument();
     expect(within(region).queryByRole("link")).toBeNull();
     expect(within(region).queryByRole("button")).toBeNull();
+  });
+
+  it("shows the picture over the initials, and initials alone without one", () => {
+    const { container } = render(<PersonRow people={[{ name: "Amy Adams", imageSrc: "http://x/a.jpg" }, { name: "Cher" }]} />);
+    const images = container.querySelectorAll("img");
+    expect(images).toHaveLength(1);
+    expect(images[0]).toHaveAttribute("src", "http://x/a.jpg");
+    expect(images[0]).toHaveAttribute("alt", "");
+    expect(screen.getByText("C")).toBeInTheDocument();
+  });
+
+  it("falls back to the initials when the picture fails", () => {
+    const { container } = render(<PersonRow people={[{ name: "Amy Adams", imageSrc: "http://x/a.jpg" }]} />);
+    fireEvent.error(container.querySelector("img")!);
+    expect(container.querySelector("img")).toBeNull();
+    expect(screen.getByText("AA")).toBeInTheDocument();
+    expect(screen.queryByRole("link")).toBeNull();
+    expect(screen.queryByRole("button")).toBeNull();
   });
 
   it("renders nothing without people", () => {
