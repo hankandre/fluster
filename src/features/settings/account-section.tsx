@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useSession } from "../../app/session";
 import { Button, SettingsRow, SettingsSection, Skeleton, useSettingsRow, useToast } from "../shared/ui";
 import { useServerInfo } from "./use-server-info";
+import { SIGN_IN_ROUTE } from "../routes";
 
 // Without a signed-in gateway there is nothing to show; Playback still works.
 export function AccountSection() {
@@ -17,7 +18,7 @@ function SignedInAccount() {
   const server = useServerInfo(gateway);
 
   async function signOut() {
-    window.location.hash = "#/next/sign-in";
+    window.location.hash = SIGN_IN_ROUTE;
     toast.show({ message: "Signed out", tone: "ok" });
     await session.signOut();
   }

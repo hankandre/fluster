@@ -2,7 +2,7 @@ import type { MouseEvent } from "react";
 import type { ImageRef, LibraryView, MediaCard as CatalogCard } from "../domain/catalog";
 import type { SessionGateway } from "../app/session";
 import type { MediaCardProps, MediaCardVariant } from "./shared/ui";
-import { cardRoute, openPlayer, playRoute, type PlayRoute } from "./routes";
+import { cardRoute, libraryRoute, openPlayer, playRoute, type PlayRoute } from "./routes";
 
 // Widths are twice the wide-window token sizes (200 px poster, 384 px thumb).
 export const POSTER_IMAGE_WIDTH = 400;
@@ -51,7 +51,7 @@ export function toLibraryCardProps(view: LibraryView, imageUrl: ImageUrl): Media
   return {
     variant: "library",
     title: view.name,
-    href: `#/next/browse/${encodeURIComponent(view.id)}`,
+    href: libraryRoute(view.id),
     ...(view.image
       ? { image: { src: imageUrl(view.image, WIDE_IMAGE_WIDTH), ...(view.image.blurHash ? { blurHash: view.image.blurHash } : {}) } }
       : {}),

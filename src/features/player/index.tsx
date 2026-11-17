@@ -9,7 +9,7 @@ import { ItemNotFoundError, type ItemDetail, type NextEpisode } from "../../doma
 import { imageUrlFor, WIDE_IMAGE_WIDTH } from "../card-view";
 import { detailKey } from "../detail/detail-key";
 import { refreshHomeRows } from "../home";
-import { itemRoute, leavePlayer, leaveToDetails, type PlayRoute } from "../routes";
+import { itemRoute, leavePlayer, leaveToDetails, type PlayRoute, SIGN_IN_ROUTE } from "../routes";
 import { REFUSAL_COPY } from "./refusal-copy";
 import { detailArt, noticeBackdrop } from "./playback-notice";
 import { DesktopOnlyNotice, ItemGoneScreen, ItemLoadNotice, NoticePage, PlayerUnavailableNotice, RefusalNotice } from "./playback-notices";
@@ -27,18 +27,8 @@ import { conversionIndicator } from "./conversion-copy";
 import { useRecordDecode } from "./last-decode";
 import { usePlayerStatus, type ReadyPlayerStatus } from "./player-status";
 
-const SIGN_IN_ROUTE = "#/next/sign-in";
 // Retry after a failed track change asks for the tracks that were playing.
 const PREVIOUS_TRACKS = "Back to previous tracks";
-
-export function PlayerFeatureView() {
-  return (
-    <main>
-      <h1>Player</h1>
-      <p>Open a movie or episode and choose Play to start the player.</p>
-    </main>
-  );
-}
 
 // The viewer's skip modes; the defaults when no preferences are provided.
 function useSkipModes() {
@@ -49,7 +39,7 @@ function useSkipModes() {
 const NO_SUBSCRIPTION = () => () => undefined;
 const defaultSkipModes = () => DEFAULT_SKIP_MODES;
 
-// #/next/play/<itemId>: loads the item, then plays it. Leaving returns to the
+// The play route: loads the item, then plays it. Leaving returns to the
 // item's detail view (see leavePlayer).
 export function PlayerRouteView(route: PlayRoute) {
   const { gateway } = useSession();

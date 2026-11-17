@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import type { FocusEvent, KeyboardEvent } from "react";
 import { Search, Settings } from "lucide-react";
 import { enterFirstRow, useRovingFocus } from "../../roving-focus";
-import { libraryRoute, parseLibraryRoute } from "../../routes";
+import { HOME_ROUTE, libraryRoute, parseLibraryRoute, SEARCH_ROUTE, SETTINGS_ROUTE } from "../../routes";
 import "./shell.css";
 
 export interface NavLibrary {
@@ -10,16 +10,13 @@ export interface NavLibrary {
   name: string;
 }
 
-const HOME_HASH = "#/next/home";
-const SEARCH_HASH = "#/next/search";
-const SETTINGS_HASH = "#/next/settings";
 
 
 // Which entry the hash marks as current: "home", "search", "settings", "library:<id>", or undefined.
 export function currentNavEntry(hash: string): string | undefined {
-  if (hash === HOME_HASH) return "home";
-  if (hash === SEARCH_HASH || hash.startsWith(`${SEARCH_HASH}/`)) return "search";
-  if (hash === SETTINGS_HASH) return "settings";
+  if (hash === HOME_ROUTE) return "home";
+  if (hash === SEARCH_ROUTE || hash.startsWith(`${SEARCH_ROUTE}/`)) return "search";
+  if (hash === SETTINGS_ROUTE) return "settings";
   const library = parseLibraryRoute(hash);
   return library ? `library:${library.libraryId}` : undefined;
 }
@@ -40,10 +37,10 @@ function overflowOf(list: HTMLElement): Overflow {
 export function AppNav({ libraries, hash, userInitial }: { libraries: NavLibrary[] | undefined; hash: string; userInitial?: string }) {
   const current = currentNavEntry(hash);
   const entries = [
-    { key: "home", href: HOME_HASH },
+    { key: "home", href: HOME_ROUTE },
     ...(libraries ?? []).map((library) => ({ key: `library:${library.id}`, href: libraryRoute(library.id) })),
-    { key: "search", href: SEARCH_HASH },
-    { key: "settings", href: SETTINGS_HASH },
+    { key: "search", href: SEARCH_ROUTE },
+    { key: "settings", href: SETTINGS_ROUTE },
   ];
   const currentIndex = entries.findIndex((entry) => entry.key === current);
   // Item 0 is the wordmark, so entry indexes shift by one. With no current entry the Tab stop is Home.
@@ -97,8 +94,8 @@ export function AppNav({ libraries, hash, userInitial }: { libraries: NavLibrary
   return (
     <nav className="app-nav-bar" aria-label="Main" ref={roving.ref} onKeyDown={onKeyDown} onFocus={onFocus}>
       <div className="app-nav-list" ref={list} data-overflow={overflow} onScroll={measure}>
-        <a className="app-nav-entry app-nav-wordmark" href={HOME_HASH} data-roving-item="">Fluster</a>
-        <a className="app-nav-entry" href={HOME_HASH} data-roving-item="" {...aria("home")}>Home</a>
+        <a className="app-nav-entry app-nav-wordmark" href={HOME_ROUTE} data-roving-item="">Fluster</a>
+        <a className="app-nav-entry" href={HOME_ROUTE} data-roving-item="" {...aria("home")}>Home</a>
         {(libraries ?? []).map((library) => (
           <a
             key={library.id}
@@ -110,12 +107,12 @@ export function AppNav({ libraries, hash, userInitial }: { libraries: NavLibrary
             {library.name}
           </a>
         ))}
-        <a className="app-nav-entry" href={SEARCH_HASH} data-roving-item="" {...aria("search")}>
+        <a className="app-nav-entry" href={SEARCH_ROUTE} data-roving-item="" {...aria("search")}>
           <Search aria-hidden="true" size={18} />
           Search
         </a>
       </div>
-      <a className="app-nav-entry app-nav-settings" href={SETTINGS_HASH} aria-label="Settings" data-roving-item="" {...aria("settings")}>
+      <a className="app-nav-entry app-nav-settings" href={SETTINGS_ROUTE} aria-label="Settings" data-roving-item="" {...aria("settings")}>
         <Settings aria-hidden="true" size={20} />
         {userInitial ? <span className="app-nav-initial" aria-hidden="true">{userInitial}</span> : null}
       </a>

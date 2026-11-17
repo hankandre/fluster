@@ -9,9 +9,8 @@ import { DetailBackdrop } from "./detail-backdrop";
 import { detailKey } from "./detail-key";
 import { DetailLoadError, DetailSkeleton, ItemGoneNotice } from "./detail-states";
 import { useHeadingFocus } from "./use-heading-focus";
+import { SIGN_IN_ROUTE } from "../routes";
 import "./detail-page.css";
-
-const SIGN_IN_ROUTE = "#/next/sign-in";
 
 export function ItemDetailView({ itemId }: { itemId: string }) {
   const { gateway } = useSession();

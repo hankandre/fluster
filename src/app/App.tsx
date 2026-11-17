@@ -6,14 +6,14 @@ import { SignInView } from "../features/sign-in";
 import { HomeView, refreshHomeRows } from "../features/home";
 import { BrowseView, CollectionView, SeriesView } from "../features/browse";
 import { SearchView } from "../features/search";
-import { DetailView, ItemDetailView } from "../features/detail";
+import { ItemDetailView } from "../features/detail";
 import { SettingsView } from "../features/settings";
 import { SignedInChrome } from "../features/shell";
 import { useTvArrowFallback } from "../features/shell/use-tv-arrow-fallback";
 import { useBackspaceAsEscape } from "../features/shell/use-backspace-as-escape";
 import { useFocusReturn } from "../features/shell/use-focus-return";
-import { PlayerFeatureView, PlayerRouteView } from "../features/player";
-import { parseCollectionRoute, parseLibraryRoute, parsePlayRoute, ROUTE_REPLACED_EVENT } from "../features/routes";
+import { PlayerRouteView } from "../features/player";
+import { type AppRoute, FEATURE_INDEX_ROUTE, GALLERY_ROUTE, HOME_ROUTE, isAppHash, isPlayerHash, parseAppRoute, ROUTE_REPLACED_EVENT, SIGN_IN_ROUTE } from "../features/routes";
 import { markAccountDataStale, markKeptDataStaleForReturn } from "../features/query-scope";
 import { resetAccountData } from "./account-data";
 import { createServices, type AppServices } from "./compose";
@@ -52,11 +52,11 @@ export function App() {
   // `visit` counts real navigations. A route replace (a sort or filter change) keeps it, so the screen is not remounted.
   const [{ hash, visit }, setRoute] = useState({ hash: window.location.hash, visit: 0 });
 
-  // The app lives under #/next. Anything else, including an empty hash, goes
+  // The app lives under its route prefix. Anything else, including an empty hash, goes
   // to Home, which sends a signed-out visitor on to sign-in.
   const inApp = isAppHash(hash);
   useEffect(() => {
-    if (!inApp) window.location.replace(HOME_HASH);
+    if (!inApp) window.location.replace(HOME_ROUTE);
   }, [inApp]);
 
   // Back and Forward show kept screens at once and refetch them in the background.
@@ -97,99 +97,56 @@ export function App() {
   );
 }
 
-const HOME_HASH = "#/next/home";
-
-function isAppHash(hash: string): boolean {
-  return hash === "#/next" || hash.startsWith("#/next/");
-}
-
 function BrowserModeLabel() {
   return <p className="browser-mode-label" role="status">Browser development mode</p>;
-}
-
-// Routes that show the player, where the OSD speaks and no toast shows. Add any new player route here.
-function isPlayerHash(hash: string): boolean {
-  return hash === "#/next/player" || hash.startsWith("#/next/play/");
 }
 
 // Which pages get the app nav. The player, sign-in, and developer pages do not.
 function chromeFor(hash: string): "nav" | "none" {
   switch (hash) {
-    case "#/next":
-    case "#/next/sign-in":
-    case "#/next/gallery":
+    case FEATURE_INDEX_ROUTE:
+    case SIGN_IN_ROUTE:
+    case GALLERY_ROUTE:
       return "none";
     default:
-      if (hash.startsWith("#/next/play/")) return "none";
-      return "nav";
+      return isPlayerHash(hash) ? "none" : "nav";
   }
 }
 
 function renderWithChrome(hash: string, visit: number, services: AppServices) {
-  const route = renderRoute(hash, visit, services);
-  if (chromeFor(hash) === "none") return route;
-  return <SignedInChrome hash={hash}>{route}</SignedInChrome>;
+  const route = parseAppRoute(hash);
+  const page = route ? renderRoute(route, hash, visit, services) : <NotFoundView />;
+  if (chromeFor(hash) === "none") return page;
+  return <SignedInChrome hash={hash}>{page}</SignedInChrome>;
 }
 
-function renderRoute(hash: string, visit: number, services: AppServices) {
-  switch (hash) {
-    case "#/next":
+function renderRoute(route: AppRoute, hash: string, visit: number, services: AppServices) {
+  switch (route.kind) {
+    case "feature-index":
       return services.native ? <NotFoundView /> : <FeatureIndex />;
-    case "#/next/sign-in":
+    case "sign-in":
       return <SignInView discovery={services.discovery} />;
-    case "#/next/home":
+    case "home":
       return <HomeView />;
-    case "#/next/search":
-      return <SearchView />;
-    case "#/next/detail":
-      return <DetailView />;
-    case "#/next/settings":
-      return <SettingsView />;
-    case "#/next/player":
-      return <PlayerFeatureView />;
-    case "#/next/gallery":
-      return GalleryView && !services.native ? <Suspense fallback={null}><GalleryView /></Suspense> : <NotFoundView />;
-    default:
-      if (hash.startsWith("#/next/play/")) return renderPlayRoute(hash);
-      return renderBrowseRoute(hash, visit) ?? <NotFoundView />;
-  }
-}
-
-// #/next/play/<itemId>?source=<mediaSourceId>&start=<ticks>
-function renderPlayRoute(hash: string) {
-  const route = parsePlayRoute(hash);
-  if (!route) return <NotFoundView />;
-  return <PlayerRouteView key={hash} {...route} />;
-}
-
-// Routes with an id: #/next/browse/<libraryId>, #/next/item/<id>, #/next/series/<id>, #/next/collection/<id>,
-// and #/next/search/<term>.
-// Anything else, including malformed ids, is not found.
-function renderBrowseRoute(hash: string, visit: number) {
-  if (hash.startsWith("#/next/browse/")) {
-    const route = parseLibraryRoute(hash);
-    return route ? <BrowseView key={`${route.libraryId}|${visit}`} libraryId={route.libraryId} sort={route.sort} filters={route.filters} /> : undefined;
-  }
-  if (hash.startsWith("#/next/collection/")) {
-    const route = parseCollectionRoute(hash);
-    return route ? <CollectionView key={`${route.collectionId}|${visit}`} collectionId={route.collectionId} sort={route.sort} filters={route.filters} /> : undefined;
-  }
-  const [, , section, id, ...extra] = hash.split("/");
-  if (!id || extra.length > 0) return undefined;
-  let itemId: string;
-  try {
-    itemId = decodeURIComponent(id);
-  } catch {
-    return undefined;
-  }
-  switch (section) {
-    case "item":
-      return <ItemDetailView itemId={itemId} />;
-    case "series":
-      return <SeriesView seriesId={itemId} />;
     case "search":
-      return <SearchView term={itemId} />;
-    default:
-      return undefined;
+      return <SearchView term={route.term} />;
+    case "settings":
+      return <SettingsView />;
+    case "gallery":
+      return GalleryView && !services.native ? <Suspense fallback={null}><GalleryView /></Suspense> : <NotFoundView />;
+    case "play":
+      return <PlayerRouteView key={hash} {...route} />;
+    case "library":
+      return <BrowseView key={`${route.libraryId}|${visit}`} libraryId={route.libraryId} sort={route.sort} filters={route.filters} />;
+    case "collection":
+      return <CollectionView key={`${route.collectionId}|${visit}`} collectionId={route.collectionId} sort={route.sort} filters={route.filters} />;
+    case "item":
+      return <ItemDetailView itemId={route.itemId} />;
+    case "series":
+      return <SeriesView seriesId={route.seriesId} />;
+    default: {
+      const unreachable: never = route;
+      return unreachable;
+    }
   }
 }

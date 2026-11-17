@@ -5,11 +5,10 @@ import type { SessionGateway } from "../../app/session";
 import { imageUrlFor } from "../card-view";
 import { scopeFor } from "../query-scope";
 import { moveToAdjacentRow } from "../roving-focus";
-import { itemRoute, seriesRoute } from "../routes";
+import { itemRoute, searchResultsRoute, seriesRoute } from "../routes";
 import { deferDefaultFocus } from "../shell/focus-return";
 import { SearchField, SearchSuggestion } from "../shared/ui";
 import { suggestionLabel, suggestionMeta } from "./search-hint-label";
-import { searchResultsRoute } from "./search-route";
 
 export const DEBOUNCE_MS = 250;
 export const MIN_TERM_LENGTH = 2;

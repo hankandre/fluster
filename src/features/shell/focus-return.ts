@@ -1,4 +1,4 @@
-import { ROUTE_REPLACED_EVENT } from "../routes";
+import { ROUTE_REPLACED_EVENT, SIGN_IN_ROUTE } from "../routes";
 
 // Focus after Back (DESIGN.md 9): remembers, per history entry, the last card or episode row the user focused,
 // and focuses it again when the user returns to that entry. Memory only; the one thing written to
@@ -30,7 +30,6 @@ interface PendingReturn {
 }
 
 const MAX_ENTRIES = 50;
-const SIGN_IN_HASH = "#/next/sign-in";
 const FREE_FOCUS = ["body", "main"];
 
 const loadId = Math.random().toString(36).slice(2);
@@ -264,7 +263,7 @@ function onPopState(event: PopStateEvent): void {
 function onHashChange(): void {
   stampEntry();
   lastHash = window.location.hash;
-  if (window.location.hash === SIGN_IN_HASH) {
+  if (window.location.hash === SIGN_IN_ROUTE) {
     records.clear();
     slots.clear();
     scrolls.clear();

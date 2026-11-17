@@ -1,5 +1,6 @@
 import type { Ref } from "react";
 import { ButtonLink, InlineError, Notice, Skeleton } from "../shared/ui";
+import { HOME_ROUTE } from "../routes";
 
 // Shaped like the header: a title block, a facts line, and two controls.
 export function DetailSkeleton({ controls = 2 }: { controls?: number }) {
@@ -25,7 +26,7 @@ export function ItemGoneNotice({ headingRef }: { headingRef: Ref<HTMLHeadingElem
     <Notice
       title="This item is no longer on the server"
       headingRef={headingRef}
-      actions={<ButtonLink variant="primary" href="#/next/home">Go home</ButtonLink>}
+      actions={<ButtonLink variant="primary" href={HOME_ROUTE}>Go home</ButtonLink>}
     >
       It may have been removed or renamed.
     </Notice>
