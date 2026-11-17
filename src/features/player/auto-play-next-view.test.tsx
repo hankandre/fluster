@@ -9,7 +9,7 @@ import type { ItemDetail, NextEpisode } from "../../domain/catalog";
 import type { LibraryItem } from "../../domain/catalog";
 import type { PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
 import type { SkipModes } from "../../domain/media-segments";
-import { MemoryPreferenceStore, continueWindowOf, skipModesOf } from "../../lib/preference-store";
+import { MemoryPreferenceStore, autoPlayOf, continueWindowOf, skipModesOf, type AutoPlayPreference } from "../../lib/preference-store";
 import { MemoryStreamingLimits } from "../../lib/streaming-limits";
 import { FakePlayerEngine } from "../../test/fake-player-engine";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
@@ -107,11 +107,13 @@ async function renderPlayer(
   engine: FakePlayerEngine,
   services: Partial<PlayerServices> = {},
   modes?: Partial<SkipModes>,
+  autoPlay?: AutoPlayPreference,
 ) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const store = new MemoryPreferenceStore();
   store.update("skipModes", { intro: "button", credits: "button", ...modes });
-  const preferences = { streamingLimits: new MemoryStreamingLimits(), continueWindow: continueWindowOf(store), skipModes: skipModesOf(store) };
+  if (autoPlay) store.update("autoPlay", autoPlay);
+  const preferences = { streamingLimits: new MemoryStreamingLimits(), continueWindow: continueWindowOf(store), skipModes: skipModesOf(store), autoPlay: autoPlayOf(store) };
   render(
     <QueryClientProvider client={client}>
       <SessionProvider createGateway={() => gateway}>
@@ -350,6 +352,48 @@ describe("Auto-play the next episode", () => {
     expect(await screen.findByLabelText("Up next")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Skip credits" })).not.toBeInTheDocument();
     expect(engine.seek).not.toHaveBeenCalled();
+  });
+
+  it("with auto-play off and Credits set to auto, Up Next shows without a countdown, nothing is skipped, and the end goes to the series page", async () => {
+    const gateway = fakeGateway([episode("e1", "Pilot")], second, {
+      createPlaybackPlan: vi.fn(async (item: LibraryItem) => ({ ...plan(item.id, "play-e1-1"), hasSegments: true })),
+      mediaSegments: vi.fn().mockResolvedValue([{ kind: "Outro", startSeconds: 1000, endSeconds: 1200 }]),
+    });
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine, {}, { credits: "auto" }, { enabled: false, countdownSeconds: 10 });
+    await loadedAt(engine, 500);
+    await waitFor(() => expect(gateway.mediaSegments).toHaveBeenCalled());
+    await act(async () => undefined);
+
+    await moveTo(engine, 1010);
+    const card = await screen.findByLabelText("Up next");
+    expect(within(card).getByRole("button", { name: /Play now/ })).toBeInTheDocument();
+    expect(screen.queryByText(/Playing in/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Skip credits" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Skipped credits")).not.toBeInTheDocument();
+    expect(engine.seek).not.toHaveBeenCalled();
+
+    await act(async () => {
+      engine.emit({ kind: "ended", reason: "eof", snapshot: snapshotAt(1200) });
+    });
+    await waitFor(() => expect(window.location.hash).toBe("#/next/series/s1"));
+  });
+
+  it("with auto-play off and Credits set to auto, the last episode still skips the credits", async () => {
+    const gateway = fakeGateway([episode("e1", "Pilot")], undefined, {
+      createPlaybackPlan: vi.fn(async (item: LibraryItem) => ({ ...plan(item.id, "play-e1-1"), hasSegments: true })),
+      mediaSegments: vi.fn().mockResolvedValue([{ kind: "Outro", startSeconds: 1000, endSeconds: 1200 }]),
+    });
+    const engine = new FakePlayerEngine();
+    await renderPlayer(gateway, engine, {}, { credits: "auto" }, { enabled: false, countdownSeconds: 10 });
+    await loadedAt(engine, 500);
+    await waitFor(() => expect(gateway.mediaSegments).toHaveBeenCalled());
+    await act(async () => undefined);
+
+    await moveTo(engine, 1010);
+    expect(await screen.findByText("Skipped credits")).toBeInTheDocument();
+    expect(engine.seek).toHaveBeenCalledWith(1200);
+    expect(screen.queryByLabelText("Up next")).not.toBeInTheDocument();
   });
 
   it("goes straight to the next episode when the file ends", async () => {

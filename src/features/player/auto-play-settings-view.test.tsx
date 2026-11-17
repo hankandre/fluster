@@ -8,7 +8,7 @@ import { SessionProvider, useSession, type SessionGateway } from "../../app/sess
 import type { ItemDetail, NextEpisode } from "../../domain/catalog";
 import type { LibraryItem } from "../../domain/catalog";
 import type { PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
-import { autoPlayOf, continueWindowOf, MemoryPreferenceStore, type AutoPlayPreference } from "../../lib/preference-store";
+import { autoPlayOf, continueWindowOf, MemoryPreferenceStore, skipModesOf, type AutoPlayPreference } from "../../lib/preference-store";
 import { MemoryStreamingLimits } from "../../lib/streaming-limits";
 import { FakePlayerEngine } from "../../test/fake-player-engine";
 import { fakeSessionGateway } from "../../test/fake-session-gateway";
@@ -116,7 +116,7 @@ async function renderPlayer(gateway: SessionGateway, engine: FakePlayerEngine, a
   );
   render(
     autoPlay ? (
-      <PreferencesProvider preferences={{ streamingLimits: new MemoryStreamingLimits(), continueWindow: continueWindowOf(store), autoPlay: autoPlayOf(store) }}>
+      <PreferencesProvider preferences={{ streamingLimits: new MemoryStreamingLimits(), continueWindow: continueWindowOf(store), skipModes: skipModesOf(store), autoPlay: autoPlayOf(store) }}>
         {tree}
       </PreferencesProvider>
     ) : tree,

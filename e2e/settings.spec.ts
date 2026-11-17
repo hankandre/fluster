@@ -185,6 +185,7 @@ test("auto-play next: both rows change, confirm with toasts, and survive a reloa
     version: 1,
     streamingLimits: {},
     continueWindow: "14",
+    skipModes: { intro: "button", credits: "button" },
     autoPlay: { enabled: false, countdownSeconds: 15 },
   });
 });
