@@ -155,6 +155,26 @@ describe.each(["10.11.7", "12.4.0"])("audio pick negotiation with the fixtures f
     expect(plan).toMatchObject({ delivery: "static", defaultAudioStreamIndex: 1 });
   });
 
+  it("an external pick the server direct plays: a plain answer that converts never replaces it", async () => {
+    const external = (answer: PlaybackInfoResponse) => {
+      const source = answer.MediaSources?.[0] as MediaSourceDto;
+      const stream = source.MediaStreams?.find((s) => s.Index === 2);
+      if (stream) stream.IsExternal = true;
+      return answer;
+    };
+    const first = external(fixture(version, "multitrack-audio-pick"));
+    const { transport, result } = await negotiate(
+      "item-multitrack",
+      [first, fixture(version, "multitrack-force-fallback")],
+      "item-multitrack",
+      PICK,
+    );
+    const plan = planOf(result);
+    expect(transport.posts).toHaveLength(2);
+    expect(plan).toMatchObject({ delivery: "static", playMethod: "DirectPlay" });
+    expect(plan.playSessionId).toBe(first.PlaySessionId);
+  });
+
   it("a pick on a second version names that version", async () => {
     const { transport, result } = await negotiate(
       "item-versions",

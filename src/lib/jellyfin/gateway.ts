@@ -851,7 +851,8 @@ export class JellyfinGateway {
         data = plain;
         decision = plainDecision;
         carriesPick = false;
-      } else if (decision.kind !== "convert") {
+      } else if (decision.kind !== "convert" && decision.kind !== "direct-play") {
+        // A first answer that direct plays is never replaced by a plain answer that does not: play it with the server's default track.
         data = plain;
         decision = plainDecision;
         carriesPick = false;
