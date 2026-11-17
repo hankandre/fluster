@@ -396,3 +396,12 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 - `.dependency-cruiser.cjs:53-75`: the three `no-components-*` rules overlap (import into, import out of, orphan). Collapse them if one rule can cover all three; probes show each fails `lint:boundaries` today, so there is no defect. S (P2-09).
 - P17-01 recorder: add a "no matching track" cell for audio and subtitles (a chosen language the file lacks; `PlayDefaultAudioTrack: false` with no language; Smart or Always with no language). Settings shows those reads as "Set in another Jellyfin app" until recorded. S (P17-03).
 - TV Picker sheet: page-wise jumps (PageUp/PageDown or letter rows) for the 486-language list on 12.4.0 and the doubled subtitle list. S (P17-03).
+
+## Settings in the player (owner request, 2026-11-16)
+
+- Owner: changing a client setting today means leaving playback, going Home, opening Settings, then starting again. Add a Settings sheet to the player beside Info, Audio & Subtitles, and Chapters. When a change affects the stream, Fluster refreshes the stream and resumes at the same position, keeping the current audio and subtitle tracks. Findings from 2026-11-16:
+  - The streaming limits already renegotiate mid-playback while keeping the position and tracks (`use-playback-session.ts` `checkLimit`, `coordinator.ts` `renegotiate`/`restart`, `track-choice.ts` merge). The sheet can reuse that path.
+  - The account audio and subtitle languages (P17-03) shape the server's starting tracks (P17-01 fixtures), so a change made in the player would need a renegotiation to take effect. Nothing applies them mid-playback today. Decide whether a language change in the player also switches the current tracks, or only applies from the next title.
+  - The Continue watching window only affects Home and does not belong in the player sheet. Auto-play next and skip intros have no Settings rows yet (P3-23, P3-24). Once they exist they apply live, with no refresh.
+  - Open design questions for the owner: which settings appear in the sheet, how it opens (button, key, TV remote), what the viewer sees during a refresh, and whether the full Settings page stays as it is.
+  - Depends on P3-23 and P3-24 for the live settings. M to L.
