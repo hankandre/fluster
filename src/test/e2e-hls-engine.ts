@@ -89,9 +89,14 @@ export class E2eHlsEngine implements PlayerEngine {
   }
 }
 
-// The requested audio stream and every subtitle with a delivery URL.
+// The requested audio stream and every subtitle with a delivery URL. With VITE_FLUSTER_E2E_AUDIO_PICK=ignored
+// the engine plays the file's first audio track whatever was asked, as a native engine does when it cannot map a
+// pick (the visual harness uses it to reach the "audio track not applied" line).
 function carriedTracks(plan: PlaybackPlan): PlayerTrack[] {
-  const audio = plan.tracks.filter((track) => track.type === "Audio" && track.index === plan.defaultAudioStreamIndex);
+  const audioTracks = plan.tracks.filter((track) => track.type === "Audio");
+  const ignorePick = import.meta.env.VITE_FLUSTER_E2E_AUDIO_PICK === "ignored";
+  const audioIndex = ignorePick ? audioTracks[0]?.index : plan.defaultAudioStreamIndex;
+  const audio = audioTracks.filter((track) => track.index === audioIndex);
   const subtitles = plan.tracks.filter((track) => track.type === "Subtitle" && track.deliveryUrl);
   return [
     ...audio.map((track, position) => ({

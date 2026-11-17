@@ -71,7 +71,8 @@ for (const scenario of scenarios) {
     const size = sizeOf(pass);
     const viewport = { width, height };
     test.describe(size, () => {
-      test.use({ viewport });
+      const audioPickPort = Number(process.env.FLUSTER_VISUAL_PORT ?? 1430) + 1;
+      test.use({ viewport, ...(scenario.audioPickIgnored ? { baseURL: `http://127.0.0.1:${audioPickPort}` } : {}) });
       test(scenario.name, async ({ page }) => {
         // The root element does not exist yet when an init script runs, so apply the form once it appears.
         if (form) {

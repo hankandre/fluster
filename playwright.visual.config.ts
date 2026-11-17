@@ -31,10 +31,20 @@ export default defineConfig({
     locale: "en-US",
     timezoneId: "UTC",
   },
-  webServer: {
-    command: `pnpm exec vite --port ${port} --strictPort`,
-    url: `http://127.0.0.1:${port}`,
-    reuseExistingServer: false,
-  },
+  webServer: [
+    {
+      command: `pnpm exec vite --port ${port} --strictPort`,
+      url: `http://127.0.0.1:${port}`,
+      reuseExistingServer: false,
+    },
+    {
+      // Scenarios marked `audioPickIgnored` run here: the test-only HLS engine plays the first audio track
+      // whatever was picked, so the player shows its "audio track not applied" line.
+      command: `pnpm exec vite --port ${port + 1} --strictPort`,
+      url: `http://127.0.0.1:${port + 1}`,
+      env: { VITE_FLUSTER_E2E_ENGINE: "fake-hls", VITE_FLUSTER_E2E_AUDIO_PICK: "ignored" },
+      reuseExistingServer: false,
+    },
+  ],
   projects: [{ name: "visual", use: { ...devices["Desktop Chrome"] } }],
 });
