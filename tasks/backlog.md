@@ -397,6 +397,10 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 - P17-01 recorder: add a "no matching track" cell for audio and subtitles (a chosen language the file lacks; `PlayDefaultAudioTrack: false` with no language; Smart or Always with no language). Settings shows those reads as "Set in another Jellyfin app" until recorded. S (P17-03).
 - TV Picker sheet: page-wise jumps (PageUp/PageDown or letter rows) for the 486-language list on 12.4.0 and the doubled subtitle list. S (P17-03).
 - P17-08 follow-ups: (a) a retry in a session that started with no audio pick does not keep an audio track switched in mpv; (b) when Rust cannot map an embedded pick, mpv's own choice plays, which is the server's default only when the account uses "Play default audio track" (fixing it needs native work); (c) external audio files are never loaded, so picking one direct plays the default track and shows the notice.
+- P17-08 Guardian L3: Play original after an in-mpv audio switch on a converted stream restores the first pick (`coordinator.ts:151-156`).
+- P17-08 Guardian L4: no notice when mpv's fallback track is unmapped (`coordinator.ts:380`).
+- P17-08 design lows: the selected picker row repeats the codec; the TV audio sheet is tall and mostly empty; the phone "More" button indent should be checked against the old baseline.
+
 
 ## Settings in the player (owner request, 2026-11-16)
 
