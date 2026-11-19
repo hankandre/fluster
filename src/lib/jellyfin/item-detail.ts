@@ -10,7 +10,7 @@ import type {
   VideoInfo,
 } from "../../domain/catalog";
 import { ticksToSeconds } from "../../domain/playback";
-import { logoAndThumb } from "./cards";
+import { logoAndThumb, toGenres } from "./cards";
 import type { BaseItemDto, MediaSourceDto, MediaStreamDto, TrickplayInfoDto } from "./types";
 
 const CAST_LIMIT = 8;
@@ -215,6 +215,8 @@ export function toItemDetail(item: BaseItemDto): ItemDetail | undefined {
     ...(item.RunTimeTicks ? { runTimeTicks: item.RunTimeTicks } : {}),
     ...(item.Overview ? { overview: item.Overview } : {}),
     genres: item.Genres ?? [],
+    genreItems: toGenres(item.GenreItems),
+    ...(item.ParentId ? { parentId: item.ParentId } : {}),
     cast,
     ...(communityRating !== undefined ? { communityRating } : {}),
     ...(criticRating !== undefined ? { criticRating } : {}),

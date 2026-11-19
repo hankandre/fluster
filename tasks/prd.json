@@ -3840,10 +3840,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "M1 gateway: libraryGenres and genreIds with P16-01 fixtures (genre-gateway.test.ts)."
         },
         {
           "id": "P16-07",

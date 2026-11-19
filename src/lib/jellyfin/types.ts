@@ -60,6 +60,8 @@ export interface BaseItemDto {
   ParentBackdropImageTags?: string[] | null;
   ImageBlurHashes?: Record<string, Record<string, string | null> | undefined> | null;
   Genres?: string[] | null;
+  GenreItems?: { Id?: string | null; Name?: string | null }[] | null;
+  ParentId?: string | null;
   People?: {
     Id?: string;
     Name?: string | null;

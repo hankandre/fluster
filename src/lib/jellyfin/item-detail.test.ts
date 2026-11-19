@@ -291,3 +291,17 @@ describe("toItemDetail cast pictures and ratings", () => {
     }
   });
 });
+
+describe("toItemDetail genres", () => {
+  const base: BaseItemDto = { Id: "m1", Name: "Film", Type: "Movie" };
+
+  it("keeps GenreItems with both an id and a name", () => {
+    const detail = toItemDetail({ ...base, GenreItems: [{ Id: "g1", Name: "Drama" }, { Id: "g2" }, { Name: "Mystery" }, { Id: "", Name: "Comedy" }] })!;
+    expect(detail.genreItems).toEqual([{ id: "g1", name: "Drama" }]);
+  });
+
+  it("gives no genre items when the server sends none", () => {
+    expect(toItemDetail(base)!.genreItems).toEqual([]);
+    expect(toItemDetail(base)!.parentId).toBeUndefined();
+  });
+});

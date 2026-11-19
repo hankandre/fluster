@@ -1,4 +1,4 @@
-import type { BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, NextEpisode, LibraryItem, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season, SeriesNextUp } from "../domain/catalog";
+import type { BrowsePage, BrowseQuery, CardImageType, EpisodeCard, Genre, ItemDetail, NextEpisode, LibraryItem, LibraryView, MediaCard, SearchHint, SearchPage, SearchQuery, Season, SeriesNextUp } from "../domain/catalog";
 import type { AccountLanguageChange, AccountLanguageSettings } from "../domain/account-language-choices";
 import type { AccountLanguages, LanguageCulture } from "../domain/languages";
 import type { MediaSegment } from "../domain/media-segments";
@@ -38,6 +38,8 @@ export interface SessionGateway {
   itemCollections(itemId: string, signal?: AbortSignal): Promise<MediaCard[] | undefined>;
   collectionItems(collectionId: string, signal?: AbortSignal): Promise<MediaCard[]>;
   latestInLibrary(parentId: string, signal?: AbortSignal): Promise<MediaCard[]>;
+  // The genres of the titles the signed-in user can see under a library, in the server's order.
+  libraryGenres(parentId: string, signal?: AbortSignal): Promise<Genre[]>;
   libraryItems(parentId: string, query: BrowseQuery, signal?: AbortSignal): Promise<BrowsePage>;
   searchHints(term: string, signal?: AbortSignal): Promise<SearchHint[]>;
   searchItems(term: string, query: SearchQuery, signal?: AbortSignal): Promise<SearchPage>;
