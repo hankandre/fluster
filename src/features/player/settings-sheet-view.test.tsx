@@ -337,6 +337,20 @@ describe("Settings sheet in the player", () => {
     expect(screen.getByRole("region", { name: "Player settings" })).toBeInTheDocument();
   });
 
+  it("a press on the video with the Countdown list open closes only the list; a second press closes the sheet", async () => {
+    await setup();
+    const { sheet, user } = await openSettings();
+    await openSection(sheet, "Playback", user);
+    await user.click(within(sheet).getByRole("button", { name: /^Countdown before/ }));
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+    const video = document.querySelector(".native-video-surface") as HTMLElement;
+    await user.click(video);
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Player settings" })).toBeInTheDocument();
+    await user.click(video);
+    expect(screen.queryByRole("region", { name: "Player settings" })).not.toBeInTheDocument();
+  });
+
   it("a change in the sheet is stored in the shared preference store", async () => {
     const { store } = await setup();
     const { sheet, user } = await openSettings();
