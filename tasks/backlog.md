@@ -442,7 +442,7 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 
 The triage of every entry added since the 2026-11-15 pass, and the two owner requests ("Settings in the player" and "Personal ratings and top-rated lists"), is in `docs/plans/proposals/product-review.md`, "Product review pass, 2026-11-19".
 
-- Tasks now, after the owner's answers of 2026-11-19: P3-32 (the player's Settings sheet), P3-33 (the streaming limits in it), P3-34 (languages in it, switching the playing tracks), P16-13 (personal-rating fixtures), P16-14 (rate a film on its page), P16-15 (the Top rated view), P16-16 (the Home row), P16-17 (a rating prompt when a film ends). P4-01 now waits for P3-32 and P3-33 (owner, E1).
+- Tasks now, after the owner's answers of 2026-11-19: P3-32 (the player's Settings sheet), P3-33 (the streaming limits in it), P3-34 (languages in it, switching the playing tracks), P16-13 (personal-rating fixtures), P16-14 (rate a film on its page), P16-15 (the Top rated view), P16-16 (the Home row), P16-17 (a rating prompt when a film ends). P4-01 now waits for P3-32, P3-33 and P3-34 (owner, E1 and 2026-11-19 after the correction).
 - Notes for specs, which edit no task. Each stays an entry above until its task's pull request closes it:
   - P13-19 (design audit and docs sync): the UI gallery page's sideways overflow (#174), the detail subtitle list's design lows (P17-02), the `.ui-button` border-width token (#192), and the P17-08 design lows.
   - P2-12 (track selector, native): P17-08 follow-up (b), an embedded pick Rust cannot map, and the second-pass low on `defaultAudioStreamIndex`.
