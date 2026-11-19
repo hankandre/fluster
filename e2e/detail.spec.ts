@@ -252,7 +252,7 @@ test("keys alone bring the last cast member into view", async ({ page }) => {
   const last = people.last();
   await expect(last).toBeFocused();
   await expect(last).toBeInViewport({ ratio: 0.95 });
-  await expect(last).toHaveAccessibleName("Lars Bergstrom, The Keeper");
+  await expect(last).toHaveAccessibleName("Felix Moreau, Station Chief");
 });
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 1920, height: 1080 }]) {

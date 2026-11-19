@@ -13,7 +13,7 @@ import { ticksToSeconds } from "../../domain/playback";
 import { logoAndThumb, toGenres } from "./cards";
 import type { BaseItemDto, MediaSourceDto, MediaStreamDto, TrickplayInfoDto } from "./types";
 
-const CAST_LIMIT = 8;
+const CAST_LIMIT = 20;
 
 // VideoRangeType values are listed in @jellyfin/sdk 1.0.2 models/video-range-type.d.ts.
 function rangeFromType(type: string | null | undefined): DynamicRange | undefined {
