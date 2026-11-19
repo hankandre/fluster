@@ -22,11 +22,22 @@ export function SettingsSheet({ id, onClose, onSignOut }: {
   const sections = useMemo(playerSettingsSections, []);
   const [saved, setSaved] = useState<SavedRow>();
   const timer = useRef<number | undefined>(undefined);
-  useEffect(() => () => window.clearTimeout(timer.current), []);
+  const serial = useRef(0);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      window.clearTimeout(timer.current);
+    };
+  }, []);
   // The message is the page's toast copy; the sheet shows the row's "Saved" instead.
   const confirm = useCallback((_message: string, row: string, word = "Saved") => {
+    // A Copy that finishes after the sheet closed has no row to mark.
+    if (!mounted.current) return;
     window.clearTimeout(timer.current);
-    setSaved({ row, word });
+    serial.current += 1;
+    setSaved({ row, word, serial: serial.current });
     timer.current = window.setTimeout(() => setSaved(undefined), SAVED_MS);
   }, []);
   const host = useMemo(() => ({ place: "player" as const, confirm, signOut: () => setConfirming(true) }), [confirm]);

@@ -1,5 +1,6 @@
 import type { Page } from "@playwright/test";
 import { LAN, SERVER, ticks } from "../support/mock-server";
+import { SAVED_MS } from "../../src/features/player/chrome/timing";
 import { go, play, signIn, signedInAt, waitForPlayerSettled, type Scenario } from "./scenario-helpers";
 import { worstArtScenarios } from "./worst-art-scenarios";
 
@@ -465,6 +466,7 @@ export const scenarios: Scenario[] = [
   { name: "59l-player-settings-home", run: async (page) => {
     await openPlayerSettings(page);
     await page.getByRole("region", { name: "Player settings" }).getByRole("button", { name: "Home" }).click();
+    await page.waitForFunction(() => document.activeElement?.matches("h2") && document.activeElement.textContent === "Home");
     await page.keyboard.press("ArrowDown");
     await waitForPlayerSettled(page);
   } },
@@ -491,10 +493,10 @@ export const scenarios: Scenario[] = [
     const sheet = page.getByRole("region", { name: "Player settings" });
     await sheet.getByRole("button", { name: "Playback" }).click();
     // The capture outlasts the 2 s Saved time, so the clear timer is dropped for this run.
-    await page.evaluate(() => {
+    await page.evaluate((savedMs) => {
       const real = window.setTimeout.bind(window);
-      window.setTimeout = ((handler: TimerHandler, delay?: number, ...args: unknown[]) => (delay === 2000 ? 0 : real(handler, delay, ...args))) as typeof window.setTimeout;
-    });
+      window.setTimeout = ((handler: TimerHandler, delay?: number, ...args: unknown[]) => (delay === savedMs ? 0 : real(handler, delay, ...args))) as typeof window.setTimeout;
+    }, SAVED_MS);
     await sheet.getByRole("switch", { name: "Play next episode automatically" }).click();
     await sheet.getByText("Saved").waitFor();
     await waitForPlayerSettled(page);

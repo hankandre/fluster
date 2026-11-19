@@ -91,9 +91,17 @@ describe("Sign-out destination", () => {
     expect(onLeave).not.toHaveBeenCalled();
   });
 
-  it("completes with no active session, because there is nothing to stop", async () => {
-    const gateway = fakeSessionGateway({ createPlaybackPlan: vi.fn(() => new Promise<PlaybackPlan>(() => undefined)) });
-    const { engine, onLeave, result } = mount(gateway);
+  it("completes after Back already stopped and left, because there is nothing to stop", async () => {
+    const { engine, onLeave, result, finishStop } = mount();
+    await playing(engine);
+    // Back finishes: leave() clears the session and navigates, and the confirm lands before the route changes.
+    await act(async () => {
+      const back = result.current.stopAndLeave();
+      finishStop();
+      await back;
+    });
+    expect(onLeave).toHaveBeenCalledTimes(1);
+    engine.stop.mockClear();
 
     const signOut = vi.fn();
     let signedOut = false;
@@ -104,6 +112,6 @@ describe("Sign-out destination", () => {
     expect(signedOut).toBe(true);
     expect(signOut).toHaveBeenCalledTimes(1);
     expect(engine.stop).not.toHaveBeenCalled();
-    expect(onLeave).not.toHaveBeenCalled();
+    expect(onLeave).toHaveBeenCalledTimes(1);
   });
 });

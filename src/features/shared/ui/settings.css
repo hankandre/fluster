@@ -157,8 +157,9 @@
     inset-inline-end: var(--space-5);
     color: var(--ok);
     font: var(--type-meta);
-    animation: settings-saved-in var(--dur-quick) var(--ease-out);
   }
+  /* Fades in when the word appears, not with the always-mounted region. No motion under reduced motion. */
+  .settings-row-saved-text { animation: settings-saved-in var(--dur-quick) var(--ease-out); }
   @keyframes settings-saved-in { from { opacity: 0; } to { opacity: 1; } }
 
   .settings-row-value {

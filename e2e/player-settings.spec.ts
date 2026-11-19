@@ -9,11 +9,19 @@ test("(b) Intros set to Skip automatically in the sheet skips the intro and says
   const sheet = page.getByRole("region", { name: "Player settings" });
   await sheet.getByRole("button", { name: "Playback" }).click();
   await sheet.getByRole("button", { name: /^What happens at an intro/ }).click();
+  // Record the status text as it changes, so a loaded runner cannot miss the 2 s window between polls.
+  await page.evaluate(() => {
+    const seen: string[] = [];
+    (window as unknown as { __saved: string[] }).__saved = seen;
+    new MutationObserver(() => {
+      for (const node of document.querySelectorAll(".settings-row-saved")) if (node.textContent) seen.push(node.textContent);
+    }).observe(document.body, { childList: true, subtree: true, characterData: true });
+  });
   await page.getByRole("option", { name: "Skip automatically" }).click();
   const introRow = sheet.locator(".settings-row", { hasText: "Intros" });
-  await expect(introRow.getByText("Saved")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __saved: string[] }).__saved)).toContain("✓ Saved");
   await expect(page.locator(".player-osd-pill", { hasText: "Intros:" })).toHaveCount(0);
-  await expect(introRow.getByText("Saved")).toBeHidden({ timeout: 4000 });
+  await expect(introRow.locator(".settings-row-saved")).toBeEmpty({ timeout: 6000 });
   expect(await page.evaluate(() => JSON.parse(window.localStorage.getItem("fluster.preferences") ?? "{}").skipModes)).toMatchObject({ intro: "auto" });
 
   await moveTo(page, 30);

@@ -20,7 +20,7 @@ afterEach(cleanup);
 function renderSheet(props: Partial<Parameters<typeof SettingsSheet>[0]> = {}) {
   const store = new MemoryPreferenceStore();
   const handlers = { onClose: vi.fn(), onSignOut: vi.fn() };
-  render(
+  const { unmount } = render(
     <QueryClientProvider client={new QueryClient()}>
       <SessionProvider createGateway={() => fakeSessionGateway()}>
         <PlayerServicesProvider services={{ engine: new FakePlayerEngine() }}>
@@ -31,7 +31,7 @@ function renderSheet(props: Partial<Parameters<typeof SettingsSheet>[0]> = {}) {
       </SessionProvider>
     </QueryClientProvider>,
   );
-  return handlers;
+  return { ...handlers, unmount };
 }
 
 it("opens on the section list with the five sections and focus on the first", () => {
@@ -88,4 +88,17 @@ it("shows Saved beside the changed row, announces it politely, and clears it aft
   } finally {
     vi.useRealTimers();
   }
+});
+
+it("replaces the status content on a second change to the same row, so it is announced again", () => {
+  renderSheet();
+  fireEvent.click(screen.getByRole("button", { name: "Playback" }));
+  const toggle = screen.getByRole("switch", { name: "Play next episode automatically" });
+  const row = toggle.closest(".settings-row") as HTMLElement;
+  fireEvent.click(toggle);
+  const first = within(row).getByText("Saved");
+  fireEvent.click(toggle);
+  const second = within(row).getByText("Saved");
+  expect(second).not.toBe(first);
+  expect(first.isConnected).toBe(false);
 });
