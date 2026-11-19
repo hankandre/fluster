@@ -3261,7 +3261,8 @@
             "P3-31",
             "P17-02",
             "P3-32",
-            "P3-33"
+            "P3-33",
+            "P3-34"
           ],
           "acceptance": [
             "docs/dogfood/YYYY-MM-DD.md records each session, what was watched, and every problem",

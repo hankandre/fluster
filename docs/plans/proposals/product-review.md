@@ -1324,3 +1324,5 @@ No invariant changes. These are the ones the new tasks must hold, and each is an
 - It filed nothing in jellyscale's tracker. The owner's answer to E3 is no.
 - It did not change `DESIGN.md`, `ARCHITECTURE.md`, or `PRODUCT.md`. Each task changes the document it affects.
 - It ran no server, app, or competing client.
+
+**Owner, 2026-11-19, after the correction:** the staging is approved: P3-32 ships Playback (auto-play, countdown, intros, credits), Home, Subtitles, Account and About; the streaming limits arrive with P3-33 and Languages with P3-34. P4-01 also waits for P3-34, so the dogfood week tests the complete in-player Settings. `depends_on` gains P3-34; the owner approved this edit of an existing task.
