@@ -11,7 +11,13 @@ const sortOptions = [
   { value: "added-desc", label: "Newest added first" },
 ];
 
-function Harness({ count, onSortChange = () => {} }: { count?: string; onSortChange?(value: string): void }) {
+const genre = {
+  options: [{ value: "all", label: "All genres" }, { value: "g-drama", label: "Drama" }],
+  value: "g-drama",
+  onChange: () => {},
+};
+
+function Harness({ count, onSortChange = () => {}, withGenre = false }: { count?: string; onSortChange?(value: string): void; withGenre?: boolean }) {
   const [sort, setSort] = useState("name-asc");
   const [on, setOn] = useState<string[]>([]);
   return (
@@ -22,12 +28,28 @@ function Harness({ count, onSortChange = () => {} }: { count?: string; onSortCha
         onSortChange={(value) => { setSort(value); onSortChange(value); }}
         filters={["Unwatched", "Favorites", "In progress"].map((label) => ({ value: label, label, pressed: on.includes(label) }))}
         onFilterChange={(value, pressed) => setOn(pressed ? [...on, value] : on.filter((item) => item !== value))}
+        genre={withGenre ? genre : undefined}
         count={count}
       />
       <ul data-spatial-row=""><li><a href="#/x" data-roving-item="">Card</a></li></ul>
     </main>
   );
 }
+
+describe("BrowseToolbar genre", () => {
+  it("has no Genre trigger without the prop", () => {
+    render(<Harness />);
+    expect(screen.queryByRole("button", { name: /^Genre/ })).toBeNull();
+  });
+
+  it("places the Genre trigger after Sort as a roving item", () => {
+    render(<Harness withGenre />);
+    const sort = screen.getByRole("button", { name: "Sort Name A to Z" });
+    const trigger = screen.getByRole("button", { name: "Genre Drama" });
+    expect(sort.compareDocumentPosition(trigger) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(trigger).toHaveAttribute("data-roving-item");
+  });
+});
 
 describe("BrowseToolbar", () => {
   it("is a named toolbar with a sort picker and three chips", () => {

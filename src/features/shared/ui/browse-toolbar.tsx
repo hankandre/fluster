@@ -15,13 +15,15 @@ interface BrowseToolbarProps {
   onSortChange(value: string): void;
   filters: ToolbarFilter[];
   onFilterChange(value: string, pressed: boolean): void;
+  // The genre filter: absent when the library has no genres to offer.
+  genre?: { options: PickerOption[]; value: string; onChange(value: string): void };
   // A ready sentence such as "248 items". Plain text, not a live region. Absent while unknown.
   count?: string;
 }
 
-// Sort, filter chips, and the item count of a library page (DESIGN.md 7.12). One Tab stop; Left and Right move
+// Sort, an optional genre, filter chips, and the item count of a library page (DESIGN.md 7.12). One Tab stop; Left and Right move
 // between the controls, and Up and Down join the page's spatial rows.
-export function BrowseToolbar({ sortOptions, sortValue, onSortChange, filters, onFilterChange, count }: BrowseToolbarProps) {
+export function BrowseToolbar({ sortOptions, sortValue, onSortChange, filters, onFilterChange, genre, count }: BrowseToolbarProps) {
   const roving = useRovingFocus<HTMLDivElement>("row", { spatial: true });
   return (
     <div className="ui-toolbar-wrap">
@@ -35,6 +37,7 @@ export function BrowseToolbar({ sortOptions, sortValue, onSortChange, filters, o
         onFocus={roving.onFocus}
       >
         <Picker label="Sort" hideLabel appearance="pill" rovingItem options={sortOptions} value={sortValue} onChange={onSortChange} />
+        {genre ? <Picker label="Genre" hideLabel appearance="pill" rovingItem options={genre.options} value={genre.value} onChange={genre.onChange} /> : null}
         <div className="ui-toolbar-filters" role="group" aria-label="Filters">
           {filters.map((filter) => (
             <ToggleChip

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
-import type { BrowseFilter, BrowseItemType } from "../../domain/catalog";
+import type { BrowseFilter, BrowseItemType, Genre } from "../../domain/catalog";
 import type { SessionGateway } from "../../app/session";
 import { imageUrlFor, toMediaCardProps } from "../card-view";
 import { detailKey } from "../detail/detail-key";
@@ -28,6 +28,8 @@ const FILTER_LABELS: Record<BrowseFilter, string> = {
 
 const FILTER_OPTIONS: { value: BrowseFilter; label: string }[] = LIBRARY_FILTERS.map((value) => ({ value, label: FILTER_LABELS[value] }));
 
+const ALL_GENRES = "all";
+
 const SORT_OPTIONS = LIBRARY_SORTS.map((sort) => ({ value: sort.id, label: sort.label }));
 
 interface LibraryGridProps {
@@ -41,22 +43,25 @@ interface LibraryGridProps {
   // The sort and filters come from the route; a change is reported through onViewChange.
   sortId: LibrarySortId;
   filters: BrowseFilter[];
-  onViewChange: (view: { sortId: LibrarySortId; filters: BrowseFilter[] }) => void;
+  // The route's genre id, and the library's genres for the toolbar. The picker shows only with at least one genre.
+  genreId?: string;
+  genres?: Genre[];
+  onViewChange: (view: { sortId: LibrarySortId; filters: BrowseFilter[]; genreId?: string }) => void;
 }
 
 // The toolbar and the paged grid of a library or collection. Pages load as the end nears the viewport, and
 // "Load more" stays as the keyboard fallback. A change of sort or filter changes the query key, which starts at page one.
-export function LibraryGrid({ gateway, parentId, itemTypes, label, errorLabel = label, sortId, filters, onViewChange }: LibraryGridProps) {
+export function LibraryGrid({ gateway, parentId, itemTypes, label, errorLabel = label, sortId, filters, genreId, genres, onViewChange }: LibraryGridProps) {
   const scope = scopeFor(gateway);
   const queryClient = useQueryClient();
   const [restored] = useState(readLibraryReturn);
   const { sortBy, sortOrder } = librarySort(sortId);
 
   const query = useInfiniteQuery({
-    queryKey: ["browse", scope, "items", parentId, itemTypes, sortBy, sortOrder, filters],
+    queryKey: ["browse", scope, "items", parentId, itemTypes, sortBy, sortOrder, filters, genreId ?? null],
     initialPageParam: 0,
     queryFn: ({ pageParam, signal }) =>
-      gateway.libraryItems(parentId, { itemTypes, startIndex: pageParam, limit: PAGE_SIZE, sortBy, sortOrder, filters }, signal),
+      gateway.libraryItems(parentId, { itemTypes, startIndex: pageParam, limit: PAGE_SIZE, sortBy, sortOrder, filters, ...(genreId ? { genreId } : {}) }, signal),
     getNextPageParam: (lastPage, allPages) => (lastPage.hasMore ? allPages.length * PAGE_SIZE : undefined),
     gcTime: ACCOUNT_GC_TIME,
   });
@@ -71,11 +76,15 @@ export function LibraryGrid({ gateway, parentId, itemTypes, label, errorLabel = 
   });
   const setSortId = (value: LibrarySortId) => {
     stopCatchUp();
-    onViewChange({ sortId: value, filters });
+    onViewChange({ sortId: value, filters, genreId });
   };
   const setFilters = (value: BrowseFilter[]) => {
     stopCatchUp();
-    onViewChange({ sortId, filters: value });
+    onViewChange({ sortId, filters: value, genreId });
+  };
+  const setGenre = (value: string) => {
+    stopCatchUp();
+    onViewChange({ sortId, filters, genreId: value === ALL_GENRES ? undefined : value });
   };
 
   const cards = query.data?.pages.flatMap((page) => page.cards) ?? [];
@@ -154,12 +163,21 @@ export function LibraryGrid({ gateway, parentId, itemTypes, label, errorLabel = 
   }
 
   function clearFilters() {
-    setFilters([]);
+    stopCatchUp();
+    onViewChange({ sortId, filters: [], genreId: undefined });
     section.current?.querySelector<HTMLElement>(".ui-toolbar-filters [aria-pressed]")?.focus();
   }
 
   const firstPageFailed = query.isError && cards.length === 0;
   const empty = query.isSuccess && cards.length === 0;
+  const narrowed = filters.length > 0 || genreId !== undefined;
+  const genre = genres && genres.length > 0
+    ? {
+        options: [{ value: ALL_GENRES, label: "All genres" }, ...genres.map((item) => ({ value: item.id, label: item.name }))],
+        value: genreId ?? ALL_GENRES,
+        onChange: setGenre,
+      }
+    : undefined;
 
   return (
     <section ref={section} className="library-grid" aria-label={label} aria-busy={query.isPending || query.isFetchingNextPage || catchingUp}>
@@ -169,6 +187,7 @@ export function LibraryGrid({ gateway, parentId, itemTypes, label, errorLabel = 
         onSortChange={(value) => setSortId(parseLibrarySort(value) ?? DEFAULT_LIBRARY_SORT)}
         filters={FILTER_OPTIONS.map((option) => ({ ...option, pressed: filters.includes(option.value) }))}
         onFilterChange={setFilter}
+        genre={genre}
         count={totalCount === undefined ? undefined : itemCountLabel(totalCount)}
       />
 
@@ -176,8 +195,8 @@ export function LibraryGrid({ gateway, parentId, itemTypes, label, errorLabel = 
       {firstPageFailed ? (
         <InlineError spatial message={`Couldn't load ${errorLabel}.`} onRetry={() => void query.refetch()} />
       ) : null}
-      {empty && filters.length === 0 ? <EmptyLibrary /> : null}
-      {empty && filters.length > 0 ? <FilteredEmpty onClear={clearFilters} /> : null}
+      {empty && !narrowed ? <EmptyLibrary /> : null}
+      {empty && narrowed ? <FilteredEmpty onClear={clearFilters} /> : null}
       {cards.length > 0 ? (
         <ul className="media-grid" data-variant="poster" data-spatial-row="" data-focus-row="Library" ref={gridRef} onKeyDown={roving.onKeyDown} onFocus={onGridFocus}>
           {cards.map((card) => (

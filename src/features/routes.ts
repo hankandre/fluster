@@ -45,20 +45,21 @@ export function seriesRoute(id: string): string {
 
 const LIBRARY_PREFIX = "#/next/browse/";
 
-// ?sort=<sortId>&filters=<a,b>. The default sort and no filters write nothing, so the bare route means the
+// ?sort=<sortId>&filters=<a,b>&genre=<id>. The default sort and no filters write nothing, so the bare route means the
 // defaults. An explicit sort other than the default stays (See all opens Newest added first). Written by hand
 // so the filter list keeps its literal commas.
-function viewQuery(sort: LibrarySortId | undefined, filters: readonly BrowseFilter[]): string {
+function viewQuery(sort: LibrarySortId | undefined, filters: readonly BrowseFilter[], genreId?: string): string {
   const parts: string[] = [];
   if (sort && sort !== DEFAULT_LIBRARY_SORT) parts.push(`sort=${encodeURIComponent(sort)}`);
   const names = LIBRARY_FILTERS.filter((filter) => filters.includes(filter));
   if (names.length > 0) parts.push(`filters=${names.join(",")}`);
+  if (genreId) parts.push(`genre=${encodeURIComponent(genreId)}`);
   return parts.length > 0 ? `?${parts.join("&")}` : "";
 }
 
-// #/next/browse/<libraryId>, optionally with ?sort=<sortId>&filters=<a,b> to open the library in that view.
-export function libraryRoute(id: string, sort?: LibrarySortId, filters: readonly BrowseFilter[] = []): string {
-  return `${LIBRARY_PREFIX}${encodeURIComponent(id)}${viewQuery(sort, filters)}`;
+// #/next/browse/<libraryId>, optionally with ?sort=<sortId>&filters=<a,b>&genre=<id> to open the library in that view.
+export function libraryRoute(id: string, sort?: LibrarySortId, filters: readonly BrowseFilter[] = [], genreId?: string): string {
+  return `${LIBRARY_PREFIX}${encodeURIComponent(id)}${viewQuery(sort, filters, genreId)}`;
 }
 
 export interface LibraryRoute {
@@ -66,6 +67,8 @@ export interface LibraryRoute {
   // Absent when the route has no sort or names an unknown one.
   sort?: LibrarySortId;
   filters: BrowseFilter[];
+  // One genre id; absent when the route has none.
+  genreId?: string;
 }
 
 export interface CollectionRoute {
@@ -74,7 +77,7 @@ export interface CollectionRoute {
   filters: BrowseFilter[];
 }
 
-function parseViewRoute(hash: string, prefix: string): { id: string; sort?: LibrarySortId; filters: BrowseFilter[] } | undefined {
+function parseViewRoute(hash: string, prefix: string): { id: string; sort?: LibrarySortId; filters: BrowseFilter[]; genreId?: string } | undefined {
   if (!hash.startsWith(prefix)) return undefined;
   const rest = hash.slice(prefix.length);
   const queryStart = rest.indexOf("?");
@@ -90,7 +93,8 @@ function parseViewRoute(hash: string, prefix: string): { id: string; sort?: Libr
   const sort = parseLibrarySort(params.get("sort") ?? "");
   const named = (params.get("filters") ?? "").split(",");
   const filters = LIBRARY_FILTERS.filter((filter) => named.includes(filter));
-  return sort ? { id, sort, filters } : { id, filters };
+  const genreId = params.get("genre") || undefined;
+  return { id, ...(sort ? { sort } : {}), filters, ...(genreId ? { genreId } : {}) };
 }
 
 // Reads a library route. A missing or malformed id is not a route.
@@ -111,8 +115,8 @@ export function collectionRoute(id: string, sort?: LibrarySortId, filters: reado
 export function parseCollectionRoute(hash: string): CollectionRoute | undefined {
   const route = parseViewRoute(hash, COLLECTION_PREFIX);
   if (!route) return undefined;
-  const { id, ...view } = route;
-  return { collectionId: id, ...view };
+  const { id, sort, filters } = route;
+  return { collectionId: id, ...(sort ? { sort } : {}), filters };
 }
 
 export const ROUTE_REPLACED_EVENT = "fluster:route-replaced";
