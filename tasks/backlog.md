@@ -345,9 +345,9 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 
 ## Player sheet focus fix (#174) review lows, 2026-11-15
 
-- `player-sheet.tsx:47`: the TV-form Up/Down step calls `next.focus()` without `preventScroll`; pressing Down within the slide-in could repeat the sideways jump. A scrolling focus may be what brings the next row into view, so check before changing. S.
-- `info-sheet.tsx:89`: `closeButton.current?.focus()` after "Play original" has no `preventScroll`; harmless after the slide, but inconsistent. S.
-- `player-sheet.test.tsx`: the test checks that some focus call used `preventScroll`, so a second, scrolling `focus()` would not fail it; the `initialFocus` ref path is untested. A Playwright check that `.player-page` `scrollLeft` stays 0 while a sheet opens would cover the real jump. S.
+- ~~`player-sheet.tsx:47`: the TV-form Up/Down step calls `next.focus()` without `preventScroll`; pressing Down within the slide-in could repeat the sideways jump. A scrolling focus may be what brings the next row into view, so check before changing. S.~~ Taken by P3-32.
+- ~~`info-sheet.tsx:89`: `closeButton.current?.focus()` after "Play original" has no `preventScroll`; harmless after the slide, but inconsistent. S.~~ Taken by P3-32.
+- ~~`player-sheet.test.tsx`: the test checks that some focus call used `preventScroll`, so a second, scrolling `focus()` would not fail it; the `initialFocus` ref path is untested. A Playwright check that `.player-page` `scrollLeft` stays 0 while a sheet opens would cover the real jump. S.~~ Taken by P3-32 (`e2e/player-sheet-scroll.spec.ts` now makes the Playwright check; P3-32 extends it to the new sheet).
 - The UI gallery page (`88-ui-gallery-player`) is 1754 px wide at a 1440 px viewport, so it overflows sideways. The old baseline also showed the sheet focus scrolling it 59 px (the fixed "Browser development mode" badge moved); #174 accepted the corrected capture. S.
 ## Text filter follow-ups (P0-19, 2026-11-15)
 
@@ -369,7 +369,7 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 ## Player page clip fix and Home checkmark follow-ups (2026-11-16)
 
 - CI cannot run Playwright WebKit (the host lacks libicu74 and libxml2), so `e2e/player-sheet-scroll.spec.ts` runs in Chromium and imitates WebKit's late scroll-to-focus. Add a WebKit project, or a WebKitGTK smoke job, so the real engine is checked. S.
-- `player-sheet.tsx:58` returns focus to the opener with a plain `focus()`; with `.player-page` clipped it can no longer scroll the page, but other scroll containers on that path would still be scrolled. Consider `preventScroll` there too. S.
+- ~~`player-sheet.tsx:58` returns focus to the opener with a plain `focus()`; with `.player-page` clipped it can no longer scroll the page, but other scroll containers on that path would still be scrolled. Consider `preventScroll` there too. S.~~ Taken by P3-32.
 - `e2e/` is outside ESLint's scope ("File ignored because no matching configuration"), so specs are never linted. S.
 - The e2e mock marks every episode 1 played (`e2e/support/mock-server.ts:185`), so Home's Next up card for "Perigee" shows a played checkmark in `19g-home-continue-merged`. Fix the fixture, and decide whether Continue watching cards should ever show the played badge (a Next up episode marked played can come from a rewatch). S (P16-02).
 
@@ -383,8 +383,8 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 ## Detail subtitle list follow-ups (P17-02, 2026-11-16)
 
 - Mark hearing-impaired tracks in the detail labels: `SubtitleInfo` has no hearing-impaired flag, so such tracks match by language and read like any other. The player's two-line labels (P13-29) already say "hard of hearing". S (P17-02).
-- Add a "Show fewer" control after the full subtitle list is expanded. Not asked for. S (P17-02).
-- Split `src/lib/jellyfin/gateway.ts` along domain lines; it was over 1000 lines before P17-02 and gained two short reads. S (P17-02).
+- ~~Add a "Show fewer" control after the full subtitle list is expanded. Not asked for. S (P17-02).~~ Shipped with #192 ("Show fewer subtitles", `src/features/detail/format.ts`).
+- ~~Split `src/lib/jellyfin/gateway.ts` along domain lines; it was over 1000 lines before P17-02 and gained two short reads. S (P17-02).~~ Already P2-08.
 - Tracks that jellyscale hides (L6) are covered by P17-05 to P17-07; the detail list counts only the tracks the server listed (P17-02).
 - Detail subtitle list design lows: the expanded list's focus ring is a viewport-tall box; the quiet "Show all N subtitles" button's padding misaligns it by about 25px; the unreachable "Show 1 subtitle" branch in `format.ts`; no test for a failed `/Localization/Cultures` read in `account-languages.ts`. S (P17-02, see its spec "Review follow-ups").
 
@@ -397,14 +397,14 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 - P17-01 recorder: add a "no matching track" cell for audio and subtitles (a chosen language the file lacks; `PlayDefaultAudioTrack: false` with no language; Smart or Always with no language). Settings shows those reads as "Set in another Jellyfin app" until recorded. S (P17-03).
 - TV Picker sheet: page-wise jumps (PageUp/PageDown or letter rows) for the 486-language list on 12.4.0 and the doubled subtitle list. S (P17-03).
 - P17-08 follow-ups: (a) a retry in a session that started with no audio pick does not keep an audio track switched in mpv; (b) when Rust cannot map an embedded pick, mpv's own choice plays, which is the server's default only when the account uses "Play default audio track" (fixing it needs native work); (c) external audio files are never loaded, so picking one direct plays the default track and shows the notice.
-- P17-08 Guardian L3: Play original after an in-mpv audio switch on a converted stream restores the first pick (`coordinator.ts:151-156`).
+- ~~P17-08 Guardian L3: Play original after an in-mpv audio switch on a converted stream restores the first pick (`coordinator.ts:151-156`).~~ Taken by P3-33.
 - P17-08 Guardian L4: no notice when mpv's fallback track is unmapped (`coordinator.ts:380`).
 - P17-08 design lows: the selected picker row repeats the codec; the TV audio sheet is tall and mostly empty; the phone "More" button indent should be checked against the old baseline.
 - P17-08 guardian (second pass) lows: for a direct-played pick that is not an embedded track, the plan's `defaultAudioStreamIndex` is the echoed pick (fixtures show `DefaultAudioStreamIndex: 2` for pick 2), so mpv falls back to its own choice, not necessarily the file's flagged default that the notice names; set it to the source's flagged default in that branch. The visual config always starts a second Vite on port+1, so two worktrees with adjacent `FLUSTER_VISUAL_PORT`s collide. S.
 
 ## Settings in the player (owner request, 2026-11-16)
 
-- Owner: changing a client setting today means leaving playback, going Home, opening Settings, then starting again. Add a Settings sheet to the player beside Info, Audio & Subtitles, and Chapters. When a change affects the stream, Fluster refreshes the stream and resumes at the same position, keeping the current audio and subtitle tracks. Findings from 2026-11-16:
+- ~~Owner: changing a client setting today means leaving playback, going Home, opening Settings, then starting again. Add a Settings sheet to the player beside Info, Audio & Subtitles, and Chapters. When a change affects the stream, Fluster refreshes the stream and resumes at the same position, keeping the current audio and subtitle tracks. Findings from 2026-11-16:~~ Taken by P3-32 (the sheet and the settings that apply at once) and P3-33 (the streaming limit and the refresh). Both wait for the owner's answers S1 to S3; languages in the sheet wait for S1 and S4 and have no task yet. The findings below stay as the record:
   - The streaming limits already renegotiate mid-playback while keeping the position and tracks (`use-playback-session.ts` `checkLimit`, `coordinator.ts` `renegotiate`/`restart`, `track-choice.ts` merge). The sheet can reuse that path.
   - The account audio and subtitle languages (P17-03) shape the server's starting tracks (P17-01 fixtures), so a change made in the player would need a renegotiation to take effect. Nothing applies them mid-playback today. Decide whether a language change in the player also switches the current tracks, or only applies from the next title.
   - The Continue watching window only affects Home and does not belong in the player sheet. Auto-play next and skip intros have no Settings rows yet (P3-23, P3-24). Once they exist they apply live, with no refresh.
@@ -412,11 +412,11 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
   - Depends on P3-23 and P3-24 for the live settings. M to L.
 - `parseItemRoute` (used by `openPlayer`) drops a `?query` from an item id, but the route table keeps it as part of the id; pick one. Found in P2-10.
 - `src/features/shell/sign-in-guard.tsx` re-sets `location.hash` on every hash change while signed out, as each view did before; harmless but repeated. Found in P2-10 review (low).
-- The `60-features-index` visual baselines must be re-accepted from the PR's CI run before merge, since the developer index now shows 4 links; do not mark P2-10 passing before they land. Found in P2-10 review (low).
+- ~~The `60-features-index` visual baselines must be re-accepted from the PR's CI run before merge, since the developer index now shows 4 links; do not mark P2-10 passing before they land. Found in P2-10 review (low).~~ Done in 132b6d2 (CI run 44023708906).
 
 ## P3-24 ship notes (2026-11-16)
 
-- `e2e/visual/scenarios.ts` `54c-player-auto-skip-osd` captures 150 ms after "Skipped intro" while the seek's Buffering panel is up (CI run 44016450522 shows it at all three desktop sizes). Its 500 ms delay makes the capture timing-dependent; wait for the buffering status to clear (or for playback to resume) before the screenshot. `55c-player-next-episode-autoplay-off` has the same Buffering panel in CI run 44027024212; fix both together. S.
+- ~~`e2e/visual/scenarios.ts` `54c-player-auto-skip-osd` captures 150 ms after "Skipped intro" while the seek's Buffering panel is up (CI run 44016450522 shows it at all three desktop sizes). Its 500 ms delay makes the capture timing-dependent; wait for the buffering status to clear (or for playback to resume) before the screenshot. `55c-player-next-episode-autoplay-off` has the same Buffering panel in CI run 44027024212; fix both together. S.~~ Taken by P3-32.
 
 ## P3-23 ship notes (2026-11-16)
 
@@ -424,7 +424,7 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 
 ## Personal ratings and top-rated lists (owner request, 2026-11-17)
 
-- Owner: rate your own films, and get lists of your top-rated ones, "above four stars or in the top 25% of movies that they've rated". Findings from 2026-11-17 (SDK 1.0.2 and Jellyfin source):
+- ~~Owner: rate your own films, and get lists of your top-rated ones, "above four stars or in the top 25% of movies that they've rated". Findings from 2026-11-17 (SDK 1.0.2 and Jellyfin source):~~ Taken by P16-13 (fixtures), P16-14 (rate a film on its page), P16-15 (the Top rated view), and P16-16 (the Home row). P16-14 to P16-16 wait for the owner's answers R1 to R4. The findings below stay as the record; the Jellyscale request is not filed:
   - Jellyfin stores a per-user 0-10 `UserItemData.Rating`, separate from the community and critic ratings. `Likes` is derived from it: Rating >= 6.5 counts as liked, setting like stores 10, setting dislike stores 1 (`MediaBrowser.Controller/Entities/UserItemData.cs`).
   - A rating is set with `POST /UserItems/{id}/UserData` carrying `Rating`; the server saves it (`Emby.Server.Implementations/Library/UserDataManager.cs`). Thumbs use `POST`/`DELETE /UserItems/{id}/Rating?likes=`.
   - The server has no sort by the user's rating (`ItemSortBy` has CommunityRating, CriticRating, IsFavoriteOrLiked) and no threshold filter beyond `Likes` (>= 6.5). So "4 stars and up" (>= 8/10) and "top 25% of what you rated" must be computed in Fluster from one request for the user's rated items.
@@ -437,3 +437,21 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
   - Hierarchy (owner, 2026-11-17): clearly distinguish the viewer's own rating from audience and critic scores. The viewer's own rating is more prominent, in its own place and not on the facts line. Audience and critic scores stay, because they help decide what to watch, but they are secondary and labelled by source ("7.8 audience · 91% critics", applied to P15-03).
   - Possible Jellyscale request (from:fluster): server-side sort and threshold filter by the user's own rating.
   - M.
+
+## Product review pass (2026-11-19)
+
+The triage of every entry added since the 2026-11-15 pass, and the two owner requests ("Settings in the player" and "Personal ratings and top-rated lists"), is in `docs/plans/proposals/product-review.md`, "Product review pass, 2026-11-19".
+
+- Tasks now: P16-13 (personal-rating fixtures).
+- Tasks that wait for the owner's answers: P3-32 (S1, S2), P3-33 (S1, S3), P16-14 (R1, R2), P16-15 (R3, R4), P16-16 (R3).
+- Notes for specs, which edit no task. Each stays an entry above until its task's pull request closes it:
+  - P13-19 (design audit and docs sync): the UI gallery page's sideways overflow (#174), the detail subtitle list's design lows (P17-02), the `.ui-button` border-width token (#192), and the P17-08 design lows.
+  - P2-12 (track selector, native): P17-08 follow-up (b), an embedded pick Rust cannot map, and the second-pass low on `defaultAudioStreamIndex`.
+  - P16-11 and P16-13 (fixtures): the recorder does not reproduce committed fixtures and logs in on a fixed device id (P17-01 follow-ups).
+  - P3-33's spec: P17-08 follow-up (a), a retry that does not keep an audio track switched in mpv, sits on the same restart path; P3-33 takes guardian L3 only.
+- Found by this pass:
+  - Languages in the player's Settings sheet have no task. If the owner answers S1 with B, add one after P3-33 (same player, in sequence): it writes the account as P17-03 does and follows S4. A renegotiation today asks for the playing tracks by index (`currentSelection`, `src/domain/track-choice.ts`), so a changed language cannot move the tracks unless Fluster stops sending them, and P3-13 says Fluster adds no track-preference logic of its own. M (owner request 2026-11-16).
+  - A rating prompt when a film ends has no task. If the owner answers R2 with B, add one after P16-05 (the after-finish moment) and after P3-33 (same player, in sequence). S to M (owner request 2026-11-17).
+  - Whether a renegotiation keeps a paused title paused, and whether direct play after a renegotiation selects the kept subtitle track in mpv, are unverified; P3-33's spec records both. S (P3-33).
+  - CI retries end-to-end journeys twice and visual captures once (`playwright.config.ts:19`, `playwright.visual.config.ts:17`), so the `e2e/tv/settings-languages.spec.ts:28` flake (2 of 10 on main without retries) rarely fails a pull request. It stays an entry; promote it if it fails a CI run. S.
+  - Adding P3-32 and P3-33 to P4-01's `depends_on` (the dogfood week waits for settings in the player) edits an existing task; it is proposal E1 for the owner. S.

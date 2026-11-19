@@ -1,6 +1,6 @@
 # Product review: edge, gaps, multi-server, backlog
 
-Status: **Answered 2026-11-12.** (A later pass, with four questions still open, is at the end: "Product review pass, 2026-11-15".) The owner's answers are in "Answers" below, as relayed by the coordinating agent. The changes they approve are applied in the same pull request, except two rule changes that wait for the owner's own confirmation. Sections 1 to 5 keep the original proposal text for the record; where an answer differs from a recommendation, the answer wins.
+Status: **Answered 2026-11-12.** (Two later passes are at the end: "Product review pass, 2026-11-15", with L5 to L7 still open, and "Product review pass, 2026-11-19", with S1 to S4 and R1 to R4 open.) The owner's answers are in "Answers" below, as relayed by the coordinating agent. The changes they approve are applied in the same pull request, except two rule changes that wait for the owner's own confirmation. Sections 1 to 5 keep the original proposal text for the record; where an answer differs from a recommendation, the answer wins.
 
 ## Direction update (owner, 2026-11-12)
 
@@ -1107,3 +1107,186 @@ Two batches. **Batch 1 is answered** (see "Answers" above; the text below is as 
 - It filed nothing in jellyscale's tracker. Two requests are in the backlog: a partial or version-checked configuration save, and a published image with the Babel Film fixture.
 - It did not change `DESIGN.md`, `ARCHITECTURE.md`, or `PRODUCT.md`. Each task changes the document it affects.
 - It did not run a competing client or a server.
+
+## Product review pass, 2026-11-19
+
+Status: **Open. S1 to S4 and R1 to R4 wait for the owner.** Five of the six tasks this pass adds are `blocked` until they are answered. Their acceptance is written for the recommended option, says so in the item, and is changed with the answers before any work starts. No existing task is edited.
+
+This is a Fable 5.2 product-review pass under the `AGENTS.md` "Tasks" rule. It was briefed for 2026-11-16 and run on 2026-11-19.
+
+### Inputs
+
+- `tasks/backlog.md`: every entry added after the last pass's final commit (`76b816b`, 2026-11-15), read from `git diff 76b816b origin/main -- tasks/backlog.md` at `160db3e`.
+- The owner's request "Settings in the player" (2026-11-16, PR #196). The owner called leaving playback to change a setting "one of the huge frustrating things" (relayed by the coordinating agent). It is the priority item of this pass.
+- The owner's request "Personal ratings and top-rated lists" (2026-11-17, PR #200), with the owner's hierarchy rule: the viewer's own rating is more prominent and in its own place; audience and critic scores are secondary and labelled by source.
+- The owner's process rule (2026-11-16, relayed): tasks that touch the same store, screen, player, or routes are built in sequence, not in parallel.
+- Merged since the brief: P17-08 (#194), P2-10 (#198), P3-24 (#197), P3-23 (#199). P15-03 is in flight on `task/P15-03`.
+
+Limits. Nothing was run: no server, no app, no competing client. The code was read at `160db3e`. The codebase-memory index was not available in this session ("project not found or not indexed"), so the map comes from semble and from reading the files named below. Every claim about Jellyfin's rating routes is the backlog's reading of the source on 2026-11-17 and is **unverified** against a server; P16-13 records it before anything is built on it.
+
+### What the code says about settings in the player
+
+- **The refresh already exists.** `checkLimit` (`src/features/player/use-playback-session.ts:362`) listens to the preferences store and, when the limit for this server's host class changes and `limitChangeAffects` (`src/lib/streaming-limits.ts:57`) says the delivery can change, calls `renegotiate(currentSelection(plan, snapshot))`. `PlaybackCoordinator.renegotiate` (`src/lib/player/coordinator.ts:146`) stops the old session, deletes its encode, and starts a new one at the current position. `currentSelection` (`src/domain/track-choice.ts:46`) asks for the playing audio and subtitle streams by index. `ARCHITECTURE.md` §3 already describes this path. The only thing missing is a way to change the limit without leaving the player.
+- **A refresh shows the loading screen today.** `restart` (`use-playback-session.ts:279`) clears the plan and resets the session state, so `player-screen.tsx:272` draws `PlayerLoading` (the backdrop, the title, one status line) and no controls until the first frame. That is question S3.
+- **Skip settings apply at once; auto-play does not.** Skip modes are read with `useSyncExternalStore` (`src/features/player/index.tsx:35`). Auto-play is read once per session (`index.tsx:137`: "Read once per session ... a change cannot restart or cancel a running countdown"), and `DESIGN.md` §7.18 says "A change applies from the next Play". The backlog entry's "they apply live" is true for skip and false for auto-play. A switch in the player that only works from the next title would be the finagling `PRODUCT.md` rules out, so P3-32 makes it apply at once.
+- **The sheet is a known shape.** `PlayerSheet` (`src/features/player/chrome/player-sheet.tsx`) is the non-modal right sheet behind Info, Audio & Subtitles, and Chapters; `SheetName` (`chrome/use-player-keys.ts:10`) lists the three; the control row's buttons are in `chrome/transport-controls.tsx`. The keys taken are Space, `k`, `j`, `l`, the arrows, `m`, `f`, `c`, `a`, `i`, `s` (Skip), `n`, Home, End, Enter, Escape, and the digits (`src/features/player/player-keymap.ts:62`).
+- **The rows exist.** `src/features/settings/playback-section.tsx` and `skip-rows.tsx` hold the limit, auto-play, countdown, intro, and credits rows over the shared `SettingsRow`, `Switch`, and `Picker`. They confirm with a toast; `DESIGN.md` §7.16 says no toast is shown in the player, so in the sheet the OSD confirms.
+- **Languages are different.** They are the account's, saved to the server (P17-03, `use-account-language-settings.ts`), and every other Jellyfin app reads them. A renegotiation sends the playing tracks by index, so a changed language does not move the tracks even after a refresh. Moving them means Fluster either stops sending the indices and lets the server choose, or chooses a track itself, and P3-13 says the server derives the default tracks and Fluster adds no preference logic. That is question S4, and it is why languages have no task yet.
+- **Two things are unverified** and go to P3-33's spec: whether a paused title stays paused across a renegotiation, and whether direct play after a renegotiation selects the kept subtitle track in mpv.
+
+### Tasks added
+
+Acceptance is in `tasks/prd.json`, which is the source of truth. Priority is this pass's; place is the position in the file. `tasks/prd.json` has no priority or risk field, so both are recorded here.
+
+| Id | Title | Priority | Risk | Place | Waits for | Model | State |
+|---|---|---|---|---|---|---|---|
+| P3-32 | Open a Settings sheet in the player for the settings that apply at once | **High** | Routine | P3, after P3-24 | P3-23, P3-24, P13-13, P13-17, P13-22, P13-34 (all done); **S1, S2** | Sonnet; Opus spec; `reviewer` | blocked: owner |
+| P3-33 | Change the streaming limit in the player and keep your place | **High** | **High** (playback session and coordinator; invariant I1) | P3, after P3-32 | P3-32; P10-08, P3-30, P17-08 (done); **S1, S3** | Sonnet; Fable spec; `guardian` review | blocked: owner |
+| P16-13 | Record personal-rating contract fixtures for 10.11 and 12.x | Medium | Routine | P16, after P16-12 | P0-02, P0-03, P16-01 (all done) | Sonnet | todo |
+| P16-14 | Rate a film on its page | Medium | Routine | P16 | P16-13, P15-03, P15-01; **R1, R2** | Sonnet; Opus spec; `reviewer` | blocked: owner |
+| P16-15 | List your top-rated films | Medium | Routine | P16 | P16-14, P15-01; **R3, R4** | Sonnet; Opus spec; `reviewer` | blocked: owner |
+| P16-16 | Show Top rated as a row on Home | Medium | Routine | P16, last | P16-15, P15-09, P16-02; **R3** | Sonnet; `reviewer` | blocked: owner |
+
+Why these priorities:
+
+- **P3-32 and P3-33, high, and in P3.** The owner named this as one of the most frustrating things in daily use, and the cost is real each time: stop the film, go Home, open Settings, change one value, find the film, start again. P3 is the daily driver, and a daily driver should not need that. They sit directly after the settings they expose (P3-23, P3-24) and ahead of the rest of P3's open work. Whether the dogfood week waits for them is proposal E1.
+- **Two tasks, not one, because they differ in risk.** P3-32 adds a sheet and makes one preference apply at once; it sends no request and can be verified alone. P3-33 puts a control on the renegotiation path, changes what a refresh looks like, and fixes one track-keeping fault on that path, so it carries the tripwire and a `guardian` review.
+- **P16-13 to P16-16, medium.** The owner asked for ratings, and nothing in daily use is broken without them. They sit in Discovery because a list of films the viewer loved is a way to find something to watch again.
+- **P16-13 is the only task that can start today.** It needs no answer: it records what the server does with a rating whatever the control looks like.
+
+### Order, under the owner's process rule
+
+Tasks that touch the same screen, store, player, or routes run in sequence. `depends_on` carries the order wherever one task builds on another:
+
+- **The player:** P3-32, then P3-33, then (only if the answers ask for them) languages in the sheet, then a rating prompt at the end of a film.
+- **A title's page:** P15-03 (in flight), then P15-01, then P16-14.
+- **The Top rated list and Home:** P16-14, then P16-15, then P16-16, which also waits for the Favorites row (P15-09) because both take a place in Home's fixed order.
+
+Where no task builds on the other, `depends_on` is not used, and the coordinator keeps them apart under the same rule: P3-32 and P3-33 do not run beside another open player task (P3-25, P3-26, P13-28, P15-06, P15-11, P15-16, P17-07), and P16-14 does not run beside another open task on a title's page (P15-02, P16-04, P16-07).
+
+### Questions for the owner
+
+Eight questions, in two batches. Streaming-service convention is the default unless there is a reason against it. A ninth, "does the full Settings page change?", is not asked, because it blocks nothing: see proposal E2.
+
+#### Batch 1: settings in the player
+
+**S1. Which settings are in the player's Settings sheet?**
+- A: The ones that change the title that is playing: Play next episode automatically, Countdown, Intros, Credits, and the streaming limit that applies to this server.
+- B: Everything in A, plus the account's audio and subtitle languages.
+- C: Everything in A, plus a last row, "All settings", that stops playback and opens Settings.
+- **Rec: A.** These five are the settings a viewer has a reason to change mid-film: the picture stutters, so lower the limit; it is late, so stop after this episode; this show's intro is worth watching. The Continue watching window only affects Home. Languages are the account's and change every other Jellyfin app; for the film that is playing, Audio & Subtitles is already one button away. P3-32 and P3-33 are written for A. B adds a task after P3-33 and needs S4.
+
+**S2. How does the sheet open?**
+- A: A Settings (gear) button in the control row, between Audio & Subtitles and Info, and the `o` key. On TV, the same button, reached with the arrows like the other three.
+- B: The button only, with no key.
+- C: No new button: a Settings section at the bottom of the Audio & Subtitles sheet.
+- **Rec: A.** Every other sheet has a button and a key, and a remote has only the button. `s` is taken by Skip. `,` is left free because other players use `,` and `.` to step frames (from memory, unverified). C saves a button but hides settings under a name that does not say they are there, and makes that sheet long on TV. P3-32 is written for A.
+
+**S3. What does the viewer see while the stream refreshes?** Today a limit change replaces the picture and the controls with the loading screen (backdrop, title, one status line) until the first frame.
+- A: As today. The sheet closes, the loading screen shows, playback returns at the same place, and an OSD line says what changed.
+- B: The sheet stays open with focus on the row. The picture gives way to the status disc with one line ("Changing the streaming limit…"), and when the picture returns the row shows the new value.
+- C: As B, and the last frame stays on screen under the status disc instead of the backdrop. This needs native player work to hold a frame across a stop and a load; whether it is possible without a new Tauri command is unverified, and a new command is an architecture change.
+- **Rec: B.** The viewer chose something in a sheet and should still be in that sheet when it has happened, with focus where they left it; on a remote, A means finding the button again to check or undo the choice. C is the best picture but is native work in the serial native queue, for a moment that lasts about as long as starting a film. P3-33 is written for B.
+
+**S4. If languages are in the sheet (S1 B): does a language change switch the tracks that are playing?**
+- A: No. It applies from the next title, and the row says so. The tracks of the title that is playing are changed in Audio & Subtitles.
+- B: Yes. Fluster refreshes the stream and plays the tracks the server picks for the new language.
+- C: It asks: after the change, the row offers "Switch now".
+- **Rec: A.** It keeps one rule: the account's languages pick the starting tracks, and the track menu changes the title that is playing. B restarts a direct play only to ask the server which track to use, and can undo a track the viewer picked by hand a minute earlier. C is two controls for what the track menu does in one. Not needed if S1 is A.
+
+#### Batch 2: personal ratings
+
+**R1. How do you rate?**
+- A: Five whole stars. Jellyfin stores 2, 4, 6, 8, or 10.
+- B: Five stars with halves. Jellyfin stores 1 to 10.
+- C: Thumbs up and down, which is Jellyfin's like and dislike (it stores 10 and 1).
+- **Rec: A.** The owner's words are "above four stars", so stars. Five stops are quick with a remote's Left and Right; ten are fiddly. Other Jellyfin apps count 6.5 and above as liked (source reading, unverified), so 4 and 5 stars read as liked elsewhere and 3 does not, which is a fair translation. B orders a top quarter more finely and can be added later without losing a rating. C cannot say "four stars". P16-14 is written for A.
+
+**R2. Where do you rate?**
+- A: On the film's page only.
+- B: On the film's page, and in a quiet prompt when a film ends.
+- C: As B, and from a card's menu in rows and grids.
+- **Rec: B, in two steps.** The page comes first (P16-14, the same under A or B). The prompt is a later task, after P16-05 settles what the end of a film looks like and after P3-33 in the player's sequence. The reason for B: a list is only as good as the ratings behind it. Which other Jellyfin apps set a rating is unverified, so Fluster may be the only place they come from, and the moment a film ends is when a viewer knows what they thought. A control that waits on a page the viewer has already left may leave the lists empty. Films only, in the owner's words ("rate your own films"); series and episodes get no control unless the owner says otherwise.
+
+**R3. Where do the lists live?**
+- A: A Top rated view beside Favorites.
+- B: The view, and a Top rated row on Home (twelve cards and See all), as Favorites has.
+- C: No view: a "4 stars and up" filter in the Movies library.
+- **Rec: B, as two tasks.** The view is P16-15 and the row is P16-16; the row's place in Home's fixed order is shown to the owner in its spec. The server cannot sort or filter by the viewer's own rating (source reading, unverified until P16-13), so Fluster computes the list, and C would be the one library filter that cannot page and sort on the server like the others.
+
+**R4. What is the cutoff, and how many rated films before a top-quarter list shows?**
+- A: 4 stars and up. No minimum is needed.
+- B: The top 25% of the films you have rated, shown once you have rated 20.
+- C: Either: 4 stars and up, or in the top 25% once you have rated 20. This is the owner's sentence taken literally.
+- **Rec: A.** A film you gave 4 stars is in the list, and that is the whole rule. With whole stars a top quarter nearly always falls on a star line anyway, ties and all, and under B or C a film can leave the list because the viewer rated a different film. If the owner prefers B or C, 20 is the proposed minimum: below that a quarter is a handful of films. P16-15 is written for A and names what changes for B or C.
+
+#### Proposals that edit something existing
+
+None is applied. Each needs the owner's yes.
+
+| # | Proposal | Why |
+|---|---|---|
+| E1 | Add P3-32 and P3-33 to P4-01's `depends_on`, so the dogfood week waits for settings in the player. | The week measures daily use, and the owner already knows this hurts daily. It edits an existing task. |
+| E2 | The full Settings page keeps every row, in the same sections, with the same copy. One sentence in `DESIGN.md` §7.18 changes with P3-32: auto-play and the countdown no longer "apply from the next Play". | The sheet is a second door to the same values, built from the same row definitions. This replaces the question "does the full Settings page change?", which is dropped from the eight because no task waits for it. |
+| E3 | File a `from:fluster` request with Jellyscale: sort and filter items by the viewer's own rating. | With it, P16-15 and P16-16 would page on the server. Until then Fluster computes the list. File it after P16-13 confirms plain Jellyfin has neither. |
+
+**Not decided here, and left as it is:** P15-03's acceptance says "The facts line shows the rating when the server has one". That is the audience and critic score, labelled by source, and matches the owner's hierarchy; the viewer's own rating never goes on that line (P16-14).
+
+### Backlog triage
+
+Every entry added since `76b816b`. "Stays" means the entry is left where it is, with the reason.
+
+| Entry | Verdict | Why |
+|---|---|---|
+| Settings in the player (owner, 2026-11-16) | **P3-32, P3-33** | The owner's priority; the refresh path already exists. Languages in the sheet wait for S1 and S4 and have no task. |
+| Personal ratings and top-rated lists (owner, 2026-11-17) | **P16-13 to P16-16** | The owner's request. The Jellyscale request in it stays open (E3). |
+| #174 lows: `player-sheet.tsx:47`, `info-sheet.tsx:89`, the focus test | **P3-32** | P3-32 adds a fourth sheet with rows of controls, which is exactly where a scrolling focus shows. |
+| Clip fix: `player-sheet.tsx:58` returns focus without `preventScroll` | **P3-32** | The same path. |
+| P3-24 ship notes: captures `54c` and `55c` depend on timing | **P3-32** | P3-32 changes auto-play in the player and adds player captures; it fixes the two it would otherwise copy. |
+| P17-08 guardian L3: Play original restores the first audio pick | **P3-33** | A viewer hears the wrong track after pressing Play original. It is on the path P3-33 changes and tests. |
+| "Show fewer" after the full subtitle list | Struck: shipped | `src/features/detail/format.ts:111` has "Show fewer subtitles" (#192). |
+| Split `gateway.ts` | Struck: duplicate | Already P2-08, `todo`. |
+| The `60-features-index` baselines | Struck: done | Accepted in `132b6d2`. |
+| Clip fix: CI cannot run WebKit | Stays | The app's real engine is unchecked for sheet scrolling, and the fault it guards was seen in use. It needs a CI image change. Until then P3-32 requires one written check in the desktop app. First to promote if a sheet fault returns. |
+| P3-23 flake: `e2e/tv/settings-languages.spec.ts:28` | Stays | 2 of 10 on main without retries, but CI retries journeys twice (`playwright.config.ts:19`), so it rarely fails a pull request. Promote it if it does. |
+| Home window: no `GET /Items/{id}/Collections` on 10.11 | Stays | Home falls back to Similar, which is not wrong, and the cost of the fix is up to N + 1 requests. The dogfood server is 12.4. |
+| Text filter follow-ups (P0-19), seven entries | Stays | Nothing a viewer has seen. They are the edges of display filters whose main gaps P0-19 closed. Take the bare `user:pass@host` case first if a filter task opens; whether any real error has that shape is unverified. |
+| E2E and visual repeatability follow-ups (P0-18), three entries | Stays | Tooling, with no failing run behind them. |
+| `e2e/` is outside ESLint | Stays | Worth doing, but no fault traced to it yet. |
+| The mock marks every episode 1 played; should Continue watching show the played badge | Stays | A fixture fix plus a small design call. No report from use. |
+| P17-01 follow-ups: split the sample script; `ARCHITECTURE.md` §3 wording | Stays | Tidy-ups. |
+| P17-01 follow-ups: the recorder is not reproducible; fixed device id | Stays; **note for P16-11 and P16-13** | Both use the recorder next. |
+| P17-02: mark hard-of-hearing tracks in the detail list | Stays | A real gain for viewers who need those tracks, but `SubtitleInfo` lacks the flag, so it is a gateway change. Take it with P15-12, which labels audio description the same way. |
+| P17-02 and P17-08 design lows; the `.ui-button` border token; the UI gallery overflow | Stays; **note for P13-19** | The design audit closes these. |
+| #192 lows: `expectTitleSafe` after re-expanding; dead `components` entries; overlapping lint rules | Stays | Each is correct today. |
+| P17-03: the "no matching track" fixture cell | Stays | Settings shows "Set in another Jellyfin app" for those reads, which is true. |
+| P17-03: page-wise jumps in the TV Picker for 486 languages | Stays | Real on a remote, but the TV shell is M6 and the Picker has typeahead on a keyboard. |
+| P17-08 follow-up (a): a retry does not keep an audio track switched in mpv | Stays; **note for P3-33's spec** | The same restart path, but a different trigger. P3-33 stays narrow. |
+| P17-08 follow-ups (b), (c), guardian L4, and the second-pass low | Stays; (b) and the second-pass low are **notes for P2-12** | They need native work or external audio files, and the viewer is told when a pick is not applied. Native work stays serial. |
+| P2-10 lows: `parseItemRoute` and the query; the sign-in guard re-setting the hash | Stays | Harmless today. They belong with the next routes change. |
+| The L6 pointer under P17-02 | Stays | It is a pointer to P17-05 to P17-07, not work. |
+
+### Invariants and rules this pass touches
+
+No invariant changes. These are the ones the new tasks must hold, and each is an acceptance item:
+
+- **I1** (never convert what can direct play; show every conversion): P3-33. Raising the limit returns to the original file, lowering it shows the indicator and reason, and the tripwire passes unchanged.
+- **I2** (only two URL shapes): P3-33 adds no URL builder; the refreshed session's `TranscodingUrl` is validated and rebuilt as now.
+- **I3** (fixed command list): P3-32 and P3-33 add no Tauri command. Option C of S3 might need one, which is why it is not the recommendation.
+- **I4** (no tokens in logs, errors, or URLs): P3-33's OSD and status lines; P16-13's fixtures.
+- **I8** (only the gateway talks to the server): the rating calls and the rated-films read live in `gateway.ts` (P16-14, P16-15).
+- "Send the same PlaybackInfo flags in the body and the query" and "send the Fluster DeviceProfile with every PlaybackInfo request": P3-33 requires that a limit change from the sheet sends the request a limit change in Settings sends today, with a test that compares them.
+- "Build media URLs only in Playback Negotiation": P3-33.
+- "Never store tokens in WebView storage" and the preferences store's rule (`src/lib/preference-store.ts`): P3-32 adds no field.
+- "Never use a native select, radio, or checkbox in a feature": P16-14's rating control.
+- **`DESIGN.md`:** §7.14 and §7.18 (P3-32, P3-33), §7.16's rule that the player shows no toast (P3-32), §7.7 (P16-14), §7.1 and §7.5 (P16-15), §7.4 (P16-16).
+- **`PRODUCT.md`:** P3-32 adds settings in the player to M1's list. Ratings are not in `PRODUCT.md`; P16-14 is where it gains them, and the owner asked for them.
+- **CI:** no change.
+
+### What this pass did not do
+
+- It did not edit an existing task. E1 is left for the owner.
+- It did not create a task for languages in the player's sheet (S1 B, S4) or for a rating prompt at the end of a film (R2 B). Each is outlined in `tasks/backlog.md` and is added when the answers ask for it.
+- It filed nothing in jellyscale's tracker (E3).
+- It did not change `DESIGN.md`, `ARCHITECTURE.md`, or `PRODUCT.md`. Each task changes the document it affects.
+- It ran no server, app, or competing client.
