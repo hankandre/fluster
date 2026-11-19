@@ -584,6 +584,51 @@ describe("sheets", () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
+  it("shows no Settings button and ignores o without a settings handler", () => {
+    renderView();
+    expect(screen.queryByRole("button", { name: "Settings" })).not.toBeInTheDocument();
+    press("o");
+    expect(screen.queryByRole("region", { name: "Player settings" })).not.toBeInTheDocument();
+  });
+
+  it("opens the Settings sheet with o and the button, one sheet at a time, without pausing", () => {
+    const { player, onBack } = renderView({}, { onSignOut: vi.fn() });
+    press("i");
+    expect(screen.getByRole("region", { name: "Player information" })).toBeInTheDocument();
+    press("o");
+    expect(screen.queryByRole("region", { name: "Player information" })).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Player settings" })).toBeInTheDocument();
+    press("Escape");
+    expect(screen.queryByRole("region", { name: "Player settings" })).not.toBeInTheDocument();
+    expect(onBack).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(screen.getByRole("region", { name: "Player settings" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(screen.queryByRole("region", { name: "Player settings" })).not.toBeInTheDocument();
+    expect(player.setPaused).not.toHaveBeenCalled();
+  });
+
+  it("ignores an Escape another handler already used, so a section stepping back does not close the sheet", () => {
+    renderView({}, { onSignOut: vi.fn() });
+    press("o");
+    const used = (event: KeyboardEvent) => event.preventDefault();
+    document.addEventListener("keydown", used);
+    press("Escape");
+    document.removeEventListener("keydown", used);
+    expect(screen.getByRole("region", { name: "Player settings" })).toBeInTheDocument();
+    press("Escape");
+    expect(screen.queryByRole("region", { name: "Player settings" })).not.toBeInTheDocument();
+  });
+
+  it("returns focus to the Settings button when the sheet it opened closes", () => {
+    renderView({}, { onSignOut: vi.fn() });
+    const button = screen.getByRole("button", { name: "Settings" });
+    button.focus();
+    fireEvent.click(button);
+    press("Escape");
+    expect(button).toHaveFocus();
+  });
+
   it("returns focus to the control that opened the sheet when it closes", () => {
     renderView();
     const button = screen.getByRole("button", { name: "Audio & Subtitles" });

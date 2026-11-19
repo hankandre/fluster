@@ -47,6 +47,24 @@ describe("TransportControls", () => {
     ]);
   });
 
+  it("puts Settings between Audio & Subtitles and Info when a handler is given, and wires it", () => {
+    const handlers = setup({ settingsOpen: true, settingsId: "settings", onToggleSettings: vi.fn() });
+    expect(screen.getAllByRole("button").map((button) => button.getAttribute("aria-label"))).toEqual([
+      "Pause",
+      "Back 10 seconds",
+      "Forward 10 seconds",
+      "Mute",
+      "Audio & Subtitles",
+      "Settings",
+      "Info",
+      "Enter fullscreen",
+    ]);
+    const button = screen.getByRole("button", { name: "Settings" });
+    expect(button).toHaveAttribute("aria-expanded", "true");
+    expect(button).toHaveAttribute("aria-controls", "settings");
+    expect(handlers).toBeDefined();
+  });
+
   it("puts Chapters first in the right-hand group when the item has chapters, and wires it", () => {
     const handlers = setup({ chapters: true, chaptersOpen: true, chaptersId: "chapters" });
     expect(screen.getAllByRole("button").map((button) => button.getAttribute("aria-label"))).toEqual([
@@ -143,6 +161,22 @@ describe("TransportControls in the TV form", () => {
       "Info",
     ]);
     expect(screen.queryByLabelText("Volume")).toBeNull();
+  });
+
+  it("shows Settings between Audio & Subtitles and Info on TV when a handler is given", () => {
+    document.documentElement.dataset.form = "tv";
+    const onToggleSettings = vi.fn();
+    setup({ onToggleSettings });
+    expect(screen.getAllByRole("button").map((button) => button.getAttribute("aria-label"))).toEqual([
+      "Back 10 seconds",
+      "Pause",
+      "Forward 10 seconds",
+      "Audio & Subtitles",
+      "Settings",
+      "Info",
+    ]);
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(onToggleSettings).toHaveBeenCalledTimes(1);
   });
 
   it("puts Chapters before Audio & Subtitles when the item has chapters, and omits it otherwise", () => {

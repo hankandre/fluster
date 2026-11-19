@@ -222,6 +222,11 @@ describe("playerKeyAction in the TV form", () => {
       expect(press("Escape", { target: button })).toEqual({ kind: "escape" });
     });
 
+    it("lets an open modal dialog own every key", () => {
+      const dialog = element('<div role="alertdialog" aria-modal="true"><button>Cancel</button></div>').querySelector("button") as HTMLElement;
+      for (const key of ["o", "ArrowLeft", "ArrowUp", "k", "5", "f"]) expect(press(key, { target: dialog })).toBeUndefined();
+    });
+
     it("does not wake the TV chrome from a rows region", () => {
       const heading = element('<div data-key-rows=""><h2 tabindex="-1">Playback</h2></div>').querySelector("h2") as HTMLElement;
       expect(press("ArrowDown", { tv: true, target: heading })).toBeUndefined();

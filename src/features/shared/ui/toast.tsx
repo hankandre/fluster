@@ -14,6 +14,9 @@ export interface ToastInput {
   message: string;
   tone?: ToastTone;
   action?: { label: string; onAction(): void };
+  // While toasts are suppressed (the player), keep this one and show it when they are not: a message that
+  // belongs to the screen being left for, such as "Signed out" on the sign-in screen.
+  holdWhileSuppressed?: boolean;
 }
 
 interface ToastEntry extends ToastInput {
@@ -69,8 +72,15 @@ export function ToastProvider({ children, durationMs = 5_000, suppressed = false
   const suppressedRef = useRef(suppressed);
   suppressedRef.current = suppressed;
 
+  const held = useRef<ToastEntry[]>([]);
   useEffect(() => {
-    if (suppressed) dispatch({ type: "clear" });
+    if (suppressed) {
+      dispatch({ type: "clear" });
+      return;
+    }
+    const entries = held.current;
+    held.current = [];
+    entries.forEach((entry) => dispatch({ type: "add", entry }));
   }, [suppressed]);
 
   // Remembers where focus was, so dismissing a focused toast gives it back.
@@ -90,7 +100,10 @@ export function ToastProvider({ children, durationMs = 5_000, suppressed = false
   const show = useCallback((input: ToastInput) => {
     const id = nextId.current;
     nextId.current += 1;
-    if (suppressedRef.current) return id;
+    if (suppressedRef.current) {
+      if (input.holdWhileSuppressed) held.current.push({ ...input, id });
+      return id;
+    }
     dispatch({ type: "add", entry: { ...input, id } });
     return id;
   }, []);

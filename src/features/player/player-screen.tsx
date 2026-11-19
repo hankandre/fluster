@@ -7,8 +7,8 @@ import type { PlaybackSessionState } from "../../lib/player/session-state";
 import { type ConversionIndicator } from "./conversion-copy";
 import type { ReadyPlayerStatus } from "./player-status";
 import { errorReason } from "./safe-reason";
-import { ChapterList } from "./chrome/chapter-list";
-import { InfoSheet, type PlayOriginalState } from "./chrome/info-sheet";
+import type { PlayOriginalState } from "./chrome/info-sheet";
+import { PlayerSheets } from "./chrome/player-sheets";
 import { AUDIO_PICK_NOT_APPLIED_COPY, conversionCopy } from "./chrome/osd-copy";
 import { OSD_NOTICE_MS } from "./chrome/timing";
 import { Osd } from "./chrome/osd";
@@ -20,7 +20,6 @@ import { PlayerTopBar, titleLine } from "./chrome/player-top-bar";
 import type { SeekChapter } from "./chrome/player-time";
 import { SkipButton } from "./chrome/skip-button";
 import { Scrubber } from "./chrome/scrubber";
-import { TrackPanel } from "./chrome/track-panel";
 import type { ConvertedTracks } from "./chrome/track-options";
 import { TransportControls } from "./chrome/transport-controls";
 import { focusChromeControl, useTvChromeFocus } from "./chrome/use-tv-chrome-focus";
@@ -69,6 +68,7 @@ export function PlayerView({
   backdrop,
   prompt,
   onPlayNext,
+  onSignOut,
 }: {
   item: LibraryItem;
   player: PlayerEngine;
@@ -112,6 +112,9 @@ export function PlayerView({
   prompt?: ReactNode;
   // Plays the next episode: `n`, and OK on the TV form. Set only while the Up Next card shows.
   onPlayNext?(): void;
+  // Present only with a signed-in session and preferences: it shows the Settings button and sheet. Stops
+  // playback and signs out; the sheet asks first.
+  onSignOut?(): void;
 }) {
   const [commandError, setCommandError] = useState<string>();
   const [sheet, setSheet] = useState<SheetName>();
@@ -123,6 +126,7 @@ export function PlayerView({
   const tracksId = useId();
   const infoId = useId();
   const chaptersId = useId();
+  const settingsId = useId();
 
   useEffect(() => {
     document.documentElement.classList.add("native-playing");
@@ -151,10 +155,12 @@ export function PlayerView({
   const { fullscreen, fullscreenRef, changeFullscreen } = useFullscreen(player, execute);
   const converted = convertedTracks && onChangeConvertedTrack ? { tracks: convertedTracks, onChange: onChangeConvertedTrack } : undefined;
 
+  const hasSettings = Boolean(onSignOut);
   const toggleSheet = useCallback((name: SheetName) => {
+    if (name === "settings" && !hasSettings) return;
     setSheet((current) => (current === name ? undefined : name));
     setChipPresses(0);
-  }, []);
+  }, [hasSettings]);
   const closeSheet = useCallback(() => setSheet(undefined), []);
   const openInfoFromChip = () => {
     setChipPresses((count) => count + 1);
@@ -301,6 +307,8 @@ export function PlayerView({
               infoOpen={sheet === "info"}
               tracksId={tracksId}
               infoId={infoId}
+              settingsOpen={sheet === "settings"}
+              settingsId={settingsId}
               onTogglePause={() => snapshot && void execute(() => player.setPaused(!snapshot.paused))}
               onSeekBy={(seconds) => snapshot && void execute(() => player.seek(seekTarget(snapshot, seconds)))}
               onToggleMute={() => snapshot && void execute(() => player.setMuted(!snapshot.muted))}
@@ -308,6 +316,7 @@ export function PlayerView({
               onToggleChapters={() => toggleSheet("chapters")}
               onToggleTracks={() => toggleSheet("tracks")}
               onToggleInfo={() => toggleSheet("info")}
+              onToggleSettings={onSignOut ? () => toggleSheet("settings") : undefined}
               onToggleFullscreen={() => void changeFullscreen(!fullscreen)}
             />
           </footer>
@@ -351,41 +360,25 @@ export function PlayerView({
         </div>
       )}
 
-      {sheet === "chapters" && chapters && chapters.length > 0 && (
-        <ChapterList
-          id={chaptersId}
-          chapters={chapters}
-          positionSeconds={snapshot?.positionSeconds}
-          durationSeconds={snapshot?.durationSeconds}
-          picture={seekPreview}
-          onSeek={(seconds) => void execute(() => player.seek(seconds))}
-          onClose={closeSheet}
-        />
-      )}
-      {sheet === "tracks" && (
-        <TrackPanel
-          id={tracksId}
-          snapshot={snapshot}
-          converted={converted}
-          planTracks={planTracks}
-          onSelect={(kind, id) => void execute(() => player.selectTrack(kind, id))}
-          onChangeConverted={(change) => void execute(change)}
-          onClose={closeSheet}
-        />
-      )}
-      {sheet === "info" && (
-        <InfoSheet
-          key={chipPresses}
-          id={infoId}
-          status={status}
-          snapshot={snapshot}
-          playMethod={playMethod}
-          indicator={indicator}
-          playOriginal={playOriginal}
-          focusPlayOriginal={chipPresses > 0}
-          onClose={closeSheet}
-        />
-      )}
+      <PlayerSheets
+        sheet={sheet}
+        ids={{ tracks: tracksId, info: infoId, chapters: chaptersId, settings: settingsId }}
+        player={player}
+        snapshot={snapshot}
+        chapters={chapters}
+        seekPreview={seekPreview}
+        execute={execute}
+        converted={converted}
+        planTracks={planTracks}
+        status={status}
+        playMethod={playMethod}
+        indicator={indicator}
+        playOriginal={playOriginal}
+        infoKey={chipPresses}
+        focusPlayOriginal={chipPresses > 0}
+        settings={onSignOut ? { confirm: osd.show, onSignOut } : undefined}
+        onClose={closeSheet}
+      />
     </section>
   );
 }

@@ -62,3 +62,19 @@ function reducedMotionBlocks(css: string): string[] {
   }
   return blocks;
 }
+
+describe("Settings sheet CSS", () => {
+  const css = readFileSync(join(__dirname, "player.css"), "utf8");
+
+  it("stacks a row's control under its text at full width, scoped to the sheet", () => {
+    expect(css).toMatch(/\.player-sheet \.settings-row\s*\{[^}]*flex-direction:\s*column/);
+    expect(css).toMatch(/\.player-sheet \.settings-row-control\s*\{[^}]*inline-size:\s*100%/);
+    expect(css).toMatch(/\.player-sheet \.settings-row-control \.ui-picker-trigger\s*\{[^}]*inline-size:\s*100%/);
+  });
+
+  it("uses tokens for every size in the sheet rows", () => {
+    const block = css.slice(css.indexOf(".player-sheet .settings-row {"), css.indexOf(".player-sheet .settings-row-control > button"));
+    expect(block).not.toMatch(/\d+(px|rem|ms)\b/);
+    expect(block).not.toMatch(/#[0-9a-f]{3,6}\b/i);
+  });
+});

@@ -194,6 +194,17 @@ describe("Toast", () => {
     expect(screen.queryByText("Stuck")).toBeNull();
   });
 
+  it("keeps a held toast while suppressed and shows it once toasts are allowed again", () => {
+    const tree = (suppressed: boolean) => (
+      <ToastProvider suppressed={suppressed}><Trigger input={{ message: "Signed out", tone: "ok", holdWhileSuppressed: true }} /></ToastProvider>
+    );
+    const { rerender } = render(tree(true));
+    act(() => screen.getByRole("button", { name: "Show" }).click());
+    expect(screen.queryByText("Signed out")).toBeNull();
+    rerender(tree(false));
+    expect(screen.getByText("Signed out")).toBeInTheDocument();
+  });
+
   it("needs a provider", () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
     expect(() => render(<Trigger input={{ message: "x" }} />)).toThrow("ToastProvider");

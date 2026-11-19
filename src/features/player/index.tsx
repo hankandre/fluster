@@ -2,6 +2,7 @@ import { useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { usePlayerServices, type PlayerServices } from "../../app/player-services";
 import { useOptionalPreferences } from "../../app/preferences";
+import { useSignOutAfterStop } from "../settings/use-sign-out-after-stop";
 import { useSession, type SessionGateway } from "../../app/session";
 import { PlayerView } from "./player-screen";
 import { DEFAULT_SKIP_MODES, offeredSegments } from "../../domain/media-segments";
@@ -9,7 +10,7 @@ import { ItemNotFoundError, type ItemDetail, type NextEpisode } from "../../doma
 import { imageUrlFor, WIDE_IMAGE_WIDTH } from "../card-view";
 import { detailKey } from "../detail/detail-key";
 import { refreshHomeRows } from "../home";
-import { itemRoute, leavePlayer, leaveToDetails, type PlayRoute } from "../routes";
+import { itemRoute, leavePlayer, leaveToDetails, leaveToSignIn, type PlayRoute } from "../routes";
 import { REFUSAL_COPY } from "./refusal-copy";
 import { detailArt, noticeBackdrop } from "./playback-notice";
 import { DesktopOnlyNotice, ItemGoneScreen, ItemLoadNotice, NoticePage, PlayerUnavailableNotice, RefusalNotice } from "./playback-notices";
@@ -137,6 +138,7 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
   detail: ItemDetail;
 }) {
   const queryClient = useQueryClient();
+  const signOutAfterStop = useSignOutAfterStop();
   const preferences = useOptionalPreferences();
   // Fixed for the whole session: a refetch of the detail must not restart playback.
   const [item] = useState(() => toPlayableItem(detail));
@@ -208,6 +210,15 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
   const offered = useMemo(() => offeredSegments(segments, skipModes, hasNext), [segments, skipModes, hasNext]);
   const showCard = Boolean(next) && upNext.shown && !playback.state.error;
 
+  // Signing out from the Settings sheet: stop the way Back does, show the sign-in screen at once, and revoke the
+  // sign-in only after the Stopped report has been sent. A failed stop leaves the viewer here, signed in.
+  const signOutFromPlayer = () => {
+    void playback.stopAndLeave(() => {
+      leaveToSignIn();
+      signOutAfterStop(whenPlaybackStopped(player.engine));
+    });
+  };
+
   const backToDetails = async () => {
     leaveTarget.current = "details";
     // A failed stop keeps the viewer here, so the next Back goes where it normally would.
@@ -276,6 +287,7 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
           />
         ) : undefined}
         onPlayNext={showCard ? upNext.playNow : undefined}
+        onSignOut={preferences ? signOutFromPlayer : undefined}
         {...seekProps}
       />
     </main>

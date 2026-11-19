@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { Captions, Info, ListVideo, Maximize, Minimize, Pause, Play, RotateCcw, RotateCw, Volume2, VolumeX } from "lucide-react";
+import { Captions, Info, ListVideo, Maximize, Minimize, Pause, Play, RotateCcw, RotateCw, Settings, Volume2, VolumeX } from "lucide-react";
 import type { PlaybackSnapshot } from "../../../domain/playback";
 import { SEEK_STEP_SECONDS } from "../player-keymap";
 import { Button } from "../../shared/ui";
 import { useTvForm } from "../../shared/use-tv-form";
 
 // Play or Pause, back and forward 10 s, mute and volume on the left; Chapters
-// (only when the item has them), Audio & Subtitles, Info, and Fullscreen on the right.
+// (only when the item has them), Audio & Subtitles, Settings (when given), Info, and Fullscreen on the right.
 export function TransportControls({
   snapshot,
   fullscreen,
@@ -17,6 +17,8 @@ export function TransportControls({
   infoOpen,
   tracksId,
   infoId,
+  settingsOpen = false,
+  settingsId,
   onTogglePause,
   onSeekBy,
   onToggleMute,
@@ -24,6 +26,7 @@ export function TransportControls({
   onToggleChapters,
   onToggleTracks,
   onToggleInfo,
+  onToggleSettings,
   onToggleFullscreen,
 }: {
   snapshot: PlaybackSnapshot | undefined;
@@ -36,6 +39,8 @@ export function TransportControls({
   infoOpen: boolean;
   tracksId: string;
   infoId: string;
+  settingsOpen?: boolean;
+  settingsId?: string;
   onTogglePause(): void;
   onSeekBy(seconds: number): void;
   onToggleMute(): void;
@@ -43,6 +48,8 @@ export function TransportControls({
   onToggleChapters?(): void;
   onToggleTracks(): void;
   onToggleInfo(): void;
+  // Shows the Settings button between Audio & Subtitles and Info when given.
+  onToggleSettings?(): void;
   onToggleFullscreen(): void;
 }) {
   const [volumeValue, setVolumeValue] = useState<number>();
@@ -100,6 +107,17 @@ export function TransportControls({
       <Captions size={20} aria-hidden="true" />
     </Button>
   );
+  const settings = onToggleSettings ? (
+    <Button
+      variant="icon"
+      aria-label="Settings"
+      aria-expanded={settingsOpen}
+      aria-controls={settingsOpen ? settingsId : undefined}
+      onClick={onToggleSettings}
+    >
+      <Settings size={20} aria-hidden="true" />
+    </Button>
+  ) : null;
   const info = (
     <Button
       variant="icon"
@@ -119,7 +137,7 @@ export function TransportControls({
       <div className="control-row" data-tv="true">
         <span />
         <div className="control-center">{back}{play}{forward}</div>
-        <div className="control-end">{chapterList}{tracks}{info}</div>
+        <div className="control-end">{chapterList}{tracks}{settings}{info}</div>
       </div>
     );
   }
@@ -151,6 +169,7 @@ export function TransportControls({
       <span className="control-spacer" />
       {chapterList}
       {tracks}
+      {settings}
       {info}
       <Button variant="icon" aria-label={fullscreen ? "Exit fullscreen" : "Enter fullscreen"} onClick={onToggleFullscreen}>
         {fullscreen ? <Minimize size={20} aria-hidden="true" /> : <Maximize size={20} aria-hidden="true" />}

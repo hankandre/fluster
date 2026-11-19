@@ -39,7 +39,7 @@ export const VOLUME_STEP = 5;
 // A list keeps the keys that move through and choose its rows.
 // A typeahead list (an open Picker) also keeps every printable key. A rows region (the Settings sheet) keeps
 // the keys that move between its rows and act on them.
-type TargetKind = "text" | "slider" | "typeahead" | "list" | "rows" | "scroll" | "activator" | "other";
+type TargetKind = "text" | "modal" | "slider" | "typeahead" | "list" | "rows" | "scroll" | "activator" | "other";
 
 const ACTIVATOR_INPUTS = new Set(["checkbox", "radio", "button", "submit", "reset"]);
 const SLIDER_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"]);
@@ -56,6 +56,8 @@ function targetKind(target: EventTarget | null): TargetKind {
     if (target.type === "range") return "slider";
     return ACTIVATOR_INPUTS.has(target.type) ? "activator" : "text";
   }
+  // An open modal dialog keeps every key.
+  if (target.closest('[aria-modal="true"]')) return "modal";
   if (target.closest('[role="listbox"][data-typeahead]')) return "typeahead";
   if (target.closest('[role="listbox"]')) return "list";
   if (target.closest("[data-key-rows]")) return "rows";
@@ -129,6 +131,8 @@ export function playerKeyAction(input: PlayerKeyInput): PlayerKeyAction | undefi
       return undefined;
     case "slider":
       return SLIDER_KEYS.has(key) ? undefined : action;
+    case "modal":
+      return undefined;
     case "typeahead":
       return LIST_KEYS.has(key) || key.length === 1 ? undefined : action;
     case "list":
