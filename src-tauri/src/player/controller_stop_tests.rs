@@ -85,12 +85,8 @@ fn stop_with_a_poisoned_session_lock_and_no_session_returns_ok() {
 #[test]
 fn stop_with_a_poisoned_pending_lock_does_not_panic() {
     let controller = MpvController::default();
-    let held = controller.clone();
-    let _ = thread::spawn(move || {
-        let _pending = held.inner.pending.begin().expect("claims the slot");
-        panic!("poison the pending slot on purpose");
-    })
-    .join();
+    controller.inner.pending.poison();
+    assert!(controller.inner.pending.is_poisoned());
     assert!(controller.stop().is_ok());
     controller.force_finish();
 }
