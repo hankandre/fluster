@@ -24,12 +24,14 @@ export function Scrubber({ snapshot, onSeek, onScrubHold, seekPreview, chapters,
   const [seekValue, setSeekValue] = useState<number>();
   const [hoverSeconds, setHoverSeconds] = useState<number>();
   const [focused, setFocused] = useState(false);
+  // Focus that a pointer press gave the slider. It shows no preview: the pointer's own hover does.
+  const [pointerFocus, setPointerFocus] = useState(false);
   const tv = useTvForm();
   const duration = snapshot?.durationSeconds ?? 0;
   const max = Math.max(duration, 1);
   const position = seekValue ?? snapshot?.positionSeconds ?? 0;
   const enhanced = Boolean(seekPreview) || Boolean(chapters?.length);
-  const previewSeconds = hoverSeconds ?? (focused ? position : undefined);
+  const previewSeconds = hoverSeconds ?? (focused && !pointerFocus ? position : undefined);
   const chapterName = previewSeconds != null && chapters ? chapterAt(chapters, previewSeconds)?.name : undefined;
   const fill = duration > 0 ? Math.min(Math.max(position / duration, 0), 1) * 100 : 0;
 
@@ -74,11 +76,16 @@ export function Scrubber({ snapshot, onSeek, onScrubHold, seekPreview, chapters,
       aria-valuetext={scrubberValueText(duration > 0 ? Math.min(position, duration) : position, snapshot?.durationSeconds)}
       onChange={(event) => setSeekValue(Number(event.target.value))}
       onPointerUp={commit}
-      onKeyDown={tv ? tvScrub.onKeyDown : onKeyDown}
+      onPointerDown={() => setPointerFocus(true)}
+      onKeyDown={(event) => {
+        setPointerFocus(false);
+        (tv ? tvScrub.onKeyDown : onKeyDown)(event);
+      }}
       onKeyUp={tv ? tvScrub.onKeyUp : commit}
       onFocus={() => setFocused(true)}
       onBlur={() => {
         setFocused(false);
+        setPointerFocus(false);
         if (tv) tvScrub.onBlur();
       }}
       disabled={!snapshot || !duration}

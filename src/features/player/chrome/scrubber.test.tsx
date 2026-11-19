@@ -129,6 +129,54 @@ describe("Scrubber", () => {
     expect(preview.style.getPropertyValue("--seek-x")).toBe("1%");
   });
 
+  describe("focus preview", () => {
+    const track = (container: HTMLElement) => {
+      const element = container.querySelector(".seek-track") as HTMLElement;
+      element.getBoundingClientRect = () => ({ left: 0, width: 400, top: 0, right: 400, bottom: 10, height: 10, x: 0, y: 0, toJSON: () => ({}) });
+      return element;
+    };
+    const picture = () => <div data-testid="thumb" />;
+
+    it("hides the preview once the pointer leaves after a pointer seek, and keeps focus", () => {
+      const onSeek = vi.fn();
+      const { container } = render(<Scrubber snapshot={snapshot} onSeek={onSeek} seekPreview={picture} />);
+      const element = track(container);
+      fireEvent.pointerDown(slider());
+      fireEvent.focus(slider());
+      fireEvent(element, new MouseEvent("pointermove", { bubbles: true, clientX: 200 }));
+      fireEvent.change(slider(), { target: { value: "1800" } });
+      fireEvent.pointerUp(slider());
+      expect(onSeek).toHaveBeenCalledWith(1800);
+      expect(screen.getByTestId("thumb")).toBeInTheDocument();
+      fireEvent.pointerLeave(element);
+      expect(screen.queryByTestId("thumb")).toBeNull();
+      expect(container.querySelector(".seek-preview")).toBeNull();
+      slider().focus();
+      expect(slider()).toHaveFocus();
+    });
+
+    it("shows the preview again when a key is pressed after a pointer seek", () => {
+      const { container } = render(<Scrubber snapshot={snapshot} onSeek={vi.fn()} seekPreview={picture} />);
+      const element = track(container);
+      fireEvent.pointerDown(slider());
+      fireEvent.focus(slider());
+      fireEvent.pointerUp(slider());
+      fireEvent.pointerLeave(element);
+      expect(screen.queryByTestId("thumb")).toBeNull();
+      fireEvent.keyDown(slider(), { key: "ArrowRight" });
+      expect(screen.getByTestId("thumb")).toHaveTextContent("");
+      expect(container.querySelector(".seek-preview")).not.toBeNull();
+    });
+
+    it("shows the preview for keyboard focus (Tab) and for ArrowRight", () => {
+      const { container } = render(<Scrubber snapshot={snapshot} onSeek={vi.fn()} seekPreview={picture} />);
+      fireEvent.focus(slider());
+      expect(container.querySelector(".seek-preview")).not.toBeNull();
+      fireEvent.keyDown(slider(), { key: "ArrowRight" });
+      expect(container.querySelector(".seek-preview")).not.toBeNull();
+    });
+  });
+
   it("shows a pill with the time and chapter when there are chapters but no pictures", () => {
     const { container } = render(<Scrubber snapshot={snapshot} onSeek={vi.fn()} chapters={[{ startSeconds: 300, name: "Start" }]} />);
     fireEvent.focus(slider());
