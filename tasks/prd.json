@@ -3412,10 +3412,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "in_progress",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": "Implemented on task/P15-03 (docs/specs/P15-03.md; owner answered Q1 B and Q2 B on 2026-11-17); pnpm check exit 0 (vitest 214 files, 3098 tests; cargo test ok); pnpm test:e2e 228 passed, 1 failed (e2e/next-episode.spec.ts:155, 1 of 45 with --repeat-each 5; not compared on origin/main, the spec does not touch detail); pnpm test:visual 464 passed, 1 flaky retry (33-search-no-results tv). Not done: CI baselines via pnpm test:visual:accept, fresh-context design review, PR screenshots, manual check of person images on the dogfood server. passes stays false until those finish."
+          "passes": true,
+          "evidence": "Implemented on task/P15-03 (docs/specs/P15-03.md; owner answered Q1 B and Q2 B on 2026-11-17); pnpm check exit 0 (vitest 214 files, 3098 tests; cargo test ok); pnpm test:e2e 228 passed, 1 failed (e2e/next-episode.spec.ts:155, 1 of 45 with --repeat-each 5; not compared on origin/main, the spec does not touch detail); pnpm test:visual 464 passed, 1 flaky retry (33-search-no-results tv). Not done: CI baselines via pnpm test:visual:accept, fresh-context design review, PR screenshots, manual check of person images on the dogfood server. passes stays false until those finish. | 2026-11-19 ship: PR #202. Owner decisions 1-4 in docs/specs/P15-03.md (ratings in plain words, series too, labelled \"7.8 audience · 91% critics\", initials removed once the photo loads). Reviews: initial (lows) and label/initials commits (merge). pnpm check passed (3100 tests); contrast report clean. Baselines (detail, series, episode, phone and TV pages) accepted from CI run 44552223076."
         },
         {
           "id": "P15-04",
