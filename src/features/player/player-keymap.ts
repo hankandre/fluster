@@ -11,6 +11,7 @@ export type PlayerKeyAction =
   | { kind: "seek-to"; fraction: number }
   | { kind: "open-tracks" }
   | { kind: "toggle-info" }
+  | { kind: "toggle-settings" }
   | { kind: "skip" }
   | { kind: "play-next" }
   // OK on a TV remote: acts only in the TV form while the chrome is hidden.
@@ -36,7 +37,9 @@ export const VOLUME_STEP = 5;
 // What the focused element does with keys of its own. A select keeps every
 // key, Escape included: Escape closes its list instead of leaving the player.
 // A list keeps the keys that move through and choose its rows.
-type TargetKind = "text" | "slider" | "list" | "scroll" | "activator" | "other";
+// A typeahead list (an open Picker) also keeps every printable key. A rows region (the Settings sheet) keeps
+// the keys that move between its rows and act on them.
+type TargetKind = "text" | "slider" | "typeahead" | "list" | "rows" | "scroll" | "activator" | "other";
 
 const ACTIVATOR_INPUTS = new Set(["checkbox", "radio", "button", "submit", "reset"]);
 const SLIDER_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"]);
@@ -53,7 +56,9 @@ function targetKind(target: EventTarget | null): TargetKind {
     if (target.type === "range") return "slider";
     return ACTIVATOR_INPUTS.has(target.type) ? "activator" : "text";
   }
+  if (target.closest('[role="listbox"][data-typeahead]')) return "typeahead";
   if (target.closest('[role="listbox"]')) return "list";
+  if (target.closest("[data-key-rows]")) return "rows";
   if (target.hasAttribute("data-key-scroll")) return "scroll";
   if (target.closest("button, a[href], summary")) return "activator";
   return "other";
@@ -88,6 +93,8 @@ function actionFor(key: string): PlayerKeyAction | undefined {
       return { kind: "open-tracks" };
     case "i":
       return { kind: "toggle-info" };
+    case "o":
+      return { kind: "toggle-settings" };
     case "s":
       return { kind: "skip" };
     case "n":
@@ -122,7 +129,10 @@ export function playerKeyAction(input: PlayerKeyInput): PlayerKeyAction | undefi
       return undefined;
     case "slider":
       return SLIDER_KEYS.has(key) ? undefined : action;
+    case "typeahead":
+      return LIST_KEYS.has(key) || key.length === 1 ? undefined : action;
     case "list":
+    case "rows":
       return LIST_KEYS.has(key) ? undefined : action;
     case "scroll":
       return SCROLL_KEYS.has(key) ? undefined : action;

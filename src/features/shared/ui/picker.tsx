@@ -192,6 +192,7 @@ export function Picker({ label, hideLabel, options, value, onChange, placeholder
           ref={list}
           className={tv ? "ui-picker-list ui-picker-list--sheet" : "ui-picker-list"}
           role="listbox"
+          data-typeahead=""
           aria-labelledby={labelId}
           style={place}
           onKeyDown={onListKeyDown}

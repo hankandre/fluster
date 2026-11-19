@@ -63,6 +63,14 @@ describe("Picker", () => {
     expect(screen.getByRole("option", { name: /20 Mbps/ })).toHaveAttribute("aria-selected", "true");
   });
 
+  it("marks the open list as owning typeahead keys", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    trigger().focus();
+    await user.keyboard("{Enter}");
+    expect(screen.getByRole("listbox")).toHaveAttribute("data-typeahead");
+  });
+
   it("opens with Space and with the arrow keys", async () => {
     const user = userEvent.setup();
     render(<Harness />);

@@ -235,6 +235,11 @@ export function leaveToDetails(itemId: string): void {
   else window.location.replace(itemRoute(itemId));
 }
 
+// Shows the sign-in screen, replacing the player entry so browser Back never reopens the player.
+export function leaveToSignIn(): void {
+  window.location.replace(SIGN_IN_ROUTE);
+}
+
 export type AppRoute =
   | { kind: "feature-index" }
   | { kind: "sign-in" }

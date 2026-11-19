@@ -79,7 +79,13 @@ export interface Session {
   gateway: SessionGateway | undefined;
   createGateway(serverUrl: string): SessionGateway;
   signIn(gateway: SessionGateway): void;
-  signOut(): Promise<void>;
+  // Clears the signed-in gateway at once. The server-side revoke waits for `revokeAfter` when given (settled
+  // either way), so a playback report that still needs the token is sent first.
+  signOut(options?: SignOutOptions): Promise<void>;
+}
+
+export interface SignOutOptions {
+  revokeAfter?: Promise<unknown>;
 }
 
 const SessionContext = createContext<Session | undefined>(undefined);
@@ -107,9 +113,11 @@ export function SessionProvider({
   useServerEvents(realtime, onServerDataChanged);
   useAccountChanged(gateway, onAccountChanged);
 
-  const signOut = useCallback(async () => {
+  const signOut = useCallback(async (options?: SignOutOptions) => {
     const current = gateway;
     setGateway(undefined);
+    // The captured gateway is the one revoked, so a sign-in during the wait is never signed out.
+    if (options?.revokeAfter) await options.revokeAfter.catch(() => undefined);
     await current?.logout();
   }, [gateway]);
 

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { waitFor } from "@testing-library/react";
-import { collectionRoute, FEATURE_INDEX_LINKS, FEATURE_INDEX_ROUTE, GALLERY_ROUTE, HOME_ROUTE, isAppHash, isOpenRoute, isPlayerHash, itemRoute, parseAppRoute, searchResultsRoute, SEARCH_ROUTE, SETTINGS_ROUTE, seriesRoute, SIGN_IN_ROUTE, leavePlayer, leaveToDetails, libraryRoute, openPlayer, parseCollectionRoute, parseItemRoute, parseLibraryRoute, parsePlayRoute, playRoute, replaceRoute, ROUTE_REPLACED_EVENT } from "./routes";
+import { collectionRoute, FEATURE_INDEX_LINKS, FEATURE_INDEX_ROUTE, GALLERY_ROUTE, HOME_ROUTE, isAppHash, isOpenRoute, isPlayerHash, itemRoute, parseAppRoute, searchResultsRoute, SEARCH_ROUTE, SETTINGS_ROUTE, seriesRoute, SIGN_IN_ROUTE, leavePlayer, leaveToDetails, leaveToSignIn, libraryRoute, openPlayer, parseCollectionRoute, parseItemRoute, parseLibraryRoute, parsePlayRoute, playRoute, replaceRoute, ROUTE_REPLACED_EVENT } from "./routes";
 
 describe("play route", () => {
   it("round-trips the item, version, and start position", () => {
@@ -278,5 +278,18 @@ describe("parseAppRoute", () => {
     const guarded = ["#/next/home", "#/next/settings", "#/next/search", "#/next/search/x", "#/next/play/m1", "#/next/browse/l", "#/next/collection/c", "#/next/item/i", "#/next/series/s"];
     for (const hash of open) expect(isOpenRoute(parseAppRoute(hash)!)).toBe(true);
     for (const hash of guarded) expect(isOpenRoute(parseAppRoute(hash)!)).toBe(false);
+  });
+});
+
+describe("leaveToSignIn", () => {
+  it("replaces the player entry with the sign-in screen", () => {
+    window.location.hash = "#/next/home";
+    openPlayer({ itemId: "m1", startTicks: 0 });
+    const length = window.history.length;
+
+    leaveToSignIn();
+
+    expect(window.location.hash).toBe(SIGN_IN_ROUTE);
+    expect(window.history.length).toBe(length);
   });
 });

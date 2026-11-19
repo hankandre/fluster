@@ -161,3 +161,58 @@ describe("SessionProvider onAccountChanged", () => {
     expect(onAccountChanged).toHaveBeenCalledExactlyOnceWith(gateways[1]);
   });
 });
+
+describe("SessionProvider signOut with revokeAfter", () => {
+  function Probe({ gateways, revokeAfter }: { gateways: SessionGateway[]; revokeAfter: Promise<unknown> }) {
+    const session = useSession();
+    return (
+      <>
+        <button onClick={() => session.signIn(gateways[0])}>sign in 0</button>
+        <button onClick={() => session.signIn(gateways[1])}>sign in 1</button>
+        <button onClick={() => void session.signOut({ revokeAfter })}>sign out after</button>
+        <p>{session.gateway ? "signed in" : "signed out"}</p>
+      </>
+    );
+  }
+
+  async function setup(revokeAfter: Promise<unknown>) {
+    const gateways = [stubGateway("https://one.test", "a"), stubGateway("https://two.test", "b")];
+    render(
+      <SessionProvider createGateway={() => gateways[0]}>
+        <Probe gateways={gateways} revokeAfter={revokeAfter} />
+      </SessionProvider>,
+    );
+    await act(async () => undefined);
+    await click("sign in 0");
+    return gateways;
+  }
+
+  it("clears the gateway at once and revokes only after the promise settles", async () => {
+    let release: () => void = () => undefined;
+    const gateways = await setup(new Promise<void>((resolve) => { release = resolve; }));
+    await click("sign out after");
+    expect(screen.getByText("signed out")).toBeInTheDocument();
+    expect(gateways[0].logout).not.toHaveBeenCalled();
+    await act(async () => release());
+    expect(gateways[0].logout).toHaveBeenCalledTimes(1);
+  });
+
+  it("still revokes when the promise rejects", async () => {
+    const rejected = Promise.reject(new Error("report failed"));
+    rejected.catch(() => undefined);
+    const gateways = await setup(rejected);
+    await click("sign out after");
+    expect(gateways[0].logout).toHaveBeenCalledTimes(1);
+  });
+
+  it("never signs out a gateway that signed in during the wait", async () => {
+    let release: () => void = () => undefined;
+    const gateways = await setup(new Promise<void>((resolve) => { release = resolve; }));
+    await click("sign out after");
+    await click("sign in 1");
+    await act(async () => release());
+    expect(screen.getByText("signed in")).toBeInTheDocument();
+    expect(gateways[0].logout).toHaveBeenCalledTimes(1);
+    expect(gateways[1].logout).not.toHaveBeenCalled();
+  });
+});

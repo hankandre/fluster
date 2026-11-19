@@ -196,8 +196,13 @@ describe("InfoSheet", () => {
 
     it("moves focus to Close as Play original starts a new session", () => {
       render(<InfoSheet status={nativeStatus} snapshot={snapshot} playMethod="Transcode" playOriginal={{ available: true, stillConverting: false, onPlay: noop }} focusPlayOriginal onClose={noop} />);
+      const focus = vi.spyOn(HTMLElement.prototype, "focus");
       fireEvent.click(screen.getByRole("button", { name: "Play original" }));
-      expect(screen.getByRole("button", { name: "Close" })).toHaveFocus();
+      const close = screen.getByRole("button", { name: "Close" });
+      expect(close).toHaveFocus();
+      const call = focus.mock.calls.find((_, index) => focus.mock.contexts[index] === close);
+      expect(call).toEqual([{ preventScroll: true }]);
+      focus.mockRestore();
     });
   });
 

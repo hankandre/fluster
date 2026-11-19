@@ -86,7 +86,7 @@ export function InfoSheet({ id, status, snapshot, playMethod, indicator, playOri
 
   const play = () => {
     // The button goes away as the new session starts; keep focus in the sheet.
-    closeButton.current?.focus();
+    closeButton.current?.focus({ preventScroll: true });
     playOriginal?.onPlay();
   };
 
