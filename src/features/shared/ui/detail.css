@@ -145,7 +145,8 @@
 
   .ui-person-row {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(var(--poster-w), 1fr));
+    grid-template-columns: repeat(auto-fill, var(--person-disc));
+    justify-content: start;
     gap: var(--space-5) var(--space-4);
     margin: 0;
     padding: 0;
@@ -158,6 +159,7 @@
     align-content: start;
     gap: var(--space-1);
     min-inline-size: 0;
+    inline-size: var(--person-disc);
   }
 
   .ui-person-disc {
@@ -165,13 +167,14 @@
     place-items: center;
     position: relative;
     overflow: hidden;
-    inline-size: 64px;
-    block-size: 64px;
+    inline-size: var(--person-disc);
+    block-size: var(--person-disc);
     margin-block-end: var(--space-2);
     border-radius: var(--radius-pill);
     background: var(--surface-2);
     color: var(--text-1);
     font: var(--type-label);
+    font-size: calc(var(--person-disc) * 0.3);
   }
 
   .ui-person-image {
@@ -180,10 +183,12 @@
     inline-size: 100%;
     block-size: 100%;
     object-fit: cover;
+    object-position: var(--person-photo-focus);
     border-radius: inherit;
   }
 
   .ui-person-name {
+    overflow-wrap: anywhere;
     font: var(--type-label);
     color: var(--text-1);
   }

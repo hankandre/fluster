@@ -199,6 +199,36 @@ test("the facts line shows the ratings and the cast shows pictures with initials
   await expect(junie).toContainText("JP");
 });
 
+test("a cast photo is cropped from the top so the head stays inside the disc", async ({ page }) => {
+  await installMockServer(page);
+  await signIn(page, "#/next/item/m1");
+
+  const image = page.getByRole("region", { name: "Cast" }).locator(".ui-person-image").first();
+  await expect(image).toBeVisible();
+  await expect(image).toHaveCSS("object-fit", "cover");
+  // 50% 15% resolves to "50% 15%" in computed style; a centred crop would read 50% 50%.
+  await expect(image).toHaveCSS("object-position", "50% 15%");
+});
+
+test("cast photos are large and evenly spaced at 1440 px, and three fit a phone without sideways scroll", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installMockServer(page);
+  await signIn(page, "#/next/item/m1");
+  const cast = page.getByRole("region", { name: "Cast" });
+  const discs = cast.locator(".ui-person-disc");
+  await expect(discs.first()).toBeVisible();
+  const box = await discs.first().boundingBox();
+  expect(box?.width).toBe(120);
+  const second = await discs.nth(1).boundingBox();
+  // Gap between neighbouring columns is the fixed grid gap, not a stretched column.
+  expect((second?.x ?? 0) - (box?.x ?? 0) - 120).toBeLessThanOrEqual(24);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const tops = await discs.evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
+  expect(tops.filter((top) => top === tops[0]).length).toBeGreaterThanOrEqual(3);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
 for (const viewport of [{ width: 1440, height: 900 }, { width: 1920, height: 1080 }]) {
   test(`a resuming item with two versions keeps its action bar on one row at ${viewport.width}px`, async ({ page }) => {
     await page.setViewportSize(viewport);

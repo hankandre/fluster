@@ -157,12 +157,35 @@ function worstArt(width, height) {
   return pixels;
 }
 
+// A 2:3 portrait like a Jellyfin person image: a dark field, a light head circle in the top third
+// (centre y 25%), and shoulders below. A crop that centres it cuts the top of the head.
+function portrait(width, height) {
+  const pixels = Buffer.alloc(width * height * 4);
+  const headX = width / 2;
+  const headY = height * 0.25;
+  const headR = width * 0.2;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const head = Math.hypot(x - headX, y - headY) < headR;
+      const shoulders = y > height * 0.45 && Math.hypot((x - headX) / 1.3, y - height * 0.95) < height * 0.5;
+      const rgb = head ? [236, 226, 208] : shoulders ? [150, 120, 96] : [22, 26, 38];
+      const i = (y * width + x) * 4;
+      pixels[i] = rgb[0];
+      pixels[i + 1] = rgb[1];
+      pixels[i + 2] = rgb[2];
+      pixels[i + 3] = 255;
+    }
+  }
+  return pixels;
+}
+
 export function generateArt(dir = artDir) {
   mkdirSync(dir, { recursive: true });
   const files = {};
   for (let i = 0; i < 6; i += 1) files[`p${i + 1}`] = encodePng(400, 600, art(400, 600, i));
   for (let i = 0; i < 3; i += 1) files[`b${i + 1}`] = encodePng(1280, 720, art(1280, 720, i + 2));
   for (let i = 0; i < 2; i += 1) files[`t${i + 1}`] = encodePng(640, 360, art(640, 360, i + 4));
+  files.portrait = encodePng(400, 600, portrait(400, 600));
   files.trick = trickplay();
   files.logo = logo();
   files.frame = encodePng(1920, 1080, art(1920, 1080, 4));

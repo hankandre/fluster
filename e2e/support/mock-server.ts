@@ -257,7 +257,8 @@ function imageFor(id: string, type: string, opts: MockOptions = {}): string {
     if (episodes[id]) return "worst-still";
   }
   const person = /^person-(\d)$/.exec(id);
-  if (person) return `p${person[1]}`;
+  // Person 1 has a true portrait (head in the top third) so the cast crop is visible.
+  if (person) return person[1] === "1" ? "portrait" : `p${person[1]}`;
   if (movies[id]) return type === "Backdrop" ? movies[id].backdrop : type === "Thumb" ? movies[id].backdrop : movies[id].poster;
   if (series[id]) return type === "Backdrop" || type === "Thumb" ? series[id].backdrop : series[id].poster;
   if (episodes[id]) return episodes[id].thumb;

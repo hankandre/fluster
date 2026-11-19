@@ -7,8 +7,8 @@ export interface Person {
   imageSrc?: string;
 }
 
-// The width asked of the server for a person picture: three times the 64 px disc.
-export const PERSON_IMAGE_WIDTH = 192;
+// The width asked of the server for a person picture: twice the largest disc (176 px, TV).
+export const PERSON_IMAGE_WIDTH = 360;
 
 // The first letters of the first and last words, upper-cased: "Amy Adams" gives "AA", "Cher" gives "C".
 export function initials(name: string): string {
