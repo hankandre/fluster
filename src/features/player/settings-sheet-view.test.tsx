@@ -324,6 +324,19 @@ describe("Settings sheet in the player", () => {
     expect(screen.getByRole("region", { name: "Player settings" })).toBeInTheDocument();
   });
 
+  it("a press on an open Countdown list, which sits outside the sheet in a portal, leaves the sheet open", async () => {
+    await setup();
+    const { sheet, user } = await openSettings();
+    await openSection(sheet, "Playback", user);
+    await user.click(within(sheet).getByRole("button", { name: /^Countdown before/ }));
+    const list = screen.getByRole("listbox");
+    expect(sheet.contains(list)).toBe(false);
+    fireEvent.pointerDown(list, { button: 0 });
+    expect(screen.getByRole("region", { name: "Player settings" })).toBeInTheDocument();
+    await user.click(screen.getByRole("option", { name: "15 seconds" }));
+    expect(screen.getByRole("region", { name: "Player settings" })).toBeInTheDocument();
+  });
+
   it("a change in the sheet is stored in the shared preference store", async () => {
     const { store } = await setup();
     const { sheet, user } = await openSettings();
