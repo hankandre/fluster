@@ -246,6 +246,20 @@
   .player-sheet-section .ui-button { justify-self: start; }
   .player-sheet .ui-option-media { width: var(--chapter-thumb-w); }
 
+  /* The Settings sheet (DESIGN.md 7.14): the page's rows, with each control under its label and description at
+     full width. Scoped here so the Settings page keeps its side-by-side rows. */
+  .player-sheet .settings-row {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: var(--space-3);
+  }
+  .player-sheet .settings-row-value,
+  .player-sheet .settings-row-control { flex: none; inline-size: 100%; box-sizing: border-box; }
+  .player-sheet .settings-row-control .ui-picker,
+  .player-sheet .settings-row-control .ui-picker-trigger { inline-size: 100%; box-sizing: border-box; }
+  .player-sheet .settings-row-control > button { max-inline-size: 100%; }
+
   /* TV form (DESIGN.md 7.14): the sheet sits inside the safe inset, the row is centred, and the TV owns
      volume and fullscreen. */
   :root[data-form="tv"] .player-sheet {
