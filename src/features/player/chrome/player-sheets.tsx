@@ -47,7 +47,7 @@ export function PlayerSheets({
   // Remounts the Info sheet on a new chip press so focus can move to Play original.
   infoKey: number;
   focusPlayOriginal: boolean;
-  settings?: { confirm(message: string): void; onSignOut(): void };
+  settings?: { onSignOut(): void };
   onClose(): void;
 }) {
   switch (sheet) {
@@ -92,7 +92,7 @@ export function PlayerSheets({
       );
     case "settings":
       if (!settings) return null;
-      return <SettingsSheet id={ids.settings} onClose={onClose} confirm={settings.confirm} onSignOut={settings.onSignOut} />;
+      return <SettingsSheet id={ids.settings} onClose={onClose} onSignOut={settings.onSignOut} />;
     default:
       return null;
   }

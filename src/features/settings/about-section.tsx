@@ -71,7 +71,7 @@ function AboutBody({ server }: { server?: ServerPart }) {
       if (!navigator.clipboard) throw new Error("no clipboard");
       await navigator.clipboard.writeText(text);
       setFallback(undefined);
-      host.confirm("Diagnostics copied");
+      host.confirm("Diagnostics copied", "Copy diagnostics", "Copied");
     } catch {
       setFallback(text);
     }

@@ -462,6 +462,43 @@ export const scenarios: Scenario[] = [
     await sheet.getByRole("heading", { level: 2, name: "About & diagnostics" }).waitFor();
     await waitForPlayerSettled(page);
   } },
+  { name: "59l-player-settings-home", run: async (page) => {
+    await openPlayerSettings(page);
+    await page.getByRole("region", { name: "Player settings" }).getByRole("button", { name: "Home" }).click();
+    await page.keyboard.press("ArrowDown");
+    await waitForPlayerSettled(page);
+  } },
+  { name: "59m-player-settings-subtitles", run: async (page) => {
+    await openPlayerSettings(page);
+    await page.getByRole("region", { name: "Player settings" }).getByRole("button", { name: "Subtitles" }).click();
+    await waitForPlayerSettled(page);
+  } },
+  { name: "59n-player-settings-account", run: async (page) => {
+    await openPlayerSettings(page);
+    await page.getByRole("region", { name: "Player settings" }).getByRole("button", { name: "Account" }).click();
+    await waitForPlayerSettled(page);
+  } },
+  { name: "59o-player-settings-sign-out-confirm", run: async (page) => {
+    await openPlayerSettings(page);
+    const sheet = page.getByRole("region", { name: "Player settings" });
+    await sheet.getByRole("button", { name: "Account" }).click();
+    await sheet.getByRole("button", { name: "Sign out" }).click();
+    await page.getByRole("alertdialog", { name: "Stop playback and sign out?" }).waitFor();
+    await waitForPlayerSettled(page);
+  } },
+  { name: "59p-player-settings-saved", run: async (page) => {
+    await openPlayerSettings(page);
+    const sheet = page.getByRole("region", { name: "Player settings" });
+    await sheet.getByRole("button", { name: "Playback" }).click();
+    // The capture outlasts the 2 s Saved time, so the clear timer is dropped for this run.
+    await page.evaluate(() => {
+      const real = window.setTimeout.bind(window);
+      window.setTimeout = ((handler: TimerHandler, delay?: number, ...args: unknown[]) => (delay === 2000 ? 0 : real(handler, delay, ...args))) as typeof window.setTimeout;
+    });
+    await sheet.getByRole("switch", { name: "Play next episode automatically" }).click();
+    await sheet.getByText("Saved").waitFor();
+    await waitForPlayerSettled(page);
+  } },
   { name: "59a-player-osd", desktopOnly: true, run: async (page) => {
     await play(page, "#/next/item/m1");
     await page.keyboard.press("ArrowRight");

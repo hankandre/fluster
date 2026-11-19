@@ -1,12 +1,12 @@
 import { createContext, useContext, type ReactNode } from "react";
 import { useOptionalToast } from "../shared/ui";
 
-// Where a Settings section is shown. The page confirms a change with a toast; the player's sheet confirms on
-// the OSD, because toasts are dropped on the player route. `signOut` replaces the account section's own
-// sign-out (the player stops playback first).
+// Where a Settings section is shown. The page confirms a change with a toast; the player's sheet marks the
+// changed row `row` (its label) with `word` beside its control, because toasts are dropped on the player route.
+// `signOut` replaces the account section's own sign-out (the player stops playback first).
 export interface SettingsHost {
   place: "page" | "player";
-  confirm(message: string): void;
+  confirm(message: string, row: string, word?: string): void;
   signOut?(): void;
 }
 

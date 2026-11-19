@@ -234,7 +234,8 @@
     padding: var(--space-5) var(--space-5) var(--space-3);
   }
   .player-sheet-head h2 { margin: 0; font: var(--type-heading); }
-  .player-sheet-body { flex: 1; overflow-y: auto; padding: 0 var(--space-5) var(--space-5); }
+  /* The top padding keeps a focused first row's full ring inside the scrolling body, which clips it otherwise. */
+  .player-sheet-body { flex: 1; overflow-y: auto; padding: var(--space-2) var(--space-5) var(--space-5); }
   .player-sheet-section { display: grid; gap: var(--space-3); padding-block: var(--space-4); }
   .player-sheet-section + .player-sheet-section { border-top: 1px solid var(--line); }
   .player-sheet-section h3 { margin: 0; color: var(--text-2); font: var(--type-meta); }

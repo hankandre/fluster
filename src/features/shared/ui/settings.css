@@ -150,6 +150,17 @@
     overflow-wrap: anywhere;
   }
 
+  /* "✓ Saved" beside a row that just changed (the player's sheet). Out of the flow, so the row never shifts. */
+  .settings-row-saved {
+    position: absolute;
+    inset-block-start: var(--space-3);
+    inset-inline-end: var(--space-5);
+    color: var(--ok);
+    font: var(--type-meta);
+    animation: settings-saved-in var(--dur-quick) var(--ease-out);
+  }
+  @keyframes settings-saved-in { from { opacity: 0; } to { opacity: 1; } }
+
   .settings-row-value {
     flex: none;
     color: var(--text-1);

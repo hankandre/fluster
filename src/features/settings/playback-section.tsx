@@ -35,19 +35,19 @@ export function PlaybackSection() {
     setLimits(next);
     streamingLimits.set(next);
     const name = FIELD_NAME[field];
-    host.confirm(choice === undefined ? `${name} limit removed.` : `${name} limit set to ${choice} Mbps.`);
+    host.confirm(choice === undefined ? `${name} limit removed.` : `${name} limit set to ${choice} Mbps.`, name);
   }
 
   function toggleAutoPlay(enabled: boolean) {
     autoPlay.set({ ...autoPlayValue, enabled });
-    host.confirm(enabled ? "Next episodes play automatically." : "Next episodes won't play automatically.");
+    host.confirm(enabled ? "Next episodes play automatically." : "Next episodes won't play automatically.", "Play next episode automatically");
   }
 
   function changeCountdown(raw: string) {
     const seconds = COUNTDOWN_CHOICES_SECONDS.find((choice) => String(choice) === raw);
     if (seconds === undefined || seconds === autoPlayValue.countdownSeconds) return;
     autoPlay.set({ ...autoPlayValue, countdownSeconds: seconds });
-    host.confirm(`Countdown set to ${seconds} seconds.`);
+    host.confirm(`Countdown set to ${seconds} seconds.`, "Countdown");
   }
 
   return (

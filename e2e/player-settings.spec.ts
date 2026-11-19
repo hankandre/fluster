@@ -10,7 +10,10 @@ test("(b) Intros set to Skip automatically in the sheet skips the intro and says
   await sheet.getByRole("button", { name: "Playback" }).click();
   await sheet.getByRole("button", { name: /^What happens at an intro/ }).click();
   await page.getByRole("option", { name: "Skip automatically" }).click();
-  await expect(page.getByText("Intros: Skip automatically.")).toBeVisible();
+  const introRow = sheet.locator(".settings-row", { hasText: "Intros" });
+  await expect(introRow.getByText("Saved")).toBeVisible();
+  await expect(page.locator(".player-osd-pill", { hasText: "Intros:" })).toHaveCount(0);
+  await expect(introRow.getByText("Saved")).toBeHidden({ timeout: 4000 });
   expect(await page.evaluate(() => JSON.parse(window.localStorage.getItem("fluster.preferences") ?? "{}").skipModes)).toMatchObject({ intro: "auto" });
 
   await moveTo(page, 30);
@@ -18,7 +21,7 @@ test("(b) Intros set to Skip automatically in the sheet skips the intro and says
   await expect(page.getByText("Skipped intro")).toBeVisible();
 });
 
-test("(c) About & diagnostics opens while the video keeps playing, and Copy confirms on the OSD", async ({ page, context }) => {
+test("(c) About & diagnostics opens while the video keeps playing, and Copy says Copied in its row", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await startArrival(page, true);
   const before = await currentTime(page);
@@ -31,7 +34,8 @@ test("(c) About & diagnostics opens while the video keeps playing, and Copy conf
   await expect(sheet.getByText("Version")).toBeVisible();
   await expect(sheet.getByText("Testfin").or(sheet.getByText("10.11.7"))).toBeVisible();
   await sheet.getByRole("button", { name: "Copy" }).click();
-  await expect(page.getByText("Diagnostics copied")).toBeVisible();
+  await expect(sheet.locator(".settings-row", { hasText: "Copy diagnostics" }).getByText("Copied")).toBeVisible();
+  await expect(page.getByText("Diagnostics copied")).toHaveCount(0);
   await expect(page.locator(".ui-toast")).toHaveCount(0);
   const text = await page.evaluate(() => navigator.clipboard.readText());
   expect(text.split("\n")).toHaveLength(7);
