@@ -23,7 +23,7 @@ export function HomeSection() {
   function change(raw: string) {
     if (!isWindow(raw) || raw === value) return;
     continueWindow.set(raw);
-    host.confirm(raw === "all" ? "Continue watching keeps everything." : `Continue watching keeps ${raw} days.`);
+    host.confirm(raw === "all" ? "Continue watching keeps everything." : `Continue watching keeps ${raw} days.`, "Continue watching");
   }
 
   return (

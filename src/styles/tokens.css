@@ -131,6 +131,7 @@
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --lift: scale(1.04);
   --chrome-idle-ms: 3000;
+  --saved-ms: 2000;
 
   /* Focus */
   --focus-ring: 0 0 0 3px var(--focus), 0 0 0 4px var(--focus-edge);

@@ -103,6 +103,13 @@ async function openSettings(user = userEvent.setup()) {
   return { sheet, user };
 }
 
+// The "Saved" status in the settings row with this label.
+async function savedBeside(label: string) {
+  const text = await screen.findByText(label, { selector: ".settings-row-label" });
+  const row = text.closest(".settings-row") as HTMLElement;
+  return within(row).findByText("Saved");
+}
+
 async function openSection(sheet: HTMLElement, name: string, user: ReturnType<typeof userEvent.setup>) {
   await user.click(within(sheet).getByRole("button", { name }));
 }
@@ -176,16 +183,16 @@ describe("Settings sheet in the player", () => {
 
     await openSection(sheet, "Playback", user);
     await user.click(within(sheet).getByRole("switch", { name: "Play next episode automatically" }));
-    expect(await screen.findByText("Next episodes won't play automatically.")).toBeInTheDocument();
+    expect(await savedBeside("Play next episode automatically")).toBeInTheDocument();
     await user.click(within(sheet).getByRole("button", { name: /^Countdown before/ }));
     await user.click(screen.getByRole("option", { name: "15 seconds" }));
-    expect(await screen.findByText("Countdown set to 15 seconds.")).toBeInTheDocument();
+    expect(await savedBeside("Countdown")).toBeInTheDocument();
     await user.click(within(sheet).getByRole("button", { name: /^What happens at an intro/ }));
     await user.click(screen.getByRole("option", { name: "Skip automatically" }));
-    expect(await screen.findByText("Intros: Skip automatically.")).toBeInTheDocument();
+    expect(await savedBeside("Intros")).toBeInTheDocument();
     await user.click(within(sheet).getByRole("button", { name: /^What happens at the credits/ }));
     await user.click(screen.getByRole("option", { name: "Do nothing" }));
-    expect(await screen.findByText("Credits: Do nothing.")).toBeInTheDocument();
+    expect(await savedBeside("Credits")).toBeInTheDocument();
     await user.keyboard("{Escape}");
     await openSection(sheet, "Home", user);
     await user.click(within(sheet).getAllByRole("button", { name: /Continue watching/ })[0]);
@@ -193,8 +200,9 @@ describe("Settings sheet in the player", () => {
 
     expect(callCounts(gateway, engine)).toEqual(before);
     expect(screen.queryByText("Loading…")).toBeNull();
-    // The confirmations are OSD lines, never toasts.
+    // The confirmations are in the rows, never toasts and never OSD lines.
     expect(document.querySelector(".ui-toast, [data-toast]")).toBeNull();
+    expect(document.querySelector(".player-osd-pill")).toBeNull();
   });
 
   it("shows only the staged Playback rows: no streaming limits and no limits intro", async () => {
@@ -261,7 +269,7 @@ describe("Settings sheet in the player", () => {
     expect(window.location.hash).toBe("#/next/series/s1");
   });
 
-  it("Intros set to Do nothing hides Skip intro, and Skip automatically seeks past the intro with an OSD line", async () => {
+  it("Intros set to Do nothing hides Skip intro, and Skip automatically seeks past the intro with an OSD line for the skip only", async () => {
     const { engine } = await setup();
     await atPosition(engine, 70);
     expect(await screen.findByRole("button", { name: "Skip intro" })).toBeInTheDocument();
@@ -288,7 +296,7 @@ describe("Settings sheet in the player", () => {
     await waitFor(() => expect(screen.queryByRole("button", { name: "Skip credits" })).toBeNull());
   });
 
-  it("copies the redacted report on the OSD without a toast", async () => {
+  it("copies the redacted report and says Copied in its row, with no toast and no OSD line", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     await setup();
     const { sheet, user } = await openSettings();
@@ -300,8 +308,10 @@ describe("Settings sheet in the player", () => {
     expect(writeText).toHaveBeenCalledTimes(1);
     expect(String(writeText.mock.calls[0][0]).split("\n")).toHaveLength(7);
     for (const marker of ["media.test", "Tester", "Hearth"]) expect(String(writeText.mock.calls[0][0])).not.toContain(marker);
-    expect(await screen.findByText("Diagnostics copied")).toBeInTheDocument();
+    expect(await within(sheet).findByText("Copied")).toBeInTheDocument();
+    expect(screen.queryByText("Diagnostics copied")).toBeNull();
     expect(document.querySelector(".ui-toast")).toBeNull();
+    expect(document.querySelector(".player-osd-pill")).toBeNull();
   });
 
   it("typing o in an open Countdown list leaves the sheet open", async () => {

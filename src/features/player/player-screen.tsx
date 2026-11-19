@@ -376,7 +376,7 @@ export function PlayerView({
         playOriginal={playOriginal}
         infoKey={chipPresses}
         focusPlayOriginal={chipPresses > 0}
-        settings={onSignOut ? { confirm: osd.show, onSignOut } : undefined}
+        settings={onSignOut ? { onSignOut } : undefined}
         onClose={closeSheet}
       />
     </section>

@@ -396,10 +396,17 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
   // `final` marks a destination no later press may replace (a confirmed sign-out).
   const stopAndLeave = useCallback(async (destination?: () => void, options?: { final?: boolean }): Promise<boolean> => {
     const active = session.current;
-    if (!active) return false;
-    if (active.destination !== "back" && !active.destinationFinal) {
+    const final = options?.final === true;
+    if (!active) {
+      // No active session means nothing to stop: a confirmed sign-out still completes.
+      if (!final || !destination) return false;
+      destination();
+      return true;
+    }
+    // A confirmed sign-out replaces any earlier destination, "back" included; nothing replaces it.
+    if (final || (active.destination !== "back" && !active.destinationFinal)) {
       active.destination = destination ?? "back";
-      active.destinationFinal = options?.final === true;
+      active.destinationFinal = final;
     }
     const stop = stopSession(engine, active);
     try {

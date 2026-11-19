@@ -191,6 +191,15 @@ export function SettingsSection({ title, intro, children, footer }: { title: str
   );
 }
 
+// The row that just saved a change, and the word to show beside its control (the player's Settings sheet, in
+// place of a toast). Rows outside a provider show nothing.
+export interface SavedRow {
+  row: string;
+  word: string;
+}
+const SavedContext = createContext<{ saved: SavedRow | undefined } | undefined>(undefined);
+export const SavedRowProvider = SavedContext.Provider;
+
 const RowContext = createContext<{ descriptionId: string } | undefined>(undefined);
 
 // The id of the current row's description, for a control's aria-describedby.
@@ -216,6 +225,8 @@ interface SettingsRowProps {
 
 export function SettingsRow({ label, description, value, children, unavailable, unavailableReason }: SettingsRowProps) {
   const descriptionId = useId();
+  const savedContext = useContext(SavedContext);
+  const saved = savedContext?.saved?.row === label ? savedContext.saved.word : undefined;
   if (unavailable || unavailableReason) {
     return (
       <div className="settings-row" aria-disabled="true" {...(unavailable ? { "data-unbuilt": unavailable } : {})}>
@@ -235,6 +246,11 @@ export function SettingsRow({ label, description, value, children, unavailable, 
         </div>
         {value !== undefined ? <div className="settings-row-value">{value}</div> : null}
         {children ? <div className="settings-row-control">{children}</div> : null}
+        {savedContext ? (
+          <span className="settings-row-saved" role="status">
+            {saved ? <><span aria-hidden="true">✓ </span>{saved}</> : null}
+          </span>
+        ) : null}
       </div>
     </RowContext.Provider>
   );

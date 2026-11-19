@@ -32,7 +32,7 @@ async function mount(place: "page" | "sheet", preferenceStore: MemoryPreferenceS
           <PlayerServicesProvider services={{ engine: new FakePlayerEngine() }}>
             <PreferencesProvider preferences={{ streamingLimits: new MemoryStreamingLimits(), continueWindow: continueWindowOf(preferenceStore), skipModes: skipModesOf(preferenceStore), autoPlay: autoPlayOf(preferenceStore) }}>
               <SignIn gateway={gateway} />
-              {place === "page" ? <SettingsView /> : <SettingsSheet onClose={() => undefined} confirm={() => undefined} onSignOut={() => undefined} />}
+              {place === "page" ? <SettingsView /> : <SettingsSheet onClose={() => undefined} onSignOut={() => undefined} />}
             </PreferencesProvider>
           </PlayerServicesProvider>
         </SessionProvider>

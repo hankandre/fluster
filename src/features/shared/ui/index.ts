@@ -21,7 +21,7 @@ export { Menu, type MenuItem } from "./menu";
 export { Picker, type PickerOption } from "./picker";
 export { SegmentedTabPanel, SegmentedTabs, type TabItem } from "./segmented-tabs";
 export { ProgressRing } from "./progress-ring";
-export { SettingsPage, SettingsRow, SettingsSection, useSettingsRow, type SettingsSectionItem } from "./settings";
+export { SavedRowProvider, SettingsPage, SettingsRow, SettingsSection, useSettingsRow, type SavedRow, type SettingsSectionItem } from "./settings";
 export { Skeleton } from "./skeleton";
 export { TextField, type TextFieldType } from "./text-field";
 export { ToastProvider, useOptionalToast, useToast, type ToastInput, type ToastTone } from "./toast";

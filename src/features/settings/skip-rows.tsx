@@ -40,7 +40,7 @@ export function SkipRows() {
     if (!isSkipMode(raw) || raw === modes[row.kind]) return;
     skipModes.set(row.kind, raw);
     const option = OPTIONS.find((candidate) => candidate.value === raw);
-    host.confirm(`${row.label}: ${option?.label ?? raw}.`);
+    host.confirm(`${row.label}: ${option?.label ?? raw}.`, row.label);
   }
 
   return (

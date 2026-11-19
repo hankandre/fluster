@@ -479,3 +479,15 @@ The triage of every entry added since the 2026-11-15 pass, and the two owner req
 - `detail.css`: `.ui-section-title` may be dead now that the cast heading is `.media-row-title`; check other users and remove. S.
 - `media-row.tsx`: no unit test pins that poster and thumb rows are unchanged by the person variant. S.
 - `media-row.tsx:129`: person items use `key={index}` and `data-focus-id={index}`; harmless while the cast is static per item. S.
+
+## P3-32 follow-up (2026-11-19)
+
+- Guardian LOW-1: closing the window during the sign-out wait drops /Sessions/Logout. Hold the window open, or revoke on close.
+- Guardian LOW-3: re-signing in as the same user and server during the wait depends on Jellyfin's DeviceId token behaviour; unverified.
+- Guardian LOW-4: an auto-advance setPlayed can lose to the revoke.
+- Design low: desktop 59h shows no initial focus ring.
+- Design low: the dev badge covers controls in captures; hide it in visual runs.
+- Design low: the TV sheet has no scroll cue at the bottom.
+- Design low: the Audio passthrough placeholder row in the sheet.
+- Design low: "Back to settings" is small on desktop.
+- Design low: the TV toggle knob is near its focus ring.
