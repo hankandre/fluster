@@ -262,3 +262,37 @@ describe("SettingsPage on compact windows", () => {
     expect(fireEvent.keyDown(button, { key: "Escape" })).toBe(true);
   });
 });
+
+describe("SettingsPage form", () => {
+  function CompactHarness({ onViewChange }: { onViewChange?(view: "list" | "section"): void }) {
+    const [value, setValue] = useState("playback");
+    return (
+      <SettingsPage label="Settings sections" sections={SECTIONS} value={value} onChange={setValue} form="compact" onViewChange={onViewChange}>
+        <Panel id={value} />
+      </SettingsPage>
+    );
+  }
+
+  it("uses the compact list on a medium window when asked to", () => {
+    render(<CompactHarness />);
+    expect(screen.queryByRole("tablist")).toBeNull();
+    expect(screen.getByRole("navigation", { name: "Settings sections" })).toBeInTheDocument();
+  });
+
+  it("focuses the heading on open and the section button on back, without scrolling", async () => {
+    const user = userEvent.setup();
+    const views = vi.fn();
+    render(<CompactHarness onViewChange={views} />);
+    const focus = vi.spyOn(HTMLElement.prototype, "focus");
+    await user.click(screen.getByRole("button", { name: "Account" }));
+    const heading = screen.getByRole("heading", { level: 2, name: "Account" });
+    expect(heading).toHaveFocus();
+    expect(focus.mock.calls.find((_, index) => focus.mock.contexts[index] === heading)).toEqual([{ preventScroll: true }]);
+    await user.keyboard("{Escape}");
+    const button = screen.getByRole("button", { name: "Account" });
+    expect(button).toHaveFocus();
+    expect(focus.mock.calls.find((_, index) => focus.mock.contexts[index] === button)).toEqual([{ preventScroll: true }]);
+    expect(views.mock.calls.map((call) => call[0])).toEqual(["section", "list"]);
+    focus.mockRestore();
+  });
+});

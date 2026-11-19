@@ -7,7 +7,7 @@ import { isTvForm } from "../../shared/tv-form";
 import { nextSubtitle, type ConvertedTracks } from "./track-options";
 import type { OsdKind } from "./use-osd";
 
-export type SheetName = "tracks" | "info" | "chapters";
+export type SheetName = "tracks" | "info" | "chapters" | "settings";
 
 // Where a relative seek lands: within the file, never before its start.
 export function seekTarget(snapshot: PlaybackSnapshot, seconds: number): number {
@@ -57,6 +57,9 @@ export function usePlayerKeys(input: PlayerKeysInput): void {
       const action = playerKeyAction({ key: keyboardEvent.key, repeat: keyboardEvent.repeat, ctrlKey: keyboardEvent.ctrlKey, metaKey: keyboardEvent.metaKey, altKey: keyboardEvent.altKey, target: keyboardEvent.target, tv: isTvForm() });
       if (!action) return;
       if (latest.current.suspended && action.kind !== "escape") return;
+      // Another handler already used this Escape (a section stepping back, a dialog). Not while an error notice is
+      // up: its own Escape handler runs first and the player still leaves.
+      if (action.kind === "escape" && keyboardEvent.defaultPrevented && !latest.current.suspended) return;
       keyboardEvent.preventDefault();
       const { player, snapshot, converted, sheet, execute, changeFullscreen, fullscreenRef, onBack, onToggleSheet, onCloseSheet, showOsd, skipTo, chromeVisible, onPlayNext, onWake } = latest.current;
       switch (action.kind) {
@@ -123,6 +126,9 @@ export function usePlayerKeys(input: PlayerKeysInput): void {
           break;
         case "toggle-info":
           onToggleSheet("info");
+          break;
+        case "toggle-settings":
+          onToggleSheet("settings");
           break;
         case "skip":
           if (skipTo !== undefined) void execute(() => player.seek(skipTo));

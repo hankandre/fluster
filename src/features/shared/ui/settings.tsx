@@ -19,6 +19,11 @@ interface SettingsPageProps {
   onChange(id: string): void;
   // The selected section's panel: a SettingsSection.
   children: ReactNode;
+  // "auto" follows the window width; "compact" always uses the list that opens one panel at a time (the player's
+  // Settings sheet).
+  form?: "auto" | "compact";
+  // Called when the compact form switches between the section list and an open section, after focus has moved.
+  onViewChange?(view: "list" | "section"): void;
 }
 
 const ROVING_STOP = '[data-roving-item][tabindex="0"]';
@@ -27,7 +32,7 @@ const ROVING_STOP = '[data-roving-item][tabindex="0"]';
 // panel. On compact windows a list of sections opens one panel at a time.
 export function SettingsPage(props: SettingsPageProps) {
   const compact = useCompact();
-  return compact ? <CompactSettings {...props} /> : <WideSettings {...props} />;
+  return props.form === "compact" || compact ? <CompactSettings {...props} /> : <WideSettings {...props} />;
 }
 
 function WideSettings({ label, sections, value, onChange, children }: SettingsPageProps) {
@@ -110,7 +115,7 @@ function WideSettings({ label, sections, value, onChange, children }: SettingsPa
   );
 }
 
-function CompactSettings({ label, sections, value, onChange, children }: SettingsPageProps) {
+function CompactSettings({ label, sections, value, onChange, children, onViewChange }: SettingsPageProps) {
   const [open, setOpen] = useState(false);
   const list = useRovingFocus<HTMLDivElement>("column");
   const panel = useRef<HTMLDivElement>(null);
@@ -125,10 +130,12 @@ function CompactSettings({ label, sections, value, onChange, children }: Setting
   // Opening a section moves focus to its heading; closing returns it to that section's button.
   useEffect(() => {
     if (open) {
-      panel.current?.querySelector<HTMLElement>("h2")?.focus();
+      panel.current?.querySelector<HTMLElement>("h2")?.focus({ preventScroll: true });
+      onViewChange?.("section");
     } else if (returnFocus.current) {
       returnFocus.current = false;
-      list.ref.current?.querySelector<HTMLElement>(`[data-section-id="${value}"]`)?.focus();
+      list.ref.current?.querySelector<HTMLElement>(`[data-section-id="${value}"]`)?.focus({ preventScroll: true });
+      onViewChange?.("list");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs on open and close only; value names the button to refocus
   }, [open]);

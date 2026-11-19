@@ -184,4 +184,48 @@ describe("playerKeyAction in the TV form", () => {
     expect(press("Enter", { tv: true })).toEqual({ kind: "ok" });
     expect(press("ArrowUp")).toEqual({ kind: "volume-by", amount: 5 });
   });
+
+  describe("settings key and sheet regions", () => {
+    it("maps o to the Settings sheet, upper case too, and not with modifiers or repeat", () => {
+      expect(press("o")).toEqual({ kind: "toggle-settings" });
+      expect(press("O")).toEqual({ kind: "toggle-settings" });
+      expect(press("o", { ctrlKey: true })).toBeUndefined();
+      expect(press("o", { metaKey: true })).toBeUndefined();
+      expect(press("o", { altKey: true })).toBeUndefined();
+      expect(press("o", { repeat: true })).toBeUndefined();
+    });
+
+    it("leaves o to a text field and lets a control-row button act", () => {
+      expect(press("o", { target: element('<input type="text">') })).toBeUndefined();
+      expect(press("o", { target: element("<button>Settings</button>") })).toEqual({ kind: "toggle-settings" });
+    });
+
+    it("lets an open typeahead list own every printable key", () => {
+      const list = element('<ul role="listbox" data-typeahead=""><li role="option">Ten</li></ul>');
+      const option = list.querySelector("li") as HTMLElement;
+      for (const key of ["o", "a", "i", "5", "n"]) expect(press(key, { target: option })).toBeUndefined();
+      expect(press("ArrowDown", { target: option })).toBeUndefined();
+      // A plain listbox owns only its navigation keys.
+      const plain = element('<ul role="listbox"><li role="option">Ten</li></ul>');
+      expect(press("o", { target: plain.querySelector("li") as HTMLElement })).toEqual({ kind: "toggle-settings" });
+    });
+
+    it("lets a rows region own the keys that move between rows, and seek on desktop", () => {
+      const region = element('<div data-key-rows=""><h2 tabindex="-1">Playback</h2><button>Row</button></div>');
+      const heading = region.querySelector("h2") as HTMLElement;
+      const button = region.querySelector("button") as HTMLElement;
+      for (const key of ["ArrowUp", "ArrowDown", "Home", "End", "Enter", " "]) {
+        expect(press(key, { target: heading })).toBeUndefined();
+        expect(press(key, { target: button })).toBeUndefined();
+      }
+      expect(press("ArrowLeft", { target: heading })).toEqual({ kind: "seek-by", seconds: -10 });
+      expect(press("Escape", { target: button })).toEqual({ kind: "escape" });
+    });
+
+    it("does not wake the TV chrome from a rows region", () => {
+      const heading = element('<div data-key-rows=""><h2 tabindex="-1">Playback</h2></div>').querySelector("h2") as HTMLElement;
+      expect(press("ArrowDown", { tv: true, target: heading })).toBeUndefined();
+      expect(press("ArrowDown", { tv: true, target: document.body })).toEqual({ kind: "wake" });
+    });
+  });
 });
