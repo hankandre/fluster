@@ -233,8 +233,13 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1920, height: 108
     if (offsets.scrollLeft < offsets.maxScroll - 1) expect(Math.abs(offsets.left - offsets.gutter)).toBeLessThanOrEqual(offsets.gutter);
 
     await page.getByRole("link", { name: /^(Play|Resume)/ }).focus();
-    await page.keyboard.press("ArrowDown");
-    await expect.poll(() => focusedId(page)).not.toBe("");
+    // The cast row now sits between the action bar and the strip in the Down order (#207), so step down until focus is in the strip.
+    for (let press = 0; press < 4; press += 1) {
+      await page.keyboard.press("ArrowDown");
+      const inStrip = await page.evaluate(() => Boolean(document.activeElement?.closest('[data-focus-row="More from Season 1"]')));
+      if (inStrip) break;
+    }
+    await expect.poll(() => focusedId(page)).toMatch(/^ep-\d$/);
     for (let attempt = 0; attempt < 5 && (await focusedId(page)) !== "ep-6"; attempt += 1) await page.keyboard.press("ArrowRight");
     const chosen = await focusedId(page);
     expect(chosen).toMatch(/^ep-\d$/);
