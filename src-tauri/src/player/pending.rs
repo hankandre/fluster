@@ -35,6 +35,21 @@ impl PendingSlot {
         Ok(PendingLaunch { slot: self, cancel })
     }
 
+    /// Panics while holding the slot's lock, so the lock is poisoned.
+    #[cfg(test)]
+    pub(super) fn poison(&self) {
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _slot = self.0.lock();
+            panic!("poison the pending slot on purpose");
+        }));
+        assert!(result.is_err());
+    }
+
+    #[cfg(test)]
+    pub(super) fn is_poisoned(&self) -> bool {
+        self.0.is_poisoned()
+    }
+
     /// Cancels the pending launch, if any. True when there was one.
     pub(super) fn cancel(&self) -> bool {
         let slot = lock(&self.0);
