@@ -1,0 +1,143 @@
+{
+  "httpStatus": 200,
+  "Items": [
+    {
+      "Name": "Synthetic AV1 (2024)",
+      "ServerId": "server-1011",
+      "Id": "item-av1",
+      "Container": "mkv",
+      "ChannelId": null,
+      "RunTimeTicks": 100210000,
+      "ProductionYear": 2024,
+      "IsFolder": false,
+      "Type": "Movie",
+      "UserData": {
+        "Rating": 8,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": true,
+        "Played": false,
+        "Key": "item-av1",
+        "ItemId": "item-av1"
+      },
+      "PrimaryImageAspectRatio": 1.7777777777777777,
+      "VideoType": "VideoFile",
+      "ImageTags": {
+        "Primary": "id-1"
+      },
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {
+        "Primary": {
+          "id-1": "W~KxVRxhbV*Zi%|Ft7WTShj0W.o0aeW=WCWqWVayXljYX7aef9a#"
+        }
+      },
+      "LocationType": "FileSystem",
+      "MediaType": "Video"
+    },
+    {
+      "Name": "Synthetic Extras (2024)",
+      "ServerId": "server-1011",
+      "Id": "item-extras",
+      "Container": "mkv",
+      "ChannelId": null,
+      "RunTimeTicks": 100210000,
+      "ProductionYear": 2024,
+      "IsFolder": false,
+      "Type": "Movie",
+      "UserData": {
+        "Rating": 10,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": true,
+        "Played": false,
+        "Key": "item-extras",
+        "ItemId": "item-extras"
+      },
+      "PrimaryImageAspectRatio": 1.7777777777777777,
+      "VideoType": "VideoFile",
+      "ImageTags": {
+        "Primary": "id-2"
+      },
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {
+        "Primary": {
+          "id-2": "W~KUf+wVX2z6bI]}X8V@NyR-X7ocRlR.WCX5X8X7bHWXWoSyg0bs"
+        }
+      },
+      "LocationType": "FileSystem",
+      "MediaType": "Video"
+    },
+    {
+      "Name": "Synthetic H264 (2024)",
+      "ServerId": "server-1011",
+      "Id": "item-h264",
+      "Container": "mkv",
+      "ChannelId": null,
+      "RunTimeTicks": 100210000,
+      "ProductionYear": 2024,
+      "IsFolder": false,
+      "Type": "Movie",
+      "UserData": {
+        "Rating": 10,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": true,
+        "Played": false,
+        "Key": "item-h264",
+        "ItemId": "item-h264"
+      },
+      "PrimaryImageAspectRatio": 1.7777777777777777,
+      "VideoType": "VideoFile",
+      "ImageTags": {
+        "Primary": "id-3"
+      },
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {
+        "Primary": {
+          "id-3": "W~K-:.xhbV*Zi%|Ft7WTShj0Woo0WDW;aya|WXa#kVbEW.WDjbj?"
+        }
+      },
+      "LocationType": "FileSystem",
+      "MediaType": "Video"
+    },
+    {
+      "Name": "Synthetic Multitrack (2024)",
+      "ServerId": "server-1011",
+      "Id": "item-multitrack",
+      "Container": "mkv",
+      "ChannelId": null,
+      "RunTimeTicks": 100210000,
+      "ProductionYear": 2024,
+      "IsFolder": false,
+      "Type": "Movie",
+      "UserData": {
+        "Rating": 7.5,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": true,
+        "Played": false,
+        "Key": "item-multitrack",
+        "ItemId": "item-multitrack"
+      },
+      "PrimaryImageAspectRatio": 1.7777777777777777,
+      "VideoType": "VideoFile",
+      "ImageTags": {
+        "Primary": "id-4"
+      },
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {
+        "Primary": {
+          "id-4": "W~K-:.xhbV*Zi%|Ft7WTShj0Woo0WDW;aya|WXa#kVbEW.WDjbj?"
+        }
+      },
+      "LocationType": "FileSystem",
+      "MediaType": "Video"
+    }
+  ],
+  "TotalRecordCount": 4,
+  "StartIndex": 0
+}

@@ -1,0 +1,208 @@
+{
+  "film": "item-extras",
+  "steps": [
+    {
+      "step": "like on an unrated film",
+      "request": {
+        "method": "POST",
+        "path": "/UserItems/item-extras/Rating",
+        "query": {
+          "likes": true
+        }
+      },
+      "status": 200,
+      "response": {
+        "Rating": 10,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": true,
+        "Played": false,
+        "Key": "item-extras",
+        "ItemId": "item-extras"
+      },
+      "readBack": {
+        "Id": "item-extras",
+        "Name": "Synthetic Extras (2024)",
+        "UserData": {
+          "Rating": 10,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": true,
+          "Played": false,
+          "Key": "item-extras",
+          "ItemId": "item-extras"
+        }
+      }
+    },
+    {
+      "step": "like over a rating of 8",
+      "request": {
+        "method": "POST",
+        "path": "/UserItems/item-extras/Rating",
+        "query": {
+          "likes": true
+        }
+      },
+      "status": 200,
+      "response": {
+        "Rating": 10,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": true,
+        "Played": false,
+        "Key": "item-extras",
+        "ItemId": "item-extras"
+      },
+      "readBack": {
+        "Id": "item-extras",
+        "Name": "Synthetic Extras (2024)",
+        "UserData": {
+          "Rating": 10,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": true,
+          "Played": false,
+          "Key": "item-extras",
+          "ItemId": "item-extras"
+        }
+      }
+    },
+    {
+      "step": "dislike over a rating of 8",
+      "request": {
+        "method": "POST",
+        "path": "/UserItems/item-extras/Rating",
+        "query": {
+          "likes": false
+        }
+      },
+      "status": 200,
+      "response": {
+        "Rating": 1,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": false,
+        "Played": false,
+        "Key": "item-extras",
+        "ItemId": "item-extras"
+      },
+      "readBack": {
+        "Id": "item-extras",
+        "Name": "Synthetic Extras (2024)",
+        "UserData": {
+          "Rating": 1,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": false,
+          "Played": false,
+          "Key": "item-extras",
+          "ItemId": "item-extras"
+        }
+      }
+    },
+    {
+      "step": "dislike over a rating of 3",
+      "request": {
+        "method": "POST",
+        "path": "/UserItems/item-extras/Rating",
+        "query": {
+          "likes": false
+        }
+      },
+      "status": 200,
+      "response": {
+        "Rating": 1,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": false,
+        "Played": false,
+        "Key": "item-extras",
+        "ItemId": "item-extras"
+      },
+      "readBack": {
+        "Id": "item-extras",
+        "Name": "Synthetic Extras (2024)",
+        "UserData": {
+          "Rating": 1,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": false,
+          "Played": false,
+          "Key": "item-extras",
+          "ItemId": "item-extras"
+        }
+      }
+    },
+    {
+      "step": "DELETE Rating",
+      "request": {
+        "method": "DELETE",
+        "path": "/UserItems/item-extras/Rating"
+      },
+      "status": 200,
+      "response": {
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Played": false,
+        "Key": "item-extras",
+        "ItemId": "item-extras"
+      },
+      "readBack": {
+        "Id": "item-extras",
+        "Name": "Synthetic Extras (2024)",
+        "UserData": {
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Played": false,
+          "Key": "item-extras",
+          "ItemId": "item-extras"
+        }
+      }
+    },
+    {
+      "step": "Likes true in the body over a rating of 8",
+      "request": {
+        "method": "POST",
+        "path": "/UserItems/item-extras/UserData",
+        "body": {
+          "Likes": true
+        }
+      },
+      "status": 200,
+      "response": {
+        "Rating": 10,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": true,
+        "Played": false,
+        "Key": "item-extras",
+        "ItemId": "item-extras"
+      },
+      "readBack": {
+        "Id": "item-extras",
+        "Name": "Synthetic Extras (2024)",
+        "UserData": {
+          "Rating": 10,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": true,
+          "Played": false,
+          "Key": "item-extras",
+          "ItemId": "item-extras"
+        }
+      }
+    }
+  ]
+}
