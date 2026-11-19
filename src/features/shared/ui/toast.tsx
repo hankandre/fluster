@@ -51,6 +51,11 @@ export function useToast(): ToastApi {
   return api;
 }
 
+// For code that also runs where no ToastProvider exists (the player sheet speaks through the OSD).
+export function useOptionalToast(): ToastApi | undefined {
+  return useContext(ToastContext);
+}
+
 const ICONS = { info: Info, ok: CircleCheck, error: CircleAlert } as const;
 
 // Toasts sit bottom left and never take focus. Errors stay until dismissed; the rest leave after

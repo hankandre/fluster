@@ -142,4 +142,13 @@ describe("up next text", () => {
     expect(upNextAnnouncement("Second", 1, 10)).toBe("Up next: Second, playing in 5 seconds");
     expect(upNextAnnouncement("Second", 8, 15)).toBe("Up next: Second, playing in 15 seconds");
   });
+
+  it("remounts the fill when the countdown length changes, so the sweep restarts", () => {
+    const { container, rerender } = render(card({ secondsLeft: 7, totalSeconds: 10 }).element);
+    const before = container.querySelector(".up-next-fill");
+    rerender(card({ secondsLeft: 20, totalSeconds: 20 }).element);
+    const after = container.querySelector(".up-next-fill");
+    expect(after).not.toBe(before);
+    expect(container.querySelector(".up-next-card")).toHaveStyle({ "--up-next-seconds": "20s" });
+  });
 });

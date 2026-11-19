@@ -29,10 +29,12 @@ export function inEndWindow(
   return positionSeconds >= cardStartSeconds(durationSeconds, outroStartSeconds, countdownSeconds);
 }
 
-// secondsLeft is undefined while the card is hidden. dismissed is set by Hide
-// and lasts for the session: the card does not come back and nothing advances.
+// secondsLeft is undefined while the card is hidden. totalSeconds is the length the running countdown started
+// with, so a change of the Countdown setting restarts it. dismissed is set by Hide and lasts for the session:
+// the card does not come back and nothing advances.
 export interface AutoPlayState {
   secondsLeft: number | undefined;
+  totalSeconds: number | undefined;
   dismissed: boolean;
 }
 
@@ -45,12 +47,16 @@ export function autoPlayReducer(state: AutoPlayState, action: AutoPlayAction): A
   switch (action.type) {
     case "window":
       if (state.dismissed) return state;
-      if (!action.inWindow) return state.secondsLeft === undefined ? state : { ...state, secondsLeft: undefined };
-      return state.secondsLeft === undefined ? { ...state, secondsLeft: action.countdownSeconds ?? AUTO_PLAY_SECONDS } : state;
+      if (!action.inWindow) return state.secondsLeft === undefined && state.totalSeconds === undefined ? state : { ...state, secondsLeft: undefined, totalSeconds: undefined };
+      {
+        const length = action.countdownSeconds ?? AUTO_PLAY_SECONDS;
+        // Starts at the full length; a changed length restarts it (the fill's length is the total).
+        return state.secondsLeft === undefined || state.totalSeconds !== length ? { ...state, secondsLeft: length, totalSeconds: length } : state;
+      }
     case "tick":
       if (state.secondsLeft === undefined) return state;
       return { ...state, secondsLeft: Math.max(0, state.secondsLeft - 1) };
     case "hide":
-      return { secondsLeft: undefined, dismissed: true };
+      return { secondsLeft: undefined, totalSeconds: undefined, dismissed: true };
   }
 }

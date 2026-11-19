@@ -3,7 +3,8 @@ import { useSession, type SessionGateway } from "../../app/session";
 import type { HostClass } from "../../domain/host-class";
 import { lastDecode } from "../player/last-decode";
 import { usePlayerStatus, type PlayerStatus } from "../player/player-status";
-import { Button, InlineError, SettingsRow, SettingsSection, Skeleton, useSettingsRow, useToast } from "../shared/ui";
+import { useSettingsHost } from "./settings-host";
+import { Button, InlineError, SettingsRow, SettingsSection, Skeleton, useSettingsRow } from "../shared/ui";
 import { diagnosticsText, libmpvVersionText, osName, safeServerVersion, safeValue, type DiagnosticsInput } from "./diagnostics";
 import { useServerInfo } from "./use-server-info";
 
@@ -51,7 +52,7 @@ interface ServerPart {
 // Without a session there is no server to describe, so the server rows and Copy are left out.
 function AboutBody({ server }: { server?: ServerPart }) {
   const { status } = usePlayerStatus();
-  const toast = useToast();
+  const host = useSettingsHost();
   const [fallback, setFallback] = useState<string | undefined>();
   const pre = useRef<HTMLPreElement>(null);
   const mono = (text: ReactNode) => <span className="settings-mono">{text}</span>;
@@ -70,7 +71,7 @@ function AboutBody({ server }: { server?: ServerPart }) {
       if (!navigator.clipboard) throw new Error("no clipboard");
       await navigator.clipboard.writeText(text);
       setFallback(undefined);
-      toast.show({ message: "Diagnostics copied", tone: "ok" });
+      host.confirm("Diagnostics copied");
     } catch {
       setFallback(text);
     }

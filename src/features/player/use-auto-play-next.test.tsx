@@ -115,3 +115,60 @@ it("with auto-play off Play now still advances once, and Hide removes the card",
   expect(hidden.result.current.shown).toBe(false);
   expect(hidden.result.current.dismissed).toBe(true);
 });
+
+// One second per act: each tick re-renders and sets the next timeout.
+function tickSeconds(count: number) {
+  for (let i = 0; i < count; i += 1) act(() => vi.advanceTimersByTime(1000));
+}
+
+function liveSetup(initial: AutoPlayPreference) {
+  const stopAndLeave = vi.fn(async (destination: () => void) => {
+    destination();
+    return true;
+  });
+  const advance = vi.fn<(next: NextEpisode) => void>();
+  const base = { next, snapshot: { ...snapshot, positionSeconds: 1190 }, failed: false, advance, stopAndLeave };
+  const hook = renderHook((autoPlay: AutoPlayPreference) => useAutoPlayCountdown({ ...base, autoPlay }), { initialProps: initial });
+  return { ...hook, advance, stopAndLeave };
+}
+
+it("turning auto-play off while counting stops the countdown and keeps the card, then back on counts from the full length", () => {
+  const { result, rerender } = liveSetup({ enabled: true, countdownSeconds: 10 });
+  tickSeconds(3);
+  expect(result.current.secondsLeft).toBe(7);
+  rerender({ enabled: false, countdownSeconds: 10 });
+  expect(result.current.secondsLeft).toBeUndefined();
+  expect(result.current.totalSeconds).toBeUndefined();
+  expect(result.current.shown).toBe(true);
+  rerender({ enabled: true, countdownSeconds: 10 });
+  expect(result.current.secondsLeft).toBe(10);
+  expect(result.current.totalSeconds).toBe(10);
+});
+
+it("changing the Countdown while counting restarts at the new length", () => {
+  const { result, rerender } = liveSetup({ enabled: true, countdownSeconds: 10 });
+  tickSeconds(4);
+  rerender({ enabled: true, countdownSeconds: 20 });
+  expect(result.current.secondsLeft).toBe(20);
+  expect(result.current.totalSeconds).toBe(20);
+});
+
+it("Hide ends every countdown for the session, whatever changes after", () => {
+  const { result, rerender } = liveSetup({ enabled: true, countdownSeconds: 10 });
+  act(() => result.current.hide());
+  rerender({ enabled: false, countdownSeconds: 10 });
+  rerender({ enabled: true, countdownSeconds: 30 });
+  expect(result.current.shown).toBe(false);
+  expect(result.current.secondsLeft).toBeUndefined();
+});
+
+it("a change after the countdown reached zero does not stop the advance", async () => {
+  const { rerender, advance, stopAndLeave } = liveSetup({ enabled: true, countdownSeconds: 5 });
+  tickSeconds(5);
+  rerender({ enabled: false, countdownSeconds: 5 });
+  await act(async () => {
+    await Promise.resolve();
+  });
+  expect(stopAndLeave).toHaveBeenCalledTimes(1);
+  expect(advance).toHaveBeenCalledTimes(1);
+});

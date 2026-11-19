@@ -1,7 +1,8 @@
 import { useSyncExternalStore } from "react";
 import { usePreferences } from "../../app/preferences";
 import { SKIP_MODES, type SkipMode, type SkipModes } from "../../domain/media-segments";
-import { Picker, SettingsRow, useSettingsRow, useToast, type PickerOption } from "../shared/ui";
+import { useSettingsHost } from "./settings-host";
+import { Picker, SettingsRow, useSettingsRow, type PickerOption } from "../shared/ui";
 
 const OPTIONS: PickerOption[] = [
   { value: "button", label: "Show a Skip button" },
@@ -32,14 +33,14 @@ const ROWS: RowCopy[] = [
 
 export function SkipRows() {
   const { skipModes } = usePreferences();
-  const toast = useToast();
+  const host = useSettingsHost();
   const modes = useSyncExternalStore(skipModes.subscribe, skipModes.get);
 
   function change(row: RowCopy, raw: string) {
     if (!isSkipMode(raw) || raw === modes[row.kind]) return;
     skipModes.set(row.kind, raw);
     const option = OPTIONS.find((candidate) => candidate.value === raw);
-    toast.show({ tone: "ok", message: `${row.label}: ${option?.label ?? raw}.` });
+    host.confirm(`${row.label}: ${option?.label ?? raw}.`);
   }
 
   return (
