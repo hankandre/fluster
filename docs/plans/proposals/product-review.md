@@ -1,6 +1,6 @@
 # Product review: edge, gaps, multi-server, backlog
 
-Status: **Answered 2026-11-12.** (Two later passes are at the end: "Product review pass, 2026-11-15", with L5 to L7 still open, and "Product review pass, 2026-11-19", with S1 to S4 and R1 to R4 open.) The owner's answers are in "Answers" below, as relayed by the coordinating agent. The changes they approve are applied in the same pull request, except two rule changes that wait for the owner's own confirmation. Sections 1 to 5 keep the original proposal text for the record; where an answer differs from a recommendation, the answer wins.
+Status: **Answered 2026-11-12.** (Two later passes are at the end: "Product review pass, 2026-11-15", with L5 to L7 still open, and "Product review pass, 2026-11-19", answered the same day.) The owner's answers are in "Answers" below, as relayed by the coordinating agent. The changes they approve are applied in the same pull request, except two rule changes that wait for the owner's own confirmation. Sections 1 to 5 keep the original proposal text for the record; where an answer differs from a recommendation, the answer wins.
 
 ## Direction update (owner, 2026-11-12)
 
@@ -1110,7 +1110,31 @@ Two batches. **Batch 1 is answered** (see "Answers" above; the text below is as 
 
 ## Product review pass, 2026-11-19
 
-Status: **Open. S1 to S4 and R1 to R4 wait for the owner.** Five of the six tasks this pass adds are `blocked` until they are answered. Their acceptance is written for the recommended option, says so in the item, and is changed with the answers before any work starts. No existing task is edited.
+Status: **Answered 2026-11-19.** The owner's answers are below, as relayed by the coordinating agent. The tasks they settle are changed in the same pull request and are now `todo`; all of them are tasks this pass added. One existing task is edited, with the owner's approval: P4-01's `depends_on` (E1). The question texts further down are kept as asked.
+
+### Answers (owner, 2026-11-19)
+
+| # | Answer | Applied in |
+|---|---|---|
+| S1 | **C.** The five rows of A (Play next episode automatically, Countdown, Intros, Credits, this server's streaming limit), and a last row, "All settings", that stops playback and opens Settings. Languages stay out of the sheet. | P3-32 (four rows and All settings), P3-33 (the limit row) |
+| S2 | A: a gear button between Audio & Subtitles and Info, and the `o` key; on TV, the same button. | P3-32 |
+| S3 | B: the sheet stays open with focus on the row, the status disc shows one line, and the row shows the new value when the picture returns. | P3-33 |
+| S4 | Does not apply: languages are not in the sheet (S1 C). | No task |
+| R1 | **B (differs from the recommendation).** Five stars with halves, stored 1 to 10. | P16-14; P16-13 now records every value from 1 to 10 |
+| R2 | B: the film's page first, then a prompt when a film ends. Films only. | P16-14 (the page), **P16-17**, added (the prompt) |
+| R3 | B: the view and the Home row. | P16-15, P16-16 |
+| R4 | A: 4 stars and up, which is a stored rating of 8 or more. No minimum. | P16-15 |
+| E1 | Yes. The dogfood week waits for settings in the player. The only edit to an existing task in this pass. | P4-01 `depends_on` gains P3-32 and P3-33 |
+| E2 | Not asked. Recorded as the default: the full Settings page stays as it is, apart from the one `DESIGN.md` §7.18 sentence P3-32 changes. | P3-32 |
+| E3 | No. No Jellyscale request is filed; Fluster computes the lists itself. | P16-15 |
+
+**What S1 C adds.** "All settings" is the one row in the sheet that ends the session. P3-32 requires it to stop playback the way Back does, so the position is reported and the title still offers Resume, to say in words that it stops playback, and to keep the viewer in the player if the stop fails.
+
+**Half stars and Jellyfin's like.** A half star stores 1 and five stars store 10. Jellyfin counts a rating of 6.5 or more as liked (source reading of 2026-11-17, unverified until P16-13). So 3.5 stars, stored as 7, and everything above it reads as liked in other Jellyfin apps, and 3 stars, stored as 6, does not. Fluster's Top rated list starts higher, at 4 stars (stored 8): a film at 3.5 stars is liked elsewhere and is not in Top rated. P16-15 tests that case.
+
+**P16-17, "Ask for a rating when a film ends".** Medium, routine, Sonnet with an Opus spec, last in P16. It waits for P16-14 (the control and the call), P16-05 (what the end of a film shows), and P3-33 (the player's sequence), so it runs after every other new player task. Its spec shows the owner the prompt before implementation.
+
+**Startable after the answers:** P3-32 and P16-13. P3-33 follows P3-32. P16-14 waits for P15-03 and P15-01.
 
 This is a Fable 5.2 product-review pass under the `AGENTS.md` "Tasks" rule. It was briefed for 2026-11-16 and run on 2026-11-19.
 
@@ -1136,16 +1160,17 @@ Limits. Nothing was run: no server, no app, no competing client. The code was re
 
 ### Tasks added
 
-Acceptance is in `tasks/prd.json`, which is the source of truth. Priority is this pass's; place is the position in the file. `tasks/prd.json` has no priority or risk field, so both are recorded here.
+Acceptance is in `tasks/prd.json`, which is the source of truth. Priority is this pass's; place is the position in the file. `tasks/prd.json` has no priority or risk field, so both are recorded here. The questions in "Waits for" are answered; the State column is the state after the answers.
 
 | Id | Title | Priority | Risk | Place | Waits for | Model | State |
 |---|---|---|---|---|---|---|---|
-| P3-32 | Open a Settings sheet in the player for the settings that apply at once | **High** | Routine | P3, after P3-24 | P3-23, P3-24, P13-13, P13-17, P13-22, P13-34 (all done); **S1, S2** | Sonnet; Opus spec; `reviewer` | blocked: owner |
-| P3-33 | Change the streaming limit in the player and keep your place | **High** | **High** (playback session and coordinator; invariant I1) | P3, after P3-32 | P3-32; P10-08, P3-30, P17-08 (done); **S1, S3** | Sonnet; Fable spec; `guardian` review | blocked: owner |
+| P3-32 | Open a Settings sheet in the player for the settings that apply at once | **High** | Routine | P3, after P3-24 | P3-23, P3-24, P13-13, P13-17, P13-22, P13-34 (all done); **S1, S2** | Sonnet; Opus spec; `reviewer` | todo |
+| P3-33 | Change the streaming limit in the player and keep your place | **High** | **High** (playback session and coordinator; invariant I1) | P3, after P3-32 | P3-32; P10-08, P3-30, P17-08 (done); **S1, S3** | Sonnet; Fable spec; `guardian` review | todo |
 | P16-13 | Record personal-rating contract fixtures for 10.11 and 12.x | Medium | Routine | P16, after P16-12 | P0-02, P0-03, P16-01 (all done) | Sonnet | todo |
-| P16-14 | Rate a film on its page | Medium | Routine | P16 | P16-13, P15-03, P15-01; **R1, R2** | Sonnet; Opus spec; `reviewer` | blocked: owner |
-| P16-15 | List your top-rated films | Medium | Routine | P16 | P16-14, P15-01; **R3, R4** | Sonnet; Opus spec; `reviewer` | blocked: owner |
-| P16-16 | Show Top rated as a row on Home | Medium | Routine | P16, last | P16-15, P15-09, P16-02; **R3** | Sonnet; `reviewer` | blocked: owner |
+| P16-14 | Rate a film on its page | Medium | Routine | P16 | P16-13, P15-03, P15-01; **R1, R2** | Sonnet; Opus spec; `reviewer` | todo |
+| P16-15 | List your top-rated films | Medium | Routine | P16 | P16-14, P15-01; **R3, R4** | Sonnet; Opus spec; `reviewer` | todo |
+| P16-16 | Show Top rated as a row on Home | Medium | Routine | P16, last | P16-15, P15-09, P16-02; **R3** | Sonnet; `reviewer` | todo |
+| P16-17 | Ask for a rating when a film ends (added after R2) | Medium | Routine | P16, last | P16-14, P16-05, P3-33 | Sonnet; Opus spec; `reviewer` | todo |
 
 Why these priorities:
 
@@ -1158,7 +1183,7 @@ Why these priorities:
 
 Tasks that touch the same screen, store, player, or routes run in sequence. `depends_on` carries the order wherever one task builds on another:
 
-- **The player:** P3-32, then P3-33, then (only if the answers ask for them) languages in the sheet, then a rating prompt at the end of a film.
+- **The player:** P3-32, then P3-33, then the rating prompt at the end of a film (P16-17, added after R2). Languages in the sheet are not built (S1 C).
 - **A title's page:** P15-03 (in flight), then P15-01, then P16-14.
 - **The Top rated list and Home:** P16-14, then P16-15, then P16-16, which also waits for the Favorites row (P15-09) because both take a place in Home's fixed order.
 
@@ -1166,7 +1191,7 @@ Where no task builds on the other, `depends_on` is not used, and the coordinator
 
 ### Questions for the owner
 
-Eight questions, in two batches. Streaming-service convention is the default unless there is a reason against it. A ninth, "does the full Settings page change?", is not asked, because it blocks nothing: see proposal E2.
+Eight questions, in two batches. **All are answered** (see "Answers" above; the text below is as asked). Streaming-service convention is the default unless there is a reason against it. A ninth, "does the full Settings page change?", is not asked, because it blocks nothing: see proposal E2.
 
 #### Batch 1: settings in the player
 
@@ -1222,7 +1247,7 @@ Eight questions, in two batches. Streaming-service convention is the default unl
 
 #### Proposals that edit something existing
 
-None is applied. Each needs the owner's yes.
+As asked: none is applied, and each needs the owner's yes. The outcome of each is in "Answers" above: E1 yes, E2 the default, E3 no.
 
 | # | Proposal | Why |
 |---|---|---|
@@ -1285,8 +1310,8 @@ No invariant changes. These are the ones the new tasks must hold, and each is an
 
 ### What this pass did not do
 
-- It did not edit an existing task. E1 is left for the owner.
-- It did not create a task for languages in the player's sheet (S1 B, S4) or for a rating prompt at the end of a film (R2 B). Each is outlined in `tasks/backlog.md` and is added when the answers ask for it.
-- It filed nothing in jellyscale's tracker (E3).
+- It edited one existing task, with the owner's approval: P4-01's `depends_on` (E1). No acceptance item of an existing task is touched.
+- It did not create a task for languages in the player's sheet. The owner's answer to S1 keeps them out.
+- It filed nothing in jellyscale's tracker. The owner's answer to E3 is no.
 - It did not change `DESIGN.md`, `ARCHITECTURE.md`, or `PRODUCT.md`. Each task changes the document it affects.
 - It ran no server, app, or competing client.

@@ -1633,9 +1633,10 @@
           ],
           "acceptance": [
             "The player has a fourth sheet, Settings, built on the same PlayerSheet as Info, Audio & Subtitles, and Chapters (owner request, 2026-11-16; tasks/backlog.md \"Settings in the player\"). Video keeps playing, one sheet is open at a time, Escape and Close close it, and focus returns to its button",
-            "It opens the way the owner answers S2. Written for S2 A: a Settings button in the control row between Audio & Subtitles and Info, and the o key. The key lives in player-keymap.ts with tests and does nothing while a focused control owns it",
-            "It holds the rows the owner answers in S1. Written for S1 A: Play next episode automatically, Countdown, Intros, and Credits (the streaming limit row is P3-33). Each row is the same component, label, description, choices, and stored value as its Settings › Playback row: one definition renders both places, and a test fails if the two differ",
-            "A change applies to the title that is playing, with no refresh: a test asserts that no change in this sheet makes a gateway call or restarts the session",
+            "It opens from a Settings (gear) button in the control row, between Audio & Subtitles and Info, and from the o key; on TV, from the same button (owner, S2 A, 2026-11-19). The key lives in player-keymap.ts with tests and does nothing while a focused control owns it",
+            "It holds, in this order: Play next episode automatically, Countdown, Intros, Credits, and a last row, All settings (owner, S1 C, 2026-11-19). The streaming limit row is P3-33 and sits before All settings. The account's languages are not in the sheet. Each of the four settings rows is the same component, label, description, choices, and stored value as its Settings › Playback row: one definition renders both places, and a test fails if the two differ",
+            "All settings stops playback the way Back does (stopAndLeave in use-playback-session.ts), so the position is reported and the title still offers Resume, and then opens Settings. If the stop fails, the viewer stays in the player with the existing message. The row says in words that it stops playback",
+            "A change to one of the four settings rows applies to the title that is playing, with no refresh: a test asserts that no such change makes a gateway call or restarts the session",
             "Auto-play next applies at once: the player no longer reads it once per session (src/features/player/index.tsx:137). After a change the Up next card is in the state DESIGN.md §7.15 defines for the new setting; the spec states the rule for a change made while the card is counting, and reducer tests cover it",
             "Intros and Credits keep applying at once, as they do today, and a test changes each from the sheet",
             "A change is confirmed in the OSD and never in a toast (DESIGN.md §7.16: no toast is shown in the player), with the words the Settings toasts use",
@@ -1643,7 +1644,7 @@
             "Every focus call on the sheet's open, close, and TV Up and Down paths uses preventScroll, or the spec says why not (player-sheet.tsx:47 and :58, info-sheet.tsx:89; #174 review lows), and e2e/player-sheet-scroll.spec.ts covers the Settings sheet",
             "In the TV form the button is reached with the arrows like the other sheet buttons; inside the sheet Up and Down move between Close and the rows, and a row's Picker opens in its TV form",
             "The sheet is opened once in the desktop app (WebKitGTK) and the check is written in evidence, because CI runs these journeys in Chromium only",
-            "A Playwright journey opens the sheet with the keyboard during an episode, turns auto-play off, and reaches the end with no advance; a second sets Intros to Skip automatically and sees \"Skipped intro\"",
+            "A Playwright journey opens the sheet with the keyboard during an episode, turns auto-play off, and reaches the end with no advance; a second sets Intros to Skip automatically and sees \"Skipped intro\"; a third chooses All settings, lands on Settings, and finds Resume on the title's page",
             "Visual scenarios cover the sheet. They and 54c-player-auto-skip-osd and 55c-player-next-episode-autoplay-off wait for the buffering status to clear before the capture, not for a fixed delay (P3-24 ship notes)",
             "DESIGN.md §7.14, §7.18 (its sentence that a change applies from the next Play), and the §10 copy table match what ships; PRODUCT.md's M1 list says settings can be changed in the player",
             "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone",
@@ -1652,10 +1653,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "blocked",
+          "status": "todo",
           "owner": null,
           "passes": false,
-          "evidence": "Blocked 2026-11-19 by the product-review pass: waits for the owner's answers to S1 and S2 (docs/plans/proposals/product-review.md, \"Product review pass, 2026-11-19\"). The acceptance is written for the recommended options and is changed with the answers before work starts."
+          "evidence": ""
         },
         {
           "id": "P3-33",
@@ -1671,13 +1672,13 @@
             "P17-08"
           ],
           "acceptance": [
-            "The player's Settings sheet (P3-32) has one Streaming limit row: the limit that applies to this server (local or remote, by the gateway's host class), named so in its label, with the values and storage of Settings › Playback. The other limit is not shown (written for S1 A)",
+            "The player's Settings sheet (P3-32) has one Streaming limit row, after Credits and before All settings: the limit that applies to this server (local or remote, by the gateway's host class), named so in its label, with the values and storage of Settings › Playback. The other limit is not shown (owner, S1 C, 2026-11-19)",
             "A change that can alter the delivery (limitChangeAffects in src/lib/streaming-limits.ts) refreshes the stream through the path that exists: checkLimit in use-playback-session.ts and PlaybackCoordinator.renegotiate. No second renegotiation path is added. A change that cannot alter the delivery only stores the value, and the OSD says the limit was saved",
             "After a refresh the title continues from the position it had, within the resume accuracy PRODUCT.md sets",
             "The audio and subtitle tracks that were playing are still playing after a refresh, subtitles off included, in each direction: original to conversion, conversion to original, and conversion to conversion. Coordinator and session tests cover each; a kept track that cannot be applied is said through the existing audio line, never changed silently",
             "Every PlaybackInfo request a limit change sends from the sheet is the request a limit change in Settings sends today: the same flags in the body and the query, the Fluster DeviceProfile, the playing MediaSourceId, and the playing stream indices. A test compares them. Only Playback Negotiation builds the request and the URL, and a TranscodingUrl is validated and rebuilt as now",
             "Invariant I1 holds: raising the limit to one the file fits under returns to the original file, and lowering it below the file's bitrate shows the conversion indicator with its reason when the new session starts. pnpm test:tripwire passes unchanged",
-            "What the viewer sees during a refresh follows the owner's answer to S3. Written for S3 B: the sheet stays open with focus on the row, a status line says the stream is being refreshed, and Back still cancels and leaves",
+            "During a refresh the sheet stays open with focus on the row, the status disc shows one line saying the stream is being refreshed, and the row shows the new value when the picture returns (owner, S3 B, 2026-11-19). Back still cancels the refresh and leaves",
             "The old session is reported Stopped as a renegotiation reports it today, so watch state is untouched, and its server encode is deleted before the new negotiation. A journey changes the limit twice in quick succession: the last choice plays and one session remains",
             "A refresh that fails shows the existing error notice; Retry and Back work, and the stored limit is the one the viewer chose",
             "After Play original the session ignores the limit (ignoreLimit in use-playback-session.ts). The spec states what the row shows and does then and shows the owner before implementation, so the row never looks as if it did something it did not",
@@ -1692,10 +1693,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual && pnpm test:tripwire",
-          "status": "blocked",
+          "status": "todo",
           "owner": null,
           "passes": false,
-          "evidence": "Blocked 2026-11-19 by the product-review pass: waits for the owner's answers to S1 and S3 (docs/plans/proposals/product-review.md, \"Product review pass, 2026-11-19\"). The acceptance is written for the recommended options and is changed with the answers before work starts."
+          "evidence": ""
         },
         {
           "id": "P3-25",
@@ -3216,7 +3217,9 @@
             "P3-30",
             "P13-31",
             "P3-31",
-            "P17-02"
+            "P17-02",
+            "P3-32",
+            "P3-33"
           ],
           "acceptance": [
             "docs/dogfood/YYYY-MM-DD.md records each session, what was watched, and every problem",
@@ -3963,7 +3966,7 @@
             "P16-01"
           ],
           "acceptance": [
-            "Fixtures recorded from Jellyfin 10.11.7 and 12.4.0, scrubbed as the P16-01 fixtures are, show POST /UserItems/{id}/UserData with a Rating and the item read back with its UserData, for the values 2, 4, 6, 8, and 10 and for one value between them (7)",
+            "Fixtures recorded from Jellyfin 10.11.7 and 12.4.0, scrubbed as the P16-01 fixtures are, show POST /UserItems/{id}/UserData with a Rating and the item read back with its UserData, for every whole value from 1 to 10 (half stars; owner, R1 B, 2026-11-19) and for one value between two of them (7.5)",
             "They record how a rating is removed (the body that clears it, or that none does) and what Likes reads after each value",
             "They record what the thumbs calls (POST and DELETE /UserItems/{id}/Rating) store, and whether one overwrites a number the viewer gave",
             "They record that setting a rating leaves Played, PlaybackPositionTicks, LastPlayedDate, and IsFavorite as they were",
@@ -3993,12 +3996,12 @@
           ],
           "acceptance": [
             "A film's page lets the viewer give it their own rating, in its own place on the detail header and not on the facts line. It is more prominent than the audience and critic scores, which stay on the facts line, secondary and labelled by source as P15-03 ships them (owner, 2026-11-17). The spec shows the owner where it sits before implementation",
-            "How the viewer rates follows the owner's answer to R1. Written for R1 A: five whole stars, stored as Rating 2, 4, 6, 8, and 10. The mapping is a pure function in src/domain with tests. A rating another app stored between two stars shows as the nearest star and is not rewritten until the viewer rates",
-            "Where the viewer rates follows the owner's answer to R2. Written for R2 A: the title's page only. Films only (owner: \"rate your own films\"); a series or episode page shows no control",
+            "The viewer rates with five stars in half steps, stored as Rating 1 to 10: half a star is 1 and five stars are 10 (owner, R1 B, 2026-11-19). The mapping is a pure function in src/domain with tests. A rating another app stored between two half stars shows as the nearest half star and is not rewritten until the viewer rates",
+            "The viewer rates on the film's page; the prompt when a film ends is P16-17 (owner, R2 B, 2026-11-19). Films only (owner: \"rate your own films\"); a series or episode page shows no control",
             "The viewer can change a rating and remove it, with the call P16-13 recorded. If a server cannot remove one, the spec stops and asks the human",
             "The rating is saved through src/lib/jellyfin/gateway.ts only, and the detail read carries it in the item's user data. Gateway tests assert the requests against the P16-13 fixtures. No playback request changes, and a test asserts a rating leaves played, favourite, and position as they were",
             "The control shows the new rating at once; a failed save puts the old one back with a toast in plain copy, never a transport message",
-            "The control is built under src/features/shared/ui and is not a native radio or select. Its state is in words as well as fill (\"Your rating: 4 of 5 stars\"), and the arrow keys, Enter, and Escape alone set, change, and remove a rating",
+            "The control is built under src/features/shared/ui and is not a native radio or select. Its state is in words as well as fill (\"Your rating: 3.5 of 5 stars\"), and the arrow keys, Enter, and Escape alone set a rating in half-star steps, change it, and remove it",
             "A Playwright journey rates a film, reloads, finds the rating, and removes it",
             "DESIGN.md §7.7 and the §10 copy table describe the control and the hierarchy, and match what ships",
             "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone",
@@ -4007,10 +4010,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "blocked",
+          "status": "todo",
           "owner": null,
           "passes": false,
-          "evidence": "Blocked 2026-11-19 by the product-review pass: waits for the owner's answers to R1 and R2 (docs/plans/proposals/product-review.md, \"Product review pass, 2026-11-19\"). The acceptance is written for the recommended options and is changed with the answers before work starts."
+          "evidence": ""
         },
         {
           "id": "P16-15",
@@ -4024,10 +4027,10 @@
             "P15-01"
           ],
           "acceptance": [
-            "A Top rated view lists the films the viewer rated at or above the cutoff the owner answers in R4, highest first, with ties in title order. Written for R4 A: 4 stars and up (Rating 8 or more)",
-            "It is reached the way the owner answers R3. Written for R3 B: its own entry beside Favorites (P15-01); the Home row is P16-16",
-            "Fluster computes the list from the request P16-13 recorded, because the server has no sort or threshold on the viewer's own rating. The rule is a pure function in src/domain with tests for ties, an empty list, and a rating removed. If R4's answer includes the top quarter, the quarter is counted over the films the viewer has rated, ties at the cutoff are included, and it applies only from the minimum number of rated films R4 sets",
-            "The view says its rule in plain words (for A: \"Films you gave 4 stars or more\"). With nothing to list, an empty state says in one sentence how to rate a film",
+            "A Top rated view lists the films the viewer rated 4 stars or more, which is a stored Rating of 8 or more, highest first, with ties in title order. There is no minimum number of rated films (owner, R4 A, 2026-11-19)",
+            "It has its own entry beside Favorites (P15-01); the Home row is P16-16 (owner, R3 B, 2026-11-19)",
+            "Fluster computes the list from the request P16-13 recorded, because the server has no sort or threshold on the viewer's own rating, and no request for one is filed with Jellyscale (owner, E3, 2026-11-19). The rule is a pure function in src/domain with tests for ties, an empty list, a rating of 7 (3.5 stars, left out), and a rating removed",
+            "The view says its rule in plain words (\"Films you gave 4 stars or more\"). With nothing to list, an empty state says in one sentence how to rate a film",
             "The request carries only the fields a card needs. The spec states the limit or paging for a viewer with thousands of rated films and a test covers it; no request is made per card",
             "Rating, changing, or removing a rating on a film's page updates the list without a restart",
             "Cards show the viewer's own rating as their mark, never the audience or critic score in its place (DESIGN.md §7.5)",
@@ -4040,10 +4043,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "blocked",
+          "status": "todo",
           "owner": null,
           "passes": false,
-          "evidence": "Blocked 2026-11-19 by the product-review pass: waits for the owner's answers to R3 and R4 (docs/plans/proposals/product-review.md, \"Product review pass, 2026-11-19\"). The acceptance is written for the recommended options and is changed with the answers before work starts."
+          "evidence": ""
         },
         {
           "id": "P16-16",
@@ -4058,7 +4061,7 @@
             "P16-02"
           ],
           "acceptance": [
-            "Home shows one Top rated row of the films in the Top rated view (P16-15), if the owner's answer to R3 includes a Home row (written for R3 B). Its place in Home's fixed order is shown to the owner in the spec before implementation",
+            "Home shows one Top rated row of the films in the Top rated view (P16-15) (owner, R3 B, 2026-11-19). Its place in Home's fixed order is shown to the owner in the spec before implementation",
             "The row holds at most 12 cards and ends with a See all tile that opens the Top rated view; the tile follows the See all rules of DESIGN.md §7.4",
             "The row's order is the view's order; a test loads Home twice with the same fixtures and asserts the same cards in the same order",
             "The row is hidden when the list is empty, and it never becomes the hero or changes the order of the rows around it",
@@ -4072,10 +4075,41 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "blocked",
+          "status": "todo",
           "owner": null,
           "passes": false,
-          "evidence": "Blocked 2026-11-19 by the product-review pass: waits for the owner's answers to R3 (docs/plans/proposals/product-review.md, \"Product review pass, 2026-11-19\"). The acceptance is written for the recommended options and is changed with the answers before work starts."
+          "evidence": ""
+        },
+        {
+          "id": "P16-17",
+          "title": "Ask for a rating when a film ends",
+          "domain": "Playback Session",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "P16-14",
+            "P16-05",
+            "P3-33"
+          ],
+          "acceptance": [
+            "When a film ends, a quiet prompt offers the same five half-star control as the film's page (P16-14) (owner, R2 B, 2026-11-19). The spec shows the owner the prompt, when exactly it appears, and how it sits with what P16-05 shows after a film, before implementation",
+            "Films only: no prompt appears for an episode, a trailer, or an extra, and none for a film stopped before its end",
+            "It is quiet: it never pauses or covers the picture, never takes focus from a control the viewer is using, never delays Back or the end of the session, and goes away by itself or with Escape. A film that already has the viewer's rating shows that rating in the prompt, not an empty control",
+            "A rating given in the prompt is saved with the call P16-14 uses, through src/lib/jellyfin/gateway.ts only, and shows on the film's page and in Top rated (P16-15) without a restart. A failed save says so in plain copy in the place DESIGN.md gives messages on that screen, and never as a transport message",
+            "No playback request changes, the Stopped report is what it is today, and no Tauri command is added",
+            "Reducer or hook tests cover: a film that ends, an episode that ends, a film stopped early, a film already rated, and a dismissed prompt; a Playwright journey plays a film to its end, rates it in the prompt, and finds the rating on the film's page",
+            "DESIGN.md §7.15 and the §10 copy table describe the prompt and match what ships",
+            "Works in the TV form inside the title-safe insets with arrows, Enter, and Escape alone",
+            "Before and after screenshots of every affected state at 1440×900 and 1920×1080, and of the TV form, are attached to the PR",
+            "A fresh-context design review against DESIGN.md and .claude/skills/change-review/references/design-checklist.md passes",
+            "No e2e journey is skipped, deleted, or weakened"
+          ],
+          "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
         }
       ]
     },

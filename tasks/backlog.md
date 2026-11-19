@@ -404,7 +404,7 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 
 ## Settings in the player (owner request, 2026-11-16)
 
-- ~~Owner: changing a client setting today means leaving playback, going Home, opening Settings, then starting again. Add a Settings sheet to the player beside Info, Audio & Subtitles, and Chapters. When a change affects the stream, Fluster refreshes the stream and resumes at the same position, keeping the current audio and subtitle tracks. Findings from 2026-11-16:~~ Taken by P3-32 (the sheet and the settings that apply at once) and P3-33 (the streaming limit and the refresh). Both wait for the owner's answers S1 to S3; languages in the sheet wait for S1 and S4 and have no task yet. The findings below stay as the record:
+- ~~Owner: changing a client setting today means leaving playback, going Home, opening Settings, then starting again. Add a Settings sheet to the player beside Info, Audio & Subtitles, and Chapters. When a change affects the stream, Fluster refreshes the stream and resumes at the same position, keeping the current audio and subtitle tracks. Findings from 2026-11-16:~~ Taken by P3-32 (the sheet and the settings that apply at once) and P3-33 (the streaming limit and the refresh). The owner answered S1 to S3 on 2026-11-19; languages stay out of the sheet (S1 C). The findings below stay as the record:
   - The streaming limits already renegotiate mid-playback while keeping the position and tracks (`use-playback-session.ts` `checkLimit`, `coordinator.ts` `renegotiate`/`restart`, `track-choice.ts` merge). The sheet can reuse that path.
   - The account audio and subtitle languages (P17-03) shape the server's starting tracks (P17-01 fixtures), so a change made in the player would need a renegotiation to take effect. Nothing applies them mid-playback today. Decide whether a language change in the player also switches the current tracks, or only applies from the next title.
   - The Continue watching window only affects Home and does not belong in the player sheet. Auto-play next and skip intros have no Settings rows yet (P3-23, P3-24). Once they exist they apply live, with no refresh.
@@ -424,7 +424,7 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 
 ## Personal ratings and top-rated lists (owner request, 2026-11-17)
 
-- ~~Owner: rate your own films, and get lists of your top-rated ones, "above four stars or in the top 25% of movies that they've rated". Findings from 2026-11-17 (SDK 1.0.2 and Jellyfin source):~~ Taken by P16-13 (fixtures), P16-14 (rate a film on its page), P16-15 (the Top rated view), and P16-16 (the Home row). P16-14 to P16-16 wait for the owner's answers R1 to R4. The findings below stay as the record; the Jellyscale request is not filed:
+- ~~Owner: rate your own films, and get lists of your top-rated ones, "above four stars or in the top 25% of movies that they've rated". Findings from 2026-11-17 (SDK 1.0.2 and Jellyfin source):~~ Taken by P16-13 (fixtures), P16-14 (rate a film on its page), P16-15 (the Top rated view), and P16-16 (the Home row). The prompt when a film ends is P16-17. The owner answered R1 to R4 on 2026-11-19: half stars, the page then a prompt, a view and a Home row, 4 stars and up. The findings below stay as the record:
   - Jellyfin stores a per-user 0-10 `UserItemData.Rating`, separate from the community and critic ratings. `Likes` is derived from it: Rating >= 6.5 counts as liked, setting like stores 10, setting dislike stores 1 (`MediaBrowser.Controller/Entities/UserItemData.cs`).
   - A rating is set with `POST /UserItems/{id}/UserData` carrying `Rating`; the server saves it (`Emby.Server.Implementations/Library/UserDataManager.cs`). Thumbs use `POST`/`DELETE /UserItems/{id}/Rating?likes=`.
   - The server has no sort by the user's rating (`ItemSortBy` has CommunityRating, CriticRating, IsFavoriteOrLiked) and no threshold filter beyond `Likes` (>= 6.5). So "4 stars and up" (>= 8/10) and "top 25% of what you rated" must be computed in Fluster from one request for the user's rated items.
@@ -435,23 +435,22 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
     - where the lists live (a Home row, a library filter, or both);
     - the cutoff (4 stars and up, the top 25%, or both), and a minimum number of rated titles before a top-25% list shows.
   - Hierarchy (owner, 2026-11-17): clearly distinguish the viewer's own rating from audience and critic scores. The viewer's own rating is more prominent, in its own place and not on the facts line. Audience and critic scores stay, because they help decide what to watch, but they are secondary and labelled by source ("7.8 audience · 91% critics", applied to P15-03).
-  - Possible Jellyscale request (from:fluster): server-side sort and threshold filter by the user's own rating.
+  - ~~Possible Jellyscale request (from:fluster): server-side sort and threshold filter by the user's own rating.~~ Owner, 2026-11-19: no. Fluster computes the lists itself.
   - M.
 
 ## Product review pass (2026-11-19)
 
 The triage of every entry added since the 2026-11-15 pass, and the two owner requests ("Settings in the player" and "Personal ratings and top-rated lists"), is in `docs/plans/proposals/product-review.md`, "Product review pass, 2026-11-19".
 
-- Tasks now: P16-13 (personal-rating fixtures).
-- Tasks that wait for the owner's answers: P3-32 (S1, S2), P3-33 (S1, S3), P16-14 (R1, R2), P16-15 (R3, R4), P16-16 (R3).
+- Tasks now, after the owner's answers of 2026-11-19: P3-32 (the player's Settings sheet), P3-33 (the streaming limit in it), P16-13 (personal-rating fixtures), P16-14 (rate a film on its page), P16-15 (the Top rated view), P16-16 (the Home row), P16-17 (a rating prompt when a film ends). P4-01 now waits for P3-32 and P3-33 (owner, E1).
 - Notes for specs, which edit no task. Each stays an entry above until its task's pull request closes it:
   - P13-19 (design audit and docs sync): the UI gallery page's sideways overflow (#174), the detail subtitle list's design lows (P17-02), the `.ui-button` border-width token (#192), and the P17-08 design lows.
   - P2-12 (track selector, native): P17-08 follow-up (b), an embedded pick Rust cannot map, and the second-pass low on `defaultAudioStreamIndex`.
   - P16-11 and P16-13 (fixtures): the recorder does not reproduce committed fixtures and logs in on a fixed device id (P17-01 follow-ups).
   - P3-33's spec: P17-08 follow-up (a), a retry that does not keep an audio track switched in mpv, sits on the same restart path; P3-33 takes guardian L3 only.
 - Found by this pass:
-  - Languages in the player's Settings sheet have no task. If the owner answers S1 with B, add one after P3-33 (same player, in sequence): it writes the account as P17-03 does and follows S4. A renegotiation today asks for the playing tracks by index (`currentSelection`, `src/domain/track-choice.ts`), so a changed language cannot move the tracks unless Fluster stops sending them, and P3-13 says Fluster adds no track-preference logic of its own. M (owner request 2026-11-16).
-  - A rating prompt when a film ends has no task. If the owner answers R2 with B, add one after P16-05 (the after-finish moment) and after P3-33 (same player, in sequence). S to M (owner request 2026-11-17).
+  - ~~Languages in the player's Settings sheet have no task.~~ Owner, 2026-11-19 (S1 C): languages stay out of the sheet. For the record: a renegotiation asks for the playing tracks by index (`currentSelection`, `src/domain/track-choice.ts`), so a changed language would not move the tracks.
+  - ~~A rating prompt when a film ends has no task.~~ Taken by P16-17 (owner, R2 B).
   - Whether a renegotiation keeps a paused title paused, and whether direct play after a renegotiation selects the kept subtitle track in mpv, are unverified; P3-33's spec records both. S (P3-33).
   - CI retries end-to-end journeys twice and visual captures once (`playwright.config.ts:19`, `playwright.visual.config.ts:17`), so the `e2e/tv/settings-languages.spec.ts:28` flake (2 of 10 on main without retries) rarely fails a pull request. It stays an entry; promote it if it fails a CI run. S.
-  - Adding P3-32 and P3-33 to P4-01's `depends_on` (the dogfood week waits for settings in the player) edits an existing task; it is proposal E1 for the owner. S.
+  - ~~Adding P3-32 and P3-33 to P4-01's `depends_on` (the dogfood week waits for settings in the player) edits an existing task; it is proposal E1 for the owner. S.~~ Approved by the owner and applied, 2026-11-19.
