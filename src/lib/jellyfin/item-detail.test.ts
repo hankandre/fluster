@@ -13,6 +13,11 @@ const hdr10Fixtures = import.meta.glob("../../../tests/fixtures/jellyfin/*/item-
   import: "default",
 }) as Record<string, BaseItemDto>;
 
+const multitrackFixtures = import.meta.glob("../../../tests/fixtures/jellyfin/*/item-detail-no-fields-multitrack*.json", {
+  eager: true,
+  import: "default",
+}) as Record<string, BaseItemDto>;
+
 describe("toItemDetail with recorded items", () => {
   it.each(Object.entries(itemFixtures))("maps two named versions from %s", (_path, dto) => {
     const detail = toItemDetail(dto)!;
@@ -270,5 +275,19 @@ describe("toItemDetail cast pictures and ratings", () => {
       expect(toItemDetail({ ...base, CriticRating: bad })!.criticRating).toBeUndefined();
     }
     expect(toItemDetail({ ...base, CriticRating: 0 })!.criticRating).toBe(0);
+  });
+
+  it("maps the recorded multitrack fixtures, and their person without a PrimaryImageTag gets no image", () => {
+    const fixtures = Object.entries(multitrackFixtures);
+    expect(fixtures.map(([path]) => path).some((path) => path.includes("/10.11.7/"))).toBe(true);
+    expect(fixtures.map(([path]) => path).some((path) => path.includes("/12.4.0/"))).toBe(true);
+    for (const [, dto] of fixtures) {
+      expect(dto.People?.[0]).toHaveProperty("Id");
+      expect(dto.People?.[0]).not.toHaveProperty("PrimaryImageTag");
+      const detail = toItemDetail(dto)!;
+      expect(detail).toBeDefined();
+      expect(detail.cast.length).toBeGreaterThan(0);
+      expect(detail.cast[0].image).toBeUndefined();
+    }
   });
 });

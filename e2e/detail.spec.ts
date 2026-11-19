@@ -191,7 +191,7 @@ test("the facts line shows the ratings and the cast shows pictures with initials
   await installMockServer(page);
   await signIn(page, "#/next/item/m1");
 
-  await expect(page.locator(".detail-facts")).toContainText("7.8/10 · 91% critics");
+  await expect(page.locator(".detail-facts")).toContainText("7.8 audience · 91% critics");
   const cast = page.getByRole("region", { name: "Cast" });
   await expect(cast.getByRole("listitem").filter({ hasText: "Mara Ellison" }).locator("img")).toHaveCount(1);
   const junie = cast.getByRole("listitem").filter({ hasText: "Junie Park" });

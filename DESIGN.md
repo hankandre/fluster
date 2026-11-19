@@ -246,11 +246,11 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 
 ### 7.7 Detail header (`DetailHeader`)
 
-- A full-bleed `AmbientBackdrop` at full strength. Over it, in the left five columns: the Logo or title (`h1`), a facts line ("2023 · 2 h 3 min · 7.8/10 · 91% critics · Drama": year, runtime, the community and critic ratings in plain words each only when the server has it, then genres; no logo and no star), `MediaBadges`, the `ActionBar`, and a three-line overview with a "More" disclosure.
+- A full-bleed `AmbientBackdrop` at full strength. Over it, in the left five columns: the Logo or title (`h1`), a facts line ("2023 · 2 h 3 min · 7.8 audience · 91% critics · Drama": year, runtime, the audience and critic scores, each labelled by its source in plain words and shown only when the server has it, then genres; no logo and no star), `MediaBadges`, the `ActionBar`, and a three-line overview with a "More" disclosure.
 - `PersonRow` cards show the name and the role, and the person's image, with initials as the fallback (no image, still loading, or failed). They are not interactive.
 - Variants:
   - **movie**
-  - **series**: facts are the year range, the season count, the ratings, and genres ("2019–2023 · 4 seasons · 8.4/10 · 88% critics · Drama"). The primary action is "Resume S1 · E2" or "Play S1 · E3". Season tabs and the episode list sit below.
+  - **series**: facts are the year range, the season count, the ratings, and genres ("2019–2023 · 4 seasons · 8.4 audience · 88% critics · Drama"). The primary action is "Resume S1 · E2" or "Play S1 · E3". Season tabs and the episode list sit below.
   - **episode**: the series name is a link above the title. Facts read "S1 · E2 · 45 min". The episode still replaces the backdrop when the episode has no backdrop. A "More from Season 1" episode strip sits below and opens positioned at the current episode.
 - Compact windows stack poster (or still), then title, then actions, then overview.
 
@@ -634,6 +634,7 @@ Fluster talks like a knowledgeable friend running the projector: calm, brief, pl
 | Detail, subtitles with no default track | n/a | {n} in {m} languages; 1 in 1 language; {n} with no language | Show all {N} subtitles |
 | Detail, subtitles in the viewer's language | n/a | (the tracks) | Show all {N} subtitles |
 | Detail, subtitles expanded | n/a | (every track) | Show fewer subtitles |
+| Detail, facts line scores | n/a | {n.n} audience; {n}% critics. Each is labelled by its source and shows only when the server has it. The viewer's own rating, when it exists, is a separate, more prominent control and never shares these labels. | n/a |
 | Detail, watched or favorite failed | n/a | Couldn't update watched state. Try again. / Couldn't update favorite. Try again. | n/a |
 | Settings, limit changed | n/a | {Local network or Remote} limit set to {n} Mbps. / {Local network or Remote} limit removed. | n/a |
 | Settings, Languages intro | n/a | Saved to your Jellyfin account, so your other Jellyfin apps use them too. Every other setting stays on this computer. | n/a |

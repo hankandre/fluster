@@ -14,7 +14,7 @@ test("Movie detail: the primary takes focus; Right reaches the version sheet and
   await expect(play(page)).toBeFocused();
   await expectNoSmallText(page);
   await expectTitleSafe(page);
-  await expect(page.locator(".detail-facts")).toContainText("7.8/10 · 91% critics");
+  await expect(page.locator(".detail-facts")).toContainText("7.8 audience · 91% critics");
 
   await page.keyboard.press("ArrowRight");
   const version = page.getByRole("button", { name: /^Version/ });
