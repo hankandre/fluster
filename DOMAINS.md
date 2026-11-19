@@ -318,9 +318,11 @@ src/
     player/          player-screen.tsx · native-video-surface.tsx · chrome/info-sheet.tsx
   app/               App.tsx (routing only) · compose.ts (composition root)
 src-tauri/src/
-  lib.rs             command registration
+  lib.rs             command registration and glue (window-close deadline)
   commands.rs        typed command handlers
-  player/            controller.rs · events.rs · properties.rs · track_list.rs · tracks.rs · diagnostics.rs · network.rs · version.rs
+  close_guard.rs     exits a closed window after a deadline
+  lock.rs · trace.rs poison-tolerant locks; debug traces that never panic
+  player/            controller.rs · controller_stop.rs · events.rs · properties.rs · track_list.rs · tracks.rs · diagnostics.rs · network.rs · version.rs
   model.rs           command request/response types
   surface/           linux.rs · macos.rs · windows.rs (planned)
   security/          redaction.rs · url_policy.rs

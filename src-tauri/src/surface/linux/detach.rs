@@ -6,6 +6,7 @@ use super::{
     UI,
 };
 use crate::trace::native_trace;
+#[cfg(debug_assertions)]
 use gtk::glib;
 use gtk::prelude::*;
 use std::cell::Cell;

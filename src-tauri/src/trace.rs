@@ -7,8 +7,6 @@
 //! through `write_trace`, which drops write errors; clippy's `print_stderr`
 //! and `print_stdout` lints keep the print macros out of production code.
 
-use std::io::Write;
-
 /// Writes `prefix message` to stderr and ignores any failure.
 #[cfg(debug_assertions)]
 pub(crate) fn write_trace(prefix: &'static str, message: &str) {
@@ -18,7 +16,8 @@ pub(crate) fn write_trace(prefix: &'static str, message: &str) {
 #[cfg(not(debug_assertions))]
 pub(crate) fn write_trace(_prefix: &'static str, _message: &str) {}
 
-fn write_line(out: &mut impl Write, prefix: &str, message: &str) -> std::io::Result<()> {
+#[cfg(any(debug_assertions, test))]
+fn write_line(out: &mut impl std::io::Write, prefix: &str, message: &str) -> std::io::Result<()> {
     writeln!(out, "{prefix} {message}")
 }
 
@@ -30,7 +29,7 @@ pub(crate) fn native_trace(message: &'static str) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io;
+    use std::io::{self, Write};
 
     struct BrokenPipe;
 
