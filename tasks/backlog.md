@@ -497,3 +497,6 @@ The triage of every entry added since the 2026-11-15 pass, and the two owner req
 
 - Empty non-interactive chrome (title text, time labels, the Up Next card body, the notice body) counts as outside an open sheet, so a press there closes it. Owner design call.
 - The "does nothing else" assertions for a press outside a sheet guard future regressions only: no click-to-pause exists today.
+## Scrub preview (#211)
+
+- `scrubber.tsx`: Alt-Tab away and back after a pointer seek shows the preview at the playhead, because blur clears the pointer flag and focus returns without a pointer press. S.

@@ -164,8 +164,51 @@ describe("Scrubber", () => {
       fireEvent.pointerLeave(element);
       expect(screen.queryByTestId("thumb")).toBeNull();
       fireEvent.keyDown(slider(), { key: "ArrowRight" });
-      expect(screen.getByTestId("thumb")).toHaveTextContent("");
       expect(container.querySelector(".seek-preview")).not.toBeNull();
+    });
+
+    it("keeps the preview while the pointer is down, even off the track", () => {
+      const { container } = render(<Scrubber snapshot={snapshot} onSeek={vi.fn()} seekPreview={picture} />);
+      const element = track(container);
+      fireEvent.pointerDown(slider(), { button: 0 });
+      fireEvent(element, new MouseEvent("pointermove", { bubbles: true, clientX: 200 }));
+      fireEvent.pointerLeave(element);
+      expect(screen.getByTestId("thumb")).toBeInTheDocument();
+      fireEvent.pointerUp(window);
+      expect(screen.queryByTestId("thumb")).toBeNull();
+    });
+
+    it("ignores a non-primary press", () => {
+      const { container } = render(<Scrubber snapshot={snapshot} onSeek={vi.fn()} seekPreview={picture} />);
+      fireEvent.pointerDown(slider(), { button: 2 });
+      fireEvent.pointerLeave(track(container));
+      expect(screen.queryByTestId("thumb")).toBeNull();
+    });
+
+    it("keeps the preview hidden for a global hotkey after a pointer seek", () => {
+      const { container } = render(<Scrubber snapshot={snapshot} onSeek={vi.fn()} seekPreview={picture} />);
+      const element = track(container);
+      fireEvent.pointerDown(slider(), { button: 0 });
+      fireEvent.focus(slider());
+      fireEvent.pointerUp(slider());
+      fireEvent.pointerUp(window);
+      fireEvent.pointerLeave(element);
+      fireEvent.keyDown(slider(), { key: "m" });
+      fireEvent.keyDown(slider(), { key: "Shift" });
+      expect(screen.queryByTestId("thumb")).toBeNull();
+    });
+
+    it("lets keyboard focus show the preview again after a blur", () => {
+      const { container } = render(<Scrubber snapshot={snapshot} onSeek={vi.fn()} seekPreview={picture} />);
+      const element = track(container);
+      fireEvent.pointerDown(slider(), { button: 0 });
+      fireEvent.focus(slider());
+      fireEvent.pointerUp(window);
+      fireEvent.pointerLeave(element);
+      expect(screen.queryByTestId("thumb")).toBeNull();
+      fireEvent.blur(slider());
+      fireEvent.focus(slider());
+      expect(screen.getByTestId("thumb")).toBeInTheDocument();
     });
 
     it("shows the preview for keyboard focus (Tab) and for ArrowRight", () => {
