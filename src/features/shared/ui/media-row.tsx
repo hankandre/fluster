@@ -4,6 +4,7 @@ import { useRovingFocus } from "../../roving-focus";
 import { Button } from "./button";
 import { InlineError } from "./inline-error";
 import { MediaCard, type MediaCardProps, type MediaCardVariant } from "./media-card";
+import { PersonCard, type Person } from "./person-card";
 import { Skeleton } from "./skeleton";
 import "./media.css";
 
@@ -11,9 +12,12 @@ export interface MediaRowProps {
   title?: string;
   // The accessible name while there is no title.
   label?: string;
-  variant: MediaCardVariant;
+  // "person" is the cast row: round pictures with a name and role, focusable but with no action.
+  variant: MediaCardVariant | "person";
   status: "pending" | "error" | "ready";
   items?: (MediaCardProps & { id: string })[];
+  // The people of a "person" row, in place of `items`.
+  people?: Person[];
   onRetry?(): void;
   errorMessage?: string;
   // Called with the id of the card that takes focus.
@@ -25,12 +29,14 @@ export interface MediaRowProps {
   startIndex?: number;
 }
 
+const CARD_SELECTOR = "[data-media-card], [data-person-card]";
 const POSTER_SKELETONS = 8;
 const THUMB_SKELETONS = 5;
 
 // One horizontal row of cards (DESIGN.md 7.4). The list bleeds to the window edges, keeps the focused card
 // one gutter from them, and joins the spatial Up and Down focus between rows.
-export function MediaRow({ title, label, variant, status, items = [], onRetry, errorMessage, onItemFocus, seeAll, startIndex }: MediaRowProps) {
+export function MediaRow({ title, label, variant, status, items = [], onRetry, errorMessage, onItemFocus, seeAll, startIndex, people = [] }: MediaRowProps) {
+  const count = variant === "person" ? people.length : items.length;
   const headingId = useId();
   const roving = useRovingFocus<HTMLUListElement>("row", { spatial: true, ...(startIndex !== undefined ? { preferredIndex: startIndex } : {}) });
   const [canScroll, setCanScroll] = useState({ previous: false, next: false });
@@ -43,14 +49,14 @@ export function MediaRow({ title, label, variant, status, items = [], onRetry, e
     setCanScroll((current) => (current.previous === previous && current.next === next ? current : { previous, next }));
   }, [roving.ref]);
 
-  useLayoutEffect(measure, [measure, items.length, status]);
+  useLayoutEffect(measure, [measure, count, status]);
   // Opens scrolled so the start card sits one gutter in, without moving focus.
   const scrolledToStart = useRef(false);
   useLayoutEffect(() => {
     const list = roving.ref.current;
     if (status !== "ready" || !list || scrolledToStart.current || startIndex === undefined || startIndex <= 0) return;
     scrolledToStart.current = true;
-    const card = list.querySelectorAll<HTMLElement>("[data-media-card]")[startIndex];
+    const card = list.querySelectorAll<HTMLElement>(CARD_SELECTOR)[startIndex];
     if (!card) return;
     const gutter = parseFloat(getComputedStyle(list).paddingInlineStart) || 0;
     list.scrollLeft += card.getBoundingClientRect().left - list.getBoundingClientRect().left - gutter;
@@ -64,7 +70,7 @@ export function MediaRow({ title, label, variant, status, items = [], onRetry, e
     return () => observer.disconnect();
   }, [measure, roving.ref, status]);
 
-  if (status === "ready" && items.length === 0) return null;
+  if (status === "ready" && count === 0) return null;
 
   function page(direction: 1 | -1) {
     const list = roving.ref.current;
@@ -76,9 +82,9 @@ export function MediaRow({ title, label, variant, status, items = [], onRetry, e
 
   function onFocus(event: FocusEvent<HTMLUListElement>) {
     roving.onFocus(event);
-    const card = (event.target as HTMLElement).closest<HTMLElement>("[data-media-card]");
+    const card = (event.target as HTMLElement).closest<HTMLElement>(CARD_SELECTOR);
     if (card && onItemFocus) {
-      const index = Array.from(event.currentTarget.querySelectorAll("[data-media-card]")).indexOf(card);
+      const index = Array.from(event.currentTarget.querySelectorAll(CARD_SELECTOR)).indexOf(card);
       const focused = items[index];
       if (focused) onItemFocus(focused.id);
     }
@@ -90,9 +96,9 @@ export function MediaRow({ title, label, variant, status, items = [], onRetry, e
   }
 
   const name = title ?? label;
-  const skeletonCount = variant === "poster" ? POSTER_SKELETONS : THUMB_SKELETONS;
-  const skeletonWidth = variant === "poster" ? "var(--poster-w)" : "var(--thumb-w)";
-  const skeletonRatio = variant === "poster" ? "2 / 3" : "16 / 9";
+  const skeletonCount = variant === "poster" || variant === "person" ? POSTER_SKELETONS : THUMB_SKELETONS;
+  const skeletonWidth = variant === "person" ? "var(--person-disc)" : variant === "poster" ? "var(--poster-w)" : "var(--thumb-w)";
+  const skeletonRatio = variant === "person" ? "1 / 1" : variant === "poster" ? "2 / 3" : "16 / 9";
 
   return (
     <section
@@ -117,12 +123,18 @@ export function MediaRow({ title, label, variant, status, items = [], onRetry, e
       ) : null}
       {status === "ready" ? (
         <div className="media-row-scroller">
-          <ul className="media-row-list" data-spatial-row="" data-focus-row={name} ref={roving.ref} onKeyDown={roving.onKeyDown} onFocus={onFocus} onScroll={measure}>
-            {items.map(({ id, ...card }) => (
-              <li key={id} data-focus-id={id}>
-                <MediaCard {...card} />
-              </li>
-            ))}
+          <ul className="media-row-list" data-variant={variant} data-spatial-row="" data-focus-row={name} ref={roving.ref} onKeyDown={roving.onKeyDown} onFocus={onFocus} onScroll={measure}>
+            {variant === "person"
+              ? people.map((person, index) => (
+                <li key={index} data-focus-id={String(index)}>
+                  <PersonCard person={person} />
+                </li>
+              ))
+              : items.map(({ id, ...card }) => (
+                <li key={id} data-focus-id={id}>
+                  <MediaCard {...card} />
+                </li>
+              ))}
             {seeAll ? (
               <li className="media-row-see-all" data-variant={variant} data-focus-id="see-all">
                 <a className="ui-see-all" href={seeAll.href} aria-label={seeAll.label} data-roving-item="">See all</a>

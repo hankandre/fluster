@@ -59,6 +59,16 @@ describe("PersonRow", () => {
     expect(container.querySelector("img")).toBeNull();
   });
 
+  it("makes each person a focus stop of the row with the name and role as its name, and no action", () => {
+    render(<PersonRow people={[{ name: "Amy Adams", role: "Louise" }, { name: "Cher" }]} />);
+    const first = screen.getByRole("group", { name: "Amy Adams, Louise" });
+    expect(first).toHaveAttribute("tabindex", "0");
+    expect(screen.getByRole("group", { name: "Cher" })).toHaveAttribute("tabindex", "-1");
+    first.focus();
+    fireEvent.keyDown(first, { key: "ArrowRight" });
+    expect(screen.getByRole("group", { name: "Cher" })).toHaveFocus();
+  });
+
   it("renders nothing without people", () => {
     const { container } = render(<PersonRow people={[]} />);
     expect(container).toBeEmptyDOMElement();

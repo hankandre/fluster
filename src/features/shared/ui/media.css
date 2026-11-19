@@ -173,6 +173,11 @@
     flex: none;
   }
 
+  /* The cast row keeps a small gap between large discs (owner decision, 2026-11-19). */
+  .media-row-list[data-variant="person"] {
+    gap: var(--space-4);
+  }
+
   /* The "See all" tile ends a row (DESIGN.md 7.4). It is not a card: no art, sized like the row's cards. */
   .ui-see-all {
     display: flex;
@@ -269,6 +274,16 @@
     outline: 3px solid transparent;
     box-shadow: var(--focus-ring), var(--shadow-lift);
     transform: var(--lift);
+  }
+
+  .ui-person:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
+  .ui-person:focus-visible .ui-person-disc {
+    outline: 3px solid transparent;
+    box-shadow: var(--focus-ring);
   }
 
   .media-card:focus-visible .media-card-title,

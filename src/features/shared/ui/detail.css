@@ -136,21 +136,11 @@
     min-width: 0;
   }
 
-  /* Person row (DESIGN.md 7.7): a wrapping grid, since the cards cannot take focus. */
+  /* Person row (DESIGN.md 7.7): one scrolling MediaRow of round pictures; each item is one disc wide. */
   .ui-section-title {
     margin: 0 0 var(--space-4);
     font: var(--type-heading);
     color: var(--text-1);
-  }
-
-  .ui-person-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, var(--person-disc));
-    justify-content: start;
-    gap: var(--space-5) var(--space-4);
-    margin: 0;
-    padding: 0;
-    list-style: none;
   }
 
   .ui-person {

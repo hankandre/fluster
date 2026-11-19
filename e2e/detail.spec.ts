@@ -162,11 +162,11 @@ test("an episode links to its series and lists the season's other episodes", asy
   await expect(strip.getByRole("link", { name: /Fog Signal/ })).toBeVisible();
   await expect(strip.getByRole("link", { name: /The Keeper's Log/ })).toHaveCount(0);
 
-  // Down from the action bar reaches the strip; the overview's "More" row may come first.
+  // Down from the action bar reaches the strip; the overview's "More" row and the cast row may come first.
   await page.getByRole("link", { name: /^Resume from/ }).focus();
-  for (let press = 0; press < 2; press += 1) {
+  for (let press = 0; press < 4; press += 1) {
     await page.keyboard.press("ArrowDown");
-    const inStrip = await page.evaluate(() => Boolean(document.activeElement?.closest(".media-row")));
+    const inStrip = await page.evaluate(() => Boolean(document.activeElement?.closest(".media-row")?.querySelector(".media-card")));
     if (inStrip) break;
   }
   await expect(strip.locator(":focus")).toHaveCount(1);
@@ -210,23 +210,49 @@ test("a cast photo is cropped from the top so the head stays inside the disc", a
   await expect(image).toHaveCSS("object-position", "50% 15%");
 });
 
-test("cast photos are large and evenly spaced at 1440 px, and three fit a phone without sideways scroll", async ({ page }) => {
+test("the cast is one scrolling row of large discs with a small gap at 1440 px, and a phone scrolls it without moving the page", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await installMockServer(page);
   await signIn(page, "#/next/item/m1");
   const cast = page.getByRole("region", { name: "Cast" });
   const discs = cast.locator(".ui-person-disc");
   await expect(discs.first()).toBeVisible();
-  const box = await discs.first().boundingBox();
-  expect(box?.width).toBe(120);
-  const second = await discs.nth(1).boundingBox();
-  // Gap between neighbouring columns is the fixed grid gap, not a stretched column.
-  expect((second?.x ?? 0) - (box?.x ?? 0) - 120).toBeLessThanOrEqual(24);
+  const token = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--person-disc")));
+  expect(token).toBeGreaterThanOrEqual(160);
+  const boxes = await discs.evaluateAll((els) => els.map((el) => el.getBoundingClientRect()));
+  expect(boxes.length).toBeGreaterThanOrEqual(8);
+  expect(boxes[0]?.width).toBe(token);
+  // One row: no wrapping, and a gap of at most 16 px between neighbours.
+  expect(new Set(boxes.map((box) => Math.round(box.top))).size).toBe(1);
+  expect((boxes[1]?.left ?? 0) - (boxes[0]?.right ?? 0)).toBeLessThanOrEqual(16);
+  const list = cast.locator(".media-row-list");
+  expect(await list.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await list.evaluate((el) => { el.scrollLeft = el.scrollWidth; });
+  expect(await list.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
 
   await page.setViewportSize({ width: 390, height: 844 });
-  const tops = await discs.evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
-  expect(tops.filter((top) => top === tops[0]).length).toBeGreaterThanOrEqual(3);
+  const phone = await discs.evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
+  expect(new Set(phone).size).toBe(1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  expect(await list.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+});
+
+test("keys alone bring the last cast member into view", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installMockServer(page);
+  await signIn(page, "#/next/item/m1");
+  const cast = page.getByRole("region", { name: "Cast" });
+  const people = cast.locator("[data-person-card]");
+  await expect(people.first()).toBeVisible();
+  await people.first().focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(people.nth(1)).toBeFocused();
+  await page.keyboard.press("End");
+  const last = people.last();
+  await expect(last).toBeFocused();
+  await expect(last).toBeInViewport({ ratio: 0.95 });
+  await expect(last).toHaveAccessibleName("Lars Bergstrom, The Keeper");
 });
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 1920, height: 1080 }]) {
