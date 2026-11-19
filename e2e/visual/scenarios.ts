@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { LAN, SERVER, ticks } from "../support/mock-server";
-import { go, play, signIn, signedInAt, type Scenario } from "./scenario-helpers";
+import { go, play, signIn, signedInAt, waitForPlayerSettled, type Scenario } from "./scenario-helpers";
 import { worstArtScenarios } from "./worst-art-scenarios";
 
 export type { Scenario };
@@ -70,6 +70,13 @@ async function subtitlesInView(page: Page, id = "m1"): Promise<void> {
   await signedInAt(page, `#/next/item/${id}`, 1_000);
   await page.getByRole("heading", { name: "File and streams" }).scrollIntoViewIfNeeded();
   await page.waitForTimeout(300);
+}
+
+// Plays the first title and opens the player's Settings sheet from its button.
+async function openPlayerSettings(page: import("@playwright/test").Page): Promise<void> {
+  await play(page, "#/next/item/m1");
+  await page.getByRole("button", { name: "Settings" }).click();
+  await page.getByRole("region", { name: "Player settings" }).waitFor();
 }
 
 export const scenarios: Scenario[] = [
@@ -412,6 +419,31 @@ export const scenarios: Scenario[] = [
     await page.getByRole("region", { name: "Audio and subtitles" }).waitFor();
     await page.waitForTimeout(300);
   } },
+  { name: "59h-player-settings-sheet", run: async (page) => {
+    await openPlayerSettings(page);
+    await waitForPlayerSettled(page);
+  } },
+  { name: "59i-player-settings-playback", run: async (page) => {
+    await openPlayerSettings(page);
+    await page.getByRole("region", { name: "Player settings" }).getByRole("button", { name: "Playback" }).click();
+    await page.keyboard.press("ArrowDown");
+    await waitForPlayerSettled(page);
+  } },
+  { name: "59j-player-settings-picker-open", run: async (page) => {
+    await openPlayerSettings(page);
+    const sheet = page.getByRole("region", { name: "Player settings" });
+    await sheet.getByRole("button", { name: "Playback" }).click();
+    await sheet.getByRole("button", { name: /^Countdown before/ }).click();
+    await page.getByRole("listbox").waitFor();
+    await waitForPlayerSettled(page);
+  } },
+  { name: "59k-player-settings-about", run: async (page) => {
+    await openPlayerSettings(page);
+    const sheet = page.getByRole("region", { name: "Player settings" });
+    await sheet.getByRole("button", { name: "About & diagnostics" }).click();
+    await sheet.getByRole("heading", { level: 2, name: "About & diagnostics" }).waitFor();
+    await waitForPlayerSettled(page);
+  } },
   { name: "59a-player-osd", desktopOnly: true, run: async (page) => {
     await play(page, "#/next/item/m1");
     await page.keyboard.press("ArrowRight");
@@ -456,7 +488,7 @@ export const scenarios: Scenario[] = [
     await play(page, "#/next/item/m4");
     await seekPlayerTo(page, 20);
     await page.getByRole("status", { name: "Player message" }).getByText("Skipped intro").waitFor();
-    await page.waitForTimeout(150);
+    await waitForPlayerSettled(page);
   } },
   { name: "55-player-next-episode", opts: { duration: 25, short: true }, run: async (page) => {
     await play(page, "#/next/item/ep-1");
@@ -495,7 +527,7 @@ export const scenarios: Scenario[] = [
   { name: "55c-player-next-episode-autoplay-off", opts: { duration: 25, short: true, preferences: { autoPlay: { enabled: false, countdownSeconds: 10 } } }, run: async (page) => {
     await play(page, "#/next/item/ep-1");
     await page.getByRole("complementary", { name: "Up next" }).waitFor({ timeout: 8_000 });
-    await page.waitForTimeout(300);
+    await waitForPlayerSettled(page);
   } },
   { name: "55d-player-next-episode-15s-reduced-motion", opts: { duration: 25, short: true, preferences: { autoPlay: { enabled: true, countdownSeconds: 15 } } }, run: async (page) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
@@ -852,6 +884,8 @@ export const scenarios: Scenario[] = [
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("ArrowRight");
     await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("ArrowRight");
+    // Settings sits between Audio & Subtitles and Info.
     await page.keyboard.press("ArrowRight");
     await page.keyboard.press("Enter");
     await page.getByRole("region", { name: "Player information" }).waitFor();

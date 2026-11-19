@@ -103,7 +103,7 @@ The client someone could use every evening instead of the web UI.
 - **Search** across movies, series, and episodes.
 - **Item detail:** artwork, overview, cast, media info (codec, HDR, audio format, subtitles) before you press play.
 - **Watch state:** mark played/unplayed, favorites. Changes from other clients appear without a restart.
-- **In the player:** auto-play next episode with a countdown, skip intro/credits from Jellyfin media segments, scrub previews from Jellyfin trickplay images, chapters.
+- **In the player:** auto-play next episode with a countdown, skip intro/credits from Jellyfin media segments, scrub previews from Jellyfin trickplay images, chapters, and a Settings sheet with every setting, applied at once.
 - **Settings:** auto-play next on or off and its countdown length; for intros and for credits, show a Skip button, skip automatically, or do nothing; streaming limits. One set of playback settings per computer.
 - **Track defaults:** respect the user's Jellyfin audio and subtitle language preferences.
 - **Input:** full keyboard navigation, media keys and MPRIS on Linux, mouse-idle hiding.

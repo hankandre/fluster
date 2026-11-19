@@ -69,6 +69,7 @@ async function startDesktop(page: Page) {
 for (const sheet of [
   { button: "Info", key: "i", region: "Player information" },
   { button: "Audio & Subtitles", key: "a", region: "Audio and subtitles" },
+  { button: "Settings", key: "o", region: "Player settings" },
 ]) {
   test(`desktop: opening ${sheet.button} from its button never scrolls the player page`, async ({ page }) => {
     await startDesktop(page);
@@ -102,3 +103,22 @@ for (const sheet of [
     await expect(page.getByRole("region", { name: sheet.region })).toBeVisible();
   });
 }
+
+test("desktop: opening About & diagnostics in the Settings sheet and going back never scrolls the player page", async ({ page }) => {
+  await startDesktop(page);
+  await page.getByRole("button", { name: "Settings" }).click();
+  const sheet = page.getByRole("region", { name: "Player settings" });
+  await expect(sheet).toBeVisible();
+  await page.evaluate(() => Promise.all(document.getAnimations().map((animation) => animation.finished.catch(() => undefined))));
+  const moved = () => page.evaluate(() => {
+    let most = Math.abs(window.scrollX);
+    for (let node = document.querySelector(".player-page") as HTMLElement | null; node; node = node.parentElement) most = Math.max(most, Math.abs(node.scrollLeft), Math.abs(node.scrollTop));
+    return most;
+  });
+  await sheet.getByRole("button", { name: "About & diagnostics" }).click();
+  await expect(sheet.getByRole("heading", { level: 2, name: "About & diagnostics" })).toBeFocused();
+  expect(await moved()).toBe(0);
+  await page.keyboard.press("Escape");
+  await expect(sheet.getByRole("button", { name: "About & diagnostics" })).toBeFocused();
+  expect(await moved()).toBe(0);
+});

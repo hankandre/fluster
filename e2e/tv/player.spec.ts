@@ -74,6 +74,8 @@ test("Player: the Info sheet opens from the control row with arrows and Enter, a
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowRight");
+  // Settings sits between Audio & Subtitles and Info, so Info is one press further.
+  await page.keyboard.press("ArrowRight");
   await expect(page.getByRole("button", { name: "Info" })).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("region", { name: "Player information" })).toContainText("Direct play");
@@ -87,6 +89,55 @@ test("Player: the Info sheet opens from the control row with arrows and Enter, a
   await expect(page.getByRole("region", { name: "Player information" })).toBeHidden();
   await page.keyboard.press("Backspace");
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
+});
+
+test("Player: the Settings sheet is reached with arrows, Enter, and Escape alone, and a Picker opens in its TV form", async ({ page }) => {
+  await mockPlayerServer(page, { hasSegments: true, segments: [{ Id: "seg-1", Type: "Intro", StartTicks: 100_000_000, EndTicks: 700_000_000 }] });
+  await stubMedia(page);
+  await openArrivalTv(page);
+  await page.keyboard.press("Enter");
+  await expect(slider(page)).toBeEnabled();
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowDown");
+  const settings = page.getByRole("button", { name: "Settings" });
+  for (let step = 0; step < 6 && !(await settings.evaluate((element) => element === document.activeElement)); step += 1) {
+    await page.keyboard.press("ArrowRight");
+  }
+  await expect(settings).toBeFocused();
+  await page.keyboard.press("Enter");
+  const sheet = page.getByRole("region", { name: "Player settings" });
+  await expect(sheet.getByRole("navigation", { name: "Settings sections" })).toBeVisible();
+  await expect(sheet.getByRole("button", { name: "Playback" })).toBeFocused();
+  await expectNoSmallText(page);
+  await expectTitleSafe(page);
+
+  await page.keyboard.press("Enter");
+  await expect(sheet.getByRole("heading", { level: 2, name: "Playback" })).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(sheet.getByRole("switch", { name: "Play next episode automatically" })).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("ArrowDown");
+  const intros = sheet.getByRole("button", { name: /^What happens at an intro/ });
+  await expect(intros).toBeFocused();
+  await expectNoSmallText(page);
+  await expectTitleSafe(page);
+
+  await page.keyboard.press("Enter");
+  const list = page.getByRole("listbox");
+  await expect(list).toHaveClass(/ui-picker-list--sheet/);
+  await expectNoSmallText(page);
+  await expectTitleSafe(page);
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Enter");
+  await expect(page.getByText("Intros: Skip automatically.")).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  await expect(sheet.getByRole("button", { name: "Playback" })).toBeFocused();
+  await expect(sheet).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(sheet).toBeHidden();
+  await expect(settings).toBeFocused();
+  await expect(page).toHaveURL(/#\/next\/play\/movie-1/);
 });
 
 const sliderValue = async (page: Page) => Number(await slider(page).inputValue());

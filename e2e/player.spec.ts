@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { mockPlayerServer, openArrival, type ServerLog } from "./support/player-server";
+import { currentTime, introAndOutro, mockPlayerServer, moveTo, openArrival, startArrival, type ServerLog } from "./support/player-server";
 
 // The decision 0002 flags, in the body and in the query string. EnableDirectPlay
 // is false only on the forced-fallback request for a disc.
@@ -264,18 +264,6 @@ test("Back cancels an in-flight playback negotiation", async ({ page }) => {
   expect(log.reports).toHaveLength(0);
 });
 
-const introAndOutro = [
-  { Id: "seg-1", Type: "Intro", StartTicks: 100_000_000, EndTicks: 700_000_000 },
-  { Id: "seg-2", Type: "Outro", StartTicks: 1_000_000_000, EndTicks: 1_190_000_000 },
-];
-
-async function moveTo(page: Page, seconds: number) {
-  await page.locator("video").evaluate((video: HTMLVideoElement, position) => {
-    video.currentTime = position;
-    video.dispatchEvent(new Event("timeupdate"));
-  }, seconds);
-}
-
 test("skip buttons appear inside the intro and the credits and seek to the segment end", async ({ page }) => {
   const log = await mockPlayerServer(page, { hasSegments: true, segments: introAndOutro });
   await openArrival(page);
@@ -349,8 +337,6 @@ test("Do nothing offers no Skip button and does not skip", async ({ page }) => {
 function startWithSegments(page: Page) {
   return startArrival(page, true, { hasSegments: true, segments: introAndOutro });
 }
-
-const currentTime = (page: Page) => page.locator("video").evaluate((video: HTMLVideoElement) => video.currentTime);
 
 async function hideChrome(page: Page) {
   await page.mouse.move(5, 5);
@@ -445,42 +431,6 @@ test("the Info panel toggles with its button and the i key and shows no ids or U
   await page.locator("body").press("i");
   await expect(panel).toBeVisible();
 });
-
-// trackPaused makes the file-less <video> remember pause and play, as keyboard.spec.ts does.
-async function startArrival(page: Page, trackPaused = false, serverOptions: Parameters<typeof mockPlayerServer>[1] = {}) {
-  await mockPlayerServer(page, serverOptions);
-  if (trackPaused) {
-    await page.addInitScript(() => {
-      const paused = new WeakMap<HTMLMediaElement, boolean>();
-      Object.defineProperty(HTMLMediaElement.prototype, "paused", {
-        configurable: true,
-        get(this: HTMLMediaElement) {
-          return paused.get(this) ?? true;
-        },
-      });
-      HTMLMediaElement.prototype.play = function play() {
-        paused.set(this, false);
-        queueMicrotask(() => {
-          this.dispatchEvent(new Event("loadedmetadata"));
-          this.dispatchEvent(new Event("play"));
-          this.dispatchEvent(new Event("playing"));
-        });
-        return Promise.resolve();
-      };
-      HTMLMediaElement.prototype.pause = function pause() {
-        paused.set(this, true);
-        this.dispatchEvent(new Event("pause"));
-      };
-      // The empty stream body cannot decode; keep that error from the engine.
-      window.addEventListener("error", (event) => {
-        if (event.target instanceof HTMLMediaElement) event.stopImmediatePropagation();
-      }, true);
-    });
-  }
-  await openArrival(page);
-  await page.getByRole("link", { name: "Play" }).click();
-  await expect(page.locator("video")).toHaveCount(1);
-}
 
 test("keys show on-screen feedback, and Home, End, and the digits jump", async ({ page }) => {
   await startArrival(page);

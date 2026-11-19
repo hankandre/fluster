@@ -39,7 +39,7 @@ describe("the chosen countdown length", () => {
 
   it("starts the countdown from the given length, and again after seeking back", () => {
     for (const seconds of [5, 15]) {
-      const start = autoPlayReducer({ secondsLeft: undefined, dismissed: false }, { type: "window", inWindow: true, countdownSeconds: seconds });
+      const start = autoPlayReducer({ secondsLeft: undefined, totalSeconds: undefined, dismissed: false }, { type: "window", inWindow: true, countdownSeconds: seconds });
       expect(start.secondsLeft).toBe(seconds);
       const out = autoPlayReducer(start, { type: "window", inWindow: false });
       expect(autoPlayReducer(out, { type: "window", inWindow: true, countdownSeconds: seconds }).secondsLeft).toBe(seconds);

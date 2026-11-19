@@ -1654,10 +1654,10 @@
             "No e2e journey is skipped, deleted, or weakened"
           ],
           "verify": "pnpm check && pnpm test:e2e && pnpm test:visual",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "M1-M5 implemented on task/P3-32 (2026-11-19): shared SETTINGS_SECTIONS and SettingsHost, live auto-play with rules R1-R7, o key and gear button, SettingsSheet with compact drill-in and OSD confirmations, Sign out confirm with revoke after the Stopped report. Pending in Ship and Review: baselines from CI for the new scenarios 59h-59k and every control-row capture, design review, WebKitGTK hand check (acceptance 13, not verified: no display in the implementer session), PR screenshots. Checks 2026-11-19: pnpm check exit 0 (218 files, 3236 tests; cargo test ok); pnpm test:visual 477 passed (no baselines written); pnpm test:e2e 234 passed, 4 failed at the 30 s timeout under full parallel load (player-settings (b), player.spec 74, 85, 105), then 35 passed with --repeat-each 5 alone, so load flakes. Journeys (a) to (d) and the TV journey added."
         },
         {
           "id": "P3-33",
