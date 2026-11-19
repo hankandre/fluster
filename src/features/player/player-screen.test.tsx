@@ -1049,6 +1049,25 @@ describe("a press outside an open sheet", () => {
     expect(screen.getByRole("region", { name: "Audio and subtitles" })).toBeInTheDocument();
   });
 
+  it("treats empty space in the top bar and the control row as the video", () => {
+    const { player, container } = renderView();
+    for (const selector of [".player-top-bar", ".player-controls"]) {
+      pressOn(screen.getByRole("button", { name: "Info" }));
+      pressOn(container.querySelector(selector) as HTMLElement);
+      expect(screen.queryByRole("region", { name: "Player information" })).not.toBeInTheDocument();
+    }
+    expect(player.setPaused).not.toHaveBeenCalled();
+    expect(player.seek).not.toHaveBeenCalled();
+  });
+
+  it("keeps the sheet open for a press on the scrubber", () => {
+    const { container } = renderView({}, { seekPreview: () => null });
+    pressOn(screen.getByRole("button", { name: "Info" }));
+    pressOn(screen.getByRole("slider", { name: "Playback position" }));
+    pressOn(container.querySelector(".seek-track") as HTMLElement);
+    expect(screen.getByRole("region", { name: "Player information" })).toBeInTheDocument();
+  });
+
   it("keeps the sheet's own button a toggle, and another sheet's button switches sheets", () => {
     renderView();
     pressOn(screen.getByRole("button", { name: "Info" }));
