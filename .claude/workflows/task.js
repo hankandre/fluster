@@ -58,6 +58,19 @@ function resolveModels(defaults, override) {
   return merge(defaults, override, '');
 }
 // MODELS-END
+// STEP-BEGIN (pure; extracted and tested by .claude/workflows/task.test.mjs)
+const mergeUnique = (a, b) => (a || []).concat(b || []).filter((item, i, all) => all.indexOf(item) === i);
+// Decide what a work() attempt leads to. A check that fails locally is never CI-only: ciOnly counts only when done and checksPassed are both true.
+//   denied: stop; done: green, ciOnly items (if any) go to Ship as steps; retry: not green, so retry or escalate.
+function decideStep(out, isDenied) {
+  if (!out) return { action: 'none', ciOnly: [] };
+  if (isDenied) return { action: 'denied', ciOnly: [] };
+  const problems = (out.blockers || []).concat(out.failures || []);
+  const green = out.done === true && out.checksPassed === true && problems.length === 0;
+  if (green) return { action: 'done', ciOnly: out.ciOnly || [] };
+  return { action: 'retry', ciOnly: [] };
+}
+// STEP-END
 const input = typeof args === 'string' ? { task: args } : args || {};
 const items = Array.isArray(input.tasks) ? input.tasks : input.task ? [input.task] : [];
 const models = resolveModels(MODELS, input.models);
@@ -159,41 +172,26 @@ async function runTask(task, opts) {
     return { task, outcome, detail };
   };
 
-  // A step whose only remaining problems are ciOnly (closable only by a CI run) skips retry and escalation and hands them to Ship.
   const problemsOf = (out) => (out.blockers || []).concat(out.failures || []);
-  const ciOnlyHandoff = (out) => !!out && !denied(out) && problemsOf(out).length === 0 && (out.ciOnly || []).length > 0;
+  const stepOf = (out) => decideStep(out, !!out && !!denied(out));
   // Implementation step with one retry and an escalation: used for implement, check fixes, and CI fixes.
+  // ciOnly items (only a CI run can produce them, reported with every local check green) are merged across attempts and left on the final result.
   const work = async (prompt, label, phaseTitle) => {
-    let out = await agent(`${common}\n${prompt}\n${VERIFY_STEPS}`, {
-      agentType: implAgent,
-      model: implModel,
-      schema: WORK,
-      phase: phaseTitle,
-      label,
-    });
-    if (ciOnlyHandoff(out)) {
-      log(`${task}: ${label} has only CI-only problems; skipping retry and escalation`);
-    } else if (out && !denied(out) && (!out.done || !out.checksPassed)) {
-      const problems = problemsOf(out);
+    let carried = [];
+    const attempt = async (text, model, name) => {
+      const out = await agent(`${common}\n${text}\n${VERIFY_STEPS}`, { agentType: implAgent, model, schema: WORK, phase: phaseTitle, label: name });
+      if (out) {
+        carried = mergeUnique(carried, out.ciOnly);
+        out.ciOnly = carried;
+      }
+      return out;
+    };
+    let out = await attempt(prompt, implModel, label);
+    if (stepOf(out).action === 'retry') {
       log(`${task}: ${label} not green; one more try, then escalating to ${models.escalate}`);
-      out = await agent(`${common}\nFinish this work: ${prompt}\nThe last attempt left these problems:\n${numbered(problems)}\n${VERIFY_STEPS}`, {
-        agentType: implAgent,
-        model: implModel,
-        schema: WORK,
-        phase: phaseTitle,
-        label: `${label} (retry)`,
-      });
-      if (ciOnlyHandoff(out)) {
-        log(`${task}: ${label} has only CI-only problems left; skipping escalation`);
-      } else if (out && !denied(out) && (!out.done || !out.checksPassed)) {
-        const left = problemsOf(out);
-        out = await agent(`${common}\nTwo attempts failed. Finish this work: ${prompt}\nRemaining problems:\n${numbered(left)}\n${VERIFY_STEPS}`, {
-          agentType: implAgent,
-          model: models.escalate,
-          schema: WORK,
-          phase: phaseTitle,
-          label: `${label} (${models.escalate})`,
-        });
+      out = await attempt(`Finish this work: ${prompt}\nThe last attempt left these problems:\n${numbered(problemsOf(out))}`, implModel, `${label} (retry)`);
+      if (stepOf(out).action === 'retry') {
+        out = await attempt(`Two attempts failed. Finish this work: ${prompt}\nRemaining problems:\n${numbered(problemsOf(out))}`, models.escalate, `${label} (${models.escalate})`);
       }
     }
     return out;
@@ -246,16 +244,15 @@ Return as open questions only product or design choices the human must make that
   if (!skipImpl) {
   const impl = await work(
     `Implement the approved spec.${specNotes.length ? `\nAlso resolve these spec-check notes, updating the spec where they change it:\n${specNotes.join('\n')}` : ''}
-Commit the spec with the work, one milestone per commit. Set the task's status to in_progress with evidence in tasks/prd.json. Do not push or open a PR. If an acceptance item can only be met with a pushed branch, an open PR, or CI runs (for example a throwaway commit that must fail CI, or baselines rendered on the CI host), do everything else, set done=true, and list each such step in ciSteps; the Ship phase does them. Never list a review (guardian, design, or any other agent review) as a ciStep: reviews happen in the Review phase, and the Ship phase cannot start agents. Return done=false with blockers if you cannot finish for any other reason. A remaining problem that only a CI run can close (for example visual baselines to accept, or a check that needs a pushed branch) goes in ciOnly, not in blockers or failures.`,
+Commit the spec with the work, one milestone per commit. Set the task's status to in_progress with evidence in tasks/prd.json. Do not push or open a PR. If an acceptance item can only be met with a pushed branch, an open PR, or CI runs (for example a throwaway commit that must fail CI, or baselines rendered on the CI host), do everything else, set done=true, and list each such step in ciSteps; the Ship phase does them. Never list a review (guardian, design, or any other agent review) as a ciStep: reviews happen in the Review phase, and the Ship phase cannot start agents. Return done=false with blockers if you cannot finish for any other reason. Use ciOnly only for a step that a local run cannot produce (for example accepting CI-rendered baselines or attaching CI screenshots), and only when every local check passed; a failing local check is never ciOnly.`,
     `implement ${task}`,
     'Implement',
   );
   if (!impl) return result('failed', 'The implementer returned nothing.');
   if (denied(impl)) return result('denied', denied(impl));
-  const implCiOnly = ciOnlyHandoff(impl);
-  if (!implCiOnly && (!impl.done || !impl.checksPassed)) return result('blocked', (impl.blockers || []).concat(impl.failures || []));
+  if (!impl.done || !impl.checksPassed) return result('blocked', (impl.blockers || []).concat(impl.failures || []));
   evidence = impl.evidence;
-  ciSteps = ciSteps.concat(impl.ciSteps || []).concat(implCiOnly ? impl.ciOnly : []);
+  ciSteps = ciSteps.concat(impl.ciSteps || []).concat(impl.ciOnly || []);
   }
 
   // 4. Review (one round)
@@ -283,19 +280,17 @@ Adversarially review git diff origin/main...${branch} for token, URL, or session
     `${blocking.length ? `Fix these review findings and commit, with a test for each behavior change:\n${blocking.join('\n')}` : 'No review findings need a fix.'}
 ${lows.length ? `Log these low findings as follow-ups in the active plan and commit; do not fix them:\n${lows.join('\n')}` : ''}
 Then, if every acceptance item is met (the review above counts as the fresh-context design review; the Ship phase links screenshots) and the spec does not reserve sign-off for the human, set the task's status to done and passes to true in tasks/prd.json, update its evidence, tick its line in the active plan, and commit. Do not push.${ciSteps.length ? `\nThese acceptance steps need CI and are done in the Ship phase, so treat them as pending (not as blockers) and leave status in_progress:\n${ciSteps.join('\n')}` : ''}
-A remaining problem that only a CI run can close goes in ciOnly, not in blockers or failures.`,
+Use ciOnly only for a step that a local run cannot produce (for example accepting CI-rendered baselines or attaching CI screenshots), and only when every local check passed; a failing local check is never ciOnly.`,
     `follow-ups ${task}`,
     'Review',
   );
   if (!followUp) return result('failed', 'The follow-up agent returned nothing.');
   if (denied(followUp)) return result('denied', denied(followUp));
   // With CI steps pending, a not-done follow-up whose checks pass hands its blockers to Ship, which refuses to merge if it cannot clear them.
-  const followCiOnly = ciOnlyHandoff(followUp);
-  if (followCiOnly) ciSteps = ciSteps.concat(followUp.ciOnly);
-  if (!followCiOnly && (!followUp.checksPassed || (!followUp.done && !ciSteps.length))) return result('blocked', (followUp.blockers || []).concat(followUp.failures || []));
-  if (!followUp.done && !followCiOnly) ciSteps = ciSteps.concat(followUp.blockers || []);
+  if (!followUp.checksPassed || (!followUp.done && !ciSteps.length)) return result('blocked', (followUp.blockers || []).concat(followUp.failures || []));
+  if (!followUp.done) ciSteps = ciSteps.concat(followUp.blockers || []);
   evidence = followUp.evidence || evidence;
-  ciSteps = ciSteps.concat(followUp.ciSteps || []);
+  ciSteps = mergeUnique(ciSteps, (followUp.ciSteps || []).concat(followUp.ciOnly || []));
 
   // 5. Ship (CI fixes go through the same retry and Fable escalation)
   const shipPrompt = `${common}
@@ -311,6 +306,7 @@ ${ciSteps.join('\n')}` : ''}`;
   if (!ship.merged && ship.ciFailures && ship.ciFailures.length) {
     const fixed = await work(`CI failed on the PR. Fix the cause, commit, and push:\n${ship.ciFailures.join('\n')}`, `fix CI ${task}`, 'Ship');
     if (denied(fixed)) return result('denied', denied(fixed));
+    if (fixed && (fixed.ciOnly || []).length) log(`${task}: the CI fix left CI-only steps for the human: ${fixed.ciOnly.join('; ')}`);
     ship = await agent(shipPrompt, { model: models.ship, effort: shipEffort, schema: SHIP, phase: 'Ship', label: `ship ${task} (retry)` });
   }
   if (!ship || !ship.merged) return result('ci-red', ship ? { prUrl: ship.prUrl, ciFailures: ship.ciFailures } : 'The ship retry returned nothing.');
