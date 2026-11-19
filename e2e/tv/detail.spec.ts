@@ -82,6 +82,9 @@ test("Episode detail: Up reaches the series link, Down returns and enters the st
   // ArrowDown enters the strip only once its cards exist.
   const strip = page.locator(".media-row", { has: page.getByRole("heading", { name: /^More from/ }) });
   await expect(strip.locator(".media-card").first()).toBeVisible();
+  // The cast row sits between the actions and the strip, so Down reaches it first.
+  await page.keyboard.press("ArrowDown");
+  await expect(page.locator("[data-person-card]:focus")).toHaveCount(1);
   await page.keyboard.press("ArrowDown");
   await expect(strip.locator(".media-card:focus")).toHaveCount(1);
   await expectTitleSafe(page);
@@ -183,4 +186,18 @@ test("Series: season tabs, a horizontal episode row with the overview under it, 
   await expect(page.locator(".ui-episode-row-link:focus")).toHaveCount(1);
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/#\/next\/play\//);
+});
+
+test("Movie detail: Down reaches the cast row and End brings the last person into view", async ({ page }) => {
+  await openDetail(page, "#/next/item/m1");
+  await expect(play(page)).toBeFocused();
+  const people = page.getByRole("region", { name: "Cast" }).locator("[data-person-card]");
+  for (let i = 0; i < 8 && !(await people.first().evaluate((el) => el === document.activeElement || el.parentElement?.parentElement?.contains(document.activeElement) === true)); i += 1) {
+    await page.keyboard.press("ArrowDown");
+  }
+  await expect(page.locator("[data-person-card]:focus")).toHaveCount(1);
+  await page.keyboard.press("End");
+  await expect(people.last()).toBeFocused();
+  await expect(people.last()).toBeInViewport({ ratio: 0.95 });
+  await expectNoSmallText(page);
 });

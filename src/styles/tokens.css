@@ -59,8 +59,8 @@
   /* Sizes */
   --sign-in-w: min(560px, 100%);
   --poster-w: 112px;
-  /* Cast photo disc: fills most of a cast column (owner decision, 2026-11-19). Three fit a 390 px phone. */
-  --person-disc: 96px;
+  /* Cast photo disc in the scrolling cast row (owner decision, 2026-11-19): large, 2.5 to 3 show on a 390 px phone. */
+  --person-disc: 120px;
   /* Where a portrait is anchored when cropped to a disc: near the top, so heads stay whole. */
   --person-photo-focus: 50% 15%;
   --person-initials-scale: 0.3;
@@ -140,9 +140,9 @@
   --z-backdrop: 0; --z-content: 1; --z-nav: 10; --z-player-chrome: 20; --z-prompt: 30; --z-sheet: 40; --z-dialog: 50; --z-toast: 60;
 }
 
-@media (min-width: 720px)  { :root { --poster-w: 140px; --thumb-w: 280px; --person-disc: 112px; } }
-@media (min-width: 1280px) { :root { --poster-w: 168px; --thumb-w: 320px; --person-disc: 120px; } }
-@media (min-width: 1920px) { :root { --poster-w: 200px; --thumb-w: 384px; --person-disc: 144px; } }
+@media (min-width: 720px)  { :root { --poster-w: 140px; --thumb-w: 280px; --person-disc: 140px; } }
+@media (min-width: 1280px) { :root { --poster-w: 168px; --thumb-w: 320px; --person-disc: 160px; } }
+@media (min-width: 1920px) { :root { --poster-w: 200px; --thumb-w: 384px; --person-disc: 200px; } }
 
 /* 10-foot: set by the TV shell on <html data-form="tv"> */
 :root[data-form="tv"] {
@@ -153,7 +153,7 @@
   --safe-y: 54px;
   --gutter: var(--safe-x);
   --poster-w: 248px;
-  --person-disc: 176px;
+  --person-disc: 200px;
   --thumb-w: 416px;
   --nav-h: 96px;
   --control-h: 72px;
