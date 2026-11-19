@@ -31,6 +31,26 @@ describe("AppShell", () => {
     expect(screen.getByRole("button", { name: "Content control" })).toHaveFocus();
   });
 
+  it("draws a Back button after the nav only when given onBack, and Tab reaches it before content", async () => {
+    const user = userEvent.setup();
+    const onBack = vi.fn();
+    render(<AppShell nav={<AppNav libraries={[]} hash="#/next/item/m1" />} onBack={onBack}><main><button type="button">Content control</button></main></AppShell>);
+    await user.tab();
+    await user.tab();
+    await user.tab();
+    const back = screen.getByRole("button", { name: "Back" });
+    expect(back).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(onBack).toHaveBeenCalledTimes(1);
+    await user.tab();
+    expect(screen.getByRole("button", { name: "Content control" })).toHaveFocus();
+  });
+
+  it("draws no Back button without onBack", () => {
+    renderShell();
+    expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
+  });
+
   it("focuses main from the skip link without changing the hash", async () => {
     const user = userEvent.setup();
     renderShell();

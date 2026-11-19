@@ -22,7 +22,7 @@ test("film page: the Drama link opens the Movies library filtered to Drama, and 
   await expect(facts(page)).toContainText("2023 · 2 h 3 min · 7.8 audience · 91% critics · Drama · Science Fiction");
   await facts(page).getByRole("link", { name: "Drama" }).click();
 
-  await expect(page).toHaveURL(/#\/next\/browse\/lib-movies\?genre=genre-drama$/);
+  await expect(page).toHaveURL(/#\/next\/browse\/lib-movies\?genre=genre-drama&from=title$/);
   await expect(page.getByRole("heading", { level: 1, name: "Movies" })).toBeFocused();
   await expect(page.getByRole("button", { name: "Genre Drama" })).toBeVisible();
   await expect(cards(page).first()).toBeVisible();
@@ -40,7 +40,7 @@ test("Back from the filtered library returns to the film with focus on the genre
   await go(page, "#/next/item/m1");
   const drama = facts(page).getByRole("link", { name: "Drama" });
   await drama.click();
-  await expect(page).toHaveURL(/#\/next\/browse\/lib-movies\?genre=genre-drama$/);
+  await expect(page).toHaveURL(/#\/next\/browse\/lib-movies\?genre=genre-drama&from=title$/);
   await page.goBack();
   await expect(page).toHaveURL(/#\/next\/item\/m1$/);
   await expect(drama).toBeFocused();
@@ -52,7 +52,7 @@ test("series page: the Drama link opens the Shows library filtered to Drama, and
   await expect(page.getByRole("heading", { level: 1, name: "Harbor Lights" })).toBeFocused();
   await facts(page).getByRole("link", { name: "Drama" }).click();
 
-  await expect(page).toHaveURL(/#\/next\/browse\/lib-shows\?genre=genre-drama$/);
+  await expect(page).toHaveURL(/#\/next\/browse\/lib-shows\?genre=genre-drama&from=title$/);
   await expect(page.getByRole("heading", { level: 1, name: "Shows" })).toBeFocused();
   await expect(page.getByRole("button", { name: "Genre Drama" })).toBeVisible();
   await expect(cards(page)).toHaveCount(2);

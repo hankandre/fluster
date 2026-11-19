@@ -92,7 +92,7 @@ function RoutedBrowse({ libraryId }: { libraryId: string }) {
     return () => window.removeEventListener(ROUTE_REPLACED_EVENT, onReplaced);
   }, []);
   const route = parseLibraryRoute(hash);
-  return <BrowseView libraryId={libraryId} sort={route?.sort} filters={route?.filters} genreId={route?.genreId} />;
+  return <BrowseView libraryId={libraryId} sort={route?.sort} filters={route?.filters} genreId={route?.genreId} fromTitle={route?.fromTitle} />;
 }
 
 async function chooseSort(name: string) {
@@ -207,6 +207,15 @@ describe("genre filter", () => {
     fireEvent.click(await screen.findByRole("option", { name: "All genres" }));
     await waitFor(() => expect(window.location.hash).toBe("#/next/browse/lib-1"));
     expect(libraryItems.mock.calls.at(-1)?.[1]).not.toHaveProperty("genreId");
+  });
+
+  it("drops from=title when the genre changes in a library opened from a title", async () => {
+    const libraryItems = vi.fn().mockResolvedValue({ cards: [card("m1", "Arrival")], hasMore: false });
+    window.location.hash = "#/next/browse/lib-1?genre=g-drama&from=title";
+    await renderView(fakeGateway({ libraryItems, libraryGenres: vi.fn().mockResolvedValue(GENRES) }), <RoutedBrowse libraryId="lib-1" />);
+    fireEvent.click(await screen.findByRole("button", { name: "Genre Drama" }));
+    fireEvent.click(await screen.findByRole("option", { name: "Mystery" }));
+    await waitFor(() => expect(window.location.hash).toBe("#/next/browse/lib-1?genre=g-mystery"));
   });
 
   it("sends a route genre with the sort and filters", async () => {

@@ -1,5 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { isTvForm } from "../tv-form";
+import { enterFirstRow } from "../../roving-focus";
+import { BackButton } from "./back-button";
 import "./shell.css";
 
 // A screen with a hero calls this while mounted, so the nav is clear over the hero (DESIGN.md 7.1).
@@ -19,7 +21,8 @@ const FALLBACK_NAV_HEIGHT = 64;
 
 // The signed-in frame: skip link, then the nav bar, then the page content. The nav is clear over a hero at
 // the top of the page, turns to glass once content scrolls under it, hides on scroll down, and returns on scroll up.
-export function AppShell({ nav, children }: { nav: ReactNode; children: ReactNode }) {
+// `onBack`, when given, draws the round Back button at the top-left of the content, under the nav (DESIGN.md §9). Down from it enters the page's first row.
+export function AppShell({ nav, onBack, children }: { nav: ReactNode; onBack?: () => void; children: ReactNode }) {
   const content = useRef<HTMLDivElement>(null);
   const header = useRef<HTMLElement>(null);
   const [overHero, setOverHero] = useState(0);
@@ -84,11 +87,16 @@ export function AppShell({ nav, children }: { nav: ReactNode; children: ReactNod
     if (isTvForm()) setHidden(true);
   }
 
+  // Down from the Back button enters the page's first spatial row, as Down from the nav does.
+  function onBackKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "ArrowDown" && enterFirstRow()) event.preventDefault();
+  }
+
   const surface = overHero > 0 && atTop ? "clear" : "glass";
 
   return (
     <NavOverHeroContext.Provider value={heroes.current}>
-      <div className="app-frame">
+      <div className="app-frame" data-has-back={onBack ? "true" : undefined}>
         <a className="skip-link" href="#content" onClick={skip}>Skip to content</a>
         <header
           className="app-nav"
@@ -99,7 +107,10 @@ export function AppShell({ nav, children }: { nav: ReactNode; children: ReactNod
         >
           {nav}
         </header>
-        <div className="app-content" ref={content} onFocus={onContentFocus}>{children}</div>
+        <div className="app-content" ref={content} onFocus={onContentFocus}>
+          {onBack && <div className="app-back" data-page-back="" onKeyDown={onBackKeyDown}><BackButton onBack={onBack} /></div>}
+          {children}
+        </div>
       </div>
     </NavOverHeroContext.Provider>
   );

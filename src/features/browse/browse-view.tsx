@@ -13,15 +13,15 @@ import { DEFAULT_LIBRARY_SORT, type LibrarySortId } from "./library-sort";
 
 // A library: its name as the page title, then the toolbar and the grid.
 // The sort and filters are in the route, so Back and a copied link keep them.
-export function BrowseView({ libraryId, sort, filters = [], genreId }: { libraryId: string; sort?: LibrarySortId; filters?: BrowseFilter[]; genreId?: string }) {
+export function BrowseView({ libraryId, sort, filters = [], genreId, fromTitle = false }: { libraryId: string; sort?: LibrarySortId; filters?: BrowseFilter[]; genreId?: string; fromTitle?: boolean }) {
   return (
     <LibraryPage>
-      {(gateway) => <LibraryContent key={libraryId} gateway={gateway} libraryId={libraryId} sort={sort} filters={filters} genreId={genreId} />}
+      {(gateway) => <LibraryContent key={libraryId} gateway={gateway} libraryId={libraryId} sort={sort} filters={filters} genreId={genreId} fromTitle={fromTitle} />}
     </LibraryPage>
   );
 }
 
-function LibraryContent({ gateway, libraryId, sort, filters, genreId }: { gateway: SessionGateway; libraryId: string; sort?: LibrarySortId; filters: BrowseFilter[]; genreId?: string }) {
+function LibraryContent({ gateway, libraryId, sort, filters, genreId, fromTitle }: { gateway: SessionGateway; libraryId: string; sort?: LibrarySortId; filters: BrowseFilter[]; genreId?: string; fromTitle: boolean }) {
   const views = useQuery({
     queryKey: ["browse", scopeFor(gateway), "views"],
     queryFn: ({ signal }) => gateway.userViews(signal),
@@ -75,7 +75,7 @@ function LibraryContent({ gateway, libraryId, sort, filters, genreId }: { gatewa
         filters={filters}
         genreId={unknownGenre ? undefined : genreId}
         genres={genres.data}
-        onViewChange={(view) => replaceRoute(libraryRoute(libraryId, view.sortId, view.filters, view.genreId))}
+        onViewChange={(view) => replaceRoute(libraryRoute(libraryId, view.sortId, view.filters, view.genreId, fromTitle && view.genreId === genreId))}
       />
     </>
   );

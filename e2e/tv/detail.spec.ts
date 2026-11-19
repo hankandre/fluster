@@ -109,7 +109,7 @@ test("Movie detail: Up from Play reaches the genre row, Enter opens the filtered
   await page.keyboard.press("ArrowLeft");
   await expect(drama).toBeFocused();
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/#\/next\/browse\/lib-movies\?genre=genre-drama$/);
+  await expect(page).toHaveURL(/#\/next\/browse\/lib-movies\?genre=genre-drama&from=title$/);
   await expect(page.getByRole("button", { name: "Genre Drama" })).toBeVisible();
   // Opened from a title, the library is a screen under it: Escape returns to the title.
   await page.keyboard.press("Escape");

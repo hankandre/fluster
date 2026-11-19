@@ -139,7 +139,7 @@ function renderRoute(route: AppRoute, hash: string, visit: number, services: App
     case "play":
       return <PlayerRouteView key={hash} {...route} />;
     case "library":
-      return <BrowseView key={`${route.libraryId}|${visit}`} libraryId={route.libraryId} sort={route.sort} filters={route.filters} genreId={route.genreId} />;
+      return <BrowseView key={`${route.libraryId}|${visit}`} libraryId={route.libraryId} sort={route.sort} filters={route.filters} genreId={route.genreId} fromTitle={route.fromTitle} />;
     case "collection":
       return <CollectionView key={`${route.collectionId}|${visit}`} collectionId={route.collectionId} sort={route.sort} filters={route.filters} />;
     case "item":

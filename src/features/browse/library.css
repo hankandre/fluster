@@ -6,6 +6,11 @@
     padding-block: var(--space-6) var(--space-8);
   }
 
+  /* The page Back button floats at the top-left of the content (shell.css), so a screen with no hero starts below it. */
+  .app-frame[data-has-back] .library-page {
+    padding-block-start: calc(var(--space-3) + var(--icon-button) + var(--space-3));
+  }
+
   .library-title {
     margin: 0 0 var(--space-4);
     color: var(--text-1);
