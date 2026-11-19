@@ -45,6 +45,20 @@ describe("PersonRow", () => {
     expect(screen.queryByRole("button")).toBeNull();
   });
 
+  it("shows initials while the picture loads, removes them once it loads, and brings them back on error", () => {
+    const { container, rerender } = render(<PersonRow people={[{ name: "Amy Adams", imageSrc: "http://x/a.jpg" }]} />);
+    expect(screen.getByText("AA")).toBeInTheDocument();
+    fireEvent.load(container.querySelector("img")!);
+    expect(screen.queryByText("AA")).toBeNull();
+    expect(container.querySelector(".ui-person-disc")).toHaveTextContent("");
+    expect(container.querySelector("img")).not.toBeNull();
+    rerender(<PersonRow people={[{ name: "Bo Cole", imageSrc: "http://x/b.jpg" }]} />);
+    expect(screen.getByText("BC")).toBeInTheDocument();
+    fireEvent.error(container.querySelector("img")!);
+    expect(screen.getByText("BC")).toBeInTheDocument();
+    expect(container.querySelector("img")).toBeNull();
+  });
+
   it("renders nothing without people", () => {
     const { container } = render(<PersonRow people={[]} />);
     expect(container).toBeEmptyDOMElement();
