@@ -148,6 +148,7 @@ Fluster is a Jellyfin client that plays the original file whenever it can and sh
 - Lower effort before choosing a weaker model.
 - Escalate one tier after two failed attempts.
 - Switch models only at task boundaries.
+- The task workflow's model choices live in MODELS in .claude/workflows/task.js; override per run with args.models.
 
 ## Pull requests
 

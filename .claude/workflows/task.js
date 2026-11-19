@@ -2,7 +2,7 @@ export const meta = {
   name: 'task',
   description: 'Run tasks/prd.json tasks in order: spec, check, implement, review, ship; park tasks with open design questions',
   whenToUse:
-    'Build Fluster tasks end to end. args: {tasks: ["P13-08", "P13-09"], risk: "routine" | "high", native: false} or {task: "P0-13", from: "check" | "implement" | "review", notes: [...], evidence: "..."}',
+    'Build Fluster tasks end to end. args: {tasks: ["P13-08", "P13-09"], risk: "routine" | "high", native: false} or {task: "P0-13", from: "check" | "implement" | "review", notes: [...], evidence: "...", models: {spec: {high: "opus"}}}',
   phases: [
     { title: 'Spec', detail: 'refiner writes docs/specs/<TASK>.md' },
     { title: 'Check', detail: 'fresh spec-checker; blocks only on critical or high' },
@@ -17,12 +17,50 @@ export const meta = {
 //   {task: "P0-13", risk, native}           run one task
 //   from: "check" | "implement" | "review"  skip finished phases (single task only)
 //   notes: [...]                            spec-check notes for the implementer (with from: "implement")
+//   models: {...}                           per-run model override, deep-merged over MODELS (see below)
 //   evidence: "..."                         verify evidence from the finished implementation (with from: "review")
 //   ciSteps: [...]                          acceptance steps that need a pushed branch or CI runs (with from: "review")
+// notes reach ONLY the implement step (work() for implement, via specNotes). Spec, check, review, follow-ups and ship never receive them.
+// (Check issues are appended to specNotes by the check step itself, so a resumed run with from: "implement" must pass them again.)
 // A task whose spec needs a new design call is parked, and the run moves on.
 // The run stops early only on a denied command.
+// MODELS-BEGIN (pure; extracted and tested by .claude/workflows/task.test.mjs)
+const MODELS = {
+  spec: { routine: 'opus', high: 'fable' },
+  check: { routine: 'opus', high: 'fable', native: 'fable' },
+  implement: { routine: 'sonnet', native: 'opus' },
+  review: { routine: 'sonnet', guarded: 'opus' },
+  guardian: 'opus',
+  ship: 'sonnet',
+  escalate: 'fable',
+};
+const MODEL_NAMES = ['haiku', 'sonnet', 'opus', 'fable'];
+function resolveModels(defaults, override) {
+  const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+  const merge = (base, extra, path) => {
+    const out = {};
+    for (const key of Object.keys(base)) out[key] = base[key];
+    for (const key of Object.keys(extra)) {
+      const where = path ? `${path}.${key}` : key;
+      if (!Object.prototype.hasOwnProperty.call(base, key)) throw new Error(`Unknown models key "${where}". Known: ${Object.keys(base).join(', ')}`);
+      if (isObject(base[key])) {
+        if (!isObject(extra[key])) throw new Error(`models.${where} must be an object`);
+        out[key] = merge(base[key], extra[key], where);
+      } else {
+        if (!MODEL_NAMES.includes(extra[key])) throw new Error(`models.${where} must be one of ${MODEL_NAMES.join(', ')}; got ${JSON.stringify(extra[key])}`);
+        out[key] = extra[key];
+      }
+    }
+    return out;
+  };
+  if (override === undefined || override === null) return merge(defaults, {}, '');
+  if (!isObject(override)) throw new Error('args.models must be an object');
+  return merge(defaults, override, '');
+}
+// MODELS-END
 const input = typeof args === 'string' ? { task: args } : args || {};
 const items = Array.isArray(input.tasks) ? input.tasks : input.task ? [input.task] : [];
+const models = resolveModels(MODELS, input.models);
 if (!items.length) return { stopped: 'no-task', detail: 'Pass args: {tasks: ["<ID>", ...]} or {task: "<ID>"}' };
 
 const strings = { type: 'array', items: { type: 'string' } };
@@ -44,6 +82,7 @@ const WORK = {
     summary: { type: 'string' },
     evidence: { type: 'string' },
     failures: strings,
+    ciOnly: strings,
     blockers: strings,
     deniedCommands: strings,
     ciSteps: strings,
@@ -93,14 +132,15 @@ async function runTask(task, opts) {
 
   let specModel, checkModel, implAgent, implModel, reviewAgent, reviewModel;
   const route = () => {
-    specModel = highRisk ? 'fable' : 'opus';
-    checkModel = highRisk || native ? 'fable' : 'opus';
+    specModel = highRisk ? models.spec.high : models.spec.routine;
+    checkModel = native ? models.check.native : highRisk ? models.check.high : models.check.routine;
     implAgent = native ? 'native-engineer' : 'implementer';
-    implModel = native ? 'opus' : 'sonnet';
+    implModel = native ? models.implement.native : models.implement.routine;
     reviewAgent = native || highRisk ? 'guardian' : 'reviewer';
-    reviewModel = native || highRisk ? 'opus' : 'sonnet';
+    reviewModel = native || highRisk ? models.review.guarded : models.review.routine;
   };
   route();
+  log(`${task}: models ${JSON.stringify(models)}`);
   // Native work (src-tauri/ or the PlayerEngine port) goes to native-engineer on Opus with a guardian review (AGENTS.md).
   const goNative = (flag, by) => {
     if (flag && !native) {
@@ -119,7 +159,10 @@ async function runTask(task, opts) {
     return { task, outcome, detail };
   };
 
-  // Implementation step with one Fable retry: used for implement, check fixes, and CI fixes.
+  // A step whose only remaining problems are ciOnly (closable only by a CI run) skips retry and escalation and hands them to Ship.
+  const problemsOf = (out) => (out.blockers || []).concat(out.failures || []);
+  const ciOnlyHandoff = (out) => !!out && !denied(out) && problemsOf(out).length === 0 && (out.ciOnly || []).length > 0;
+  // Implementation step with one retry and an escalation: used for implement, check fixes, and CI fixes.
   const work = async (prompt, label, phaseTitle) => {
     let out = await agent(`${common}\n${prompt}\n${VERIFY_STEPS}`, {
       agentType: implAgent,
@@ -128,9 +171,11 @@ async function runTask(task, opts) {
       phase: phaseTitle,
       label,
     });
-    if (out && !denied(out) && (!out.done || !out.checksPassed)) {
-      const problems = (out.blockers || []).concat(out.failures || []);
-      log(`${task}: ${label} not green; one more try, then escalating to Fable`);
+    if (ciOnlyHandoff(out)) {
+      log(`${task}: ${label} has only CI-only problems; skipping retry and escalation`);
+    } else if (out && !denied(out) && (!out.done || !out.checksPassed)) {
+      const problems = problemsOf(out);
+      log(`${task}: ${label} not green; one more try, then escalating to ${models.escalate}`);
       out = await agent(`${common}\nFinish this work: ${prompt}\nThe last attempt left these problems:\n${numbered(problems)}\n${VERIFY_STEPS}`, {
         agentType: implAgent,
         model: implModel,
@@ -138,14 +183,16 @@ async function runTask(task, opts) {
         phase: phaseTitle,
         label: `${label} (retry)`,
       });
-      if (out && !denied(out) && (!out.done || !out.checksPassed)) {
-        const left = (out.blockers || []).concat(out.failures || []);
+      if (ciOnlyHandoff(out)) {
+        log(`${task}: ${label} has only CI-only problems left; skipping escalation`);
+      } else if (out && !denied(out) && (!out.done || !out.checksPassed)) {
+        const left = problemsOf(out);
         out = await agent(`${common}\nTwo attempts failed. Finish this work: ${prompt}\nRemaining problems:\n${numbered(left)}\n${VERIFY_STEPS}`, {
           agentType: implAgent,
-          model: 'fable',
+          model: models.escalate,
           schema: WORK,
           phase: phaseTitle,
-          label: `${label} (Fable)`,
+          label: `${label} (${models.escalate})`,
         });
       }
     }
@@ -199,15 +246,16 @@ Return as open questions only product or design choices the human must make that
   if (!skipImpl) {
   const impl = await work(
     `Implement the approved spec.${specNotes.length ? `\nAlso resolve these spec-check notes, updating the spec where they change it:\n${specNotes.join('\n')}` : ''}
-Commit the spec with the work, one milestone per commit. Set the task's status to in_progress with evidence in tasks/prd.json. Do not push or open a PR. If an acceptance item can only be met with a pushed branch, an open PR, or CI runs (for example a throwaway commit that must fail CI, or baselines rendered on the CI host), do everything else, set done=true, and list each such step in ciSteps; the Ship phase does them. Never list a review (guardian, design, or any other agent review) as a ciStep: reviews happen in the Review phase, and the Ship phase cannot start agents. Return done=false with blockers if you cannot finish for any other reason.`,
+Commit the spec with the work, one milestone per commit. Set the task's status to in_progress with evidence in tasks/prd.json. Do not push or open a PR. If an acceptance item can only be met with a pushed branch, an open PR, or CI runs (for example a throwaway commit that must fail CI, or baselines rendered on the CI host), do everything else, set done=true, and list each such step in ciSteps; the Ship phase does them. Never list a review (guardian, design, or any other agent review) as a ciStep: reviews happen in the Review phase, and the Ship phase cannot start agents. Return done=false with blockers if you cannot finish for any other reason. A remaining problem that only a CI run can close (for example visual baselines to accept, or a check that needs a pushed branch) goes in ciOnly, not in blockers or failures.`,
     `implement ${task}`,
     'Implement',
   );
   if (!impl) return result('failed', 'The implementer returned nothing.');
   if (denied(impl)) return result('denied', denied(impl));
-  if (!impl.done || !impl.checksPassed) return result('blocked', (impl.blockers || []).concat(impl.failures || []));
+  const implCiOnly = ciOnlyHandoff(impl);
+  if (!implCiOnly && (!impl.done || !impl.checksPassed)) return result('blocked', (impl.blockers || []).concat(impl.failures || []));
   evidence = impl.evidence;
-  ciSteps = ciSteps.concat(impl.ciSteps || []);
+  ciSteps = ciSteps.concat(impl.ciSteps || []).concat(implCiOnly ? impl.ciOnly : []);
   }
 
   // 4. Review (one round)
@@ -223,7 +271,7 @@ Review git diff origin/main...${branch} against the spec, the task acceptance, a
     const guard = await agent(
       `${common}
 Adversarially review git diff origin/main...${branch} for token, URL, or session-ID leaks, redaction coverage, direct-play and negotiation changes, and native safety. Change no files. Return every finding with its severity, file:line, and a concrete failure scenario.`,
-      { agentType: 'guardian', model: 'opus', schema: REVIEW, phase: 'Review', label: `guardian ${task}` },
+      { agentType: 'guardian', model: models.guardian, schema: REVIEW, phase: 'Review', label: `guardian ${task}` },
     );
     if (guard) review.findings = review.findings.concat(guard.findings);
   }
@@ -234,15 +282,18 @@ Adversarially review git diff origin/main...${branch} for token, URL, or session
   const followUp = await work(
     `${blocking.length ? `Fix these review findings and commit, with a test for each behavior change:\n${blocking.join('\n')}` : 'No review findings need a fix.'}
 ${lows.length ? `Log these low findings as follow-ups in the active plan and commit; do not fix them:\n${lows.join('\n')}` : ''}
-Then, if every acceptance item is met (the review above counts as the fresh-context design review; the Ship phase links screenshots) and the spec does not reserve sign-off for the human, set the task's status to done and passes to true in tasks/prd.json, update its evidence, tick its line in the active plan, and commit. Do not push.${ciSteps.length ? `\nThese acceptance steps need CI and are done in the Ship phase, so treat them as pending (not as blockers) and leave status in_progress:\n${ciSteps.join('\n')}` : ''}`,
+Then, if every acceptance item is met (the review above counts as the fresh-context design review; the Ship phase links screenshots) and the spec does not reserve sign-off for the human, set the task's status to done and passes to true in tasks/prd.json, update its evidence, tick its line in the active plan, and commit. Do not push.${ciSteps.length ? `\nThese acceptance steps need CI and are done in the Ship phase, so treat them as pending (not as blockers) and leave status in_progress:\n${ciSteps.join('\n')}` : ''}
+A remaining problem that only a CI run can close goes in ciOnly, not in blockers or failures.`,
     `follow-ups ${task}`,
     'Review',
   );
   if (!followUp) return result('failed', 'The follow-up agent returned nothing.');
   if (denied(followUp)) return result('denied', denied(followUp));
   // With CI steps pending, a not-done follow-up whose checks pass hands its blockers to Ship, which refuses to merge if it cannot clear them.
-  if (!followUp.checksPassed || (!followUp.done && !ciSteps.length)) return result('blocked', (followUp.blockers || []).concat(followUp.failures || []));
-  if (!followUp.done) ciSteps = ciSteps.concat(followUp.blockers || []);
+  const followCiOnly = ciOnlyHandoff(followUp);
+  if (followCiOnly) ciSteps = ciSteps.concat(followUp.ciOnly);
+  if (!followCiOnly && (!followUp.checksPassed || (!followUp.done && !ciSteps.length))) return result('blocked', (followUp.blockers || []).concat(followUp.failures || []));
+  if (!followUp.done && !followCiOnly) ciSteps = ciSteps.concat(followUp.blockers || []);
   evidence = followUp.evidence || evidence;
   ciSteps = ciSteps.concat(followUp.ciSteps || []);
 
@@ -254,13 +305,13 @@ Review: ${blocking.length} fixed, ${lows.length} low logged in the plan.${ciStep
 Before enabling auto-merge, do these CI-dependent acceptance steps on this PR branch. Temporary commits are allowed only when a step asks for one, and each must be reverted in a later commit. Record each run URL in the task's evidence. Then, if every acceptance item is met, set the task's status to done and passes to true, commit, and push. If any listed step cannot be completed (for example it needs a review or a human), do not enable auto-merge; return merged=false and put the reason in ciFailures. This is the one case where the Ship phase changes files:
 ${ciSteps.join('\n')}` : ''}`;
   const shipEffort = ciSteps.length ? 'medium' : 'low';
-  let ship = await agent(shipPrompt, { model: 'sonnet', effort: shipEffort, schema: SHIP, phase: 'Ship', label: `ship ${task}` });
+  let ship = await agent(shipPrompt, { model: models.ship, effort: shipEffort, schema: SHIP, phase: 'Ship', label: `ship ${task}` });
   if (!ship) return result('failed', 'The ship agent returned nothing.');
   if (denied(ship)) return result('denied', denied(ship));
   if (!ship.merged && ship.ciFailures && ship.ciFailures.length) {
     const fixed = await work(`CI failed on the PR. Fix the cause, commit, and push:\n${ship.ciFailures.join('\n')}`, `fix CI ${task}`, 'Ship');
     if (denied(fixed)) return result('denied', denied(fixed));
-    ship = await agent(shipPrompt, { model: 'sonnet', effort: shipEffort, schema: SHIP, phase: 'Ship', label: `ship ${task} (retry)` });
+    ship = await agent(shipPrompt, { model: models.ship, effort: shipEffort, schema: SHIP, phase: 'Ship', label: `ship ${task} (retry)` });
   }
   if (!ship || !ship.merged) return result('ci-red', ship ? { prUrl: ship.prUrl, ciFailures: ship.ciFailures } : 'The ship retry returned nothing.');
   return { task, outcome: 'merged', prUrl: ship.prUrl, fixed: blocking, lowsLogged: lows };
