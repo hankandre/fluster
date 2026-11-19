@@ -108,6 +108,8 @@ interface ActiveSession {
   // Back and wins over everything else. Absent means onLeave. It lives only
   // as long as the stop it waits for: a failed stop clears it.
   destination?: (() => void) | "back";
+  // The destination is a sign-out the viewer confirmed. Like "back" it wins over a later advance.
+  destinationFinal?: boolean;
 }
 
 // Stops the session, or only marks it stopping when it never started. Resolves
@@ -391,10 +393,14 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
 
   // Stops the engine, then leaves without waiting for the Stopped report.
   // Resolves false when the stop failed and the player stays open.
-  const stopAndLeave = useCallback(async (destination?: () => void): Promise<boolean> => {
+  // `final` marks a destination no later press may replace (a confirmed sign-out).
+  const stopAndLeave = useCallback(async (destination?: () => void, options?: { final?: boolean }): Promise<boolean> => {
     const active = session.current;
     if (!active) return false;
-    if (active.destination !== "back") active.destination = destination ?? "back";
+    if (active.destination !== "back" && !active.destinationFinal) {
+      active.destination = destination ?? "back";
+      active.destinationFinal = options?.final === true;
+    }
     const stop = stopSession(engine, active);
     try {
       await stop;
@@ -406,6 +412,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
         active.stop = undefined;
         active.stopping = false;
         active.destination = undefined;
+        active.destinationFinal = false;
         dispatch(failureAction(error));
       }
       return false;
