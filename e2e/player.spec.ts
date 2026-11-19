@@ -532,8 +532,10 @@ test("the scrub preview is gone once the pointer has sought and moved away", asy
   if (!box) throw new Error("seek track not found");
   await page.mouse.move(box.x + box.width * 0.3, box.y + box.height / 2);
   await page.mouse.down();
+  await expect(slider).toBeFocused();
   await page.mouse.move(box.x + box.width * 0.5, box.y + box.height / 2);
   await page.mouse.up();
+  await expect(slider).toBeFocused();
   await expect(page.locator(".seek-preview")).toBeVisible();
   await page.mouse.move(box.x + box.width / 2, box.y - 200);
   await expect(page.locator(".seek-preview")).toHaveCount(0);

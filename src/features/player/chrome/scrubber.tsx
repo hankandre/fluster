@@ -1,10 +1,13 @@
-import { useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { useEffect, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import type { PlaybackSnapshot } from "../../../domain/playback";
 import { SEEK_STEP_SECONDS } from "../player-keymap";
 import { useTvForm } from "../../shared/use-tv-form";
 import { chapterAt, clock, endsAt, remaining, scrubberValueText, type SeekChapter } from "./player-time";
 import { ScrubPreview } from "./scrub-preview";
 import { useTvScrub } from "./use-tv-scrub";
+
+// Keys the slider itself acts on; any other key (a global hotkey, Shift) leaves a pointer seek's quiet preview alone.
+const SCRUBBER_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown", "Enter", "Escape"]);
 
 // The seek bar: a transparent range input over a drawn track, with elapsed
 // and remaining time. Without a preview or chapters it is the bare slider.
@@ -26,12 +29,14 @@ export function Scrubber({ snapshot, onSeek, onScrubHold, seekPreview, chapters,
   const [focused, setFocused] = useState(false);
   // Focus that a pointer press gave the slider. It shows no preview: the pointer's own hover does.
   const [pointerFocus, setPointerFocus] = useState(false);
+  // True from a primary-button press on the slider until the pointer is released anywhere.
+  const [dragging, setDragging] = useState(false);
   const tv = useTvForm();
   const duration = snapshot?.durationSeconds ?? 0;
   const max = Math.max(duration, 1);
   const position = seekValue ?? snapshot?.positionSeconds ?? 0;
   const enhanced = Boolean(seekPreview) || Boolean(chapters?.length);
-  const previewSeconds = hoverSeconds ?? (focused && !pointerFocus ? position : undefined);
+  const previewSeconds = dragging ? position : hoverSeconds ?? (focused && !pointerFocus ? position : undefined);
   const chapterName = previewSeconds != null && chapters ? chapterAt(chapters, previewSeconds)?.name : undefined;
   const fill = duration > 0 ? Math.min(Math.max(position / duration, 0), 1) * 100 : 0;
 
@@ -42,6 +47,17 @@ export function Scrubber({ snapshot, onSeek, onScrubHold, seekPreview, chapters,
     : undefined;
 
   const tvScrub = useTvScrub({ playhead: snapshot?.positionSeconds ?? 0, duration, setPending: setSeekValue, onSeek, onScrubHold });
+
+  useEffect(() => {
+    if (!dragging) return;
+    const end = () => setDragging(false);
+    window.addEventListener("pointerup", end);
+    window.addEventListener("pointercancel", end);
+    return () => {
+      window.removeEventListener("pointerup", end);
+      window.removeEventListener("pointercancel", end);
+    };
+  }, [dragging]);
 
   const commit = () => {
     if (seekValue != null) onSeek(seekValue);
@@ -76,9 +92,13 @@ export function Scrubber({ snapshot, onSeek, onScrubHold, seekPreview, chapters,
       aria-valuetext={scrubberValueText(duration > 0 ? Math.min(position, duration) : position, snapshot?.durationSeconds)}
       onChange={(event) => setSeekValue(Number(event.target.value))}
       onPointerUp={commit}
-      onPointerDown={() => setPointerFocus(true)}
+      onPointerDown={(event) => {
+        if (event.button !== 0) return;
+        setPointerFocus(true);
+        setDragging(true);
+      }}
       onKeyDown={(event) => {
-        setPointerFocus(false);
+        if (SCRUBBER_KEYS.has(event.key) || event.key === "Tab") setPointerFocus(false);
         (tv ? tvScrub.onKeyDown : onKeyDown)(event);
       }}
       onKeyUp={tv ? tvScrub.onKeyUp : commit}
