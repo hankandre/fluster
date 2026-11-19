@@ -163,6 +163,7 @@ fn redaction_canary_the_converted_path_never_prints() {
             "print!",
             "dbg!",
             "native_trace",
+            "write_trace",
             "log::",
             "tracing::",
         ] {
