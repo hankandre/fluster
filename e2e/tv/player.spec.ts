@@ -129,7 +129,8 @@ test("Player: the Settings sheet is reached with arrows, Enter, and Escape alone
   await expectTitleSafe(page);
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Enter");
-  await expect(page.getByText("Intros: Skip automatically.")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Player settings" }).locator(".settings-row", { hasText: "Intros" }).getByText("Saved")).toBeVisible();
+  await expect(page.locator(".player-osd-pill")).toHaveCount(0);
 
   await page.keyboard.press("Escape");
   await expect(sheet.getByRole("button", { name: "Playback" })).toBeFocused();

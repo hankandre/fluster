@@ -217,7 +217,8 @@ test("(a) the keyboard opens the Settings sheet, turns auto-play off, and the en
   await page.keyboard.press("ArrowDown");
   await expect(sheet.getByRole("switch", { name: "Play next episode automatically" })).toBeFocused();
   await page.keyboard.press("Space");
-  await expect(page.getByText("Next episodes won't play automatically.")).toBeVisible();
+  await expect(sheet.locator(".settings-row", { hasText: "Play next episode automatically" }).getByText("Saved")).toBeVisible();
+  await expect(page.locator(".player-osd-pill")).toHaveCount(0);
   expect(await page.evaluate(() => JSON.parse(window.localStorage.getItem("fluster.preferences") ?? "{}").autoPlay)).toMatchObject({ enabled: false });
 
   await page.keyboard.press("Escape");

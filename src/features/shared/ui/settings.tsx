@@ -196,6 +196,8 @@ export function SettingsSection({ title, intro, children, footer }: { title: str
 export interface SavedRow {
   row: string;
   word: string;
+  // Changes with every save, so a second change to the same row replaces the status content and is announced again.
+  serial: number;
 }
 const SavedContext = createContext<{ saved: SavedRow | undefined } | undefined>(undefined);
 export const SavedRowProvider = SavedContext.Provider;
@@ -226,7 +228,7 @@ interface SettingsRowProps {
 export function SettingsRow({ label, description, value, children, unavailable, unavailableReason }: SettingsRowProps) {
   const descriptionId = useId();
   const savedContext = useContext(SavedContext);
-  const saved = savedContext?.saved?.row === label ? savedContext.saved.word : undefined;
+  const saved = savedContext?.saved?.row === label ? savedContext.saved : undefined;
   if (unavailable || unavailableReason) {
     return (
       <div className="settings-row" aria-disabled="true" {...(unavailable ? { "data-unbuilt": unavailable } : {})}>
@@ -248,7 +250,7 @@ export function SettingsRow({ label, description, value, children, unavailable, 
         {children ? <div className="settings-row-control">{children}</div> : null}
         {savedContext ? (
           <span className="settings-row-saved" role="status">
-            {saved ? <><span aria-hidden="true">✓ </span>{saved}</> : null}
+            {saved ? <span key={saved.serial} className="settings-row-saved-text"><span aria-hidden="true">✓ </span>{saved.word}</span> : null}
           </span>
         ) : null}
       </div>
