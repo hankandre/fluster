@@ -469,3 +469,7 @@ The triage of every entry added since the 2026-11-15 pass, and the two owner req
 - `.claude/workflows/task.js`: after escalation, a result that claims done and checksPassed while still listing failures passes the implement gate. Require no problems at the gate too. S.
 - The follow-up gate returns `blocked` with an empty detail when the only content is ciOnly on a non-green result. Say why in the detail. S.
 - `ciOnly` carried from a non-green earlier attempt can reach Ship as a step after a later green attempt. Drop ciOnly from non-green attempts. S.
+## Cast photo fix (#207) review lows, 2026-11-19
+
+- `person-row.tsx`: person images are requested at 360 px, 2x the TV disc; at 1440 that loads about 3x the pixels shown, and a large cast loads noticeably more. Request per form (for example 288 on desktop) or use `srcset` if bytes matter. S.
+- `e2e/detail.spec.ts`: the crop test checks the CSS value, not that the head is visible; the 1440 disc test asserts an exact 120 px and breaks if the token changes; both rely on the m1 mock cast having at least 3 people. S.

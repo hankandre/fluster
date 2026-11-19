@@ -174,7 +174,7 @@
     background: var(--surface-2);
     color: var(--text-1);
     font: var(--type-label);
-    font-size: calc(var(--person-disc) * 0.3);
+    font-size: calc(var(--person-disc) * var(--person-initials-scale));
   }
 
   .ui-person-image {

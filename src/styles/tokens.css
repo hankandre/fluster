@@ -63,6 +63,7 @@
   --person-disc: 96px;
   /* Where a portrait is anchored when cropped to a disc: near the top, so heads stay whole. */
   --person-photo-focus: 50% 15%;
+  --person-initials-scale: 0.3;
   --thumb-w: 240px;
   --nav-h: 64px;
   --nav-fade-w: var(--space-7);
