@@ -27,6 +27,7 @@ export function fakeSessionGateway(overrides: Partial<SessionGateway> = {}): Ses
     itemCollections: vi.fn().mockResolvedValue(undefined),
     collectionItems: vi.fn().mockResolvedValue([]),
     latestInLibrary: vi.fn(),
+    libraryGenres: vi.fn().mockResolvedValue([]),
     libraryItems: vi.fn(),
     searchHints: vi.fn(),
     searchItems: vi.fn(),

@@ -1,5 +1,5 @@
 import type { PlayedEntry, RecentPlays } from "../../domain/up-next";
-import type { BrowseCard, CardImageType, EpisodeCard, ImageRef, LibraryView, MediaCard, NextEpisode, SearchCard, SeriesNextUp, SearchHint, SearchKind, Season } from "../../domain/catalog";
+import type { BrowseCard, CardImageType, EpisodeCard, Genre, ImageRef, LibraryView, MediaCard, NextEpisode, SearchCard, SeriesNextUp, SearchHint, SearchKind, Season } from "../../domain/catalog";
 import type { BaseItemDto, SearchHintDto } from "./types";
 
 const POSTER_ASPECT_RATIO = 2 / 3;
@@ -153,6 +153,11 @@ export function toHomeLibraries(items: BaseItemDto[] | undefined): LibraryView[]
     const image = primaryTag ? imageRef(item.Id, "Primary", primaryTag, item.ImageBlurHashes?.Primary?.[primaryTag]) : undefined;
     return [{ id: item.Id, name: item.Name, collectionType: item.CollectionType, ...(image ? { image } : {}) }];
   });
+}
+
+// Genres the server names with an id, in the server's order.
+export function toGenres(items: { Id?: string | null; Name?: string | null }[] | null | undefined): Genre[] {
+  return (items ?? []).flatMap((item) => (item.Id && item.Name ? [{ id: item.Id, name: item.Name }] : []));
 }
 
 function browseKind(type: string | undefined): BrowseCard["kind"] {

@@ -77,6 +77,11 @@ export type BrowseSortBy = "SortName" | "DateCreated" | "PremiereDate" | "Commun
 export type BrowseSortOrder = "Ascending" | "Descending";
 export type BrowseFilter = "IsUnplayed" | "IsFavorite" | "IsResumable";
 
+export interface Genre {
+  id: string;
+  name: string;
+}
+
 export type BrowseItemType = "Movie" | "Series" | "BoxSet";
 
 export interface BrowseQuery {
@@ -86,6 +91,8 @@ export interface BrowseQuery {
   sortBy: BrowseSortBy;
   sortOrder: BrowseSortOrder;
   filters: BrowseFilter[];
+  // One genre id, sent as genreIds. Absent means every genre.
+  genreId?: string;
 }
 
 // A card in a library or collection grid. Series and BoxSet cards link on.
@@ -286,6 +293,10 @@ export interface ItemDetail {
   runTimeTicks?: number;
   overview?: string;
   genres: string[];
+  // The genres that have an id on the server, in the server's order. Links to a genre need the id.
+  genreItems: Genre[];
+  // The folder the item sits in; a film or series stored in a library folder has the library as its parent.
+  parentId?: string;
   cast: CastMember[];
   // Community rating on a 0-10 scale and critic rating on 0-100; each absent when the server has none.
   communityRating?: number;

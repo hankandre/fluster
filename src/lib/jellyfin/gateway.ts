@@ -1,6 +1,6 @@
 import { Jellyfin, type Api } from "@jellyfin/sdk";
 import axios from "axios";
-import type { BrowseCard, BrowsePage, BrowseQuery, CardImageType, EpisodeCard, ItemDetail, LibraryItem, LibraryView, MediaCard, NextEpisode, SearchHint, SearchPage, SearchQuery, Season, SeriesNextUp } from "../../domain/catalog";
+import type { BrowseCard, BrowsePage, BrowseQuery, CardImageType, EpisodeCard, Genre, ItemDetail, LibraryItem, LibraryView, MediaCard, NextEpisode, SearchHint, SearchPage, SearchQuery, Season, SeriesNextUp } from "../../domain/catalog";
 import { ItemNotFoundError } from "../../domain/catalog";
 import type { RecentPlays } from "../../domain/up-next";
 import type { PlaybackDelivery, PlaybackPlan, PlaybackPlanOptions, PlaybackSnapshot, ServerPlayMethod } from "../../domain/playback";
@@ -16,7 +16,7 @@ import { MemoryLanHttpConfirmations, type LanHttpConfirmationStore } from "../la
 import { limitMbpsFor, mbpsToBitsPerSecond, MemoryStreamingLimits, type StreamingLimitStore } from "../streaming-limits";
 import { redactText } from "../redact";
 import { redactTransportError } from "../transport-error";
-import { toBrowseCards, toEpisodeCards, toNextEpisode, toHomeLibraries, toMediaCards, toRecentPlays, toSearchCards, toSearchHints, toSeasons, toSeriesNextUp } from "./cards";
+import { toBrowseCards, toEpisodeCards, toGenres, toNextEpisode, toHomeLibraries, toMediaCards, toRecentPlays, toSearchCards, toSearchHints, toSeasons, toSeriesNextUp } from "./cards";
 import { stripCredentialQuery } from "./credential-query";
 import { deriveDeviceId } from "./device-id";
 import { limitIsOnlyReason } from "./client-limit";
@@ -558,6 +558,17 @@ export class JellyfinGateway {
     return toMediaCards(data);
   }
 
+  // The genres of a library, from GET /Genres with the user and the library (P16-01 A5).
+  async libraryGenres(parentId: string, signal?: AbortSignal): Promise<Genre[]> {
+    const { userId } = this.requireSession();
+    const { data } = await this.get<ItemsResult>("/Genres", {
+      params: { userId, parentId },
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    return toGenres(data.Items);
+  }
+
   // Lists a library or collection page. It fetches one extra item to learn whether more pages
   // exist. Only the first page asks for the total count, which the toolbar shows.
   async libraryItems(parentId: string, query: BrowseQuery, signal?: AbortSignal): Promise<BrowsePage> {
@@ -576,6 +587,7 @@ export class JellyfinGateway {
       ...CARD_IMAGE_PARAMS,
     };
     if (query.filters.length > 0) params.filters = query.filters.join(",");
+    if (query.genreId) params.genreIds = query.genreId;
     const { data } = await this.get<ItemsResult>("/Items", {
       params,
       signal,
