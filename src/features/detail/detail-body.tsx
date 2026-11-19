@@ -9,6 +9,8 @@ import { DetailHeader, MediaBadges, PERSON_IMAGE_WIDTH, PersonRow } from "../sha
 import type { ArtSource } from "./art-source";
 import { DetailActions, DetailMessages } from "./detail-actions";
 import { detailFacts } from "./detail-facts";
+import { genreLinks } from "./genre-links";
+import { useLibraryViews } from "../shell/use-library-views";
 import { EpisodeStrip } from "./episode-strip";
 import { FileAndStreams } from "./file-and-streams";
 import { mediaBadges } from "./media-badges";
@@ -70,6 +72,7 @@ export function DetailBody({ gateway, item, onArt, headingRef }: DetailBodyProps
   } : undefined;
   const logo = item.type === "Movie" && item.logo ? { src: imageUrl(item.logo, 800) } : undefined;
   const seriesName = item.seriesName;
+  const views = useLibraryViews(gateway);
 
   return (
     <>
@@ -78,6 +81,7 @@ export function DetailBody({ gateway, item, onArt, headingRef }: DetailBodyProps
         logo={logo}
         seriesLink={seriesName ? { name: seriesName, ...(item.seriesId ? { href: seriesRoute(item.seriesId) } : {}) } : undefined}
         facts={detailFacts(item)}
+        genres={genreLinks(item, views.data)}
         badges={selected ? <MediaBadges badges={mediaBadges(selected)} /> : undefined}
         actions={<DetailActions item={item} selected={selected} onVersion={onVersion} audio={audio} played={played} favorite={favorite} />}
         notice={<DetailMessages />}

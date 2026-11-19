@@ -49,6 +49,36 @@ describe("DetailHeader", () => {
     expect(screen.getByRole("link", { name: "Play" })).toHaveFocus();
   });
 
+  it("renders genres with a link as links in one spatial row after the facts", () => {
+    renderHeader({ genres: [{ name: "Drama", href: "#/next/browse/lib-1?genre=g1" }, { name: "Mystery" }] });
+    const line = screen.getByText(/2016 · 1 h 57 min ·/).closest("p")!;
+    expect(line).toHaveAttribute("data-spatial-row");
+    expect(line.textContent).toBe("2016 · 1 h 57 min · Drama · Mystery");
+    expect(within(line).getByRole("link", { name: "Drama" })).toHaveAttribute("href", "#/next/browse/lib-1?genre=g1");
+    expect(within(line).queryByRole("link", { name: "Mystery" })).toBeNull();
+  });
+
+  it("moves between genre links with Left and Right and up to the next row with Down", () => {
+    renderHeader({ genres: [{ name: "Drama", href: "#/a" }, { name: "Mystery", href: "#/b" }], actions: <div data-spatial-row=""><a href="#/play" data-roving-item="">Play</a></div> });
+    const [drama, mystery] = [screen.getByRole("link", { name: "Drama" }), screen.getByRole("link", { name: "Mystery" })];
+    drama.focus();
+    fireEvent.keyDown(drama, { key: "ArrowRight" });
+    expect(mystery).toHaveFocus();
+    fireEvent.keyDown(mystery, { key: "ArrowDown" });
+    expect(screen.getByRole("link", { name: "Play" })).toHaveFocus();
+  });
+
+  it("joins genres without links into the facts text", () => {
+    renderHeader({ genres: [{ name: "Drama" }, { name: "Mystery" }] });
+    expect(screen.getByText("2016 · 1 h 57 min · Drama · Mystery")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Drama" })).toBeNull();
+  });
+
+  it("shows genres alone when there are no facts", () => {
+    renderHeader({ facts: undefined, genres: [{ name: "Drama", href: "#/a" }] });
+    expect(screen.getByRole("link", { name: "Drama" }).closest("p")?.textContent).toBe("Drama");
+  });
+
   it("shows facts, badges, and the overview, and marks the header busy", () => {
     renderHeader({ badges: <ul><li>4K</li></ul>, overview: <p>Linguist.</p>, busy: true });
     expect(screen.getByText("2016 · 1 h 57 min")).toBeInTheDocument();

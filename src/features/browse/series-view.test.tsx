@@ -24,6 +24,7 @@ function series(overrides: Partial<ItemDetail> = {}): ItemDetail {
     overview: "A lighthouse keeper finds a signal.",
     genres: ["Drama", "Mystery"],
     cast: [],
+    genreItems: [{ id: "g-drama", name: "Drama" }, { id: "g-mystery", name: "Mystery" }],
     userData: { played: false, favorite: false, resumePositionTicks: 0 },
     versions: [],
     backdrop: { itemId: "series-1", type: "Backdrop", tag: "b1", blurHash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" },
@@ -102,6 +103,20 @@ describe("header", () => {
     expect(await screen.findByText("2022–2024 · 2 seasons · Drama · Mystery")).toBeInTheDocument();
     expect(screen.getByText("A lighthouse keeper finds a signal.")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Back to libraries" })).not.toBeInTheDocument();
+  });
+
+  it("links the genres to the first TV library filtered to each, and leaves text when the libraries fail", async () => {
+    const userViews = vi.fn().mockResolvedValue([
+      { id: "lib-movies", name: "Movies", collectionType: "movies" },
+      { id: "lib-shows", name: "Shows", collectionType: "tvshows" },
+    ]);
+    await renderSeries(fakeGateway({ userViews }));
+    expect(await screen.findByRole("link", { name: "Drama" })).toHaveAttribute("href", "#/next/browse/lib-shows?genre=g-drama");
+    expect(screen.getByRole("link", { name: "Mystery" })).toHaveAttribute("href", "#/next/browse/lib-shows?genre=g-mystery");
+    cleanup();
+    await renderSeries(fakeGateway({ userViews: vi.fn().mockRejectedValue(new Error("boom")) }));
+    expect(await screen.findByText("2022–2024 · 2 seasons · Drama · Mystery")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Drama" })).toBeNull();
   });
 
   it("shows the series Logo as the h1 with the name as alt", async () => {

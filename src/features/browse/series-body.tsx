@@ -9,6 +9,8 @@ import { playRoute } from "../routes";
 import { ActionBar, ButtonLink, DetailHeader, InlineError, ProgressRing, Skeleton } from "../shared/ui";
 import { useTvPrimaryRef } from "../shared/use-tv-form";
 import { fallbackSeasonOf, seriesPrimaryState, type SeriesPrimary } from "./series-next";
+import { genreLinks } from "../detail/genre-links";
+import { useLibraryViews } from "../shell/use-library-views";
 import { seriesFacts } from "./series-facts";
 import { useSeasonEpisodes, useSeriesNextUp, useSeriesSeasons } from "./series-queries";
 import { SeriesSeasons } from "./series-seasons";
@@ -26,6 +28,7 @@ export function SeriesBody({ gateway, item, onArt, headingRef }: SeriesBodyProps
   const imageUrl = imageUrlFor(gateway);
   const seasons = useSeriesSeasons(gateway, item.id);
   const nextUp = useSeriesNextUp(gateway, item.id);
+  const views = useLibraryViews(gateway);
 
   // Without a next episode from the server, the first episode of the season that would open is offered.
   const fallbackSeason = fallbackSeasonOf(seasons.data);
@@ -52,6 +55,7 @@ export function SeriesBody({ gateway, item, onArt, headingRef }: SeriesBodyProps
         title={item.title}
         logo={item.logo ? { src: imageUrl(item.logo, 800) } : undefined}
         facts={seriesFacts(item, seasons.data)}
+        genres={genreLinks(item, views.data)}
         actions={actions}
         notice={notice}
         overview={item.overview ? <Overview text={item.overview} /> : undefined}

@@ -200,6 +200,7 @@ export function toItemDetail(item: BaseItemDto): ItemDetail | undefined {
   const communityRating = ratingWithin(item.CommunityRating, false, 10);
   const criticRating = ratingWithin(item.CriticRating, true, 100);
   const chapters = toChapters(item.Chapters);
+  const genreItems = toGenres(item.GenreItems);
   const endYear = item.Type === "Series" ? yearOf(item.EndDate) : undefined;
   return {
     id: item.Id,
@@ -215,7 +216,7 @@ export function toItemDetail(item: BaseItemDto): ItemDetail | undefined {
     ...(item.RunTimeTicks ? { runTimeTicks: item.RunTimeTicks } : {}),
     ...(item.Overview ? { overview: item.Overview } : {}),
     genres: item.Genres ?? [],
-    genreItems: toGenres(item.GenreItems),
+    ...(genreItems.length > 0 ? { genreItems } : {}),
     ...(item.ParentId ? { parentId: item.ParentId } : {}),
     cast,
     ...(communityRating !== undefined ? { communityRating } : {}),

@@ -49,12 +49,15 @@
     color: var(--text-1);
   }
 
-  .detail-series-link {
+  .detail-series-link,
+  .detail-genre-link {
     text-decoration: none;
   }
 
   .detail-series-link:hover,
-  .detail-series-link:focus-visible {
+  .detail-series-link:focus-visible,
+  .detail-genre-link:hover,
+  .detail-genre-link:focus-visible {
     text-decoration: underline;
   }
 

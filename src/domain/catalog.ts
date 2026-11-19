@@ -294,7 +294,7 @@ export interface ItemDetail {
   overview?: string;
   genres: string[];
   // The genres that have an id on the server, in the server's order. Links to a genre need the id.
-  genreItems: Genre[];
+  genreItems?: Genre[];
   // The folder the item sits in; a film or series stored in a library folder has the library as its parent.
   parentId?: string;
   cast: CastMember[];

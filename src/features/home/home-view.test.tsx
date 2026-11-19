@@ -101,6 +101,15 @@ describe("HomeView", () => {
     expect(within(row).getByRole("article", { name: "Up next" })).toBeInTheDocument();
   });
 
+  it("asks for no genres and shows no genre row", async () => {
+    const libraryGenres = vi.fn().mockResolvedValue([{ id: "g-drama", name: "Drama" }]);
+    await renderHome(fakeGateway({ libraryGenres }));
+    expect(await screen.findByRole("heading", { name: "Latest in Movies" })).toBeInTheDocument();
+    expect(libraryGenres).not.toHaveBeenCalled();
+    expect(screen.queryByRole("heading", { name: /Drama/ })).toBeNull();
+    expect(screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent)).toEqual(["Continue watching", "Latest in Movies"]);
+  });
+
   it("shows thumb cards in Continue watching and poster cards in Latest", async () => {
     await renderHome(fakeGateway());
     expect(await screen.findByRole("article", { name: "Resume me, 38 minutes left" })).toHaveAttribute("data-variant", "thumb");

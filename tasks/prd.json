@@ -3843,7 +3843,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "M1 gateway: libraryGenres and genreIds with P16-01 fixtures. M2 route genre param and library toolbar Genre Picker (unit tests green)."
+          "evidence": "M1 gateway: libraryGenres and genreIds with P16-01 fixtures. M2 route genre param and library toolbar Genre Picker. M3 genre links on film and series facts lines (unit tests green)."
         },
         {
           "id": "P16-07",
