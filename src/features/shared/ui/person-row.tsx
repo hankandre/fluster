@@ -19,14 +19,24 @@ export function initials(name: string): string {
   return `${first}${last}`.toUpperCase();
 }
 
-// The initials sit under the picture, so they show while it loads and when it fails.
+// The initials show while there is no picture, while it loads, and after it fails. Once it has loaded they leave
+// the DOM, so nothing shows through a transparent picture.
 function PersonDisc({ name, imageSrc }: { name: string; imageSrc?: string }) {
-  const [failed, setFailed] = useState(false);
+  const [state, setState] = useState<"loading" | "loaded" | "failed">("loading");
+  const showImage = imageSrc !== undefined && state !== "failed";
   return (
     <span className="ui-person-disc" aria-hidden="true">
-      {initials(name)}
-      {imageSrc && !failed ? (
-        <img className="ui-person-image" src={imageSrc} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} />
+      {showImage && state === "loaded" ? null : initials(name)}
+      {showImage ? (
+        <img
+          className="ui-person-image"
+          src={imageSrc}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          onLoad={() => setState("loaded")}
+          onError={() => setState("failed")}
+        />
       ) : null}
     </span>
   );
