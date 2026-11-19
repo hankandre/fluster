@@ -190,6 +190,8 @@ test("Library: Sort opens as a sheet, a chip filters, Load more focuses the firs
   await expect(sort).toBeFocused();
   await expect(sort).toContainText("Name Z to A");
 
+  // Past the Genre picker to the chips.
+  await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowRight");
   await expect(page.getByRole("button", { name: "Unwatched" })).toBeFocused();
   await page.keyboard.press("Enter");
@@ -214,6 +216,44 @@ test("Library: Sort opens as a sheet, a chip filters, Load more focuses the firs
   // Escape on a root tab focuses the nav's current entry.
   await page.keyboard.press("Escape");
   await expect(nav(page).getByRole("link", { name: "Movies" })).toBeFocused();
+});
+
+test("Library: Right from Sort reaches Genre, Enter opens the sheet, a genre filters, Escape closes a reopened sheet unchanged", async ({ page }) => {
+  await signInTv(page);
+  await expect(page.locator(".hero-actions a").first()).toBeFocused({ timeout: 10_000 });
+  await openFromNav(page, "Movies", ["ArrowRight"]);
+  await expect(page).toHaveURL(/#\/next\/browse\/lib-movies$/);
+  await expect(page.locator(".library-grid a.media-card").first()).toBeVisible();
+  await page.keyboard.press("ArrowDown");
+  const sort = page.getByRole("button", { name: /^Sort/ });
+  if (!(await sort.evaluate((element) => element === document.activeElement))) await page.keyboard.press("ArrowUp");
+  await expect(sort).toBeFocused();
+
+  await page.keyboard.press("ArrowRight");
+  const genre = page.getByRole("button", { name: "Genre All genres" });
+  await expect(genre).toBeFocused();
+  await page.keyboard.press("Enter");
+  const list = page.getByRole("listbox");
+  await expect(list).toHaveClass(/ui-picker-list--sheet/);
+  await expectNoSmallText(page);
+  await expectTitleSafe(page, "[role='listbox']");
+  // Down moves to Comedy; Down again, Documentary; Down again, Drama.
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Enter");
+  await expect(list).toBeHidden();
+  await expect(page).toHaveURL(/#\/next\/browse\/lib-movies\?genre=genre-drama$/);
+  await expect(page.getByRole("button", { name: "Genre Drama" })).toBeFocused();
+  await expect(page.locator(".library-grid a.media-card")).toHaveCount(6);
+  await expectTitleSafe(page);
+
+  await page.keyboard.press("Enter");
+  await expect(list).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(list).toBeHidden();
+  await expect(page.getByRole("button", { name: "Genre Drama" })).toBeFocused();
+  await expect(page).toHaveURL(/#\/next\/browse\/lib-movies\?genre=genre-drama$/);
 });
 
 test("Collection: Escape goes back; an unknown library offers Go home", async ({ page }) => {

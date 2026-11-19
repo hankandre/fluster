@@ -58,6 +58,8 @@ test("Library: Back returns to the card that was left", async ({ page }) => {
   await expect(page.locator(".library-grid [aria-busy='true']")).toHaveCount(0);
   // Down from the heading reaches the toolbar; a chip, not the Sort picker, opens onto the grid with Down.
   await page.keyboard.press("ArrowDown");
+  // Sort, then Genre, then the chips.
+  await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowRight");
   await expect(page.getByRole("button", { name: "Unwatched" })).toBeFocused();
   await pressUntilRow(page, "ArrowDown", "Library");
@@ -94,6 +96,8 @@ test("Library: Back restores the sort, filter, pages, scroll position, and card"
   await expect(page.getByRole("button", { name: "Sort Newest added first" })).toBeFocused();
   await expect(page.locator(".library-grid [aria-busy='true']")).toHaveCount(0);
   await expect(page.locator(".library-grid a.media-card")).toHaveCount(60);
+  // Past the Genre picker to the chips.
+  await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowRight");
   await expect(page.getByRole("button", { name: "Unwatched" })).toBeFocused();
   await page.keyboard.press("Enter");

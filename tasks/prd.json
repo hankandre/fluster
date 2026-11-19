@@ -3843,7 +3843,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "M1 gateway: libraryGenres and genreIds with P16-01 fixtures. M2 route genre param and library toolbar Genre Picker. M3 genre links on film and series facts lines (unit tests green)."
+          "evidence": "Implemented M1 gateway, M2 route and toolbar Genre Picker, M3 facts-line genre links, M4 DESIGN 7.7 and 7.12, mock, e2e journeys, visual scenarios. pnpm check exit 0 (3231 tests); pnpm test:e2e and test:visual pass apart from load-induced timeouts that pass alone. Baselines for new and changed scenarios come from CI (test:visual:accept)."
         },
         {
           "id": "P16-07",

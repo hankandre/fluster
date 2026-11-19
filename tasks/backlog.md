@@ -461,3 +461,5 @@ The triage of every entry added since the 2026-11-15 pass, and the two owner req
 
 - `person-row.tsx`: `PersonDisc` resets its photo state only because `PersonRow` keys it by `imageSrc`; another caller that changes `imageSrc` without a key would keep "loaded" or "failed". Derive the state from `imageSrc` or document the key. S.
 - `docs/specs/P15-03.md` acceptance text and Approach 4 still describe "/10" and initials under the picture; decision log 3 and 4 supersede them. S.
+
+- P16-06 follow-ups: genre links on episodes and the Home hero (owner chose film and series pages only); a cross-library genre page; on TV, Escape on a genre-filtered library opened from a title focuses the nav (the library is a root tab) instead of returning to the title, history Back returns (found while testing e2e/tv/detail.spec.ts); verify on the dogfood server that a restricted user's `/Genres` hides unseen genres and that a library's user-view id equals its folder id (ParentId match).

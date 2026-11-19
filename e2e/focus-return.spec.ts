@@ -80,6 +80,8 @@ async function chooseSortAndFilter(page: Page): Promise<void> {
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Enter");
   await expect(page.getByRole("button", { name: "Sort Newest added first" })).toBeFocused();
+  // Past the Genre picker to the chips.
+  await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press(" ");
   await expect(page.getByRole("button", { name: "Unwatched" })).toHaveAttribute("aria-pressed", "true");
@@ -374,4 +376,18 @@ test("Account: signing out and in again drops what was kept and starts at the de
   await expect(page.getByRole("button", { name: "Unwatched" })).toHaveAttribute("aria-pressed", "false");
   await expect(gridCards(page).first()).toBeVisible();
   expect(libraryRequests).toBeGreaterThan(first);
+});
+
+test("Library: Back from a title returns to the genre-filtered library with the genre and the card focused", async ({ page }) => {
+  await signIn(page);
+  await go(page, "#/next/browse/lib-movies?genre=genre-mystery");
+  await expect(page.getByRole("button", { name: "Genre Mystery" })).toBeVisible();
+  await expect(gridCards(page)).toHaveCount(3);
+  await gridCards(page).first().click();
+  await expect(page).toHaveURL(/#\/next\/item\/m5/);
+  await page.keyboard.press("Escape");
+  await expect(page).toHaveURL(/#\/next\/browse\/lib-movies\?genre=genre-mystery$/);
+  await expect(page.getByRole("button", { name: "Genre Mystery" })).toBeVisible();
+  await expect(gridCards(page)).toHaveCount(3);
+  await expect(gridCards(page).first()).toBeFocused();
 });
