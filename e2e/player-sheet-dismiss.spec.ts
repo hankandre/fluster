@@ -50,3 +50,14 @@ test("desktop: with a sheet open, Pause in the control row pauses and the sheet 
   await page.getByRole("button", { name: "Audio & Subtitles" }).click();
   await expect(page.getByRole("region", { name: "Audio and subtitles" })).toHaveCount(0);
 });
+
+test("desktop: a click on empty space in the control row closes the sheet like the video", async ({ page }) => {
+  await start(page);
+  await page.getByRole("button", { name: "Info" }).click();
+  await expect(page.getByRole("region", { name: "Player information" })).toBeVisible();
+  const box = await page.locator(".player-controls").boundingBox();
+  if (!box) throw new Error("no control row");
+  await page.mouse.click(box.x + 2, box.y + 2);
+  await expect(page.getByRole("region", { name: "Player information" })).toHaveCount(0);
+  expect(await paused(page)).toBe(false);
+});
