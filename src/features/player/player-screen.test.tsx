@@ -994,3 +994,102 @@ describe("errors", () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 });
+
+// DESIGN.md 7.14 (owner, 2026-11-19): on desktop a press outside an open sheet closes it and does nothing else.
+describe("a press outside an open sheet", () => {
+  const sheets = [
+    { button: "Info", region: "Player information" },
+    { button: "Audio & Subtitles", region: "Audio and subtitles" },
+    { button: "Settings", region: "Player settings" },
+  ];
+  const surface = (container: HTMLElement) => container.querySelector(".native-video-surface") as HTMLElement;
+  // A mouse press as the browser sends it: pointerdown, mousedown, mouseup, click.
+  const pressOn = (target: Element, button = 0) => {
+    fireEvent.pointerDown(target, { button });
+    fireEvent.mouseDown(target, { button });
+    fireEvent.mouseUp(target, { button });
+    if (button === 0) fireEvent.click(target, { button });
+  };
+
+  afterEach(() => {
+    delete document.documentElement.dataset.form;
+  });
+
+  it.each(sheets)("closes $button on a press on the video, and nothing else happens", ({ button, region }) => {
+    const { player, onBack, container } = renderView({}, { onSignOut: vi.fn() });
+    pressOn(screen.getByRole("button", { name: button }));
+    expect(screen.getByRole("region", { name: region })).toBeInTheDocument();
+    pressOn(surface(container));
+    expect(screen.queryByRole("region", { name: region })).not.toBeInTheDocument();
+    expect(player.setPaused).not.toHaveBeenCalled();
+    expect(player.seek).not.toHaveBeenCalled();
+    expect(player.setFullscreen).not.toHaveBeenCalled();
+    expect(onBack).not.toHaveBeenCalled();
+    // The chrome stays as it was: a press is not a toggle.
+    expect(container.querySelector(".player-chrome")).toHaveAttribute("data-visible", "true");
+  });
+
+  it("keeps the sheet open for a press inside it", () => {
+    renderView();
+    pressOn(screen.getByRole("button", { name: "Info" }));
+    const sheet = screen.getByRole("region", { name: "Player information" });
+    pressOn(sheet.querySelector("h2") as HTMLElement);
+    pressOn(sheet);
+    expect(screen.getByRole("region", { name: "Player information" })).toBeInTheDocument();
+  });
+
+  it("lets a control in the row act and keeps the sheet open", () => {
+    const { player } = renderView();
+    pressOn(screen.getByRole("button", { name: "Audio & Subtitles" }));
+    pressOn(screen.getByRole("button", { name: "Pause" }));
+    expect(player.setPaused).toHaveBeenCalledWith(true);
+    expect(screen.getByRole("region", { name: "Audio and subtitles" })).toBeInTheDocument();
+    pressOn(screen.getByRole("button", { name: "Forward 10 seconds" }));
+    expect(player.seek).toHaveBeenCalledWith(52);
+    expect(screen.getByRole("region", { name: "Audio and subtitles" })).toBeInTheDocument();
+  });
+
+  it("keeps the sheet's own button a toggle, and another sheet's button switches sheets", () => {
+    renderView();
+    pressOn(screen.getByRole("button", { name: "Info" }));
+    pressOn(screen.getByRole("button", { name: "Audio & Subtitles" }));
+    expect(screen.queryByRole("region", { name: "Player information" })).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Audio and subtitles" })).toBeInTheDocument();
+    pressOn(screen.getByRole("button", { name: "Audio & Subtitles" }));
+    expect(screen.queryByRole("region", { name: "Audio and subtitles" })).not.toBeInTheDocument();
+  });
+
+  it("ignores a secondary press on the video", () => {
+    const { container } = renderView();
+    pressOn(screen.getByRole("button", { name: "Info" }));
+    pressOn(surface(container), 2);
+    expect(screen.getByRole("region", { name: "Player information" })).toBeInTheDocument();
+  });
+
+  it("does nothing on the video when no sheet is open", () => {
+    const { player, onBack, container } = renderView();
+    pressOn(surface(container));
+    expect(player.setPaused).not.toHaveBeenCalled();
+    expect(onBack).not.toHaveBeenCalled();
+  });
+
+  it("leaves the TV form unchanged: a press on the video keeps the sheet open", () => {
+    document.documentElement.dataset.form = "tv";
+    const { container } = renderView();
+    press("i");
+    pressOn(surface(container));
+    expect(screen.getByRole("region", { name: "Player information" })).toBeInTheDocument();
+  });
+
+  it.each(sheets)("Escape closes $button after a mouse opened it, with focus where the click left it", ({ button, region }) => {
+    const { onBack } = renderView({}, { onSignOut: vi.fn() });
+    const opener = screen.getByRole("button", { name: button });
+    opener.focus();
+    pressOn(opener);
+    expect(screen.getByRole("region", { name: region })).toBeInTheDocument();
+    press("Escape");
+    expect(screen.queryByRole("region", { name: region })).not.toBeInTheDocument();
+    expect(onBack).not.toHaveBeenCalled();
+    expect(opener).toHaveFocus();
+  });
+});

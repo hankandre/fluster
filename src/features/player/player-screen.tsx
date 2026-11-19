@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import type { LibraryItem } from "../../domain/catalog";
 import type { MediaTrack, PlayerEngine, PlayMethod } from "../../domain/playback";
 import type { TrackKind } from "../../domain/track-choice";
@@ -25,6 +25,7 @@ import { TransportControls } from "./chrome/transport-controls";
 import { focusChromeControl, useTvChromeFocus } from "./chrome/use-tv-chrome-focus";
 import { useTvForm } from "../shared/use-tv-form";
 import { CHROME_ZONE_ATTRIBUTE, useChromeVisibility } from "./chrome/use-chrome-visibility";
+import { useSheetOutsidePress } from "./chrome/use-sheet-outside-press";
 import { BUFFERING_STATUS_DELAY_MS } from "./chrome/timing";
 import { useDelayedFlag } from "./chrome/use-delayed-flag";
 import { useFullscreen } from "./chrome/use-fullscreen";
@@ -190,6 +191,9 @@ export function PlayerView({
     const active = document.activeElement;
     if (active && region.current?.contains(active) && active !== region.current) region.current.focus();
   }, [tv, visibility.visible]);
+  const outsidePress = useSheetOutsidePress({ region, open: sheet !== undefined, tv, onClose: closeSheet });
+  const chromePointerDown = visibility.sectionProps.onPointerDown;
+  const sectionProps = { ...visibility.sectionProps, onPointerDown: (event: ReactPointerEvent<HTMLElement>) => { chromePointerDown(); outsidePress(event); } };
   const wakeChrome = visibility.wake;
   const wake = useCallback((target: "scrubber" | "play") => {
     wakeChrome();
@@ -253,7 +257,7 @@ export function PlayerView({
 
   if (sessionError) {
     return (
-      <section className="player-page" aria-label="Player" ref={region} tabIndex={tv ? -1 : undefined} data-tv-own-arrows={tv ? "" : undefined} {...visibility.sectionProps}>
+      <section className="player-page" aria-label="Player" ref={region} tabIndex={tv ? -1 : undefined} data-tv-own-arrows={tv ? "" : undefined} {...sectionProps}>
         <NativeVideoSurface player={player} onError={setCommandError} />
         <PlaybackErrorNotice
           item={item}
@@ -271,7 +275,7 @@ export function PlayerView({
   }
 
   return (
-    <section className="player-page" aria-label="Player" ref={region} tabIndex={tv ? -1 : undefined} data-tv-own-arrows={tv ? "" : undefined} {...visibility.sectionProps}>
+    <section className="player-page" aria-label="Player" ref={region} tabIndex={tv ? -1 : undefined} data-tv-own-arrows={tv ? "" : undefined} {...sectionProps}>
       <NativeVideoSurface player={player} onError={setCommandError} />
 
       {!chromeShown && (
