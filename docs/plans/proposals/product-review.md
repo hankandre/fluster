@@ -1116,10 +1116,10 @@ Status: **Answered 2026-11-19.** The owner's answers are below, as relayed by th
 
 | # | Answer | Applied in |
 |---|---|---|
-| S1 | **C.** The five rows of A (Play next episode automatically, Countdown, Intros, Credits, this server's streaming limit), and a last row, "All settings", that stops playback and opens Settings. Languages stay out of the sheet. | P3-32 (four rows and All settings), P3-33 (the limit row) |
+| S1 | **Corrected by the owner, 2026-11-19 (replaces the first answer, C).** Every Settings section is in the player's sheet: Playback, Home, Languages, Subtitles, Account, About & diagnostics, built from the same section components as the Settings page. There is no "All settings" row and nothing that stops playback to open Settings. In the sheet a row's control sits under its label and description, full width (P3-32 OQ2). | P3-32 (the sheet and every section), P3-33 (both streaming limit rows), **P3-34**, added (Languages) |
 | S2 | A: a gear button between Audio & Subtitles and Info, and the `o` key; on TV, the same button. | P3-32 |
 | S3 | B: the sheet stays open with focus on the row, the status disc shows one line, and the row shows the new value when the picture returns. | P3-33 |
-| S4 | Does not apply: languages are not in the sheet (S1 C). | No task |
+| S4 | **Corrected by the owner, 2026-11-19 (it now applies): B.** Changing the audio or subtitle language in the player saves the account setting and switches the playing title to a matching track right away: in mpv when the playing stream carries it, otherwise by a refresh at the same position. With no track in that language nothing changes and the row says so. A track picked by hand in Audio & Subtitles is not undone unless the language is changed again. | **P3-34**, added |
 | R1 | **B (differs from the recommendation).** Five stars with halves, stored 1 to 10. | P16-14; P16-13 now records every value from 1 to 10 |
 | R2 | B: the film's page first, then a prompt when a film ends. Films only. | P16-14 (the page), **P16-17**, added (the prompt) |
 | R3 | B: the view and the Home row. | P16-15, P16-16 |
@@ -1128,13 +1128,21 @@ Status: **Answered 2026-11-19.** The owner's answers are below, as relayed by th
 | E2 | Not asked. Recorded as the default: the full Settings page stays as it is, apart from the one `DESIGN.md` §7.18 sentence P3-32 changes. | P3-32 |
 | E3 | No. No Jellyscale request is filed; Fluster computes the lists itself. | P16-15 |
 
-**What S1 C adds.** "All settings" is the one row in the sheet that ends the session. P3-32 requires it to stop playback the way Back does, so the position is reported and the title still offers Resume, to say in words that it stops playback, and to keep the viewer in the player if the stop fails.
+**The correction, in the owner's words.** "The idea was that you could open up your settings during playback. We would allow you to change settings as you're watching your stream, and if those settings impacted the stream, we would refresh the stream. … you would be able to change settings while streaming and not have to leave your viewing experience to do that." The first answer to S1 (C, with an "All settings" row that stopped playback) was applied in `14803e7` and is replaced: that row, its acceptance item, and its journey are deleted from P3-32.
+
+**What the correction changes.**
+
+- **P3-32** holds every section. Two parts arrive with the task that makes them act on the stream, so that P3-32 itself sends no playback request: the two streaming limit rows with P3-33, and the Languages section with P3-34. Sign out in the sheet ends playback the way Back does before it signs out; the spec shows the owner that flow.
+- **P3-33** shows both limits, as Settings › Playback does. Only the one that applies to this server refreshes the stream.
+- **P3-34, "Change the audio or subtitle language in the player and switch the playing tracks"**, is new. High priority, **high risk** (track selection and Playback Negotiation, invariant I1): Opus, a Fable spec, and a `guardian` review. It waits for P3-33 (the refresh path and the player's sequence), P17-03, P17-08, and P13-29. It is the first place Fluster picks a track by language itself: `ARCHITECTURE.md` §3 and P3-13 say the server derives the starting tracks, and a renegotiation today sends the playing tracks by index, so the server's choice never reaches a playing title. Two things in it go to the owner in the spec: which track plays when several match the language, and what each choice that is not a language ("The file's default", "Original language", "Off", "when the audio is in another language") does to the playing title.
+- **P16-17** (the rating prompt) now waits for P3-34 instead of P3-33, to stay last in the player's sequence.
+- **P4-01** is not changed again: E1 named P3-32 and P3-33. Whether the dogfood week also waits for P3-34 is the owner's call.
 
 **Half stars and Jellyfin's like.** A half star stores 1 and five stars store 10. Jellyfin counts a rating of 6.5 or more as liked (source reading of 2026-11-17, unverified until P16-13). So 3.5 stars, stored as 7, and everything above it reads as liked in other Jellyfin apps, and 3 stars, stored as 6, does not. Fluster's Top rated list starts higher, at 4 stars (stored 8): a film at 3.5 stars is liked elsewhere and is not in Top rated. P16-15 tests that case.
 
 **P16-17, "Ask for a rating when a film ends".** Medium, routine, Sonnet with an Opus spec, last in P16. It waits for P16-14 (the control and the call), P16-05 (what the end of a film shows), and P3-33 (the player's sequence), so it runs after every other new player task. Its spec shows the owner the prompt before implementation.
 
-**Startable after the answers:** P3-32 and P16-13. P3-33 follows P3-32. P16-14 waits for P15-03 and P15-01.
+**Startable after the answers:** P3-32 and P16-13. P3-33 follows P3-32, and P3-34 follows P3-33. P16-14 waits for P15-03 and P15-01.
 
 This is a Fable 5.2 product-review pass under the `AGENTS.md` "Tasks" rule. It was briefed for 2026-11-16 and run on 2026-11-19.
 
@@ -1166,6 +1174,7 @@ Acceptance is in `tasks/prd.json`, which is the source of truth. Priority is thi
 |---|---|---|---|---|---|---|---|
 | P3-32 | Open a Settings sheet in the player for the settings that apply at once | **High** | Routine | P3, after P3-24 | P3-23, P3-24, P13-13, P13-17, P13-22, P13-34 (all done); **S1, S2** | Sonnet; Opus spec; `reviewer` | todo |
 | P3-33 | Change the streaming limit in the player and keep your place | **High** | **High** (playback session and coordinator; invariant I1) | P3, after P3-32 | P3-32; P10-08, P3-30, P17-08 (done); **S1, S3** | Sonnet; Fable spec; `guardian` review | todo |
+| P3-34 | Change the audio or subtitle language in the player and switch the playing tracks (added after the S1 and S4 correction) | **High** | **High** (track selection and Playback Negotiation; invariant I1) | P3, after P3-33 | P3-33, P17-03, P17-08, P13-29 | Opus; Fable spec; `guardian` review | todo |
 | P16-13 | Record personal-rating contract fixtures for 10.11 and 12.x | Medium | Routine | P16, after P16-12 | P0-02, P0-03, P16-01 (all done) | Sonnet | todo |
 | P16-14 | Rate a film on its page | Medium | Routine | P16 | P16-13, P15-03, P15-01; **R1, R2** | Sonnet; Opus spec; `reviewer` | todo |
 | P16-15 | List your top-rated films | Medium | Routine | P16 | P16-14, P15-01; **R3, R4** | Sonnet; Opus spec; `reviewer` | todo |
@@ -1183,7 +1192,7 @@ Why these priorities:
 
 Tasks that touch the same screen, store, player, or routes run in sequence. `depends_on` carries the order wherever one task builds on another:
 
-- **The player:** P3-32, then P3-33, then the rating prompt at the end of a film (P16-17, added after R2). Languages in the sheet are not built (S1 C).
+- **The player:** P3-32, then P3-33, then languages in the sheet (P3-34, added after the correction), then the rating prompt at the end of a film (P16-17, added after R2).
 - **A title's page:** P15-03 (in flight), then P15-01, then P16-14.
 - **The Top rated list and Home:** P16-14, then P16-15, then P16-16, which also waits for the Favorites row (P15-09) because both take a place in Home's fixed order.
 
@@ -1263,7 +1272,7 @@ Every entry added since `76b816b`. "Stays" means the entry is left where it is, 
 
 | Entry | Verdict | Why |
 |---|---|---|
-| Settings in the player (owner, 2026-11-16) | **P3-32, P3-33** | The owner's priority; the refresh path already exists. Languages in the sheet wait for S1 and S4 and have no task. |
+| Settings in the player (owner, 2026-11-16) | **P3-32, P3-33** | The owner's priority; the refresh path already exists. Languages in the sheet are P3-34, added after the owner's correction. |
 | Personal ratings and top-rated lists (owner, 2026-11-17) | **P16-13 to P16-16** | The owner's request. The Jellyscale request in it stays open (E3). |
 | #174 lows: `player-sheet.tsx:47`, `info-sheet.tsx:89`, the focus test | **P3-32** | P3-32 adds a fourth sheet with rows of controls, which is exactly where a scrolling focus shows. |
 | Clip fix: `player-sheet.tsx:58` returns focus without `preventScroll` | **P3-32** | The same path. |
@@ -1295,7 +1304,7 @@ Every entry added since `76b816b`. "Stays" means the entry is left where it is, 
 
 No invariant changes. These are the ones the new tasks must hold, and each is an acceptance item:
 
-- **I1** (never convert what can direct play; show every conversion): P3-33. Raising the limit returns to the original file, lowering it shows the indicator and reason, and the tripwire passes unchanged.
+- **I1** (never convert what can direct play; show every conversion): P3-34 (a language change never converts a file that carries the track; the tripwire gains a case) and P3-33. Raising the limit returns to the original file, lowering it shows the indicator and reason, and the tripwire passes unchanged.
 - **I2** (only two URL shapes): P3-33 adds no URL builder; the refreshed session's `TranscodingUrl` is validated and rebuilt as now.
 - **I3** (fixed command list): P3-32 and P3-33 add no Tauri command. Option C of S3 might need one, which is why it is not the recommendation.
 - **I4** (no tokens in logs, errors, or URLs): P3-33's OSD and status lines; P16-13's fixtures.
@@ -1311,7 +1320,7 @@ No invariant changes. These are the ones the new tasks must hold, and each is an
 ### What this pass did not do
 
 - It edited one existing task, with the owner's approval: P4-01's `depends_on` (E1). No acceptance item of an existing task is touched.
-- It did not create a task for languages in the player's sheet. The owner's answer to S1 keeps them out.
+- It first left languages out of the player's sheet (the first answer to S1). The owner's correction puts them in: P3-34.
 - It filed nothing in jellyscale's tracker. The owner's answer to E3 is no.
 - It did not change `DESIGN.md`, `ARCHITECTURE.md`, or `PRODUCT.md`. Each task changes the document it affects.
 - It ran no server, app, or competing client.
