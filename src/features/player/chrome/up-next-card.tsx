@@ -59,7 +59,7 @@ export function UpNextCard({ next, stillSrc, secondsLeft, totalSeconds, paused, 
       <span className="visually-hidden" role="status">{announced}</span>
       <div className="up-next-actions">
         <Button variant="primary" icon={<Play aria-hidden="true" />} onClick={onPlayNow}>
-          {counting ? <span className="up-next-fill" aria-hidden="true" /> : null}
+          {counting ? <span key={totalSeconds} className="up-next-fill" aria-hidden="true" /> : null}
           Play now
         </Button>
         <Button variant="quiet" onClick={onHide}>Hide</Button>

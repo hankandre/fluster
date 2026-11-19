@@ -1,7 +1,8 @@
 import { useSyncExternalStore } from "react";
 import { usePreferences } from "../../app/preferences";
 import type { ContinueWindow } from "../../domain/up-next";
-import { Picker, SettingsRow, SettingsSection, useSettingsRow, useToast, type PickerOption } from "../shared/ui";
+import { useSettingsHost } from "./settings-host";
+import { Picker, SettingsRow, SettingsSection, useSettingsRow, type PickerOption } from "../shared/ui";
 
 const OPTIONS: PickerOption[] = [
   { value: "7", label: "7 days" },
@@ -16,13 +17,13 @@ function isWindow(value: string): value is ContinueWindow {
 
 export function HomeSection() {
   const { continueWindow } = usePreferences();
-  const toast = useToast();
+  const host = useSettingsHost();
   const value = useSyncExternalStore(continueWindow.subscribe, continueWindow.get);
 
   function change(raw: string) {
     if (!isWindow(raw) || raw === value) return;
     continueWindow.set(raw);
-    toast.show({ tone: "ok", message: raw === "all" ? "Continue watching keeps everything." : `Continue watching keeps ${raw} days.` });
+    host.confirm(raw === "all" ? "Continue watching keeps everything." : `Continue watching keeps ${raw} days.`);
   }
 
   return (

@@ -3,7 +3,9 @@ import { usePreferences } from "../../app/preferences";
 import { COUNTDOWN_CHOICES_SECONDS } from "../../lib/preference-store";
 import { isLimitChoice, STREAMING_LIMIT_CHOICES_MBPS, type StreamingLimits } from "../../lib/streaming-limits";
 import { SkipRows } from "./skip-rows";
-import { Picker, SettingsRow, SettingsSection, Switch, useSettingsRow, useToast, type PickerOption } from "../shared/ui";
+import { useSettingsHost } from "./settings-host";
+import { STAGED_FOR_LATER } from "./staged-for-later";
+import { Picker, SettingsRow, SettingsSection, Switch, useSettingsRow, type PickerOption } from "../shared/ui";
 
 const NO_LIMIT = "none";
 
@@ -21,7 +23,8 @@ const FIELD_NAME: Record<Field, string> = { localMbps: "Local network", remoteMb
 export function PlaybackSection() {
   const { streamingLimits, autoPlay } = usePreferences();
   const autoPlayValue = useSyncExternalStore(autoPlay.subscribe, autoPlay.get);
-  const toast = useToast();
+  const host = useSettingsHost();
+  const showLimits = host.place === "page" || !STAGED_FOR_LATER.playbackLimitRows;
   const [limits, setLimits] = useState<StreamingLimits>(() => streamingLimits.get());
 
   function change(field: Field, raw: string) {
@@ -32,32 +35,36 @@ export function PlaybackSection() {
     setLimits(next);
     streamingLimits.set(next);
     const name = FIELD_NAME[field];
-    toast.show({ tone: "ok", message: choice === undefined ? `${name} limit removed.` : `${name} limit set to ${choice} Mbps.` });
+    host.confirm(choice === undefined ? `${name} limit removed.` : `${name} limit set to ${choice} Mbps.`);
   }
 
   function toggleAutoPlay(enabled: boolean) {
     autoPlay.set({ ...autoPlayValue, enabled });
-    toast.show({ tone: "ok", message: enabled ? "Next episodes play automatically." : "Next episodes won't play automatically." });
+    host.confirm(enabled ? "Next episodes play automatically." : "Next episodes won't play automatically.");
   }
 
   function changeCountdown(raw: string) {
     const seconds = COUNTDOWN_CHOICES_SECONDS.find((choice) => String(choice) === raw);
     if (seconds === undefined || seconds === autoPlayValue.countdownSeconds) return;
     autoPlay.set({ ...autoPlayValue, countdownSeconds: seconds });
-    toast.show({ tone: "ok", message: `Countdown set to ${seconds} seconds.` });
+    host.confirm(`Countdown set to ${seconds} seconds.`);
   }
 
   return (
     <SettingsSection
       title="Playback"
-      intro="Fluster plays the original file. If a file is above your limit, the server converts it to fit. Both limits start as No limit and apply the next time you press Play."
+      intro={showLimits ? "Fluster plays the original file. If a file is above your limit, the server converts it to fit. Both limits start as No limit and apply the next time you press Play." : undefined}
     >
-      <SettingsRow label="Local network" description="Servers on this computer or your home network.">
-        <LimitPicker label="Local network maximum bitrate" value={limits.localMbps} onChange={(raw) => change("localMbps", raw)} />
-      </SettingsRow>
-      <SettingsRow label="Remote" description="Servers on the internet.">
-        <LimitPicker label="Remote maximum bitrate" value={limits.remoteMbps} onChange={(raw) => change("remoteMbps", raw)} />
-      </SettingsRow>
+      {showLimits ? (
+        <SettingsRow label="Local network" description="Servers on this computer or your home network.">
+          <LimitPicker label="Local network maximum bitrate" value={limits.localMbps} onChange={(raw) => change("localMbps", raw)} />
+        </SettingsRow>
+      ) : null}
+      {showLimits ? (
+        <SettingsRow label="Remote" description="Servers on the internet.">
+          <LimitPicker label="Remote maximum bitrate" value={limits.remoteMbps} onChange={(raw) => change("remoteMbps", raw)} />
+        </SettingsRow>
+      ) : null}
       <SettingsRow label="Play next episode automatically" description="At the end of an episode, play the next one after a countdown.">
         <AutoPlaySwitch checked={autoPlayValue.enabled} onChange={toggleAutoPlay} />
       </SettingsRow>

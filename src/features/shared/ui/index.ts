@@ -24,7 +24,7 @@ export { ProgressRing } from "./progress-ring";
 export { SettingsPage, SettingsRow, SettingsSection, useSettingsRow, type SettingsSectionItem } from "./settings";
 export { Skeleton } from "./skeleton";
 export { TextField, type TextFieldType } from "./text-field";
-export { ToastProvider, useToast, type ToastInput, type ToastTone } from "./toast";
+export { ToastProvider, useOptionalToast, useToast, type ToastInput, type ToastTone } from "./toast";
 export { Switch } from "./switch";
 export { ToggleButton } from "./toggle-button";
 export { ToggleChip } from "./toggle-chip";

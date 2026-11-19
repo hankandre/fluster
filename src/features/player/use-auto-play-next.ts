@@ -51,6 +51,8 @@ export interface AutoPlayCountdown {
   shown: boolean;
   // Undefined while the card is hidden, and always with auto-play off.
   secondsLeft: number | undefined;
+  // The length the running countdown started with; undefined when none runs.
+  totalSeconds: number | undefined;
   // True after Hide: no card and no advance for the rest of the session.
   dismissed: boolean;
   playNow(): void;
@@ -65,7 +67,7 @@ export function useAutoPlayCountdown({ next, snapshot, outroStartSeconds, autoPl
   snapshot: PlaybackSnapshot | undefined;
   // Where the credits start, from the Outro media segment, when there is one.
   outroStartSeconds?: number;
-  // The viewer's choice, fixed for the session. Off: the card shows, nothing counts or advances.
+  // The viewer's choice, live: a change applies at once (DESIGN.md 7.15). Off: the card shows, nothing counts or advances.
   autoPlay: AutoPlayPreference;
   // Any playback error or refusal: no card and no advance, so the viewer can
   // read the error and choose Retry or Back.
@@ -74,7 +76,7 @@ export function useAutoPlayCountdown({ next, snapshot, outroStartSeconds, autoPl
   advance(next: NextEpisode): void;
   stopAndLeave(destination: () => void): Promise<boolean>;
 }): AutoPlayCountdown {
-  const [state, dispatch] = useReducer(autoPlayReducer, { secondsLeft: undefined, dismissed: false } satisfies AutoPlayState);
+  const [state, dispatch] = useReducer(autoPlayReducer, { secondsLeft: undefined, totalSeconds: undefined, dismissed: false } satisfies AutoPlayState);
   const leaving = useRef(false);
   const position = snapshot?.positionSeconds ?? 0;
   const duration = snapshot?.durationSeconds;
@@ -120,5 +122,5 @@ export function useAutoPlayCountdown({ next, snapshot, outroStartSeconds, autoPl
     return () => window.clearTimeout(timer);
   }, [secondsLeft, paused, playNow]);
 
-  return { shown, secondsLeft, dismissed: state.dismissed, playNow, hide };
+  return { shown, secondsLeft, totalSeconds: secondsLeft === undefined ? undefined : state.totalSeconds, dismissed: state.dismissed, playNow, hide };
 }

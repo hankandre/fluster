@@ -36,8 +36,15 @@ function useSkipModes() {
   return useSyncExternalStore(store?.subscribe ?? NO_SUBSCRIPTION, store?.get ?? defaultSkipModes);
 }
 
+// The viewer's auto-play choice; the defaults when no preferences are provided.
+function useAutoPlay() {
+  const store = useOptionalPreferences()?.autoPlay;
+  return useSyncExternalStore(store?.subscribe ?? NO_SUBSCRIPTION, store?.get ?? defaultAutoPlay);
+}
+
 const NO_SUBSCRIPTION = () => () => undefined;
 const defaultSkipModes = () => DEFAULT_SKIP_MODES;
+const defaultAutoPlay = () => DEFAULT_AUTO_PLAY;
 
 // The play route: loads the item, then plays it. Leaving returns to the
 // item's detail view (see leavePlayer).
@@ -133,8 +140,8 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
   const preferences = useOptionalPreferences();
   // Fixed for the whole session: a refetch of the detail must not restart playback.
   const [item] = useState(() => toPlayableItem(detail));
-  // Read once per session, like the item: a change cannot restart or cancel a running countdown.
-  const [autoPlay] = useState(() => preferences?.autoPlay.get() ?? DEFAULT_AUTO_PLAY);
+  // Live: a change in the Settings sheet applies at once (DESIGN.md 7.15).
+  const autoPlay = useAutoPlay();
 
   const seekProps = useSeekPreview(gateway, detail, route.mediaSourceId);
   const next = useNextEpisode(gateway, detail);
@@ -262,7 +269,7 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
             next={next}
             stillSrc={next.image ? imageUrlFor(gateway)(next.image, WIDE_IMAGE_WIDTH) : undefined}
             secondsLeft={upNext.secondsLeft}
-            totalSeconds={autoPlay.enabled ? autoPlay.countdownSeconds : undefined}
+            totalSeconds={autoPlay.enabled ? upNext.totalSeconds : undefined}
             paused={playback.state.snapshot?.paused ?? false}
             onPlayNow={upNext.playNow}
             onHide={upNext.hide}

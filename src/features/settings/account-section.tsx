@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import { useSession } from "../../app/session";
-import { Button, SettingsRow, SettingsSection, Skeleton, useSettingsRow, useToast } from "../shared/ui";
+import { Button, SettingsRow, SettingsSection, Skeleton, useSettingsRow, useOptionalToast } from "../shared/ui";
 import { useServerInfo } from "./use-server-info";
 import { SIGN_IN_ROUTE } from "../routes";
+import { useSettingsHost } from "./settings-host";
 
 // Without a signed-in gateway there is nothing to show; Playback still works.
 export function AccountSection() {
@@ -13,13 +14,14 @@ export function AccountSection() {
 
 function SignedInAccount() {
   const session = useSession();
-  const toast = useToast();
+  const toast = useOptionalToast();
+  const host = useSettingsHost();
   const gateway = session.gateway!;
   const server = useServerInfo(gateway);
 
   async function signOut() {
     window.location.hash = SIGN_IN_ROUTE;
-    toast.show({ message: "Signed out", tone: "ok" });
+    toast?.show({ message: "Signed out", tone: "ok" });
     await session.signOut();
   }
 
@@ -33,7 +35,7 @@ function SignedInAccount() {
       <SettingsRow label="User" value={gateway.currentUserName() ?? "Unknown"} />
       <SettingsRow label="Stay signed in" unavailable="P3-02" />
       <SettingsRow label="Sign out" description="You'll need to sign in again to use this server.">
-        <SignOutButton onSignOut={() => void signOut()} />
+        <SignOutButton onSignOut={() => (host.signOut ? host.signOut() : void signOut())} />
       </SettingsRow>
     </SettingsSection>
   );
