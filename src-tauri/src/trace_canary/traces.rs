@@ -5,7 +5,7 @@ use super::code_view::code_view;
 use std::ops::Range;
 
 /// Calls whose text reaches stdout or stderr.
-const TRACE_CALLS: [&str; 8] = [
+const TRACE_CALLS: [&str; 9] = [
     "eprintln!",
     "eprint!",
     "println!",
@@ -14,11 +14,17 @@ const TRACE_CALLS: [&str; 8] = [
     "native_trace",
     "realtime_trace",
     "media_trace",
+    "write_trace",
 ];
 
 /// The sanctioned trace helpers; they forward their message by design and
 /// their callers are scanned instead.
-const TRACE_SINKS: [&str; 3] = ["native_trace", "realtime_trace", "media_trace"];
+const TRACE_SINKS: [&str; 4] = [
+    "native_trace",
+    "realtime_trace",
+    "media_trace",
+    "write_trace",
+];
 
 /// A module declared under `#[cfg(test)]`, with its inline body if it has one.
 pub(super) struct CfgTestModule {

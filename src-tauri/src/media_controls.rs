@@ -326,7 +326,7 @@ pub(crate) struct MediaControls {
 
 impl MediaControls {
     pub(crate) fn publish(&self, update: MediaUpdate) {
-        let mut updates = self.updates.lock().expect("media controls mutex poisoned");
+        let mut updates = crate::lock::lock(&self.updates);
         if let Some(sender) = updates.as_ref() {
             if sender.send(update).is_err() {
                 // The service thread is gone; stop sending.
@@ -364,14 +364,11 @@ pub(crate) fn start(app: &AppHandle, controller: MpvController) -> MediaControls
     }
 }
 
-// Constant messages only: the argument type keeps ids and URLs out.
-#[cfg(debug_assertions)]
+// Constant messages only: the argument type keeps ids and URLs out. Never
+// panics: see `crate::trace`.
 fn media_trace(message: &'static str) {
-    eprintln!("[fluster media] {message}");
+    crate::trace::write_trace("[fluster media]", message);
 }
-
-#[cfg(not(debug_assertions))]
-fn media_trace(_message: &'static str) {}
 
 #[cfg(test)]
 mod tests;

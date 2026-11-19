@@ -4,6 +4,7 @@
 
 use super::media::LaunchMedia;
 use super::MpvError;
+use crate::lock::lock;
 use crate::model::{Delivery, LaunchRequest};
 use crate::redaction::safe_error;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -25,7 +26,7 @@ impl PendingSlot {
     /// Claims the slot, or refuses when another launch is pending. Callers
     /// hold the session lock and have checked that no session exists.
     pub(super) fn begin(&self) -> Result<PendingLaunch<'_>, MpvError> {
-        let mut slot = self.0.lock().expect("pending launch mutex poisoned");
+        let mut slot = lock(&self.0);
         if slot.is_some() {
             return Err(MpvError::AlreadyPlaying);
         }
@@ -36,7 +37,7 @@ impl PendingSlot {
 
     /// Cancels the pending launch, if any. True when there was one.
     pub(super) fn cancel(&self) -> bool {
-        let slot = self.0.lock().expect("pending launch mutex poisoned");
+        let slot = lock(&self.0);
         if let Some(cancel) = slot.as_ref() {
             cancel.store(true, Ordering::Release);
             return true;
@@ -115,7 +116,7 @@ impl PendingLaunch<'_> {
 
 impl Drop for PendingLaunch<'_> {
     fn drop(&mut self) {
-        let mut slot = self.slot.0.lock().expect("pending launch mutex poisoned");
+        let mut slot = lock(&self.slot.0);
         if slot
             .as_ref()
             .is_some_and(|current| Arc::ptr_eq(current, &self.cancel))

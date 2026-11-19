@@ -1,8 +1,10 @@
 mod auth_header;
+mod close_guard;
 #[cfg(test)]
 mod command_allowlist;
 mod commands;
 mod discovery;
+mod lock;
 #[cfg(test)]
 mod logger_guard;
 mod media_controls;
@@ -11,10 +13,12 @@ mod player;
 mod realtime;
 mod redaction;
 mod surface;
+mod trace;
 #[cfg(test)]
 mod trace_canary;
 mod url_policy;
 
+use close_guard::CloseGuard;
 use commands::{
     discover_servers, initialize_player, launch_playback, realtime_connect, realtime_disconnect,
     seek_absolute, select_track, set_fullscreen, set_muted, set_paused, set_player_surface,
@@ -22,6 +26,7 @@ use commands::{
 };
 use player::MpvController;
 use realtime::RealtimeManager;
+use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -34,6 +39,8 @@ pub fn run() {
     }
     let controller = MpvController::default();
     let renderer_controller = controller.clone();
+    let close_controller = controller.clone();
+    let close_guard = CloseGuard::default();
     tauri::Builder::default()
         .manage(controller)
         .manage(RealtimeManager::default())
@@ -44,6 +51,11 @@ pub fn run() {
                 renderer_controller.clone(),
             ));
             Ok(())
+        })
+        .on_window_event(move |window, event| {
+            if let tauri::WindowEvent::CloseRequested { .. } = event {
+                close_guard.arm(window.app_handle().clone(), close_controller.clone());
+            }
         })
         .invoke_handler(tauri::generate_handler![
             initialize_player,
