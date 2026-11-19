@@ -12,8 +12,15 @@ export function watchNativeWindowClose(beforeClose: () => Promise<void>): () => 
       closing = true;
       try {
         await beforeClose();
-      } finally {
+      } catch {
+        // A failed stop must not keep the window open.
+      }
+      try {
         await appWindow.destroy();
+      } catch {
+        // Let a later close try again; Rust exits on its own close deadline
+        // (src-tauri/src/close_guard.rs) if none succeeds.
+        closing = false;
       }
     });
     if (cancelled) unlisten();

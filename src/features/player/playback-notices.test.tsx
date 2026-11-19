@@ -86,6 +86,15 @@ describe("playback notices", () => {
     expect(screen.getByRole("button", { name: "Retry" })).toBeDisabled();
   });
 
+  it("a failed stop shows the stop copy, never the native message", () => {
+    const raw = "The player stop task did not finish.";
+    const { container } = render(<PlaybackErrorNotice item={item} serverName="Hearth" stage="stop" message={raw} retryLabel="Retry" onRetry={vi.fn()} onBack={vi.fn()} />);
+    expect(screen.getByRole("heading", { level: 1, name: "Couldn't stop playback" })).toBeInTheDocument();
+    expect(screen.getByText("The player didn't close properly. Go back to try again, or quit Fluster if you can still hear it.")).toBeInTheDocument();
+    expect(container).not.toHaveTextContent(raw);
+    expect(container).not.toHaveTextContent("Playback could not start");
+  });
+
   it.each([
     ["network", "Couldn't reach Hearth. Check that the server is on, then try again."],
     ["server", "Hearth had a problem starting playback. Try again in a moment."],

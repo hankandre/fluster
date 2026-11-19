@@ -32,6 +32,15 @@ describe("playbackSessionReducer", () => {
     expect(state.snapshot?.diagnostics).toEqual(snapshot.diagnostics);
   });
 
+  it("marks a failed stop, and a later player error clears the mark", () => {
+    let state = playbackSessionReducer(initialPlaybackSessionState, { type: "failure", message: "The player did not stop.", stage: "stop" });
+    expect(state).toMatchObject({ error: "The player did not stop.", errorStage: "stop" });
+    state = playbackSessionReducer(state, { type: "event", event: { kind: "error", message: "decode failed" } });
+    expect(state.errorStage).toBeUndefined();
+    state = playbackSessionReducer(state, { type: "failure", message: "x", kind: "network" });
+    expect(state.errorStage).toBeUndefined();
+  });
+
   it("does not discard diagnostics when a first-frame event arrives after state", () => {
     let state = playbackSessionReducer(initialPlaybackSessionState, {
       type: "event",

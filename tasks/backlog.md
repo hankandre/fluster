@@ -500,3 +500,11 @@ The triage of every entry added since the 2026-11-15 pass, and the two owner req
 ## Scrub preview (#211)
 
 - `scrubber.tsx`: Alt-Tab away and back after a pointer seek shows the preview at the playhead, because blur clears the pointer flag and focus returns without a pointer press. S.
+## Stop panic incident follow-up (2026-11-19, fix/stop-playback-panic)
+
+- Owner decision: `src-tauri/capabilities/default.json` grants only `core:default`, which lacks `core:window:allow-destroy`, so `appWindow.destroy()` in `src/app/window-close.ts` is denied and a close during playback never completes from the frontend. Until the owner approves the permission (or another close path), Rust's close deadline (`src-tauri/src/close_guard.rs`, 25 s) is what exits. M.
+- Owner decision: the copy for a failed stop ("Couldn't stop playback" / "The player didn't close properly. Go back to try again, or quit Fluster if you can still hear it.") is proposed, not yet in DESIGN.md §10; Retry on that notice relaunches playback, which may be the wrong action for a failed stop. S.
+- The owner's thread snapshot shows mpv's built-in Lua scripts running (`lua/stats`, `lua/console`, `lua/select`, `lua/positioning`, `lua/commands`, `lua/context_men…`). The native-player skill says scripts stay disabled; `config=no` does not turn them off. Set `load-scripts=no` (and check `load-stats-overlay`, `load-console`, and the other `load-*` options) with a test. S.
+- A failed stop after a natural end still shows "Playback could not start" (the coordinator's error event has no stop stage). S.
+- `launch_playback` maps a panicked launch to "The player launch task did not finish." without cleaning up a session it may have installed. S.
+- `e2e/tv/settings-languages.spec.ts:8` is flaky on main (1 of 3 fails with --repeat-each 3 on 6458d46): Audio language trigger not focused after ArrowRight. S.

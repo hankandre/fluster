@@ -91,6 +91,11 @@ export function failureAction(error: unknown): PlaybackSessionAction {
   return { type: "failure", message: kind ? "Jellyfin request failed." : errorReason(error, "Something went wrong."), kind };
 }
 
+// A failed stop keeps no native text: the view shows the stop copy for it.
+export function stopFailureAction(): PlaybackSessionAction {
+  return { type: "failure", message: "The player did not stop.", stage: "stop" };
+}
+
 interface ActiveSession {
   coordinator: PlaybackCoordinator;
   // Set once start() runs. A session that never started has nothing to stop.
@@ -411,7 +416,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     const stop = stopSession(engine, active);
     try {
       await stop;
-    } catch (error) {
+    } catch {
       // Every press waiting on this stop failed with it and the viewer stays
       // on the player, so none of their destinations survives. The next press
       // starts a fresh stop with its own destination.
@@ -420,7 +425,7 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
         active.stopping = false;
         active.destination = undefined;
         active.destinationFinal = false;
-        dispatch(failureAction(error));
+        dispatch(stopFailureAction());
       }
       return false;
     }

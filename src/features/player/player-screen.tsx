@@ -264,6 +264,7 @@ export function PlayerView({
           backdrop={backdrop}
           message={sessionError}
           kind={session.errorKind}
+          stage={session.errorStage}
           serverName={serverName}
           retryLabel={retryLabel}
           retrying={retrying}
