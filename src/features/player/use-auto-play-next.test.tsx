@@ -148,16 +148,16 @@ it("turning auto-play off while counting stops the countdown and keeps the card,
 it("changing the Countdown while counting restarts at the new length", () => {
   const { result, rerender } = liveSetup({ enabled: true, countdownSeconds: 10 });
   tickSeconds(4);
-  rerender({ enabled: true, countdownSeconds: 20 });
-  expect(result.current.secondsLeft).toBe(20);
-  expect(result.current.totalSeconds).toBe(20);
+  rerender({ enabled: true, countdownSeconds: 15 });
+  expect(result.current.secondsLeft).toBe(15);
+  expect(result.current.totalSeconds).toBe(15);
 });
 
 it("Hide ends every countdown for the session, whatever changes after", () => {
   const { result, rerender } = liveSetup({ enabled: true, countdownSeconds: 10 });
   act(() => result.current.hide());
   rerender({ enabled: false, countdownSeconds: 10 });
-  rerender({ enabled: true, countdownSeconds: 30 });
+  rerender({ enabled: true, countdownSeconds: 15 });
   expect(result.current.shown).toBe(false);
   expect(result.current.secondsLeft).toBeUndefined();
 });

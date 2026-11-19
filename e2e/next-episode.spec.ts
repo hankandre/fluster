@@ -202,6 +202,41 @@ test("Hide keeps playing, never advances, and the end returns to the series", as
   expect(log.playbackInfo.map((entry) => entry.itemId)).toEqual(["ep-1"]);
 });
 
+test("(a) the keyboard opens the Settings sheet, turns auto-play off, and the end of the file opens the series with no advance", async ({ page }) => {
+  test.setTimeout(45_000);
+  const log = await mockServer(page);
+  await playFirstEpisode(page);
+  await expect(page.getByLabel("Up next").getByRole("status")).toContainText(/playing in 10 seconds/i);
+
+  await page.keyboard.press("o");
+  const sheet = page.getByRole("region", { name: "Player settings" });
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByRole("button", { name: "Playback" })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(sheet.getByRole("heading", { level: 2, name: "Playback" })).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(sheet.getByRole("switch", { name: "Play next episode automatically" })).toBeFocused();
+  await page.keyboard.press("Space");
+  await expect(page.getByText("Next episodes won't play automatically.")).toBeVisible();
+  expect(await page.evaluate(() => JSON.parse(window.localStorage.getItem("fluster.preferences") ?? "{}").autoPlay)).toMatchObject({ enabled: false });
+
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Escape");
+  await expect(sheet).toBeHidden();
+  const card = page.getByLabel("Up next");
+  await expect(card).toBeVisible();
+  await expect(card).not.toContainText(/playing in/i);
+
+  // Past the old countdown: nothing stops and nothing advances.
+  await page.waitForTimeout(12_000);
+  await expect(page).toHaveURL(/#\/next\/play\/ep-1$/);
+  expect(log.stopped).toHaveLength(0);
+
+  await page.locator("video").dispatchEvent("ended");
+  await expect(page).toHaveURL(/#\/next\/series\/series-1$/);
+  expect(log.playbackInfo.map((entry) => entry.itemId)).toEqual(["ep-1"]);
+});
+
 test("n plays the next episode with a fresh play session", async ({ page }) => {
   const log = await mockServer(page);
   await playFirstEpisode(page);

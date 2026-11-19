@@ -61,7 +61,7 @@ export interface ServerLog {
   playbackInfo: Array<Record<string, unknown>>;
   playbackInfoQueries: URLSearchParams[];
   reports: Array<{ path: string; body: Record<string, unknown> }>;
-  // PlaybackInfo, playstate, and ActiveEncodings requests in arrival order.
+  // PlaybackInfo, playstate, ActiveEncodings, and Logout requests in arrival order.
   sequence: string[];
   segmentRequests: Array<{ search: string; authorization: string | undefined }>;
   requestUrls: string[];
@@ -161,6 +161,9 @@ export async function mockPlayerServer(page: Page, options: ServerOptions = {}):
           ...(options.chapters ? { Chapters: options.chapters } : {}),
           UserData: { Played: false, IsFavorite: false, PlaybackPositionTicks: options.resumeTicks ?? 0 },
         });
+      case "/Sessions/Logout":
+        log.sequence.push("POST /Sessions/Logout");
+        return route.fulfill({ status: 204, headers: cors });
       case "/Videos/ActiveEncodings":
         log.sequence.push(`DELETE ActiveEncodings ${url.searchParams.get("playSessionId")}`);
         return route.fulfill({ status: 204, headers: cors });
@@ -211,4 +214,56 @@ export async function openArrival(page: Page) {
   await expect(page.getByRole("heading", { name: "Home" })).toBeVisible({ timeout: 8_000 });
   await page.getByRole("link", { name: "Arrival, 2016" }).click();
   await expect(page).toHaveURL(/#\/next\/item\/movie-1$/);
+}
+
+// Intro 10-70 s and credits 100-119 s, for the skip journeys.
+export const introAndOutro = [
+  { Id: "seg-1", Type: "Intro", StartTicks: 100_000_000, EndTicks: 700_000_000 },
+  { Id: "seg-2", Type: "Outro", StartTicks: 1_000_000_000, EndTicks: 1_190_000_000 },
+];
+
+// Moves the stubbed media element to `seconds` and reports the new position.
+export async function moveTo(page: Page, seconds: number) {
+  await page.locator("video").evaluate((video: HTMLVideoElement, position) => {
+    video.currentTime = position;
+    video.dispatchEvent(new Event("timeupdate"));
+  }, seconds);
+}
+
+export const currentTime = (page: Page) => page.locator("video").evaluate((video: HTMLVideoElement) => video.currentTime);
+
+// trackPaused makes the file-less <video> remember pause and play, as keyboard.spec.ts does.
+export async function startArrival(page: Page, trackPaused = false, serverOptions: Parameters<typeof mockPlayerServer>[1] = {}) {
+  await mockPlayerServer(page, serverOptions);
+  if (trackPaused) {
+    await page.addInitScript(() => {
+      const paused = new WeakMap<HTMLMediaElement, boolean>();
+      Object.defineProperty(HTMLMediaElement.prototype, "paused", {
+        configurable: true,
+        get(this: HTMLMediaElement) {
+          return paused.get(this) ?? true;
+        },
+      });
+      HTMLMediaElement.prototype.play = function play() {
+        paused.set(this, false);
+        queueMicrotask(() => {
+          this.dispatchEvent(new Event("loadedmetadata"));
+          this.dispatchEvent(new Event("play"));
+          this.dispatchEvent(new Event("playing"));
+        });
+        return Promise.resolve();
+      };
+      HTMLMediaElement.prototype.pause = function pause() {
+        paused.set(this, true);
+        this.dispatchEvent(new Event("pause"));
+      };
+      // The empty stream body cannot decode; keep that error from the engine.
+      window.addEventListener("error", (event) => {
+        if (event.target instanceof HTMLMediaElement) event.stopImmediatePropagation();
+      }, true);
+    });
+  }
+  await openArrival(page);
+  await page.getByRole("link", { name: "Play" }).click();
+  await expect(page.locator("video")).toHaveCount(1);
 }

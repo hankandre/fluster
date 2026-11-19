@@ -48,3 +48,15 @@ export async function play(page: Page, itemHash: string, frame = "frame"): Promi
   await page.mouse.move(720, 460);
   await page.waitForTimeout(300);
 }
+
+// Waits for the player's buffering status to clear, so a capture never catches the centred disc and ring. The
+// harness's <video> has no media and reports no data forever, so the element is told it has enough, as a real
+// stream would once it plays.
+export async function waitForPlayerSettled(page: Page): Promise<void> {
+  await page.locator("video").evaluate((video) => {
+    Object.defineProperty(video, "readyState", { configurable: true, get: () => HTMLMediaElement.HAVE_ENOUGH_DATA });
+    for (const name of ["canplay", "playing", "timeupdate"]) video.dispatchEvent(new Event(name));
+  });
+  await page.getByRole("status", { name: "Player status" }).waitFor({ state: "attached" });
+  await page.waitForFunction(() => !document.querySelector('[role="status"][aria-label="Player status"] .player-status'), undefined, { timeout: 10_000 });
+}
