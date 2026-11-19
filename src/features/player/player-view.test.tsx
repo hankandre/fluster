@@ -257,6 +257,30 @@ describe("Player feature", () => {
     await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
   });
 
+  it("a Retry whose stop fails shows the failed-stop copy with one way out, and Back to details stops again", async () => {
+    const gateway = fakeGateway();
+    const engine = new FakePlayerEngine();
+    engine.launch.mockRejectedValueOnce(new Error("The video surface is not ready."));
+    await renderPlayer(gateway, engine);
+    expect(await screen.findByRole("button", { name: "Retry" })).toBeEnabled();
+    engine.stop.mockRejectedValueOnce("The player stop task did not finish.");
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    });
+
+    expect(await screen.findByRole("heading", { name: "Couldn't stop playback" })).toBeInTheDocument();
+    expect(screen.queryByText(/stop task/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Playback could not start" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+    const stops = engine.stop.mock.calls.length;
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Back to details" }));
+    });
+    await waitFor(() => expect(window.location.hash).toBe("#/next/item/m1"));
+    expect(engine.stop.mock.calls.length).toBeGreaterThan(stops);
+  });
+
   it("a failed stop on Back to details does not send a later Escape to the details view", async () => {
     const gateway = fakeGateway();
     const engine = new FakePlayerEngine();

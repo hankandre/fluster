@@ -93,6 +93,8 @@ describe("playback notices", () => {
     expect(screen.getByText("The player didn't close properly. Go back to try again, or quit Fluster if you can still hear it.")).toBeInTheDocument();
     expect(container).not.toHaveTextContent(raw);
     expect(container).not.toHaveTextContent("Playback could not start");
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Back to details" })).toHaveClass("ui-button--primary");
   });
 
   it.each([

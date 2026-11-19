@@ -19,8 +19,8 @@ export function playbackErrorCopy(message: string, kind: TransportErrorKind | un
   }
 }
 
-// A failed stop (DESIGN.md 10 style; wording awaits the owner's approval).
-// The native message never reaches the screen.
+// A failed stop (DESIGN.md 10, approved by the owner 2026-11-19). The native
+// message never reaches the screen.
 export const STOP_FAILED_TITLE = "Couldn't stop playback";
 export const STOP_FAILED_BODY = "The player didn't close properly. Go back to try again, or quit Fluster if you can still hear it.";
 

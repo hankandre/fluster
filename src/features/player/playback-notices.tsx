@@ -110,7 +110,8 @@ export function PlaybackErrorNotice({ item, backdrop, message, kind, stage, serv
   onRetry(): void;
   onBack(): void;
 }) {
-  const retry: NoticeAction = { label: retryLabel, onActivate: onRetry, busy: retrying };
+  // A failed stop has one way out (owner decision 2026-11-19): Back to details retries the stop and leaves.
+  const retry: NoticeAction | undefined = stage === "stop" ? undefined : { label: retryLabel, onActivate: onRetry, busy: retrying };
   return (
     <PlaybackNotice
       title={stage === "stop" ? STOP_FAILED_TITLE : "Playback could not start"}
