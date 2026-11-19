@@ -92,7 +92,7 @@ function RoutedBrowse({ libraryId }: { libraryId: string }) {
     return () => window.removeEventListener(ROUTE_REPLACED_EVENT, onReplaced);
   }, []);
   const route = parseLibraryRoute(hash);
-  return <BrowseView libraryId={libraryId} sort={route?.sort} filters={route?.filters} />;
+  return <BrowseView libraryId={libraryId} sort={route?.sort} filters={route?.filters} genreId={route?.genreId} />;
 }
 
 async function chooseSort(name: string) {
@@ -174,6 +174,76 @@ describe("library page", () => {
     fireEvent.click(screen.getByRole("button", { name: "switch" }));
     expect(await screen.findByRole("heading", { level: 1, name: "Sets" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sort Name A to Z" })).toBeInTheDocument();
+  });
+});
+
+const GENRES = [{ id: "g-drama", name: "Drama" }, { id: "g-mystery", name: "Mystery" }];
+
+describe("genre filter", () => {
+  it("asks for genres only for movie and TV libraries", async () => {
+    const libraryGenres = vi.fn().mockResolvedValue(GENRES);
+    await renderView(fakeGateway({ libraryGenres }), <BrowseView libraryId="lib-1" />);
+    expect(await screen.findByRole("button", { name: "Genre All genres" })).toBeInTheDocument();
+    expect(libraryGenres).toHaveBeenCalledWith("lib-1", expect.anything());
+    cleanup();
+    const sets = vi.fn().mockResolvedValue(GENRES);
+    await renderView(fakeGateway({ libraryGenres: sets }), <BrowseView libraryId="lib-2" />);
+    await screen.findByRole("link", { name: "Arrival" });
+    expect(sets).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: /^Genre/ })).toBeNull();
+  });
+
+  it("writes the picked genre to the route, sends it, and restarts at page one", async () => {
+    const libraryItems = vi.fn().mockResolvedValue({ cards: [card("m1", "Arrival")], hasMore: true });
+    await renderView(fakeGateway({ libraryItems, libraryGenres: vi.fn().mockResolvedValue(GENRES) }), <RoutedBrowse libraryId="lib-1" />);
+    await screen.findByRole("link", { name: "Arrival" });
+    fireEvent.click(await screen.findByRole("button", { name: "Genre All genres" }));
+    fireEvent.click(await screen.findByRole("option", { name: "Mystery" }));
+    await waitFor(() => expect(libraryItems.mock.calls.at(-1)?.[1]).toMatchObject({ startIndex: 0, genreId: "g-mystery" }));
+    expect(window.location.hash).toBe("#/next/browse/lib-1?genre=g-mystery");
+    expect(await screen.findByRole("button", { name: "Genre Mystery" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Genre Mystery" }));
+    fireEvent.click(await screen.findByRole("option", { name: "All genres" }));
+    await waitFor(() => expect(window.location.hash).toBe("#/next/browse/lib-1"));
+    expect(libraryItems.mock.calls.at(-1)?.[1]).not.toHaveProperty("genreId");
+  });
+
+  it("sends a route genre with the sort and filters", async () => {
+    const libraryItems = vi.fn().mockResolvedValue({ cards: [card("m1", "Arrival")], hasMore: false });
+    window.location.hash = "#/next/browse/lib-1?sort=added-desc&filters=IsFavorite&genre=g-drama";
+    await renderView(fakeGateway({ libraryItems, libraryGenres: vi.fn().mockResolvedValue(GENRES) }), <RoutedBrowse libraryId="lib-1" />);
+    expect(await screen.findByRole("button", { name: "Genre Drama" })).toBeInTheDocument();
+    expect(libraryItems.mock.calls[0]?.[1]).toMatchObject({ sortBy: "DateCreated", filters: ["IsFavorite"], genreId: "g-drama" });
+  });
+
+  it.each([
+    ["an empty list", () => vi.fn().mockResolvedValue([])],
+    ["an error", () => vi.fn().mockRejectedValue(new Error("boom"))],
+  ])("shows no genre picker for %s", async (_name, make) => {
+    await renderView(fakeGateway({ libraryGenres: make() }), <BrowseView libraryId="lib-1" />);
+    await screen.findByRole("link", { name: "Arrival" });
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 10)); });
+    expect(screen.queryByRole("button", { name: /^Genre/ })).toBeNull();
+  });
+
+  it("drops a route genre the loaded list lacks", async () => {
+    const libraryItems = vi.fn().mockResolvedValue({ cards: [card("m1", "Arrival")], hasMore: false });
+    window.location.hash = "#/next/browse/lib-1?genre=g-gone";
+    await renderView(fakeGateway({ libraryItems, libraryGenres: vi.fn().mockResolvedValue(GENRES) }), <RoutedBrowse libraryId="lib-1" />);
+    await waitFor(() => expect(window.location.hash).toBe("#/next/browse/lib-1"));
+    await waitFor(() => expect(libraryItems.mock.calls.at(-1)?.[1]).not.toHaveProperty("genreId"));
+  });
+
+  it("clears a genre from the filtered-empty state", async () => {
+    const libraryItems = vi.fn().mockImplementation((_id: string, query: { genreId?: string }) =>
+      Promise.resolve(query.genreId ? { cards: [], hasMore: false, totalCount: 0 } : { cards: [card("m1", "Arrival")], hasMore: false }));
+    window.location.hash = "#/next/browse/lib-1?genre=g-drama";
+    await renderView(fakeGateway({ libraryItems, libraryGenres: vi.fn().mockResolvedValue(GENRES) }), <RoutedBrowse libraryId="lib-1" />);
+    expect(await screen.findByRole("heading", { name: "Nothing matches these filters" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(await screen.findByRole("link", { name: "Arrival" })).toBeInTheDocument();
+    expect(window.location.hash).toBe("#/next/browse/lib-1");
   });
 });
 

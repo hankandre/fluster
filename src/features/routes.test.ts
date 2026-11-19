@@ -171,6 +171,30 @@ describe("library route", () => {
   );
 });
 
+describe("library route genre", () => {
+  it("writes the genre last, after sort and filters", () => {
+    expect(libraryRoute("lib-1", undefined, [], "genre-drama")).toBe("#/next/browse/lib-1?genre=genre-drama");
+    expect(libraryRoute("lib-1", "added-desc", ["IsUnplayed"], "genre-drama")).toBe("#/next/browse/lib-1?sort=added-desc&filters=IsUnplayed&genre=genre-drama");
+    expect(libraryRoute("lib-1", undefined, [], undefined)).toBe("#/next/browse/lib-1");
+  });
+
+  it("round-trips an id with reserved characters", () => {
+    const id = "a&b=c/d";
+    expect(libraryRoute("lib-1", undefined, [], id)).toBe("#/next/browse/lib-1?genre=a%26b%3Dc%2Fd");
+    expect(parseLibraryRoute(libraryRoute("lib-1", "added-desc", ["IsFavorite"], id))).toEqual({ libraryId: "lib-1", sort: "added-desc", filters: ["IsFavorite"], genreId: id });
+  });
+
+  it("ignores an empty genre and keeps it through parseAppRoute", () => {
+    expect(parseLibraryRoute("#/next/browse/lib-1?genre=")).toEqual({ libraryId: "lib-1", filters: [] });
+    expect(parseAppRoute("#/next/browse/lib-1?genre=g1")).toEqual({ kind: "library", libraryId: "lib-1", filters: [], genreId: "g1" });
+  });
+
+  it("never carries a genre on a collection route", () => {
+    expect(parseCollectionRoute("#/next/collection/box-1?genre=g1")).toEqual({ collectionId: "box-1", filters: [] });
+    expect(collectionRoute("box-1", "added-desc", [])).not.toContain("genre");
+  });
+});
+
 describe("collection route", () => {
   it("builds and parses with sort and filters", () => {
     expect(collectionRoute("box 1")).toBe("#/next/collection/box%201");
