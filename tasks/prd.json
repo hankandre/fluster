@@ -3843,7 +3843,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "Implemented M1 gateway, M2 route and toolbar Genre Picker, M3 facts-line genre links, M4 DESIGN 7.7 and 7.12, mock, e2e journeys, visual scenarios. pnpm check exit 0 (3231 tests); pnpm test:e2e and test:visual pass apart from load-induced timeouts that pass alone. Baselines for new and changed scenarios come from CI (test:visual:accept)."
+          "evidence": "Implemented M1 gateway, M2 route and toolbar Genre Picker, M3 facts-line genre links, M4 DESIGN 7.7 and 7.12, mock, e2e journeys, visual scenarios. pnpm check exit 0 (3231 tests); pnpm test:e2e and test:visual pass apart from load-induced timeouts that pass alone. Baselines for new and changed scenarios come from CI (test:visual:accept). Review fixes: empty genre list keeps the route genre; Escape from a title-opened genre library returns to the title (TV e2e restored). pnpm check, test:e2e (240 passed), test:visual (477 passed) pass. Pending for Ship: baselines, dogfood checks, PR screenshots."
         },
         {
           "id": "P16-07",

@@ -53,6 +53,35 @@ describe("useBackKey", () => {
     expect(screen.getByRole("link", { name: "Home" })).toHaveFocus();
   });
 
+  it("goes back from a genre-filtered library opened from a title in the TV form", async () => {
+    document.documentElement.dataset.form = "tv";
+    window.location.hash = "#/next/item/m1";
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    window.location.hash = "#/next/browse/lib-1?genre=g-drama";
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const back = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
+    render(<Probe />);
+    const content = screen.getByRole("button", { name: "Content" });
+    content.focus();
+    expect(fireEvent.keyDown(content, { key: "Escape" })).toBe(false);
+    expect(back).toHaveBeenCalledTimes(1);
+  });
+
+  it("focuses the nav on a genre-filtered library opened from the nav in the TV form", async () => {
+    document.documentElement.dataset.form = "tv";
+    window.location.hash = "#/next/browse/lib-1";
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    window.location.hash = "#/next/browse/lib-1?genre=g-drama";
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const back = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
+    render(<Probe />);
+    const content = screen.getByRole("button", { name: "Content" });
+    content.focus();
+    expect(fireEvent.keyDown(content, { key: "Escape" })).toBe(false);
+    expect(back).not.toHaveBeenCalled();
+    expect(screen.getByRole("link", { name: "Home" })).toHaveFocus();
+  });
+
   it("leaves the app on Home when focus is already in the nav", () => {
     document.documentElement.dataset.form = "tv";
     const leave = vi.fn();
