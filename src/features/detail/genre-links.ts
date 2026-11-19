@@ -19,6 +19,6 @@ export function genreLinks(item: ItemDetail, views: readonly LibraryView[] | und
   const library = genreLibrary(item, views);
   return item.genres.slice(0, MAX_GENRES).map((name) => {
     const id = (item.genreItems ?? []).find((genre) => genre.name === name)?.id;
-    return library && id ? { name, href: libraryRoute(library.id, undefined, [], id) } : { name };
+    return library && id ? { name, href: libraryRoute(library.id, undefined, [], id, true) } : { name };
   });
 }

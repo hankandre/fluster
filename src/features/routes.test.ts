@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { waitFor } from "@testing-library/react";
-import { collectionRoute, FEATURE_INDEX_LINKS, FEATURE_INDEX_ROUTE, GALLERY_ROUTE, HOME_ROUTE, isAppHash, isOpenRoute, isPlayerHash, itemRoute, parseAppRoute, searchResultsRoute, SEARCH_ROUTE, SETTINGS_ROUTE, seriesRoute, SIGN_IN_ROUTE, leavePlayer, leaveToDetails, leaveToSignIn, libraryRoute, openPlayer, parseCollectionRoute, parseItemRoute, parseLibraryRoute, parsePlayRoute, playRoute, replaceRoute, ROUTE_REPLACED_EVENT } from "./routes";
+import { hasBackButton, collectionRoute, FEATURE_INDEX_LINKS, FEATURE_INDEX_ROUTE, GALLERY_ROUTE, HOME_ROUTE, isAppHash, isOpenRoute, isPlayerHash, itemRoute, parseAppRoute, searchResultsRoute, SEARCH_ROUTE, SETTINGS_ROUTE, seriesRoute, SIGN_IN_ROUTE, leavePlayer, leaveToDetails, leaveToSignIn, libraryRoute, openPlayer, parseCollectionRoute, parseItemRoute, parseLibraryRoute, parsePlayRoute, playRoute, replaceRoute, ROUTE_REPLACED_EVENT } from "./routes";
 
 describe("play route", () => {
   it("round-trips the item, version, and start position", () => {
@@ -315,5 +315,46 @@ describe("leaveToSignIn", () => {
 
     expect(window.location.hash).toBe(SIGN_IN_ROUTE);
     expect(window.history.length).toBe(length);
+  });
+});
+
+describe("hasBackButton", () => {
+  it.each([
+    [HOME_ROUTE, false],
+    [SEARCH_ROUTE, false],
+    [searchResultsRoute("dune"), false],
+    [SETTINGS_ROUTE, false],
+    [libraryRoute("lib-1"), false],
+    [libraryRoute("lib-1", undefined, [], "g-drama"), false],
+    [libraryRoute("lib-1", undefined, [], "g-drama", true), true],
+    [playRoute({ itemId: "m1", startTicks: 0 }), false],
+    [SIGN_IN_ROUTE, false],
+    [GALLERY_ROUTE, false],
+    [itemRoute("m1"), true],
+    [seriesRoute("s1"), true],
+    [collectionRoute("c1"), true],
+    ["#/next/nowhere/x/y", true],
+  ])("%s -> %s", (hash, expected) => {
+    expect(hasBackButton(hash)).toBe(expected);
+  });
+});
+
+describe("a genre library opened from a title", () => {
+  it("round-trips the from=title marker and writes it only with a genre", () => {
+    const hash = libraryRoute("lib-1", undefined, [], "g-drama", true);
+    expect(hash).toBe("#/next/browse/lib-1?genre=g-drama&from=title");
+    expect(parseLibraryRoute(hash)).toMatchObject({ genreId: "g-drama", fromTitle: true });
+    expect(libraryRoute("lib-1", undefined, [], undefined, true)).toBe("#/next/browse/lib-1");
+    expect(parseLibraryRoute("#/next/browse/lib-1?from=title")?.fromTitle).toBeUndefined();
+  });
+
+  it("has no Back button after Home, a title, a nav library, and a genre chosen by a replace", () => {
+    // The nav opens the bare library; choosing a genre there rewrites the entry without the marker.
+    expect(hasBackButton(libraryRoute("lib-1"))).toBe(false);
+    expect(hasBackButton(libraryRoute("lib-1", undefined, [], "g-drama"))).toBe(false);
+  });
+
+  it("keeps the Back button after a history pop, because the marker is in the route", () => {
+    expect(hasBackButton("#/next/browse/lib-1?genre=g-drama&from=title")).toBe(true);
   });
 });

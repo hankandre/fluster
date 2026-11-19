@@ -258,7 +258,8 @@ test("Back cancels an in-flight playback negotiation", async ({ page }) => {
   await page.waitForTimeout(450);
   // The detail page has its own level 1 "Arrival", so assert directly that the player never mounted.
   await expect(page.locator(".player-page")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Back", exact: true })).toHaveCount(0);
+  // The detail page now has its own Back button (2026-11-19), so look for the player's top bar instead.
+  await expect(page.locator(".player-top-bar")).toHaveCount(0);
   await expect(page.locator("video")).toHaveCount(0);
   expect(log.playbackInfo).toHaveLength(1);
   expect(log.reports).toHaveLength(0);

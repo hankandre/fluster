@@ -48,18 +48,21 @@ const LIBRARY_PREFIX = "#/next/browse/";
 // ?sort=<sortId>&filters=<a,b>&genre=<id>. The default sort and no filters write nothing, so the bare route means the
 // defaults. An explicit sort other than the default stays (See all opens Newest added first). Written by hand
 // so the filter list keeps its literal commas.
-function viewQuery(sort: LibrarySortId | undefined, filters: readonly BrowseFilter[], genreId?: string): string {
+function viewQuery(sort: LibrarySortId | undefined, filters: readonly BrowseFilter[], genreId?: string, fromTitle = false): string {
   const parts: string[] = [];
   if (sort && sort !== DEFAULT_LIBRARY_SORT) parts.push(`sort=${encodeURIComponent(sort)}`);
   const names = LIBRARY_FILTERS.filter((filter) => filters.includes(filter));
   if (names.length > 0) parts.push(`filters=${names.join(",")}`);
   if (genreId) parts.push(`genre=${encodeURIComponent(genreId)}`);
+  // Set only by a title's genre link, so the library is a screen under that title (DESIGN.md §9).
+  if (genreId && fromTitle) parts.push("from=title");
   return parts.length > 0 ? `?${parts.join("&")}` : "";
 }
 
 // #/next/browse/<libraryId>, optionally with ?sort=<sortId>&filters=<a,b>&genre=<id> to open the library in that view.
-export function libraryRoute(id: string, sort?: LibrarySortId, filters: readonly BrowseFilter[] = [], genreId?: string): string {
-  return `${LIBRARY_PREFIX}${encodeURIComponent(id)}${viewQuery(sort, filters, genreId)}`;
+// `fromTitle` marks a genre library opened from a title's genre link; a view change that drops or changes the genre drops it.
+export function libraryRoute(id: string, sort?: LibrarySortId, filters: readonly BrowseFilter[] = [], genreId?: string, fromTitle = false): string {
+  return `${LIBRARY_PREFIX}${encodeURIComponent(id)}${viewQuery(sort, filters, genreId, fromTitle)}`;
 }
 
 export interface LibraryRoute {
@@ -69,6 +72,8 @@ export interface LibraryRoute {
   filters: BrowseFilter[];
   // One genre id; absent when the route has none.
   genreId?: string;
+  // True when a title's genre link opened this genre library (`from=title`).
+  fromTitle?: boolean;
 }
 
 export interface CollectionRoute {
@@ -77,7 +82,7 @@ export interface CollectionRoute {
   filters: BrowseFilter[];
 }
 
-function parseViewRoute(hash: string, prefix: string): { id: string; sort?: LibrarySortId; filters: BrowseFilter[]; genreId?: string } | undefined {
+function parseViewRoute(hash: string, prefix: string): { id: string; sort?: LibrarySortId; filters: BrowseFilter[]; genreId?: string; fromTitle?: boolean } | undefined {
   if (!hash.startsWith(prefix)) return undefined;
   const rest = hash.slice(prefix.length);
   const queryStart = rest.indexOf("?");
@@ -94,7 +99,8 @@ function parseViewRoute(hash: string, prefix: string): { id: string; sort?: Libr
   const named = (params.get("filters") ?? "").split(",");
   const filters = LIBRARY_FILTERS.filter((filter) => named.includes(filter));
   const genreId = params.get("genre") || undefined;
-  return { id, ...(sort ? { sort } : {}), filters, ...(genreId ? { genreId } : {}) };
+  const fromTitle = genreId !== undefined && params.get("from") === "title";
+  return { id, ...(sort ? { sort } : {}), filters, ...(genreId ? { genreId } : {}), ...(fromTitle ? { fromTitle } : {}) };
 }
 
 // Reads a library route. A missing or malformed id is not a route.
@@ -326,6 +332,36 @@ export function isOpenRoute(route: AppRoute): boolean {
     case "item":
     case "series":
       return false;
+    default: {
+      const unreachable: never = route;
+      return unreachable;
+    }
+  }
+}
+
+// True on a signed-in screen that is not a root tab, where the page shows a Back button (DESIGN.md §8). Roots are
+// Home, Search, Settings, and a library (the nav's entries); the player has its own Back, and sign-in and the
+// developer pages have no nav. An unknown hash counts as non-root, as Escape treats it. A new route kind fails to
+// compile here until it is placed.
+export function hasBackButton(hash: string): boolean {
+  const route = parseAppRoute(hash);
+  if (!route) return true;
+  switch (route.kind) {
+    case "home":
+    case "search":
+    case "settings":
+    case "play":
+    case "feature-index":
+    case "sign-in":
+    case "gallery":
+      return false;
+    // A genre library opened from a title's genre link is a screen under that title.
+    case "library":
+      return route.fromTitle === true;
+    case "collection":
+    case "item":
+    case "series":
+      return true;
     default: {
       const unreachable: never = route;
       return unreachable;

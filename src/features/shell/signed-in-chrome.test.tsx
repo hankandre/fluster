@@ -17,12 +17,12 @@ function SignIn({ gateway }: { gateway: SessionGateway }) {
   return <button onClick={() => session.signIn(gateway)}>test sign in</button>;
 }
 
-async function renderChrome(gateway: SessionGateway, signIn: boolean) {
+async function renderChrome(gateway: SessionGateway, signIn: boolean, hash = "#/next/home") {
   render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <SessionProvider createGateway={() => gateway}>
         <SignIn gateway={gateway} />
-        <SignedInChrome hash="#/next/home"><main><h1>Page</h1></main></SignedInChrome>
+        <SignedInChrome hash={hash}><main><h1>Page</h1></main></SignedInChrome>
       </SessionProvider>
     </QueryClientProvider>,
   );
@@ -46,6 +46,30 @@ describe("SignedInChrome", () => {
     cleanup();
     await renderChrome(fakeSessionGateway({ currentUserName: vi.fn(() => undefined) }), true);
     expect(document.querySelector(".app-nav-initial")).toBeNull();
+  });
+
+  it.each(["#/next/home", "#/next/search", "#/next/settings", "#/next/browse/lib-1"])("shows no Back button on the root screen %s", async (hash) => {
+    await renderChrome(fakeSessionGateway(), true, hash);
+    expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
+  });
+
+  it.each(["#/next/item/m1", "#/next/series/s1", "#/next/collection/c1"])("shows a Back button on the non-root screen %s", async (hash) => {
+    await renderChrome(fakeSessionGateway(), true, hash);
+    expect(screen.getByRole("button", { name: "Back" })).toBeInTheDocument();
+  });
+
+  it("goes back through the same function as Escape", async () => {
+    const back = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
+    await renderChrome(fakeSessionGateway(), true, "#/next/item/m1");
+    // An in-app hash change marks the tab as having navigated, so Back uses history.
+    window.location.hash = "#/next/item/m1";
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    const button = screen.getByRole("button", { name: "Back" });
+    fireEvent.click(button);
+    expect(back).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(button, { key: "Escape" });
+    expect(back).toHaveBeenCalledTimes(2);
+    back.mockRestore();
   });
 
   it("takes the first letter of a name", () => {

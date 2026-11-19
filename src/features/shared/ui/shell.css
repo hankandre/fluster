@@ -55,6 +55,29 @@
     --sticky-top: var(--nav-h);
   }
 
+  /* The page Back button floats over the hero or backdrop at the gutter, just under the nav (DESIGN.md §8).
+     It is placed from the frame, not the content box, because a hero's negative margin pulls the content box
+     up under the nav. It sits on the glass surface so it reads on bright art. */
+  .app-frame {
+    position: relative;
+  }
+
+  .app-back {
+    position: absolute;
+    inset-block-start: calc(var(--nav-h) + var(--space-3));
+    inset-inline-start: var(--gutter);
+    z-index: calc(var(--z-nav) - 1);
+  }
+
+  :root[data-form="tv"] .app-back {
+    inset-block-start: calc(var(--nav-h) + var(--safe-y) + var(--space-3));
+  }
+
+  .app-back .ui-button--icon {
+    background: var(--surface-0-glass);
+    backdrop-filter: blur(var(--blur-nav));
+  }
+
   .app-nav[data-hidden="true"] ~ .app-content {
     --sticky-top: 0;
   }

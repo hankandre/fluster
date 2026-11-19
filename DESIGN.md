@@ -192,6 +192,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 - A top bar, 64 px desktop or 96 px TV. Left: the Fluster wordmark (text, `--type-label` 700), which goes to Home. Then: Home, one entry per library (from `UserViews`), and Search (icon plus label). Right: Settings (gear icon), then the account control, the user's initial. Until P13-21 the initial is only a label. From P13-21 it opens the account menu (§7.21).
 - It is transparent over a hero, then `--surface-0` at 92% with a `--blur-nav` blur once content scrolls under it (the only allowed blur). On desktop it hides on scroll down and returns on scroll up.
 - It is hidden in the player and in sign-in.
+- **Page Back button** (owner, 2026-11-19). Every non-root screen draws the §7.19 round icon button (`BackButton`, the arrow the player's top bar uses, accessible name "Back") at the top-left of the page content: at `--gutter` from the left edge (on TV, inside the safe inset) and `--space-3` under the nav bar, over the hero or backdrop where there is one. It sits on `--surface-0-glass` with the `--blur-nav` blur so it reads on bright art. It scrolls away with the page. Non-root means every route that is not a nav entry and is not the player: movie, series, and episode pages and collections today (`hasBackButton` in `src/features/routes.ts` decides, from the route table). Home, Search, Settings, and a library are roots and show none, except a genre-filtered library opened from a title's genre link, which is a screen under that title and shows it. A title's genre link marks the library route `from=title`; changing the genre or sort in that library keeps the mark only while the genre stays, and a library opened any other way never has it, so Escape and the button read the same route state, not history. It does what Escape does on a non-root screen, through the same function (`goBack`): browser history, else Home.
 - There is no Libraries page: each library is a nav entry (`#/next/browse` alone is Not found). Where the entries overflow, the list scrolls and the clipped edge fades over `--nav-fade-w` (a mask, no animation); a focused or current entry scrolls clear of the fade.
 - Accessibility: `<nav aria-label="Main">`, the current page marked `aria-current="page"`, and a skip link "Skip to content" as the first Tab stop.
 
@@ -253,6 +254,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
   - **series**: facts are the year range, the season count, the ratings, and genres ("2019–2023 · 4 seasons · 8.4 audience · 88% critics · Drama"); its genres are links as on the movie page, to the title's library when it is a TV library and otherwise the first TV library. The primary action is "Resume S1 · E2" or "Play S1 · E3". Season tabs and the episode list sit below.
   - **episode**: the series name is a link above the title. Facts read "S1 · E2 · 45 min"; genres are plain text on episodes and on the Home hero (no links). The episode still replaces the backdrop when the episode has no backdrop. A "More from Season 1" episode strip sits below and opens positioned at the current episode.
 - Compact windows stack poster (or still), then title, then actions, then overview.
+- The page Back button (§7.1) sits at the top-left over the backdrop, above the title.
 
 ### 7.8 Action bar (`ActionBar`)
 
@@ -564,14 +566,15 @@ Fluster remembers any number of accounts. An account is one user on one server. 
 
 - One focus at a time, always visible when it came from a keyboard or remote (`:focus-visible`). On TV, focus is always visible.
 - Containers are one Tab stop with arrows inside (roving tabindex, as in `roving-focus.ts`). Up and Down across rows and sections are spatial: they go to the nearest item by horizontal centre.
+- Focus order on a non-root screen: the skip link, the nav, the page's Back button, then the content. In the TV form the order up the page is the first control, Back, then the nav row.
 - Opening a screen focuses its primary action (TV) or its `h1` (desktop, for screen readers), with the primary action as the next Tab. Returning with Back restores the previously focused card or episode row; when it is gone, focus lands on the card now at the same place in the same row, and when the row is gone too, on the screen's opening focus. A fresh visit never restores.
 - Focus is never obscured: rows scroll the focused card to at least `--gutter` from any edge, and the sticky nav never covers it (WCAG 2.4.11).
 
 **Hover and focus.** Hover previews (half-strength lift, row arrows, scrubber thickening) but never moves focus. Every hover-revealed control is also reachable and visible on focus.
 
-**Back.** Back or Escape closes the topmost layer: menu, then sheet, then dialog, then fullscreen, then player, then screen (browser history). A player sheet closes on Escape however it was opened, by click or by key; on desktop a click on the video outside it closes it too, and does nothing else (§7.14; owner, 2026-11-19). In the TV form Backspace does the same outside text fields; on desktop Backspace does nothing outside text fields, and Escape and the Back button remain (owner, 2026-11-13; P13-34). Up from the first row reaches the nav and Down returns, on every form. Back (Escape, or Backspace in the TV form) on a non-root screen goes back (browser history, else Home); on a root tab it does nothing on desktop and focuses the tab row on TV, and Back on Home from the tab row leaves the app by the platform's rule (D14 B).
+**Back.** Back or Escape closes the topmost layer: menu, then sheet, then dialog, then fullscreen, then player, then screen (browser history). A player sheet closes on Escape however it was opened, by click or by key; on desktop a click on the video outside it closes it too, and does nothing else (§7.14; owner, 2026-11-19). In the TV form Backspace does the same outside text fields; on desktop Backspace does nothing outside text fields, and Escape and the Back button remain (owner, 2026-11-13; P13-34). Up from the first row reaches the nav and Down returns, on every form; on a non-root screen the page's Back button sits between them, so Up from the first control reaches Back, Up from Back reaches the nav, Down from Back enters the first row, and Down from the nav returns to the page's first row (owner, 2026-11-19). Every non-root screen also has a round Back button at the top-left of the content (§7.1); Enter on it does what Escape does, and Tab reaches it right after the nav. Back (Escape, or Backspace in the TV form) on a non-root screen goes back (browser history, else Home); on a root tab it does nothing on desktop and focuses the tab row on TV, and Back on Home from the tab row leaves the app by the platform's rule (D14 B).
 
-**Back restores the place** (UX audit D1 B; P13-31). Back returns to the screen as it was left: the same scroll position, sort, filters, loaded pages, and focused card, with no skeleton. A screen's data is kept while its account is the active one and dropped when the account changes, signs out, or the app closes. Nothing is written to disk. A library's sort, genre, and filters live in the route.
+**Back restores the place** (UX audit D1 B; P13-31). Back, by Escape or the page's Back button, returns to the screen as it was left: the same scroll position, sort, filters, loaded pages, and focused card, with no skeleton. A screen's data is kept while its account is the active one and dropped when the account changes, signs out, or the app closes. Nothing is written to disk. A library's sort, genre, and filters live in the route.
 
 **Keyboard map**
 
@@ -705,6 +708,10 @@ Fluster talks like a knowledgeable friend running the projector: calm, brief, pl
 3. **Logo and Thumb images.** The gateway requests Jellyfin `Logo` and `Thumb` images (P13-05). The Logo becomes the title in heroes and detail headers.
 4. **TV Skip on OK.** While the chrome is hidden, OK activates a visible Skip. On desktop, Skip still never takes focus.
 5. **Ambient Home backdrop.** It follows the focused card after a 300 ms dwell (§7.2). Reduced motion swaps it without a crossfade.
+
+### Added 2026-11-19 (owner)
+
+- **Page Back button.** The owner reported that a movie or series page has no Back button on the desktop app and the only way back is the mouse's or keyboard's navigate-back key. Decision: a round back-arrow button at the top-left of the page content, under the nav bar, on every non-root screen; it is the player's top-bar control. See §7.1 and §9.
 
 ### Added 2026-11-12 (UX audit)
 

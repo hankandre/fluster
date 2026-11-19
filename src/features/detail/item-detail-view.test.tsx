@@ -161,8 +161,8 @@ describe("media info", () => {
     ]);
     const film = detail({ genres: ["Sci-Fi", "Drama"], genreItems: [{ id: "g-scifi", name: "Sci-Fi" }, { id: "g-drama", name: "Drama" }], parentId: "lib-kids" });
     await renderDetail(fakeGateway({ itemDetail: vi.fn().mockResolvedValue(film), userViews }));
-    expect(await screen.findByRole("link", { name: "Sci-Fi" })).toHaveAttribute("href", "#/next/browse/lib-kids?genre=g-scifi");
-    expect(screen.getByRole("link", { name: "Drama" })).toHaveAttribute("href", "#/next/browse/lib-kids?genre=g-drama");
+    expect(await screen.findByRole("link", { name: "Sci-Fi" })).toHaveAttribute("href", "#/next/browse/lib-kids?genre=g-scifi&from=title");
+    expect(screen.getByRole("link", { name: "Drama" })).toHaveAttribute("href", "#/next/browse/lib-kids?genre=g-drama&from=title");
     cleanup();
     const episode = detail({ type: "Episode", genres: ["Drama"], genreItems: [{ id: "g-drama", name: "Drama" }], seasonNumber: 1, episodeNumber: 2 });
     await renderDetail(fakeGateway({ itemDetail: vi.fn().mockResolvedValue(episode), userViews }));

@@ -1,6 +1,5 @@
-import { ArrowLeft } from "lucide-react";
 import type { LibraryItem } from "../../../domain/catalog";
-import { Button } from "../../shared/ui";
+import { BackButton } from "../../shared/ui";
 import { ConversionChip } from "../conversion-chip";
 import type { ConversionIndicator } from "../conversion-copy";
 
@@ -23,9 +22,7 @@ export function PlayerTopBar({ item, indicator, onBack, onOpenInfo }: {
 }) {
   return (
     <header className="player-top-bar" data-chrome-zone="">
-      <Button variant="icon" aria-label="Back" onClick={onBack}>
-        <ArrowLeft size={21} aria-hidden="true" />
-      </Button>
+      <BackButton onBack={onBack} />
       <div className="player-title">
         {item.type === "Episode" && item.seriesName && <p>{item.seriesName}</p>}
         <h1>{titleLine(item)}</h1>

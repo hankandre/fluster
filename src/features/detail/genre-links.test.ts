@@ -48,15 +48,15 @@ describe("genreLibrary", () => {
 describe("genreLinks", () => {
   it("links at most two genres to the library filtered to each", () => {
     expect(genreLinks(item(), views)).toEqual([
-      { name: "Drama", href: "#/next/browse/lib-movies?genre=g-drama" },
-      { name: "Science Fiction", href: "#/next/browse/lib-movies?genre=g-scifi" },
+      { name: "Drama", href: "#/next/browse/lib-movies?genre=g-drama&from=title" },
+      { name: "Science Fiction", href: "#/next/browse/lib-movies?genre=g-scifi&from=title" },
     ]);
   });
 
   it("leaves a genre without an id as plain text", () => {
     expect(genreLinks(item({ genreItems: [{ id: "g-scifi", name: "Science Fiction" }] }), views)).toEqual([
       { name: "Drama" },
-      { name: "Science Fiction", href: "#/next/browse/lib-movies?genre=g-scifi" },
+      { name: "Science Fiction", href: "#/next/browse/lib-movies?genre=g-scifi&from=title" },
     ]);
     expect(genreLinks(item({ genreItems: undefined }), views).every((genre) => !genre.href)).toBe(true);
   });

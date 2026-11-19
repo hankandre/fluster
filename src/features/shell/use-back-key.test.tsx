@@ -57,7 +57,7 @@ describe("useBackKey", () => {
     document.documentElement.dataset.form = "tv";
     window.location.hash = "#/next/item/m1";
     await new Promise((resolve) => setTimeout(resolve, 0));
-    window.location.hash = "#/next/browse/lib-1?genre=g-drama";
+    window.location.hash = "#/next/browse/lib-1?genre=g-drama&from=title";
     await new Promise((resolve) => setTimeout(resolve, 0));
     const back = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
     render(<Probe />);

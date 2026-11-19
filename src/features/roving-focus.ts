@@ -57,6 +57,7 @@ export function nearestByCentre(centreX: number, boxes: { left: number; width: n
 
 const SPATIAL_ROW_SELECTOR = "[data-spatial-row]";
 
+const PAGE_BACK_SELECTOR = "[data-page-back] button";
 const NAV_STOP_SELECTOR = 'nav[aria-label="Main"] [data-roving-item][tabindex="0"]';
 
 // Moves focus Up or Down to the nearest item (by horizontal centre) of the adjacent spatial row
@@ -68,7 +69,8 @@ export function moveToAdjacentRow(container: HTMLElement, current: HTMLElement, 
   let index = rows.indexOf(container) + direction;
   while (index >= 0 && index < rows.length && itemsIn(rows[index]).length === 0) index += direction;
   if (index < 0 && direction === -1) {
-    const entry = document.querySelector<HTMLElement>(NAV_STOP_SELECTOR);
+    // A non-root page's Back button sits between the first row and the nav (DESIGN.md §9).
+    const entry = document.querySelector<HTMLElement>(PAGE_BACK_SELECTOR) ?? document.querySelector<HTMLElement>(NAV_STOP_SELECTOR);
     if (!entry) return false;
     entry.focus();
     return true;

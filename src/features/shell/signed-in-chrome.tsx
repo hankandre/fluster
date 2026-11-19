@@ -1,10 +1,11 @@
 import { useState, type ReactNode } from "react";
 import { useLibraryViews } from "./use-library-views";
 import { useSession, type SessionGateway } from "../../app/session";
+import { hasBackButton } from "../routes";
 import { AppNav, AppShell } from "../shared/ui";
 import { LeaveAppDialog } from "./leave-app-dialog";
 import { leaveApp } from "./leave-app";
-import { useBackKey } from "./use-back-key";
+import { goBack, useBackKey } from "./use-back-key";
 import { useSearchShortcut } from "./use-search-shortcut";
 
 // Wraps signed-in pages in the app shell. While signed out it renders the page alone.
@@ -23,7 +24,7 @@ function NavShell({ gateway, hash, children }: { gateway: SessionGateway; hash: 
   const libraries = views.data?.map((view) => ({ id: view.id, name: view.name }));
   return (
     <>
-      <AppShell nav={<AppNav libraries={libraries} hash={hash} userInitial={initialOf(gateway.currentUserName())} />}>{children}</AppShell>
+      <AppShell onBack={hasBackButton(hash) ? goBack : undefined} nav={<AppNav libraries={libraries} hash={hash} userInitial={initialOf(gateway.currentUserName())} />}>{children}</AppShell>
       <LeaveAppDialog
         open={confirmingLeave}
         onStay={() => setConfirmingLeave(false)}

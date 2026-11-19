@@ -111,8 +111,8 @@ describe("header", () => {
       { id: "lib-shows", name: "Shows", collectionType: "tvshows" },
     ]);
     await renderSeries(fakeGateway({ userViews }));
-    expect(await screen.findByRole("link", { name: "Drama" })).toHaveAttribute("href", "#/next/browse/lib-shows?genre=g-drama");
-    expect(screen.getByRole("link", { name: "Mystery" })).toHaveAttribute("href", "#/next/browse/lib-shows?genre=g-mystery");
+    expect(await screen.findByRole("link", { name: "Drama" })).toHaveAttribute("href", "#/next/browse/lib-shows?genre=g-drama&from=title");
+    expect(screen.getByRole("link", { name: "Mystery" })).toHaveAttribute("href", "#/next/browse/lib-shows?genre=g-mystery&from=title");
     cleanup();
     await renderSeries(fakeGateway({ userViews: vi.fn().mockRejectedValue(new Error("boom")) }));
     expect(await screen.findByText("2022–2024 · 2 seasons · Drama · Mystery")).toBeInTheDocument();
