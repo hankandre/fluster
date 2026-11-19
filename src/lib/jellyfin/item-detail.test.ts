@@ -256,13 +256,19 @@ describe("toItemDetail cast pictures and ratings", () => {
       { Id: "p1", Name: "No Tag", Type: "Actor" },
       { Name: "No Id", Type: "Actor", PrimaryImageTag: "t" },
       { Id: "d1", Name: "Director", Type: "Director", PrimaryImageTag: "t" },
-      ...Array.from({ length: 10 }, (_, index) => ({ Id: `x${index}`, Name: `Extra ${index}`, Type: "Actor", PrimaryImageTag: "t" })),
+      ...Array.from({ length: 30 }, (_, index) => ({ Id: `x${index}`, Name: `Extra ${index}`, Type: "Actor", PrimaryImageTag: "t" })),
     ];
     const detail = toItemDetail({ ...base, People: people })!;
-    expect(detail.cast).toHaveLength(8);
+    expect(detail.cast).toHaveLength(20);
     expect(detail.cast[0].image).toBeUndefined();
     expect(detail.cast[1].image).toBeUndefined();
     expect(detail.cast.map((member) => member.name)).not.toContain("Director");
+  });
+
+  it("maps a 25-person cast to exactly 20, in the server's order", () => {
+    const people = Array.from({ length: 25 }, (_, index) => ({ Id: `a${index}`, Name: `Actor ${index}`, Type: "Actor" }));
+    const detail = toItemDetail({ ...base, People: people })!;
+    expect(detail.cast.map((member) => member.name)).toEqual(people.slice(0, 20).map((person) => person.Name));
   });
 
   it("maps valid ratings and drops invalid ones", () => {
