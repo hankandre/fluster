@@ -491,3 +491,4 @@ The triage of every entry added since the 2026-11-15 pass, and the two owner req
 - Design low: the Audio passthrough placeholder row in the sheet.
 - Design low: "Back to settings" is small on desktop.
 - Design low: the TV toggle knob is near its focus ring.
+- Guardian re-check low (#209): `e2e/next-episode.spec.ts:220` and `e2e/tv/player.spec.ts:132` assert "Saved" with a plain `toBeVisible()`; on a heavily loaded runner the first poll could land after the 2 s clear. Use the status-history pattern from `e2e/player-settings.spec.ts`. S.
