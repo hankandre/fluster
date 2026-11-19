@@ -5,7 +5,7 @@ import { runtimeLabel } from "./format";
 const MAX_GENRES = 2;
 
 // The facts line under the title (DESIGN.md 7.7): "S1 · E2 · 45 min · Drama" for an episode,
-// "2016 · 1 h 57 min · 7.8/10 · 91% critics · Sci-Fi" otherwise.
+// "2016 · 1 h 57 min · 7.8 audience · 91% critics · Sci-Fi" otherwise.
 // Ratings show only when the server has them. Genres are the trailing part. Undefined when there is nothing to say.
 export function detailFacts(item: ItemDetail): string | undefined {
   const parts: (string | undefined)[] = [];

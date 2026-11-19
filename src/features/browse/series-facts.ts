@@ -3,7 +3,7 @@ import { ratingFacts } from "../detail/rating-facts";
 
 const MAX_GENRES = 2;
 
-// The facts line under a series name (DESIGN.md 7.7): "2022–2024 · 2 seasons · 8.1/10 · 91% critics · Drama · Mystery".
+// The facts line under a series name (DESIGN.md 7.7): "2022–2024 · 2 seasons · 8.1 audience · 91% critics · Drama · Mystery".
 // Ratings show only when the server has them. Genres are the trailing part.
 // Specials are not counted. The season count waits for the seasons to load.
 export function seriesFacts(item: ItemDetail, seasons?: Season[]): string | undefined {
