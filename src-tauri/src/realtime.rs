@@ -212,13 +212,10 @@ fn is_auth_refusal(error: &SocketError) -> bool {
     matches!(error, SocketError::Http(response) if is_auth_refusal_status(response.status()))
 }
 
-#[cfg(debug_assertions)]
+/// Never panics: see `crate::trace`.
 fn realtime_trace(message: &'static str) {
-    eprintln!("[fluster realtime] {message}");
+    crate::trace::write_trace("[fluster realtime]", message);
 }
-
-#[cfg(not(debug_assertions))]
-fn realtime_trace(_message: &'static str) {}
 
 /// Keeps the socket open until the task is aborted or the server refuses
 /// the session. If the loop ever panics, the frontend hears `disconnected`

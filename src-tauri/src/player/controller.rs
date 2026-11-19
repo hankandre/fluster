@@ -5,19 +5,20 @@ use super::pending::{PendingSlot, PREPARE_DEADLINE};
 use super::properties::observe_properties;
 use super::version::{ensure_numeric_locale, query_libmpv_version};
 use super::{native_trace, MpvError};
-use crate::media_controls::{MediaControls, MediaUpdate};
+use crate::lock::lock;
+use crate::media_controls::MediaControls;
 use crate::model::{LaunchRequest, PlayerCapabilities, PlayerEvent, PlayerSurfaceFrame};
 use crate::redaction::safe_error;
 use crate::surface;
 use libmpv2::Mpv;
 use std::panic::{catch_unwind, AssertUnwindSafe};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread;
-use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
 
-const STOP_TIMEOUT: Duration = Duration::from_secs(5);
+#[path = "controller_stop.rs"]
+mod stop;
 
 struct Session {
     id: String,
@@ -55,48 +56,24 @@ pub(crate) struct MpvController {
 
 impl MpvController {
     pub(crate) fn set_renderer_result(&self, result: Result<String, String>) {
-        *self.inner.renderer.lock().expect("renderer mutex poisoned") = result;
-        self.inner
-            .capabilities
-            .lock()
-            .expect("capabilities mutex poisoned")
-            .take();
+        *lock(&self.inner.renderer) = result;
+        lock(&self.inner.capabilities).take();
     }
 
     /// Where session state goes for the system media controls.
     pub(crate) fn set_media_controls(&self, media: MediaControls) {
-        *self
-            .inner
-            .media
-            .lock()
-            .expect("media controls mutex poisoned") = media;
+        *lock(&self.inner.media) = media;
     }
 
     fn media(&self) -> MediaControls {
-        self.inner
-            .media
-            .lock()
-            .expect("media controls mutex poisoned")
-            .clone()
+        lock(&self.inner.media).clone()
     }
 
     pub(crate) fn capabilities(&self) -> Result<PlayerCapabilities, MpvError> {
-        if let Some(capabilities) = self
-            .inner
-            .capabilities
-            .lock()
-            .expect("capabilities mutex poisoned")
-            .clone()
-        {
+        if let Some(capabilities) = lock(&self.inner.capabilities).clone() {
             return Ok(capabilities);
         }
-        let renderer = match self
-            .inner
-            .renderer
-            .lock()
-            .expect("renderer mutex poisoned")
-            .clone()
-        {
+        let renderer = match lock(&self.inner.renderer).clone() {
             Ok(renderer) => renderer,
             Err(error) if error.is_empty() => {
                 return Err(MpvError::Renderer(
@@ -113,11 +90,7 @@ impl MpvController {
             native_renderer: renderer,
             libmpv_version: Some(libmpv_version),
         };
-        *self
-            .inner
-            .capabilities
-            .lock()
-            .expect("capabilities mutex poisoned") = Some(capabilities.clone());
+        *lock(&self.inner.capabilities) = Some(capabilities.clone());
         Ok(capabilities)
     }
 
@@ -133,7 +106,7 @@ impl MpvController {
         // One launch at a time: the pending marker refuses a second launch
         // until this one becomes a session or fails, and `stop` cancels it.
         let pending = {
-            let session = self.inner.session.lock().expect("session mutex poisoned");
+            let session = lock(&self.inner.session);
             if session.is_some() {
                 return Err(MpvError::AlreadyPlaying);
             }
@@ -166,7 +139,7 @@ impl MpvController {
         pending.check()?;
         let mpv = Arc::new(Mutex::new(mpv));
         let mut event_client = {
-            let mpv_guard = mpv.lock().expect("libmpv mutex poisoned");
+            let mpv_guard = lock(&mpv);
             mpv_guard
                 .create_client(Some("fluster-events"))
                 .map_err(|error| MpvError::Initialize(safe_error(error)))?
@@ -187,7 +160,7 @@ impl MpvController {
 
         let finished = Arc::new(AtomicBool::new(false));
         {
-            let mut session = self.inner.session.lock().expect("session mutex poisoned");
+            let mut session = lock(&self.inner.session);
             let refused = if session.is_some() {
                 Some(MpvError::AlreadyPlaying)
             } else {
@@ -245,7 +218,7 @@ impl MpvController {
             })?;
 
         let result = media
-            .load(&mpv.lock().expect("libmpv mutex poisoned"))
+            .load(&lock(&mpv))
             .map_err(|error| MpvError::Command(safe_error(error)));
         if result.is_err() {
             self.request_finish(&app, &session_id);
@@ -315,97 +288,22 @@ impl MpvController {
             .map_err(|error| MpvError::Command(safe_error(error)))
     }
 
-    pub(crate) fn stop(&self) -> Result<(), MpvError> {
-        let (session_id, finished) = {
-            let session = self.inner.session.lock().expect("session mutex poisoned");
-            let Some(session) = session.as_ref() else {
-                // A launch still checking its stream gives up before it
-                // creates a handle; `stop` does not wait for it.
-                self.inner.pending.cancel();
-                return Ok(());
-            };
-            (session.id.clone(), session.finished.clone())
-        };
-
-        native_trace("stop requested");
-        // Do not issue a synchronous mpv "stop" command while the event client
-        // is unwinding. libmpv can make those two shutdown paths wait on each
-        // other. The event loop owns shutdown: it releases the event client,
-        // detaches the renderer, and finally drops the root mpv handle.
-        finished.store(true, Ordering::Release);
-        self.wait_for_session_end(&session_id, STOP_TIMEOUT)
-    }
-
     fn with_mpv<F>(&self, operation: F) -> Result<(), MpvError>
     where
         F: FnOnce(&Mpv) -> libmpv2::Result<()>,
     {
         let mpv = {
-            let session = self.inner.session.lock().expect("session mutex poisoned");
+            let session = lock(&self.inner.session);
             session
                 .as_ref()
                 .map(|session| session.mpv.clone())
                 .ok_or(MpvError::NotPlaying)?
         };
-        let result = operation(&mpv.lock().expect("libmpv mutex poisoned"));
+        let result = operation(&lock(&mpv));
         result.map_err(|error| MpvError::Command(safe_error(error)))
-    }
-
-    fn request_finish(&self, app: &AppHandle, id: &str) {
-        surface::detach(app, id);
-        let session = self.inner.session.lock().expect("session mutex poisoned");
-        if session.as_ref().is_some_and(|session| session.id == id) {
-            session
-                .as_ref()
-                .expect("checked active session")
-                .finished
-                .store(true, Ordering::Release);
-        }
-    }
-
-    fn finalize_session(&self, app: &AppHandle, id: &str) {
-        native_trace("finalizing native surface");
-        surface::detach(app, id);
-        native_trace("native surface detached");
-        let mut session = self.inner.session.lock().expect("session mutex poisoned");
-        if session.as_ref().is_some_and(|session| session.id == id) {
-            session.take();
-            self.media().publish(MediaUpdate::Stopped);
-            self.inner.session_finished.notify_all();
-        }
-        native_trace("playback finalized");
-    }
-
-    fn wait_for_session_end(&self, id: &str, timeout: Duration) -> Result<(), MpvError> {
-        let deadline = Instant::now() + timeout;
-        let mut session = self.inner.session.lock().expect("session mutex poisoned");
-        while session.as_ref().is_some_and(|session| session.id == id) {
-            let Some(remaining) = deadline.checked_duration_since(Instant::now()) else {
-                native_trace("stop timed out");
-                return Err(MpvError::StopTimeout);
-            };
-            let (next_session, result) = self
-                .inner
-                .session_finished
-                .wait_timeout(session, remaining)
-                .expect("session mutex poisoned");
-            session = next_session;
-            if result.timed_out() && session.as_ref().is_some_and(|session| session.id == id) {
-                native_trace("stop timed out");
-                return Err(MpvError::StopTimeout);
-            }
-        }
-        native_trace("stop acknowledged");
-        Ok(())
     }
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn stop_is_idempotent_without_an_active_session() {
-        assert!(MpvController::default().stop().is_ok());
-    }
-}
+#[path = "controller_stop_tests.rs"]
+mod stop_tests;

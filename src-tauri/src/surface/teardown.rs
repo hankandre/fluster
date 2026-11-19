@@ -29,8 +29,7 @@ pub(super) fn tear_down(
         return Ok(());
     }
     if surface.make_current().is_err() {
-        #[cfg(debug_assertions)]
-        eprintln!("[fluster native] video GL context not current; freeing render context anyway");
+        crate::trace::native_trace("video GL context not current; freeing render context anyway");
     }
     surface.free_render_context();
     surface.collapse_surface();

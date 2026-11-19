@@ -5,19 +5,18 @@ use super::{
     run_on_main, set_composition_background, LinuxUi, GL_LOADED, LIBRARY_BACKGROUND, RENDER_STATE,
     UI,
 };
+use crate::trace::native_trace;
 use gtk::glib;
 use gtk::prelude::*;
 use std::cell::Cell;
 use tauri::AppHandle;
 
 pub fn detach(app: &AppHandle, session_id: &str) {
-    #[cfg(debug_assertions)]
-    eprintln!("[fluster native] scheduling GTK detach");
+    native_trace("scheduling GTK detach");
     let session_id = session_id.to_string();
     let app_for_detach = app.clone();
     let _ = run_on_main(app, move || {
-        #[cfg(debug_assertions)]
-        eprintln!("[fluster native] GTK detach started");
+        native_trace("GTK detach started");
         let result = UI.with(|slot| match slot.borrow().as_ref() {
             Some(ui) => tear_down(
                 &mut LinuxTeardown {
@@ -32,8 +31,7 @@ pub fn detach(app: &AppHandle, session_id: &str) {
                 Ok(())
             }
         });
-        #[cfg(debug_assertions)]
-        eprintln!("[fluster native] GTK detach finished");
+        native_trace("GTK detach finished");
         result
     });
 }
@@ -65,13 +63,11 @@ impl SurfaceTeardown for LinuxTeardown<'_> {
     }
 
     fn free_render_context(&mut self) {
-        #[cfg(debug_assertions)]
-        eprintln!("[fluster native] dropping render context");
+        native_trace("dropping render context");
         // Take first, then drop, so no RefCell borrow is held while libmpv frees.
         let state = RENDER_STATE.with(|state| state.borrow_mut().take());
         drop(state);
-        #[cfg(debug_assertions)]
-        eprintln!("[fluster native] render context dropped");
+        native_trace("render context dropped");
     }
 
     fn collapse_surface(&mut self) {
@@ -130,7 +126,7 @@ fn trace_next_paint(window: &gtk::Widget) {
     let handler = std::rc::Rc::new(Cell::new(None::<glib::SignalHandlerId>));
     let handler_for_paint = handler.clone();
     let id = clock.connect_after_paint(move |clock| {
-        eprintln!("[fluster native] window painted after detach");
+        native_trace("window painted after detach");
         if let Some(id) = handler_for_paint.take() {
             clock.disconnect(id);
         }

@@ -58,13 +58,10 @@ pub(crate) enum MpvError {
     StopTimeout,
 }
 
-#[cfg(debug_assertions)]
+/// Never panics: see `crate::trace`.
 fn native_trace(message: &str) {
-    eprintln!("[fluster native] {message}");
+    crate::trace::write_trace("[fluster native]", message);
 }
-
-#[cfg(not(debug_assertions))]
-fn native_trace(_message: &str) {}
 
 fn string_property(mpv: &Mpv, property: &str) -> Option<String> {
     mpv.get_property::<MpvStr<'_>>(property)

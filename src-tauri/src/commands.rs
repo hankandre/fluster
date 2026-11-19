@@ -97,10 +97,15 @@ pub(crate) fn set_fullscreen(
 #[tauri::command]
 pub(crate) async fn stop_playback(controller: State<'_, MpvController>) -> Result<(), String> {
     let controller = controller.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || controller.stop())
-        .await
-        .map_err(|_| "The player stop task did not finish.".to_string())?
-        .map_err(|error| error.to_string())
+    let stopping = controller.clone();
+    match tauri::async_runtime::spawn_blocking(move || stopping.stop()).await {
+        Ok(result) => result.map_err(|error| error.to_string()),
+        Err(_) => {
+            // The stop panicked: end the session anyway so it cannot keep playing.
+            controller.force_finish();
+            Err("The player stop task did not finish.".to_string())
+        }
+    }
 }
 
 #[tauri::command]
