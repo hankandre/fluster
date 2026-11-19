@@ -216,7 +216,7 @@ function PlaybackScreen({ gateway, player, route, detail, status }: {
     void playback.stopAndLeave(() => {
       leaveToSignIn();
       signOutAfterStop(whenPlaybackStopped(player.engine));
-    });
+    }, { final: true });
   };
 
   const backToDetails = async () => {
