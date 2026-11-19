@@ -523,3 +523,19 @@ test("a pick sends one PlaybackInfo with the index, and no pick sends none", asy
   expect(log.playbackInfoQueries[1].get("AudioStreamIndex")).toBe("2");
   expect(log.playbackInfoQueries[1].get("Static")).toBeNull();
 });
+
+test("the scrub preview is gone once the pointer has sought and moved away", async ({ page }) => {
+  await startArrival(page, false, { chapters: [{ StartPositionTicks: 600_000_000, Name: "Middle" }] });
+  const slider = page.getByRole("slider", { name: "Playback position" });
+  await expect(slider).toBeEnabled();
+  const box = await page.locator(".seek-track").boundingBox();
+  if (!box) throw new Error("seek track not found");
+  await page.mouse.move(box.x + box.width * 0.3, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height / 2);
+  await page.mouse.up();
+  await expect(page.locator(".seek-preview")).toBeVisible();
+  await page.mouse.move(box.x + box.width / 2, box.y - 200);
+  await expect(page.locator(".seek-preview")).toHaveCount(0);
+  await expect(slider).toBeFocused();
+});
