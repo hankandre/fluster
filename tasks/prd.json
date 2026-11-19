@@ -4020,10 +4020,10 @@
             "No app behaviour changes: nothing under src/ changes except the fixture test"
           ],
           "verify": "pnpm check && pnpm test -- src/lib/jellyfin/rating-fixtures.test.ts",
-          "status": "todo",
+          "status": "in_progress",
           "owner": null,
           "passes": false,
-          "evidence": ""
+          "evidence": "Recorded 12 rating-*.json per version (10.11.7, 12.4.0) with tests/integration/record-rating-fixtures.mjs; pnpm vitest run src/lib/jellyfin/rating-fixtures.test.ts: 92 passed; README at tests/fixtures/jellyfin/README.md."
         },
         {
           "id": "P16-14",

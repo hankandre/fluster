@@ -1,0 +1,38 @@
+{
+  "Items": [
+    {
+      "Name": "Synthetic HEVC HDR10 (2024)",
+      "ServerId": "server-124",
+      "Id": "item-hevc",
+      "Container": "mkv",
+      "ChannelId": null,
+      "RunTimeTicks": 100210000,
+      "ProductionYear": 2024,
+      "IsFolder": false,
+      "Type": "Movie",
+      "UserData": {
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": true,
+        "Played": false,
+        "Key": "item-hevc",
+        "ItemId": "item-hevc"
+      },
+      "PrimaryImageAspectRatio": 1.7777777777777777,
+      "VideoType": "VideoFile",
+      "ImageTags": {
+        "Primary": "id-8"
+      },
+      "BackdropImageTags": [],
+      "ImageBlurHashes": {
+        "Primary": {
+          "id-8": "WiIh{X*BH[*?Ec7Y_N%urxz#NYAUD%xaxaR7kCR+-qNHRjtjjYs,"
+        }
+      },
+      "LocationType": "FileSystem",
+      "MediaType": "Video"
+    }
+  ],
+  "TotalRecordCount": 1,
+  "StartIndex": 0
+}

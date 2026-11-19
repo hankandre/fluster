@@ -436,6 +436,7 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
     - the cutoff (4 stars and up, the top 25%, or both), and a minimum number of rated titles before a top-25% list shows.
   - Hierarchy (owner, 2026-11-17): clearly distinguish the viewer's own rating from audience and critic scores. The viewer's own rating is more prominent, in its own place and not on the facts line. Audience and critic scores stay, because they help decide what to watch, but they are secondary and labelled by source ("7.8 audience · 91% critics", applied to P15-03).
   - ~~Possible Jellyscale request (from:fluster): server-side sort and threshold filter by the user's own rating.~~ Owner, 2026-11-19: no. Fluster computes the lists itself.
+  - Checked against both servers by P16-13 (2026-11-19): see `tests/fixtures/jellyfin/README.md` "Personal ratings (P16-13)". Findings for P16-14 to P16-16: `DELETE /UserItems/{id}/Rating` is the only call that clears a rating (no `UserData` body does; `{ Rating: 0 }` stores 0); the thumbs routes overwrite a number (like stores 10, dislike stores 1); `filters=Likes` is enough for the cutoff of 8; `Dislikes` and `IsFavoriteOrLikes` do not behave as named and `Likes,Dislikes` is a 400 on 12.4.0.
   - M.
 
 ## Product review pass (2026-11-19)

@@ -1,0 +1,153 @@
+{
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/UserItems/{id}/UserData",
+      "body": {
+        "Rating": 8
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/UserItems/{id}/Rating",
+      "query": {
+        "likes": true
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/UserItems/{id}/Rating"
+    }
+  ],
+  "films": [
+    {
+      "film": "item-h264",
+      "before": {
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 1,
+        "IsFavorite": true,
+        "LastPlayedDate": "2026-01-05T12:00:00.0000000Z",
+        "Played": true,
+        "Key": "item-h264",
+        "ItemId": "item-h264"
+      },
+      "afterRating": {
+        "Rating": 8,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 1,
+        "IsFavorite": true,
+        "Likes": true,
+        "LastPlayedDate": "2026-01-05T12:00:00.0000000Z",
+        "Played": true,
+        "Key": "item-h264",
+        "ItemId": "item-h264"
+      },
+      "afterLike": {
+        "Rating": 10,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 1,
+        "IsFavorite": true,
+        "Likes": true,
+        "LastPlayedDate": "2026-01-05T12:00:00.0000000Z",
+        "Played": true,
+        "Key": "item-h264",
+        "ItemId": "item-h264"
+      },
+      "afterDelete": {
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 1,
+        "IsFavorite": true,
+        "LastPlayedDate": "2026-01-05T12:00:00.0000000Z",
+        "Played": true,
+        "Key": "item-h264",
+        "ItemId": "item-h264"
+      }
+    },
+    {
+      "film": "item-av1",
+      "before": {
+        "PlayedPercentage": 40,
+        "PlaybackPositionTicks": 40084000,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "LastPlayedDate": "2026-06-01T12:00:00.0000000Z",
+        "Played": false,
+        "Key": "item-av1",
+        "ItemId": "item-av1"
+      },
+      "afterRating": {
+        "Rating": 8,
+        "PlayedPercentage": 40,
+        "PlaybackPositionTicks": 40084000,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": true,
+        "LastPlayedDate": "2026-06-01T12:00:00.0000000Z",
+        "Played": false,
+        "Key": "item-av1",
+        "ItemId": "item-av1"
+      },
+      "afterLike": {
+        "Rating": 10,
+        "PlayedPercentage": 40,
+        "PlaybackPositionTicks": 40084000,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": true,
+        "LastPlayedDate": "2026-06-01T12:00:00.0000000Z",
+        "Played": false,
+        "Key": "item-av1",
+        "ItemId": "item-av1"
+      },
+      "afterDelete": {
+        "PlayedPercentage": 40,
+        "PlaybackPositionTicks": 40084000,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "LastPlayedDate": "2026-06-01T12:00:00.0000000Z",
+        "Played": false,
+        "Key": "item-av1",
+        "ItemId": "item-av1"
+      }
+    },
+    {
+      "film": "item-sidecar",
+      "before": {
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Played": false,
+        "Key": "item-sidecar",
+        "ItemId": "item-sidecar"
+      },
+      "afterRating": {
+        "Rating": 8,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": true,
+        "Played": false,
+        "Key": "item-sidecar",
+        "ItemId": "item-sidecar"
+      },
+      "afterLike": {
+        "Rating": 10,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": true,
+        "Played": false,
+        "Key": "item-sidecar",
+        "ItemId": "item-sidecar"
+      },
+      "afterDelete": {
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Played": false,
+        "Key": "item-sidecar",
+        "ItemId": "item-sidecar"
+      }
+    }
+  ]
+}

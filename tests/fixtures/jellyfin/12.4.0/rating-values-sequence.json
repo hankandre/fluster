@@ -1,0 +1,479 @@
+{
+  "film": "item-multitrack",
+  "steps": [
+    {
+      "step": "Rating 1",
+      "request": {
+        "method": "POST",
+        "path": "/UserItems/item-multitrack/UserData",
+        "body": {
+          "Rating": 1
+        }
+      },
+      "status": 200,
+      "response": {
+        "Rating": 1,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": false,
+        "Played": false,
+        "Key": "item-multitrack",
+        "ItemId": "item-multitrack"
+      },
+      "readBack": {
+        "Id": "item-multitrack",
+        "Name": "Synthetic Multitrack (2024)",
+        "UserData": {
+          "Rating": 1,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": false,
+          "Played": false,
+          "Key": "item-multitrack",
+          "ItemId": "item-multitrack"
+        }
+      }
+    },
+    {
+      "step": "Rating 2",
+      "request": {
+        "method": "POST",
+        "path": "/UserItems/item-multitrack/UserData",
+        "body": {
+          "Rating": 2
+        }
+      },
+      "status": 200,
+      "response": {
+        "Rating": 2,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": false,
+        "Played": false,
+        "Key": "item-multitrack",
+        "ItemId": "item-multitrack"
+      },
+      "readBack": {
+        "Id": "item-multitrack",
+        "Name": "Synthetic Multitrack (2024)",
+        "UserData": {
+          "Rating": 2,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": false,
+          "Played": false,
+          "Key": "item-multitrack",
+          "ItemId": "item-multitrack"
+        }
+      }
+    },
+    {
+      "step": "Rating 3",
+      "request": {
+        "method": "POST",
+        "path": "/UserItems/item-multitrack/UserData",
+        "body": {
+          "Rating": 3
+        }
+      },
+      "status": 200,
+      "response": {
+        "Rating": 3,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": false,
+        "Played": false,
+        "Key": "item-multitrack",
+        "ItemId": "item-multitrack"
+      },
+      "readBack": {
+        "Id": "item-multitrack",
+        "Name": "Synthetic Multitrack (2024)",
+        "UserData": {
+          "Rating": 3,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": false,
+          "Played": false,
+          "Key": "item-multitrack",
+          "ItemId": "item-multitrack"
+        }
+      }
+    },
+    {
+      "step": "Rating 4",
+      "request": {
+        "method": "POST",
+        "path": "/UserItems/item-multitrack/UserData",
+        "body": {
+          "Rating": 4
+        }
+      },
+      "status": 200,
+      "response": {
+        "Rating": 4,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": false,
+        "Played": false,
+        "Key": "item-multitrack",
+        "ItemId": "item-multitrack"
+      },
+      "readBack": {
+        "Id": "item-multitrack",
+        "Name": "Synthetic Multitrack (2024)",
+        "UserData": {
+          "Rating": 4,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": false,
+          "Played": false,
+          "Key": "item-multitrack",
+          "ItemId": "item-multitrack"
+        }
+      }
+    },
+    {
+      "step": "Rating 5",
+      "request": {
+        "method": "POST",
+        "path": "/UserItems/item-multitrack/UserData",
+        "body": {
+          "Rating": 5
+        }
+      },
+      "status": 200,
+      "response": {
+        "Rating": 5,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": false,
+        "Played": false,
+        "Key": "item-multitrack",
+        "ItemId": "item-multitrack"
+      },
+      "readBack": {
+        "Id": "item-multitrack",
+        "Name": "Synthetic Multitrack (2024)",
+        "UserData": {
+          "Rating": 5,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": false,
+          "Played": false,
+          "Key": "item-multitrack",
+          "ItemId": "item-multitrack"
+        }
+      }
+    },
+    {
+      "step": "Rating 6",
+      "request": {
+        "method": "POST",
+        "path": "/UserItems/item-multitrack/UserData",
+        "body": {
+          "Rating": 6
+        }
+      },
+      "status": 200,
+      "response": {
+        "Rating": 6,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": false,
+        "Played": false,
+        "Key": "item-multitrack",
+        "ItemId": "item-multitrack"
+      },
+      "readBack": {
+        "Id": "item-multitrack",
+        "Name": "Synthetic Multitrack (2024)",
+        "UserData": {
+          "Rating": 6,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": false,
+          "Played": false,
+          "Key": "item-multitrack",
+          "ItemId": "item-multitrack"
+        }
+      }
+    },
+    {
+      "step": "Rating 7",
+      "request": {
+        "method": "POST",
+        "path": "/UserItems/item-multitrack/UserData",
+        "body": {
+          "Rating": 7
+        }
+      },
+      "status": 200,
+      "response": {
+        "Rating": 7,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": true,
+        "Played": false,
+        "Key": "item-multitrack",
+        "ItemId": "item-multitrack"
+      },
+      "readBack": {
+        "Id": "item-multitrack",
+        "Name": "Synthetic Multitrack (2024)",
+        "UserData": {
+          "Rating": 7,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": true,
+          "Played": false,
+          "Key": "item-multitrack",
+          "ItemId": "item-multitrack"
+        }
+      }
+    },
+    {
+      "step": "Rating 8",
+      "request": {
+        "method": "POST",
+        "path": "/UserItems/item-multitrack/UserData",
+        "body": {
+          "Rating": 8
+        }
+      },
+      "status": 200,
+      "response": {
+        "Rating": 8,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": true,
+        "Played": false,
+        "Key": "item-multitrack",
+        "ItemId": "item-multitrack"
+      },
+      "readBack": {
+        "Id": "item-multitrack",
+        "Name": "Synthetic Multitrack (2024)",
+        "UserData": {
+          "Rating": 8,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": true,
+          "Played": false,
+          "Key": "item-multitrack",
+          "ItemId": "item-multitrack"
+        }
+      }
+    },
+    {
+      "step": "Rating 9",
+      "request": {
+        "method": "POST",
+        "path": "/UserItems/item-multitrack/UserData",
+        "body": {
+          "Rating": 9
+        }
+      },
+      "status": 200,
+      "response": {
+        "Rating": 9,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": true,
+        "Played": false,
+        "Key": "item-multitrack",
+        "ItemId": "item-multitrack"
+      },
+      "readBack": {
+        "Id": "item-multitrack",
+        "Name": "Synthetic Multitrack (2024)",
+        "UserData": {
+          "Rating": 9,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": true,
+          "Played": false,
+          "Key": "item-multitrack",
+          "ItemId": "item-multitrack"
+        }
+      }
+    },
+    {
+      "step": "Rating 10",
+      "request": {
+        "method": "POST",
+        "path": "/UserItems/item-multitrack/UserData",
+        "body": {
+          "Rating": 10
+        }
+      },
+      "status": 200,
+      "response": {
+        "Rating": 10,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": true,
+        "Played": false,
+        "Key": "item-multitrack",
+        "ItemId": "item-multitrack"
+      },
+      "readBack": {
+        "Id": "item-multitrack",
+        "Name": "Synthetic Multitrack (2024)",
+        "UserData": {
+          "Rating": 10,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": true,
+          "Played": false,
+          "Key": "item-multitrack",
+          "ItemId": "item-multitrack"
+        }
+      }
+    },
+    {
+      "step": "Rating 7.5",
+      "request": {
+        "method": "POST",
+        "path": "/UserItems/item-multitrack/UserData",
+        "body": {
+          "Rating": 7.5
+        }
+      },
+      "status": 200,
+      "response": {
+        "Rating": 7.5,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": true,
+        "Played": false,
+        "Key": "item-multitrack",
+        "ItemId": "item-multitrack"
+      },
+      "readBack": {
+        "Id": "item-multitrack",
+        "Name": "Synthetic Multitrack (2024)",
+        "UserData": {
+          "Rating": 7.5,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": true,
+          "Played": false,
+          "Key": "item-multitrack",
+          "ItemId": "item-multitrack"
+        }
+      }
+    },
+    {
+      "step": "Rating 6.5",
+      "request": {
+        "method": "POST",
+        "path": "/UserItems/item-multitrack/UserData",
+        "body": {
+          "Rating": 6.5
+        }
+      },
+      "status": 200,
+      "response": {
+        "Rating": 6.5,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Likes": true,
+        "Played": false,
+        "Key": "item-multitrack",
+        "ItemId": "item-multitrack"
+      },
+      "readBack": {
+        "Id": "item-multitrack",
+        "Name": "Synthetic Multitrack (2024)",
+        "UserData": {
+          "Rating": 6.5,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": true,
+          "Played": false,
+          "Key": "item-multitrack",
+          "ItemId": "item-multitrack"
+        }
+      }
+    }
+  ],
+  "outOfRange": [
+    {
+      "step": "Rating 11",
+      "request": {
+        "method": "POST",
+        "path": "/UserItems/item-multitrack/UserData",
+        "body": {
+          "Rating": 11
+        }
+      },
+      "status": 400,
+      "response": null,
+      "readBack": {
+        "Id": "item-multitrack",
+        "Name": "Synthetic Multitrack (2024)",
+        "UserData": {
+          "Rating": 6.5,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": true,
+          "Played": false,
+          "Key": "item-multitrack",
+          "ItemId": "item-multitrack"
+        }
+      }
+    },
+    {
+      "step": "Rating -1",
+      "request": {
+        "method": "POST",
+        "path": "/UserItems/item-multitrack/UserData",
+        "body": {
+          "Rating": -1
+        }
+      },
+      "status": 400,
+      "response": null,
+      "readBack": {
+        "Id": "item-multitrack",
+        "Name": "Synthetic Multitrack (2024)",
+        "UserData": {
+          "Rating": 6.5,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": true,
+          "Played": false,
+          "Key": "item-multitrack",
+          "ItemId": "item-multitrack"
+        }
+      }
+    }
+  ]
+}

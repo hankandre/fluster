@@ -1,0 +1,361 @@
+{
+  "film": "item-ass",
+  "candidates": [
+    {
+      "candidate": "empty body",
+      "before": {
+        "step": "Rating 8",
+        "request": {
+          "method": "POST",
+          "path": "/UserItems/item-ass/UserData",
+          "body": {
+            "Rating": 8
+          }
+        },
+        "status": 200,
+        "response": {
+          "Rating": 8,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": true,
+          "Played": false,
+          "Key": "item-ass",
+          "ItemId": "item-ass"
+        },
+        "readBack": {
+          "Id": "item-ass",
+          "Name": "Synthetic ASS (2024)",
+          "UserData": {
+            "Rating": 8,
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Likes": true,
+            "Played": false,
+            "Key": "item-ass",
+            "ItemId": "item-ass"
+          }
+        }
+      },
+      "after": {
+        "step": "empty body",
+        "request": {
+          "method": "POST",
+          "path": "/UserItems/item-ass/UserData",
+          "body": {}
+        },
+        "status": 200,
+        "response": {
+          "Rating": 8,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": true,
+          "Played": false,
+          "Key": "item-ass",
+          "ItemId": "item-ass"
+        },
+        "readBack": {
+          "Id": "item-ass",
+          "Name": "Synthetic ASS (2024)",
+          "UserData": {
+            "Rating": 8,
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Likes": true,
+            "Played": false,
+            "Key": "item-ass",
+            "ItemId": "item-ass"
+          }
+        }
+      }
+    },
+    {
+      "candidate": "Rating null",
+      "before": {
+        "step": "Rating 8",
+        "request": {
+          "method": "POST",
+          "path": "/UserItems/item-ass/UserData",
+          "body": {
+            "Rating": 8
+          }
+        },
+        "status": 200,
+        "response": {
+          "Rating": 8,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": true,
+          "Played": false,
+          "Key": "item-ass",
+          "ItemId": "item-ass"
+        },
+        "readBack": {
+          "Id": "item-ass",
+          "Name": "Synthetic ASS (2024)",
+          "UserData": {
+            "Rating": 8,
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Likes": true,
+            "Played": false,
+            "Key": "item-ass",
+            "ItemId": "item-ass"
+          }
+        }
+      },
+      "after": {
+        "step": "Rating null",
+        "request": {
+          "method": "POST",
+          "path": "/UserItems/item-ass/UserData",
+          "body": {
+            "Rating": null
+          }
+        },
+        "status": 200,
+        "response": {
+          "Rating": 8,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": true,
+          "Played": false,
+          "Key": "item-ass",
+          "ItemId": "item-ass"
+        },
+        "readBack": {
+          "Id": "item-ass",
+          "Name": "Synthetic ASS (2024)",
+          "UserData": {
+            "Rating": 8,
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Likes": true,
+            "Played": false,
+            "Key": "item-ass",
+            "ItemId": "item-ass"
+          }
+        }
+      }
+    },
+    {
+      "candidate": "Likes null",
+      "before": {
+        "step": "Rating 8",
+        "request": {
+          "method": "POST",
+          "path": "/UserItems/item-ass/UserData",
+          "body": {
+            "Rating": 8
+          }
+        },
+        "status": 200,
+        "response": {
+          "Rating": 8,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": true,
+          "Played": false,
+          "Key": "item-ass",
+          "ItemId": "item-ass"
+        },
+        "readBack": {
+          "Id": "item-ass",
+          "Name": "Synthetic ASS (2024)",
+          "UserData": {
+            "Rating": 8,
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Likes": true,
+            "Played": false,
+            "Key": "item-ass",
+            "ItemId": "item-ass"
+          }
+        }
+      },
+      "after": {
+        "step": "Likes null",
+        "request": {
+          "method": "POST",
+          "path": "/UserItems/item-ass/UserData",
+          "body": {
+            "Likes": null
+          }
+        },
+        "status": 200,
+        "response": {
+          "Rating": 8,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": true,
+          "Played": false,
+          "Key": "item-ass",
+          "ItemId": "item-ass"
+        },
+        "readBack": {
+          "Id": "item-ass",
+          "Name": "Synthetic ASS (2024)",
+          "UserData": {
+            "Rating": 8,
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Likes": true,
+            "Played": false,
+            "Key": "item-ass",
+            "ItemId": "item-ass"
+          }
+        }
+      }
+    },
+    {
+      "candidate": "Rating 0",
+      "before": {
+        "step": "Rating 8",
+        "request": {
+          "method": "POST",
+          "path": "/UserItems/item-ass/UserData",
+          "body": {
+            "Rating": 8
+          }
+        },
+        "status": 200,
+        "response": {
+          "Rating": 8,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": true,
+          "Played": false,
+          "Key": "item-ass",
+          "ItemId": "item-ass"
+        },
+        "readBack": {
+          "Id": "item-ass",
+          "Name": "Synthetic ASS (2024)",
+          "UserData": {
+            "Rating": 8,
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Likes": true,
+            "Played": false,
+            "Key": "item-ass",
+            "ItemId": "item-ass"
+          }
+        }
+      },
+      "after": {
+        "step": "Rating 0",
+        "request": {
+          "method": "POST",
+          "path": "/UserItems/item-ass/UserData",
+          "body": {
+            "Rating": 0
+          }
+        },
+        "status": 200,
+        "response": {
+          "Rating": 0,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": false,
+          "Played": false,
+          "Key": "item-ass",
+          "ItemId": "item-ass"
+        },
+        "readBack": {
+          "Id": "item-ass",
+          "Name": "Synthetic ASS (2024)",
+          "UserData": {
+            "Rating": 0,
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Likes": false,
+            "Played": false,
+            "Key": "item-ass",
+            "ItemId": "item-ass"
+          }
+        }
+      }
+    },
+    {
+      "candidate": "DELETE Rating",
+      "before": {
+        "step": "Rating 8",
+        "request": {
+          "method": "POST",
+          "path": "/UserItems/item-ass/UserData",
+          "body": {
+            "Rating": 8
+          }
+        },
+        "status": 200,
+        "response": {
+          "Rating": 8,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Likes": true,
+          "Played": false,
+          "Key": "item-ass",
+          "ItemId": "item-ass"
+        },
+        "readBack": {
+          "Id": "item-ass",
+          "Name": "Synthetic ASS (2024)",
+          "UserData": {
+            "Rating": 8,
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Likes": true,
+            "Played": false,
+            "Key": "item-ass",
+            "ItemId": "item-ass"
+          }
+        }
+      },
+      "after": {
+        "step": "DELETE Rating",
+        "request": {
+          "method": "DELETE",
+          "path": "/UserItems/item-ass/Rating"
+        },
+        "status": 200,
+        "response": {
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Played": false,
+          "Key": "item-ass",
+          "ItemId": "item-ass"
+        },
+        "readBack": {
+          "Id": "item-ass",
+          "Name": "Synthetic ASS (2024)",
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "item-ass",
+            "ItemId": "item-ass"
+          }
+        }
+      }
+    }
+  ]
+}
