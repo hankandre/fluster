@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { LibraryItem } from "../../domain/catalog";
 import type { PlaybackPlan, PlaybackSnapshot, PlayerEngine, PlayerEvent } from "../../domain/playback";
-import { PlaybackCancelledError, PlaybackCoordinator, type PlaybackGateway } from "./coordinator";
+import { PlaybackCancelledError, PlaybackCoordinator, PlayerStopError, type PlaybackGateway } from "./coordinator";
 
 const item: LibraryItem = {
   id: "one",
@@ -154,6 +154,26 @@ describe("PlaybackCoordinator", () => {
 
     await coordinator.start(item);
     await expect(coordinator.retry()).rejects.toThrow("reused the failed playback session");
+    expect(player.launch).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects a retry whose stop failed with a PlayerStopError that carries no native text", async () => {
+    const gateway = {
+      createPlaybackPlan: vi.fn(async () => plan),
+      reportStart: vi.fn(async () => undefined),
+      reportProgress: vi.fn(async () => undefined),
+      reportStopped: vi.fn(async () => undefined),
+      authorizationHeader: () => "test-header",
+      stopActiveEncoding: vi.fn(async () => undefined),
+    } as PlaybackGateway;
+    const player = new FakePlayer();
+    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
+    await coordinator.start(item);
+    player.stop.mockRejectedValueOnce(new Error("mpv did not stop at /home/u/x.mkv"));
+
+    const failure = await coordinator.retry().catch((error: unknown) => error);
+    expect(failure).toBeInstanceOf(PlayerStopError);
+    expect(String(failure)).not.toContain("x.mkv");
     expect(player.launch).toHaveBeenCalledTimes(1);
   });
 

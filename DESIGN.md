@@ -664,6 +664,7 @@ Fluster talks like a knowledgeable friend running the projector: calm, brief, pl
 | Player loading, before the server answers | n/a | Loading… | Back |
 | Playback error, server unreachable (no response, network error, timeout) | Playback could not start | Couldn't reach {server}. Check that the server is on, then try again. | Retry, Back to details |
 | Playback error, server error (HTTP 5xx) | Playback could not start | {server} had a problem starting playback. Try again in a moment. | Retry, Back to details |
+| Playback error, the player did not stop (Back, Retry, or a track or limit change; owner decision 2026-11-19) | Couldn't stop playback | The player didn't close properly. Go back to try again, or quit Fluster if you can still hear it. | Back to details (primary; it tries the stop again, then leaves) |
 | Playback error, other request failure | Playback could not start | Something went wrong starting playback. Try again. | Retry, Back to details |
 | Progress report failed | n/a | Couldn't save your progress to {server}. Playback continues. | n/a |
 

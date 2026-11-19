@@ -68,6 +68,15 @@ export class PlaybackCancelledError extends Error {
   }
 }
 
+// The engine did not stop. Carries fixed text only: the native reason never
+// reaches the view, which shows the failed-stop copy (DESIGN.md 10).
+export class PlayerStopError extends Error {
+  constructor() {
+    super("The player did not stop.");
+    this.name = "PlayerStopError";
+  }
+}
+
 export class PlaybackCoordinator {
   private item?: LibraryItem;
   private choice?: PlaybackStartChoice;
@@ -313,7 +322,11 @@ export class PlaybackCoordinator {
     try {
       await this.cancelStop;
       this.cancelStop = undefined;
-      await this.player.stop();
+      try {
+        await this.player.stop();
+      } catch {
+        throw new PlayerStopError();
+      }
       await this.eventQueue;
       await this.finish(reason, this.snapshot);
     } finally {

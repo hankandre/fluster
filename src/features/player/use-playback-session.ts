@@ -16,7 +16,7 @@ import {
 import { currentSelection, sourceTrackOptions, trackChange, type TrackKind } from "../../domain/track-choice";
 import type { SessionGateway } from "../../app/session";
 import type { PlayerServices } from "../../app/player-services";
-import { PlaybackCancelledError, PlaybackCoordinator, type PlaybackGateway } from "../../lib/player/coordinator";
+import { PlaybackCancelledError, PlaybackCoordinator, PlayerStopError, type PlaybackGateway } from "../../lib/player/coordinator";
 import { initialPlaybackSessionState, playbackSessionReducer, type PlaybackSessionAction } from "../../lib/player/session-state";
 import { redactText } from "../../lib/redact";
 import { errorReason } from "./safe-reason";
@@ -198,6 +198,11 @@ export function usePlaybackSession(options: PlaybackSessionOptions) {
     }
     if (error instanceof UnsupportedDeliveryError) {
       setUnsupported(true);
+      return;
+    }
+    // A Retry or renegotiation whose stop failed shows the failed-stop copy.
+    if (error instanceof PlayerStopError) {
+      dispatch(stopFailureAction());
       return;
     }
     dispatch(failureAction(error));
