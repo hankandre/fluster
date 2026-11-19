@@ -455,4 +455,9 @@ The triage of every entry added since the 2026-11-15 pass, and the two owner req
   - Whether a renegotiation keeps a paused title paused, and whether direct play after a renegotiation selects the kept subtitle track in mpv, are unverified; P3-33's spec records both. S (P3-33).
   - CI retries end-to-end journeys twice and visual captures once (`playwright.config.ts:19`, `playwright.visual.config.ts:17`), so the `e2e/tv/settings-languages.spec.ts:28` flake (2 of 10 on main without retries) rarely fails a pull request. It stays an entry; promote it if it fails a CI run. S.
   - ~~Adding P3-32 and P3-33 to P4-01's `depends_on` (the dogfood week waits for settings in the player) edits an existing task; it is proposal E1 for the owner. S.~~ Approved by the owner and applied, 2026-11-19.
-  - Whether P4-01 (the dogfood week) also waits for P3-34 is the owner's call; E1 named P3-32 and P3-33 only. S.
+  - ~~Whether P4-01 (the dogfood week) also waits for P3-34 is the owner's call; E1 named P3-32 and P3-33 only. S.~~ Owner, 2026-11-19: yes; P4-01 depends on P3-34 (#203).
+
+## P15-03 ship notes (2026-11-19)
+
+- `person-row.tsx`: `PersonDisc` resets its photo state only because `PersonRow` keys it by `imageSrc`; another caller that changes `imageSrc` without a key would keep "loaded" or "failed". Derive the state from `imageSrc` or document the key. S.
+- `docs/specs/P15-03.md` acceptance text and Approach 4 still describe "/10" and initials under the picture; decision log 3 and 4 supersede them. S.
