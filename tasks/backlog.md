@@ -492,3 +492,8 @@ The triage of every entry added since the 2026-11-15 pass, and the two owner req
 - Design low: "Back to settings" is small on desktop.
 - Design low: the TV toggle knob is near its focus ring.
 - Guardian re-check low (#209): `e2e/next-episode.spec.ts:220` and `e2e/tv/player.spec.ts:132` assert "Saved" with a plain `toBeVisible()`; on a heavily loaded runner the first poll could land after the 2 s clear. Use the status-history pattern from `e2e/player-settings.spec.ts`. S.
+
+## Player sheet outside click (2026-11-19)
+
+- Empty non-interactive chrome (title text, time labels, the Up Next card body, the notice body) counts as outside an open sheet, so a press there closes it. Owner design call.
+- The "does nothing else" assertions for a press outside a sheet guard future regressions only: no click-to-pause exists today.

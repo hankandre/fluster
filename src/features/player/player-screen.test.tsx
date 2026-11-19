@@ -1005,7 +1005,7 @@ describe("a press outside an open sheet", () => {
   const surface = (container: HTMLElement) => container.querySelector(".native-video-surface") as HTMLElement;
   // A mouse press as the browser sends it: pointerdown, mousedown, mouseup, click.
   const pressOn = (target: Element, button = 0) => {
-    fireEvent.pointerDown(target, { button });
+    fireEvent.pointerDown(target, { button, isPrimary: true });
     fireEvent.mouseDown(target, { button });
     fireEvent.mouseUp(target, { button });
     if (button === 0) fireEvent.click(target, { button });
@@ -1083,6 +1083,20 @@ describe("a press outside an open sheet", () => {
     pressOn(screen.getByRole("button", { name: "Info" }));
     pressOn(surface(container), 2);
     expect(screen.getByRole("region", { name: "Player information" })).toBeInTheDocument();
+  });
+
+  it("ignores a second finger and a ctrl-click, and closes on a primary touch or pen tap", () => {
+    const { container } = renderView();
+    pressOn(screen.getByRole("button", { name: "Info" }));
+    fireEvent.pointerDown(surface(container), { button: 0, isPrimary: false, pointerType: "touch" });
+    expect(screen.getByRole("region", { name: "Player information" })).toBeInTheDocument();
+    fireEvent.pointerDown(surface(container), { button: 0, isPrimary: true, ctrlKey: true });
+    expect(screen.getByRole("region", { name: "Player information" })).toBeInTheDocument();
+    fireEvent.pointerDown(surface(container), { button: 0, isPrimary: true, pointerType: "touch" });
+    expect(screen.queryByRole("region", { name: "Player information" })).not.toBeInTheDocument();
+    pressOn(screen.getByRole("button", { name: "Info" }));
+    fireEvent.pointerDown(surface(container), { button: 0, isPrimary: true, pointerType: "pen" });
+    expect(screen.queryByRole("region", { name: "Player information" })).not.toBeInTheDocument();
   });
 
   it("does nothing on the video when no sheet is open", () => {
