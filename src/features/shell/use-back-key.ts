@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { currentNavEntry } from "../shared/ui/app-nav";
 import { isTvForm } from "../shared/tv-form";
-import { HOME_ROUTE } from "../routes";
+import { HOME_ROUTE, parseItemRoute, parseLibraryRoute } from "../routes";
 import { isTextTarget } from "../use-escape-key";
 import { currentTvPlatform, exitRule, leaveApp } from "./leave-app";
 
@@ -12,12 +12,22 @@ const NAV_CURRENT = 'nav[aria-label="Main"] [aria-current="page"], nav[aria-labe
 // (first-load normalisation, redirects) fires hashchange too but leaves history.length unchanged.
 let navigatedInApp = false;
 let lastHistoryLength = typeof window !== "undefined" ? window.history.length : 0;
+// The hash the last pushed entry was left from, so a library opened from a title's genre link can tell Escape to return there.
+let pushedFrom = "";
 if (typeof window !== "undefined") {
-  window.addEventListener("hashchange", () => {
+  window.addEventListener("hashchange", (event) => {
     const length = window.history.length;
-    if (length > lastHistoryLength) navigatedInApp = true;
+    if (length > lastHistoryLength) {
+      navigatedInApp = true;
+      pushedFrom = event.oldURL.includes("#") ? event.oldURL.slice(event.oldURL.indexOf("#")) : "";
+    }
     lastHistoryLength = length;
   });
+}
+
+// A genre-filtered library reached from a title's genre link is a screen under that title, not a root tab.
+function openedFromTitleGenre(hash: string): boolean {
+  return parseLibraryRoute(hash)?.genreId !== undefined && parseItemRoute(pushedFrom) !== undefined;
 }
 
 // Screen-level Back for signed-in, non-player routes (DESIGN.md §9). Registered on window (bubble), so it
@@ -36,7 +46,7 @@ export function useBackKey(onConfirmLeave?: () => void): void {
       if (isTextTarget(event.target)) return;
       if (document.querySelector(MODAL_LAYER)) return;
       const hash = window.location.hash;
-      if (currentNavEntry(hash) !== undefined) {
+      if (currentNavEntry(hash) !== undefined && !openedFromTitleGenre(hash)) {
         if (!isTvForm()) return;
         const nav = document.querySelector<HTMLElement>('nav[aria-label="Main"]');
         if (nav?.contains(document.activeElement)) {

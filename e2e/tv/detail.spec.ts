@@ -89,7 +89,7 @@ test("Episode detail: Up reaches the series link, Down returns and enters the st
   await expect(page).toHaveURL(/#\/next\/home$/);
 });
 
-test("Movie detail: Up from Play reaches the genre row, Enter opens the filtered library, Back returns to the genre link", async ({ page }) => {
+test("Movie detail: Up from Play reaches the genre row, Enter opens the filtered library, Escape returns to the genre link", async ({ page }) => {
   await openDetail(page, "#/next/item/m1");
   await expect(play(page)).toBeFocused();
   await expectNoSmallText(page);
@@ -108,10 +108,8 @@ test("Movie detail: Up from Play reaches the genre row, Enter opens the filtered
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/#\/next\/browse\/lib-movies\?genre=genre-drama$/);
   await expect(page.getByRole("button", { name: "Genre Drama" })).toBeVisible();
-  // The library is a root tab, so Escape focuses the nav's entry (as after See all on Home); history Back returns to the title.
+  // Opened from a title, the library is a screen under it: Escape returns to the title.
   await page.keyboard.press("Escape");
-  await expect(nav(page).getByRole("link", { name: "Movies" })).toBeFocused();
-  await page.goBack();
   await expect(page).toHaveURL(/#\/next\/item\/m1$/);
   await expect(drama).toBeFocused();
 });

@@ -29,8 +29,8 @@ function LibraryContent({ gateway, libraryId, sort, filters, genreId }: { gatewa
   });
   const library = views.data?.find((view) => view.id === libraryId);
   const genres = useLibraryGenres(gateway, library);
-  // A genre the server does not list for this library is dropped from the route; the grid then reloads unfiltered.
-  const unknownGenre = genreId !== undefined && genres.data !== undefined && !genres.data.some((genre) => genre.id === genreId);
+  // A genre missing from a non-empty list is dropped (an empty list means the server cannot tell, so the route keeps it) from the route; the grid then reloads unfiltered.
+  const unknownGenre = genreId !== undefined && genres.data !== undefined && genres.data.length > 0 && !genres.data.some((genre) => genre.id === genreId);
   useEffect(() => {
     if (unknownGenre) replaceRoute(libraryRoute(libraryId, sort, filters));
   }, [unknownGenre, libraryId, sort, filters]);

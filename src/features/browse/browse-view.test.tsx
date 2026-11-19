@@ -235,6 +235,18 @@ describe("genre filter", () => {
     await waitFor(() => expect(libraryItems.mock.calls.at(-1)?.[1]).not.toHaveProperty("genreId"));
   });
 
+  it("keeps a route genre when the server lists no genres", async () => {
+    const libraryItems = vi.fn().mockResolvedValue({ cards: [card("m1", "Arrival")], hasMore: false });
+    const libraryGenres = vi.fn().mockResolvedValue([]);
+    window.location.hash = "#/next/browse/lib-1?genre=g-drama";
+    await renderView(fakeGateway({ libraryItems, libraryGenres }), <RoutedBrowse libraryId="lib-1" />);
+    await screen.findByRole("link", { name: "Arrival" });
+    await waitFor(() => expect(libraryGenres).toHaveBeenCalled());
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 10)); });
+    expect(window.location.hash).toBe("#/next/browse/lib-1?genre=g-drama");
+    expect(libraryItems.mock.calls.at(-1)?.[1]).toMatchObject({ genreId: "g-drama" });
+  });
+
   it("clears a genre from the filtered-empty state", async () => {
     const libraryItems = vi.fn().mockImplementation((_id: string, query: { genreId?: string }) =>
       Promise.resolve(query.genreId ? { cards: [], hasMore: false, totalCount: 0 } : { cards: [card("m1", "Arrival")], hasMore: false }));
