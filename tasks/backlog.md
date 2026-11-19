@@ -464,3 +464,8 @@ The triage of every entry added since the 2026-11-15 pass, and the two owner req
 
 - P16-06 follow-ups: genre links on episodes and the Home hero (owner chose film and series pages only); a cross-library genre page; verify on the dogfood server that a restricted user's `/Genres` hides unseen genres and that a library's user-view id equals its folder id (ParentId match).
 - P16-06 review lows (details in `docs/specs/P16-06.md`): genre links are not a Tab stop (owner to accept); links look like plain text at rest and the focus ring clips the separator dot; `e2e/support/mock-server.ts` is 519 lines (move genre data to `mock-genres.ts`); redundant `filters` effect dependency and stale genre list in `browse-view.tsx`; genre id matched by name, nav views gcTime 0 causes a link layout shift, ParentId match unverified.
+## Task workflow models (#208) review lows, 2026-11-19
+
+- `.claude/workflows/task.js`: after escalation, a result that claims done and checksPassed while still listing failures passes the implement gate. Require no problems at the gate too. S.
+- The follow-up gate returns `blocked` with an empty detail when the only content is ciOnly on a non-green result. Say why in the detail. S.
+- `ciOnly` carried from a non-green earlier attempt can reach Ship as a step after a later green attempt. Drop ciOnly from non-green attempts. S.
