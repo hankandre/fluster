@@ -20,23 +20,23 @@ const seasons: Season[] = [
 ];
 
 describe("seriesFacts", () => {
-  it("puts the ratings after the season count and before the genres", () => {
-    expect(seriesFacts({ ...series, communityRating: 8.1, criticRating: 88 }, seasons)).toBe("2022–2024 · 2 seasons · 8.1 audience · 88% critics · Drama · Mystery");
+  it("puts the ratings after the season count and leaves the genres to the header", () => {
+    expect(seriesFacts({ ...series, communityRating: 8.1, criticRating: 88 }, seasons)).toBe("2022–2024 · 2 seasons · 8.1 audience · 88% critics");
   });
 
-  it("joins the year range, the season count without Specials, and two genres", () => {
-    expect(seriesFacts(series, seasons)).toBe("2022–2024 · 2 seasons · Drama · Mystery");
+  it("joins the year range, the season count without Specials, and no genres", () => {
+    expect(seriesFacts(series, seasons)).toBe("2022–2024 · 2 seasons");
   });
 
   it("shows one year when the end year is missing or equal", () => {
-    expect(seriesFacts({ ...series, endYear: undefined }, seasons)).toBe("2022 · 2 seasons · Drama · Mystery");
-    expect(seriesFacts({ ...series, endYear: 2022 }, seasons)).toBe("2022 · 2 seasons · Drama · Mystery");
+    expect(seriesFacts({ ...series, endYear: undefined }, seasons)).toBe("2022 · 2 seasons");
+    expect(seriesFacts({ ...series, endYear: 2022 }, seasons)).toBe("2022 · 2 seasons");
   });
 
   it("says 1 season, and leaves the count out while loading or when there is none", () => {
-    expect(seriesFacts(series, [seasons[1]])).toContain("1 season ·");
-    expect(seriesFacts(series, undefined)).toBe("2022–2024 · Drama · Mystery");
-    expect(seriesFacts(series, [seasons[0]])).toBe("2022–2024 · Drama · Mystery");
+    expect(seriesFacts(series, [seasons[1]])).toBe("2022–2024 · 1 season");
+    expect(seriesFacts(series, undefined)).toBe("2022–2024");
+    expect(seriesFacts(series, [seasons[0]])).toBe("2022–2024");
   });
 
   it("is undefined for an item with nothing to say", () => {

@@ -154,6 +154,22 @@ describe("media info", () => {
     expect(within(info).queryByRole("alert")).toBeNull();
   });
 
+  it("links a film's genres to its own library filtered to each, and not an episode's", async () => {
+    const userViews = vi.fn().mockResolvedValue([
+      { id: "lib-movies", name: "Movies", collectionType: "movies" },
+      { id: "lib-kids", name: "Kids", collectionType: "movies" },
+    ]);
+    const film = detail({ genres: ["Sci-Fi", "Drama"], genreItems: [{ id: "g-scifi", name: "Sci-Fi" }, { id: "g-drama", name: "Drama" }], parentId: "lib-kids" });
+    await renderDetail(fakeGateway({ itemDetail: vi.fn().mockResolvedValue(film), userViews }));
+    expect(await screen.findByRole("link", { name: "Sci-Fi" })).toHaveAttribute("href", "#/next/browse/lib-kids?genre=g-scifi");
+    expect(screen.getByRole("link", { name: "Drama" })).toHaveAttribute("href", "#/next/browse/lib-kids?genre=g-drama");
+    cleanup();
+    const episode = detail({ type: "Episode", genres: ["Drama"], genreItems: [{ id: "g-drama", name: "Drama" }], seasonNumber: 1, episodeNumber: 2 });
+    await renderDetail(fakeGateway({ itemDetail: vi.fn().mockResolvedValue(episode), userViews }));
+    await screen.findByRole("heading", { level: 1 });
+    expect(screen.queryByRole("link", { name: "Drama" })).toBeNull();
+  });
+
   it("shows overview, genres, year, runtime, and cast", async () => {
     await renderDetail(fakeGateway());
     expect(await screen.findByText("Linguist meets aliens.")).toBeInTheDocument();

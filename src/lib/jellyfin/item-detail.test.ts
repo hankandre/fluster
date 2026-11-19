@@ -301,7 +301,7 @@ describe("toItemDetail genres", () => {
   });
 
   it("gives no genre items when the server sends none", () => {
-    expect(toItemDetail(base)!.genreItems).toEqual([]);
+    expect(toItemDetail(base)!.genreItems).toBeUndefined();
     expect(toItemDetail(base)!.parentId).toBeUndefined();
   });
 });

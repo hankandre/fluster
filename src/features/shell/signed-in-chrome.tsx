@@ -1,7 +1,6 @@
 import { useState, type ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useLibraryViews } from "./use-library-views";
 import { useSession, type SessionGateway } from "../../app/session";
-import { scopeFor } from "../query-scope";
 import { AppNav, AppShell } from "../shared/ui";
 import { LeaveAppDialog } from "./leave-app-dialog";
 import { leaveApp } from "./leave-app";
@@ -19,11 +18,7 @@ function NavShell({ gateway, hash, children }: { gateway: SessionGateway; hash: 
   useSearchShortcut();
   const [confirmingLeave, setConfirmingLeave] = useState(false);
   useBackKey(() => setConfirmingLeave(true));
-  const views = useQuery({
-    queryKey: ["nav", scopeFor(gateway), "views"],
-    queryFn: ({ signal }) => gateway.userViews(signal),
-    gcTime: 0,
-  });
+  const views = useLibraryViews(gateway);
   // Pending or failed: only the fixed entries show, with no placeholder and no error text.
   const libraries = views.data?.map((view) => ({ id: view.id, name: view.name }));
   return (

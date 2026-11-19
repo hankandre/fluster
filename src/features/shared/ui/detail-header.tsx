@@ -11,6 +11,8 @@ export interface DetailHeaderProps {
   // The show an episode belongs to; a plain name when there is no link.
   seriesLink?: { name: string; href?: string };
   facts?: string;
+  // Genres at the end of the facts line. With an href a genre is a link; without one it is plain text.
+  genres?: { name: string; href?: string }[];
   badges?: ReactNode;
   actions: ReactNode;
   // Messages under the actions, such as "The player cannot start".
@@ -25,7 +27,7 @@ export interface DetailHeaderProps {
 
 // The header of the item detail page (DESIGN.md 7.7): the title or Logo is the page's h1, over the page's
 // ambient art, in the left five columns. The art itself is the AmbientBackdrop behind the page.
-export function DetailHeader({ title, logo, seriesLink, facts, badges, actions, notice, overview, inlineArt, busy, headingRef }: DetailHeaderProps) {
+export function DetailHeader({ title, logo, seriesLink, facts, genres, badges, actions, notice, overview, inlineArt, busy, headingRef }: DetailHeaderProps) {
   return (
     <header className="detail-header" aria-busy={busy || undefined}>
       {inlineArt ? (
@@ -38,7 +40,7 @@ export function DetailHeader({ title, logo, seriesLink, facts, badges, actions, 
         <h1 ref={headingRef} tabIndex={-1} className="detail-title">
           <LogoTitle key={logo?.src ?? "text"} title={title} logo={logo} />
         </h1>
-        {facts ? <p className="detail-facts">{facts}</p> : null}
+        <FactsLine facts={facts} genres={genres ?? []} />
         {badges}
         {actions}
         {notice}
@@ -55,5 +57,27 @@ function SeriesLink({ name, href }: { name: string; href?: string }) {
     <div data-spatial-row="" ref={roving.ref} onKeyDown={roving.onKeyDown} onFocus={roving.onFocus}>
       <a className="detail-series detail-series-link" href={href} data-roving-item="">{name}</a>
     </div>
+  );
+}
+
+// The facts line (DESIGN.md 7.7). Genres without a link join the text; with links the line is one spatial row.
+function FactsLine({ facts, genres }: { facts?: string; genres: { name: string; href?: string }[] }) {
+  const roving = useRovingFocus<HTMLParagraphElement>("row", { spatial: true });
+  if (!genres.some((genre) => genre.href)) {
+    const line = [facts, ...genres.map((genre) => genre.name)].filter(Boolean).join(" · ");
+    return line ? <p className="detail-facts">{line}</p> : null;
+  }
+  return (
+    <p className="detail-facts" data-spatial-row="" ref={roving.ref} onKeyDown={roving.onKeyDown} onFocus={roving.onFocus}>
+      {facts ? `${facts} · ` : null}
+      {genres.map((genre, index) => (
+        <span key={genre.name}>
+          {index > 0 ? " · " : null}
+          {genre.href
+            ? <a className="detail-genre-link" href={genre.href} data-roving-item="">{genre.name}</a>
+            : genre.name}
+        </span>
+      ))}
+    </p>
   );
 }
