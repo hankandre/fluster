@@ -8,13 +8,15 @@ export interface PlaybackSessionState {
   error?: string;
   // Set when the failure was a failed Jellyfin request; the view shows plain copy for it, not the message.
   errorKind?: TransportErrorKind;
+  // Set when stopping the player failed; the view shows plain stop copy, not the message.
+  errorStage?: "stop";
   reportingWarning?: string;
 }
 
 export type PlaybackSessionAction =
   | { type: "reset" }
   | { type: "event"; event: PlayerEvent }
-  | { type: "failure"; message: string; kind?: TransportErrorKind }
+  | { type: "failure"; message: string; kind?: TransportErrorKind; stage?: "stop" }
   | { type: "reporting-warning"; message?: string };
 
 export const initialPlaybackSessionState: PlaybackSessionState = {
@@ -29,7 +31,7 @@ export function playbackSessionReducer(
     case "reset":
       return initialPlaybackSessionState;
     case "failure":
-      return { ...state, error: action.message, errorKind: action.kind };
+      return { ...state, error: action.message, errorKind: action.kind, errorStage: action.stage };
     case "reporting-warning":
       return { ...state, reportingWarning: action.message };
     case "event":
@@ -42,7 +44,7 @@ function reducePlayerEvent(state: PlaybackSessionState, event: PlayerEvent): Pla
     case "first-frame":
       return { ...state, firstFrameReady: true };
     case "error":
-      return { ...state, error: event.message, errorKind: undefined };
+      return { ...state, error: event.message, errorKind: undefined, errorStage: undefined };
     case "ended":
       return { ...state, snapshot: event.snapshot ?? state.snapshot };
     case "loaded":

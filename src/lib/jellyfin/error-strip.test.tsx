@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { LibraryItem } from "../../domain/catalog";
 import type { PlaybackPlan, PlaybackSnapshot, PlayerEngine } from "../../domain/playback";
-import { failureAction } from "../../features/player/use-playback-session";
+import { failureAction, stopFailureAction } from "../../features/player/use-playback-session";
 import { PlaybackCoordinator, type PlaybackGateway } from "../player/coordinator";
 import { classifyTransportError } from "../transport-error";
 import { JellyfinGateway } from "./gateway";
@@ -192,5 +192,9 @@ describe("failureAction", () => {
     const fromString = failureAction("The player did not stop.");
     expect(fromString).toEqual({ type: "failure", message: "The player did not stop.", kind: undefined });
     expect(failureAction(new Error("The player did not stop."))).toEqual(fromString);
+  });
+
+  it("marks a failed stop with fixed text, so the native reason never reaches the view", () => {
+    expect(stopFailureAction()).toEqual({ type: "failure", message: "The player did not stop.", stage: "stop" });
   });
 });

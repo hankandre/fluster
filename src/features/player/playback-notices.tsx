@@ -3,7 +3,7 @@ import { DESKTOP_ONLY_COPY, type RefusalCopy } from "./refusal-copy";
 import type { LoadingBackdrop } from "./chrome/player-loading";
 import { PlaybackNotice, noticeContext, type NoticeAction } from "./playback-notice";
 import { safeReason } from "./safe-reason";
-import { playbackErrorCopy } from "./error-copy";
+import { playbackErrorCopy, STOP_FAILED_BODY, STOP_FAILED_TITLE } from "./error-copy";
 import type { TransportErrorKind } from "../../lib/transport-error";
 import type { LibraryItem } from "../../domain/catalog";
 import { HOME_ROUTE } from "../routes";
@@ -96,12 +96,14 @@ export function ItemGoneScreen({ onBack }: { onBack(): void }) {
 }
 
 // The session failed: Retry renegotiates, Back leaves.
-export function PlaybackErrorNotice({ item, backdrop, message, kind, serverName, retryLabel, retrying, onRetry, onBack }: {
+export function PlaybackErrorNotice({ item, backdrop, message, kind, stage, serverName, retryLabel, retrying, onRetry, onBack }: {
   item: LibraryItem;
   backdrop?: LoadingBackdrop;
   message: string;
   // Set when a Jellyfin request failed: the notice then shows plain copy, never the message.
   kind?: TransportErrorKind;
+  // Set when stopping the player failed: the notice shows the stop copy, never the message.
+  stage?: "stop";
   serverName: string;
   retryLabel: string;
   retrying?: boolean;
@@ -111,7 +113,7 @@ export function PlaybackErrorNotice({ item, backdrop, message, kind, serverName,
   const retry: NoticeAction = { label: retryLabel, onActivate: onRetry, busy: retrying };
   return (
     <PlaybackNotice
-      title="Playback could not start"
+      title={stage === "stop" ? STOP_FAILED_TITLE : "Playback could not start"}
       context={noticeContext(item)}
       backdrop={backdrop}
       retry={retry}
@@ -119,7 +121,7 @@ export function PlaybackErrorNotice({ item, backdrop, message, kind, serverName,
       // usePlayerKeys owns Escape inside the player (fullscreen first), so it is not handled twice.
       onEscape={() => undefined}
     >
-      {playbackErrorCopy(message, kind, serverName)}
+      {stage === "stop" ? STOP_FAILED_BODY : playbackErrorCopy(message, kind, serverName)}
     </PlaybackNotice>
   );
 }

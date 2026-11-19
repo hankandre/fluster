@@ -354,11 +354,9 @@ export class PlaybackCoordinator {
         }
         try {
           await this.player.stop();
-        } catch (error) {
-          this.callbacks.onEvent({
-            kind: "error",
-            message: errorReason(error, "The player did not finish shutting down."),
-          });
+        } catch {
+          // The native stop text never reaches the screen.
+          this.callbacks.onEvent({ kind: "error", message: "The player did not finish shutting down." });
           await this.finish("error", event.snapshot ?? this.snapshot);
           break;
         }

@@ -783,7 +783,8 @@ describe("Leaving does not wait for playstate reports", () => {
     await act(async () => {
       engineStopped.resolve();
     });
-    expect(await screen.findByText(/The player did not stop/)).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Couldn't stop playback" })).toBeInTheDocument();
+    expect(screen.queryByText(/The player did not stop/)).not.toBeInTheDocument();
     expect(window.location.hash).toBe("#/next/play/e1");
     expect(engine.stop).toHaveBeenCalledTimes(1);
 

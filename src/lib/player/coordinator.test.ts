@@ -603,7 +603,7 @@ describe("PlaybackCoordinator", () => {
   it.each([
     ["string", "mpv did not stop at https://media.test/x?api_key=SECRET-TOKEN"],
     ["Error", new Error("mpv did not stop at https://media.test/x?api_key=SECRET-TOKEN")],
-  ])("reads a failed stop after the end (%s) the same way, redacted", async (_label, failure) => {
+  ])("reports a failed stop after the end (%s) with fixed text, never the native message", async (_label, failure) => {
     const gateway = {
       createPlaybackPlan: vi.fn(async () => plan),
       reportStart: vi.fn(async () => undefined),
@@ -623,7 +623,7 @@ describe("PlaybackCoordinator", () => {
 
     await vi.waitFor(() => expect(onEvent).toHaveBeenCalledWith(expect.objectContaining({ kind: "error" })));
     const errorEvent = onEvent.mock.calls.map(([event]) => event).find((event) => event.kind === "error");
-    expect(errorEvent.message).toContain("mpv did not stop at");
+    expect(errorEvent.message).toBe("The player did not finish shutting down.");
     expect(errorEvent.message).not.toContain("SECRET-TOKEN");
   });
 
@@ -638,7 +638,7 @@ describe("PlaybackCoordinator", () => {
     } as PlaybackGateway;
   }
 
-  it("hides a file path and host in a failed stop after the end", async () => {
+  it("keeps a file path and host out of a failed stop after the end", async () => {
     const gateway = plainGateway();
     const player = new FakePlayer();
     player.stop.mockRejectedValueOnce(new Error("mpv did not stop: cannot open /video.mkv on media.local:8096"));
@@ -651,9 +651,7 @@ describe("PlaybackCoordinator", () => {
 
     await vi.waitFor(() => expect(onEvent).toHaveBeenCalledWith(expect.objectContaining({ kind: "error" })));
     const errorEvent = onEvent.mock.calls.map(([event]) => event).find((event) => event.kind === "error");
-    expect(errorEvent.message).toContain("mpv did not stop");
-    expect(errorEvent.message).toContain("[path]");
-    expect(errorEvent.message).toContain("[address]");
+    expect(errorEvent.message).toBe("The player did not finish shutting down.");
     expect(errorEvent.message).not.toContain("video.mkv");
     expect(errorEvent.message).not.toContain("media.local");
   });
