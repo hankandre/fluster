@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Page } from "@playwright/test";
+import { filterByGenre, genreItemsOf, genresDto, parentOf } from "./mock-genres";
 
 export const SERVER = "http://127.0.0.1:8096";
 export const LAN = "http://192.168.50.10:8096";
@@ -83,6 +84,9 @@ export interface MockOptions {
   liveDelay?: { libraryMs?: number; rowsMs?: number };
   // Library /Items answers 500 (the library error state).
   libraryItemsError?: boolean;
+  // /Genres answers an empty list, or 500.
+  noGenres?: boolean;
+  genresError?: boolean;
   // /UserViews returns twelve libraries, so the nav overflows on a phone.
   manyLibraries?: boolean;
   // /Items?searchTerm answers after this delay (the search loading state).
@@ -180,8 +184,8 @@ const movies: Record<string, Dto> = {
   m6: { Name: "Low Tide", ProductionYear: 2020, poster: "p6", backdrop: "b3", RunTimeTicks: ticks(5400), Genres: ["Documentary"], Overview: "A year on the mudflats." },
 };
 const series: Record<string, Dto> = {
-  s1: { Name: "Harbor Lights", ProductionYear: 2022, poster: "p5", backdrop: "b2" },
-  s2: { Name: "Quiet Orbit", ProductionYear: 2024, poster: "p4", backdrop: "b3" },
+  s1: { Name: "Harbor Lights", ProductionYear: 2022, poster: "p5", backdrop: "b2", Genres: ["Drama", "Mystery"] },
+  s2: { Name: "Quiet Orbit", ProductionYear: 2024, poster: "p4", backdrop: "b3", Genres: ["Drama"] },
 };
 const episodeNames = ["Landfall", "The Keeper's Log", "Fog Signal", "Slack Water", "Spring Tide", "Lantern Room"];
 const episodes: Record<string, Dto> = Object.fromEntries(episodeNames.map((name, index) => [`ep-${index + 1}`, {
@@ -196,6 +200,7 @@ function movieDto(id: string, opts: MockOptions): Dto {
   const m = movies[id];
   return {
     Id: id, Name: m.Name, Type: "Movie", ProductionYear: m.ProductionYear, RunTimeTicks: m.RunTimeTicks, Overview: m.Overview, Genres: m.Genres,
+    GenreItems: genreItemsOf(m.Genres), ParentId: parentOf("Movie"),
     OfficialRating: m.OfficialRating, CommunityRating: m.CommunityRating, CriticRating: m.CriticRating, People: m.People ?? [],
     ImageTags: { Primary: `tag-${id}`, Logo: `logo-${id}` }, PrimaryImageAspectRatio: 2 / 3,
     ...(opts.noBackdrop ? {} : {
@@ -220,8 +225,10 @@ function movieDto(id: string, opts: MockOptions): Dto {
 function seriesDto(id: string): Dto {
   const s = series[id];
   return {
-    Id: id, Name: s.Name, Type: "Series", ProductionYear: s.ProductionYear, ImageTags: { Primary: `tag-${id}` }, BackdropImageTags: [`bd-${id}`], PrimaryImageAspectRatio: 2 / 3,
-    ...(id === "s1" ? { Overview: "A lighthouse keeper's daughter uncovers the harbor's oldest secret.", Genres: ["Drama", "Mystery"], CommunityRating: 8.1, EndDate: "2024-11-01T00:00:00.0000000Z" } : {}),
+    Id: id, Name: s.Name, Type: "Series", ProductionYear: s.ProductionYear, ParentId: parentOf("Series"), ImageTags: { Primary: `tag-${id}` }, BackdropImageTags: [`bd-${id}`], PrimaryImageAspectRatio: 2 / 3,
+    ...(id === "s1" ? { Overview: "A lighthouse keeper's daughter uncovers the harbor's oldest secret.", CommunityRating: 8.1, EndDate: "2024-11-01T00:00:00.0000000Z" } : {}),
+    ...(s.Genres ? { Genres: s.Genres } : {}),
+    GenreItems: genreItemsOf(s.Genres),
     ...(id === "s2" ? { UserData: { UnplayedItemCount: 3 } } : {}),
   };
 }
@@ -425,6 +432,9 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
           if (opts.longRows) return json([...latest, ...latest.map((m) => ({ ...m, Id: `${m.Id}-b` })), ...latest.map((m) => ({ ...m, Id: `${m.Id}-c` }))]);
           return json(latest);
         }
+        case "/Genres":
+          if (opts.genresError) return route.fulfill({ status: 500, headers: cors });
+          return json(opts.noGenres ? { Items: [], TotalRecordCount: 0, StartIndex: 0 } : genresDto(url.searchParams.get("parentId"), movies, series));
         case "/Items": {
           // The viewer's finished films and episodes, newest first (Home dates next episodes by their series' last play).
           if (url.searchParams.get("sortBy") === "DatePlayed") {
@@ -460,7 +470,11 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
             if (opts.libraryItemsError || (opts.libraryPageError && start > 0)) return route.fulfill({ status: 500, headers: cors });
           }
           if (parent === "box-1") return json({ Items: [movieDto("m1", opts), movieDto("m4", opts)], TotalRecordCount: 2 });
-          if (parent === "lib-shows") return json({ Items: [seriesDto("s1"), seriesDto("s2")], TotalRecordCount: 2 });
+          const genreIds = url.searchParams.get("genreIds");
+          if (parent === "lib-shows") {
+            const shows = filterByGenre([seriesDto("s1"), seriesDto("s2")], genreIds);
+            return json({ Items: shows, TotalRecordCount: shows.length });
+          }
           if (opts.bigLibrary && parent === "lib-movies") {
             const limit = Number(url.searchParams.get("limit") ?? 60);
             const page = Array.from({ length: Math.max(0, Math.min(limit, 150 - start)) }, (_, offset) => bigMovie(start + offset + 1, opts));
@@ -468,6 +482,7 @@ export async function installMockServer(page: Page, opts: MockOptions = {}): Pro
           }
           const list = Object.keys(movies).map((id) => movieDto(id, opts));
           let all = [...list, ...list.map((m) => ({ ...m, Id: `${m.Id}-b` })), ...list.map((m) => ({ ...m, Id: `${m.Id}-c` }))];
+          all = filterByGenre(all, genreIds);
           const filters = (url.searchParams.get("filters") ?? "").split(",");
           if (filters.includes("IsFavorite")) all = all.filter((m) => m.UserData.IsFavorite);
           if (filters.includes("IsResumable")) all = all.filter((m) => m.UserData.PlaybackPositionTicks > 0);

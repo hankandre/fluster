@@ -229,6 +229,19 @@ export const scenarios: Scenario[] = [
     await page.getByRole("heading", { name: "Nothing matches these filters" }).waitFor();
     await page.waitForTimeout(300);
   } },
+  { name: "21i-library-genre-open", run: async (page) => {
+    await signedInAt(page, "#/next/browse/lib-movies", 1_000);
+    await page.getByRole("button", { name: /^Genre/ }).click();
+    await page.getByRole("listbox").waitFor();
+    await page.waitForTimeout(300);
+  } },
+  { name: "21j-library-genre-filtered", run: (page) => signedInAt(page, "#/next/browse/lib-movies?genre=genre-drama", 1_000) },
+  { name: "21k-library-genre-filtered-empty", run: async (page) => {
+    await signedInAt(page, "#/next/browse/lib-movies?genre=genre-comedy", 1_000);
+    await page.getByRole("button", { name: "In progress" }).click();
+    await page.getByRole("heading", { name: "Nothing matches these filters" }).waitFor();
+    await page.waitForTimeout(300);
+  } },
   { name: "21d-library-error", opts: { libraryItemsError: true }, run: async (page) => {
     await signedInAt(page, "#/next/browse/lib-movies", 300);
     await page.getByText("Couldn't load Movies.").waitFor({ timeout: 10_000 });
@@ -311,6 +324,11 @@ export const scenarios: Scenario[] = [
 
   // Item detail
   { name: "40-detail-movie", run: (page) => signedInAt(page, "#/next/item/m1", 1_000) },
+  { name: "40a-detail-genre-focused", run: async (page) => {
+    await signedInAt(page, "#/next/item/m1", 1_000);
+    await page.locator(".detail-facts").getByRole("link", { name: "Drama" }).focus();
+    await page.waitForTimeout(300);
+  } },
   { name: "41-detail-movie-fullpage", fullPage: true, run: (page) => signedInAt(page, "#/next/item/m1", 1_000) },
   { name: "42-detail-resume", run: (page) => signedInAt(page, "#/next/item/m2", 1_000) },
   { name: "41a-detail-subtitles-preferred", opts: { manySubtitles: "default", subtitleLanguage: "eng" }, run: (page) => subtitlesInView(page) },

@@ -62,16 +62,17 @@ function SeriesLink({ name, href }: { name: string; href?: string }) {
 
 // The facts line (DESIGN.md 7.7). Genres without a link join the text; with links the line is one spatial row.
 function FactsLine({ facts, genres }: { facts?: string; genres: { name: string; href?: string }[] }) {
-  const roving = useRovingFocus<HTMLParagraphElement>("row", { spatial: true });
+  // Arrow keys only (Up from the action bar), so one Tab from the title still reaches Play (DESIGN.md 7.8).
+  const roving = useRovingFocus<HTMLParagraphElement>("row", { spatial: true, tabStop: false });
   if (!genres.some((genre) => genre.href)) {
     const line = [facts, ...genres.map((genre) => genre.name)].filter(Boolean).join(" · ");
     return line ? <p className="detail-facts">{line}</p> : null;
   }
   return (
-    <p className="detail-facts" data-spatial-row="" ref={roving.ref} onKeyDown={roving.onKeyDown} onFocus={roving.onFocus}>
+    <p className="detail-facts" data-spatial-row="" data-focus-row="Genres" ref={roving.ref} onKeyDown={roving.onKeyDown} onFocus={roving.onFocus}>
       {facts ? `${facts} · ` : null}
       {genres.map((genre, index) => (
-        <span key={genre.name}>
+        <span key={genre.name} data-focus-id={genre.name}>
           {index > 0 ? " · " : null}
           {genre.href
             ? <a className="detail-genre-link" href={genre.href} data-roving-item="">{genre.name}</a>

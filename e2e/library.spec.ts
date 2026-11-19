@@ -66,6 +66,8 @@ test("filter chips toggle from the keyboard, send the filter, and update the cou
   await openMovies(page);
   await expect(toolbar(page).getByText("18 items")).toBeVisible();
   await page.keyboard.press("Tab");
+  // Sort, then Genre, then the chips.
+  await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowRight");
   const unwatched = page.getByRole("button", { name: "Unwatched" });
   await expect(unwatched).toBeFocused();
@@ -199,3 +201,64 @@ test("See all ends a Latest row and opens the library by date added", async ({ p
   await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Movies" })).toHaveAttribute("aria-current", "page");
 });
 
+
+test("the toolbar offers genres after Sort; choosing Mystery from the keyboard sends genreIds and All genres clears it", async ({ page }) => {
+  const requests = libraryRequests(page);
+  await openMovies(page);
+  await expect(cards(page).first()).toBeVisible();
+  const genre = toolbar(page).getByRole("button", { name: "Genre All genres" });
+  await expect(genre).toBeVisible();
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("button", { name: /^Sort/ })).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await expect(genre).toBeFocused();
+  await page.keyboard.press("Enter");
+  await page.getByRole("listbox").waitFor();
+  await expect(page.getByRole("option")).toHaveText(["All genres", "Comedy", "Documentary", "Drama", "Mystery", "Science Fiction", "Thriller"]);
+  await page.getByRole("option", { name: "Mystery" }).click();
+  await expect(page).toHaveURL(/#\/next\/browse\/lib-movies\?genre=genre-mystery$/);
+  await expect(page.getByRole("button", { name: "Genre Mystery" })).toBeFocused();
+  await expect.poll(() => requests.some((url) => url.searchParams.get("genreIds") === "genre-mystery" && url.searchParams.get("startIndex") === "0")).toBe(true);
+  await expect(cards(page)).toHaveCount(3);
+  await expect(toolbar(page).getByText("3 items")).toBeVisible();
+
+  await page.keyboard.press("Enter");
+  await page.getByRole("option", { name: "All genres" }).click();
+  await expect(page).toHaveURL(/#\/next\/browse\/lib-movies$/);
+  await expect(toolbar(page).getByText("18 items")).toBeVisible();
+});
+
+test("a genre with the chips that match nothing offers Clear filters, which clears both", async ({ page }) => {
+  await signIn(page);
+  await page.goto("/#/next/browse/lib-movies?genre=genre-comedy");
+  await expect(page.getByRole("button", { name: "Genre Comedy" })).toBeVisible();
+  await page.getByRole("button", { name: "In progress" }).click();
+  await expect(page.getByRole("heading", { name: "Nothing matches these filters" })).toBeVisible();
+  await page.getByRole("button", { name: "Clear filters" }).click();
+  await expect(page).toHaveURL(/#\/next\/browse\/lib-movies$/);
+  await expect(page.getByRole("button", { name: "Genre All genres" })).toBeVisible();
+  await expect(cards(page).first()).toBeVisible();
+});
+
+test("no genres from the server leaves no Genre trigger, and a /Genres error does too", async ({ page }) => {
+  await openMovies(page, { noGenres: true });
+  await expect(cards(page).first()).toBeVisible();
+  await expect(toolbar(page).getByRole("button", { name: /^Sort/ })).toBeVisible();
+  await expect(toolbar(page).getByRole("button", { name: /^Genre/ })).toHaveCount(0);
+});
+
+test("a /Genres error leaves the library usable without a Genre trigger", async ({ page }) => {
+  await openMovies(page, { genresError: true });
+  await expect(cards(page).first()).toBeVisible();
+  await expect(toolbar(page).getByRole("button", { name: /^Genre/ })).toHaveCount(0);
+});
+
+test("a collection page has no Genre trigger", async ({ page }) => {
+  const genreRequests: string[] = [];
+  page.on("request", (request) => { if (new URL(request.url()).pathname === "/Genres") genreRequests.push(request.url()); });
+  await signIn(page);
+  await page.goto("/#/next/collection/box-1");
+  await expect(cards(page).first()).toBeVisible();
+  await expect(toolbar(page).getByRole("button", { name: /^Genre/ })).toHaveCount(0);
+  expect(genreRequests).toEqual([]);
+});

@@ -68,6 +68,12 @@ describe("DetailHeader", () => {
     expect(screen.getByRole("link", { name: "Play" })).toHaveFocus();
   });
 
+  it("keeps the genre links out of the Tab order", () => {
+    renderHeader({ genres: [{ name: "Drama", href: "#/a" }, { name: "Mystery", href: "#/b" }] });
+    expect(screen.getByRole("link", { name: "Drama" })).toHaveAttribute("tabindex", "-1");
+    expect(screen.getByRole("link", { name: "Mystery" })).toHaveAttribute("tabindex", "-1");
+  });
+
   it("joins genres without links into the facts text", () => {
     renderHeader({ genres: [{ name: "Drama" }, { name: "Mystery" }] });
     expect(screen.getByText("2016 · 1 h 57 min · Drama · Mystery")).toBeInTheDocument();

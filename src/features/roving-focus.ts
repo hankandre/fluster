@@ -112,12 +112,14 @@ function columnsOf(items: HTMLElement[]): number {
 // stop, so Tab back into the list returns to it.
 // `columns` fixes the grid width when the items sit at different heights, so it replaces the measured one.
 // `preferredIndex` moves the Tab stop (never focus) whenever its value changes between renders.
-export function useRovingFocus<T extends HTMLElement>(layout: RovingLayout, options?: { preferredIndex?: number; spatial?: boolean; columns?: number }) {
+export function useRovingFocus<T extends HTMLElement>(layout: RovingLayout, options?: { preferredIndex?: number; spatial?: boolean; columns?: number; tabStop?: boolean }) {
   const ref = useRef<T>(null);
   const active = useRef(0);
   const preferred = options?.preferredIndex;
   const spatial = options?.spatial === true;
   const fixedColumns = options?.columns;
+  // False keeps every item out of the Tab order: the row is reached by arrow keys only.
+  const tabStop = options?.tabStop !== false;
   const lastPreferred = useRef<number | undefined>(undefined);
 
   const sync = useCallback(() => {
@@ -129,8 +131,8 @@ export function useRovingFocus<T extends HTMLElement>(layout: RovingLayout, opti
     }
     lastPreferred.current = preferred;
     if (active.current >= items.length) active.current = 0;
-    items.forEach((item, index) => item.setAttribute("tabindex", index === active.current ? "0" : "-1"));
-  }, [preferred]);
+    items.forEach((item, index) => item.setAttribute("tabindex", tabStop && index === active.current ? "0" : "-1"));
+  }, [preferred, tabStop]);
 
   // Runs after every render, so new pages of items join the roving set.
   useLayoutEffect(sync);
