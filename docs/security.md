@@ -56,7 +56,7 @@ Code running inside the app process, or root, can read the token: same-process K
 | Claim | Status |
 |---|---|
 | The core's gateway holds the token only as a private field, clears it on logout, and exposes the header value only through `authorizationHeader()` (the Node and reference path) | Tested: `src/lib/jellyfin/gateway.test.ts` |
-| A playback plan is token-free: it holds only token-free stream and subtitle URLs and never the header | Tested: `src/lib/player/coordinator.test.ts`, `src/lib/jellyfin/gateway.test.ts` |
+| A playback plan is token-free: it holds only token-free stream and subtitle URLs and never the header | Tested: `src/lib/jellyfin/gateway.test.ts` ("keeps same-origin external subtitle URLs token-free", "strips every server credential parameter from subtitle URLs") |
 | A gateway error (401, 5xx, network, timeout) carries no token, config, or request object | Tested: `src/lib/jellyfin/error-strip.test.ts` |
 | `redactText` and the URL redactors remove tokens, `ApiKey`, `api_key`, `access_token`, passwords, and play-session ids from every string that can reach a log, error, or diagnostic | Tested: `src/lib/redact.test.ts`, `src/lib/redact-canary.test.ts` |
 | Copy diagnostics holds no server name, address, user name, token, or play-session id | Tested: `src/lib/diagnostics.test.ts`, `src/lib/redact-canary.test.ts` |
