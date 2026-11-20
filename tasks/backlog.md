@@ -517,3 +517,8 @@ The triage of every entry added since the 2026-11-15 pass, and the two owner req
 
 - `scripts/visual-accept.mjs`: a merged sharded report no longer records `config.shard`, so `planAccept` can't see a shard that produced a report but ran no tests (for example a web server that never started). If the baselines-match test also failed, that shard's baselines would be planned for deletion. Refuse unless the merged test count matches the scenario passes. S.
 - The contrast report (`scripts/build-contrast-report.mjs`) no longer runs in CI. It was never uploaded or gated there; merge `test-results/contrast` across shards if it should be. S.
+
+## cargo-audit job (#217)
+
+- `ci.yml` `rust-audit`: Dependabot can't bump `CARGO_AUDIT_VERSION` and `CARGO_AUDIT_SHA256`, so check rustsec/rustsec releases by hand when other CI pins are bumped. S.
+- `ci.yml` `rust-audit`: the RustSec advisory database is cloned live with no retry. A GitHub outage turns the required check red until a rerun (it fails closed). Add a retry if it happens. S.
