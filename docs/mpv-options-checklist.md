@@ -44,14 +44,17 @@ Citations are to commit `ba55ef2` on `main` (after PR #221, merged as `288ce46`)
   - Otherwise FFmpeg gets `tls_verify=0` (`stream/stream_lavf.c` line 174), and an HTTPS server's certificate is not checked.
   - mpv 0.41 defaults it to `no`: `mpv --list-options` on the local mpv v0.41.0 prints `--tls-verify  Flag (default: no)`. Any desktop install on mpv 0.41 (this development host included) has the gap today, logged in `tasks/backlog.md`.
   - Rust's own playlist fetches always verify, using the platform roots (`src-tauri/src/player/hls/fetch.rs:23-51`).
+- [ ] **A CA source for FFmpeg's TLS on Android.** With `curl-enabled=no`, HTTPS goes through FFmpeg's TLS backend, which checks the peer only against the CAs it can find.
+  - FFmpeg's OpenSSL backend loads `tls-ca-file` when it is set and otherwise calls `SSL_CTX_set_default_verify_paths`, whose failure is only a warning (`libavformat/tls_openssl.c` `openssl_init_ca_key_cert`, FFmpeg `master` read on 2026-11-20). Peer verification is on only when `verify` is set (`tls_open`).
+  - OpenSSL's default paths are its build-time `OPENSSLDIR`, not Android's system store (`/system/etc/security/cacerts`, plus user CAs), so an Android build of FFmpeg probably finds no CA and refuses every HTTPS server once `tls-verify=yes` (unverified on a device).
+  - Before shipping, verify on a device which TLS backend the libmpv build uses, and pass `tls-ca-file` with a PEM bundle the app writes from the Android trust store, or ship one. Test a valid server, a self-signed one, and a wrong host name.
 
 ## Config, scripts, and input
 
 - [ ] **`config=no`** (`controller.rs:140`). mpv then sets its config directory to `""` (mpv `options/path.c` lines 113-116), and every platform path lookup returns nothing (lines 77-80). So no `mpv.conf`, no `input.conf`, no `script-opts`, and no user `scripts/` directory are loaded: `load_scripts` finds no directory (mpv `player/scripting.c` lines 289-297).
-- [ ] **Builtin scripts off.**
+- [ ] **Builtin scripts off, each set explicitly:** `load-scripts=no`, `osc=no`, `ytdl=no`, `load-stats-overlay=no`, `load-console=no`, `load-select=no`, `load-positioning=no`, `load-commands=no`, `load-context-menu=no`, and `load-auto-profiles=no`. Read each back in a test. Re-check `options/options.c` in every mpv release for new `load-*` scripts.
   - Set today: `osc=no` (`controller.rs:143`) and `ytdl=no` (`network.rs:86`).
   - Not set today: `load-stats-overlay`, `load-console`, `load-select`, `load-positioning`, `load-commands`, and `load-context-menu`. All default to `yes` in mpv v0.42.0 (`options/options.c` lines 1029-1040), so they load whenever the libmpv build has Lua. `load-auto-profiles` defaults to `auto`, which loads nothing without config profiles.
-  - When mpv returns, set `load-scripts=no` and each `load-*=no`, and read them back in a test.
 - [ ] **No default input.** `input-default-bindings=no` and `input-vo-keyboard=no` (`controller.rs:144-145`). The app sends only typed commands; no generic mpv command, property, or option bridge (`AGENTS.md`).
 - [ ] **No sibling files.** `autoload-files=no` (`controller.rs:147-149`), so only the subtitles Fluster adds appear as external tracks.
 - [ ] **Probe handles.** The throwaway handles that read the version and options set `config=no`, `vo=null`, and `ao=null`, and open nothing (`version.rs:53-59`).
