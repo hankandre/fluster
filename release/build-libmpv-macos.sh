@@ -13,6 +13,16 @@ for tool in brew git meson ninja pkg-config otool install_name_tool; do
   command -v "${tool}" >/dev/null || { echo "Missing required tool: ${tool}" >&2; exit 1; }
 done
 
+# HTTPS: Homebrew's FFmpeg uses GnuTLS, whose default trust store is
+# Homebrew's own cert.pem, which the app does not bundle. With tls-verify=yes
+# every HTTPS server would then be refused, so a release must bundle a CA file
+# and pass it as tls-ca-file (docs/security.md). Neither exists yet.
+ca_bundle="${repository_root}/src-tauri/resources/tls/ca-bundle.pem"
+if [[ ! -s "${ca_bundle}" ]] || ! grep -q '"tls-ca-file"' "${repository_root}/src-tauri/src/player/network.rs"; then
+  echo "macOS release blocked: bundle a CA file at src-tauri/resources/tls/ca-bundle.pem and pass it as tls-ca-file (see docs/security.md)." >&2
+  exit 1
+fi
+
 build_root="$(mktemp -d)"
 install_prefix="${build_root}/prefix"
 resource_lib="${repository_root}/src-tauri/resources/lib"
