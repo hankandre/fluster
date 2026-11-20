@@ -1,0 +1,331 @@
+{
+ "stats": {
+  "presses": 500,
+  "ok": 370,
+  "unexpected_place": 0,
+  "nowhere": 1,
+  "stuck": 1,
+  "burst_presses_after_divergence": 128,
+  "blur_of_recycled_cell": 2,
+  "column_offset_on_row_change": {
+   "n": 99,
+   "same_col": 86,
+   "mean_abs": 2.8,
+   "max_abs": 44
+  },
+  "rail_exit_returns_to_last_card": {
+   "same_card": 1,
+   "other_card": 0
+  },
+  "incidents": {
+   "single_press_failures": 2,
+   "bursts_diverged": 10,
+   "bursts_total": 12,
+   "singles_total": 299
+  },
+  "burst_achieved_median_gap_ms": 0.0,
+  "flag_enableCustomFocusSearchOnClippedElementsAndroid": "false",
+  "boot": "rowMvcpOff=false window=960x540 posters=400 backdrops=60 rows=20 cols=50",
+  "initial_focus": [
+   "rail",
+   0
+  ],
+  "windows": 311,
+  "seconds": 200.4,
+  "injector": "cmd input",
+  "settle_s": 0.6,
+  "burst_gap_s": 0.05
+ },
+ "failures": [
+  {
+   "press": 42,
+   "key": "RIGHT",
+   "verdict": "BLUR of recycled cell",
+   "focused_was": [
+    "card",
+    0,
+    41
+   ],
+   "blur_reported": [
+    "card",
+    0,
+    8
+   ]
+  },
+  {
+   "press": 42,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    41
+   ],
+   "expected": "0,42",
+   "got": null,
+   "verdict": "nowhere"
+  },
+  {
+   "press": 153,
+   "key": "LEFT",
+   "from": [
+    "card",
+    2,
+    0
+   ],
+   "expected": "rail",
+   "got": [
+    "card",
+    2,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 285,
+   "key": "burst RIGHTx20",
+   "from": [
+    "card",
+    0,
+    1
+   ],
+   "expected_final": [
+    "card",
+    0,
+    21
+   ],
+   "got": [
+    "card",
+    0,
+    9
+   ],
+   "verdict": "12 presses misrouted",
+   "first_divergence": "no further focus events"
+  },
+  {
+   "press": 288,
+   "key": "burst RIGHTx15",
+   "from": [
+    "card",
+    0,
+    46
+   ],
+   "expected_final": [
+    "card",
+    0,
+    49
+   ],
+   "got": [
+    "card",
+    1,
+    10
+   ],
+   "verdict": "12 presses misrouted",
+   "first_divergence": [
+    "card",
+    1,
+    5
+   ]
+  },
+  {
+   "press": 290,
+   "key": "burst LEFTx10",
+   "from": [
+    "card",
+    2,
+    2
+   ],
+   "expected_final": [
+    "rail",
+    null
+   ],
+   "got": [
+    "card",
+    1,
+    39
+   ],
+   "verdict": "7 presses misrouted",
+   "first_divergence": [
+    "card",
+    1,
+    43
+   ]
+  },
+  {
+   "press": 292,
+   "key": "burst LEFTx30",
+   "from": [
+    "card",
+    0,
+    44
+   ],
+   "expected_final": [
+    "card",
+    0,
+    14
+   ],
+   "got": [
+    "card",
+    1,
+    31
+   ],
+   "verdict": "25 presses misrouted",
+   "first_divergence": [
+    "rail",
+    0
+   ]
+  },
+  {
+   "press": 294,
+   "key": "burst RIGHTx20",
+   "from": [
+    "card",
+    2,
+    2
+   ],
+   "expected_final": [
+    "card",
+    2,
+    22
+   ],
+   "got": [
+    "card",
+    2,
+    9
+   ],
+   "verdict": "13 presses misrouted",
+   "first_divergence": "no further focus events"
+  },
+  {
+   "press": 297,
+   "key": "burst RIGHTx15",
+   "from": [
+    "card",
+    2,
+    46
+   ],
+   "expected_final": [
+    "card",
+    2,
+    49
+   ],
+   "got": [
+    "card",
+    1,
+    18
+   ],
+   "verdict": "12 presses misrouted",
+   "first_divergence": [
+    "card",
+    1,
+    5
+   ]
+  },
+  {
+   "press": 299,
+   "key": "burst LEFTx10",
+   "from": [
+    "card",
+    2,
+    47
+   ],
+   "expected_final": [
+    "card",
+    2,
+    37
+   ],
+   "got": [
+    "card",
+    2,
+    39
+   ],
+   "verdict": "2 presses misrouted",
+   "first_divergence": "no further focus events"
+  },
+  {
+   "press": 300,
+   "key": "UP",
+   "verdict": "BLUR of recycled cell",
+   "focused_was": [
+    "card",
+    2,
+    39
+   ],
+   "blur_reported": [
+    "card",
+    2,
+    1
+   ]
+  },
+  {
+   "press": 301,
+   "key": "burst LEFTx30",
+   "from": [
+    "card",
+    1,
+    26
+   ],
+   "expected_final": [
+    "rail",
+    null
+   ],
+   "got": [
+    "rail",
+    0
+   ],
+   "verdict": "26 presses misrouted",
+   "first_divergence": [
+    "rail",
+    0
+   ]
+  },
+  {
+   "press": 306,
+   "key": "burst RIGHTx15",
+   "from": [
+    "card",
+    0,
+    46
+   ],
+   "expected_final": [
+    "card",
+    0,
+    49
+   ],
+   "got": [
+    "card",
+    1,
+    18
+   ],
+   "verdict": "12 presses misrouted",
+   "first_divergence": [
+    "card",
+    1,
+    5
+   ]
+  },
+  {
+   "press": 308,
+   "key": "burst LEFTx10",
+   "from": [
+    "card",
+    2,
+    2
+   ],
+   "expected_final": [
+    "rail",
+    null
+   ],
+   "got": [
+    "card",
+    1,
+    23
+   ],
+   "verdict": "7 presses misrouted",
+   "first_divergence": [
+    "card",
+    1,
+    23
+   ]
+  }
+ ]
+}

@@ -1,0 +1,64 @@
+--------- beginning of main
+         1795196505.776  2735  2735 I FLUSTER_FLAG: enableCustomFocusSearchOnClippedElementsAndroid=false
+         1795196505.865  2735  2753 I ReactNativeJS: Running "main"
+         1795196505.876  2735  2753 I ReactNativeJS: BOOT rowMvcpOff=false window=960x540 posters=400 backdrops=60 rows=20 cols=50
+         1795196511.894  2800  2800 I FLUSTER_PRESS: seg launch
+         1795196511.910  2735  2753 I ReactNativeJS: FOCUS rail,0
+         1795196512.921  2810  2810 I FLUSTER_PRESS: seg row_hold_right enter
+         1795196512.927  2735  2753 I ReactNativeJS: BLUR rail,0
+         1795196512.927  2735  2753 I ReactNativeJS: FOCUS 0,0
+         1795196515.967  2843  2843 I FLUSTER_PRESS: seg row_hold_right hold RIGHT
+         1795196515.977  2735  2753 I ReactNativeJS: BLUR 0,0
+         1795196515.977  2735  2753 I ReactNativeJS: FOCUS 0,1
+         1795196515.977  2735  2753 I ReactNativeJS: BLUR 0,1
+         1795196515.977  2735  2753 I ReactNativeJS: FOCUS 0,2
+         1795196515.977  2735  2753 I ReactNativeJS: BLUR 0,2
+         1795196515.977  2735  2753 I ReactNativeJS: FOCUS 0,3
+         1795196515.977  2735  2753 I ReactNativeJS: BLUR 0,3
+         1795196515.977  2735  2753 I ReactNativeJS: FOCUS 0,4
+         1795196515.977  2735  2753 I ReactNativeJS: BLUR 0,4
+         1795196515.977  2735  2753 I ReactNativeJS: FOCUS 0,5
+         1795196515.978  2735  2753 I ReactNativeJS: BLUR 0,5
+         1795196515.978  2735  2753 I ReactNativeJS: FOCUS 0,6
+         1795196515.978  2735  2753 I ReactNativeJS: BLUR 0,6
+         1795196515.978  2735  2753 I ReactNativeJS: FOCUS 0,7
+         1795196515.978  2735  2753 I ReactNativeJS: BLUR 0,7
+         1795196515.978  2735  2753 I ReactNativeJS: FOCUS 0,8
+         1795196515.978  2735  2753 I ReactNativeJS: BLUR 0,8
+         1795196515.978  2735  2753 I ReactNativeJS: FOCUS 0,9
+         1795196515.997  2735  2753 I ReactNativeJS: BLUR 0,9
+         1795196515.997  2735  2753 I ReactNativeJS: FOCUS 1,5
+         1795196515.997  2735  2753 I ReactNativeJS: BLUR 1,5
+         1795196515.997  2735  2753 I ReactNativeJS: FOCUS 1,6
+         1795196515.997  2735  2753 I ReactNativeJS: BLUR 1,6
+         1795196515.997  2735  2753 I ReactNativeJS: FOCUS 1,7
+         1795196515.997  2735  2753 I ReactNativeJS: BLUR 1,7
+         1795196515.998  2735  2753 I ReactNativeJS: FOCUS 1,8
+         1795196515.998  2735  2753 I ReactNativeJS: BLUR 1,8
+         1795196515.998  2735  2753 I ReactNativeJS: FOCUS 1,9
+         1795196515.998  2735  2753 I ReactNativeJS: BLUR 1,9
+         1795196515.998  2735  2753 I ReactNativeJS: FOCUS 2,5
+         1795196515.998  2735  2753 I ReactNativeJS: BLUR 2,5
+         1795196515.998  2735  2753 I ReactNativeJS: FOCUS 2,6
+         1795196515.998  2735  2753 I ReactNativeJS: BLUR 2,6
+         1795196515.998  2735  2753 I ReactNativeJS: FOCUS 2,7
+         1795196515.998  2735  2753 I ReactNativeJS: BLUR 2,7
+         1795196515.998  2735  2753 I ReactNativeJS: FOCUS 2,8
+         1795196516.017  2735  2753 I ReactNativeJS: BLUR 2,8
+         1795196516.017  2735  2753 I ReactNativeJS: FOCUS 2,9
+         1795196517.107  2877  2877 I FLUSTER_FLAG: enableCustomFocusSearchOnClippedElementsAndroid=false
+         1795196517.193  2877  2895 I ReactNativeJS: Running "main"
+         1795196517.200  2877  2895 I ReactNativeJS: BOOT rowMvcpOff=false window=960x540 posters=400 backdrops=60 rows=20 cols=50
+         1795196523.238  2929  2929 I FLUSTER_PRESS: seg launch
+         1795196523.260  2877  2895 I ReactNativeJS: FOCUS rail,0
+         1795196524.265  2940  2940 I FLUSTER_PRESS: seg rows_hold_down enter
+         1795196524.277  2877  2895 I ReactNativeJS: BLUR rail,0
+         1795196524.277  2877  2895 I ReactNativeJS: FOCUS 0,0
+         1795196527.306  2953  2953 I FLUSTER_PRESS: seg rows_hold_down hold DOWN
+         1795196527.327  2877  2895 I ReactNativeJS: BLUR 0,0
+         1795196527.327  2877  2895 I ReactNativeJS: FOCUS 1,0
+         1795196527.327  2877  2895 I ReactNativeJS: BLUR 1,0
+         1795196527.327  2877  2895 I ReactNativeJS: FOCUS 2,0
+         1795196527.327  2877  2895 I ReactNativeJS: BLUR 2,0
+         1795196527.327  2877  2895 I ReactNativeJS: FOCUS 3,0
+         1795196527.327  2877  2895 I ReactNativeJS: BLUR 3,0

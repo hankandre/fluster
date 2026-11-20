@@ -7,7 +7,7 @@ emulators on 2026-11-20. **No real TV hardware has been measured yet.** The Shie
 
 ## Verdict so far (emulator only)
 
-Frame time and memory pass with room to spare. **Focus does not.** The canonical implementation has
+Frame time passes on the emulator, and memory is within Google's targets *excluding Graphics*, which the emulator cannot measure, so memory stays unverified until the Shield run. **Focus does not pass.** The canonical implementation has
 five reproducible focus defects; all appear with the clipped-element flag both on and off.
 
 - Rows are react-native-tvos 0.88.1-0 + FlashList v2.3.3 + Reanimated 4.7.1.
@@ -96,7 +96,7 @@ does not enforce this.
 | `dist/browse-falsifier-clippedfocus-on.apk` | Same build with the flag forced on | 6436f42ebd9e2c20 |
 | `dist/experiment-row-mvcp-off.apk` | Experiment only: rows with `maintainVisibleContentPosition={{disabled:true}}` | c4480f8e5859681e |
 
-The two stock APKs were rebuilt at the end after one type fix (`StyleSheet.absoluteFillObject` → `absoluteFill`, the same style at runtime). Runs 1–3 and the 1 GB run used the earlier builds; the `tv-flagoff-deliverable` run used these exact APKs.
+The two stock APKs were rebuilt at the end after one type fix (`StyleSheet.absoluteFillObject` → `absoluteFill`, the same style at runtime). Runs 1–3 and the 1 GB run used the earlier builds. The `tv-flagoff-deliverable` and `tv-oneshot` runs used the rebuilt flag-off APK. **The rebuilt flag-on APK has never been launched.**
 
 All three are release builds, Hermes, new architecture, 49 MB, and minSdk 24 / targetSdk 36 (so
 they run on the Shield's API 30). The ABIs are `arm64-v8a` and `x86_64` (`aapt2 dump badging`). They
@@ -154,14 +154,20 @@ prints `rowMvcpOff=` so the arm can be checked.
 - From a fresh launch, `dumpsys gfxinfo <pkg> reset`, then hold Right 49 times along row 0 (50 ms
   per press). Then, from a fresh launch, hold Down 19 times.
 - Each segment logs its focus path, which shows the segment did what it claims (49 and 19 events).
+  In the committed `frames.json` files, hold-Right shows 50 events ending on `rail,0`: the 50th is
+  the next launch's priming press, logged before the next marker. The driver now logs a `seg launch`
+  marker first, so new runs show 49.
   The first two runs held Left as well; Left jumps (below) polluted those segments, so they are
   shown separately.
 
 **Memory.**
-- `dumpsys meminfo` 8 s after launch, and again after Right through each row then Down, for all 20
-  rows.
-- Because of defect 5 below, rows 0–4 were traversed fully, while rows 5–19 opened already scrolled
-  to their end, so only their last ~6 posters loaded.
+- `dumpsys meminfo` 8 s after launch, and again after a scroll pass: hold Right 49 times in each
+  row, then Down.
+- Counting every FOCUS event, rows 0, 1, 2, 3 and 5–19 were focused and **row 4 never was**.
+  Defect 4 (Right past a row's end leaves the row) skipped it.
+- Rows 0–3 and 5 were traversed fully. Rows 6–19 opened already scrolled to their end (defect 5),
+  so only their last ~6 posters loaded.
+- The tables call this phase "after the scroll pass".
 - The art server counted 297 images served in that run (368 in the flag-on run).
 
 **Cold start.** 5 × (`am force-stop`, `am start -W`). It reports `TotalTime` plus the time from
@@ -194,16 +200,19 @@ as the Shield's UI), using `-gpu swiftshader_indirect` on a 16-core host.
 **Defects found** (with no workarounds applied):
 
 1. **The focused cell is recycled; the row snaps back.**
-   - Seen in all four stock and flag-on runs, 4–5 times per run. Rapid presses hit it most.
+   - Seen in every stock and flag-on run (five on 2 GB, one on 1 GB), 4–5 times per run. Rapid presses hit it most.
    - Holding Left along a row: at about column 26–36, as the next card scrolls in at the left edge,
      the row snaps to its start. The native view that still has focus now shows column 2–9's
      poster, with no focus or blur event for the change.
    - The user sees a jump of ~20–34 columns. Or, on Right, focus "goes nowhere": BLUR with no
      FOCUS, and the next press starts from the wrong card.
-   - **Verified by screenshot** in a manual replay on row 3. Before the press, the hero said column
-     26 and the focused card showed column 27. After, the row was at columns 0–5 and the ring sat on
-     column 4's poster.
-   - **Cause (partly verified).** It disappeared (0 of 0) in the single run with FlashList's
+   - **Verified by screenshot** in a manual replay on row 3.
+     - Before the press, the focus was on column 27, with the row showing columns 26–31.
+     - The press logged a normal move (`BLUR 3,27`, `FOCUS 3,26`), and the hero updated to column
+       26.
+     - But the screen showed the row snapped to columns 0–5, with the ring on column 4's poster.
+     - The next Left logged `BLUR 3,4`.
+   - **Cause (partly verified).** It disappeared (0 recycled-cell BLURs) in the single run with FlashList's
      `maintainVisibleContentPosition` disabled on the rows. That option is on by default in FlashList
      v2 (`FlashListProps.d.ts:294`). One run is not proof.
 2. **Left on the rail escapes into the content.**
@@ -261,9 +270,9 @@ Tegra X1 or a 1 GB box.** They show only that the JS and UI threads are not the 
 | Run | Phase | Total PSS | Java heap | Native heap | Private other | Graphics | Bitmaps (malloced) | ~Anon+Swap |
 |---|---|---|---|---|---|---|---|---|
 | flag off, run 3 | idle after launch | 113 | 14 | 46 | 20 | 0* | 21 (41 bitmaps) | 80 |
-| flag off, run 3 | after all rows (297 images served) | 155 | 9 | 89 | 24 | 0* | 50 (59) | 122 |
-| flag off, deliverable APK | after all rows (365 served) | 155 | 10 | 88 | 23 | 0* | 49 (57) | 121 |
-| flag on, run 2 | after all rows (368 served) | 158 | 12 | 89 | 24 | 0* | 50 (58) | 125 |
+| flag off, run 3 | after the scroll pass (297 images served) | 155 | 9 | 89 | 24 | 0* | 50 (59) | 122 |
+| flag off, deliverable APK | after the scroll pass (365 served) | 155 | 10 | 88 | 23 | 0* | 49 (57) | 121 |
+| flag on, run 2 | after the scroll pass (368 served) | 158 | 12 | 89 | 24 | 0* | 50 (58) | 125 |
 | runs 1–2 (polluted traversal, rows 0–2 only) | after | 181–184 | 7–10 | 102 | 38 | 0* | 45–46 (90–91) | 147–150 |
 
 \* Graphics reads 0 because swiftshader draws on the host, so GPU memory is not attributed to the
@@ -274,7 +283,8 @@ Shield run.**
 Google's definition, not the same counter.
 
 Against Google's 1 GB TV targets:
-- **280 MB total:** met, at 155–184 MB PSS.
+- **280 MB total:** 155–184 MB PSS *excluding Graphics*, which is part of Total PSS on a real
+  device but reads 0 here. Within target only if Graphics adds less than ~95 MB (**unverified**).
 - **≤200 MB Anon+Swap plus Graphics:** 122–150 MB before Graphics, so it is met only if Graphics
   stays under ~50–78 MB (**unverified**).
 - **30–40 MB Graphics:** unmeasured.
@@ -307,11 +317,30 @@ device, not an Android low-RAM (Go-style) configuration**. The AVD is at
 | Frames, hold Right row 0 | 220 frames, 1.36 % janky, p50/p90/p95/p99 15/16/16/16 ms |
 | Frames, hold Down 19 rows | 100 frames, 2.0 % janky, 16/16/16/16 ms |
 | Memory, idle | PSS 132 MB (Java 13, Native 46, Code 40, Private other 14, swap 1), bitmaps 21 MB |
-| Memory, after all rows (371 images served) | **PSS 156 MB** (Java 11, Native 79, Code 15, Private other 26, **swap PSS 12**), bitmaps 50 MB (58), ~Anon+Swap 128 MB, Graphics 0* |
+| Memory, after the scroll pass (371 images served) | **PSS 156 MB** (Java 11, Native 79, Code 15, Private other 26, **swap PSS 12**), bitmaps 50 MB (58), ~Anon+Swap 128 MB, Graphics 0* |
 | Cold start | TotalTime median **273 ms** (138–407); process start → first React commit median **304 ms** |
 
 At 1 GB the system starts swapping the app (12 MB swap PSS) and paging out code (Code PSS falls
-from 40 to 15 MB). Cold start roughly doubles. PSS stays well under the 280 MB target.
+from 40 to 15 MB). Cold start roughly doubles. PSS, excluding Graphics, stays under the 280 MB target.
+
+## One-call bursts (stress, not a held key)
+
+With `FALSIFIER_BURST=oneshot`, on `fluster_tv` with the deliverable APK, a burst is sent as one
+`input keyevent 22 22 22 …` call (`results/tv-oneshot-stress-*`).
+
+- 49 back-to-back Rights produced only **19 focus events, ending in another row** (`2,9`).
+- 19 Downs produced **3**.
+- Frames: 35 and 31, at 11.4 % and 19.4 % janky.
+- Focus: 10 of 12 bursts diverged, with 128 presses after divergence.
+
+Under a key flood with no gaps, focus cannot keep up and leaves the row. No remote sends keys that
+fast, so this is a stress datum only. An earlier draft of the driver fell back to this mode
+automatically on slow injectors; it no longer does.
+
+The driver as committed was validated by `results/tv-final-driver-frames`:
+- hold Right: 49 focus events ending on `0,49`, 66 ms median gap, 212 frames, 2.36 % janky,
+  p90/p99 16/16 ms;
+- hold Down: 19 events ending on `19,0`, 98 frames, 4.08 % janky, 16/16 ms.
 
 ## Results: `fluster_googletv`
 
@@ -322,6 +351,7 @@ Not run (time). `run-falsifier.sh emulator-XXXX dist/browse-falsifier.apk all go
 **Verified** (by command output or screenshot in this worktree):
 - the build chain;
 - that release logcat carries the focus lines;
+- the Play/Pause perf overlay (JS fps 61, 1 stall over 50 ms, worst 72 ms while pressing Right at 10/s; screenshot);
 - that the APK has arm64-v8a, with minSdk 24;
 - that the flag's effective value is set per arm;
 - that art comes over `adb reverse` with no address baked in;
@@ -334,8 +364,18 @@ run).
 **Unverified:**
 - anything about real hardware: frame pacing, Graphics memory, cold start, and how D-pad key repeat
   on a real remote compares with the injected 50 ms bursts;
-- whether `input keyevent` on API 30 is fast enough to imitate a held key. The driver measures this
-  and falls back to one call with back-to-back keycodes, and records which it used in `device.json`;
+- whether `input keyevent` on API 30 is fast enough to imitate a held key.
+  - Bursts are always paced: one call per key, then 50 ms. On a slow injector they run slower
+    than a held key.
+  - The driver warns when one injection takes over 100 ms, and records the achieved gap
+    (`burst_achieved_median_gap_ms`, `median_gap_ms` per segment), which should be compared before
+    comparing devices.
+  - `FALSIFIER_BURST=oneshot` sends a whole burst in one call. That is a stress test, not a held
+    key (see "One-call bursts" below), and its results are not comparable with paced ones;
+- that the APK runs on arm64 or API 30. Neither the arm64 slice nor API 30 has ever been launched;
+  only the x86_64 slice ran, on API 36;
+- `adb reverse` over network adb (the Shield's connection). It was only used over the emulator's
+  local transport;
 - whether the Google TV image behaves the same;
 - whether a Compose for TV client avoids these defects. The decision's "feel" comparison is the
   owner's to make;

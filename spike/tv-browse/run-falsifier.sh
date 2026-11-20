@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # Runs the browse-falsifier measurements against one adb device.
 #
-#   ./run-falsifier.sh <adb-serial> [apk] [what]
+#   [FALSIFIER_BURST=...] ./run-falsifier.sh <adb-serial> [apk] [what] [label]
 #
 #   adb-serial  from `adb devices` (emulator-5554, or <shield-ip>:5555 after `adb connect`)
 #   apk         optional; installed first (default: dist/browse-falsifier.apk)
 #   what        all (default) | focus | frames | memory | coldstart
+#   FALSIFIER_BURST=oneshot (env) sends each burst in one call: a stress test, not a held key.
 #   label       optional results label (default: the device model). The serial is never
 #               written to disk, because for a network device it is the device's address.
 #

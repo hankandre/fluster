@@ -6,6 +6,7 @@ Focus oracle: every press is preceded on the device by `log -t FLUSTER_PRESS "<n
 so the app's FOCUS/BLUR lines (tag ReactNativeJS) between two markers belong to that press.
 """
 import argparse
+import os
 import json
 import re
 import statistics
@@ -15,8 +16,10 @@ import time
 from pathlib import Path
 
 KEYS = {"RIGHT": 22, "LEFT": 21, "DOWN": 20, "UP": 19}
-# Set in main(): when one injection costs more than ~100 ms, a paced loop cannot imitate a
-# held key, so bursts send all keycodes in one `input keyevent` call instead (back to back).
+# Bursts are always a paced loop (one call per key, then 50 ms), so on a slow injector they
+# run slower than a held key; the achieved gap is recorded. FALSIFIER_BURST=oneshot sends all
+# keycodes in one call instead. That is a stress test, not a held key: on the emulator 49
+# back-to-back Rights gave 19 focus events (RESULTS.md, "One-call bursts").
 SLOW_INJECTOR = False
 
 
@@ -62,7 +65,7 @@ def launch(serial, pkg, activity, settle=6.0):
     # After `am start` the window is in touch mode with nothing focused; the first D-pad
     # press only exits touch mode and focuses the first focusable (rail item 0). That
     # priming press is not counted.
-    sh(serial, "input keyevent 21; sleep 1")
+    sh(serial, 'log -t FLUSTER_PRESS "seg launch"; input keyevent 21; sleep 1')
     return out
 
 
@@ -155,9 +158,11 @@ def parse_windows(lines):
             if parts and parts[0] == "end":
                 cur = None
                 continue
-            if len(parts) >= 4:
+            if len(parts) >= 4 and parts[0].isdigit():
                 cur = {"i": int(parts[0]), "kind": parts[1], "key": parts[2], "n": int(parts[3]), "events": []}
                 windows.append(cur)
+            else:
+                cur = None
             continue
         m = FOCUS_RE.search(line)
         if m and cur is not None:
@@ -452,15 +457,17 @@ def run_memory(serial, pkg, activity, out, tool):
     time.sleep(5)
     after, raw1 = meminfo(serial, pkg)
     (out / "meminfo-raw.txt").write_text(raw0 + "\n\n====\n\n" + raw1)
-    segs = segments(log.stop())
+    lines = log.stop()
+    segs = segments(lines)
     visited = {}
-    for x in segs:
-        if x["final"] and not x["final"].startswith("rail"):
-            r, c = map(int, x["final"].split(","))
+    for line in lines:
+        m = FOCUS_RE.search(line)
+        if m and m.group(1) == "FOCUS" and m.group(2) != "rail":
+            r, c = int(m.group(2)), int(m.group(3))
             visited[r] = max(visited.get(r, 0), c)
     rows_reached = {str(r): visited[r] for r in sorted(visited)}  # row -> furthest column focused
-    res = {"idle_after_launch": idle, "after_scrolling_all_rows": after,
-           "rows_visited_furthest_col": rows_reached, "segments": segs}
+    res = {"idle_after_launch": idle, "after_scrolling_all_rows": after,  # i.e. after the scroll pass
+           "rows_focused_furthest_col": rows_reached, "segments": segs}
     (out / "memory.json").write_text(json.dumps(res, indent=1))
     return res
 
@@ -517,10 +524,14 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     global SLOW_INJECTOR
     tool, per = detect_input(args.serial)
-    SLOW_INJECTOR = per > 0.1
+    forced = os.environ.get("FALSIFIER_BURST", "auto")  # auto | paced | oneshot
+    SLOW_INJECTOR = forced == "oneshot"
+    if per > 0.1 and not SLOW_INJECTOR:
+        print(f"WARNING: one key injection takes {per * 1000:.0f} ms; paced bursts will be slower than a held key", file=sys.stderr)
+    sh(args.serial, "input keyevent 224")  # KEYCODE_WAKEUP: a sleeping TV swallows the first press
     info = device_info(args.serial)
     info["injector"] = f"{tool} ({per * 1000:.0f} ms per call incl. adb round trip / 5)"
-    info["burst_mode"] = "one call, back-to-back keycodes" if SLOW_INJECTOR else "paced loop, 50 ms gap"
+    info["burst_mode"] = "one call, back-to-back keycodes (stress, not a held key)" if SLOW_INJECTOR else "paced loop, one call per key + 50 ms"
     (out / "device.json").write_text(json.dumps(info, indent=1))
     print(json.dumps(info, indent=1))
     if args.what in ("coldstart", "all"):
