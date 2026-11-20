@@ -326,9 +326,11 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1920, height: 108
         expect(overlaps, `controls ${i} and ${j} overlap`).toBe(false);
       }
     }
-    // The six controls share one row where they fit (1440 px and wider), and the bar wraps where they do not.
+    // The six controls share one row at 1920 px. At 1440 px the larger desktop labels make this long audio label
+    // wrap the bar to a second row (owner decision, 2026-11-20, DESIGN.md 7.8); at 390 px it wraps further.
     const rows = new Set(boxes.map((box) => Math.round(box.top))).size;
-    if (viewport.width > 390) expect(rows).toBe(1);
+    if (viewport.width >= 1920) expect(rows).toBe(1);
+    else if (viewport.width > 390) expect(rows).toBe(2);
     else expect(rows).toBeGreaterThan(1);
   });
 }
