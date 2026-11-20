@@ -1,0 +1,12 @@
+--------- beginning of system
+--------- beginning of main
+         1795205740.266 15495 15495 I FlusterBrowse: FOCUS rail,0
+         1795205740.427 15495 15495 I FlusterBrowse: BOOT compose window=960x540dp posters=400 backdrops=60 rows=20 cols=50
+         1795205746.475 15732 15732 I FLUSTER_PRESS: seg launch
+         1795205748.217 15753 15753 I FLUSTER_PRESS: seg row_hold_right enter
+         1795205751.713 15785 15785 I FLUSTER_PRESS: seg row_hold_right hold RIGHT
+         1795205757.472 15837 15837 I FlusterBrowse: FOCUS rail,0
+         1795205757.758 15837 15837 I FlusterBrowse: BOOT compose window=960x540dp posters=400 backdrops=60 rows=20 cols=50
+         1795205763.775 15969 15969 I FLUSTER_PRESS: seg launch
+         1795205765.522 15988 15988 I FLUSTER_PRESS: seg rows_hold_down enter
+         1795205769.004 16022 16022 I FLUSTER_PRESS: seg rows_hold_down hold DOWN
