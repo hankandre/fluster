@@ -107,7 +107,14 @@ pub(super) fn probed_http_stacks() -> Option<super::network::HttpStacks> {
         }
         other => {
             let mpv = other.expect("libmpv starts the probe handle");
-            Some(probe_runtime(&mpv).expect("a supported libmpv").http)
+            match probe_runtime(&mpv) {
+                Ok((_, http)) => Some(http),
+                Err(super::MpvError::UnsupportedVersion(version)) => {
+                    eprintln!("SKIP probe: libmpv {version} is older than Fluster supports");
+                    None
+                }
+                Err(error) => panic!("the libmpv probe failed: {error}"),
+            }
         }
     }
 }

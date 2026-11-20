@@ -15,15 +15,18 @@ use libmpv2::{Mpv, MpvInitializer};
 // start with `http://` turns the proxy off (http.c `http_open_cnx_internal`).
 const STREAM_LAVF_OPTIONS: &str = "max_redirects=0,http_proxy=direct://";
 // mpv 0.42 adds a libcurl backend for HTTP(S), on by default when mpv is
-// built with libcurl and libavformat >= 62.15.101 (`stream/stream_curl.c`
-// v0.42.0 lines 91-97, 124). It sets `CURLOPT_FOLLOWLOCATION` with
+// built with libcurl and libavformat is >= 62.15.101, or in the FFmpeg 8.1
+// and 8.0 backport ranges [62.12.102, 62.13) and [62.3.103, 62.4)
+// (`stream/stream_curl.c` v0.42.0 lines 91-97, 124). It sets `CURLOPT_FOLLOWLOCATION` with
 // `--curl-max-redirects` (default 16, lines 127, 972-973) and sends
 // `http-header-fields` (lines 932-934), and demux_lavf routes nested opens
 // such as HLS segments through it (`demux/demux_lavf.c` lines 1016-1023).
 // `curl-enabled=no` makes both the stream and the nested opens fall back to
 // FFmpeg (stream_curl.c lines 1145-1146, 1361-1364; `stream/stream.c` lines
 // 455-460 move on to the next backend), the one HTTP path the
-// options above harden; `curl-max-redirects=0` stays as a second guard.
+// options above harden; `curl-max-redirects=0` stays as a second guard for
+// redirects only. libcurl's own proxy handling is never reached, because
+// curl serves nothing.
 const CURL_ENABLED: &str = "curl-enabled";
 const CURL_MAX_REDIRECTS: &str = "curl-max-redirects";
 // FFmpeg AVFormatContext option, copied onto every nested open by mpv
@@ -107,7 +110,7 @@ pub(super) fn initialize_error(error: libmpv2::Error, curl_guard_failed: bool) -
 
 // Decided from the probed runtime, never from a failed `set_option`: on
 // `LavfAndCurl` a failure here fails the launch.
-fn refuse_curl_backend(init: &MpvInitializer, http: HttpStacks) -> libmpv2::Result<()> {
+pub(super) fn refuse_curl_backend(init: &MpvInitializer, http: HttpStacks) -> libmpv2::Result<()> {
     match http {
         HttpStacks::LavfOnly => Ok(()),
         HttpStacks::LavfAndCurl => {

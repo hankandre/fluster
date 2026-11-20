@@ -106,7 +106,7 @@ fn only_a_curl_guard_failure_becomes_the_redirect_refusal() {
         initialize_error(raw(), false),
         MpvError::Initialize(_)
     ));
-    assert!(MpvError::RedirectGuard
-        .to_string()
-        .contains("did not start"));
+    let copy = MpvError::RedirectGuard.to_string();
+    assert!(copy.ends_with("Update Fluster."), "{copy}");
+    assert!(!copy.contains("libmpv"), "{copy}");
 }
