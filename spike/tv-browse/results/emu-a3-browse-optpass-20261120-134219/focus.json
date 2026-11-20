@@ -1,0 +1,8153 @@
+{
+ "stats": {
+  "presses": 822,
+  "ok": 97,
+  "unexpected_place": 0,
+  "nowhere": 0,
+  "stuck": 489,
+  "burst_presses_after_divergence": 236,
+  "blur_of_recycled_cell": 0,
+  "column_offset_on_row_change": {
+   "n": 0,
+   "same_col": 0,
+   "mean_abs": null,
+   "max_abs": null
+  },
+  "rail_exit_returns_to_last_card": {
+   "same_card": 0,
+   "other_card": 0
+  },
+  "incidents": {
+   "single_press_failures": 489,
+   "bursts_diverged": 14,
+   "bursts_total": 14,
+   "singles_total": 586
+  },
+  "burst_achieved_median_gap_ms": null,
+  "flag_enableCustomFocusSearchOnClippedElementsAndroid": "false",
+  "boot": "arm={\"name\":\"a3\",\"mvcpOff\":true,\"traps\":true,\"rowMemory\":true,\"rgb\":false,\"diskOnly\":false,\"backdropW\":1920,\"crossfadeMs\":300,\"plainLift\":false,\"lazyPosters\":false} rowMvcpOff=true window=960x540 posters=400 backdrops=60 rows=20 cols=50",
+  "initial_focus": [
+   "rail",
+   0
+  ],
+  "windows": 600,
+  "seconds": 215.1,
+  "injector": "cmd input",
+  "settle_s": 0.6,
+  "burst_gap_s": 0.05
+ },
+ "failures": [
+  {
+   "press": 1,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 2,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 3,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 4,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 5,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 6,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 7,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 8,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 9,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 10,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 11,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 12,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 13,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 14,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 15,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 16,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 17,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 18,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 19,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 20,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 21,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 22,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 23,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 24,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 25,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 26,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 27,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 28,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 29,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 30,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 31,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 32,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 33,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 34,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 35,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 36,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 37,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    0
+   ],
+   "expected": "0,1",
+   "got": [
+    "card",
+    0,
+    0
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 41,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 42,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 43,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 44,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 45,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 46,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 47,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 48,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 49,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 50,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 51,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 52,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 0,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 53,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 1,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 54,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 2,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 55,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 3,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 56,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 4,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 57,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 5,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 58,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 6,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 59,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 7,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 60,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 8,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 61,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 9,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 62,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 10,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 63,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 11,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 64,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 12,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 65,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 13,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 66,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 14,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 67,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 15,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 68,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 16,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 69,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 17,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 70,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 18,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 71,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 19,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 72,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 20,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 73,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 21,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 74,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 22,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 75,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 23,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 76,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 24,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 77,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 25,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 78,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 26,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 79,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 27,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 80,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 28,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 81,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 29,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 82,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 30,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 83,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 31,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 84,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 32,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 85,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 33,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 86,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 34,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 87,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 35,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 88,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 36,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 89,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 37,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 90,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 38,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 91,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 39,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 92,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 40,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 93,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 41,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 94,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 42,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 95,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 43,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 96,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 44,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 97,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 45,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 98,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 46,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 99,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 47,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 100,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 48,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 101,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 49,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 102,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 50,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 103,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 51,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 104,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 52,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 105,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 53,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 106,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 54,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 107,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 55,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 108,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 56,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 109,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 57,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 110,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 58,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 111,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 59,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 112,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 60,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 113,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 61,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 114,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 62,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 115,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 63,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 116,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 64,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 117,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 65,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 118,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 66,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 119,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 67,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 120,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 68,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 121,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 69,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 70,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 71,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 72,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 73,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 74,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 75,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 76,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 77,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 78,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 79,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 80,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 81,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 82,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 83,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 84,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 85,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 86,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 87,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 88,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 141,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 89,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 142,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 90,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 143,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 91,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 144,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 92,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 145,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 93,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 146,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 94,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 147,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 95,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 148,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 96,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 149,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 97,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 150,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 98,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 151,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 99,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 152,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 100,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 153,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 101,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 154,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 102,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 103,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 156,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 104,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 157,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 105,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 158,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 106,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 159,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 107,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 160,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 108,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 161,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 109,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 162,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 110,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 163,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 111,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 164,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 112,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 165,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 113,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 166,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 114,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 167,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 115,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 168,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 116,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 169,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 117,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 170,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 118,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 119,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 172,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 120,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 173,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 121,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 174,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 175,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 176,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 177,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 178,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 179,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 180,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 181,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 182,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 183,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 184,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 185,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 186,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 188,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 189,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 190,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 191,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 192,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 193,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 141,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 194,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 142,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 195,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 143,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 196,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 144,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 197,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 145,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 198,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 146,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 199,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 147,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 200,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 148,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 201,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 149,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 202,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 150,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 151,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 204,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 152,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 205,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 153,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 206,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 154,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 207,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 208,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 156,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 209,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 157,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 210,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 158,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 211,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 159,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 212,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 160,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 213,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 161,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 214,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 162,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 215,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 163,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 216,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 164,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 217,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 165,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 218,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 166,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 167,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 220,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 168,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 221,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 169,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 222,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 170,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 223,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 224,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 172,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 225,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 173,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 226,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 174,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 227,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 175,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 228,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 176,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 229,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 177,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 230,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 178,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 231,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 179,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 232,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 180,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 233,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 181,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 234,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 182,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 183,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 236,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 184,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 237,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 185,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 238,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 186,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 239,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 240,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 188,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 241,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 189,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 242,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 190,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 243,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 191,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 244,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 192,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 245,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 193,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 246,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 194,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 247,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 195,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 248,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 196,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 249,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 197,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 250,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 198,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 199,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 252,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 200,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 253,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 201,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 254,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 202,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 255,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 256,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 204,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 257,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 205,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 258,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 206,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 259,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 207,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 260,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 208,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 261,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 209,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 262,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 210,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 263,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 211,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 264,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 212,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 265,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 213,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 266,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 214,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 215,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 268,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 216,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 217,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 218,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 220,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 221,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 222,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 223,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 224,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 225,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 226,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 227,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 228,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 229,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 230,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 231,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 232,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 285,
+   "key": "burst RIGHTx20",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected_final": [
+    "card",
+    0,
+    23
+   ],
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "20 presses misrouted",
+   "first_divergence": "no further focus events"
+  },
+  {
+   "press": 233,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 234,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 236,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 286,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 237,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 238,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 288,
+   "key": "burst RIGHTx15",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected_final": [
+    "card",
+    0,
+    18
+   ],
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "15 presses misrouted",
+   "first_divergence": "no further focus events"
+  },
+  {
+   "press": 239,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 240,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 241,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 242,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 289,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 243,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 290,
+   "key": "burst LEFTx10",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected_final": [
+    "rail",
+    null
+   ],
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "10 presses misrouted",
+   "first_divergence": "no further focus events"
+  },
+  {
+   "press": 244,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 245,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 246,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 247,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 292,
+   "key": "burst LEFTx30",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected_final": [
+    "rail",
+    null
+   ],
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "30 presses misrouted",
+   "first_divergence": "no further focus events"
+  },
+  {
+   "press": 248,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 249,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 250,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 293,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 252,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 294,
+   "key": "burst RIGHTx20",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected_final": [
+    "card",
+    0,
+    23
+   ],
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "20 presses misrouted",
+   "first_divergence": "no further focus events"
+  },
+  {
+   "press": 253,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 254,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 255,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 256,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 295,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 257,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 258,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 297,
+   "key": "burst RIGHTx15",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected_final": [
+    "card",
+    0,
+    18
+   ],
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "15 presses misrouted",
+   "first_divergence": "no further focus events"
+  },
+  {
+   "press": 259,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 260,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 261,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 262,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 298,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 263,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 299,
+   "key": "burst LEFTx10",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected_final": [
+    "rail",
+    null
+   ],
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "10 presses misrouted",
+   "first_divergence": "no further focus events"
+  },
+  {
+   "press": 264,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 265,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,2",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 266,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 301,
+   "key": "burst LEFTx30",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected_final": [
+    "rail",
+    null
+   ],
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "30 presses misrouted",
+   "first_divergence": "no further focus events"
+  },
+  {
+   "press": 268,
+   "key": "RIGHT",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "0,4",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 302,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 303,
+   "key": "burst RIGHTx20",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected_final": [
+    "card",
+    0,
+    23
+   ],
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "20 presses misrouted",
+   "first_divergence": "no further focus events"
+  },
+  {
+   "press": 304,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 306,
+   "key": "burst RIGHTx15",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected_final": [
+    "card",
+    0,
+    18
+   ],
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "15 presses misrouted",
+   "first_divergence": "no further focus events"
+  },
+  {
+   "press": 307,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 308,
+   "key": "burst LEFTx10",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected_final": [
+    "rail",
+    null
+   ],
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "10 presses misrouted",
+   "first_divergence": "no further focus events"
+  },
+  {
+   "press": 285,
+   "key": "burst RIGHTx20",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected_final": [
+    "card",
+    0,
+    23
+   ],
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "20 presses misrouted",
+   "first_divergence": "no further focus events"
+  },
+  {
+   "press": 310,
+   "key": "burst LEFTx6",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected_final": [
+    "rail",
+    null
+   ],
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "6 presses misrouted",
+   "first_divergence": "no further focus events"
+  },
+  {
+   "press": 286,
+   "key": "DOWN",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected": "row 1",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "stuck"
+  },
+  {
+   "press": 288,
+   "key": "burst RIGHTx15",
+   "from": [
+    "card",
+    0,
+    3
+   ],
+   "expected_final": [
+    "card",
+    0,
+    18
+   ],
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "15 presses misrouted",
+   "first_divergence": "no further focus events"
+  }
+ ]
+}

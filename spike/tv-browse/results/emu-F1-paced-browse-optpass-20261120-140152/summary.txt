@@ -1,0 +1,56 @@
+{
+ "ro.product.model": "sdk_google_atv64_x86_64",
+ "ro.product.manufacturer": "Google",
+ "ro.build.version.release": "16",
+ "ro.build.version.sdk": "36",
+ "ro.config.low_ram": "",
+ "ro.product.cpu.abi": "x86_64",
+ "ro.hardware": "ranchu",
+ "mem_total": "MemTotal:        2018820 kB",
+ "display": "Physical size: 1920x1080; Physical density: 320",
+ "dexopt": "[dev.fluster.spike.browse] path: /data/app/~~Os2RmvNcVN90J61PY5NISA==/dev.fluster.spike.browse-z4hN233UpiLsaqpuuPGr1g==/base.apk x86_64: [status=verify] [reason=install] [primary-abi] [location is /data/app/~~Os2RmvNcVN90J61PY5NISA==/dev.fluster.spike.browse-z4hN233UpiLsaqpuuPGr1g==/oat/x86_64/base.odex]",
+ "arm": "{\"name\":\"F1\",\"mvcpOff\":true,\"traps\":true,\"rowMemory\":true,\"rgb\":true}",
+ "injector": "cmd input (14 ms per call incl. adb round trip / 5)",
+ "burst_mode": "input loop, one call per key + 50 ms"
+}
+focus {
+ "presses": 500,
+ "ok": 497,
+ "unexpected_place": 2,
+ "nowhere": 0,
+ "stuck": 1,
+ "burst_presses_after_divergence": 0,
+ "blur_of_recycled_cell": 0,
+ "column_offset_on_row_change": {
+  "n": 95,
+  "same_col": 86,
+  "mean_abs": 3.35,
+  "max_abs": 43
+ },
+ "rail_exit_returns_to_last_card": {
+  "same_card": 0,
+  "other_card": 0
+ },
+ "incidents": {
+  "single_press_failures": 3,
+  "bursts_diverged": 0,
+  "bursts_total": 12,
+  "singles_total": 299
+ },
+ "burst_achieved_median_gap_ms": 67.0,
+ "flag_enableCustomFocusSearchOnClippedElementsAndroid": "false",
+ "boot": "arm={\"name\":\"F1\",\"mvcpOff\":true,\"traps\":true,\"rowMemory\":true,\"rgb\":true,\"diskOnly\":false,\"backdropW\":1920,\"crossfadeMs\":300,\"plainLift\":false,\"trapsOff\":[],\"lazyPosters\":false} rowMvcpOff=true window=960x540 posters=400 backdrops=60 rows=20 cols=50",
+ "initial_focus": [
+  "rail",
+  0
+ ],
+ "windows": 311,
+ "seconds": 226.6,
+ "injector": "cmd input",
+ "settle_s": 0.6,
+ "burst_gap_s": 0.05
+}
+   {'press': 100, 'key': 'LEFT', 'from': ('card', 0, 0), 'expected': 'rail', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 293, 'key': 'DOWN', 'from': ('rail', 0), 'expected': 'rail 1', 'got': ('card', 0, 30), 'verdict': 'unexpected'}
+   {'press': 302, 'key': 'DOWN', 'from': ('rail', 0), 'expected': 'rail 1', 'got': ('card', 0, 43), 'verdict': 'unexpected'}
+art server: served 194 images

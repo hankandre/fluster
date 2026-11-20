@@ -1,0 +1,412 @@
+{
+ "stats": {
+  "presses": 500,
+  "ok": 425,
+  "unexpected_place": 3,
+  "nowhere": 0,
+  "stuck": 0,
+  "burst_presses_after_divergence": 72,
+  "blur_of_recycled_cell": 12,
+  "column_offset_on_row_change": {
+   "n": 71,
+   "same_col": 62,
+   "mean_abs": 2.32,
+   "max_abs": 29
+  },
+  "rail_exit_returns_to_last_card": {
+   "same_card": 1,
+   "other_card": 8
+  },
+  "incidents": {
+   "single_press_failures": 3,
+   "bursts_diverged": 6,
+   "bursts_total": 12,
+   "singles_total": 299
+  },
+  "burst_achieved_median_gap_ms": 65.0,
+  "flag_enableCustomFocusSearchOnClippedElementsAndroid": "false",
+  "boot": "arm={\"name\":\"stock\",\"mvcpOff\":false,\"traps\":false,\"rowMemory\":false,\"rgb\":false,\"diskOnly\":false,\"backdropW\":1920,\"crossfadeMs\":300,\"plainLift\":false,\"trapsOff\":[],\"lazyPosters\":false} rowMvcpOff=false window=960x540 posters=400 backdrops=60 rows=20 cols=50",
+  "initial_focus": [
+   "rail",
+   0
+  ],
+  "windows": 311,
+  "seconds": 429.7,
+  "injector": "input",
+  "settle_s": 0.6,
+  "burst_gap_s": 0.05
+ },
+ "failures": [
+  {
+   "press": 61,
+   "key": "LEFT",
+   "verdict": "BLUR of recycled cell",
+   "focused_was": [
+    "card",
+    0,
+    39
+   ],
+   "blur_reported": [
+    "card",
+    0,
+    29
+   ]
+  },
+  {
+   "press": 61,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    39
+   ],
+   "expected": "0,38",
+   "got": [
+    "card",
+    0,
+    28
+   ],
+   "verdict": "unexpected"
+  },
+  {
+   "press": 62,
+   "key": "LEFT",
+   "verdict": "BLUR of recycled cell",
+   "focused_was": [
+    "card",
+    0,
+    28
+   ],
+   "blur_reported": [
+    "card",
+    0,
+    17
+   ]
+  },
+  {
+   "press": 62,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    28
+   ],
+   "expected": "0,27",
+   "got": [
+    "card",
+    0,
+    16
+   ],
+   "verdict": "unexpected"
+  },
+  {
+   "press": 63,
+   "key": "LEFT",
+   "verdict": "BLUR of recycled cell",
+   "focused_was": [
+    "card",
+    0,
+    16
+   ],
+   "blur_reported": [
+    "card",
+    0,
+    4
+   ]
+  },
+  {
+   "press": 63,
+   "key": "LEFT",
+   "from": [
+    "card",
+    0,
+    16
+   ],
+   "expected": "0,15",
+   "got": [
+    "card",
+    0,
+    3
+   ],
+   "verdict": "unexpected"
+  },
+  {
+   "press": 290,
+   "key": "burst LEFTx10",
+   "from": [
+    "card",
+    1,
+    6
+   ],
+   "expected_final": [
+    "rail",
+    null
+   ],
+   "got": [
+    "card",
+    0,
+    27
+   ],
+   "verdict": "3 presses misrouted",
+   "first_divergence": [
+    "card",
+    0,
+    28
+   ]
+  },
+  {
+   "press": 292,
+   "key": "LEFT",
+   "verdict": "BLUR of recycled cell",
+   "focused_was": [
+    "card",
+    0,
+    25
+   ],
+   "blur_reported": [
+    "card",
+    0,
+    15
+   ]
+  },
+  {
+   "press": 292,
+   "key": "burst LEFTx30",
+   "from": [
+    "card",
+    0,
+    27
+   ],
+   "expected_final": [
+    "rail",
+    null
+   ],
+   "got": [
+    "rail",
+    0
+   ],
+   "verdict": "28 presses misrouted",
+   "first_divergence": [
+    "card",
+    0,
+    14
+   ]
+  },
+  {
+   "press": 299,
+   "key": "burst LEFTx10",
+   "from": [
+    "card",
+    1,
+    6
+   ],
+   "expected_final": [
+    "rail",
+    null
+   ],
+   "got": [
+    "card",
+    0,
+    26
+   ],
+   "verdict": "3 presses misrouted",
+   "first_divergence": [
+    "card",
+    0,
+    27
+   ]
+  },
+  {
+   "press": 301,
+   "key": "LEFT",
+   "verdict": "BLUR of recycled cell",
+   "focused_was": [
+    "card",
+    0,
+    25
+   ],
+   "blur_reported": [
+    "card",
+    0,
+    14
+   ]
+  },
+  {
+   "press": 301,
+   "key": "LEFT",
+   "verdict": "BLUR of recycled cell",
+   "focused_was": [
+    "card",
+    0,
+    12
+   ],
+   "blur_reported": [
+    "card",
+    0,
+    23
+   ]
+  },
+  {
+   "press": 301,
+   "key": "LEFT",
+   "verdict": "BLUR of recycled cell",
+   "focused_was": [
+    "card",
+    0,
+    14
+   ],
+   "blur_reported": [
+    "card",
+    0,
+    3
+   ]
+  },
+  {
+   "press": 301,
+   "key": "LEFT",
+   "verdict": "BLUR of recycled cell",
+   "focused_was": [
+    "card",
+    0,
+    2
+   ],
+   "blur_reported": [
+    "card",
+    0,
+    13
+   ]
+  },
+  {
+   "press": 301,
+   "key": "LEFT",
+   "verdict": "BLUR of recycled cell",
+   "focused_was": [
+    "card",
+    0,
+    11
+   ],
+   "blur_reported": [
+    "card",
+    0,
+    0
+   ]
+  },
+  {
+   "press": 301,
+   "key": "LEFT",
+   "verdict": "BLUR of recycled cell",
+   "focused_was": [
+    "card",
+    0,
+    8
+   ],
+   "blur_reported": [
+    "card",
+    0,
+    25
+   ]
+  },
+  {
+   "press": 301,
+   "key": "LEFT",
+   "verdict": "BLUR of recycled cell",
+   "focused_was": [
+    "card",
+    0,
+    24
+   ],
+   "blur_reported": [
+    "card",
+    0,
+    7
+   ]
+  },
+  {
+   "press": 301,
+   "key": "LEFT",
+   "verdict": "BLUR of recycled cell",
+   "focused_was": [
+    "card",
+    0,
+    16
+   ],
+   "blur_reported": [
+    "card",
+    0,
+    5
+   ]
+  },
+  {
+   "press": 301,
+   "key": "burst LEFTx30",
+   "from": [
+    "card",
+    0,
+    26
+   ],
+   "expected_final": [
+    "rail",
+    null
+   ],
+   "got": [
+    "rail",
+    1
+   ],
+   "verdict": "29 presses misrouted",
+   "first_divergence": [
+    "card",
+    0,
+    12
+   ]
+  },
+  {
+   "press": 308,
+   "key": "burst LEFTx10",
+   "from": [
+    "card",
+    1,
+    6
+   ],
+   "expected_final": [
+    "rail",
+    null
+   ],
+   "got": [
+    "card",
+    0,
+    26
+   ],
+   "verdict": "3 presses misrouted",
+   "first_divergence": [
+    "card",
+    0,
+    27
+   ]
+  },
+  {
+   "press": 310,
+   "key": "burst LEFTx6",
+   "from": [
+    "card",
+    0,
+    26
+   ],
+   "expected_final": [
+    "card",
+    0,
+    20
+   ],
+   "got": [
+    "card",
+    0,
+    18
+   ],
+   "verdict": "6 presses misrouted",
+   "first_divergence": [
+    "card",
+    0,
+    23
+   ]
+  }
+ ]
+}

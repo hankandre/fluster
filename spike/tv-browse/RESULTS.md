@@ -7,6 +7,13 @@ below).
 
 ## Verdict so far
 
+**Update (optimisation pass, same day):** the React Native screen's Shield problems turned
+out fixable. With six focus fixes, a static lift, 16-bit art and compiled code, it passes the
+500-press focus test with no failures, holds Down at 0 % janky (p99 13 ms), and meets
+Google's 1 GB-box memory targets on the Shield (PSS 242–246 MB). The costs are a Baseline
+Profile requirement, design concessions, and thin margins. See "React Native optimisation
+pass" below. The text in this section is the state before that pass.
+
 On the **Shield**, the canonical implementation has three problems.
 
 1. **Focus.** Five focus defects reproduce exactly as on the emulator, with the clipped-element flag
@@ -110,6 +117,7 @@ does not enforce this.
 | `dist/browse-falsifier.apk` | Stock: flag at its default (off) | 656473b7f5a93887 |
 | `dist/browse-falsifier-clippedfocus-on.apk` | Same build with the flag forced on | 6436f42ebd9e2c20 |
 | `dist/experiment-row-mvcp-off.apk` | Experiment only: rows with `maintainVisibleContentPosition={{disabled:true}}` | c4480f8e5859681e |
+| `dist/browse-optpass-v5.apk` (= `dist/browse-optpass.apk`) | Optimisation pass: collapsed rail, every arm switchable at launch (stock unless served an arm) | 54539d87442dd634 |
 
 The two stock APKs were rebuilt at the end after one type fix (`StyleSheet.absoluteFillObject` → `absoluteFill`, the same style at runtime). Runs 1–3 and the 1 GB run used the earlier builds. The `tv-flagoff-deliverable` and `tv-oneshot` runs used the rebuilt flag-off APK. **The rebuilt flag-on APK has never been launched.**
 
@@ -485,6 +493,251 @@ that change.
 - Initial focus (`hasTVPreferredFocus`) once launched from the TV launcher.
 - An automated focus regression test like this one in CI on an Android TV emulator: it caught all
   of the above in about 4 minutes per run.
+
+## React Native optimisation pass (2026-11-20)
+
+Goal: find out whether the Shield problems above are fixable in React Native or are React
+Native limits. A Compose for TV build of the same screen is the native baseline (other
+worktree).
+
+### What changed in the screen (all arms)
+
+- **Collapsed rail (owner decision 2026-11-20).** Icons only, **88 px** wide on the 1920
+  canvas (44 dp at 960×540 dp), expanding to **300 px** with labels while it holds focus. It
+  is an overlay (absolute, `zIndex` 2): the rows start at x = 88 and never reflow. Item: 56 px
+  square icon cell, 12 px gap, 10 px radius; top padding 94 px. The open rail is 92 %
+  opaque. The hero text starts at x = 112. Rail item 0 has `hasTVPreferredFocus`, so the
+  first press lands on the rail as before. **The Compose build should copy this geometry.**
+- Everything else (20 rows × 50 posters, 248 px posters, 300 px poster files, 1920 backdrops,
+  300 ms dwell and crossfade, 1.08 lift with a 160 ms ring) is unchanged.
+- With the rail 212 px narrower, about 6.7 posters are visible per row instead of 6, so the
+  old 300 px-rail numbers are not directly comparable. Row a0 below is the new baseline.
+
+### Method
+
+- **One APK, many arms.** `src/arm.ts` fetches `/config.json` from the art server at launch
+  (`FLUSTER_ARM` on the host, through `adb reverse`). The `BOOT` log line prints the arm, and
+  every run's logcat was checked for it.
+- **ART compile state is a harness condition.** Every earlier run reinstalled the APK, so the
+  app ran JIT-only: the a0 trace shows 645 ms of JIT compiling in a 6 s Down hold.
+  `FALSIFIER_COMPILE=speed-profile` warms the app up (3 rounds of row and rail traffic), then
+  runs `cmd package compile -m speed-profile -f`. `dumpsys package dexopt`, recorded in each
+  run's `device.json`, shows `reason=unknown` after that compile and `reason=install` after
+  an `adb install`. The status reads `speed-profile` in both cases, because the install
+  compiles against a nearly empty profile, so only the reason tells them apart. This stands in for what a device reaches after use, or
+  what a shipped Baseline Profile gives at install from Play. **The Compose build must be
+  measured in the same two states.**
+- **"JIT"** in the tables means "as installed by `adb install`" (`reason=install`).
+- **Frames:** three runs per arm, reported as a range. A difference inside the a0 range is
+  "no effect".
+- **Memory:** as before, plus a third reading after `am send-trim-memory <pkg>
+  RUNNING_CRITICAL`, to separate caches from the floor. The untrimmed reading is the headline.
+- **Profiling:** Perfetto (`perfetto --txt -c`, atrace with app tracing, `-a` is not supported
+  on Android 11) plus `dumpsys gfxinfo framestats` in the same run. A Hermes sampling
+  profile was not taken (not exposed in the release build): **unverified**, but the cost is
+  on the UI thread, not the JS thread.
+
+### What the profile showed (stock, JIT, held Down)
+
+One traced run (Perfetto plus framestats, `results/` does not keep the trace) reproduced the
+problem: 45 % janky, p99 61 ms, 14 slow-UI-thread frames.
+
+- **Janky frames are long on the main thread, or start late because it is busy.** In
+  framestats the long phase is ANIMATION (12–22 ms); draw, sync and GPU stay at 1–3 ms.
+- **The animation phase is Fabric mounting.** Under it, `MountItemDispatcher::mountViews` →
+  `IntBufferBatchMountItem::mountInstructions::UPDATE_PROPS numInstructions=15` takes
+  13–18 ms. That is one recycled row: FlashList hands a row view to a new row, and ~15
+  views get new props.
+- **Most of that is expo-image on the main thread.** `[ExpoImage] rerenderIfNeeded` (a Glide
+  request per poster) was 140 of the 186 ms of row-update mounting, and
+  `[ExpoImage] onResourceReady` added 104 ms more (up to 26 ms in one call). Text updates
+  added 12 ms.
+- **The app was JIT-only.** The JIT thread compiled for 645 ms of the 6 s window, including
+  `BaseViewManager.setTransformProperty` and `ExpoImageViewWrapper.rerenderIfNeeded`.
+  Interpreted and freshly JIT-compiled Java is what makes those mounts slow on the Tegra X1.
+- **Ruled out:** the hero and backdrop. With a 300 ms dwell that resets on every focus, they
+  never update during a 65 ms-cadence hold, so a "throttle during held keys" change has nothing
+  to remove. The JS thread (`mqt_v_js`, 689 ms of 6 s) is busy but is not where frames are lost.
+- `Choreographer#doFrame` ran 342 times for 90 draws: Reanimated's frame callback runs every
+  vsync while a lift animation is live. It costs ~0.3 ms per idle frame (p50).
+
+### Frames (Shield, held key at ~65 ms; three runs per arm, range shown)
+
+Down = hold Down 19 rows (19 focus events every run). Right = hold Right 49 cards. Changes are
+cumulative from a1. The "a" rows used the APK before the final focus fixes (the rail return
+guide, later replaced); the frame segments do not touch the rail, and every segment's focus
+path was complete (19 and 49 events).
+
+| Arm | Compile | Down janky | Down p90 | Down p99 | Down slow UI | Right janky | Right p99 |
+|---|---|---|---|---|---|---|---|
+| Old stock, 300 px rail (earlier section) | JIT | 30.2–32.9 % | 29–30 | 69–73 | 13–15 | 1.1–1.7 % | 17 |
+| **a0** stock, collapsed rail | JIT | 33.3–34.1 % | 28–34 | 48–65 | 12–17 | 0.6–3.5 % | 16–19 |
+| **a0** stock, collapsed rail | **speed-profile** | 5.5–17.1 % | 14–21 | 20–38 | 1–2 | 0.6–1.2 % | 16–17 |
+| a1 + row MVCP off | speed-profile | 4.6–9.0 % | 14–15 | 22–26 | 1–2 | 1.2–2.3 % | 16–18 |
+| a2 + focus traps | speed-profile | 5.8–11.4 % | 15–17 | 21–25 | 2–5 | 2.3–5.8 % | 17–24 |
+| a3 + per-row offsets | speed-profile | 1.1–6.7 % | 13–14 | 19–27 | 1–2 | 1.1–2.3 % | 16–18 |
+| a4 + RGB_565 posters | speed-profile | 5.6–5.8 % | 15 | 25–28 | 2 | 0–0.6 % | 15–16 |
+| a5 + lift without Reanimated | speed-profile | 1.6–3.2 % | 12–13 | 17–24 | 1 | 0 % | 9–10 |
+| a6 + lazy posters while held | speed-profile | 3.3–4.4 % | 7–11 | 25–53 | 1–2 | 0 % | 9–12 |
+| a7 + row `drawDistance` 0 | speed-profile | 0–1.6 % | 7–8 | 14–18 | 0–1 | 0–0.8 % | 10–12 |
+| **F1** = a4 (focus fixes + RGB_565, design unchanged) | speed-profile | 3.4–7.9 % | 14–15 | 23–31 | 2 | 0.6–1.2 % | 15–18 |
+| **F2** = F1 + plain lift + row `drawDistance` 0 | **speed-profile** | **0 %** | 9–10 | **13–15** | 0 | **0 %** | 10–11 |
+| **F2** | **JIT** | 12.9–18.8 % | 17–20 | 25–27 | 5–9 | 0 % | 12–13 |
+| **F4** = F2 + no image memory cache + RGB_565 1280 px backdrop | speed-profile | **0 %** | 9–10 | **13** | 0 | **0 %** | 11 |
+
+How to read it:
+- **Compilation is the biggest lever by far.** The same stock build drops from ~33 % to
+  5–17 % janky and from 48–65 ms to 20–38 ms p99 once ART has compiled it. A user's device
+  reaches that after some use, and a Play install with a cloud or shipped Baseline Profile
+  starts closer to it. A fresh `adb install` does not.
+- **a1–a4 are inside the a0 noise.** MVCP off, the traps, per-row offsets and RGB_565 are
+  focus or memory fixes; they neither help nor hurt frames measurably.
+- **The Reanimated lift was the second cost.** Replacing the 160 ms `withTiming` scale and
+  ring with a static focused style (a5) cut Right's p99 from 16–17 to 9–10 ms and the frame
+  count from ~175 to ~120. **This changes the design:** the lift is no longer animated. An
+  animated lift without Reanimated (for example a native-driven `Animated` value, or a
+  single moving focus frame) was **not tried**.
+- **Lazy posters (a6) did not help** and lost a press in one run, so it is not in F2.
+- **Row `drawDistance` 0 (a7)** mounts fewer off-screen posters per recycled row (about 7
+  instead of 9). It looks slightly better for frames, but it drops the occasional press in a
+  fast Right hold (see Focus below), and blank cards during a hold were **not checked by
+  screenshot**.
+- **F2 meets the frame bar when compiled:** 0 janky frames in 6 holds, p99 ≤ 15 ms. Under JIT
+  it is still 13–19 % janky on Down, against 33–34 % for stock.
+
+### Memory (Shield, MB, `dumpsys meminfo`, after the scroll pass)
+
+All rows: speed-profile compiled. "Images" is what the art server served in the run; "rows"
+is rows focused / rows traversed to column 49. ~Anon+Swap and Graphics are computed as in the
+Shield section above (Graphics = EGL mtrack + Other mtrack).
+
+| Arm | Images, rows | Idle PSS | **PSS** | Java | Native | Code | Graphics | ~Anon+Swap | Anon+Swap+Graphics | PSS after critical trim |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Old stock, 300 px rail, JIT (earlier) | 297, 19/5 | 196 | 312 | 10 | 137 | 24 | 91 | 171 | 262 | n/a |
+| stock, collapsed rail | 304, 19/19 | 231 | 345 | 14 | 139 | 48 | 93 | 178 | 271 | 331 |
+| F1 (focus fixes, RGB_565 posters) | 424, 20/20 | 212 | 328 | 13 | 140 | 48 | 62 | 191 | 253 | 321 |
+| F2 (+ plain lift, row `drawDistance` 0) | 419, 20/19 | 197 | 288 | 14 | 117 | 48 | 58 | 155 | 213 | 280 |
+| F3 (F2 + no decoded-image memory cache) | 415, 20/20 | 198 | 276 | 13 | 113 | 48 | 52 | 150 | 202 | 264 |
+| F4b (F3 + RGB_565 backdrop, still 1920 px) | 415, 20/20 | 189 | **248** | 12 | 104 | 48 | **37** | 140 | **177** | 247 |
+| **F4** (F3 + RGB_565 backdrop at 1280 px) | 417, 20/20 | 185 | **246** | 14 | 102 | 48 | **33** | 139 | **172** | 240 |
+| F4, repeat | 417, 20/19 | 185 | 242 | 11 | 103 | 48 | 33 | 136 | 169 | 241 |
+| stock, repeat | 301, 19/19 | 233 | 350 | 15 | 140 | 48 | 93 | 180 | 273 | 334 |
+| F4, after reinstall (`reason=install`) | 420, 20/20 | 183 | 244 | 12 | 102 | 48 | 33 | 138 | 171 | 239 |
+
+How to read it:
+- **The focus fixes raise the workload.** With rows that keep their place and a trap at the
+  row's end, the scroll pass really visits every row's 50 cards: 415–424 images against 304.
+  The stock rows 6–19 open already scrolled to the end (defect 5), so only ~6 posters each
+  load.
+- **Code is 48 MB of PSS in every run of this APK**, compiled or freshly reinstalled,
+  against 24 MB for the earlier APK. The cause is **unverified** (the new APK adds only the
+  arm code and the `profileable` tag). It is inside every figure here.
+- **RGB_565 posters cut GPU memory by about a third** (Other mtrack 85 → 54 MB) even with 40 %
+  more images loaded. expo-image's `decodeFormat="rgb"` did take effect on Tegra (the drop
+  is only explained by 16-bit textures), but the decoded-bitmap size was not inspected
+  directly: **partly verified**.
+- **Plain lift and row `drawDistance` 0 cut native heap by ~23 MB** (fewer mounted cards and
+  posters per row, no per-card Reanimated state).
+- **The RGB_565 backdrop is what brings Graphics into range** (52 → 37 MB): the hero holds
+  two full-screen bitmaps during a crossfade, 8.3 MB each at ARGB_8888. Dropping it to
+  1280 px saves only 4 MB more. In an emulator screenshot the 16-bit backdrop under the 55 %
+  scrim shows no visible banding; on the Shield's panel it is **unverified** (owner's eye).
+- **Dropping the decoded-image memory cache (F3)** saves 12 MB, at the cost of re-decoding
+  posters from disk when a row comes back. Frames with it (F4) stayed at 0 % janky.
+- **The critical trim frees only 1–16 MB.** Most memory is held by mounted views and their
+  bitmaps, not by caches.
+
+### Focus (Shield, 500 presses, compiled)
+
+| Run | Single presses ok | Single failures | Bursts diverged | Presses after divergence | Recycled-cell BLURs | Rail → Right returns to the card left |
+|---|---|---|---|---|---|---|
+| Old stock, 300 px rail (earlier) | 296/299 | 3 | 6/12 | 70 | 4 | (1 of 1, emulator) |
+| stock, collapsed rail | 296/299 | 3 (recycled-cell jumps 61–63) | 6/12 | 72 | 12 | 1 of 9 |
+| **F1** (focus fixes) | **299/299** | **0** | **0/12** | **0** | **0** | **9 of 9** |
+| F4 (F1 + the memory and frame arms) | 299/299 | 0 | 4/12 | 4 | 0 | 9 of 9 |
+| emulator, stock, paced bursts | 287/299 | 12 | 6/12 | 69 | 11 | 1 of 9 |
+| emulator, F1, paced bursts | 299/299 | 0 | 0/12 | 0 | 0 | 9 of 9 |
+
+Burst cadence 58–67 ms. Up/Down landed on the same column 70 of 79 times with F1 and F4.
+
+**F4's four diverged bursts are a cost of row `drawDistance` 0.** In each, a held Right of
+15 or 20 presses lost exactly its last press (`0,19` instead of `0,20`, `0,33` instead of
+`0,34`): with no card mounted beyond the screen edge, a fast press can find no card to the
+right. A `drawDistance` of about one card (~150 dp) should keep both the memory saving and
+the press; that was **not tested**.
+
+The focus fixes that made it clean (all in the `traps`, `mvcpOff` and `rowMemory` arms):
+1. `maintainVisibleContentPosition={{ disabled: true }}` on the row FlashLists: no recycled
+   focused cell, no row snap-back (defect 1).
+2. Rail `TVFocusGuideView` with `trapFocusLeft`, `trapFocusUp` and `trapFocusDown`: Left,
+   Up or Down on the rail no longer reach the off-screen cards under it (defect 2). The Up
+   and Down traps were added after the emulator showed Down from `rail,0` landing on
+   `0,30`.
+3. A 2 px `TVFocusGuideView` at the content's left edge whose destination is the last rail
+   item used, plus scrolling a row fully home when its first card takes focus. Without the
+   scroll, Android spends the next Left on scrolling the row's 24 px left padding, which was
+   defect 3 ("Left at column 0 is stuck").
+4. Each row wrapped in `TVFocusGuideView trapFocusRight`: Right past the end stays (defect 4).
+5. Per-row offsets saved from `onScroll` and restored with `scrollToOffset` when a row view
+   is recycled for another row (defect 5).
+6. Right from the rail goes back to the card the user left: the rail items get
+   `nextFocusRight` set to that card's native tag while the rail is open, only if the card's
+   view still shows it. A return guide right of the open rail was tried first; together with
+   the edge guide it bounced focus between the rail and the card on every Right.
+
+### Verdict
+
+**React Native can meet the Shield frame budget and most of Google's memory targets, but
+not out of the box, and not all of them.**
+
+- **Focus: fixed.** Six explicit fixes (about 60 lines) take the 500-press test from
+  3 failures, 6 diverged bursts and 12 recycled-cell jumps to zero, on the Shield and the
+  emulator (F1). F4's row `drawDistance` 0 brings back a lost last press in 4 of 12 Right
+  bursts. That is the ordinary TV focus work the earlier sections predicted.
+- **Vertical jank: fixable, but it depends on compiled code.** The cost is expo-image and
+  Fabric prop updates on the UI thread when a row view is recycled, made slow by JIT-only
+  code. Compiled, with a static lift and fewer mounted posters, holding Down is 0 % janky
+  with p99 13–15 ms (from 33 % and 48–65 ms). **Uncompiled it is still 13–19 % janky.**
+  A shipped Baseline Profile covering the browse paths is therefore a hard requirement, and
+  the first sessions after install will still be worse. Whether a Baseline Profile alone
+  reaches the speed-profile result was **not tested**.
+- **Memory: met on the Shield with F4, with design costs.** PSS 242–246 MB (target 280),
+  Anon+Swap+Graphics 169–172 MB (target ≤200), Graphics 33 MB (target 30–40), from
+  345–350 / 271–273 / 93 for stock, while loading 40 % more images. It needs RGB_565 for
+  posters *and* backdrop, no decoded-image memory cache, the static lift and fewer mounted
+  posters per row. The same numbers hold after a reinstall (244 MB).
+- **What remains:**
+  - The memory margins are thin and depend on design costs: 16-bit art everywhere, no
+    decoded-image cache, a static lift. Graphics at 33 MB is inside the 30–40 MB band with
+    little room; 15 MB of it is there at idle, before any poster.
+  - Native heap of 113–117 MB with no breakdown on Android 11 (no "Bitmap (malloced)" line);
+    the share held by Hermes, Glide and decoded bitmaps is **unverified**.
+  - The static lift is a design change; an animated lift that does not cost a UI-thread frame
+    callback per card is untried.
+  - The 1 GB-box result is **unverified**: Glide sizes its caches from the device's memory
+    class, and the 3 GB Shield gets larger ones.
+  - The Compose build must be measured in both ART states (JIT after `adb install`, and
+    speed-profile after warm-up), or the comparison is confounded.
+
+### Cold start (Shield, `am start -W`, 5 runs, compiled)
+
+TotalTime median 340–369 ms across the compiled runs (348 ms on the final APK, range
+333–358). Process start to first React commit 472–482 ms. The commit now waits for the arm
+fetch from the art server, so it is not comparable to the earlier 555 ms.
+
+### Files and how to rerun
+
+- `src/arm.ts`: the arms. `src/Rail.tsx`: the collapsed rail and its focus work.
+- `run-falsifier.sh`: `FLUSTER_ARM='{"traps":true,...}'` picks the arm;
+  `FALSIFIER_COMPILE=speed-profile` warms up and compiles first. An APK path that does not
+  exist skips the install, which keeps the compiled state between runs.
+- `results/opt-*`: every Shield run in the tables (a0–a7, F1–F4, `opt-focus-*`,
+  `opt-mem-*`, `opt-compile-*` with their cold starts). `results/emu-*`: the emulator focus
+  runs. `emu-a3*` and `emu-F1b-paced` are invalid: the first used monkey bursts on the
+  emulator, which restarted the React root 25 times (the Compose build shares this emulator
+  and was running at the same time), and the second could not reach its art server (port
+  clash with the Compose worktree's server).
+- APK: `dist/browse-optpass-v5.apk` (all arms; stock unless an arm is served).
 
 ## Files
 

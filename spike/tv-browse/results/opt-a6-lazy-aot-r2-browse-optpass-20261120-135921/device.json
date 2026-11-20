@@ -1,0 +1,15 @@
+{
+ "ro.product.model": "SHIELD Android TV",
+ "ro.product.manufacturer": "NVIDIA",
+ "ro.build.version.release": "11",
+ "ro.build.version.sdk": "30",
+ "ro.config.low_ram": "",
+ "ro.product.cpu.abi": "arm64-v8a",
+ "ro.hardware": "darcy",
+ "mem_total": "MemTotal:        3016708 kB",
+ "display": "Physical size: 3840x2160; Override size: 1920x1080; Physical density: 320",
+ "dexopt": "[dev.fluster.spike.browse] path: /data/app/~~0NJc7aTXB5kJ4sBIu73U4A==/dev.fluster.spike.browse-GTDWHZTolAQNtj9qdmR6rw==/base.apk arm64: [status=speed-profile] [reason=unknown] [com.android.soundpicker]",
+ "arm": "{\"name\":\"a6\",\"mvcpOff\":true,\"traps\":true,\"rowMemory\":true,\"rgb\":true,\"plainLift\":true,\"lazyPosters\":true}",
+ "injector": "input (719 ms per call incl. adb round trip / 5)",
+ "burst_mode": "monkey script, press + 50 ms wait"
+}

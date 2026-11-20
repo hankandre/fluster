@@ -1,0 +1,88 @@
+{
+ "ro.product.model": "SHIELD Android TV",
+ "ro.product.manufacturer": "NVIDIA",
+ "ro.build.version.release": "11",
+ "ro.build.version.sdk": "30",
+ "ro.config.low_ram": "",
+ "ro.product.cpu.abi": "arm64-v8a",
+ "ro.hardware": "darcy",
+ "mem_total": "MemTotal:        3016708 kB",
+ "display": "Physical size: 3840x2160; Override size: 1920x1080; Physical density: 320",
+ "dexopt": "[dev.fluster.spike.browse] path: /data/app/~~0NJc7aTXB5kJ4sBIu73U4A==/dev.fluster.spike.browse-GTDWHZTolAQNtj9qdmR6rw==/base.apk arm64: [status=speed-profile] [reason=unknown] [com.android.soundpicker]",
+ "arm": "{\"name\":\"a7\",\"mvcpOff\":true,\"traps\":true,\"rowMemory\":true,\"rgb\":true,\"plainLift\":true,\"lazyPosters\":true,\"rowDrawDistance\":0}",
+ "injector": "input (718 ms per call incl. adb round trip / 5)",
+ "burst_mode": "monkey script, press + 50 ms wait"
+}
+frames {
+ "row_hold_right": {
+  "frames": 125,
+  "janky": 1,
+  "janky_pct": 0.8,
+  "p50_ms": 5,
+  "p90_ms": 7,
+  "p95_ms": 8,
+  "p99_ms": 10,
+  "missed_vsync": 0,
+  "slow_ui": 0,
+  "slow_draw": 1,
+  "frame_deadline_missed": 1
+ },
+ "rows_hold_down": {
+  "frames": 41,
+  "janky": 0,
+  "janky_pct": 0.0,
+  "p50_ms": 5,
+  "p90_ms": 7,
+  "p95_ms": 12,
+  "p99_ms": 14,
+  "missed_vsync": 0,
+  "slow_ui": 0,
+  "slow_draw": 0,
+  "frame_deadline_missed": 0
+ },
+ "segments": [
+  {
+   "segment": "seg launch",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row_hold_right enter",
+   "focus_events": 1,
+   "first": "0,0",
+   "final": "0,0",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row_hold_right hold RIGHT",
+   "focus_events": 49,
+   "first": "0,1",
+   "final": "rail,0",
+   "median_gap_ms": 59.0
+  },
+  {
+   "segment": "seg launch",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg rows_hold_down enter",
+   "focus_events": 1,
+   "first": "0,0",
+   "final": "0,0",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg rows_hold_down hold DOWN",
+   "focus_events": 18,
+   "first": "1,0",
+   "final": "18,0",
+   "median_gap_ms": 62
+  }
+ ]
+}
+art server: served 73 images

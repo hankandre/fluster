@@ -1,0 +1,57 @@
+{
+ "ro.product.model": "SHIELD Android TV",
+ "ro.product.manufacturer": "NVIDIA",
+ "ro.build.version.release": "11",
+ "ro.build.version.sdk": "30",
+ "ro.config.low_ram": "",
+ "ro.product.cpu.abi": "arm64-v8a",
+ "ro.hardware": "darcy",
+ "mem_total": "MemTotal:        3016708 kB",
+ "display": "Physical size: 3840x2160; Override size: 1920x1080; Physical density: 320",
+ "dexopt": "[dev.fluster.spike.browse] path: /data/app/~~LZw-W6W9nUsqUrFOYXN2tA==/dev.fluster.spike.browse-gYVhSsSlFH5u1HTlAqyOcA==/base.apk arm64: [status=speed-profile] [reason=unknown] [com.android.soundpicker]",
+ "arm": "{\"name\":\"F4\",\"mvcpOff\":true,\"traps\":true,\"rowMemory\":true,\"rgb\":true,\"plainLift\":true,\"rowDrawDistance\":0,\"diskOnly\":true,\"rgbBackdrop\":true,\"backdropW\":1280}",
+ "injector": "input (715 ms per call incl. adb round trip / 5)",
+ "burst_mode": "monkey script, press + 50 ms wait"
+}
+focus {
+ "presses": 500,
+ "ok": 496,
+ "unexpected_place": 0,
+ "nowhere": 0,
+ "stuck": 0,
+ "burst_presses_after_divergence": 4,
+ "blur_of_recycled_cell": 0,
+ "column_offset_on_row_change": {
+  "n": 79,
+  "same_col": 70,
+  "mean_abs": 2.01,
+  "max_abs": 27
+ },
+ "rail_exit_returns_to_last_card": {
+  "same_card": 9,
+  "other_card": 0
+ },
+ "incidents": {
+  "single_press_failures": 0,
+  "bursts_diverged": 4,
+  "bursts_total": 12,
+  "singles_total": 299
+ },
+ "burst_achieved_median_gap_ms": 58.0,
+ "flag_enableCustomFocusSearchOnClippedElementsAndroid": "false",
+ "boot": "arm={\"name\":\"F4\",\"mvcpOff\":true,\"traps\":true,\"rowMemory\":true,\"rgb\":true,\"diskOnly\":true,\"backdropW\":1280,\"rgbBackdrop\":true,\"crossfadeMs\":300,\"rowDrawDistance\":0,\"plainLift\":true,\"trapsOff\":[],\"lazyPosters\":false} rowMvcpOff=true window=960x540 posters=400 backdrops=60 rows=20 cols=50",
+ "initial_focus": [
+  "rail",
+  0
+ ],
+ "windows": 311,
+ "seconds": 429.1,
+ "injector": "input",
+ "settle_s": 0.6,
+ "burst_gap_s": 0.05
+}
+   {'press': 285, 'key': 'burst RIGHTx20', 'from': ('card', 0, 0), 'expected_final': ('card', 0, 20), 'got': ('card', 0, 19), 'verdict': '1 presses misrouted', 'first_divergence': 'no further focus events'}
+   {'press': 288, 'key': 'burst RIGHTx15', 'from': ('card', 0, 19), 'expected_final': ('card', 0, 34), 'got': ('card', 0, 33), 'verdict': '1 presses misrouted', 'first_divergence': 'no further focus events'}
+   {'press': 297, 'key': 'burst RIGHTx15', 'from': ('card', 1, 19), 'expected_final': ('card', 1, 34), 'got': ('card', 1, 33), 'verdict': '1 presses misrouted', 'first_divergence': 'no further focus events'}
+   {'press': 306, 'key': 'burst RIGHTx15', 'from': ('card', 2, 19), 'expected_final': ('card', 2, 34), 'got': ('card', 2, 33), 'verdict': '1 presses misrouted', 'first_divergence': 'no further focus events'}
+art server: served 225 images

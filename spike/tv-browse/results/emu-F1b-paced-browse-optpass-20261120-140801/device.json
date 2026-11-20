@@ -1,0 +1,15 @@
+{
+ "ro.product.model": "sdk_google_atv64_x86_64",
+ "ro.product.manufacturer": "Google",
+ "ro.build.version.release": "16",
+ "ro.build.version.sdk": "36",
+ "ro.config.low_ram": "",
+ "ro.product.cpu.abi": "x86_64",
+ "ro.hardware": "ranchu",
+ "mem_total": "MemTotal:        2018820 kB",
+ "display": "Physical size: 1920x1080; Physical density: 320",
+ "dexopt": "[dev.fluster.spike.browse] path: /data/app/~~PS91Pzaiarg_WHOTuO44uw==/dev.fluster.spike.browse-zwX3VjxdSxkPfAYOgTcC3g==/base.apk x86_64: [status=verify] [reason=install] [primary-abi] [location is /data/app/~~PS91Pzaiarg_WHOTuO44uw==/dev.fluster.spike.browse-zwX3VjxdSxkPfAYOgTcC3g==/oat/x86_64/base.odex]",
+ "arm": "{\"name\":\"F1\",\"mvcpOff\":true,\"traps\":true,\"rowMemory\":true,\"rgb\":true}",
+ "injector": "cmd input (6 ms per call incl. adb round trip / 5)",
+ "burst_mode": "input loop, one call per key + 50 ms"
+}

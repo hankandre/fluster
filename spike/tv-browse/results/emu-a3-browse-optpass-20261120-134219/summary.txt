@@ -1,0 +1,93 @@
+{
+ "ro.product.model": "sdk_google_atv64_x86_64",
+ "ro.product.manufacturer": "Google",
+ "ro.build.version.release": "16",
+ "ro.build.version.sdk": "36",
+ "ro.config.low_ram": "",
+ "ro.product.cpu.abi": "x86_64",
+ "ro.hardware": "ranchu",
+ "mem_total": "MemTotal:        2018820 kB",
+ "display": "Physical size: 1920x1080; Physical density: 320",
+ "dexopt": "[dev.fluster.spike.browse] path: /data/app/~~LfMCaBnUrjttObH4Wzidog==/dev.fluster.spike.browse-UpnaCqsEc4c9JRf1Sgpq7g==/base.apk x86_64: [status=verify] [reason=install] [primary-abi] [location is /data/app/~~LfMCaBnUrjttObH4Wzidog==/dev.fluster.spike.browse-UpnaCqsEc4c9JRf1Sgpq7g==/oat/x86_64/base.odex]",
+ "arm": "{\"name\":\"a3\",\"mvcpOff\":true,\"traps\":true,\"rowMemory\":true}",
+ "injector": "cmd input (18 ms per call incl. adb round trip / 5)",
+ "burst_mode": "monkey script, press + 50 ms wait"
+}
+focus {
+ "presses": 822,
+ "ok": 97,
+ "unexpected_place": 0,
+ "nowhere": 0,
+ "stuck": 489,
+ "burst_presses_after_divergence": 236,
+ "blur_of_recycled_cell": 0,
+ "column_offset_on_row_change": {
+  "n": 0,
+  "same_col": 0,
+  "mean_abs": null,
+  "max_abs": null
+ },
+ "rail_exit_returns_to_last_card": {
+  "same_card": 0,
+  "other_card": 0
+ },
+ "incidents": {
+  "single_press_failures": 489,
+  "bursts_diverged": 14,
+  "bursts_total": 14,
+  "singles_total": 586
+ },
+ "burst_achieved_median_gap_ms": null,
+ "flag_enableCustomFocusSearchOnClippedElementsAndroid": "false",
+ "boot": "arm={\"name\":\"a3\",\"mvcpOff\":true,\"traps\":true,\"rowMemory\":true,\"rgb\":false,\"diskOnly\":false,\"backdropW\":1920,\"crossfadeMs\":300,\"plainLift\":false,\"lazyPosters\":false} rowMvcpOff=true window=960x540 posters=400 backdrops=60 rows=20 cols=50",
+ "initial_focus": [
+  "rail",
+  0
+ ],
+ "windows": 600,
+ "seconds": 215.1,
+ "injector": "cmd input",
+ "settle_s": 0.6,
+ "burst_gap_s": 0.05
+}
+   {'press': 1, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 2, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 3, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 4, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 5, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 6, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 7, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 8, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 9, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 10, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 11, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 12, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 13, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 14, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 15, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 16, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 17, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 18, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 19, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 20, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 21, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 22, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 23, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 24, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 25, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 26, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 27, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 28, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 29, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 30, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 31, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 32, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 33, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 34, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 35, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 36, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 37, 'key': 'RIGHT', 'from': ('card', 0, 0), 'expected': '0,1', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 41, 'key': 'RIGHT', 'from': ('card', 0, 3), 'expected': '0,4', 'got': ('card', 0, 3), 'verdict': 'stuck'}
+   {'press': 42, 'key': 'RIGHT', 'from': ('card', 0, 3), 'expected': '0,4', 'got': ('card', 0, 3), 'verdict': 'stuck'}
+   {'press': 43, 'key': 'RIGHT', 'from': ('card', 0, 3), 'expected': '0,4', 'got': ('card', 0, 3), 'verdict': 'stuck'}
+art server: served 287 images

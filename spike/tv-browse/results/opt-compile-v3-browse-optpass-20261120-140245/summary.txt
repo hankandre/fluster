@@ -1,0 +1,49 @@
+{
+ "ro.product.model": "SHIELD Android TV",
+ "ro.product.manufacturer": "NVIDIA",
+ "ro.build.version.release": "11",
+ "ro.build.version.sdk": "30",
+ "ro.config.low_ram": "",
+ "ro.product.cpu.abi": "arm64-v8a",
+ "ro.hardware": "darcy",
+ "mem_total": "MemTotal:        3016708 kB",
+ "display": "Physical size: 3840x2160; Override size: 1920x1080; Physical density: 320",
+ "dexopt": "[dev.fluster.spike.browse] path: /data/app/~~qMS-VRuE4RYFhqEGs-tbSg==/dev.fluster.spike.browse-314qMRBJxdF6c6bcjw9I-w==/base.apk arm64: [status=speed-profile] [reason=unknown] [com.android.soundpicker]",
+ "arm": "{\"name\":\"stock\"}",
+ "injector": "input (719 ms per call incl. adb round trip / 5)",
+ "burst_mode": "monkey script, press + 50 ms wait"
+}
+coldstart {
+ "runs": [
+  {
+   "total_ms": 409,
+   "wait_ms": 411,
+   "proc_start_to_first_react_commit_ms": 591
+  },
+  {
+   "total_ms": 358,
+   "wait_ms": 362,
+   "proc_start_to_first_react_commit_ms": 451
+  },
+  {
+   "total_ms": 390,
+   "wait_ms": 392,
+   "proc_start_to_first_react_commit_ms": 472
+  },
+  {
+   "total_ms": 369,
+   "wait_ms": 371,
+   "proc_start_to_first_react_commit_ms": 510
+  },
+  {
+   "total_ms": 346,
+   "wait_ms": 348,
+   "proc_start_to_first_react_commit_ms": 472
+  }
+ ],
+ "median_total_ms": 369,
+ "median_first_react_commit_ms": 472,
+ "min_total_ms": 346,
+ "max_total_ms": 409
+}
+art server: served 45 images
