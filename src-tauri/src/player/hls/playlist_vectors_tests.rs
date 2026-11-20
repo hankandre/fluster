@@ -10,7 +10,7 @@ use std::collections::HashSet;
 use url::Url;
 
 const VECTORS: &str = include_str!("../../../../tests/fixtures/hls-playlists.json");
-const VECTOR_COUNT: usize = 207;
+const VECTOR_COUNT: usize = 210;
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
