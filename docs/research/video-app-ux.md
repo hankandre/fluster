@@ -1,6 +1,6 @@
 # Video app UX: what the evidence says about how things should work
 
-Researched 2026-11-12 for [`docs/plans/proposals/ux-audit.md`](../plans/proposals/ux-audit.md). The owner asked for it the same day: "We should probably also do some UX research since we want our app to be superior to all that have preceded it."
+Researched 2026-11-12 for `docs/plans/proposals/ux-audit.md` (at the tag `desktop-tauri-final`). The owner asked for it the same day: "We should probably also do some UX research since we want our app to be superior to all that have preceded it."
 
 This document is about **how** things should work. Which features to build is covered by three earlier studies and is not repeated here: [`streaming-ux-gripes.md`](streaming-ux-gripes.md), [`streaming-ux-loves.md`](streaming-ux-loves.md), and [`jellyfin-clients.md`](jellyfin-clients.md). A fourth, `streaming-wishlist.md`, was being written in parallel (pull request #137). It appeared after this research was done, so nothing here rests on it; where it has demand figures for something below (spoiler-safe episode lists, a skip step you choose, caption settings), the audit points to it.
 

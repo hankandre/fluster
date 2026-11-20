@@ -1,5 +1,5 @@
 {
-  "description": "Host classes from docs/decisions/0001 (ADR 0001). Read by src/domain/host-class.test.ts and src-tauri/src/url_policy.rs so the TypeScript and Rust classifiers cannot drift. Each URL is classified after WHATWG parsing.",
+  "description": "Host classes from docs/decisions/0001 (ADR 0001). Read by src/domain/host-class.test.ts and by every native classifier (Kotlin in T3-03), so the classifiers cannot drift. Each URL is classified after WHATWG parsing.",
   "vectors": [
     { "url": "http://localhost:8096", "class": "loopback" },
     { "url": "http://LOCALHOST/", "class": "loopback" },

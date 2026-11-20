@@ -1,5 +1,5 @@
 {
-  "description": "HLS master URLs. `vectors`: the plans src/lib/jellyfin/hls-rust-vectors.test.ts builds from the recorded conversion fixtures; Rust deserializes each plan and accepts its master URL (src-tauri/src/player/hls/master_url_tests.rs). `refusals`: master URLs Rust refuses; `typescript` says whether rebuildMasterUrl (src/lib/jellyfin/hls-url.ts) refuses it or rebuilds it into `url`, which Rust then accepts (hls-url.test.ts, master_url_tests.rs). See tests/fixtures/README.md.",
+  "description": "HLS master URLs. `vectors`: the plans src/lib/jellyfin/hls-master-url-vectors.test.ts builds from the recorded conversion fixtures; every native validator deserializes each plan and accepts its master URL (Kotlin in T8-08). `refusals`: master URLs every validator refuses; `typescript` says whether rebuildMasterUrl (src/lib/jellyfin/hls-url.ts) refuses it or rebuilds it into `url`, which a validator then accepts (hls-url.test.ts). See tests/fixtures/README.md.",
   "vectors": [
     {
       "name": "10.11.7 h264-force-fallback http://127.0.0.1:8096",

@@ -1,5 +1,5 @@
 {
-  "description": "HLS playlist rules from the desktop Rust validator (src-tauri/src/player/hls/playlist.rs, uri.rs, attributes.rs), as language-neutral vectors every validator must pass (decision 0003). Read by src-tauri/src/player/hls/playlist_vectors_tests.rs. Schema, reason codes, and check order: tests/fixtures/README.md.",
+  "description": "HLS playlist rules from the desktop's Rust validator (player/hls/playlist.rs, uri.rs, attributes.rs at the tag desktop-tauri-final), as language-neutral vectors every validator must pass (decision 0003). Every native playlist validator runs them (Kotlin in T8-08); src/lib/jellyfin/hls-playlist-vectors.test.ts checks their shape. Schema, reason codes, and check order: tests/fixtures/README.md.",
   "vectors": [
     {
       "name": "jellyfin fMP4 master",

@@ -1,6 +1,6 @@
 # Streaming UX gripes: what people dislike about Netflix and its peers
 
-Researched 2026-11-12 for [`docs/plans/proposals/discovery-and-profiles.md`](../plans/proposals/discovery-and-profiles.md). The owner asked for it the same day: "We should also do a ton of product research into the gripes and frustrations that people have with Netflix and its UX and see if there are ways for us to improve on it. Obviously, this is a personal library software so it's a bit different."
+Researched 2026-11-12 for `docs/plans/proposals/discovery-and-profiles.md` (at the tag `desktop-tauri-final`). The owner asked for it the same day: "We should also do a ton of product research into the gripes and frustrations that people have with Netflix and its UX and see if there are ways for us to improve on it. Obviously, this is a personal library software so it's a bit different."
 
 ## Method and limits
 

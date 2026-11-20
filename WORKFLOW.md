@@ -1,15 +1,15 @@
 # Workflow
 
-How Octave is built: one human steering, coding agents executing. This document adapts practices published by Anthropic, OpenAI, and the Bun team to a small Tauri/Rust + React codebase whose most important property, *never convert what it can play as stored, and never convert silently*, can be checked mechanically.
+How Octave is built: one human steering, coding agents executing. This document adapts practices published by Anthropic, OpenAI, and the Bun team to a small React Native and Kotlin codebase over a TypeScript core, whose most important property, *never convert what the device can play as stored, and never convert silently*, can be checked mechanically.
 
-Sources are listed at the end. Where a practice is adopted, the reason is stated so it can be dropped when the reason stops being true.
+Sources are listed at the end. Where a practice is adopted, the reason is stated so it can be dropped when the reason stops being true. A command or path marked with a task id does not exist yet; that task adds it.
 
 ## Principles
 
 1. **The repository is the system of record.** If a decision, constraint, or plan lives only in a chat, a head, or an issue comment, agents cannot see it. Write it into the repo.
-2. **Humans steer, agents execute.** The human owns intent (what and why), tradeoffs, saying "no", the merge decision, and the hardware release gates. Agents own implementation, tests, and first-pass review.
+2. **Humans steer, agents execute.** The owner owns intent (what and why), look, wording and direction, saying "no", the merge decision, and the on-device gates on the Shield. Agents own implementation, tests, and first-pass review. The Product Owner agent (Fable 5.2) owns the backlog and priorities, under the owner's veto.
 3. **The verifier is the ceiling.** Agents reliably reach whatever the checks can distinguish and no further. Invest in oracles before investing in more agent throughput.
-4. **Fix the process that generates the code, not the code.** When an agent makes the same class of mistake twice, add a test, lint, hook, or doc line. Do not just hand-patch the output.
+4. **Fix the process that generates the code, not the code.** When an agent makes the same class of mistake twice, add a test, lint, hook, or doc line.
 5. **Enforce invariants mechanically.** Prose rules are suggestions. A rule that must hold every time becomes a test, a lint, a type, or a hook, and its failure message tells the agent how to fix it.
 6. **Keep the harness minimal and re-test it.** Every step in this workflow encodes an assumption about what agents cannot do alone. Revisit those assumptions when models change.
 
@@ -19,67 +19,57 @@ Agents read the short map first and load detail only when needed.
 
 | File | Role | Size target |
 |---|---|---|
-| `AGENTS.md` | Rules: short imperative sentences, no justification. Commands, hard rules, pointers. | ≤ ~120 lines |
+| `AGENTS.md` | Rules: short imperative sentences, no justification. Commands, hard rules, pointers. | ≤ ~170 lines |
 | `CLAUDE.md` | Imports `AGENTS.md` so Claude Code and Codex share one rulebook | 1 line |
 | `.claude/skills/<name>/SKILL.md` | Repeatable processes as short imperative steps; procedures and context in `references/` | ≤ ~60 lines each |
 | `PRODUCT.md` | What Octave is, for whom, scope and non-goals, roadmap | stable |
-| `ARCHITECTURE.md` | Stack decision, system shape, Jellyfin API usage, invariants | stable |
+| `ARCHITECTURE.md` | Stack, system shape, engines, Jellyfin API usage, invariants | stable |
 | `DOMAINS.md` | Bounded contexts, ownership, dependency rules, ubiquitous language | stable |
 | `DESIGN.md` | Design system: principles, tokens, components, interaction, voice, accessibility | stable |
 | `WORKFLOW.md` | This file | stable |
-| `docs/architecture.md`, `docs/security.md`, `docs/validation.md` | Deep detail for the playback core, security boundary, release gates | as needed |
-| `tasks/prd.json` | Phases and tasks with acceptance criteria and `passes` flags; agents may only flip status fields | living |
-| `docs/specs/<TASK-ID>.md` | Per-task spec written by `refiner`, with the `spec-checker` verdict appended | one per task |
-| `docs/plans/active/`, `docs/plans/completed/` | Execution plans for tasks that need more than one session | one per initiative |
-| `docs/decisions/NNNN-slug.md` | Short architecture decision records for choices that would otherwise be re-litigated | ~1 page each |
+| `docs/security.md` | The token and network boundary, each claim with its test or task | as needed |
+| `docs/mpv-options-checklist.md` | What a future libmpv engine must pass | until T13 |
+| `tasks/prd.json` | Phases and tasks with acceptance items and `passes` flags; agents change only status fields, through `pnpm task` (T1-13) | living |
+| `tasks/backlog.md` | Deferred and newly found work; `tasks/backlog.jsonl` from T1-10 | living |
+| `docs/specs/<TASK-ID>.md` | Per-task spec written by `refiner`, with the `spec-checker` verdict appended; the first spec creates the folder | one per task |
+| `docs/plans/active/`, `docs/plans/completed/` | Execution plans for work that needs more than one session; the first plan creates the folder | one per initiative |
+| `docs/decisions/NNNN-slug.md` | Decision records for choices that would otherwise be re-litigated; history, never rewritten (later changes are dated amendments) | ~1 page each |
 
-`AGENTS.md` should link to the five root documents and contain only what the code cannot say: exact commands, the hard rules, and gotchas that have been corrected at least twice.
+The desktop app, its specs, plans, and task list live only in the tag `desktop-tauri-final`.
 
 ## The unit of work
 
 Every change follows the same lifecycle. Small changes compress steps; they do not skip verification.
 
-### 1. Intent (human)
+### 1. Intent (owner or Product Owner)
 
-Write a brief with four headings: **Goal**, **Context** (links to the domain and docs), **Constraints** (which invariants it touches), and **Done when** (observable, checkable outcomes). A GitHub issue is fine; a plan file is required for anything multi-step.
+A task in `tasks/prd.json` with acceptance items, or a brief with four headings: **Goal**, **Context**, **Constraints** (which invariants it touches), and **Done when**.
 
-### 2. Execution plan (agent drafts, human approves)
+### 2. Execution plan (agent drafts, owner approves)
 
-For work spanning more than one session or more than one domain, create `docs/plans/active/NNN-slug.md`:
-
-```markdown
-# NNN: <title>
-## Goal / Done when
-## Context and domains touched
-## Milestones          (each independently verifiable, with its validation command)
-## Progress            (- [x] checkboxes, updated as work lands)
-## Decision log        (date — decision — why)
-## Surprises & discoveries
-## Validation evidence (commands run and their results)
-## Outcome & retrospective
-```
-
-The plan is a living document. An agent starting a fresh session reads the plan, the git log, and runs the smoke check before touching code. When the work merges, move the plan to `completed/`.
+For work spanning more than one session or more than one domain, create `docs/plans/active/NNN-slug.md` from the `exec-plan` skill's template: goal and done when, domains touched, milestones each with a validation command, progress, decision log, surprises, validation evidence, and the outcome. When the work merges, move the plan to `completed/`.
 
 ### 2a. Refine and spec (per task)
 
 Each task runs: refine + spec → spec check → implement → verify → one review round → ship.
 
-- `refiner` reads the task in `tasks/prd.json`, its plan, and the relevant code and docs. It writes only `docs/specs/<TASK-ID>.md`: goal; acceptance items mapped to how each is met and tested; files to touch; approach; test plan; risks and out of scope; validation commands.
-- `spec-checker` runs in a fresh context. It checks the spec against the task acceptance, `AGENTS.md` hard rules, `ARCHITECTURE.md`, `DESIGN.md` (for UI), and the code. It appends a verdict: "Approved" or "Changes needed" with numbered issues.
-- Allow one revision round. If the spec is still not approved, stop and ask the human.
-- Implement from the approved spec.
-- Work a task defers goes to `tasks/backlog.md` in the same pull request: one line with what, why, where it came from, and a rough size. A deferral names a task or a backlog entry, or it is not a deferral.
+- `refiner` reads the task (`pnpm task show <id>`, T1-13; until then one task with `jq`), its plan, and the relevant code and docs. It writes only `docs/specs/<TASK-ID>.md`: goal; acceptance items mapped to how each is met and tested; files to touch; approach; test plan; risks and out of scope; validation commands; and, for every dependency the task adopts, the maintenance check from primary sources.
+- `spec-checker` runs in a fresh context against the task, the `AGENTS.md` hard rules, `ARCHITECTURE.md`, `DESIGN.md` (for UI), and the code. It appends a verdict: "Approved" or "Changes needed" with numbered issues.
+- Allow one revision round. If the spec is still not approved, stop and ask the owner.
+- Work a task defers goes to the backlog in the same pull request: what, why, where it came from, and a rough size.
+
+### 2b. Tests first (T1-12)
+
+T1-12 adds a step before implementation: a test writer turns each acceptance item into a failing test and commits it; the run stops if those tests pass before any implementation exists; the implementer may not change them. Until it lands, write the failing test first wherever the behavior is checkable.
 
 ### 3. Pilot before scale
 
-For any repeated or mechanical change (a new set of API endpoints, a refactor across modules, a new platform surface), do two or three units first, review them closely, and fix the plan or the docs. Then let agents do the rest. This is how Bun ported 1,448 files: three pilot files first, then a corrected porting guide.
+For any repeated or mechanical change, do two or three units first, review them closely, and fix the plan or the docs. Then let agents do the rest.
 
 ### 4. Implement
 
 - One milestone per commit. Conventional Commit subjects.
 - **Stop and fix.** After each milestone run the relevant checks; a red check is fixed before the next milestone starts.
-- Write the test that fails first when the behavior is checkable.
 - Never stub, skip, or delete a test to make a check pass. Never write a paragraph-long comment justifying a workaround; fix the cause or record it in the plan's decision log.
 
 ### 5. Verify (agent, with evidence)
@@ -87,80 +77,86 @@ For any repeated or mechanical change (a new set of API endpoints, a refactor ac
 Minimum before asking for review:
 
 ```sh
-pnpm check
-pnpm test:e2e
-cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+mise exec -- pnpm check
 ```
 
-For visible UI changes also run `pnpm test:visual`. It writes screenshots to `visual-captures/<width>x<height>/` and a contact sheet at `visual-captures/index.html`; attach the affected captures to the PR. `pnpm check` does not run it. CI compares every capture with `e2e/visual/baselines/` and fails on any difference or missing or extra baseline. CI splits the captures across 4 `visual-shard` runners, one worker each, and the `visual` job merges them into one `visual-captures` artifact; it writes `results.json` only when all 4 shard reports arrived, because a merged report no longer says it was sharded. Each failing shard uploads its own `visual-diffs-<n>`. The run also writes `visual-captures/results.json` (Playwright's JSON report) into the artifact. When a UI change is intended, run `pnpm test:visual:accept <run-id>` on the failed run, check the changed images in its contact sheet, and commit the baselines in the same PR. Accept copies only the captures that failed in that run, deletes baselines of removed scenarios, and leaves passing captures untouched even when their bytes differ. It refuses, writing nothing, when the artifact has no `results.json`, a failed capture has no image, or the run was cut short or filtered. `pnpm test:visual:accept <run-id> --dry-run` prints the plan and writes nothing. Baselines come only from CI (local renders differ); locally, `OCTAVE_VISUAL_COMPARE=1` compares without ever writing. After a rebase onto a branch that changed baselines, accept again from the new run; never hand-merge PNGs. A bump of the Playwright version or the runner image can shift rendering: fix it with a baseline-only PR accepted from CI.
+`pnpm check` runs the import-boundary lint, ESLint, the ghost-term check, the core's Vitest suite in Node (the task-list validator included), the type-check, and the task workflow's tests. Add, as each exists and as the change needs it:
 
-`pnpm test:e2e` uses `OCTAVE_E2E_PORT` (default 1420) for the app and the next port for the fake-HLS server. If either is taken, the run stops with one sentence that names the busy port; set a port whose next port is free. On a host whose network interfaces change during a run (docker, VPN, Wi-Fi, IPv6 address renewal), Chromium aborts requests with `net::ERR_NETWORK_CHANGED` and a journey times out waiting for a page that never loaded. Run the suites through `scripts/netns.sh` (for example `scripts/netns.sh pnpm test:e2e`) to give them a private network with only loopback; this is opt-in, local only, and CI does not use it.
+| Change | Command | From |
+|---|---|---|
+| Negotiation, reporting, or anything the server sees | `pnpm test:tripwire` against the pinned servers | today |
+| Kotlin or an Expo native module | `pnpm tv:native:test` (JVM tests) | T3-01 |
+| The core on the device | `pnpm tv:e2e` (Hermes conformance, focus test) | T3-02 |
+| Any request the app sends | `pnpm tv:wire` against the pinned Jellyscale | T3-05 |
+| Anything visible | `pnpm tv:visual`; attach the changed images | T3-07 |
 
-The PR or plan records the commands run and their results. "Tests pass" without output is not evidence. User-visible changes are checked by driving the app (Playwright in browser mode, or the native harness), not only by unit tests.
+The PR or plan records the commands run and their results. "Tests pass" without output is not evidence. A Shield check is the owner's: the task says so and is left `blocked` until the owner reports it.
 
 ### 6. Independent review (fresh context)
 
-The implementer never reviews its own work. Run one review round. Fix critical, high, and medium findings; log lows in the active plan instead of re-reviewing. A separate agent with a fresh context reviews the diff against the brief and plan, looking for:
+The implementer never reviews its own work. Run one review round. Fix critical, high, and medium findings; log lows in the active plan. A separate agent with a fresh context reviews the diff against the task and plan, looking for:
 
 - correctness bugs and missed edge cases
-- violations of the invariants in `ARCHITECTURE.md` and dependency rules in `DOMAINS.md`
+- violations of the invariants in `ARCHITECTURE.md` and the dependency rules in `DOMAINS.md`
 - stubs, skipped tests, or justified workarounds
-- secrets, tokens, or authenticated URLs in logs or errors
+- tokens or authenticated URLs in logs, errors, props, or events
 
-Tell the reviewer to skip style. Adversarial reviewers always find *something*. The human decides which findings justify more complexity.
+Any diff on a high-risk path (the core's negotiation, gateway, player and redaction code, `modules/player`, the native HTTP client, `docs/security.md`) also gets a `guardian` review.
 
-### 7. Human gate
+### 7. Owner gate
 
-The human reviews **intent and design**, not every line:
+The owner reviews **intent and design**, not every line:
 
-- Does this do what the brief asked, and nothing more?
-- Does it touch the direct-play policy, the native command surface, token handling, or redaction? If so, read those lines.
-- Which hardware/compositor/Jellyfin gates are untested? (List them explicitly in the PR, per `AGENTS.md`.)
+- Does this do what the task asked, and nothing more?
+- Does it touch the direct-play policy, a native method, token handling, or redaction? If so, read those lines.
+- Which device, Jellyfin, or Jellyscale gates are untested? (Listed in the PR, per `AGENTS.md`.)
 
 ### 8. Ship
 
-The agent opens the PR, waits for CI, and merges with the `ship` skill. Merges rebase onto `main` and delete the branch. The agent enables auto-merge and merges when CI is green. The PR calls out any change to an invariant, `docs/security.md`, release signing, or CI itself.
+The agent opens the PR, waits for CI, and merges with the `ship` skill. The PR calls out any change to an invariant, `docs/security.md`, release signing, or CI.
 
 ### 9. Retrospective
 
-If the change needed correction, ask: what capability or rule was missing? Promote the answer into a test, lint, hook, or doc line in the same PR or a follow-up.
+If the change needed correction, ask: what capability or rule was missing? Promote the answer into a test, lint, hook, or doc line.
 
 ## Oracles
 
-These are Octave's verifiers, from cheapest to most authoritative. New work should land a check at the cheapest level that can catch its failure.
+Octave's verifiers, from cheapest to most authoritative. New work should land a check at the cheapest level that can catch its failure.
 
-| Level | Oracle | Catches |
-|---|---|---|
-| Type | TypeScript strict, Rust types, narrow Tauri commands | Shape errors, invalid commands |
-| Unit | Vitest (reducers, gateway, planning), `cargo test` | Logic, policy flags, URL redaction, track mapping |
-| Contract | Recorded Jellyfin responses as fixtures; gateway tests assert request bodies *and* query strings | API drift, silent transcode flags |
-| Component | Testing Library on views | Rendered interaction |
-| Journey | Playwright against browser mode with a mocked server | User flows end to end |
-| **Server tripwire** | Decision 0002 rules (P10-09): `pnpm test:tripwire` (`tests/integration/tripwire.ts`) plays every sample through the real `JellyfinGateway` against pinned Jellyfin 10.11.7 and 12.4 in `tests/integration/docker-compose.yml`, watching ffmpeg processes in the container, `/Sessions` `TranscodingInfo`, and `TranscodeManager` command lines and `FFmpeg.*` log files. Every playable sample must direct play with no job signal and only `/Videos/{id}/stream` requests with exactly one `Static=true` or external subtitle files, never redirected. The BluRay folder, the ISO, and a forced-limit H.264 run must come back DirectStream or Transcode with an indicator reason, request only same-origin `master.m3u8`, `main.m3u8`, and `hls1/` URLs with no credential parameter and `EnableTrickplay=false`, agree with `/Sessions` `PlayMethod` and `TranscodingInfo.IsVideoDirect`/`IsAudioDirect`, and leave no job 10 s after the stopped report. The `octave-noconv` user must get `conversion-not-allowed`. Liveness checks fail the run if the Jellyfin log does not grow, `/Sessions` never shows the playback, or a poll errors. Summary on stdout, JSON log in `release-evidence/tripwire/`. CI job `tripwire`, required through `linux-wayland-beta`; details in `docs/validation.md`. | **The core invariant. Language-independent, like Bun's test suite.** |
-| Native | Rust tests for the command surface; native harness (`testForceSoftware`) | mpv lifecycle, decoder fallback |
-| Hardware (human) | `docs/validation.md` gates on real GPUs and compositors | NVDEC/VA-API/VideoToolbox, Wayland composition, AppImage |
-
-The server tripwire turns the product's defining rule into a pass/fail signal that works no matter what the implementation looks like. Run `pnpm samples:generate && pnpm fixture:up && pnpm fixture:setup` first; the tripwire starts a library scan itself and waits for the server to go quiet before playing.
+| Level | Oracle | Catches | From |
+|---|---|---|---|
+| Type | TypeScript strict; Kotlin types | Shape errors | today; Kotlin T3-01 |
+| Lint | dependency-cruiser layer rules, ESLint, the ghost-term check; the native network build check | Layering, platform leaks, desktop-era text; default Media3 data sources, stray HTTP clients | today; T3-04 |
+| Unit | Vitest on the core in Node; JVM tests for Kotlin | Logic, policy flags, URL rules, redaction | today; T3-01 |
+| Contract | Recorded Jellyfin 10.11 and 12.4 responses (and Jellyscale from T2-08) as fixtures; gateway tests assert request bodies *and* query strings | API drift, silent conversion flags | today |
+| Shared vectors | `tests/fixtures/hls-master-urls.json`, `hls-playlists.json`, `host-classes.json`: every validator on every platform passes all three | Drift between the TypeScript rules and each native validator | today (TypeScript); Kotlin T3-03, T8-08 |
+| **Server tripwire** | `pnpm test:tripwire` (`tests/integration/tripwire.ts`) plays every sample through the real gateway against pinned Jellyfin 10.11.7 and 12.4 (`tests/integration/docker-compose.yml`), watching ffmpeg in the container, `/Sessions` `TranscodingInfo`, and the transcode logs. Every playable sample must direct play with no job; the disc folder, the ISO, and a forced-limit run must convert with an indicator reason over same-origin, credential-free HLS; no job may outlive the stopped report by 10 s. Per device capability set and against Jellyscale from T2-09 | **The core invariant, independent of any UI** | today |
+| Device | The core's conformance suite under Hermes on the emulator; the 500-press scripted focus test | Host divergence (URL, crypto); focus jumps | T3-02, T3-10 |
+| **Wire** | `pnpm tv:wire`: tagged tests on the emulator against the pinned Jellyscale record every request and fail on one without the header, a credential in a URL, a followed redirect, or another origin. A playback task passes only when its wire test passes | Token leaks and unauthenticated paths, end to end | T3-05, T10-01 |
+| Visual | Fixture screens at 1920×1080 compared with CI baselines | Unintended look changes | T3-07 |
+| Shield (owner) | The owner's Nvidia Shield and a cheap Google TV box | HDR, passthrough, feel, performance budget | T0-06, the Shield checks |
 
 Make check output agent-friendly: short summaries on stdout, full logs to files, `ERROR` on the same line as the cause so it can be grepped.
 
 ## Mechanical enforcement backlog
 
-Rules currently stated in prose that should become checks:
+Rules stated in prose that should become checks:
 
-- **Playback policy.** A test that scans request construction for `EnableTranscoding`, `EnableDirectStream`, `AllowVideoStreamCopy`, `AllowAudioStreamCopy` and fails unless body and query carry the same values as the policy, and a test that fails if the DeviceProfile gains a codec or container condition or an `Hls` subtitle profile.
-- **No generic mpv bridge.** A Rust test that enumerates registered Tauri commands and fails if the list changes without updating an allowlist in the same commit.
-- **Redaction canaries.** Inject a known canary token. Assert it appears in no log, error string, or diagnostic export.
-- **Dependency direction.** Done (P0-07): `pnpm lint:boundaries` runs `dependency-cruiser` (`.dependency-cruiser.cjs`) over the layer rules in `DOMAINS.md`, with remediation text in each error; `pnpm check` runs it. `scripts/lint-boundaries.mjs` wraps it and fails on zero modules cruised, any dependency-cruiser environment issue, or a non-test source file it did not read; dependency-cruiser loads the `typescript-6` alias through `scripts/typescript-6-resolve.mjs` until it supports the app's TypeScript (P0-14).
-- **Hook dependencies and unused code.** Done (P0-16): `pnpm lint` runs ESLint with only `react-hooks/rules-of-hooks` and `react-hooks/exhaustive-deps` as errors over `src/`, and fails on an unneeded disable directive; `tsconfig.app.json` sets `noUnusedLocals` and `noUnusedParameters`. ESLint's parser loads the `typescript-6` alias through `scripts/typescript-6-resolve.mjs`.
-- **Rust pitfalls (enforced).** Clippy denies `debug_assert_with_mut_call`, `unwrap_used` in non-test code, and `undocumented_unsafe_blocks`. Run release-mode tests in CI, not only debug. (Bun's port regressed because a side effect inside `debug_assert!` vanished in release builds.)
-- **File size.** Flag source files over ~400 lines; `App.tsx` is the current candidate to split along domain lines.
+- **Playback policy.** A test that fails unless body and query carry the policy's flags, and a test that fails if the DeviceProfile gains a codec or container condition or an `Hls` subtitle profile.
+- **No generic player bridge.** The port and module allowlist tests (T2-05, T8-01).
+- **No default network path.** The native build check (T3-04).
+- **Redaction canaries across the JavaScript and native seam** (T3-05, T10-02).
+- **Frozen tests.** A diff check that fails when an implementer changes a test written before implementation (T1-12).
+- **Task file size and evidence length** (T1-13).
+- **File size.** Flag source files over ~400 lines.
+
+Done and enforced today: dependency direction (`pnpm lint:boundaries`, which fails on zero modules read), no desktop-era terms (`pnpm lint:ghost-terms`), and the task list's shape (`src/tasks/prd.test.ts`).
 
 ## Model routing
 
-Pick the cheapest model that finishes the job **without rework**. Optimize cost per merged change, not cost per request. A cheap run that needs three retries and a human rescue costs more than one capable run.
+Pick the cheapest model that finishes the job **without rework**. Optimize cost per merged change, not cost per request.
 
-Relative API list prices (per million input/output tokens, as of 2026-10). Subscription usage is weighted by model in a similar way, so the ratios are the useful part:
+Relative API list prices (per million input/output tokens, as of 2026-10):
 
 | Model | In / out $ per MTok | Relative to Sonnet |
 |---|---|---|
@@ -174,37 +170,38 @@ Relative API list prices (per million input/output tokens, as of 2026-10). Subsc
 | Stage / work | Model | Agent |
 |---|---|---|
 | Codebase search, CI log triage, commit messages, watching PRs, doc-gardening detection | **Haiku 5.5** | `scout`, `ci-triage` |
-| Refine + spec and spec check, routine tasks (screens, docs, tests) | **Opus 5.5** | `refiner`, `spec-checker` |
-| Refine + spec and spec check, high-risk tasks (native, security, architecture, ADRs: e.g. P3-01, P12-02, P2-06, #12) | **Fable 5.2** | `refiner`, `spec-checker` with a spawn-time `model: fable` override |
-| Native Rust implementation (`player/*`, `surface/*`, `unsafe`, FFI, threading) | **Opus 5.5** | `native-engineer` |
-| TypeScript implementation, tests, Playwright journeys | **Sonnet 5.5** | `implementer` |
+| Refine + spec and spec check, routine tasks | **Opus 5.5** | `refiner`, `spec-checker` |
+| Refine + spec and spec check, high-risk tasks (native, security, architecture, decision records) | **Fable 5.2** | `refiner`, `spec-checker` with a spawn-time `model: fable` override |
+| Backlog triage, priorities, and task specs in the Product Owner flow (T1-12) | **Fable 5.2** | Product Owner |
+| Kotlin, Expo native modules, Media3, the native HTTP client | **Opus 5.5** | `native-engineer` |
+| TypeScript implementation and tests | **Sonnet 5.5** | `implementer` |
 | Verify | **Sonnet 5.5** | coordinator or `implementer` |
 | Review, routine diffs | **Sonnet 5.5** | `reviewer` |
-| Review: native, Tauri command, token/redaction, or negotiation-security diffs | **Opus 5.5** | `guardian` |
+| Review: native, token, redaction, or negotiation diffs | **Opus 5.5** | `guardian` |
 | Plans and decision records | **Opus 5.5** | `planner` |
-| Coordinator (one fresh session per task; specs and plans live in the repo) | **Sonnet 5.5** | main session |
+| Coordinator (one fresh session per task) | **Sonnet 5.5** | main session |
 | Escalation after two failed attempts at the same problem | one tier up; **Fable 5.2** after Opus | any |
 
 ### Rules
 
-1. **Effort before model.** Try a stronger model at `low`/`medium` effort before reaching for a cheaper model at `high`. Raise effort only when a failure shows it is needed.
-2. **Escalate on evidence.** Two failed attempts at the same milestone means move up a tier (or fix the brief). Don't start high "just in case".
+1. **Effort before model.** Try a stronger model at lower effort before a cheaper model at high effort.
+2. **Escalate on evidence.** Two failed attempts at the same milestone means move up a tier (or fix the brief).
 3. **De-escalate once the pattern exists.** Opus pilots, Sonnet scales. Haiku maintains.
-4. **Switch models only at task boundaries.** Prompt caches are per model. Start a fresh coordinator session per task.
-5. **Reviewer >= implementer on risky paths.** Sonnet may review Sonnet's UI work. Native, policy, and security diffs get `guardian`.
-6. **Measure.** Note the model and approximate cost on each completed plan's retrospective. Adjust this table when the data disagrees with it.
+4. **Switch models only at task boundaries.** Prompt caches are per model.
+5. **Reviewer >= implementer on risky paths.** Native, policy, and security diffs get `guardian`.
+6. **Measure.** Note the model and approximate cost on each completed plan's retrospective.
 
 ### Wiring it up in Claude Code
 
-`.claude/workflows/task.js` runs tasks in order through Spec, Check, Implement, Review, and Ship. Start it with the Workflow tool (`args: {tasks: ["P13-08", "P13-09"], risk: "routine" | "high", native: false}`) and watch it in `/workflows`. The script moves between stages, so the coordinator spends no tokens on handoffs.
+`.claude/workflows/task.js` runs tasks in order through Spec, Check, Implement, Review, and Ship. Start it with the Workflow tool (`args: {tasks: ["T3-01", "T3-02"], risk: "routine" | "high", native: false}`). It builds each task's worktree as `../octave-<TASK-ID>` on the branch `task/<TASK-ID>` from the repository name. Its tests: `pnpm test:workflow`.
 
-- The human makes every design call. Before a batch, a Fable pass collects the batch's design questions into `docs/specs/decisions-<phase>.md` and the human answers them in one sitting; every spec treats those answers as settled.
-- A task whose spec still needs a new design call is parked with its questions, and the run moves on. Answer, then run it again with `{task, from: "check"}`.
+- The owner makes every look, wording, and direction call. Before a batch, a Fable pass collects the batch's design questions into `docs/specs/decisions-<phase>.md` and the owner answers them in one sitting.
+- A task whose spec still needs a new design call is parked with its questions, and the run moves on.
 - The spec check blocks only on critical or high issues; medium and low issues go to the implementer.
-- The implementer runs the verify skill itself. A step that is not green gets one retry, then one attempt on Fable.
-- The run stops early only on a denied command. Red CI after the Fable attempt is returned for the human.
+- Native work (Kotlin under `modules/` or `apps/tv/android`) routes to `native-engineer`, and any diff on a high-risk path adds a `guardian` review.
+- The run stops early only on a denied command.
 
-Subagent definitions under `.claude/agents/*.md` set `model` in their frontmatter, so routing is configured once instead of remembered.
+Subagent definitions under `.claude/agents/*.md` set `model` in their frontmatter:
 
 | Agent | Model | Role |
 |---|---|---|
@@ -212,91 +209,58 @@ Subagent definitions under `.claude/agents/*.md` set `model` in their frontmatte
 | `ci-triage` | haiku | Read failing check output, return the cause and the file:line |
 | `refiner` | opus | Refine one task and write `docs/specs/<TASK-ID>.md` |
 | `spec-checker` | opus | Fresh-context spec check; appends the verdict |
-| `implementer` | sonnet | Execute one milestone from the approved spec |
-| `reviewer` | sonnet | Fresh-context review of routine diffs against the brief |
-| `native-engineer` | opus | Rust/mpv/surface/FFI work |
-| `guardian` | opus | Review of policy, command-surface, token, and redaction changes |
-| `planner` | opus | Draft execution plans and decision records |
+| `implementer` | sonnet | Execute one TypeScript milestone from the approved spec |
+| `reviewer` | sonnet | Fresh-context review of routine diffs |
+| `native-engineer` | opus | Kotlin, Expo native modules, Media3, and the native HTTP client |
+| `guardian` | opus | Review of policy, native-method, token, and redaction changes |
+| `planner` | opus | Execution plans and decision records |
 
-High-risk specs use Fable: the coordinator passes `model: fable` when spawning `refiner` and `spec-checker`.
-
-What the Claude Code docs say (https://code.claude.com/docs/en/sub-agents):
-
-- The frontmatter `model` field accepts the aliases `sonnet`, `opus`, `haiku`, `fable`; a full model ID such as `claude-opus-5-5`; or `inherit`.
-- Order of precedence: the spawn-time `model` parameter, then the frontmatter, then `CLAUDE_CODE_SUBAGENT_MODEL`, then the main session's model.
-- The spawn-time parameter takes only an alias, not a full ID or `inherit`.
-- Checked on 2026-11-10: a subagent spawned with `model: fable` reported `claude-fable-5-2` (Fable 5.2), so the alias already selects 5.2. To pin a version, set the full model ID in the agent's frontmatter.
+What the Claude Code docs say (https://code.claude.com/docs/en/sub-agents): the frontmatter `model` field accepts the aliases `sonnet`, `opus`, `haiku`, `fable`, a full model ID, or `inherit`; the spawn-time `model` parameter wins over the frontmatter, then `CLAUDE_CODE_SUBAGENT_MODEL`, then the main session's model; the spawn-time parameter takes only an alias.
 
 ## Code intelligence tools
 
-Three MCP servers let agents find code without reading whole files. That saves context, and it lets cheaper models do navigation work well. **Rule: locate with tools, then read only the lines you need.** Reading a whole 1,000-line file to find one function is the most common avoidable token spend.
+Three MCP servers let agents find code without reading whole files. **Rule: locate with tools, then read only the lines you need.**
 
-| Tool | Best at | Use for | Typical caller |
-|---|---|---|---|
-| **semble** (`search`, `find_related`) | Search by *intent* ("where is the subtitle URL validated?") in natural language | First stop when you don't know the symbol name; finding similar code before writing new code (dedupe) | Haiku `scout`, any agent starting a task |
-| **serena** (LSP-backed symbols) | Exact symbol work: `find_symbol`, `get_symbols_overview`, `find_referencing_symbols`, `rename_symbol`, `replace_symbol_body`, `get_diagnostics_for_file` | Outlining a file before reading it; impact analysis ("who calls `createPlaybackPlan`?"); safe renames and moves during the `DOMAINS.md` layout migration; checking type errors without a full build | Sonnet `implementer`, Opus `native-engineer` |
-| **codebase-memory-mcp** (graph) | Structure across the whole repo: `get_architecture`, `search_graph`, `trace_path`, `query_graph`, `detect_changes`, `manage_adr` | Architecture overviews at session start; tracing call paths across layers (UI → coordinator → gateway → Rust command); checking that a diff respects the `DOMAINS.md` dependency rules; storing decision records | Opus `planner` / `guardian`, doc-gardening passes |
+| Tool | Best at | Use for |
+|---|---|---|
+| **semble** (`search`, `find_related`) | Search by intent in natural language | First stop when you don't know the symbol name; finding similar code before writing new code |
+| **serena** (LSP-backed symbols) | `find_symbol`, `get_symbols_overview`, `find_referencing_symbols`, `rename_symbol` | Outlining a file before reading it; impact analysis; safe renames during the `packages/core` move |
+| **codebase-memory-mcp** (graph) | `get_architecture`, `search_graph`, `trace_path`, `detect_changes` | Architecture overviews, call paths across layers, the symbols a diff touches |
 
-Suggested order for an unfamiliar task:
-
-1. Get the shape: `get_architecture` (codebase-memory).
-2. Find the area: `semble search` with the intent.
-3. Outline the files: `get_symbols_overview` (serena).
-4. Read specific bodies: `find_symbol` with bodies, or `get_code_snippet`.
-5. Check impact before editing: `find_referencing_symbols` or `trace_path`.
-6. Fall back to Grep only for literals (e.g. `api_key`, error strings).
-
-Setup notes:
-
-- **Serena** runs both `typescript` and `rust` language servers (`.serena/project.yml`). Rust needs rust-analyzer for the pinned toolchain: `rustup component add rust-analyzer --toolchain 1.95.0`. It is kept out of `rust-toolchain.toml` so CI doesn't download it. Decide whether `.serena/project.yml` is committed (shared config); today `.serena/` is untracked.
-- **codebase-memory-mcp** auto-refreshes this project's index. After large moves, check `check_index_coverage` before trusting a graph answer.
-- Use `detect_changes` (codebase-memory) in review to list affected symbols and callers. Give that list to the reviewer instead of making it read the whole diff context.
-- Decision records can live in `docs/decisions/` *or* in codebase-memory's `manage_adr`. Pick one. The repo file wins by default because the repo is the system of record.
+Serena runs the TypeScript language server (`.serena/project.yml`); add Kotlin when T3-01 brings Kotlin source. After large moves, check codebase-memory's `check_index_coverage` before trusting a graph answer.
 
 ## Parallel agents
 
 Parallelism helps when work is independent and verifiable. It hurts when everyone is stuck on the same bug or editing the same file.
 
-- **When:** separate domains (catalog UI vs. playstate reporting vs. release packaging), or a piloted mechanical change split by file.
-- **When not:** native surface and mpv work. It needs real hardware and a human watching the screen. Keep it serial.
-- **Isolation:** one git worktree per agent. Rules every parallel agent follows:
-  - commit only files you own
-  - no `git stash` or `git reset --hard`; force-push only your own unmerged PR branch, with `--force-with-lease`, after a rebase
-  - do not edit another agent's plan
-  - pull and rebase before pushing
-- **Claiming:** when running more than two agents from a plan, each claims a milestone by writing its name under that milestone in the plan file and committing. Git conflicts tell the loser to pick another.
-- **Shared resources:** Rust builds are expensive. Use a per-worktree `CARGO_TARGET_DIR` or `sccache`. Do not let several agents run `cargo` against one target directory at once.
-- **Cap:** two to four concurrent streams. Beyond that, human review, not agent capacity, is the bottleneck.
+- **When:** separate domains, or a piloted mechanical change split by file.
+- **When not:** the core extraction (T2-02 is the only task in progress while it is open), native module and player work, and anything on the Shield. Keep them serial.
+- **Isolation:** one git worktree per agent. Commit only files you own; no `git stash` or `git reset --hard`; force-push only your own unmerged PR branch, with `--force-with-lease`, after a rebase; do not edit another agent's plan.
+- **Shared resources:** one agent at a time on the Shield or an emulator serial. Gradle builds are expensive; give each worktree its own build directory.
+- **Cap:** two to four concurrent streams.
 
 ## Garbage collection
 
-Agents copy existing patterns, including bad ones. Schedule cleanup instead of letting it accumulate.
-
-- **Weekly doc-gardening pass:** check that the five root docs match the code (commands still run, domains still map to directories, invariants still enforced); open small PRs for drift.
+- **Weekly doc-gardening pass:** check that the root docs match the code (commands still run, domains still map to directories, invariants still enforced); open small PRs for drift.
 - **Weekly debt pass:** de-duplicate helpers, shrink oversized files, remove dead code; one small PR per finding.
 - Promote any repeated review comment into a lint or doc line.
 
-Only schedule a recurring task after it has worked reliably when run by hand.
-
 ## Anti-patterns
 
-- Declaring done after unit tests or `curl` alone when the change is user-visible.
+- Declaring done after unit tests alone when the change is visible or reaches the server.
 - Editing, skipping, or deleting tests to go green.
-- Growing `AGENTS.md` with emphasis (ALL CAPS) instead of turning the rule into a check.
-- Long autonomous runs without a plan file: work is lost at context resets.
+- Growing `AGENTS.md` with emphasis instead of turning the rule into a check.
+- Long autonomous runs without a plan file.
 - Letting an adversarial reviewer push toward speculative abstraction.
-- Running agents with unrestricted shell on the host. Use the sandbox or a container for long autonomous runs.
-- Treating browser-mode success as evidence about native playback.
+- Treating emulator success as evidence about the Shield, or Jellyfin success as evidence about Jellyscale.
 
 ## Sources
 
 - Anthropic, *Building a C compiler with a team of parallel Claudes* (2026-02-05). https://www.anthropic.com/engineering/building-c-compiler
 - Anthropic, *Effective harnesses for long-running agents* (2025-11-26). https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents
 - Anthropic, *Harness design for long-running application development* (2026-03-24). https://www.anthropic.com/research/harness-design-long-running-apps
-- Anthropic, *Redesigning source control at Anthropic* (2026-10-13). https://www.anthropic.com/research/redesigning-source-control
 - Anthropic, *Effective context engineering for AI agents* (2025-09-29). https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
 - Claude Code, *Best practices*. https://code.claude.com/docs/en/best-practices
-- OpenAI, *Harness engineering: leveraging Codex in an agent-first world* (2026-02-11). https://openai.com/index/harness-engineering/ (read via a mirror; original returned 403)
+- OpenAI, *Harness engineering: leveraging Codex in an agent-first world* (2026-02-11). https://openai.com/index/harness-engineering/
 - OpenAI Cookbook, *Using PLANS.md for multi-hour problem solving*. https://developers.openai.com/cookbook/articles/codex_exec_plans
-- OpenAI, *Run long horizon tasks with Codex*. https://developers.openai.com/blog/run-long-horizon-tasks-with-codex
-- Jarred Sumner, *Rewriting Bun in Rust* (2026-07-08). https://bun.com/blog/bun-in-rust, and oven-sh/bun PR #30412 and `REVIEW.md`
+- Jarred Sumner, *Rewriting Bun in Rust* (2026-07-08). https://bun.com/blog/bun-in-rust

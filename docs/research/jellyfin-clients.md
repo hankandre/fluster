@@ -1,6 +1,6 @@
 # Jellyfin clients: how they work today
 
-Researched 2026-11-12 for the product review in [`docs/plans/proposals/product-review.md`](../plans/proposals/product-review.md).
+Researched 2026-11-12 for the product review in `docs/plans/proposals/product-review.md` (at the tag `desktop-tauri-final`).
 
 Scope note, 2026-11-12: after this research the owner made Octave video only. Music, audiobooks, photos, and Live TV are out of scope (`PRODUCT.md` "Not for"). The music and Live TV rows below are kept as a record of what other clients do, not as gaps for Octave to close.
 
@@ -74,7 +74,7 @@ Context: the Jellyfin server is versioned 12.x. v12.0 shipped 2026-09-08 and v12
 
 **Platforms and stack**
 - Qt 6 WebEngine hosting jellyfin-web, with libmpv for video and audio (https://github.com/jellyfin/jellyfin-desktop/blob/master/README.md).
-- Linux through Flathub. macOS, Windows, and AppImage only as nightly development builds (https://github.com/jellyfin/jellyfin-desktop/blob/master/README.md).
+- Linux through Flathub. macOS, Windows, and portable Linux builds only as nightly development builds (https://github.com/jellyfin/jellyfin-desktop/blob/master/README.md).
 
 **Playback**
 - The device profile direct plays all video with no codec or container list, unless the user turns on a force-transcode toggle (https://github.com/jellyfin/jellyfin-desktop/blob/master/native/nativeshell.js#L163-L167).
@@ -311,7 +311,7 @@ Multi-server support for Jellium, Tsukimi, Switchfin, Fathom, and MPV Shim: unve
 
 ### 4.2 Others
 
-- **Blink:** Tauri 2 and React, but playback runs in the WebView, not mpv. It lists "Multi Jellyfin server support" (https://github.com/prayag17/Blink).
+- **Blink:** a desktop WebView shell with React, but playback runs in the WebView, not mpv. It lists "Multi Jellyfin server support" (https://github.com/prayag17/Blink).
 - **Sodalite** (tvOS, iOS): its own engine, Dolby Vision, lossless audio, a "Stats for Nerds" overlay, several servers with automatic internal and external URL probing (https://github.com/superuser404notfound/Sodalite).
 - **AFinity** (Android): libmpv and ExoPlayer; shows the reason when transcoding (https://github.com/MakD/AFinity).
 - **Elefin** (Android TV): several saved servers, one active at a time (https://github.com/flex36ty/elefin).

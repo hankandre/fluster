@@ -2,6 +2,8 @@
 
 Work that someone found and no task owns yet.
 
+Many entries below describe the desktop app, whose code is now only in the tag `desktop-tauri-final`; their paths refer to that tag. T1-10 moves this file to `tasks/backlog.jsonl` and drops the desktop-only entries.
+
 ## Rules
 
 - Any agent or pull request may append an entry. Appending never needs approval.
@@ -14,7 +16,7 @@ Work that someone found and no task owns yet.
 
 Decided "not now" by the owner. Revisit dates are in the review.
 
-- A PIN per profile on this device. Four other clients have one. Revisit with the TV shell (Q11). M. The owner decided on 2026-11-12 that it ships with the TV shell's account picker; until then "Stay signed in" off is the privacy control (P13-27). It needs a decision record, because it adds a Tauri command.
+- A PIN per profile on this device. Four other clients have one. Revisit with the TV shell (Q11). M. The owner decided on 2026-11-12 that it ships with the TV shell's account picker; until then "Stay signed in" off is the privacy control (P13-27). It needs a decision record, because it adds a the desktop shell command.
 - Recap, Preview, and Commercial segments with the same three skip modes (Q15). S.
 - A "Still watching?" prompt (Q16). S.
 - Audio sync offset and dual subtitles; each needs a typed player command (Q18). M.
@@ -80,7 +82,7 @@ Each line points at its full text in `docs/design/rework-plan.md` ("Decision log
 - P13-07 card lows: the accessible name without `remainingTicks`, `RowError` still in Home rows, the media mark in RTL, no e2e for the row position after Down.
 - P13-06: the "Browser development mode" label overlapping content on phone captures.
 - Error stripping (PR #128): the four test gaps.
-- Unverified on the dogfood server (`OCTAVE_DOGFOOD_SERVER`): the Jellyfin 10.11 and 12.4 response checks listed under P13-07, P13-08, P13-09, P13-10, P13-11, and P13-12, and the WebKitGTK checks listed beside them.
+- Unverified on the dogfood server (`OCTAVE_DOGFOOD_SERVER`): the Jellyfin 10.11 and 12.4 response checks listed under P13-07, P13-08, P13-09, P13-10, P13-11, and P13-12, and the the desktop WebView checks listed beside them.
 
 ## Loves (from the 2026-11-12 loves pass)
 
@@ -183,10 +185,10 @@ The review is `docs/research/code-quality-review-2026-11-13.md` (commit `fb8d071
 - ~~Run `pnpm typecheck:core`, `pnpm typecheck:integration`, and `pnpm test:no-test-engine` in CI (D1). `pnpm check` runs them; `.github/workflows/ci.yml` does not, so the shell-neutral core's DOM check and the test-engine guard hold only when someone runs `pnpm check`. Problem 4. S.~~ Taken by P0-15.
 - ~~A TypeScript lint for hook dependencies (D2). No linter is configured, yet two `eslint-disable-next-line react-hooks/exhaustive-deps` comments exist (`src/features/player/chrome/player-sheet.tsx:37`, `src/features/shared/ambient-backdrop.tsx:61`). Problem 4. S to M; the number of findings on the first run is unverified.~~ Taken by P0-16.
 - ~~Turn on `noUnusedLocals` and `noUnusedParameters` in `tsconfig.app.json` (D3). `tsconfig.integration.json` has both. Problem 4. S; the number of findings is unverified.~~ Taken by P0-16.
-- ~~Compile and lint `src-tauri/src/surface/macos.rs` in CI (D4). Every job runs on `ubuntu-22.04`, so its 331 lines and its `unsafe` blocks are never compiled, while `src-tauri/Cargo.toml` says "for Linux and macOS". Problem 4. S if it compiles today, which is unverified.~~ Taken by P0-17.
+- ~~Compile and lint `surface/macos.rs` in CI (D4). Every job runs on `ubuntu-22.04`, so its 331 lines and its `unsafe` blocks are never compiled, while `the Rust crate's Cargo.toml` says "for Linux and macOS". Problem 4. S if it compiles today, which is unverified.~~ Taken by P0-17.
 - Add P3-31 to P4-01's `depends_on` (D5). It edits an existing task, so the owner or the coordinating agent applies it.
-- `src/app/compose.ts:15` imports the e2e engine from `src/test/` into the composition root. The guard that keeps it out of a build (`pnpm test:no-test-engine`) runs in `release-appimage.yml` and in `pnpm check` only. D1 A covers it; if D1 is declined, load the engine so the composition root does not import test code. Problem 6. S.
-- `ensure_numeric_locale` accepts a data race in its `SAFETY` comment (`src-tauri/src/player/version.rs:25-32`): `setlocale` runs after other threads exist. Check whether the call can become a read that only fails the launch when the locale is wrong. Smaller points. S.
+- `src/app/compose.ts:15` imports the e2e engine from `src/test/` into the composition root. The guard that keeps it out of a build (`pnpm test:no-test-engine`) runs in `the desktop release workflow` and in `pnpm check` only. D1 A covers it; if D1 is declined, load the engine so the composition root does not import test code. Problem 6. S.
+- `ensure_numeric_locale` accepts a data race in its `SAFETY` comment (`player/version.rs:25-32`): `setlocale` runs after other threads exist. Check whether the call can become a read that only fails the launch when the locale is wrong. Smaller points. S.
 - A check that fails on a source file over about 400 lines (`WORKFLOW.md`, Mechanical enforcement backlog, "File size"). The review found `gateway.ts` at 955, `coordinator.ts` at 476, and `use-playback-session.ts` at 434. Goes with the linter if D2 adds one. S.
 - Drop the `#/next` prefix from every route once P2-10 has put the routes in one module. The proof-of-concept screens it kept apart are deleted. Not a finding of the review; noted by the triage. It moves every e2e journey and deep link. S to M.
 - Check `docs/security.md` lines 9 and 30 against the code when `fix/plan-without-token` lands: line 9 does not say the plan was held in component state, and line 30 says the browser player "never receives the header" while it was handed the whole plan. Problem 1. S.
@@ -214,7 +216,7 @@ The review is `docs/research/code-quality-review-2026-11-13.md` (commit `fb8d071
 - P13-24 note: a card restored on a TV screen can sit inside the bottom title-safe inset when the page scrolls to it, because scrolling content has no bottom scroll padding. The TV journeys therefore bound the vertical position by the window, as `expectTitleSafe` does. Needs a design call on a scroll inset. S.
 - P13-24 review low: `e2e/tv/browse.spec.ts` (Home) and `e2e/tv/detail.spec.ts` (Series) replaced two existing assertions (hero primary focused after Back; series primary focused plus two ArrowDown presses) with assertions on the restored card or row. This is the specified new behaviour, but the diff is not additions only; the human should confirm. S.
 - P13-24 review low: `src/features/shell/focus-return.ts` `remember()` deletes the entry's record on any focusin in main that is not a restorable item. If a screen focuses a non-card element during a pending return, a second Back to that entry restores nothing. Safe failure, unlikely. S.
-- P13-24 review low: `src/features/shell/use-focus-return.ts` gives up after 10s and forces focus to the same index or the deferred default. No test covers the slow-network path end to end (unverified); manual WebKitGTK checks are untested. S.
+- P13-24 review low: `src/features/shell/use-focus-return.ts` gives up after 10s and forces focus to the same index or the deferred default. No test covers the slow-network path end to end (unverified); manual the desktop WebView checks are untested. S.
 
 ## From P3-22 (preferences store)
 
@@ -234,9 +236,9 @@ Measured by the worst-case artwork captures; see `docs/design/contrast-report.md
 
 ## PR #165 guardian lows (fullscreen-exit resize, 2026-11-14)
 
-- The GTK layout test uses a `DrawingArea` in place of the real `WebKitWebView`. If WebKitGTK ever reports a non-zero minimum size, the WebView could overflow again with no failing test. Manual check F3 covers it for now. S.
+- The GTK layout test uses a `DrawingArea` in place of the real `desktop WebView widget`. If the desktop WebView ever reports a non-zero minimum size, the WebView could overflow again with no failing test. Manual check F3 covers it for now. S.
 - For about one frame after the window shrinks, the video `GLArea` keeps its old size until the frontend's ResizeObserver sends the new frame; GTK clips it. Cosmetic. S.
-- `PlayerSurfaceFrame::validate` (`src-tauri/src/model.rs:92-104`) has no upper bound. A frame near `i32::MAX` overflows `allocated_width().max(1) * scale` (`linux.rs:111-112`): debug builds panic in a GTK callback, release builds wrap. Only the trusted WebView sends frames, so bound the frame in `validate`. S.
+- `PlayerSurfaceFrame::validate` (`model.rs:92-104`) has no upper bound. A frame near `i32::MAX` overflows `allocated_width().max(1) * scale` (`linux.rs:111-112`): debug builds panic in a GTK callback, release builds wrap. Only the trusted WebView sends frames, so bound the frame in `validate`. S.
 - Leaving fullscreen or maximize relies on GTK's saved or default window size (1280×820). Untested on compositors other than the owner's (umbriel). S.
 
 ## From P13-29 (track labels and spoken time)
@@ -267,7 +269,7 @@ Measured by the worst-case artwork captures; see `docs/design/contrast-report.md
 
 ## Dependabot alert 34: glib 0.18 unsoundness (RUSTSEC-2024-0429), 2026-11-14
 
-- `glib 0.18.5` is pulled in by `gtk`, `gdk` and `webkit2gtk` 0.18 (Tauri 2's GTK3 stack on Linux). The fix is in glib 0.20, which needs the GTK4 stack; Octave cannot bump it alone. Octave does not call `glib::VariantStrIter` (grep of `src-tauri/src`, 2026-11-14), so the unsound path is not reached by our code; reach through Tauri or WebKitGTK is unverified. Revisit when Tauri moves to GTK4; decide whether to dismiss the alert with this reason (owner call). S.
+- `glib 0.18.5` is pulled in by `gtk`, `gdk` and `the GTK WebView crate` 0.18 (the desktop shell's GTK3 stack on Linux). The fix is in glib 0.20, which needs the GTK4 stack; Octave cannot bump it alone. Octave does not call `glib::VariantStrIter` (grep of `the Rust crate src`, 2026-11-14), so the unsound path is not reached by our code; reach through the desktop shell or the desktop WebView is unverified. Revisit when the desktop shell moves to GTK4; decide whether to dismiss the alert with this reason (owner call). S.
 
 ## Flaky `rust-audit` on a Dependabot PR (#149, 2026-11-14)
 
@@ -281,7 +283,7 @@ Measured by the worst-case artwork captures; see `docs/design/contrast-report.md
 - `dropOtherAccounts` also removes active unscoped queries such as `["player","server-name",origin]` and `["media-segments",...]` if an account change lands while one is mounted; the effect is a brief refetch. Scope those keys or exempt them (P13-31 review).
 - `useAccountChanged` resets in an effect after the new gateway renders, so a direct account A to B swap briefly renders B's screens with A's data still cached (B uses its own scope, so nothing crosses; read, not run). Reset before render (P13-31 review).
 - The account reset runs only when the gateway object changes. A future re-auth or switcher path (P3-02, P3-20, P13-21) that logs in another user on the same gateway would skip it; document that a gateway is single-user or also key the drop on the user id (P13-31 review).
-- `window.scrollTo({ behavior: "instant" })` in `focus-return.ts:141`: WebKitGTK support is unverified and a TypeError would lose the remembered scroll. Use `"auto"`, which behaves the same under `base.css:154` (P13-31 review).
+- `window.scrollTo({ behavior: "instant" })` in `focus-return.ts:141`: the desktop WebView support is unverified and a TypeError would lose the remembered scroll. Use `"auto"`, which behaves the same under `base.css:154` (P13-31 review).
 - ~~Re-check `e2e/tv/detail.spec.ts:46`, which failed in two earlier full e2e runs under load and passed alone and in a third run; it may be a real race (P13-31 review).~~ Taken by P0-18.
 - Run the design checklist against fresh captures and compare them with the PR's before and after screenshots; the diff changes no markup or styles (P13-31 review).
 - A server event refetch can flicker an in-flight optimistic flag, because `markAccountDataStale` refetches the open detail while a toggle is pending (`use-flag-mutation.ts:55-56`) (P13-31 guardian).
@@ -336,7 +338,7 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
   - Ask jellyscale for a published, versioned image and the Babel Film fixture in a form Octave's CI can fetch or generate. `scripts/generate-samples.sh` cannot make its PGS track, because ffmpeg cannot encode PGS (P0-03). Not yet filed. S (P17-04).
   - ~~If the owner answers L1 with "the same rule for audio", the detail page's audio list needs a follow-up task; P17-02 does subtitles only. S.~~ Answered 2026-11-15 in the owner's own words: an audio dropdown that Play uses. Taken by P17-08. The audio lines in "File and streams" stay whole.
   - How long an audio pick on a title's page lasts is question L8; P17-08 is written for "while the page is open". S.
-  - The glib 0.18 alert (entry above) was dismissed by the owner on 2026-11-14; only the revisit when Tauri moves to GTK4 remains.
+  - The glib 0.18 alert (entry above) was dismissed by the owner on 2026-11-14; only the revisit when the desktop shell moves to GTK4 remains.
   - P17-02 fixes a problem the owner saw on the dogfood server. Adding it to P4-01's `depends_on` edits an existing task, so it is the owner's or the coordinator's call. S.
 
 ## Home window follow-ups (P16-02, 2026-11-15)
@@ -368,7 +370,7 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 
 ## Player page clip fix and Home checkmark follow-ups (2026-11-16)
 
-- CI cannot run Playwright WebKit (the host lacks libicu74 and libxml2), so `e2e/player-sheet-scroll.spec.ts` runs in Chromium and imitates WebKit's late scroll-to-focus. Add a WebKit project, or a WebKitGTK smoke job, so the real engine is checked. S.
+- CI cannot run Playwright WebKit (the host lacks libicu74 and libxml2), so `e2e/player-sheet-scroll.spec.ts` runs in Chromium and imitates WebKit's late scroll-to-focus. Add a WebKit project, or a the desktop WebView smoke job, so the real engine is checked. S.
 - ~~`player-sheet.tsx:58` returns focus to the opener with a plain `focus()`; with `.player-page` clipped it can no longer scroll the page, but other scroll containers on that path would still be scrolled. Consider `preventScroll` there too. S.~~ Taken by P3-32.
 - `e2e/` is outside ESLint's scope ("File ignored because no matching configuration"), so specs are never linted. S.
 - The e2e mock marks every episode 1 played (`e2e/support/mock-server.ts:185`), so Home's Next up card for "Perigee" shows a played checkmark in `19g-home-continue-merged`. Fix the fixture, and decide whether Continue watching cards should ever show the played badge (a Next up episode marked played can come from a rewatch). S (P16-02).
@@ -529,7 +531,7 @@ The triage of every entry added since the 2026-11-15 pass, and the two owner req
 - The probe treats a definite "no such option" for `curl-enabled` as "no curl backend". If mpv ever renames the option without an alias, a curl build would go unguarded. Recheck `curl-enabled` in each mpv release's `options.rst`. S.
 - On the curl path, whether libcurl reads the `http_proxy` environment variable is unverified; Octave relies on `curl-enabled=no` so curl never runs. S.
 - Under `HAVE_LIBCURL`, mpv 0.42 sets `http_persistent=0` and `http_multiple=1` on lavf HLS opens even with `curl-enabled=no` (`demux/demux_lavf.c` v0.42.0 lines 1575-1588). Check HLS playback and segment requests still behave on 0.42. S.
-- The release AppImage's bundled libmpv must pass the curl guard tests before it moves to mpv 0.42. S.
+- The desktop release's bundled libmpv must pass the curl guard tests before it moves to mpv 0.42. S.
 
 ## HLS playlist vectors and mpv checklist (decision 0003, 2026-11-20)
 
