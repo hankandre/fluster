@@ -1,0 +1,120 @@
+Applications Graphics Acceleration Info:
+Uptime: 3039018044 Realtime: 3039018044
+
+** Graphics info for pid 7225 [dev.fluster.spike.browsecompose] **
+
+Stats since: 3039013428234594ns
+Total frames rendered: 216
+Janky frames: 56 (25.93%)
+50th percentile: 10ms
+90th percentile: 26ms
+95th percentile: 32ms
+99th percentile: 38ms
+Number Missed Vsync: 6
+Number High input latency: 205
+Number Slow UI thread: 10
+Number Slow bitmap uploads: 0
+Number Slow issue draw commands: 1
+Number Frame deadline missed: 10
+HISTOGRAM: 5ms=26 6ms=19 7ms=19 8ms=22 9ms=17 10ms=11 11ms=10 12ms=9 13ms=12 14ms=5 15ms=8 16ms=2 17ms=4 18ms=3 19ms=3 20ms=4 21ms=5 22ms=3 23ms=2 24ms=8 25ms=1 26ms=2 27ms=2 28ms=2 29ms=0 30ms=5 31ms=1 32ms=2 34ms=3 36ms=2 38ms=3 40ms=0 42ms=0 44ms=1 46ms=0 48ms=0 53ms=0 57ms=0 61ms=0 65ms=0 69ms=0 73ms=0 77ms=0 81ms=0 85ms=0 89ms=0 93ms=0 97ms=0 101ms=0 105ms=0 109ms=0 113ms=0 117ms=0 121ms=0 125ms=0 129ms=0 133ms=0 150ms=0 200ms=0 250ms=0 300ms=0 350ms=0 400ms=0 450ms=0 500ms=0 550ms=0 600ms=0 650ms=0 700ms=0 750ms=0 800ms=0 850ms=0 900ms=0 950ms=0 1000ms=0 1050ms=0 1100ms=0 1150ms=0 1200ms=0 1250ms=0 1300ms=0 1350ms=0 1400ms=0 1450ms=0 1500ms=0 1550ms=0 1600ms=0 1650ms=0 1700ms=0 1750ms=0 1800ms=0 1850ms=0 1900ms=0 1950ms=0 2000ms=0 2050ms=0 2100ms=0 2150ms=0 2200ms=0 2250ms=0 2300ms=0 2350ms=0 2400ms=0 2450ms=0 2500ms=0 2550ms=0 2600ms=0 2650ms=0 2700ms=0 2750ms=0 2800ms=0 2850ms=0 2900ms=0 2950ms=0 3000ms=0 3050ms=0 3100ms=0 3150ms=0 3200ms=0 3250ms=0 3300ms=0 3350ms=0 3400ms=0 3450ms=0 3500ms=0 3550ms=0 3600ms=0 3650ms=0 3700ms=0 3750ms=0 3800ms=0 3850ms=0 3900ms=0 3950ms=0 4000ms=0 4050ms=0 4100ms=0 4150ms=0 4200ms=0 4250ms=0 4300ms=0 4350ms=0 4400ms=0 4450ms=0 4500ms=0 4550ms=0 4600ms=0 4650ms=0 4700ms=0 4750ms=0 4800ms=0 4850ms=0 4900ms=0 4950ms=0
+50th gpu percentile: 9ms
+90th gpu percentile: 13ms
+95th gpu percentile: 14ms
+99th gpu percentile: 14ms
+GPU HISTOGRAM: 1ms=0 2ms=45 3ms=19 4ms=3 5ms=5 6ms=8 7ms=13 8ms=13 9ms=12 10ms=19 11ms=25 12ms=19 13ms=24 14ms=9 15ms=2 16ms=0 17ms=0 18ms=0 19ms=0 20ms=0 21ms=0 22ms=0 23ms=0 24ms=0 25ms=0 4950ms=0
+Font Cache (CPU):
+  Size: 30.12 kB 
+  Glyph Count: 7 
+CPU Caches:
+GPU Caches:
+  Other:
+    Other: 7.94 KB (1 entry)
+  Image:
+    Texture: 7.81 KB (64 entries)
+  Scratch:
+    Texture: 4.00 MB (1 entry)
+    Buffer Object: 112.00 KB (3 entries)
+    RenderTarget: 16.72 MB (7 entries)
+Other Caches:
+                         Current / Maximum
+  Layers Total           0.00 KB (numLayers = 0)
+Total GPU memory usage:
+  21856000 bytes, 20.84 MB (16.25 MB is purgeable)
+
+
+Pipeline=Skia (OpenGL)
+Profile data in ms:
+
+	dev.fluster.spike.browsecompose/dev.fluster.spike.browsecompose.MainActivity/android.view.ViewRootImpl@de11f2 (visibility=0)
+View hierarchy:
+
+  dev.fluster.spike.browsecompose/dev.fluster.spike.browsecompose.MainActivity/android.view.ViewRootImpl@de11f2
+  6 views, 9.39 kB of render nodes
+
+
+Total ViewRootImpl   : 1
+Total attached Views : 6
+Total RenderNode     : 9.39 kB (used) / 33.47 kB (capacity)
+
+
+
+====
+
+Applications Graphics Acceleration Info:
+Uptime: 3039033772 Realtime: 3039033772
+
+** Graphics info for pid 7395 [dev.fluster.spike.browsecompose] **
+
+Stats since: 3039030233560161ns
+Total frames rendered: 91
+Janky frames: 42 (46.15%)
+50th percentile: 14ms
+90th percentile: 81ms
+95th percentile: 121ms
+99th percentile: 150ms
+Number Missed Vsync: 18
+Number High input latency: 67
+Number Slow UI thread: 19
+Number Slow bitmap uploads: 0
+Number Slow issue draw commands: 1
+Number Frame deadline missed: 20
+HISTOGRAM: 5ms=6 6ms=9 7ms=3 8ms=9 9ms=6 10ms=4 11ms=3 12ms=3 13ms=0 14ms=4 15ms=2 16ms=0 17ms=0 18ms=5 19ms=4 20ms=2 21ms=2 22ms=1 23ms=0 24ms=0 25ms=1 26ms=2 27ms=1 28ms=0 29ms=0 30ms=0 31ms=2 32ms=0 34ms=1 36ms=0 38ms=1 40ms=0 42ms=0 44ms=0 46ms=1 48ms=3 53ms=0 57ms=3 61ms=1 65ms=1 69ms=0 73ms=1 77ms=0 81ms=1 85ms=0 89ms=0 93ms=1 97ms=0 101ms=1 105ms=0 109ms=0 113ms=1 117ms=0 121ms=2 125ms=0 129ms=1 133ms=1 150ms=2 200ms=0 250ms=0 300ms=0 350ms=0 400ms=0 450ms=0 500ms=0 550ms=0 600ms=0 650ms=0 700ms=0 750ms=0 800ms=0 850ms=0 900ms=0 950ms=0 1000ms=0 1050ms=0 1100ms=0 1150ms=0 1200ms=0 1250ms=0 1300ms=0 1350ms=0 1400ms=0 1450ms=0 1500ms=0 1550ms=0 1600ms=0 1650ms=0 1700ms=0 1750ms=0 1800ms=0 1850ms=0 1900ms=0 1950ms=0 2000ms=0 2050ms=0 2100ms=0 2150ms=0 2200ms=0 2250ms=0 2300ms=0 2350ms=0 2400ms=0 2450ms=0 2500ms=0 2550ms=0 2600ms=0 2650ms=0 2700ms=0 2750ms=0 2800ms=0 2850ms=0 2900ms=0 2950ms=0 3000ms=0 3050ms=0 3100ms=0 3150ms=0 3200ms=0 3250ms=0 3300ms=0 3350ms=0 3400ms=0 3450ms=0 3500ms=0 3550ms=0 3600ms=0 3650ms=0 3700ms=0 3750ms=0 3800ms=0 3850ms=0 3900ms=0 3950ms=0 4000ms=0 4050ms=0 4100ms=0 4150ms=0 4200ms=0 4250ms=0 4300ms=0 4350ms=0 4400ms=0 4450ms=0 4500ms=0 4550ms=0 4600ms=0 4650ms=0 4700ms=0 4750ms=0 4800ms=0 4850ms=0 4900ms=0 4950ms=0
+50th gpu percentile: 3ms
+90th gpu percentile: 14ms
+95th gpu percentile: 14ms
+99th gpu percentile: 15ms
+GPU HISTOGRAM: 1ms=0 2ms=39 3ms=9 4ms=1 5ms=2 6ms=0 7ms=2 8ms=3 9ms=5 10ms=7 11ms=2 12ms=7 13ms=4 14ms=6 15ms=4 16ms=0 17ms=0 18ms=0 19ms=0 20ms=0 21ms=0 22ms=0 23ms=0 24ms=0 25ms=0 4950ms=0
+Font Cache (CPU):
+  Size: 37.44 kB 
+  Glyph Count: 7 
+CPU Caches:
+GPU Caches:
+  Other:
+    Other: 7.94 KB (1 entry)
+  Scratch:
+    Texture: 4.00 MB (1 entry)
+    Buffer Object: 112.00 KB (3 entries)
+    RenderTarget: 16.98 MB (11 entries)
+  Image:
+    Texture: 7.81 KB (63 entries)
+Other Caches:
+                         Current / Maximum
+  Layers Total           0.00 KB (numLayers = 0)
+Total GPU memory usage:
+  22134528 bytes, 21.11 MB (16.53 MB is purgeable)
+
+
+Pipeline=Skia (OpenGL)
+Profile data in ms:
+
+	dev.fluster.spike.browsecompose/dev.fluster.spike.browsecompose.MainActivity/android.view.ViewRootImpl@54d4c9 (visibility=0)
+View hierarchy:
+
+  dev.fluster.spike.browsecompose/dev.fluster.spike.browsecompose.MainActivity/android.view.ViewRootImpl@54d4c9
+  6 views, 9.39 kB of render nodes
+
+
+Total ViewRootImpl   : 1
+Total attached Views : 6
+Total RenderNode     : 9.39 kB (used) / 33.47 kB (capacity)
+

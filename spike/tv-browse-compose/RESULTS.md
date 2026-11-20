@@ -27,7 +27,11 @@ On the **emulator** the first-pass Compose screen:
 - **Cold start:** slower than React Native on the emulator: 410–459 ms `TotalTime` median, or
   345–410 ms once compiled with the shipped baseline profiles, against 125–157 ms.
 
-Shield results: see "Results: Nvidia Shield" below.
+On the **Shield** only frames and a provisional cold start could be measured before the 16:00
+blackout, because two other agents held the device: **held Right 25.9 % janky (React Native
+1.1–1.7 %) and held Down 46.2 % (React Native 30–33 %)**, one run each, and 554 ms cold start.
+Focus and memory on the Shield are still needed; the exact commands are at the end of the Shield
+section.
 
 ## What was built
 
@@ -274,7 +278,103 @@ is **unverified**; no trace was taken.
 
 ## Results: Nvidia Shield TV
 
-SHIELD_RESULTS_PLACEHOLDER
+The device is the owner's SHIELD Android TV (`darcy`): Android 11 (API 30), arm64-v8a, 3 GB, a
+3840×2160 panel with a 1920×1080 UI override at 320 dpi, so the window is 960×540 dp as on the
+emulator. It was reached over network adb (address not recorded), with `svc power stayon true`
+during runs and false afterwards.
+
+**Only one valid Shield measurement was possible before the 16:00 blackout.** Two other agents
+(the React Native optimisation pass and a playback spike) drove the Shield almost continuously
+from 13:47 to 15:31. Each attempt here waited until no other spike app was in front and no other
+agent's driver was running for a minute, and aborted as soon as another spike app took the
+foreground:
+
+| Run (results folder) | Started | Outcome |
+|---|---|---|
+| `shield-INVALID-foreign-app-*` | 14:07 | `dev.fluster.spike.play` took the foreground at press 62; focus, frames and memory invalid. Cold start in it (643 ms median) also discarded. |
+| `shield-coldstart-only-aborted-*` | 14:22 | Cold start finished (5 runs), then the React Native app took the foreground; aborted. |
+| aborted, folder deleted | 14:26 | React Native app took the foreground within 20 s. |
+| `shield-frames-*` | 15:28 | **Valid** (both segments' focus paths check out, see below). |
+| `shield-memory-aborted-*` | 15:30 | React Native app took the foreground at 15:31; aborted, loop stopped. |
+
+**Compilation on the Shield.** `adb install` on this Android 11 device compiled the app at
+install time: `dumpsys package dexopt` reports `status=speed-profile [reason=install]`
+(`shield-frames-*/dexopt.txt`), unlike the emulator's `verify`. So the Shield's "as installed" arm
+already runs the libraries' baseline-profile code; no separate speed-profile arm is needed there.
+
+### Focus
+
+**Not measured** (aborted twice). Still needed; see "Shield runs still needed".
+
+### Frames (`dumpsys gfxinfo`, held key via monkey)
+
+| Run | Segment | Frames | Janky | p50 / p90 / p95 / p99 | Slow UI thread | Missed vsync | Focus path |
+|---|---|---|---|---|---|---|---|
+| shield-frames | hold Right, row 0 → col 49 | 216 | **25.93 %** | 10 / 26 / 32 / 38 ms | 10 | 6 | 49 card events, 65 ms median gap |
+| shield-frames | hold Down, row 0 → row 19 | 91 | **46.15 %** | 14 / 81 / 121 / 150 ms | 19 | 18 | 19 events to `19,0`, **112 ms** median gap |
+
+One run only. Holding Down, focus fell behind the 50 ms key repeat (112 ms between focus events
+against the 65 ms injected). "Slow issue draw commands" is 1 in each segment, so the cost is on
+the UI thread, not the GPU. What on the UI thread (composition of a new `LazyRow`, image decode
+callbacks, the hero `Crossfade`) is **unverified**; no trace was taken.
+
+### Memory
+
+**Not measured** (aborted). The 14:07 invalid run's memory pass ran with the app in the background
+(Graphics 0 afterwards), so it is not reported.
+
+### Cold start (`am start -W`, 5 runs)
+
+| Run | TotalTime median (min–max) | Process start → `BOOT` (first composition), median |
+|---|---|---|
+| shield-coldstart-only-aborted (14:22) | **554 ms** (535–859) | **523 ms** |
+
+**Provisional:** the device was checked for other spike apps in front, not for other agents'
+drivers, before this run.
+
+### Side by side with React Native on the Shield
+
+The React Native numbers are the committed ones in `spike/tv-browse/RESULTS.md` (flag-off
+deliverable APK, FlashList rows, **its old 300 px expanded rail, before the collapsed rail and
+before the optimisation pass** the React Native agent was running today).
+
+| Measure | React Native (deliverable) | Compose baseline (first pass) |
+|---|---|---|
+| Focus, single presses ok | 296/299 | not measured on the Shield (emulator: 297–299/299, lenient on Up/Down) |
+| Focus, bursts diverged / presses misrouted | 6/12 / 70 | not measured (emulator: 0/12 / 0) |
+| Recycled-cell jumps | 4 | not measured (emulator: 0) |
+| Hold Right: janky, p90 / p99 | 1.12–1.69 %, 13–14 / 17 ms | **25.93 %**, 26 / 38 ms (1 run) |
+| Hold Down: janky, p90 / p99 | 30.23–32.91 %, 29–30 / 69–73 ms | **46.15 %**, 81 / 150 ms (1 run) |
+| Hold Down: focus kept up with the key | yes (19 events) | lagged: 112 ms per move against 65 ms injected |
+| Memory after the scroll pass: PSS / Graphics incl. mtrack | 312 MB / 91 MB (rows 0–5 mostly) | not measured |
+| Cold start: TotalTime median | 387 ms | 554 ms (provisional) |
+| Cold start: process start → first content | 555 ms (first React commit) | 523 ms (first composition, provisional) |
+| APK | 49 MB | 1.2 MB |
+
+On this evidence the first-pass Compose screen is **not** smoother than React Native on the
+Shield: it is worse on held Right and on held Down. It is better on focus correctness on the
+emulator and much smaller. Both frame results are single or double runs on one device; the React
+Native optimisation pass and this baseline's untried fixes (below) could move either.
+
+### Shield runs still needed (for the coordinator, after 23:00)
+
+From `spike/tv-browse-compose/` in this worktree, with the Shield's serial in `$S` and no other
+agent on the device:
+
+```
+adb -s "$S" shell svc power stayon true
+./run-falsifier.sh "$S" dist/browse-compose.apk all shield-run1     # coldstart, focus, frames, memory
+./run-falsifier.sh "$S" dist/browse-compose.apk frames shield-run2  # second frames sample
+adb -s "$S" shell am force-stop dev.fluster.spike.browsecompose
+adb -s "$S" shell input keyevent KEYCODE_HOME
+adb -s "$S" shell svc power stayon false
+```
+
+Each takes about 11 minutes (`all`) or 1 minute (`frames`). The art server binds host port 8738;
+set `FALSIFIER_HOST_PORT` if a React Native run uses the same host at the same time. Check
+`results/<label>-*/dexopt.txt` says `speed-profile`; `FALSIFIER_COMPILE=speed-profile` forces it.
+Then fill the Focus, Memory and Cold start tables above from `focus.json`, `memory.json` and
+`coldstart.json` (or `python3 ../tv-browse/scripts/summarize.py results/<label>-*` for a one-line row).
 
 ## What is verified and what is not
 
