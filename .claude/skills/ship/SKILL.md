@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Open a pull request for a finished Octave branch, wait for CI, merge it, and clean up. Use after verify and review pass, or when the human asks to ship.
+description: Open a pull request for a finished Octave branch, wait for CI, merge it, and clean up. Use after verify and review pass, or when the owner asks to ship.
 ---
 
 # Ship
@@ -18,14 +18,14 @@ description: Open a pull request for a finished Octave branch, wait for CI, merg
 - Create it with `gh pr create --base main`.
 - Use a Conventional Commit subject as the title.
 - Fill in every section of `.github/pull_request_template.md`.
-- List the `tasks/prd.json` task ids and plan it covers.
-- Set each completed task to `done` with `passes: true` and evidence before opening the PR.
-- List every untested Wayland, GPU, Jellyfin, and AppImage gate.
+- List the task ids and plan it covers.
+- Set each completed task to `done` with `passes: true` and evidence of at most 600 characters before opening the PR.
+- List every untested device, Jellyfin, and Jellyscale gate.
 - End the body with the attribution line from the session.
 
 ## Wait for CI
 
-- Enable auto-merge with `gh pr merge <number> --auto --rebase --delete-branch`.
+- Enable auto-merge with `gh pr merge <number> --auto --rebase --delete-branch`, unless the task or the owner says not to.
 - Run `gh pr checks <number> --watch`.
 - Hand failing output to `ci-triage`.
 - Fix failures in new commits on the branch.
@@ -38,13 +38,6 @@ description: Open a pull request for a finished Octave branch, wait for CI, merg
 - Treat a `BEHIND` merge state as stale, not failed.
 - Run `gh pr update-branch <number> --rebase` and let CI re-run.
 - Never update a branch that is `DIRTY`; resolve conflicts instead.
-
-## Dependabot
-
-- Let the auto-merge workflow merge minor and patch npm and cargo updates.
-- Triage majors, GitHub Actions, and ignored crates at each task boundary.
-- Ask before merging GitHub Actions updates.
-- Keep `@tauri-apps/api` on the Rust `tauri` crate's minor.
 
 ## Resolve conflicts
 
@@ -63,12 +56,12 @@ description: Open a pull request for a finished Octave branch, wait for CI, merg
 
 ## Dependabot PRs
 
-- Treat Dependabot PRs like any other PR.
+- Let the auto-merge workflow merge minor and patch npm updates.
 - Read the changelog for major updates before merging.
-- Ask before merging updates to Tauri, libmpv bindings, or the Jellyfin SDK.
+- Ask before merging GitHub Actions updates, and updates to Expo, react-native-tvos, Media3, or the Jellyfin SDK.
 
 ## After the merge
 
 - Run `git switch main && git pull --ff-only`.
 - Delete the local branch.
-- Report the PR link and merge commit to the human.
+- Report the PR link and merge commit to the owner.

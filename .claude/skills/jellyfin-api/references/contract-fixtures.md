@@ -2,7 +2,7 @@
 
 ## Record
 
-- Start the pinned server: `docker compose -f tests/integration/docker-compose.yml up -d`.
+- Start the pinned servers: `pnpm fixture:up`, then `pnpm fixture:setup`.
 - Use a throwaway test user.
 - Make the request with the real gateway or `curl` using header auth.
 - Save the JSON response.
@@ -17,7 +17,7 @@
 
 ## Store
 
-- Save to `tests/fixtures/jellyfin/<server-version>/<endpoint>-<case>.json`.
+- Save to `tests/fixtures/jellyfin/<server-version>/<endpoint>-<case>.json` (Jellyscale fixtures beside them from T2-08).
 - Record one fixture per server version that behaves differently.
 - Name the case after the behavior, such as `playbackinfo-bluray-folder.json`.
 
@@ -26,4 +26,4 @@
 - Load the fixture through a fake transport.
 - Assert the outgoing method, path, body, and query.
 - Assert the gateway's typed output or refusal reason.
-- Add a case for every source acceptance rule.
+- Add a case for every source decision rule.

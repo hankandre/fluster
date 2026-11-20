@@ -11,6 +11,7 @@ tools: Read, Grep, Glob, Bash, mcp__semble__search, mcp__semble__find_related, m
 - Outline files with serena before reading them.
 - Read only the symbols you need.
 - Use Grep only for literal strings.
+- Never load `tasks/prd.json` whole; read single tasks.
 - Answer with conclusions and `file:line` references.
 - Quote at most a few lines of code.
 - Say "not found" instead of guessing.

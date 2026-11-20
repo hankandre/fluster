@@ -2,7 +2,7 @@ export const meta = {
   name: 'task',
   description: 'Run tasks/prd.json tasks in order: spec, check, implement, review, ship; park tasks with open design questions',
   whenToUse:
-    'Build Octave tasks end to end. args: {tasks: ["P13-08", "P13-09"], risk: "routine" | "high", native: false} or {task: "P0-13", from: "check" | "implement" | "review", notes: [...], evidence: "...", models: {spec: {high: "opus"}}}',
+    'Build Octave tasks end to end. args: {tasks: ["T3-01", "T3-02"], risk: "routine" | "high", native: false} or {task: "T3-01", from: "check" | "implement" | "review", notes: [...], evidence: "...", models: {spec: {high: "opus"}}, root: "/abs/path/of/the/folder/holding/the/checkout"}',
   phases: [
     { title: 'Spec', detail: 'refiner writes docs/specs/<TASK>.md' },
     { title: 'Check', detail: 'fresh spec-checker; blocks only on critical or high' },
@@ -13,8 +13,9 @@ export const meta = {
 };
 
 // args:
-//   {tasks: ["P13-08", ...], risk, native}  run tasks in order
-//   {task: "P0-13", risk, native}           run one task
+//   {tasks: ["T3-01", ...], risk, native}  run tasks in order
+//   {task: "T3-01", risk, native}           run one task
+//   root: "/abs/dir"                        folder that holds the main checkout (default "..", relative to it)
 //   from: "check" | "implement" | "review"  skip finished phases (single task only)
 //   notes: [...]                            spec-check notes for the implementer (with from: "implement")
 //   models: {...}                           per-run model override, deep-merged over MODELS (see below)
@@ -58,6 +59,22 @@ function resolveModels(defaults, override) {
   return merge(defaults, override, '');
 }
 // MODELS-END
+// PATHS-BEGIN (pure; extracted and tested by .claude/workflows/task.test.mjs)
+// The repository is octave; each task gets a sibling worktree and branch named by its id.
+const REPO = 'octave';
+const TASK_ID = /^T\d+-\d{2}$/;
+function taskPaths(task, root) {
+  if (typeof task !== 'string' || !TASK_ID.test(task)) throw new Error(`Unknown task id ${JSON.stringify(task)}; expected an id such as T3-01`);
+  const parent = root || '..';
+  const main = root ? `${root}/${REPO}` : '.';
+  return { main, worktree: `${parent}/${REPO}-${task}`, branch: `task/${task}`, spec: `docs/specs/${task}.md` };
+}
+// Paths whose change always needs a guardian review (AGENTS.md: policy, tokens, redaction, native).
+const HIGH_RISK_PATH =
+  /^(packages\/core\/.*(jellyfin|negotiat|gateway|player|playback|redact|safe-reason|transport|host-class|session)|src\/lib\/jellyfin\/|src\/lib\/player\/|src\/lib\/redact|src\/lib\/safe-reason|src\/lib\/transport-error|src\/lib\/lan-http|src\/domain\/(playback|host-class)|modules\/|apps\/tv\/android\/|docs\/security\.md|tests\/fixtures\/(hls-|host-classes))/;
+// Kotlin and native module work goes to native-engineer.
+const NATIVE_PATH = /^(modules\/|apps\/tv\/android\/)/;
+// PATHS-END
 // STEP-BEGIN (pure; extracted and tested by .claude/workflows/task.test.mjs)
 const mergeUnique = (a, b) => (a || []).concat(b || []).filter((item, i, all) => all.indexOf(item) === i);
 // Decide what a work() attempt leads to. A check that fails locally is never CI-only: ciOnly counts only when done and checksPassed are both true.
@@ -128,12 +145,10 @@ const SHIP = {
   required: ['merged'],
 };
 
-// Paths whose change always needs a guardian review (AGENTS.md: policy, tokens, redaction, native, commands).
-const HIGH_RISK_PATH = /^(src-tauri\/|src\/lib\/jellyfin\/|src\/lib\/player\/|src\/lib\/redact|src\/lib\/transport-error|src\/lib\/.*lan-http|src\/domain\/playback|src\/domain\/policy|src\/app\/session|docs\/security\.md)/;
 const denied = (result) => (result && result.deniedCommands && result.deniedCommands.length ? result.deniedCommands : null);
 const numbered = (list) => list.map((item, i) => `${i + 1}. ${item}`).join('\n');
 const VERIFY_STEPS =
-  'Run the verify skill before you return: mise exec -- pnpm check, then pnpm test:e2e with OCTAVE_E2E_PORT set to a free port; if the diff against origin/main touches src/features/ or src/styles/, also pnpm test:visual with OCTAVE_VISUAL_PORT set to a free port. Never run pkill or killall: stop only processes you started, with TaskStop or their own PID, and pick a fresh port instead of clearing a busy one. If a test fails, rerun it alone with --repeat-each 5 and on origin/main before blaming or fixing the change, and say which in the evidence. Return checksPassed, the evidence (commands with their result lines), and each failure with file:line.';
+  'Run the verify skill before you return: mise exec -- pnpm check. When the diff touches negotiation or reporting, also pnpm test:tripwire against the pinned servers. When these commands exist, also run: pnpm tv:native:test if the diff touches Kotlin or a native module; pnpm tv:e2e on a free emulator if it touches the app; the task\'s wire test with pnpm tv:wire against the pinned Jellyscale if the task\'s verify names it (a playback task passes only when it passes); pnpm tv:visual if it touches screens, shared controls, or design tokens. Never run pkill or killall: stop only processes you started, with TaskStop or their own PID. One agent at a time on an emulator or device serial. If a test fails, rerun it alone and on origin/main before blaming or fixing the change, and say which in the evidence. Return checksPassed, the evidence (commands with their result lines), and each failure with file:line.';
 
 async function runTask(task, opts) {
   const highRisk = opts.risk === 'high';
@@ -154,19 +169,18 @@ async function runTask(task, opts) {
   };
   route();
   log(`${task}: models ${JSON.stringify(models)}`);
-  // Native work (src-tauri/ or the PlayerEngine port) goes to native-engineer on Opus with a guardian review (AGENTS.md).
+  // Native work (Kotlin under modules/ or apps/tv/android, or the PlayerEngine port) goes to native-engineer on Opus with a guardian review (AGENTS.md).
   const goNative = (flag, by) => {
     if (flag && !native) {
       native = true;
       route();
-      log(`${task}: the ${by} touches src-tauri/ or the PlayerEngine port; routing to native-engineer and guardian`);
+      log(`${task}: the ${by} touches native code or the PlayerEngine port; routing to native-engineer and guardian`);
     }
   };
 
-  const worktree = `/home/handre/Code/octave-${task}`;
-  const branch = `task/${task}`;
-  const spec = `docs/specs/${task}.md`;
-  const common = `Task ${task} in tasks/prd.json. Worktree: ${worktree} (branch ${branch}). Spec: ${spec} in that worktree. Work only in that worktree. Answered questions in docs/specs/decisions-*.md and decisions the spec marks as confirmed by the human are settled human decisions. If a command is denied, report it in deniedCommands and do not work around it.`;
+  const { main, worktree, branch, spec } = taskPaths(task, opts.root);
+  const where = opts.root ? '' : ' Relative paths are relative to the main checkout, which is your starting directory.';
+  const common = `Task ${task} in tasks/prd.json (read it with pnpm task show ${task} once T1-13 lands; until then read only that task with jq, never the whole file). Worktree: ${worktree} (branch ${branch}).${where} Spec: ${spec} in that worktree. Work only in that worktree. Answered questions in docs/specs/decisions-*.md and decisions the spec marks as confirmed by the human are settled human decisions. If a command is denied, report it in deniedCommands and do not work around it.`;
   const result = (outcome, detail) => {
     log(`${task}: ${outcome}`);
     return { task, outcome, detail };
@@ -201,10 +215,10 @@ async function runTask(task, opts) {
   if (!skipSpec) {
     const specResult = await agent(
       `${common}
-Create the worktree if it is missing: git -C /home/handre/Code/octave fetch -q && git -C /home/handre/Code/octave worktree add ${worktree} -b ${branch} origin/main.
+Create the worktree if it is missing: git -C ${main} fetch -q && git worktree add ${worktree} -b ${branch} origin/main (run from the main checkout).
 If a task in this task's depends_on is not done on origin/main, return that as the only open question ("blocked by <ID>").
 If ${spec} already exists with every section, keep it and report on it. Otherwise write it. Do not commit.
-Resolve gaps yourself from the task, the code, the docs, and the settled decisions, and write the answers into the spec. Return as open questions only product or design choices the human must make that no settled decision covers; give each its options and a recommendation. Set touchesNative=true if the spec's files to touch include anything under src-tauri/ or the PlayerEngine port (src/domain/playback.ts engine interface, src/lib/player/native-player.ts).`,
+Resolve gaps yourself from the task, the code, the docs, and the settled decisions, and write the answers into the spec. Return as open questions only product or design choices the human must make that no settled decision covers; give each its options and a recommendation. Set touchesNative=true if the spec's files to touch include anything under modules/ or apps/tv/android/, or the PlayerEngine port (the engine interface in src/domain/playback.ts, later packages/core).`,
       { agentType: 'refiner', model: specModel, schema: SPEC, phase: 'Spec', label: `spec ${task}` },
     );
     if (!specResult) return result('failed', 'The refiner returned nothing.');
@@ -217,7 +231,7 @@ Resolve gaps yourself from the task, the code, the docs, and the settled decisio
   if (!skipCheck) {
     const check = await agent(
       `${common}
-Check the spec and append your "## Spec check" verdict to it. Set approved=true unless an issue is critical or high; list medium and low issues anyway, prefixed with their severity, and the implementer will resolve them. Return approved and the numbered issues. Set touchesNative=true if the spec's files to touch include anything under src-tauri/ or the PlayerEngine port (src/domain/playback.ts engine interface, src/lib/player/native-player.ts).`,
+Check the spec and append your "## Spec check" verdict to it. Set approved=true unless an issue is critical or high; list medium and low issues anyway, prefixed with their severity, and the implementer will resolve them. Return approved and the numbered issues. Set touchesNative=true if the spec's files to touch include anything under modules/ or apps/tv/android/, or the PlayerEngine port (the engine interface in src/domain/playback.ts, later packages/core).`,
       { agentType: 'spec-checker', model: checkModel, schema: CHECK, phase: 'Check', label: `check ${task}` },
     );
     if (!check) return result('failed', 'The spec-checker returned nothing.');
@@ -258,11 +272,17 @@ Commit the spec with the work, one milestone per commit. Set the task's status t
   // 4. Review (one round)
   const review = await agent(
     `${common}
-Review git diff origin/main...${branch} against the spec, the task acceptance, and the hard rules. If the diff touches src/features/ or src/styles/, also do the design review: follow .claude/skills/change-review/references/design-checklist.md against DESIGN.md and look at the captures in visual-captures/ (run pnpm test:visual with OCTAVE_VISUAL_PORT set to a free port if they are missing). This is the only review round. Change no files. Return every finding with its severity, file:line, and a concrete failure scenario. Return filesChanged: every path from git diff --name-only origin/main...${branch}. Set needsGuardian=true if the diff touches src/lib/jellyfin/, src/lib/player/, redaction, tokens, PlaybackInfo or negotiation, a Tauri command, or src-tauri/, or if the task's acceptance asks for a guardian review.`,
+Review git diff origin/main...${branch} against the spec, the task acceptance, and the hard rules. If the diff touches apps/tv screens, shared controls, or design tokens, also do the design review: follow .claude/skills/change-review/references/design-checklist.md against DESIGN.md and look at the captures from pnpm tv:visual (T3-07) when it exists. This is the only review round. Change no files. Return every finding with its severity, file:line, and a concrete failure scenario. Return filesChanged: every path from git diff --name-only origin/main...${branch}. Set needsGuardian=true if the diff touches the gateway, negotiation, the player, redaction, tokens, a native method or event, Kotlin, the native HTTP client, or docs/security.md, or if the task's acceptance asks for a guardian review.`,
     { agentType: reviewAgent, model: reviewModel, schema: REVIEW, phase: 'Review', label: `review ${task}` },
   );
   if (!review) return result('failed', 'The reviewer returned nothing.');
   const riskyFiles = (review.filesChanged || []).filter((path) => HIGH_RISK_PATH.test(path));
+  // A diff that reached Kotlin sends its follow-up fixes to native-engineer; the guardian below covers the review.
+  if (!native && (review.filesChanged || []).some((path) => NATIVE_PATH.test(path))) {
+    implAgent = 'native-engineer';
+    implModel = models.implement.native;
+    log(`${task}: the diff touches Kotlin or a native module; follow-ups go to native-engineer`);
+  }
   if ((review.needsGuardian || riskyFiles.length) && reviewAgent !== 'guardian') {
     log(`${task}: the diff touches high-risk code; adding a guardian review`);
     const guard = await agent(
@@ -294,7 +314,7 @@ Use ciOnly only for a step that a local run cannot produce (for example acceptin
 
   // 5. Ship (CI fixes go through the same retry and Fable escalation)
   const shipPrompt = `${common}
-Ship with the ship skill: rebase onto origin/main if it moved (force-with-lease is allowed on this branch), push, open the PR if none exists, enable auto-merge with rebase, and wait for CI with gh pr checks --watch. The PR body must explain user impact, testing (use the evidence below), conversion and security implications, untested gates, and call out any change to invariants, docs/security.md, release signing, or CI. For a UI change, add a Screenshots section that links the visual-captures artifact from the PR's CI run (gh api repos/hankandre/octave/actions/runs/<run>/artifacts) and names the captures that changed, plus a Design review notes section from the review. Change no source files. If CI is red, return merged=false with each failing check and its cause. After a merge, run git -C /home/handre/Code/octave pull --ff-only and remove the worktree and branch.
+Ship with the ship skill: rebase onto origin/main if it moved (force-with-lease is allowed on this branch), push, open the PR if none exists, enable auto-merge with rebase, and wait for CI with gh pr checks --watch. The PR body must explain user impact, testing (use the evidence below), conversion and security implications, untested device, Jellyfin and Jellyscale gates, and call out any change to invariants, docs/security.md, release signing, or CI. For a UI change, add a Screenshots section that links the visual artifact from the PR's CI run (gh api repos/{owner}/{repo}/actions/runs/<run>/artifacts) and names the images that changed, plus a Design review notes section from the review. Change no source files. If CI is red, return merged=false with each failing check and its cause. After a merge, run git -C ${main} pull --ff-only and remove the worktree and branch.
 Evidence: ${evidence}
 Review: ${blocking.length} fixed, ${lows.length} low logged in the plan.${ciSteps.length ? `
 Before enabling auto-merge, do these CI-dependent acceptance steps on this PR branch. Temporary commits are allowed only when a step asks for one, and each must be reverted in a later commit. Record each run URL in the task's evidence. Then, if every acceptance item is met, set the task's status to done and passes to true, commit, and push. If any listed step cannot be completed (for example it needs a review or a human), do not enable auto-merge; return merged=false and put the reason in ciFailures. This is the one case where the Ship phase changes files:
@@ -315,7 +335,7 @@ ${ciSteps.join('\n')}` : ''}`;
 
 const outcomes = [];
 for (const task of items) {
-  const out = await runTask(task, items.length === 1 ? input : { risk: input.risk, native: input.native });
+  const out = await runTask(task, items.length === 1 ? input : { risk: input.risk, native: input.native, root: input.root });
   outcomes.push(out);
   if (out.outcome === 'denied') {
     log(`Stopping: a command was denied in ${task}`);

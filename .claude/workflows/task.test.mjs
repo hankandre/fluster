@@ -89,3 +89,60 @@ test('ciOnly merges across attempts without duplicates', () => {
   assert.deepEqual(mergeUnique(['a'], undefined), ['a']);
   assert.deepEqual(mergeUnique(undefined, undefined), []);
 });
+
+const pathsBlock = src.split('// PATHS-BEGIN')[1].split('\n').slice(1).join('\n').split('// PATHS-END')[0];
+const { REPO, taskPaths, HIGH_RISK_PATH, NATIVE_PATH } = new Function(`${pathsBlock}; return { REPO, taskPaths, HIGH_RISK_PATH, NATIVE_PATH };`)();
+
+test('the worktree and branch come from the repository name and the task id', () => {
+  assert.equal(REPO, 'octave');
+  assert.deepEqual(taskPaths('T3-01'), { main: '.', worktree: '../octave-T3-01', branch: 'task/T3-01', spec: 'docs/specs/T3-01.md' });
+  assert.deepEqual(taskPaths('T10-13', '/srv/code'), {
+    main: '/srv/code/octave',
+    worktree: '/srv/code/octave-T10-13',
+    branch: 'task/T10-13',
+    spec: 'docs/specs/T10-13.md',
+  });
+});
+
+test('task ids outside the T<phase>-<nn> form are refused', () => {
+  for (const bad of ['P13-08', 'T3-1', 't3-01', 'T3-01; rm -rf /', '', undefined]) {
+    assert.throws(() => taskPaths(bad), /Unknown task id/);
+  }
+});
+
+test('the high-risk paths name the core negotiation, gateway, player and redaction code, native code and the security document', () => {
+  for (const path of [
+    'packages/core/src/jellyfin/gateway.ts',
+    'packages/core/src/jellyfin/source-acceptance.ts',
+    'packages/core/src/player/coordinator.ts',
+    'packages/core/src/redact.ts',
+    'src/lib/jellyfin/gateway.ts',
+    'src/lib/player/coordinator.ts',
+    'src/lib/redact.ts',
+    'src/domain/playback.ts',
+    'modules/player/android/src/main/java/dev/octave/player/Player.kt',
+    'modules/http/android/src/main/java/dev/octave/http/Client.kt',
+    'apps/tv/android/app/src/main/AndroidManifest.xml',
+    'docs/security.md',
+    'tests/fixtures/hls-playlists.json',
+  ]) {
+    assert.ok(HIGH_RISK_PATH.test(path), path);
+  }
+  for (const path of ['apps/tv/src/screens/home.tsx', 'README.md', 'src/domain/catalog.ts', 'packages/core/src/domain/catalog.ts']) {
+    assert.ok(!HIGH_RISK_PATH.test(path), path);
+  }
+});
+
+test('Kotlin under modules/ and apps/tv/android routes to the native engineer', () => {
+  assert.ok(NATIVE_PATH.test('modules/player/android/Player.kt'));
+  assert.ok(NATIVE_PATH.test('apps/tv/android/app/build.gradle'));
+  assert.ok(!NATIVE_PATH.test('apps/tv/src/app.tsx'));
+});
+
+test('the verify step runs the TV commands, not the desktop ones', () => {
+  const verify = src.split('const VERIFY_STEPS =')[1].split('\n')[1];
+  for (const command of ['pnpm check', 'pnpm test:tripwire', 'pnpm tv:native:test', 'pnpm tv:e2e', 'pnpm tv:wire', 'pnpm tv:visual']) {
+    assert.ok(verify.includes(command), command);
+  }
+  for (const gone of ['test:e2e', 'test:visual', 'cargo']) assert.ok(!verify.includes(gone), gone);
+});
