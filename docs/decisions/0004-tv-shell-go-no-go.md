@@ -1,6 +1,6 @@
 # 0004: Go or no-go on React Native as Octave's TV shell
 
-- Status: **Proposed**. The owner decides; nothing here is accepted yet.
+- Status: **Accepted: go with React Native** (the owner, 2026-11-20: "I'm willing to go with React Native"). The conditions below become tasks (T0-06, T3-13, T3-14, T11-08). Still open and decided later, without blocking the go: the focus-lift and memory variant (choice 2), and the owner's sofa trial (choice 3). The night Shield runs of 2026-11-20 are added as evidence when they land.
 - Date: 2026-11-20 (drafted about 15:40 CST, before the serial Shield run planned for after 23:00)
 - Task: T0-05. It closes phase T0 (T0-01 to T0-04) and gates T1 onward.
 - Follows: decision 0003, "Decision (accepted)" item 8: "The owner's go or no-go becomes decision 0004."
