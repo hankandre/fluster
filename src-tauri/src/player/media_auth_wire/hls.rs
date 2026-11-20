@@ -4,7 +4,7 @@
 //! and FFmpeg themselves; `player::hls` tests cover Rust's validation.
 
 use super::*;
-use crate::player::network::MediaDelivery;
+use crate::player::network::{HttpStacks, MediaDelivery};
 use crate::player::test_http::{paths, serve_routes, Route};
 
 pub(super) const PLAYLIST: &str = "application/vnd.apple.mpegurl";
@@ -48,6 +48,12 @@ pub(super) enum Network {
     WithoutRedirectLimit,
     /// Production without the protocol whitelist.
     WithoutWhitelist,
+    /// Production with the curl backend turned back on, so only
+    /// `curl-max-redirects=0` guards it. Needs mpv 0.42+ built with libcurl.
+    CurlBackendOn,
+    /// `CurlBackendOn` with curl's own redirect limit back at its default,
+    /// to show curl serves the segment and the test can see it follow.
+    CurlBackendOnWithRedirects,
 }
 
 pub(super) fn hls_player(network: Network) -> Option<Mpv> {
@@ -58,17 +64,23 @@ pub(super) fn hls_player_with(
     network: Network,
     authorization: &MediaBrowserAuthorization,
 ) -> Option<Mpv> {
+    let http = probed_http_stacks()?;
     ensure_numeric_locale().expect("numeric locale");
     let created = Mpv::with_initializer(|init| {
         init.set_option("config", false)?;
         init.set_option("vo", "null")?;
         init.set_option("ao", "null")?;
         init.set_option("autoload-files", false)?;
-        harden_network_options(&init, MediaDelivery::ValidatedHls)?;
+        harden_network_options(&init, MediaDelivery::ValidatedHls, http)?;
         match network {
             Network::Production => {}
             Network::WithoutRedirectLimit => init.set_option("stream-lavf-o", "")?,
             Network::WithoutWhitelist => init.set_option("demuxer-lavf-o", "")?,
+            Network::CurlBackendOn => init.set_option("curl-enabled", true)?,
+            Network::CurlBackendOnWithRedirects => {
+                init.set_option("curl-enabled", true)?;
+                init.set_option("curl-max-redirects", 16i64)?;
+            }
         }
         set_media_authorization(&init, authorization)
     });
@@ -150,12 +162,27 @@ fn hls_nested_opens_send_exactly_the_typed_header() {
 /// `max_redirects=0` from `stream-lavf-o` reaches FFmpeg's nested segment
 /// opens: a 302 on a segment sends nothing to the target. Without it, the
 /// same playlist does reach the target, so the test can see a redirect.
+/// On a libmpv with the curl backend (mpv 0.42+), nested opens would go
+/// through curl unless `curl-enabled=no`; the last two cases turn curl back
+/// on and check `curl-max-redirects=0` refuses the redirect as well, and
+/// that curl does follow it once its limit is raised.
 #[test]
 fn hls_segment_redirects_are_refused_on_nested_opens() {
-    for (network, expect_followed) in [
+    let Some(http) = probed_http_stacks() else {
+        return;
+    };
+    eprintln!("hls segment redirect test on HTTP stacks {http:?}");
+    let mut cases = vec![
         (Network::Production, false),
         (Network::WithoutRedirectLimit, true),
-    ] {
+    ];
+    if http == HttpStacks::LavfAndCurl {
+        cases.push((Network::CurlBackendOn, false));
+        cases.push((Network::CurlBackendOnWithRedirects, true));
+    } else {
+        eprintln!("SKIP hls CurlBackendOn case: this libmpv has no curl backend");
+    }
+    for (network, expect_followed) in cases {
         let Some(mut mpv) = hls_player(network) else {
             return;
         };

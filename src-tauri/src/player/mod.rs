@@ -48,6 +48,10 @@ pub(crate) enum MpvError {
     Initialize(String),
     #[error("Fluster requires libmpv 0.41 or newer, but found {0}. Install a current libmpv development/runtime package or use the release AppImage.")]
     UnsupportedVersion(String),
+    /// The loaded libmpv has a network backend that could not be told to
+    /// refuse redirects (`network::refuse_curl_backend`).
+    #[error("This libmpv has a network backend Fluster could not lock down, so playback did not start. Use the release AppImage or another libmpv package.")]
+    RedirectGuard,
     #[error("Could not set the numeric locale required by libmpv.")]
     Locale,
     #[error("No playback session is active.")]

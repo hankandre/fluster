@@ -1,9 +1,10 @@
 //! Session lifecycle: launch, typed playback commands, and shutdown.
 
 use super::events::run_event_loop;
+use super::network::{initialize_error, HardeningError, HttpStacks};
 use super::pending::{PendingSlot, PREPARE_DEADLINE};
 use super::properties::observe_properties;
-use super::version::{ensure_numeric_locale, query_libmpv_version};
+use super::version::{ensure_numeric_locale, query_libmpv_runtime};
 use super::{native_trace, MpvError};
 use crate::lock::lock;
 use crate::media_controls::MediaControls;
@@ -33,6 +34,8 @@ struct ControllerInner {
     session_finished: Condvar,
     renderer: Mutex<Result<String, String>>,
     capabilities: Mutex<Option<PlayerCapabilities>>,
+    /// Set with `capabilities` from the same probe of the loaded libmpv.
+    http: Mutex<Option<HttpStacks>>,
     media: Mutex<MediaControls>,
 }
 
@@ -44,6 +47,7 @@ impl Default for ControllerInner {
             session_finished: Condvar::new(),
             renderer: Mutex::new(Err(String::new())),
             capabilities: Mutex::new(None),
+            http: Mutex::new(None),
             media: Mutex::new(MediaControls::default()),
         }
     }
@@ -82,7 +86,9 @@ impl MpvController {
             }
             Err(error) => return Err(MpvError::Renderer(error)),
         };
-        let libmpv_version = query_libmpv_version()?;
+        let runtime = query_libmpv_runtime()?;
+        *lock(&self.inner.http) = Some(runtime.http);
+        let libmpv_version = runtime.version;
         let capabilities = PlayerCapabilities {
             mode: "native",
             embedded: true,
@@ -103,6 +109,10 @@ impl MpvController {
             return Err(MpvError::InvalidPlan);
         }
         self.capabilities()?;
+        // Whether this libmpv has a curl backend to refuse, from the probe
+        // `capabilities` ran; the loaded libmpv cannot change in a process.
+        let http = lock(&self.inner.http)
+            .ok_or_else(|| MpvError::Initialize("the libmpv probe did not run".into()))?;
         // One launch at a time: the pending marker refuses a second launch
         // until this one becomes a session or fails, and `stop` cancels it.
         let pending = {
@@ -122,6 +132,7 @@ impl MpvController {
         ensure_numeric_locale()?;
 
         let force_software = request.test_force_software;
+        let mut curl_guard_failed = false;
         let mpv = Mpv::with_initializer(|init| {
             init.set_option("config", false)?;
             init.set_option("vo", "libmpv")?;
@@ -133,9 +144,12 @@ impl MpvController {
             // Only the subtitles Fluster adds may appear as external tracks,
             // so their add order identifies them (see `tracks.rs`).
             init.set_option("autoload-files", false)?;
-            media.configure(&init, &request)
+            media.configure(&init, &request, http).map_err(|error| {
+                curl_guard_failed = matches!(error, HardeningError::CurlGuard(_));
+                error.into()
+            })
         })
-        .map_err(|error| MpvError::Initialize(safe_error(error)))?;
+        .map_err(|error| initialize_error(error, curl_guard_failed))?;
         pending.check()?;
         let mpv = Arc::new(Mutex::new(mpv));
         let mut event_client = {

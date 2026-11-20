@@ -2,6 +2,7 @@
 
 use super::*;
 use crate::model::MediaTrack;
+use crate::player::network::HttpStacks;
 use crate::player::track_list::load_external_subtitles;
 
 #[test]
@@ -48,11 +49,41 @@ fn stream_and_external_subtitles_send_exactly_the_typed_header() {
     }
 }
 
+/// With the production options (on mpv 0.42+ that includes `curl-enabled=no`,
+/// so FFmpeg's `max_redirects=0` applies) the redirect target gets nothing.
 #[test]
 fn redirects_are_refused_while_the_header_is_set() {
-    let Some(mut mpv) = headless_player(&test_authorization()) else {
+    let Some(http) = probed_http_stacks() else {
         return;
     };
+    eprintln!("redirect test on HTTP stacks {http:?}");
+    let Some(mpv) = headless_player(&test_authorization()) else {
+        return;
+    };
+    assert_redirect_not_followed(mpv);
+}
+
+/// Defence in depth: with the curl backend forced back on, the production
+/// `curl-max-redirects=0` still refuses the redirect. Needs a libmpv with
+/// the curl backend (mpv 0.42+); skipped on one without it.
+#[test]
+fn curl_backend_redirects_are_refused_too() {
+    let Some(http) = probed_http_stacks() else {
+        return;
+    };
+    if http == HttpStacks::LavfOnly {
+        eprintln!("SKIP curl_backend_redirects_are_refused_too: this libmpv has no curl backend");
+        return;
+    }
+    let Some(mpv) = headless_player(&test_authorization()) else {
+        return;
+    };
+    mpv.set_property("curl-enabled", true)
+        .expect("the curl backend can be turned back on");
+    assert_redirect_not_followed(mpv);
+}
+
+fn assert_redirect_not_followed(mut mpv: Mpv) {
     let (target, target_origin) = listener();
     let target_requests = serve(target, String::new());
     let (server, origin) = listener();

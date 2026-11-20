@@ -7,7 +7,7 @@
 use super::hls::{HlsError, HlsRequest, HlsSession};
 use super::network::{
     allow_subtitle_formats, harden_network_options, load_static, load_validated_hls,
-    set_media_authorization, validate_playback_urls, MediaDelivery,
+    set_media_authorization, validate_playback_urls, HardeningError, HttpStacks, MediaDelivery,
 };
 use super::track_list::{load_external_subtitles, read_mpv_tracks, read_tracks};
 use super::tracks::hls_player_tracks;
@@ -136,14 +136,17 @@ impl LaunchMedia {
         }
     }
 
-    /// The network options and the header for this media's handle.
+    /// The network options and the header for this media's handle. `http`
+    /// comes from `version::query_libmpv_runtime` for the loaded libmpv.
     pub(super) fn configure(
         &self,
         init: &MpvInitializer,
         request: &LaunchRequest,
-    ) -> libmpv2::Result<()> {
-        harden_network_options(init, self.delivery())?;
-        set_media_authorization(init, &request.authorization)
+        http: HttpStacks,
+    ) -> Result<(), HardeningError> {
+        harden_network_options(init, self.delivery(), http)?;
+        set_media_authorization(init, &request.authorization)?;
+        Ok(())
     }
 
     pub(super) fn load(&self, mpv: &Mpv) -> libmpv2::Result<()> {

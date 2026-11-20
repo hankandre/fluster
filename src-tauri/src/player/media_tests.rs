@@ -4,7 +4,9 @@ use super::*;
 use crate::command_allowlist::collect_rust_files;
 use crate::model::HlsMediaKind;
 use crate::player::test_http::{listener, serve_routes, Route};
-use crate::player::test_support::{hls_launch_request, launch_request, test_authorization};
+use crate::player::test_support::{
+    hls_launch_request, launch_request, probed_http_stacks, test_authorization,
+};
 use crate::player::version::ensure_numeric_locale;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -13,12 +15,13 @@ const ITEM: &str = "0123456789abcdef0123456789abcdef";
 const PLAYLIST: &str = "application/vnd.apple.mpegurl";
 
 fn headless(media: &LaunchMedia, request: &LaunchRequest) -> Option<Mpv> {
+    let http = probed_http_stacks()?;
     ensure_numeric_locale().expect("numeric locale");
     let created = Mpv::with_initializer(|init| {
         init.set_option("config", false)?;
         init.set_option("vo", "null")?;
         init.set_option("ao", "null")?;
-        media.configure(&init, request)
+        Ok(media.configure(&init, request, http)?)
     });
     match created {
         Err(libmpv2::Error::VersionMismatch { linked, loaded }) => {
@@ -232,6 +235,68 @@ fn production_sources() -> Vec<(PathBuf, String)> {
             (path, source)
         })
         .collect()
+}
+
+/// Tripwire for the curl guard: production code builds a playback handle
+/// only in `controller.rs`, with the probed `HttpStacks` passed through
+/// `LaunchMedia::configure` into `harden_network_options`, which refuses the
+/// curl backend before any other option. The only other handle is the
+/// version probe, which sets no network option and loads nothing.
+#[test]
+fn every_playback_handle_gets_the_probed_curl_guard() {
+    for (path, source) in production_sources() {
+        let name = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("");
+        assert!(!source.contains("Mpv::new("), "{}", path.display());
+        let handles = source.matches("with_initializer(").count();
+        let expected = usize::from(["controller.rs", "version.rs"].contains(&name));
+        assert_eq!(handles, expected, "{}", path.display());
+        if name != "network.rs" && name != "version.rs" {
+            assert!(
+                !source.contains("HttpStacks::"),
+                "{} picks the HTTP stacks itself",
+                path.display()
+            );
+        }
+        match name {
+            "version.rs" => assert!(source.contains("with_initializer(probe_options)")),
+            "controller.rs" => {
+                assert!(source.contains("*lock(&self.inner.http) = Some(runtime.http);"));
+                assert!(source.contains("let http = lock(&self.inner.http)"));
+                assert!(source.contains(".configure(&init, &request, http)"));
+                assert!(source.contains("initialize_error(error, curl_guard_failed)"));
+            }
+            "media.rs" => {
+                assert!(source.contains("harden_network_options(init, self.delivery(), http)?;"))
+            }
+            "network.rs" => assert!(source.contains(
+                ") -> Result<(), HardeningError> {\n    refuse_curl_backend(init, http).map_err(HardeningError::CurlGuard)?;"
+            )),
+            _ => {}
+        }
+    }
+}
+
+/// No mpv handle is built outside `player/`.
+#[test]
+fn no_mpv_handle_is_built_outside_the_player() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+    let mut files = Vec::new();
+    collect_rust_files(&root, &mut files);
+    let player = root.join("player");
+    let outside: Vec<_> = files
+        .into_iter()
+        .filter(|path| !path.starts_with(&player))
+        .collect();
+    assert!(outside.len() > 10, "the scan found too few files");
+    for path in outside {
+        let source = fs::read_to_string(&path).expect("readable source");
+        for call in ["with_initializer(", "Mpv::new(", "mpv_create("] {
+            assert!(!source.contains(call), "{}: {call}", path.display());
+        }
+    }
 }
 
 /// Guardian note for P10-04: a plain `loadfile` on a `ValidatedHls` handle
