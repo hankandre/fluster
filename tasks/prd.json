@@ -343,7 +343,8 @@
           "skill": "exec-plan",
           "human": false,
           "depends_on": [
-            "T1-06"
+            "T1-06",
+            "T2-01"
           ],
           "acceptance": [
             "The document states the token boundary for Android: where the token is held, which code may read it, and that it never appears in a URL, a React prop, an event, a log or a diagnostic",
@@ -530,7 +531,7 @@
           "skill": "exec-plan",
           "human": true,
           "depends_on": [
-            "T1-07"
+            "T0-05"
           ],
           "acceptance": [
             "Owner decision: the owner accepts docs/decisions/0005, because it settles a security boundary",

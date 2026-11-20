@@ -70,7 +70,7 @@ Octave borrows the feel of a streaming service and leaves out what such a servic
 
 ### Servers
 
-- **Jellyfin** 10.11.x and 12.x with default settings. Jellyfin 12 disables legacy query-string authorization by default, so Octave authenticates every request with a header (`ARCHITECTURE.md` §4).
+- **Jellyfin** 10.11.x and 12.x with default settings. Jellyfin 12 disables legacy query-string authorization by default, so Octave authenticates every request with a header (`ARCHITECTURE.md` §3).
 - **Jellyscale**, a scale-out video server that speaks the Jellyfin client API. It is a first-class server: it requires a token on every media request, so Octave sends the header on every request, and a playback task passes only when its wire test passes against Jellyscale. Where Jellyscale lacks a feature, the task waits for the Jellyscale issue (phase T10); Octave never works around it with a token in a URL.
 
 ### Sign-in

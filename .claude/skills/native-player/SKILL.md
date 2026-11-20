@@ -8,7 +8,7 @@ description: Change Octave's native code: the player module (Media3 now, libmpv 
 ## Before editing
 
 - Use Opus.
-- Read `ARCHITECTURE.md` §2–3, `DOMAINS.md` §6, and `docs/security.md`.
+- Read `ARCHITECTURE.md` §2, `DOMAINS.md` §6, and `docs/security.md`.
 - Read decision 0005: the token lives only in Kotlin's session registry and its Keystore record; JavaScript holds an opaque session id.
 - Outline the target file before reading it; read only the symbols you need.
 - Verify any new dependency against the maintenance rule from primary sources first.

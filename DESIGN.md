@@ -180,7 +180,7 @@ Each component lists its anatomy, states, and accessibility notes. They are buil
 
 - **Home, in this order on every visit and for every account:** the hero, **Continue watching**, then one **Recently added** row. There is no row of library tiles and no per-library Latest rows; libraries live in the rail. An empty row is hidden and the others keep their order. Later rows (My list, T12-02) take places their own tasks set.
 - **Continue watching** is one row: in-progress films and episodes together with each series' next episode, most recently played first, at most 16 cards. Cards play in one press. Removing a title from the row, and whether titles leave by themselves after a window, wait for the owner (T5-01).
-- **Recently added** is one row of movies and shows, newest first. A series with new episodes shows once, as the series, and opens the series page. The row ends with a "See all" tile that opens the newest additions as a grid; Left from the first card wraps to it.
+- **Recently added** is one row of movies and shows, newest first. A series with new episodes shows once, as the series, and opens the series page. The row ends with a "See all" tile that opens the newest additions as a grid.
 - A row is a title (`typeHeading`, sentence case) over a horizontal list of cards. Left and Right move within the row. Up and Down move to the adjacent row, to the card nearest by horizontal centre. The focused card keeps 96 px from the edge. Left from the first card opens the rail. Each row remembers its scroll position in app state, so a recycled row never inherits another row's place (decision 0004, condition 6).
 - States: skeleton (cards of the right variant), error (`InlineError` in place of cards), and hidden when empty.
 

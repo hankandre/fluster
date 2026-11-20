@@ -68,9 +68,7 @@ The replacement named by decision 0004 is native Kotlin with Compose for TV; it 
 - **One authenticated client.** Every server request (sign-in, catalog, artwork, media, playlists, segments, subtitles) goes through one OkHttp client. Its interceptor adds the header only for the signed-in server's scheme, host and port; redirects and SSL redirects are off; no proxy; any other origin is refused before the request is sent (T3-03). A build check fails on Media3's default data sources, another `OkHttpClient`, `HttpURLConnection`, or an ExoPlayer without Octave's media source factory (T3-04).
 - **The video is native.** A native view hosts the video; React passes it no URL. The player screen's chrome is native per platform.
 
----
-
-## 3. Engines
+### Engines
 
 | | Media3 (first, T8) | libmpv (second, T13) |
 |---|---|---|
@@ -84,7 +82,7 @@ The replacement named by decision 0004 is native Kotlin with Compose for TV; it 
 
 ---
 
-## 4. Jellyfin API usage
+## 3. Jellyfin API usage
 
 ### Supported servers
 
@@ -113,12 +111,12 @@ The replacement named by decision 0004 is native Kotlin with Compose for TV; it 
 |---|---|
 | Libraries | `GET /UserViews` (filter by `CollectionType`) |
 | Browse / search | `GET /Items?parentId=&includeItemTypes=&recursive=true&sortBy=&sortOrder=&startIndex=&limit=&fields=&searchTerm=&enableImageTypes=Primary,Backdrop,Thumb,Logo&imageTypeLimit=1&enableTotalRecordCount=false` (`true` on the first library page only) |
-| Letter rail | `nameLessThan` counts per letter (T6-04); Jellyscale issue #227 (T10-09) |
-| Remembered sort | `/DisplayPreferences` per library and account (T6-03) |
+| Letter rail | `nameLessThan` counts per letter (T6-04) **[unverified]**; Jellyscale issue #227 (T10-09) |
+| Remembered sort | `/DisplayPreferences` per library and account (T6-03) **[unverified]** |
 | Continue watching | `GET /UserItems/Resume?mediaTypes=Video&limit=` |
 | Next Up (merged into Continue watching) | `GET /Shows/NextUp?limit=&enableRewatching=false&enableResumable=false&fields=PrimaryImageAspectRatio,DateCreated` with no `nextUpDateCutoff` (`docs/research/discovery-api.md` §3); the window is applied in `src/domain/up-next.ts`. Series form: `GET /Shows/NextUp?seriesId=&limit=1&enableUserData=true&enableResumable=true&enableRewatching=false&enableImages=false&enableTotalRecordCount=false` |
 | Recently played (dates next episodes, anchors the hero) | `GET /Items?recursive=true&includeItemTypes=Movie,Episode&filters=IsPlayed&sortBy=DatePlayed&sortOrder=Descending&limit=100&enableUserData=true&enableImages=false&enableTotalRecordCount=false` |
-| Recently added (one Home row, movies and shows, episodes grouped by series) | `GET /Items/Latest?limit=&groupItems=true` (returns an array, not a QueryResult). One card per series; Jellyscale issue #234 (T10-07) |
+| Recently added (one Home row, movies and shows, episodes grouped by series) | `GET /Items/Latest?limit=&groupItems=true` (returns an array, not a QueryResult). Without `parentId`, across libraries: **[unverified]**. One card per series; Jellyscale issue #234 (T10-07) |
 | Series | `GET /Shows/{id}/Seasons`, `GET /Shows/{id}/Episodes?seasonId=` |
 | Next episode | `GET /Shows/{id}/Episodes?adjacentTo={episodeId}` |
 | Detail | `GET /Items/{id}?userId=` with no `fields`; recordings on 10.11.7 and 12.4.0 (`item-detail-no-fields-*.json`) show the full item, including `MediaSources`, `MediaStreams`, `People`, `CommunityRating`, `CriticRating`, `Genres`, and `UserData` |
@@ -173,7 +171,7 @@ What the device can decode is never written into the profile. It is a client-sid
 2. `RequiresOpening` is `true` (a live source): Refuse `live-source`.
 3. **DirectPlay** when all hold: `SupportsDirectPlay === true`; `Protocol === "File"`; `Path` present; `VideoType` is not `BluRay`, `Dvd`, or `Iso` (any case) and `Path` has no `BDMV` or `VIDEO_TS` segment and does not end in `.iso`; `TranscodingUrl` is empty; and (from T2-07) an engine on this device can play the source's video and audio.
 4. A disc folder or ISO that the server offered for direct play: send a second PlaybackInfo for that `MediaSourceId` with `EnableDirectPlay: false`, then apply the rules to the answer once. If the answer still offers direct play, Refuse `disc-source` or `iso-source`; there is never a third request.
-5. **Device cannot play (T2-07).** The server offered direct play, but no engine on this device can play the source: send one more PlaybackInfo for that `MediaSourceId` with `EnableDirectPlay: false` and `AllowVideoStreamCopy: false` (and `AllowAudioStreamCopy: false` when the audio is what the device cannot play), in body and query, and use its answer, with a client-side conversion reason. If it still offers only direct play, Refuse with the typed "this device cannot play the file" reason; there is never a third request.
+5. **Device cannot play (T2-07).** The server offered direct play, but no engine on this device can play the source: send one more PlaybackInfo for that `MediaSourceId` with `EnableDirectPlay: false` and `AllowVideoStreamCopy: false`, in body and query (whether audio the device cannot play also needs `AllowAudioStreamCopy: false` is open for T2-07), and use its answer, with a client-side conversion reason. If it still offers only direct play, Refuse with the typed "this device cannot play the file" reason; there is never a third request.
 6. **DirectStream** or **Transcode** when `TranscodingUrl` is present, `TranscodingSubProtocol` is `hls` (otherwise Refuse `unsafe-transcoding-url`), and the rebuilt URL passes the HLS URL rules below. DirectStream only when the URL shows that video and audio are copied: `TranscodeReasons` is present and every value is `ContainerNotSupported` or `VideoCodecTagNotSupported`; no `SubtitleMethod=Encode`, `AlwaysBurnInSubtitleWhenTranscoding=true`, `RequireAvc=true`, or `AllowVideoStreamCopy`/`AllowAudioStreamCopy=false`; the source has one video stream whose codec is in the URL's `VideoCodec` list and within its limits; and the URL's `AudioCodec` is exactly the codec of the chosen audio stream. Anything else is Transcode. After the first frame of a converted session the coordinator asks the server (`GET /Sessions?deviceId=`) at 3 s and once more at 10 s; the plan becomes DirectStream exactly when `TranscodingInfo.IsVideoDirect` and (with audio) `IsAudioDirect` are true. Playstate reports for every converted session keep `PlayMethod: Transcode` (see Playstate reporting).
 7. Otherwise Refuse: `conversion-not-allowed`, `not-a-file`, `missing-source-data`, or `no-sources`.
 
@@ -240,7 +238,7 @@ The gateway pins `@jellyfin/sdk` 1.0.2 and axios until T2-04 replaces both with 
 
 ---
 
-## 5. Invariants
+## 4. Invariants
 
 Each invariant names what enforces it today, or the task that adds the enforcement. The desktop app's native tests proved the same rules for libmpv; their names and what each proved are in `docs/mpv-options-checklist.md`.
 
@@ -258,7 +256,7 @@ Each invariant names what enforces it today, or the task that adds the enforceme
 
 ---
 
-## 6. Known gaps
+## 5. Known gaps
 
 | Severity | Gap | Task |
 |---|---|---|
