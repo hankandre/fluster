@@ -1,6 +1,6 @@
 # 0005: Where the access token lives on Android TV and how it crosses to native code
 
-- Status: **Proposed.** The owner accepts security boundaries (T2-01, acceptance 1). Nothing here is in force until then.
+- Status: **Accepted** by the owner on 2026-11-20: **native memory only** (Kotlin owns the token and does all server HTTP; JavaScript holds an opaque session handle); the token **may be persisted** encrypted under an Android Keystore key, readable only by native code, and users **stay signed in by default**; **development builds sign in only to development servers**. The new native session surface (signIn, request, restoreSessions, endSession, one event) is accepted as part of this decision.
 - Date: 2026-11-20
 - Task: T2-01 (the TV task list on branch `docs/tv-prd`, commit `c2c224b`).
 - Follows: decision 0003 ("Decision (accepted)" items 3 and 6) and decision 0004 (branch `docs/decision-0004`, commit `931bc39`).
