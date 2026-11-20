@@ -102,16 +102,20 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: visual-shard-${{ matrix.shard }}
+          # A re-run of a failed job uploads under the same name.
+          overwrite: true
           path: |
             visual-captures/
             blob-report/
-          retention-days: 1
+          retention-days: 7
           if-no-files-found: warn
       - name: Upload visual diffs
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: visual-diffs-${{ matrix.shard }}
+          # A re-run of a failed job uploads under the same name.
+          overwrite: true
           path: test-results/visual-run/
           retention-days: 14
           if-no-files-found: warn
@@ -161,9 +165,12 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: visual-captures
+          # A re-run of a failed job uploads under the same name.
+          overwrite: true
           path: visual-captures/
           retention-days: 14
           if-no-files-found: warn
+      # merge-reports exits 0 even when captures failed; this step is the gate.
       - name: Require every shard to pass
         env:
           SHARDS: ${{ needs.visual-shard.result }}
