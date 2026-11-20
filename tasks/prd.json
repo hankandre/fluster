@@ -2246,7 +2246,7 @@
             "P12-01"
           ],
           "acceptance": [
-            "A decision record compares React Native (react-native-tvos), Kotlin Multiplatform with Compose, and native Kotlin, each with libmpv on Android, using current sources",
+            "A decision record compares React Native (react-native-tvos), Kotlin Multiplatform with Compose, native Kotlin, and a WebView shell that reuses the React UI over a native video layer (added by the owner, 2026-11-20), each with libmpv on Android, using current sources",
             "For each option it shows, with current sources, that the shell can direct play and direct stream original files with hardware decoding (MediaCodec on Android, VideoToolbox on Apple), and rules out any option that cannot",
             "It states how the TV engine sends the Authorization header on static and HLS requests and refuses redirects, matching decision 0002",
             "It lists what P9-01 must prove, including a converted sample over HLS",
