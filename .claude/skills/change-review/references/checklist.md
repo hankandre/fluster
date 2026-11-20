@@ -1,6 +1,6 @@
 # Review checklist
 
-## Invariants (ARCHITECTURE.md §5)
+## Invariants (ARCHITECTURE.md §4)
 
 - I1: Can any path convert a source that an engine on this device can play under the direct-play rules?
 - I1: Is every DirectStream or Transcode shown with its reason?

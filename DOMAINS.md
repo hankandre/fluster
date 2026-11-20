@@ -75,7 +75,7 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 **Rules.**
 - Catalog code never builds stream URLs or decides playability. It hands an `itemId` (and optionally a `mediaSourceId`) to Playback Negotiation.
-- Request only the fields a view needs (`ARCHITECTURE.md` §4).
+- Request only the fields a view needs (`ARCHITECTURE.md` §3).
 - Images never take a URL, header, or token from React; only an item id, type, tag, and size.
 
 ---

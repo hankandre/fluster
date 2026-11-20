@@ -7,7 +7,7 @@ description: Add or change Jellyfin and Jellyscale server calls, playback negoti
 
 ## Before editing
 
-- Read `ARCHITECTURE.md` §4.
+- Read `ARCHITECTURE.md` §3.
 - Use Opus for negotiation, source decisions, auth, or track mapping.
 - Use Sonnet for catalog queries and images.
 
@@ -36,7 +36,7 @@ description: Add or change Jellyfin and Jellyscale server calls, playback negoti
 - Send the Octave DeviceProfile with every PlaybackInfo request.
 - Never add codec or container conditions to it; the device's capabilities are read by the source decision, not sent.
 - Send the same flags in body and query.
-- Decide each source with the `ARCHITECTURE.md` §4 rules: DirectPlay, DirectStream, Transcode, or Refuse.
+- Decide each source with the `ARCHITECTURE.md` §3 rules: DirectPlay, DirectStream, Transcode, or Refuse.
 - When no engine on the device can play a source, send one more request with direct play and stream copy off; never a third.
 - Return a typed refusal reason when no source can be played or converted.
 - Rebuild a `TranscodingUrl` with the HLS URL rules before use; never use it as given.

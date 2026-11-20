@@ -75,6 +75,7 @@ Tokens and network
 - Send every server request (sign-in, catalog, artwork, playlists, segments, media, subtitles) through the one authenticated OkHttp client; it adds the header only for the session's origin, follows no redirect, uses no proxy, stores no cookie, and refuses any other origin.
 - Strip the session's token value, as written and percent-encoded, from every response body before it crosses to JavaScript.
 - Keep the native session surface to `signIn`, `request`, `restoreSessions`, `endSession`, and the `sessionEnded` event; `request` takes no header and no absolute URL. Adding a method or event needs a decision record.
+- Load artwork natively: the image view takes an item id, image type, tag, size, and session id, never a URL, header, or token (T3-11).
 - Never use `DefaultHttpDataSource`, `DefaultDataSource.Factory`, or an ExoPlayer built without Octave's media source factory.
 - Treat a 3xx answer and a status of 0 as errors everywhere. A host with no native transport (Node tests, the tripwire) sets `redirect: "manual"` in one place, the core's transport adapter.
 - Never put a token in a URL, a React prop, an event, or a log; authenticate media, playlists, segments, and images with the header.
