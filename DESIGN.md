@@ -411,8 +411,9 @@ Octave talks like a knowledgeable friend running the projector: calm, brief, pla
 | Library, not available | This library isn't available | It may have been removed, or this account can't see it. | Go home |
 | Libraries, error | n/a | Couldn't load your libraries. | Retry |
 | Library, later page error | n/a | Couldn't load more items. | Retry |
-| Row error | n/a | Couldn't load {row}. For the merged row, "Couldn't load Continue watching." when either of its lists fails. | Retry |
+| Row error | n/a | Couldn't load {row}. For the merged row, "Couldn't load Continue watching." when either of its lists fails; Retry reloads only the failed list. | Retry |
 | Search, error | n/a | Couldn't load search results. | Retry |
+| Search, more results error | n/a | Couldn't load more results. | Retry |
 | Sign-in, Quick Connect | Approve this sign-in on your phone | Scan the code with your phone, or enter the code in Quick Connect. | Use a password |
 | Sign-in, Quick Connect off | n/a | Quick Connect is off on this server. Ask its owner to turn it on, or use a password. | Use a password |
 | Sign-in, 401 | n/a | That username and password didn't work. | n/a |
@@ -424,24 +425,35 @@ Octave talks like a knowledgeable friend running the projector: calm, brief, pla
 | Detail, watched or favorite toast | n/a | Marked as watched. / Marked as unwatched. / Added to favorites. / Removed from favorites. | n/a |
 | Detail, subtitles after the default track | n/a | {n} more in {m} languages; 1 more in 1 language; {n} more with no language | Show all {N} subtitles |
 | Detail, subtitles with no default track | n/a | {n} in {m} languages; 1 in 1 language; {n} with no language | Show all {N} subtitles |
+| Detail, subtitles in the viewer's language | n/a | (the tracks) | Show all {N} subtitles |
 | Detail, subtitles expanded | n/a | (every track) | Show fewer subtitles |
-| Detail, facts line scores | n/a | {n.n} audience; {n}% critics. Each is labelled by its source and shows only when the server has it. | n/a |
+| Detail, facts line scores | n/a | {n.n} audience; {n}% critics. Each is labelled by its source and shows only when the server has it. The viewer's own rating, when it exists, is a separate, more prominent control and never shares these labels. | n/a |
 | Detail, watched or favorite failed | n/a | Couldn't update watched state. Try again. / Couldn't update favorite. Try again. | n/a |
 | Settings, limit changed | n/a | {Local network or Remote} limit set to {n} Mbps. / {Local network or Remote} limit removed. | n/a |
-| Settings, changes in the player | n/a | ✓ Saved | n/a |
+| Player, Settings sheet changes (in the row, not the OSD) | n/a | ✓ Saved / ✓ Copied (Copy diagnostics). The Settings page keeps its toasts: Next episodes play automatically. / Next episodes won't play automatically. / Countdown set to {n} seconds. / Intros: {choice}. / Credits: {choice}. / Continue watching keeps {n} days. / Continue watching keeps everything. / Diagnostics copied | n/a |
+| Player, Settings sheet Sign out confirm | n/a | Stop playback and sign out? Playback stops and you'll need to sign in again to use this server. | Cancel / Sign out |
 | Settings, Languages intro | n/a | Saved to your account on the server, so your other apps for this server use them too. | n/a |
+| Settings, Languages audio | n/a | The file's default: Plays the audio track each file marks as its default. / Original language: Plays the film's original language when your server knows it, otherwise the file's default track. Play default audio track is off in your Jellyfin account. / {Language}: Plays {Language} when a title has it. Play default audio track is off in your Jellyfin account. | n/a |
+| Settings, Languages subtitles | n/a | Off: No subtitles when a title starts. You can turn them on while watching. / The file's default: Shows the subtitle track each file marks as its default. / {Language}, when the audio is in another language: {Language} subtitles when the audio is in another language; only forced {Language} subtitles otherwise. / {Language}, always: {Language} subtitles whenever a title has them. | n/a |
+| Settings, Languages current-only entry | n/a | Set in another Jellyfin app. Choose one here to change it. | n/a |
+| Settings, Languages saved | n/a | Audio set to {label}. / Subtitles set to {label}. | n/a |
+| Settings, Languages save failed | n/a | Couldn't save your audio language. Try again. / Couldn't save your subtitle language. Try again. | n/a |
 | Settings, Languages refused | n/a | Your server didn't accept this change from Octave. Change it in your server's web app. | n/a |
+| Settings, Languages read failed | n/a | Couldn't load your languages. | Retry |
+| Settings, Subtitles | n/a | Subtitle style: Not available yet. | n/a |
 | Settings, unavailable row | n/a | Not available yet. | n/a |
 | Settings, signed out | n/a | Signed out | n/a |
 | Settings, copy diagnostics | n/a | Diagnostics copied | Copy |
+| Settings, copy failed | n/a | Couldn't copy. Select the text below and copy it. | n/a |
 | Item gone | This item is no longer on the server | It may have been removed or renamed. | Go home |
 | Player loading | n/a | Opening the original file… | Back |
-| Player loading, converting | n/a | Converting on server: {reason}… | Back |
 | Player, this device can't play the original | n/a | Converting on server: this device can't play the original file. | n/a |
+| Player loading, converting | n/a | Converting on server: {reason}… | Back |
 | Player, picked audio track not applied | n/a | Couldn't switch to the audio track you picked. Playing the default track. | n/a |
-| Playback error, server unreachable | Playback could not start | Couldn't reach {server}. Check that the server is on, then try again. | Retry, Back to details |
+| Player loading, before the server answers | n/a | Loading… | Back |
+| Playback error, server unreachable (no response, network error, timeout) | Playback could not start | Couldn't reach {server}. Check that the server is on, then try again. | Retry, Back to details |
 | Playback error, server error (HTTP 5xx) | Playback could not start | {server} had a problem starting playback. Try again in a moment. | Retry, Back to details |
-| Playback error, the player did not stop | Couldn't stop playback | The player didn't close properly. Go back to try again. | Back to details |
+| Playback error, the player did not stop (Back, Retry, or a track or limit change; owner decision 2026-11-19) | Couldn't stop playback | The player didn't close properly. Go back to try again, or quit Octave if you can still hear it. | Back to details (primary; it tries the stop again, then leaves) |
 | Playback error, unsafe stream | Playback could not start | Your server offered a stream address Octave won't use. | Back to details |
 | Playback error, other request failure | Playback could not start | Something went wrong starting playback. Try again. | Retry, Back to details |
 | Progress report failed | n/a | Couldn't save your progress to {server}. Playback continues. | n/a |
