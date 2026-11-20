@@ -81,6 +81,12 @@ pub(super) fn harden_network_options(
 ) -> Result<(), HardeningError> {
     refuse_curl_backend(init, http).map_err(HardeningError::CurlGuard)?;
     init.set_option("stream-lavf-o", STREAM_LAVF_OPTIONS)?;
+    // mpv 0.41, and 0.42 built without libcurl on libavformat < 63, default
+    // `tls-verify` to `no` and pass FFmpeg `tls_verify=0`, so an HTTPS
+    // server's certificate would go unchecked (mpv `stream/network.c`
+    // v0.42.0 lines 54-56, `stream/stream_lavf.c` line 174). FFmpeg's TLS
+    // backend then uses the system trust store when no `tls-ca-file` is set.
+    init.set_option("tls-verify", true)?;
     // The builtin ytdl_hook script retries a failed load by running yt-dlp
     // with the full stream URL as a process argument.
     init.set_option("ytdl", false)?;

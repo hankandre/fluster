@@ -8,6 +8,7 @@ mod launch;
 mod launch_canary;
 mod proxy;
 mod references;
+mod tls;
 mod tracks;
 
 use super::network::{harden_network_options, set_media_authorization, MediaDelivery};

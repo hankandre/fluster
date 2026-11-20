@@ -164,6 +164,8 @@ fn libmpv_accepts_the_network_hardening_options() {
     assert_eq!(lavf_options, STREAM_LAVF_OPTIONS);
     let ytdl: bool = mpv.get_property("ytdl").expect("ytdl");
     assert!(!ytdl);
+    let tls_verify: bool = mpv.get_property("tls-verify").expect("tls-verify");
+    assert!(tls_verify);
     let access_references: bool = mpv
         .get_property("access-references")
         .expect("access-references");
