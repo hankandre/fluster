@@ -50,7 +50,7 @@ pub(crate) enum MpvError {
     UnsupportedVersion(String),
     /// The loaded libmpv has a network backend that could not be told to
     /// refuse redirects (`network::refuse_curl_backend`).
-    #[error("This libmpv has a network backend Fluster could not lock down, so playback did not start. Use the release AppImage or another libmpv package.")]
+    #[error("Fluster can't play with the video player installed on this computer, because it can't stop that player from following redirects. Update Fluster.")]
     RedirectGuard,
     #[error("Could not set the numeric locale required by libmpv.")]
     Locale,

@@ -1,23 +1,53 @@
 //! libmpv runtime checks: the numeric locale, the minimum mpv version, and
 //! which HTTP stacks the loaded build has.
 
-use super::network::HttpStacks;
+use super::network::{refuse_curl_backend, HttpStacks};
 use super::{string_property, MpvError};
 use crate::redaction::safe_error;
 use libmpv2::{mpv_error, Mpv, MpvStr};
 
-/// What the loaded libmpv is, read from a throwaway handle.
+/// What the loaded libmpv is, read from throwaway handles.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct LibmpvRuntime {
     pub(super) version: String,
     pub(super) http: HttpStacks,
+    /// Whether a handle accepts the curl guard; checked only on `LavfAndCurl`.
+    pub(super) curl_guard_applies: bool,
+}
+
+impl LibmpvRuntime {
+    /// The HTTP stacks a launch hardens, or the refusal when this libmpv has
+    /// a curl backend its handles cannot refuse. Checked before any server
+    /// request, so a refused launch starts no transcode and fetches nothing.
+    pub(super) fn launch_http(&self) -> Result<HttpStacks, MpvError> {
+        match (self.http, self.curl_guard_applies) {
+            (HttpStacks::LavfAndCurl, false) => Err(MpvError::RedirectGuard),
+            (http, _) => Ok(http),
+        }
+    }
 }
 
 pub(super) fn query_libmpv_runtime() -> Result<LibmpvRuntime, MpvError> {
     ensure_numeric_locale()?;
     let mpv = Mpv::with_initializer(probe_options)
         .map_err(|error| MpvError::Initialize(safe_error(error)))?;
-    probe_runtime(&mpv)
+    let (version, http) = probe_runtime(&mpv)?;
+    let curl_guard_applies = http == HttpStacks::LavfOnly || curl_guard_applies();
+    Ok(LibmpvRuntime {
+        version,
+        http,
+        curl_guard_applies,
+    })
+}
+
+// Builds a throwaway handle with the guard exactly as a playback handle sets
+// it, so a launch can be refused before it contacts the server.
+fn curl_guard_applies() -> bool {
+    Mpv::with_initializer(|init| {
+        refuse_curl_backend(&init, HttpStacks::LavfAndCurl)?;
+        probe_options(init)
+    })
+    .is_ok()
 }
 
 /// The options of the probe handle: no config, no output, no network.
@@ -28,40 +58,52 @@ pub(super) fn probe_options(init: libmpv2::MpvInitializer) -> libmpv2::Result<()
     Ok(())
 }
 
-pub(super) fn probe_runtime(mpv: &Mpv) -> Result<LibmpvRuntime, MpvError> {
+/// The supported version and HTTP stacks of the libmpv behind `mpv`.
+pub(super) fn probe_runtime(mpv: &Mpv) -> Result<(String, HttpStacks), MpvError> {
     let version = string_property(mpv, "mpv-version")
         .ok_or_else(|| MpvError::Initialize("the runtime did not expose mpv-version".into()))?;
     if !is_supported_mpv_version(&version) {
         return Err(MpvError::UnsupportedVersion(version));
     }
-    let curl_options = has_curl_options(mpv);
-    let http = http_stacks(&version, curl_options);
-    Ok(LibmpvRuntime { version, http })
+    let answer = mpv
+        .get_property::<MpvStr<'_>>("option-info/curl-enabled/name")
+        .err();
+    Ok((version, http_stacks(curl_options(answer.as_ref()))))
 }
 
-// mpv registers the `curl-*` options only when built with libcurl
-// (`options/options.c` v0.42.0 lines 940-941, `#if HAVE_LIBCURL`). Only a
-// definite "no such option" counts as absent; any other answer counts as
-// present, so the handle must then refuse the curl backend or fail.
-fn has_curl_options(mpv: &Mpv) -> bool {
-    match mpv.get_property::<MpvStr<'_>>("option-info/curl-enabled/name") {
-        Err(libmpv2::Error::Raw(code)) => code != mpv_error::PropertyNotFound,
-        _ => true,
+/// What the probe learned about the `curl-enabled` option.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum CurlOptions {
+    Present,
+    /// libmpv answered "no such property": this build has no libcurl.
+    Absent,
+    /// Any other failure; treated as present.
+    Unknown,
+}
+
+/// Classifies the error, if any, from reading `option-info/curl-enabled/name`.
+pub(super) fn curl_options(error: Option<&libmpv2::Error>) -> CurlOptions {
+    match error {
+        None => CurlOptions::Present,
+        Some(libmpv2::Error::Raw(code)) if *code == mpv_error::PropertyNotFound => {
+            CurlOptions::Absent
+        }
+        Some(_) => CurlOptions::Unknown,
     }
 }
 
 /// The curl backend follows redirects by default (`stream/stream_curl.c`
-/// v0.42.0 lines 127, 972-973). mpv 0.42.0 and newer may have it, and git
-/// builds after 2026-05-16 have it while still reporting `0.41.0`
-/// (`MPV_VERSION` at c6833a93 is `0.41.0-UNKNOWN`), so either signal turns
-/// the curl guard on. An unparsable version also turns it on.
-pub(super) fn http_stacks(version: &str, curl_options: bool) -> HttpStacks {
-    let below_curl_release =
-        parse_mpv_version(version).is_some_and(|(major, minor, _)| (major, minor) < (0, 42));
-    if curl_options || !below_curl_release {
-        HttpStacks::LavfAndCurl
-    } else {
-        HttpStacks::LavfOnly
+/// v0.42.0 lines 127, 972-973). It and the `curl-*` options are built only
+/// with libcurl, behind the same `HAVE_LIBCURL` gate (`options/options.c`
+/// v0.42.0 lines 940-941, `stream/stream.c` lines 103-105), so a definite
+/// "no such option" means no curl backend, whatever the version. This also
+/// covers git builds that have the backend while still reporting `0.41.0`
+/// (`MPV_VERSION` at c6833a93 is `0.41.0-UNKNOWN`). An option that exists,
+/// or an answer that is not a clear "not found", turns the guard on.
+pub(super) fn http_stacks(curl_options: CurlOptions) -> HttpStacks {
+    match curl_options {
+        CurlOptions::Absent => HttpStacks::LavfOnly,
+        CurlOptions::Present | CurlOptions::Unknown => HttpStacks::LavfAndCurl,
     }
 }
 
@@ -111,27 +153,58 @@ mod tests {
     }
 
     #[test]
-    fn the_curl_guard_follows_the_version_and_the_options() {
-        for (version, curl_options, expected) in [
-            ("0.41.0", false, HttpStacks::LavfOnly),
-            ("mpv 0.41.2", false, HttpStacks::LavfOnly),
-            // A git build after the curl backend landed still says 0.41.0.
-            ("mpv v0.41.0-412-gabcdef", true, HttpStacks::LavfAndCurl),
-            ("0.41.0", true, HttpStacks::LavfAndCurl),
-            // From 0.42 the guard is required even if the probe saw no option,
-            // so a renamed or missing option fails the launch instead.
-            ("0.42.0", false, HttpStacks::LavfAndCurl),
-            ("0.42.0", true, HttpStacks::LavfAndCurl),
-            ("mpv 0.43.1-dirty", false, HttpStacks::LavfAndCurl),
-            ("1.0.0", false, HttpStacks::LavfAndCurl),
-            ("0.100.0", false, HttpStacks::LavfAndCurl),
-            ("unknown", false, HttpStacks::LavfAndCurl),
+    fn the_curl_guard_follows_the_probed_option() {
+        use libmpv2::Error;
+        let not_found = Error::Raw(mpv_error::PropertyNotFound);
+        let unavailable = Error::Raw(mpv_error::PropertyUnavailable);
+        let option_error = Error::Raw(mpv_error::OptionNotFound);
+        for (error, options, expected) in [
+            (None, CurlOptions::Present, HttpStacks::LavfAndCurl),
+            (Some(&not_found), CurlOptions::Absent, HttpStacks::LavfOnly),
+            (
+                Some(&unavailable),
+                CurlOptions::Unknown,
+                HttpStacks::LavfAndCurl,
+            ),
+            (
+                Some(&option_error),
+                CurlOptions::Unknown,
+                HttpStacks::LavfAndCurl,
+            ),
+            (
+                Some(&Error::InvalidUtf8),
+                CurlOptions::Unknown,
+                HttpStacks::LavfAndCurl,
+            ),
+            (
+                Some(&Error::Null),
+                CurlOptions::Unknown,
+                HttpStacks::LavfAndCurl,
+            ),
         ] {
-            assert_eq!(
-                http_stacks(version, curl_options),
-                expected,
-                "{version} {curl_options}"
-            );
+            assert_eq!(curl_options(error), options, "{error:?}");
+            assert_eq!(http_stacks(options), expected, "{error:?}");
         }
+    }
+
+    #[test]
+    fn a_launch_is_refused_up_front_when_the_curl_guard_cannot_apply() {
+        let runtime = |http, curl_guard_applies| LibmpvRuntime {
+            version: "0.42.0".into(),
+            http,
+            curl_guard_applies,
+        };
+        assert_eq!(
+            runtime(HttpStacks::LavfOnly, false).launch_http().ok(),
+            Some(HttpStacks::LavfOnly)
+        );
+        assert_eq!(
+            runtime(HttpStacks::LavfAndCurl, true).launch_http().ok(),
+            Some(HttpStacks::LavfAndCurl)
+        );
+        assert!(matches!(
+            runtime(HttpStacks::LavfAndCurl, false).launch_http(),
+            Err(MpvError::RedirectGuard)
+        ));
     }
 }

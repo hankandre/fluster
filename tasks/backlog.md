@@ -525,7 +525,8 @@ The triage of every entry added since the 2026-11-15 pass, and the two owner req
 
 ## mpv 0.42 curl guard (fix/mpv-curl-redirects)
 
-- Run the Rust tests on a libmpv 0.42 built with libcurl (Arch once it ships, or a local build) and record the result: `every_handle_refuses_the_curl_backend_when_libmpv_has_one`, `curl_backend_redirects_are_refused_too`, and the `CurlBackendOn` case of `hls_segment_redirects_are_refused_on_nested_opens` have only run their 0.41 (no curl) branch. S.
+- Run the Rust tests on a libmpv 0.42 built with libcurl (Arch once it ships, or a local build) and record the result: `every_handle_refuses_the_curl_backend_when_libmpv_has_one`, `curl_backend_redirects_are_refused_too`, and the `CurlBackendOn` cases of `hls_segment_redirects_are_refused_on_nested_opens` have only run their 0.41 (no curl) branch. S.
+- The probe treats a definite "no such option" for `curl-enabled` as "no curl backend". If mpv ever renames the option without an alias, a curl build would go unguarded. Recheck `curl-enabled` in each mpv release's `options.rst`. S.
+- On the curl path, whether libcurl reads the `http_proxy` environment variable is unverified; Fluster relies on `curl-enabled=no` so curl never runs. S.
 - Under `HAVE_LIBCURL`, mpv 0.42 sets `http_persistent=0` and `http_multiple=1` on lavf HLS opens even with `curl-enabled=no` (`demux/demux_lavf.c` v0.42.0 lines 1575-1588). Check HLS playback and segment requests still behave on 0.42. S.
-- The curl guard refuses a libmpv 0.42 built without libcurl (no `curl-*` options, so the guard cannot be set). Decide whether to allow it when the probe proves the options are absent on 0.42+. S.
 - The release AppImage's bundled libmpv must pass the curl guard tests before it moves to mpv 0.42. S.

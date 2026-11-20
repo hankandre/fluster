@@ -251,7 +251,12 @@ fn every_playback_handle_gets_the_probed_curl_guard() {
             .unwrap_or("");
         assert!(!source.contains("Mpv::new("), "{}", path.display());
         let handles = source.matches("with_initializer(").count();
-        let expected = usize::from(["controller.rs", "version.rs"].contains(&name));
+        let expected = match name {
+            "controller.rs" => 1,
+            // The probe handle and the curl guard check.
+            "version.rs" => 2,
+            _ => 0,
+        };
         assert_eq!(handles, expected, "{}", path.display());
         if name != "network.rs" && name != "version.rs" {
             assert!(
@@ -261,10 +266,18 @@ fn every_playback_handle_gets_the_probed_curl_guard() {
             );
         }
         match name {
-            "version.rs" => assert!(source.contains("with_initializer(probe_options)")),
+            "version.rs" => {
+                assert!(source.contains("with_initializer(probe_options)"));
+                assert!(source.contains("refuse_curl_backend(&init, HttpStacks::LavfAndCurl)?;"));
+            }
             "controller.rs" => {
-                assert!(source.contains("*lock(&self.inner.http) = Some(runtime.http);"));
-                assert!(source.contains("let http = lock(&self.inner.http)"));
+                assert!(source.contains("*lock(&self.inner.runtime) = Some(runtime);"));
+                assert!(source.contains("let http = lock(&self.inner.runtime)"));
+                assert!(source.contains(".launch_http()?;"));
+                // The up-front refusal comes before any server request.
+                let refusal = source.find(".launch_http()?;").expect("launch_http");
+                let prepare = source.find("pending.prepare(").expect("prepare");
+                assert!(refusal < prepare, "the curl guard is checked after prepare");
                 assert!(source.contains(".configure(&init, &request, http)"));
                 assert!(source.contains("initialize_error(error, curl_guard_failed)"));
             }

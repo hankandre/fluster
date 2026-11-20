@@ -64,8 +64,9 @@ fn redirects_are_refused_while_the_header_is_set() {
 }
 
 /// Defence in depth: with the curl backend forced back on, the production
-/// `curl-max-redirects=0` still refuses the redirect. Needs a libmpv with
-/// the curl backend (mpv 0.42+); skipped on one without it.
+/// `curl-max-redirects=0` still refuses the redirect. With curl's limit
+/// raised again, the same redirect is followed, which shows curl served the
+/// open. Needs a libmpv with the curl backend (mpv 0.42+); skipped without.
 #[test]
 fn curl_backend_redirects_are_refused_too() {
     let Some(http) = probed_http_stacks() else {
@@ -75,15 +76,37 @@ fn curl_backend_redirects_are_refused_too() {
         eprintln!("SKIP curl_backend_redirects_are_refused_too: this libmpv has no curl backend");
         return;
     }
-    let Some(mpv) = headless_player(&test_authorization()) else {
-        return;
-    };
-    mpv.set_property("curl-enabled", true)
-        .expect("the curl backend can be turned back on");
-    assert_redirect_not_followed(mpv);
+    for (max_redirects, expect_followed) in [(None, false), (Some(16i64), true)] {
+        let Some(mut mpv) = headless_player(&test_authorization()) else {
+            return;
+        };
+        mpv.set_property("curl-enabled", true)
+            .expect("the curl backend can be turned back on");
+        if let Some(limit) = max_redirects {
+            mpv.set_property("curl-max-redirects", limit)
+                .expect("curl-max-redirects");
+        }
+        let (outcome, followed) = load_redirect(&mut mpv);
+        eprintln!("curl static redirect followed (expected {expect_followed}): {followed}");
+        assert_eq!(followed, expect_followed);
+        if !expect_followed {
+            assert!(matches!(outcome, LoadOutcome::Failed));
+        }
+    }
 }
 
 fn assert_redirect_not_followed(mut mpv: Mpv) {
+    let (outcome, followed) = load_redirect(&mut mpv);
+    assert!(matches!(outcome, LoadOutcome::Failed));
+    assert!(
+        !followed,
+        "the header followed a redirect to another origin"
+    );
+}
+
+/// Loads `/redirect` (302 to another origin) and returns the outcome and
+/// whether the other origin was asked for anything.
+fn load_redirect(mpv: &mut Mpv) -> (LoadOutcome, bool) {
     let (target, target_origin) = listener();
     let target_requests = serve(target, String::new());
     let (server, origin) = listener();
@@ -91,7 +114,7 @@ fn assert_redirect_not_followed(mut mpv: Mpv) {
 
     mpv.command("loadfile", &[&format!("{origin}/redirect"), "replace"])
         .expect("loadfile");
-    assert!(matches!(wait_for_load(&mut mpv), LoadOutcome::Failed));
+    let outcome = wait_for_load(mpv);
 
     let requests = requests.lock().expect("requests mutex").clone();
     let redirect = requests
@@ -100,8 +123,6 @@ fn assert_redirect_not_followed(mut mpv: Mpv) {
         .expect("the redirecting origin was asked");
     assert_single_exact_header(redirect);
     thread::sleep(Duration::from_millis(200));
-    assert!(
-        target_requests.lock().expect("requests mutex").is_empty(),
-        "the header followed a redirect to another origin"
-    );
+    let followed = !target_requests.lock().expect("requests mutex").is_empty();
+    (outcome, followed)
 }

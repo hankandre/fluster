@@ -1,10 +1,10 @@
 //! Session lifecycle: launch, typed playback commands, and shutdown.
 
 use super::events::run_event_loop;
-use super::network::{initialize_error, HardeningError, HttpStacks};
+use super::network::{initialize_error, HardeningError};
 use super::pending::{PendingSlot, PREPARE_DEADLINE};
 use super::properties::observe_properties;
-use super::version::{ensure_numeric_locale, query_libmpv_runtime};
+use super::version::{ensure_numeric_locale, query_libmpv_runtime, LibmpvRuntime};
 use super::{native_trace, MpvError};
 use crate::lock::lock;
 use crate::media_controls::MediaControls;
@@ -35,7 +35,7 @@ struct ControllerInner {
     renderer: Mutex<Result<String, String>>,
     capabilities: Mutex<Option<PlayerCapabilities>>,
     /// Set with `capabilities` from the same probe of the loaded libmpv.
-    http: Mutex<Option<HttpStacks>>,
+    runtime: Mutex<Option<LibmpvRuntime>>,
     media: Mutex<MediaControls>,
 }
 
@@ -47,7 +47,7 @@ impl Default for ControllerInner {
             session_finished: Condvar::new(),
             renderer: Mutex::new(Err(String::new())),
             capabilities: Mutex::new(None),
-            http: Mutex::new(None),
+            runtime: Mutex::new(None),
             media: Mutex::new(MediaControls::default()),
         }
     }
@@ -87,8 +87,8 @@ impl MpvController {
             Err(error) => return Err(MpvError::Renderer(error)),
         };
         let runtime = query_libmpv_runtime()?;
-        *lock(&self.inner.http) = Some(runtime.http);
-        let libmpv_version = runtime.version;
+        let libmpv_version = runtime.version.clone();
+        *lock(&self.inner.runtime) = Some(runtime);
         let capabilities = PlayerCapabilities {
             mode: "native",
             embedded: true,
@@ -111,8 +111,11 @@ impl MpvController {
         self.capabilities()?;
         // Whether this libmpv has a curl backend to refuse, from the probe
         // `capabilities` ran; the loaded libmpv cannot change in a process.
-        let http = lock(&self.inner.http)
-            .ok_or_else(|| MpvError::Initialize("the libmpv probe did not run".into()))?;
+        // A guard that cannot apply refuses here, before any server request.
+        let http = lock(&self.inner.runtime)
+            .as_ref()
+            .ok_or_else(|| MpvError::Initialize("the libmpv probe did not run".into()))?
+            .launch_http()?;
         // One launch at a time: the pending marker refuses a second launch
         // until this one becomes a session or fails, and `stop` cancels it.
         let pending = {
