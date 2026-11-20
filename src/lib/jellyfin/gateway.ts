@@ -20,7 +20,7 @@ import { toBrowseCards, toEpisodeCards, toGenres, toNextEpisode, toHomeLibraries
 import { stripCredentialQuery } from "./credential-query";
 import { deriveDeviceId } from "./device-id";
 import { limitIsOnlyReason } from "./client-limit";
-import { FLUSTER_PROFILE, MAX_BITRATE } from "./device-profile";
+import { OCTAVE_PROFILE, MAX_BITRATE } from "./device-profile";
 import { AccountConfigurationUnreadable, isPlainRecord, toAccountLanguages, toAccountLanguageSettings, toLanguageCultures, withLanguageChange } from "./account-languages";
 import { toItemDetail } from "./item-detail";
 import { toMediaSegments, type MediaSegmentsResponse } from "./media-segments";
@@ -41,6 +41,7 @@ import type {
   ServerInfo,
   UserDto,
 } from "./types";
+import { APP_NAME } from "../../domain/app-identity";
 
 export const CONTROL_REQUEST_TIMEOUT_MS = 15_000;
 export const REPORT_REQUEST_TIMEOUT_MS = 3_000;
@@ -70,7 +71,7 @@ export interface ClientIdentity {
 
 // Deliberately not a real version, so a path that forgets the identity is
 // visible on the server.
-const UNIDENTIFIED_CLIENT: ClientIdentity = { version: "0.0.0", deviceName: "Fluster" };
+const UNIDENTIFIED_CLIENT: ClientIdentity = { version: "0.0.0", deviceName: APP_NAME };
 
 // Jellyfin binds the Quick Connect token to the DeviceId sent with Initiate
 // (QuickConnectManager.cs:72-93, 154-163), before any user is known, so a
@@ -80,7 +81,7 @@ const QUICK_CONNECT_DEVICE_USER = "#quick-connect";
 
 function createClient(client: ClientIdentity, deviceId: string): Jellyfin {
   return new Jellyfin({
-    clientInfo: { name: "Fluster", version: client.version },
+    clientInfo: { name: APP_NAME, version: client.version },
     deviceInfo: { name: client.deviceName, id: deviceId },
   });
 }
@@ -91,7 +92,7 @@ function buildAuthorizationHeader(client: ClientIdentity, serverUrl: string, dev
 
 function createSdkApi(client: ClientIdentity, serverUrl: string, deviceId: string, accessToken?: string): Api {
   // The SDK's generated APIs apply basePath and authorization through their
-  // Configuration object. Fluster's narrow gateway uses the raw Axios client,
+  // Configuration object. Octave's narrow gateway uses the raw Axios client,
   // so it must provide those values on an isolated instance explicitly.
   // No request follows a redirect (docs/decisions/0001, edge case 8): a
   // server or anyone on the path must not be able to move the token, or the
@@ -121,9 +122,9 @@ export const PLAYBACK_INFO_FLAGS = Object.freeze({
 });
 
 export const PUBLIC_HTTP_REFUSED_MESSAGE =
-  "This address uses plain HTTP on the internet, so Fluster will not connect. Use HTTPS, or HTTP only for this device or a private home-network address such as 192.168.x.x, a name.local name, or a name.home.arpa name.";
+  "This address uses plain HTTP on the internet, so Octave will not connect. Use HTTPS, or HTTP only for this device or a private home-network address such as 192.168.x.x, a name.local name, or a name.home.arpa name.";
 export const REDIRECT_REFUSED_MESSAGE =
-  "The server answered with a redirect, which Fluster does not follow. Enter the server's final address instead.";
+  "The server answered with a redirect, which Octave does not follow. Enter the server's final address instead.";
 export const UNENCRYPTED_NOT_CONFIRMED_MESSAGE =
   "Confirm the unencrypted connection to this server before signing in.";
 
@@ -229,7 +230,7 @@ export class JellyfinGateway {
     this.plainHttp = url.protocol === "http:";
     // Before login there is no user, so the unauthenticated API uses a
     // throwaway device id that is never sent with credentials.
-    this.api = transport ? undefined : createSdkApi(this.client, this.serverUrl, "fluster-unauthenticated");
+    this.api = transport ? undefined : createSdkApi(this.client, this.serverUrl, "octave-unauthenticated");
     this.transport = transport ?? (this.api!.axiosInstance as HttpTransport);
   }
 
@@ -246,10 +247,10 @@ export class JellyfinGateway {
     const version = data.Version;
     const parsed = parseServerVersion(version);
     if (!parsed || !isSupportedServerVersion(parsed)) {
-      throw new SignInFailure("unsupported-version", `Fluster needs Jellyfin 10.11 or newer; this server reports ${version}.`);
+      throw new SignInFailure("unsupported-version", `Octave needs Jellyfin 10.11 or newer; this server reports ${version}.`);
     }
     if (this.needsConsentForPlainHttp() && !data.Id) {
-      throw new SignInFailure("unexpected-response", "The server did not report its Id, so Fluster cannot remember an unencrypted connection to it.");
+      throw new SignInFailure("unexpected-response", "The server did not report its Id, so Octave cannot remember an unencrypted connection to it.");
     }
     this.serverId = data.Id;
     return {
@@ -404,7 +405,7 @@ export class JellyfinGateway {
     this.deviceId = undefined;
     const transport = this.transport;
     if (this.api) {
-      this.api = createSdkApi(this.client, this.serverUrl, "fluster-unauthenticated");
+      this.api = createSdkApi(this.client, this.serverUrl, "octave-unauthenticated");
       this.transport = this.api.axiosInstance as HttpTransport;
     }
     if (!accessToken || !deviceId) return;
@@ -944,7 +945,7 @@ export class JellyfinGateway {
     return mbps === undefined ? MAX_BITRATE : mbpsToBitsPerSecond(mbps);
   }
 
-  // POST /Items/{id}/PlaybackInfo with the Fluster DeviceProfile and the
+  // POST /Items/{id}/PlaybackInfo with the Octave DeviceProfile and the
   // decision 0002 flags in body and query. AlwaysBurnInSubtitleWhenTranscoding
   // is body-only: it is not a query parameter in the 10.11.7 or 12.4 OpenAPI.
   // AudioStreamIndex and SubtitleStreamIndex go in both too (PlaybackInfoDto
@@ -969,7 +970,7 @@ export class JellyfinGateway {
       MaxStreamingBitrate: maxStreamingBitrate,
       ...streams,
       ...(mediaSourceId ? { MediaSourceId: mediaSourceId } : {}),
-      DeviceProfile: { ...FLUSTER_PROFILE, MaxStreamingBitrate: maxStreamingBitrate },
+      DeviceProfile: { ...OCTAVE_PROFILE, MaxStreamingBitrate: maxStreamingBitrate },
     };
     const { data } = await this.post<PlaybackInfoResponse>(`/Items/${encodeURIComponent(itemId)}/PlaybackInfo`, request, {
       params: { ...flags, UserId: userId, StartTimeTicks: startPositionTicks, MaxStreamingBitrate: maxStreamingBitrate, ...streams },

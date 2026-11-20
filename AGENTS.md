@@ -1,6 +1,6 @@
-# Fluster agent rules
+# Octave agent rules
 
-Fluster is a Jellyfin client that plays the original file whenever it can and shows every server conversion: Tauri 2 + React/TypeScript + Rust with embedded libmpv.
+Octave is a Jellyfin client that plays the original file whenever it can and shows every server conversion: Tauri 2 + React/TypeScript + Rust with embedded libmpv.
 
 ## Read first
 
@@ -17,7 +17,7 @@ Fluster is a Jellyfin client that plays the original file whenever it can and sh
 - Add tasks to `tasks/prd.json` only in a Fable 5.2 product-review pass that triages `tasks/backlog.md` and gives each new task a priority and a place.
 - Never edit acceptance items without human approval.
 - Link the task id in commits, plans, and PRs.
-- Read the dogfood server URL from `FLUSTER_DOGFOOD_SERVER`; never commit it.
+- Read the dogfood server URL from `OCTAVE_DOGFOOD_SERVER`; never commit it.
 
 
 ## Subagents
@@ -51,7 +51,7 @@ Fluster is a Jellyfin client that plays the original file whenever it can and sh
 - Never request conversion for a source that passes the direct-play rules in `ARCHITECTURE.md` §3.
 - Show every server conversion and its reason in the player.
 - Send the same PlaybackInfo flags in the request body and the query string.
-- Send the Fluster DeviceProfile with every PlaybackInfo request.
+- Send the Octave DeviceProfile with every PlaybackInfo request.
 - Never add codec or container conditions to the DeviceProfile.
 - Use a `TranscodingUrl` only after Playback Negotiation validates and rebuilds it.
 - Never let an HLS master playlist list subtitle or trickplay renditions.

@@ -16,7 +16,7 @@
 //   folder with no media request and no job.
 //
 // Prerequisites: pnpm samples:generate && pnpm fixture:up && pnpm fixture:setup
-// FLUSTER_CONVERSION_SAMPLES=1 (for generation and for this run) adds the
+// OCTAVE_CONVERSION_SAMPLES=1 (for generation and for this run) adds the
 // dvdsub (playable) and ISO (conversion) samples.
 // Usage: pnpm test:tripwire
 // Output: a summary table on stdout and the full JSON log in
@@ -67,10 +67,10 @@ const SERVERS = [
 ];
 
 // Items are found by path, because metadata matching renames some titles.
-// user: "restricted" plays as fluster-noconv (setup-servers.sh), whose policy
+// user: "restricted" plays as octave-noconv (setup-servers.sh), whose policy
 // forbids video and audio transcoding and remuxing.
 // limitMbps: the local streaming limit the gateway reads for this run; absent
-// is "No limit". optIn: generated only with FLUSTER_CONVERSION_SAMPLES=1.
+// is "No limit". optIn: generated only with OCTAVE_CONVERSION_SAMPLES=1.
 interface Sample {
   name: string;
   path: string;
@@ -106,7 +106,7 @@ const SAMPLES: Sample[] = [
   // no TranscodeReasons for this folder on 10.11.7, so the reason checked is
   // the indicator's, which falls back to "the server needs to convert this file".
   { name: "bluray-folder", path: BLURAY, expect: { kind: "conversion", methods: BOTH_METHODS } },
-  // 0.2 Mbit/s is below the sample's ~0.5 Mbit/s and below Fluster's lowest
+  // 0.2 Mbit/s is below the sample's ~0.5 Mbit/s and below Octave's lowest
   // offered limit (2 Mbit/s), so this run injects its own limit store; the
   // gateway still reads it the way it reads the user's setting.
   {
@@ -121,7 +121,7 @@ const SAMPLES: Sample[] = [
 
 const AFTER_STOP_GRACE_MS = 1500;
 const LOG_FLUSH_MS = 2000;
-const conversionSamplesEnabled = process.env.FLUSTER_CONVERSION_SAMPLES === "1";
+const conversionSamplesEnabled = process.env.OCTAVE_CONVERSION_SAMPLES === "1";
 const activeSamples = SAMPLES.filter((sample) => conversionSamplesEnabled || !sample.optIn);
 
 function readCredentials(): Record<string, string> {
@@ -340,7 +340,7 @@ function emptyResult(sample: Sample, failure?: string): SampleResult {
     path: sample.path,
     status: "FAIL",
     expect: sample.expect,
-    user: sample.user ?? "fluster-test",
+    user: sample.user ?? "octave-test",
     streamingLimit: sample.limitMbps === undefined ? "no limit" : `${sample.limitMbps} Mbit/s (local)`,
     failures: failure ? [failure] : [],
     notes: [],
@@ -400,7 +400,7 @@ async function runServer(server: (typeof SERVERS)[number], credentials: Record<s
     const limits = sample.limitMbps === undefined ? new MemoryStreamingLimits() : fixedLimit(sample.limitMbps);
     const gateway = new JellyfinGateway(url, undefined, randomUUID(), new MemoryLanHttpConfirmations(), limits, {
       version: (JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as { version: string }).version,
-      deviceName: "Fluster Linux",
+      deviceName: "Octave Linux",
     });
     const connection = await gateway.connect();
     result.version ??= connection.version;

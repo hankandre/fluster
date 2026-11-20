@@ -8,11 +8,11 @@ import type { HttpTransport, PlaybackInfoResponse } from "./types";
 
 // The HLS plans this negotiation builds from every recorded conversion
 // (P10-02 fixtures, both servers), on a server with and without a base path,
-// are the shared vectors in tests/fixtures/hls-master-urls.json. Rust
-// deserializes each plan as its launch request and re-checks the master URL
-// (`master_url_tests.rs`), so the TypeScript rebuild and the Rust validator
-// cannot drift (P10-04). Regenerate after a deliberate change with
-// FLUSTER_WRITE_HLS_VECTORS=1 pnpm vitest run hls-rust-vectors.
+// are the shared vectors in tests/fixtures/hls-master-urls.json. Every native
+// validator deserializes each plan as its launch request and re-checks the
+// master URL (Kotlin in T8-08), so the TypeScript rebuild and the native
+// validators cannot drift. Regenerate after a deliberate change with
+// OCTAVE_WRITE_HLS_VECTORS=1 pnpm vitest run hls-master-url-vectors.
 const VECTOR_FILE = join(__dirname, "../../../tests/fixtures/hls-master-urls.json");
 const FIXTURE_ROOT = join(__dirname, "../../../tests/fixtures/jellyfin");
 
@@ -80,7 +80,7 @@ async function buildVectors(): Promise<Vector[]> {
   return vectors;
 }
 
-describe("HLS vectors shared with Rust", () => {
+describe("HLS vectors shared with every native validator", () => {
   it("are the plans this negotiation builds today", async () => {
     const vectors = await buildVectors();
     for (const { name, plan } of vectors) {
@@ -89,7 +89,7 @@ describe("HLS vectors shared with Rust", () => {
     }
     // Both base paths reach the vectors: the master URL keeps `/jellyfin`.
     expect(vectors.some(({ plan }) => new URL(plan.streamUrl).pathname.startsWith("/jellyfin/videos/"))).toBe(true);
-    if (process.env.FLUSTER_WRITE_HLS_VECTORS === "1") {
+    if (process.env.OCTAVE_WRITE_HLS_VECTORS === "1") {
       // The description and the `refusals` (hls-url.test.ts) are kept as they are.
       const { description, refusals } = JSON.parse(readFileSync(VECTOR_FILE, "utf8")) as { description: string; refusals: unknown[] };
       writeFileSync(VECTOR_FILE, `${JSON.stringify({ description, vectors, refusals }, null, 2)}\n`);

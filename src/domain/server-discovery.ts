@@ -21,7 +21,7 @@ export interface DiscoveredServer {
 
 export interface DiscoveryResult {
   servers: DiscoveredServer[];
-  // Replies whose address Fluster refused (ADR 0001 decision 9).
+  // Replies whose address Octave refused (ADR 0001 decision 9).
   refused: number;
   // Allowed replies that did not fit in the list.
   dropped: number;
@@ -33,9 +33,9 @@ export interface ServerDiscovery {
   discover(): Promise<DiscoveryResult>;
 }
 
-export const DISCOVERY_FAILED_MESSAGE = "Fluster could not search this network for servers.";
+export const DISCOVERY_FAILED_MESSAGE = "Octave could not search this network for servers.";
 export const DISCOVERED_ID_MISMATCH_MESSAGE =
-  "The server at this address is not the one that answered on your network. Fluster did not connect. Enter the server's address yourself.";
+  "The server at this address is not the one that answered on your network. Octave did not connect. Enter the server's address yourself.";
 
 // Jellyfin reports the same system id in discovery and /System/Info/Public;
 // compare without case or dashes.

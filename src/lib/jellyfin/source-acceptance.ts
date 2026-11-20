@@ -150,7 +150,7 @@ function streamsOf(source: MediaSourceDto, type: string): MediaStreamDto[] {
 }
 
 // DirectStream only when the URL shows that the server copies video and
-// audio; anything uncertain is Transcode, so Fluster never claims original
+// audio; anything uncertain is Transcode, so Octave never claims original
 // quality it cannot show (decision 0002 "Never silent"). The limits mirror
 // Jellyfin's EncodingHelper.CanStreamCopyVideo and CanStreamCopyAudio
 // (v10.11.7 lines 2317-2560), read from the URL the server will be sent. The

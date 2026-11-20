@@ -1,6 +1,6 @@
 ---
 name: planner
-description: Turn a Fluster brief into an execution plan or decision record. Use for work spanning more than one session or domain, or for architecture choices.
+description: Turn a Octave brief into an execution plan or decision record. Use for work spanning more than one session or domain, or for architecture choices.
 model: opus
 ---
 

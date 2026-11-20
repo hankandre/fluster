@@ -1,8 +1,8 @@
-# Fluster
+# Octave
 
-Fluster is a Jellyfin 10.11 client that plays the original file whenever it can and shows every server conversion. The current beta target is Linux x86_64 on Wayland. It asks Jellyfin for the untouched original file and decodes it locally with embedded libmpv. Video is drawn by a native OpenGL surface beneath a transparent Tauri WebView, while React renders the in-shell controls and overlays.
+Octave is a Jellyfin 10.11 client that plays the original file whenever it can and shows every server conversion. The current beta target is Linux x86_64 on Wayland. It asks Jellyfin for the untouched original file and decodes it locally with embedded libmpv. Video is drawn by a native OpenGL surface beneath a transparent Tauri WebView, while React renders the in-shell controls and overlays.
 
-When mpv cannot play the original, Fluster falls back to server repackaging (direct stream) or conversion (transcode) and shows which one and why in the player ([Decision 0002](docs/decisions/0002-server-transcoding-fallback.md); remaining work in `docs/plans/active/002-transcoding-fallback-and-parity.md`).
+When mpv cannot play the original, Octave falls back to server repackaging (direct stream) or conversion (transcode) and shows which one and why in the player ([Decision 0002](docs/decisions/0002-server-transcoding-fallback.md); remaining work in `docs/plans/active/002-transcoding-fallback-and-parity.md`).
 
 ## Current vertical slice
 
@@ -20,7 +20,7 @@ When mpv cannot play the original, Fluster falls back to server repackaging (dir
 
 GPU selection is automatic. There is no executable or GPU selector, and the desktop client never opens a separate player window.
 
-X11, Windows, ARM64 Linux, Flatpak, downloads, persistent login, live TV, and disc/ISO media are not in this slice. Server conversion fallback and an Android TV shell are planned next. Fluster is a video client: music, audiobooks, and photos are out of scope. The macOS renderer remains experimental and is outside this beta's validation claim.
+X11, Windows, ARM64 Linux, Flatpak, downloads, persistent login, live TV, and disc/ISO media are not in this slice. Server conversion fallback and an Android TV shell are planned next. Octave is a video client: music, audiobooks, and photos are out of scope. The macOS renderer remains experimental and is outside this beta's validation claim.
 
 ## Develop
 

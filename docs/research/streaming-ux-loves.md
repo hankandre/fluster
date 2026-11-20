@@ -25,7 +25,7 @@ It is the companion to [`streaming-ux-gripes.md`](streaming-ux-gripes.md) and us
 
 Ordered by the strength of the evidence that people use the feature or choose by it. Task ids are from `tasks/prd.json`.
 
-| # | Loved feature | Verdict | Strength | Applies to Fluster? | Fluster today |
+| # | Loved feature | Verdict | Strength | Applies to Octave? | Octave today |
 |---|---|---|---|---|---|
 | L1 | What you were watching, pinned first | Drives choice | Strong | Yes | Have; P16-02 |
 | L2 | It starts fast and does not stall or crash | Drives choice | Strong | Yes | Partly measured; **P3-28 added** |
@@ -70,7 +70,7 @@ The short reading: **the features with the best evidence are the plain ones**: t
 - *Love.* Hub 2026 tested "I get logged out of the TV streaming service or app unexpectedly" and "TV apps make it hard to log back and often require resetting passwords, getting a code, etc." Both sit in its "App performance" group, the group it describes as rare but with "a big impact".
 - *Use and choice.* 39% of viewers aged 13 to 24 "say that difficult logins make them use a TV service less often", against 25% of older viewers (Hub 2026).
 - *Verdict.* Drives choice, as an absence: people use a service less when it is hard to get back in.
-- *Applies?* Yes. Fluster signs out when the window closes today.
+- *Applies?* Yes. Octave signs out when the window closes today.
 - *API.* None beyond sign-in. Jellyscale: sign-in by name is implemented.
 
 **L15. Signing in on a TV without typing.**
@@ -115,14 +115,14 @@ The short reading: **the features with the best evidence are the plain ones**: t
 **L12. Hide rows you do not use.**
 - *Love.* 29% love "Remove things you don't use (like 'Trending Now' or 'Leaving Soon') so you don't see them again" (Hub 2026). "New or Improved Home Screen Sections" has 172 votes on Jellyfin's tracker (https://features.jellyfin.org/posts/1986).
 - *Use and choice.* 47% would absolutely use it, the fourth-highest use figure of the 13, and 37% say it makes them more likely to keep the subscription (Hub 2026).
-- *Verdict.* Used and liked, on intent. The examples respondents were shown are a service's promotional rows, which Fluster does not have.
-- *Applies?* Partly. Fluster's rows are the viewer's own and one per library.
+- *Verdict.* Used and liked, on intent. The examples respondents were shown are a service's promotional rows, which Octave does not have.
+- *Applies?* Partly. Octave's rows are the viewer's own and one per library.
 - *API.* None needed; a preference. Jellyfin's `DisplayPreferences` could carry it across devices (**implemented in Jellyscale**).
 
 **L13. Rows that group similar titles.**
 - *Love and use.* The Morning Consult figure above (82% likely to use groupings). Netflix's home page is where "2 of every 3 hours streamed" are found (gripes §5, row 8). Hub 2026 found "content categories are too broad to be useful" a frequent, low-frustration problem.
 - *Verdict.* Used and liked on services; the personal-library evidence is absent.
-- *Applies?* Yes. Fluster has "Latest in {library}" rows and plans genre browsing from the library (P16-06).
+- *Applies?* Yes. Octave has "Latest in {library}" rows and plans genre browsing from the library (P16-06).
 - *API.* `GET /Genres`, `GET /Items?genreIds=`. **Jellyscale: `/Genres` is a stub.**
 
 **L27. Top 10 and popularity lists.**
@@ -136,10 +136,10 @@ The short reading: **the features with the best evidence are the plain ones**: t
 ### 2.3 Search
 
 - **How much viewing starts in search.** No primary figure newer than Netflix's 2015 "the remaining 20% comes from search" was found (gripes §2.8). 43% of viewers aged 13 to 24 and 35% of older viewers "decide what to watch in advance" (Hub 2026), which means many sessions begin with a title in mind.
-- **Search across services.** 70% agree "I want a way to search across all my services" (Hub 2026); two-thirds want universal search (Horowitz, 2,200 adults, 2022) (https://www.nexttv.com/news/survey-streaming-dominates-video-viewing). It answers a problem a single library does not have. Its nearest relative in Fluster is search across several servers (P15-08).
+- **Search across services.** 70% agree "I want a way to search across all my services" (Hub 2026); two-thirds want universal search (Horowitz, 2,200 adults, 2022) (https://www.nexttv.com/news/survey-streaming-dominates-video-viewing). It answers a problem a single library does not have. Its nearest relative in Octave is search across several servers (P15-08).
 - **L30. Voice search.** Loud praise, little use: 10.9% had used voice search to find something to watch (TiVo, Q2 2017; snippet) (https://www.advanced-television.com/2017/09/27/tivo-viewers-will-pay-more-for-sport-specific-networks/); about half of those who have it do not use it (TiVo, Q4 2017; snippet) (https://www.nexttv.com/news/about-half-consumers-voice-search-actually-use-it-tivo-study-417042). Hub 2026 lists "Voice activated search doesn't accurately pull up the show or movie I ask for" among its problems. All the usage figures are old.
 - **Search by mood, and AI search.** "Built-in AI search" is loved by 27% and would be used by 40% (Hub 2026): mid-table. 20% of those who look for more information about a title already "ask ChatGPT or AI about it" (Hub 2026, n=1,633). Nothing shows use inside a TV app.
-- *Applies?* Exact search over one library is already Fluster's (P3-07). *API:* `GET /Items?searchTerm=`; **Jellyscale answers 404 for `/Search/Hints`**, which Fluster's suggestions call (`tasks/backlog.md`).
+- *Applies?* Exact search over one library is already Octave's (P3-07). *API:* `GET /Items?searchTerm=`; **Jellyscale answers 404 for `/Search/Hints`**, which Octave's suggestions call (`tasks/backlog.md`).
 
 ### 2.4 Detail pages, episode lists, and seasons
 
@@ -154,9 +154,9 @@ The short reading: **the features with the best evidence are the plain ones**: t
 - *Verdict.* Nice but not decisive.
 - *Applies?* Yes, only from what the server holds. *API:* `CommunityRating` and `CriticRating` on the item.
 
-**Episode lists and season pickers.** No research was found: unverified. One usability study reported that finding an individual episode was the hardest task it set, and that Netflix "required many clicks to find the list of episodes" (UserTesting, 2018; snippet) (https://de.slideshare.net/UserTestingDotCom/the-streaming-media-cx-index-what-customers-expect-from-svod-experiences). Opinion pieces prefer season tabs to a dropdown (snippet) (https://uxdesign.cc/does-hbo-max-have-good-ux-59646edbc2f7). Fluster's series page already uses tabs and a one-press next episode.
+**Episode lists and season pickers.** No research was found: unverified. One usability study reported that finding an individual episode was the hardest task it set, and that Netflix "required many clicks to find the list of episodes" (UserTesting, 2018; snippet) (https://de.slideshare.net/UserTestingDotCom/the-streaming-media-cx-index-what-customers-expect-from-svod-experiences). Opinion pieces prefer season tabs to a dropdown (snippet) (https://uxdesign.cc/does-hbo-max-have-good-ux-59646edbc2f7). Octave's series page already uses tabs and a one-press next episode.
 
-**Several versions of a film.** Plex's "Multiple Cuts Of Movie" request reached 1,459 votes and was implemented (https://forums.plex.tv/c/feature-suggestions/8/l/votes.json); Jellyfin's version-handling request has 266 (https://features.jellyfin.org/posts/174). Fluster has the version picker (P3-08).
+**Several versions of a film.** Plex's "Multiple Cuts Of Movie" request reached 1,459 votes and was implemented (https://forums.plex.tv/c/feature-suggestions/8/l/votes.json); Jellyfin's version-handling request has 266 (https://features.jellyfin.org/posts/174). Octave has the version picker (P3-08).
 
 ### 2.5 Playback controls
 
@@ -207,7 +207,7 @@ The short reading: **the features with the best evidence are the plain ones**: t
 - *Love.* 33% love "Use your phone instead of the TV remote to make typing in a TV app easier" (Hub 2026).
 - *Use and choice.* 49% would absolutely use it, third of 13; 43% say it makes them more likely to keep the subscription; Hub's composite puts it third and in its "build now" tier, and first-tier for viewers aged 35 and over (Hub 2026). No measured usage was found.
 - *Verdict.* Used and liked, on intent only. It answers the typing problem (gripes §2.14).
-- *Applies?* When Fluster runs on a TV. Jellyfin already lets one client control another's session, so a phone running any Jellyfin app can be the remote once Fluster accepts commands.
+- *Applies?* When Octave runs on a TV. Jellyfin already lets one client control another's session, so a phone running any Jellyfin app can be the remote once Octave accepts commands.
 - *API.* `POST /Sessions/Capabilities/Full` and the remote-control messages on the socket. **Jellyscale: `/Sessions` and `/socket` are implemented; both Capabilities routes are stubs.**
 
 **Carrying on from one device to another.** 32% love "Start a show on your phone and continue at the same point on TV"; 42% would use it (Hub 2026). On Jellyfin this is the resume position, which the server already keeps. It is L3.
@@ -231,7 +231,7 @@ The short reading: **the features with the best evidence are the plain ones**: t
 **L26. Thumbs and "two thumbs up".**
 - *Love and use.* Replacing stars with thumbs gave "an astounding 200% increase in ratings activity" in a test with hundreds of thousands of members (Netflix, quoted in https://www.tubefilter.com/2017/04/05/netflix-thumbs-up-down-ratings/). Netflix said of "two thumbs up" that members wanted to tell liked from loved; it published no figures (https://techcrunch.com/2022/04/11/netflix-adds-a-two-thumbs-up-button-in-effort-to-learn-what-users-love-not-just-like/). Netflix's own product lead: "We made ratings less important because the implicit signal of your behavior is more important" (snippet) (https://www.businessinsider.in/netflix-will-kill-its-5-star-rating-system-in-favor-of-thumbs-up-thumbs-down-heres-why/amp_articleshow/57679521.cms). "Personal ratings" has 461 votes on Jellyfin's tracker (https://features.jellyfin.org/posts/1134). Hub 2026 found "I can only give a thumbs up or thumbs down" among the least frustrating problems.
 - *Verdict.* Nice but not decisive. A simpler control gets used more, and the vendor still trusts behaviour over it. No survey shows that viewers value rating things.
-- *Applies?* Weakly. A rating feeds a recommender, and Fluster's first one reads what the viewer finished and favourited.
+- *Applies?* Weakly. A rating feeds a recommender, and Octave's first one reads what the viewer finished and favourited.
 - *API.* Jellyfin has `Likes` on user data. **Jellyscale answers 404 for likes and ratings, by decision.**
 
 **L23. A watch history.**
@@ -258,7 +258,7 @@ The short reading: **the features with the best evidence are the plain ones**: t
 
 **L5. Plays the file as it is.**
 - *Love.* Infuse holds 4.67 from 28,627 ratings on the US App Store and sells a $99.99 lifetime licence (https://apps.apple.com/us/app/infuse/id1136220934); Swiftfin, the free Jellyfin client on the same devices, holds 3.76 from 278 (Apple lookup API, 2026-11-12). Firecore says Infuse "has long been known for its ability to directly play almost any video format" (https://firecore.com/blog/infuse-85-smarter-streaming). The Jellyfin project's own write-up leads with "direct playback (no transcoding required) for almost all formats" (https://jellyfin.org/posts/client-infuse). A forum user picks it because the official Apple TV app "doesn't play in Dolby Vision" (snippet) (https://forum.jellyfin.org/t-how-can-i-watch-dv-on-apple-tv-4k).
-- *Use and choice.* People pay for a third-party player when free ones exist. Unwanted transcoding is the first recurring complaint in the Jellyfin clients' trackers ([`jellyfin-clients.md`](jellyfin-clients.md) §5). In July 2026 Infuse added optional server transcoding for slow links (Firecore, above), which is the same order Fluster uses: original first, conversion as a stated fallback.
+- *Use and choice.* People pay for a third-party player when free ones exist. Unwanted transcoding is the first recurring complaint in the Jellyfin clients' trackers ([`jellyfin-clients.md`](jellyfin-clients.md) §5). In July 2026 Infuse added optional server transcoding for slow links (Firecore, above), which is the same order Octave uses: original first, conversion as a stated fallback.
 - *Limits.* No survey asks why Infuse's users bought it, and Firecore publishes no usage. The rating gap also reflects polish and age.
 - *Verdict.* **Drives choice among personal-media users**, on paid adoption and reviews: medium strength.
 
@@ -268,7 +268,7 @@ The short reading: **the features with the best evidence are the plain ones**: t
 - *Verdict.* **Drives choice for a small group; nice but not decisive for most.** The home-theatre persona in `PRODUCT.md` chooses by it. The vote counts say that persona is a minority of Jellyfin's users.
 - *API.* None; the file's own streams.
 
-**L18. Honest labels.** "Stats for nerds" has 219 votes for the Android TV app ([`jellyfin-clients.md`](jellyfin-clients.md) §5), and the Plex Atmos-label request above has 701. Nice but not decisive; Fluster already leads here.
+**L18. Honest labels.** "Stats for nerds" has 219 votes for the Android TV app ([`jellyfin-clients.md`](jellyfin-clients.md) §5), and the Plex Atmos-label request above has 701. Nice but not decisive; Octave already leads here.
 
 ### 2.10 Accessibility and polish
 
@@ -293,11 +293,11 @@ What was found on switching and preference, as distinct from praise for a featur
 ## 4. What the weighing shows
 
 1. **The plain things win.** Of the 32 features, the three with evidence of choice are that the app opens fast on what you were watching, remembers your place and your sign-in, and plays without stalling. None is a feature a service advertises.
-2. **Fluster's plan already matches the top of the list.** L1, L3, L5 to L9 are built or are tasks. The gripes study reached the same first rows from complaints. Two independent readings agreeing is the strongest result here.
-3. **Three gaps appear.** Startup is promised and not measured (L2). Saved titles are planned for the nav, where the survey says they get lost (L4). A phone as the remote ranks in the top tier for TVs and Fluster's task for it sits in its last milestone (L10).
+2. **Octave's plan already matches the top of the list.** L1, L3, L5 to L9 are built or are tasks. The gripes study reached the same first rows from complaints. Two independent readings agreeing is the strongest result here.
+3. **Three gaps appear.** Startup is promised and not measured (L2). Saved titles are planned for the nav, where the survey says they get lost (L4). A phone as the remote ranks in the top tier for TVs and Octave's task for it sits in its last milestone (L10).
 4. **Stated intent overstates.** Downloads: 54% "more likely to subscribe" against about 3% using them. Voice search: half of those who have it do not use it. Watch lists: loved, and three-quarters of saved titles untouched. The Hub figures are the same kind of evidence and should be read with that discount.
-5. **Several loved features need a crowd or a catalogue Fluster does not have.** Top 10, universal search, "leaving soon", and collaborative ratings do not carry over.
-6. **Quality drives a minority.** Direct play matters to personal-media users enough to pay for. HDR and passthrough matter intensely to few. Fluster's identity rests on the first; the second is a persona, not the majority.
+5. **Several loved features need a crowd or a catalogue Octave does not have.** Top 10, universal search, "leaving soon", and collaborative ratings do not carry over.
+6. **Quality drives a minority.** Direct play matters to personal-media users enough to pay for. HDR and passthrough matter intensely to few. Octave's identity rests on the first; the second is a persona, not the majority.
 7. **Much is simply unmeasured.** No usage data was found for skip recap, skip credits, the countdown, scrubbing thumbnails, profiles, kids' profiles, audio description, subtitle styling, casting, or history pages.
 
 ## 5. Adopt, already have, don't adopt
@@ -356,6 +356,6 @@ New work the evidence supports. The first needs no owner choice and is a task; t
 | Search across services; AI search | The first answers a problem one library does not have. The second is stage 3 of the viewer profile, not a feature to add now. |
 | L16 Downloads on the desktop, ahead of their milestone | The evidence is not overwhelming for a desktop: stated intent, phone-centred use. Keep P8-03 where it is. It is the top request for a phone client and should lead that shell's list. |
 | L28 Watch together, ahead of its milestone | Loud praise, little measured use. Keep P8-02 where it is. |
-| L12 Hiding rows, now | Fluster has no promotional rows to hide, and the owner chose one fixed order. The intent figure is new evidence for the backlog entry. |
+| L12 Hiding rows, now | Octave has no promotional rows to hide, and the owner chose one fixed order. The intent figure is new evidence for the backlog entry. |
 | L32 Picture-in-picture, a sleep timer, dialogue boost, X-Ray | No usage data at all. Backlog, not tasks. |
 | Skipping intros without asking, as the default | 45% enjoy title sequences. The button stays the default, as decided. |

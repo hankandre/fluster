@@ -1,6 +1,6 @@
 ---
 name: verify
-description: Run Fluster's checks and record evidence before asking for review. Use after finishing a milestone or before opening a PR.
+description: Run Octave's checks and record evidence before asking for review. Use after finishing a milestone or before opening a PR.
 ---
 
 # Verify

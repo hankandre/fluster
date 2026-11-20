@@ -1,4 +1,4 @@
-// Plays a conversion plan the way Fluster's native player does (decision
+// Plays a conversion plan the way Octave's native player does (decision
 // 0002, E1-B): Rust fetches the master and every variant playlist with the
 // Authorization header, libmpv then fetches the init section and segments
 // with the same header, and the coordinator reports start once the file has

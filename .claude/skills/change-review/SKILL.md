@@ -1,6 +1,6 @@
 ---
 name: change-review
-description: Review a Fluster diff in a fresh context against its brief, invariants, and domain rules. Use for every change before the human gate; never on a change you implemented.
+description: Review a Octave diff in a fresh context against its brief, invariants, and domain rules. Use for every change before the human gate; never on a change you implemented.
 ---
 
 # Change review

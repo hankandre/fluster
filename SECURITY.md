@@ -9,8 +9,8 @@ Never include real Jellyfin access tokens, passwords, or authenticated URLs in a
 ## In scope
 
 - Leaks of Jellyfin tokens, passwords, authenticated URLs, or play-session IDs
-- Any path that makes the Jellyfin server transcode or remux a file Fluster could play as stored, or converts without showing it
-- Ways to run arbitrary mpv commands, options, or scripts through Fluster
+- Any path that makes the Jellyfin server transcode or remux a file Octave could play as stored, or converts without showing it
+- Ways to run arbitrary mpv commands, options, or scripts through Octave
 - Weaknesses in server URL, subtitle URL, or credential validation
 - Supply-chain issues in the release AppImage or DMG
 

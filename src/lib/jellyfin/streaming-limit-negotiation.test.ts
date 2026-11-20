@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { LibraryItem } from "../../domain/catalog";
 import { MemoryStreamingLimits, type StreamingLimits } from "../streaming-limits";
 import { limitIsOnlyReason } from "./client-limit";
-import { FLUSTER_PROFILE, MAX_BITRATE } from "./device-profile";
+import { OCTAVE_PROFILE, MAX_BITRATE } from "./device-profile";
 import { JellyfinGateway } from "./gateway";
 import type { HttpRequestConfig, HttpTransport, PlaybackInfoResponse } from "./types";
 
@@ -71,7 +71,7 @@ describe("MaxStreamingBitrate", () => {
     const { posts } = await negotiate("https://media.example.com", {}, directPlay);
     expect(posts[0].data.MaxStreamingBitrate).toBe(MAX_BITRATE);
     expect(posts[0].params.MaxStreamingBitrate).toBe(MAX_BITRATE);
-    expect(posts[0].data.DeviceProfile).toEqual(FLUSTER_PROFILE);
+    expect(posts[0].data.DeviceProfile).toEqual(OCTAVE_PROFILE);
   });
 
   it.each([

@@ -56,7 +56,7 @@ Citations are to commit `ba55ef2` on `main` (after PR #221, merged as `288ce46`)
   - Set today: `osc=no` (`controller.rs:143`) and `ytdl=no` (`network.rs:86`).
   - Not set today: `load-stats-overlay`, `load-console`, `load-select`, `load-positioning`, `load-commands`, and `load-context-menu`. All default to `yes` in mpv v0.42.0 (`options/options.c` lines 1029-1040), so they load whenever the libmpv build has Lua. `load-auto-profiles` defaults to `auto`, which loads nothing without config profiles.
 - [ ] **No default input.** `input-default-bindings=no` and `input-vo-keyboard=no` (`controller.rs:144-145`). The app sends only typed commands; no generic mpv command, property, or option bridge (`AGENTS.md`).
-- [ ] **No sibling files.** `autoload-files=no` (`controller.rs:147-149`), so only the subtitles Fluster adds appear as external tracks.
+- [ ] **No sibling files.** `autoload-files=no` (`controller.rs:147-149`), so only the subtitles Octave adds appear as external tracks.
 - [ ] **Probe handles.** The throwaway handles that read the version and options set `config=no`, `vo=null`, and `ao=null`, and open nothing (`version.rs:53-59`).
 
 ## URLs before mpv

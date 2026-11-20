@@ -76,7 +76,7 @@ function decodeLine(decode: DiagnosticsInput["decode"]): string {
 export function diagnosticsText(input: DiagnosticsInput): string {
   const renderer = input.player.kind === "native" ? safeValue(input.player.renderer) : "none";
   return [
-    `Fluster ${safeValue(input.appVersion)}`,
+    `Octave ${safeValue(input.appVersion)}`,
     `OS: ${safeValue(input.os)}`,
     playerLine(input.player),
     `Renderer: ${renderer}`,

@@ -79,7 +79,7 @@ describe.each(versions)("conversion fixtures on Jellyfin %s", (version) => {
     }
   });
 
-  it("still offers DirectPlay for an ISO image, so Fluster must force the fallback", () => {
+  it("still offers DirectPlay for an ISO image, so Octave must force the fallback", () => {
     expect(first(version, "iso").VideoType).toBe("Iso");
     expect(first(version, "iso").SupportsDirectPlay).toBe(true);
     const forced = first(version, "iso-force-fallback");

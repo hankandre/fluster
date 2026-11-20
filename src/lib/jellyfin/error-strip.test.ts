@@ -26,7 +26,7 @@ const snapshot: PlaybackSnapshot = {
 function axiosFailure(kind: "401" | "500" | "network" | "timeout"): AxiosError {
   const config = {
     url: "/Items",
-    headers: { Authorization: `MediaBrowser Client="Fluster", Token="${CANARY}"` },
+    headers: { Authorization: `MediaBrowser Client="Octave", Token="${CANARY}"` },
   } as unknown as InternalAxiosRequestConfig;
   const request = { responseURL: `${SERVER}/Items?api_key=${CANARY}`, headers: { Authorization: CANARY } };
   switch (kind) {

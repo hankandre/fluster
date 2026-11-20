@@ -137,7 +137,7 @@ export function printSummary(results: ServerResult[], logPath: string, skippedOp
   }
   console.log(`\nFull log: ${logPath}`);
   if (skippedOptIn.length > 0) {
-    console.log(`Skipped opt-in samples (generate and run with FLUSTER_CONVERSION_SAMPLES=1): ${skippedOptIn.join(", ")}`);
+    console.log(`Skipped opt-in samples (generate and run with OCTAVE_CONVERSION_SAMPLES=1): ${skippedOptIn.join(", ")}`);
   }
   console.log(failed
     ? "Tripwire FAILED."

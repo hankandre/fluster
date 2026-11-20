@@ -1,6 +1,6 @@
 ---
 name: implementer
-description: Implement one specified Fluster plan milestone in TypeScript, tests, catalog, UI, or gateway code. Use when the brief and validation command already exist. Not for src-tauri/ or policy changes.
+description: Implement one specified Octave plan milestone in TypeScript, tests, catalog, UI, or gateway code. Use when the brief and validation command already exist. Not for src-tauri/ or policy changes.
 model: sonnet
 ---
 

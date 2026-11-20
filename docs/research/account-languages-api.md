@@ -3,11 +3,11 @@
 Recorded by P17-01 with `tests/integration/record-account-language-fixtures.mjs` on 2026-11-16. Every fact below names the fixture that shows it (`tests/fixtures/jellyfin/<version>/account-language-<name>.json`) and the test that asserts it (`src/lib/jellyfin/account-language-fixtures.test.ts`, the `it` whose name repeats the sentence).
 
 - Servers: `jellyfin/jellyfin:10.11.7` and `jellyfin/jellyfin:12.4.20261026-211555` (reports itself as 12.4.0), from `tests/integration/docker-compose.yml`, on fresh volumes.
-- Viewer: a throwaway non-admin user `fluster-languages`, created by the recorder with a random password and deleted when it ends. Only user creation, user deletion, and `POST /Library/Refresh` use the admin `fluster-test` user. No fixture user's `Configuration` is changed; the recorder compares each with a snapshot at the end and restores it if it differs.
+- Viewer: a throwaway non-admin user `octave-languages`, created by the recorder with a random password and deleted when it ends. Only user creation, user deletion, and `POST /Library/Refresh` use the admin `octave-test` user. No fixture user's `Configuration` is changed; the recorder compares each with a snapshot at the end and restores it if it differs.
 - Sample: `tests/samples/staging/Synthetic Languages (2024)/Synthetic Languages (2024).mkv`, staged outside both libraries and copied into `movies/` only for the run. One H.264 video, four audio tracks (`eng` flagged default, `deu`, `fra`, `jpn`), and twelve SRT subtitle tracks: `eng` (default), `fra`, `fra` forced, `fra` hearing-impaired, `deu`, `ger`, `spa`, `ita`, `jpn`, `por`, `nld`, and one with no language tag. `scripts/generate-samples.sh` checks every tag and flag with ffprobe, also with jellyfin-ffmpeg from the 10.11.7 image (the CI form).
 - Jellyscale: `main` at `8246054` (2026-11-16T03:52Z) of `jellyscale-org/jellyscale`: `tasks/prd.json` for the task status and `compat/captures/user-configuration-12.4.md` for JS-116's capture of Jellyfin 12.4.
 - Stream indices: Jellyfin numbers the video 0, the audio 1 to 4, and the subtitles 5 to 16 (`account-language-playbackinfo-sample.json`). The tables below write "a:2" for the third audio track (index 3) and "s:1" for the second subtitle track (index 6), the order of the file.
-- Requests: header auth, no token in any URL. `POST /Users/Configuration` carries no `userId`, so it saves the caller's own settings. PlaybackInfo carries the Fluster DeviceProfile and the same flags in body and query.
+- Requests: header auth, no token in any URL. `POST /Users/Configuration` carries no `userId`, so it saves the caller's own settings. PlaybackInfo carries the Octave DeviceProfile and the same flags in body and query.
 
 ## 1. Route table
 
@@ -26,7 +26,7 @@ Recorded by P17-01 with `tests/integration/record-account-language-fixtures.mjs`
 
 ## 2. Default tracks
 
-Cells are in `account-language-defaults.json`. Each cell saves the new user's whole `Configuration` with the listed fields changed, reads it back, and asks PlaybackInfo (Fluster profile, flags in body and query). Every cell saved with 204 and read back as sent. **The two versions gave the same index in every cell.** "Index" is the value of `MediaSources[0].DefaultAudioStreamIndex` or `DefaultSubtitleStreamIndex`.
+Cells are in `account-language-defaults.json`. Each cell saves the new user's whole `Configuration` with the listed fields changed, reads it back, and asks PlaybackInfo (Octave profile, flags in body and query). Every cell saved with 204 and read back as sent. **The two versions gave the same index in every cell.** "Index" is the value of `MediaSources[0].DefaultAudioStreamIndex` or `DefaultSubtitleStreamIndex`.
 
 | Cell | Audio pref | Play default track | Subtitle pref | Subtitle mode | Audio index | Subtitle index |
 |---|---|---|---|---|---|---|
@@ -74,5 +74,5 @@ Facts only; this task decides none of them.
 - The server reports tags through its own table: the `ger` track is reported as `deu`. Comparing languages for display needs `ger` equal to `deu` (P17-02); the server already treats a `ger` preference as `deu` for audio (A4).
 - `OriginalLanguage` is stored as a plain string; on plain Jellyfin it selects the file's default audio track. An audio pick sent into negotiation (P17-08) is not changed by it.
 - **`ARCHITECTURE.md` §3 line 187** says "With `PlayDefaultAudioTrack` on, the file's default audio track wins over `AudioLanguagePreference`". The fixtures hold it on both versions (A2). The line also says remembered selections are unverified; they still are, because the throwaway user never plays the item.
-- Recording method: the `fluster-test` admin and the throwaway user must not log in twice on the same device id, or the first token ends. The recorder reuses the admin session for the fixture user of the same name.
+- Recording method: the `octave-test` admin and the throwaway user must not log in twice on the same device id, or the first token ends. The recorder reuses the admin session for the fixture user of the same name.
 - The baseline re-record (`record-fixtures.mjs` and `record-discovery-fixtures.mjs`) does not reproduce the committed fixtures on a fresh server: ids and online matches differ. Run before and after the language recorder on the same servers, the two outputs differ only in `DateCreated` (two files) and in one online-matched title (`discovery-suggestions`), which the language recorder does not touch.

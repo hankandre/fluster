@@ -1,10 +1,10 @@
-# Fluster design system
+# Octave design system
 
 Status: **Accepted 2026-11-08.** The owner approved this system and the five decisions in §13. The app adopts it through phase P13 in `tasks/prd.json`. Until P13-02 lands, the token block in §8 is the planned content of `src/styles/tokens.css`. The audit behind it is [`docs/design/audit.md`](docs/design/audit.md). The work to adopt it is in [`docs/design/rework-plan.md`](docs/design/rework-plan.md).
 
 ## 1. The idea
 
-**House lights down.** Fluster's screens behave like a cinema. While you choose, the lights are half up: quiet warm-black chrome, the artwork at full size, one clear action. When you press Play the lights go out and only the picture remains. Chrome comes back only when you reach for it, like an usher's torch.
+**House lights down.** Octave's screens behave like a cinema. While you choose, the lights are half up: quiet warm-black chrome, the artwork at full size, one clear action. When you press Play the lights go out and only the picture remains. Chrome comes back only when you reach for it, like an usher's torch.
 
 The chrome itself is colourless. It is warm black with warm off-white text. **Colour comes only from the artwork**: each title tints its own screen with an accent taken from its artwork's BlurHash (§3.2). Two films never look the same, and the app never looks like a brand fighting the poster.
 
@@ -65,7 +65,7 @@ Every item screen (Detail, Series, Player loading, Up Next) and the Home hero se
 
 How:
 
-- The BlurHash format stores the average colour directly. Characters 2–5 are the DC term, a base-83 24-bit sRGB value ([blurhash spec](https://github.com/woltapp/blurhash/blob/master/Algorithm.md)). There is no image decoding and no canvas, and it is available before the image loads. Fluster already receives `ImageBlurHashes` (`src/lib/jellyfin/cards.ts`).
+- The BlurHash format stores the average colour directly. Characters 2–5 are the DC term, a base-83 24-bit sRGB value ([blurhash spec](https://github.com/woltapp/blurhash/blob/master/Algorithm.md)). There is no image decoding and no canvas, and it is available before the image loads. Octave already receives `ImageBlurHashes` (`src/lib/jellyfin/cards.ts`).
 - A pure function `artTint(blurHash) → { accent, glow, shade } | undefined` lives in `src/features/shared/` (presentation, not domain). It is unit-tested with fixed hashes.
 - If chroma is below 0.02 (grey art) or there is no hash, the defaults apply: `--art-accent: #e8c48a` (warm brass, 11.8:1), `--art-shade: #141210`.
 - The clamp keeps `--art-accent` at 3:1 or more against `--surface-0` and the progress track (WCAG 1.4.11). **Never use it for text under 24 px, for focus, or as a button fill.**
@@ -180,7 +180,7 @@ Reduced motion (`prefers-reduced-motion: reduce`):
 - **TV body text is 28 px and no TV text is under 24 px** (UX audit D13 B): the sizes tvOS, Fire TV, and Xbox agree on. The type tokens are raised for the TV form; the scale, and six posters across, stay. The tokens are raised in the §8 block (P13-34).
 - Posters are 248 px (6 visible). Thumbs are 416 px (4 visible). Row gap is 48 px. Focus lift is `scale(1.08)` with `--shadow-lift`.
 - **No hover and no pointer.** All functions work with D-pad, OK, Back, Play/Pause, and Menu or Info. Text entry happens only in search and sign-in, through the shell's on-screen keyboard; sign-in leads with discovered servers and Quick Connect, so typing is the fallback (Q25 A).
-- Navigation is a top tab row inside the safe inset that is hidden while focus is in the content and appears when Up from the first row reaches it. Down returns to the page. Back (Escape or Backspace) on a root tab focuses the tab row, and Back on Home leaves the app the way the platform requires: without a question on Android TV, whose guidelines say not to gate exit, and after a confirmation where a platform's rules ask for one (UX audit D14 B; P13-34): on Tizen, Back on Home asks "Leave Fluster?" with Stay focused and Leave primary, and Back closes it. The browser TV form follows the Android TV rule. The platform comes from `<html data-tv-platform>`, set by the TV shell. Up from the first row reaches the nav on every form.
+- Navigation is a top tab row inside the safe inset that is hidden while focus is in the content and appears when Up from the first row reaches it. Down returns to the page. Back (Escape or Backspace) on a root tab focuses the tab row, and Back on Home leaves the app the way the platform requires: without a question on Android TV, whose guidelines say not to gate exit, and after a confirmation where a platform's rules ask for one (UX audit D14 B; P13-34): on Tizen, Back on Home asks "Leave Octave?" with Stay focused and Leave primary, and Back closes it. The browser TV form follows the Android TV rule. The platform comes from `<html data-tv-platform>`, set by the TV shell. Up from the first row reaches the nav on every form.
 - Opening a screen focuses its primary action. Screens without one keep their heading, search field, or section list.
 - There is no Tab key: where no roving list takes an arrow key, a geometric fallback moves focus to the nearest control in that direction, inside the topmost dialog or sheet.
 - Development: `?form=tv` turns the form on in browser mode (`applyFormFlag`, development builds only). The TV shell sets `data-form="tv"` itself.
@@ -191,7 +191,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 
 ### 7.1 App shell and nav (`AppShell`, `AppNav`)
 
-- A top bar, 64 px desktop or 96 px TV. Left: the Fluster wordmark (text, `--type-label` 700), which goes to Home. Then: Home, one entry per library (from `UserViews`), and Search (icon plus label). Right: Settings (gear icon), then the account control, the user's initial. Until P13-21 the initial is only a label. From P13-21 it opens the account menu (§7.21).
+- A top bar, 64 px desktop or 96 px TV. Left: the Octave wordmark (text, `--type-label` 700), which goes to Home. Then: Home, one entry per library (from `UserViews`), and Search (icon plus label). Right: Settings (gear icon), then the account control, the user's initial. Until P13-21 the initial is only a label. From P13-21 it opens the account menu (§7.21).
 - It is transparent over a hero, then `--surface-0` at 92% with a `--blur-nav` blur once content scrolls under it (the only allowed blur). On desktop it hides on scroll down and returns on scroll up.
 - It is hidden in the player and in sign-in.
 - **Page Back button** (owner, 2026-11-19). Every non-root screen draws the §7.19 round icon button (`BackButton`, the arrow the player's top bar uses, accessible name "Back") at the top-left of the page content: at `--gutter` from the left edge (on TV, inside the safe inset) and `--space-3` under the nav bar, over the hero or backdrop where there is one. It sits on `--surface-0-glass` with the `--blur-nav` blur so it reads on bright art. It scrolls away with the page. Non-root means every route that is not a nav entry and is not the player: movie, series, and episode pages and collections today (`hasBackButton` in `src/features/routes.ts` decides, from the route table). Home, Search, Settings, and a library are roots and show none, except a genre-filtered library opened from a title's genre link, which is a screen under that title and shows it. A title's genre link marks the library route `from=title`; changing the genre or sort in that library keeps the mark only while the genre stays, and a library opened any other way never has it, so Escape and the button read the same route state, not history. It does what Escape does on a non-root screen, through the same function (`goBack`): browser history, else Home.
@@ -387,20 +387,20 @@ The unencrypted-connection warning is a `Dialog` with `role="alertdialog"` over 
 
 ### 7.21 Accounts (`AccountMenu`, `AccountPicker`) (P13-21)
 
-Fluster remembers any number of accounts. An account is one user on one server. One account is active at a time, and each server's libraries stay separate.
+Octave remembers any number of accounts. An account is one user on one server. One account is active at a time, and each server's libraries stay separate.
 
 - **Account menu.** The nav's account control opens a `Menu` (§7.10): every saved account as "name · server" with a check on the active one, then "Add account" and "Manage accounts" (Settings › Accounts). Choosing an account switches to it and lands on Home in one activation.
-- **Launch.** With one signed-in account, Fluster opens it. With two or more signed-in accounts, it shows the `AccountPicker` first ("Who's watching?"), on desktop and on TV. Signed-out tiles do not count.
+- **Launch.** With one signed-in account, Octave opens it. With two or more signed-in accounts, it shows the `AccountPicker` first ("Who's watching?"), on desktop and on TV. Signed-out tiles do not count.
 - **`AccountPicker`.** "Who's watching?" as the `h1`, then a grid of account tiles: the user's initial, the name, and the server name in `--type-meta`. A signed-out account is marked "Signed out" in words and says that it needs the password; choosing it opens sign-in for that user and server, by password or Quick Connect (P13-27). The last tile is "Add account". On TV the account control opens this screen instead of a menu.
 - **Three actions, three labels.** *Switch* keeps the sign-in. *Sign out* revokes it on the server, keeps the tile, and shows the "Signed out" toast. *Remove* also forgets the account, after a `Dialog` with the safe action focused.
-- **Privacy (owner, 2026-11-12).** "Stay signed in" is the privacy control. An account with it off is signed out whenever Fluster closes, shows as "Signed out", and does not count towards showing the picker, so nobody else at this computer can open it. Sign-in and Settings › Accounts say so in words, and Settings › Accounts can change it for a saved account (P13-27). A PIN per account comes with the TV shell's account picker, not before.
+- **Privacy (owner, 2026-11-12).** "Stay signed in" is the privacy control. An account with it off is signed out whenever Octave closes, shows as "Signed out", and does not count towards showing the picker, so nobody else at this computer can open it. Sign-in and Settings › Accounts say so in words, and Settings › Accounts can change it for a saved account (P13-27). A PIN per account comes with the TV shell's account picker, not before.
 - A plain-HTTP account says "unencrypted" on its tile, and resuming it takes one press that names the user and the server (P3-01).
 - Empty Home offers "Add account" beside "Open settings".
 
 ## 8. Tokens (`src/styles/tokens.css`)
 
 ```css
-/* Fluster design tokens (DESIGN.md §8). Imported by src/styles.css from P13-02. */
+/* Octave design tokens (DESIGN.md §8). Imported by src/styles.css from P13-02. */
 @font-face { font-family: "Atkinson Hyperlegible Next"; src: url("../assets/fonts/AtkinsonHyperlegibleNext-Variable.woff2") format("woff2"); font-weight: 200 800; font-display: swap; }
 @font-face { font-family: "Atkinson Hyperlegible Mono"; src: url("../assets/fonts/AtkinsonHyperlegibleMono-Variable.woff2") format("woff2"); font-weight: 200 800; font-display: swap; }
 
@@ -612,7 +612,7 @@ Fluster remembers any number of accounts. An account is one user on one server. 
 
 ## 10. Voice and copy
 
-Fluster talks like a knowledgeable friend running the projector: calm, brief, plain, and honest about the file.
+Octave talks like a knowledgeable friend running the projector: calm, brief, plain, and honest about the file.
 
 - Sentence case. No exclamation marks. No "Oops". No blame ("you entered" becomes "That address didn't answer").
 - Controls name the action: "Resume", "Start over", "Play S1 · E3", "Mark as watched", "Hide".
@@ -636,7 +636,7 @@ Fluster talks like a knowledgeable friend running the projector: calm, brief, pl
 | Search, more results error | n/a | Couldn't load more results. | Retry |
 | Sign-in, 401 | n/a | That username and password didn't work. | n/a |
 | Sign-in, unreachable | n/a | Couldn't reach {address}. Check the address and that the server is running. | n/a |
-| Sign-in, refused plain HTTP | n/a | This address uses plain HTTP on the internet, so Fluster will not connect. Use HTTPS, or HTTP only for this device or a private home-network address such as 192.168.x.x, a name.local name, or a name.home.arpa name. | n/a |
+| Sign-in, refused plain HTTP | n/a | This address uses plain HTTP on the internet, so Octave will not connect. Use HTTPS, or HTTP only for this device or a private home-network address such as 192.168.x.x, a name.local name, or a name.home.arpa name. | n/a |
 | Sign-in, anything else | n/a | Something went wrong. Try again. | n/a |
 | Series, no episodes | n/a | This series has no episodes yet. | n/a |
 | Next episode error | n/a | Couldn't load your next episode. | Retry |
@@ -656,7 +656,7 @@ Fluster talks like a knowledgeable friend running the projector: calm, brief, pl
 | Settings, Languages current-only entry | n/a | Set in another Jellyfin app. Choose one here to change it. | n/a |
 | Settings, Languages saved | n/a | Audio set to {label}. / Subtitles set to {label}. | n/a |
 | Settings, Languages save failed | n/a | Couldn't save your audio language. Try again. / Couldn't save your subtitle language. Try again. | n/a |
-| Settings, Languages refused | n/a | Your server didn't accept this change from Fluster. Change it in Jellyfin. | n/a |
+| Settings, Languages refused | n/a | Your server didn't accept this change from Octave. Change it in Jellyfin. | n/a |
 | Settings, Languages read failed | n/a | Couldn't load your languages. | Retry |
 | Settings, Subtitles | n/a | Subtitle style: Not available yet. | n/a |
 | Settings, unavailable row | n/a | Not available yet. | n/a |
@@ -670,8 +670,8 @@ Fluster talks like a knowledgeable friend running the projector: calm, brief, pl
 | Player loading, before the server answers | n/a | Loading… | Back |
 | Playback error, server unreachable (no response, network error, timeout) | Playback could not start | Couldn't reach {server}. Check that the server is on, then try again. | Retry, Back to details |
 | Playback error, server error (HTTP 5xx) | Playback could not start | {server} had a problem starting playback. Try again in a moment. | Retry, Back to details |
-| Playback error, the player did not stop (Back, Retry, or a track or limit change; owner decision 2026-11-19) | Couldn't stop playback | The player didn't close properly. Go back to try again, or quit Fluster if you can still hear it. | Back to details (primary; it tries the stop again, then leaves) |
-| Playback error, the installed player can't refuse redirects (`MpvError::RedirectGuard`) | Playback could not start | Fluster can't play with the video player installed on this computer, because it can't stop that player from following redirects. Update Fluster. | Retry, Back to details |
+| Playback error, the player did not stop (Back, Retry, or a track or limit change; owner decision 2026-11-19) | Couldn't stop playback | The player didn't close properly. Go back to try again, or quit Octave if you can still hear it. | Back to details (primary; it tries the stop again, then leaves) |
+| Playback error, the installed player can't refuse redirects (`MpvError::RedirectGuard`) | Playback could not start | Octave can't play with the video player installed on this computer, because it can't stop that player from following redirects. Update Octave. | Retry, Back to details |
 | Playback error, other request failure | Playback could not start | Something went wrong starting playback. Try again. | Retry, Back to details |
 | Progress report failed | n/a | Couldn't save your progress to {server}. Playback continues. | n/a |
 

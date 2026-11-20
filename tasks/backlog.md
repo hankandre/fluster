@@ -22,11 +22,11 @@ Decided "not now" by the owner. Revisit dates are in the review.
 
 Jellyscale (direction update, 2026-11-12).
 
-- **Test Fluster against Jellyscale when its client-integration work starts.** Jellyscale is a scale-out video server that speaks the Jellyfin client API (`~/Code/jellyscale`). Fluster assumes it will provide the APIs needed to stream; no compatibility audit has been done. Notes for whoever runs the test, from Jellyscale's `compat/endpoints.yaml` and `README.md` on 2026-11-12:
+- **Test Octave against Jellyscale when its client-integration work starts.** Jellyscale is a scale-out video server that speaks the Jellyfin client API (`~/Code/jellyscale`). Octave assumes it will provide the APIs needed to stream; no compatibility audit has been done. Notes for whoever runs the test, from Jellyscale's `compat/endpoints.yaml` and `README.md` on 2026-11-12:
   - Routes a Netflix-like UI needs that are stubs there today: `/Items/{id}/Similar`, `/Genres`, `/Persons`, `/Items/{id}/LocalTrailers`, `/Items/Filters2`.
-  - Quick Connect and user management are not built (`/QuickConnect/Enabled` is a stub; the README's Identity row says "not built"). Fluster's sign-in leads with Quick Connect.
+  - Quick Connect and user management are not built (`/QuickConnect/Enabled` is a stub; the README's Identity row says "not built"). Octave's sign-in leads with Quick Connect.
   - Trickplay and library and metadata work are also listed as not built.
-  - Found on 2026-11-12 by the discovery pass (`docs/plans/proposals/discovery-and-profiles.md` §3.4), from `compat/endpoints.yaml` and `docs/status.md` at `93a0f3f`: `/Shows/NextUp` is a stub, so Fluster's Next up row is empty there; `/Search/Hints` answers 404 and Fluster's search suggestions call it; media segments are not built, so Skip intro has no data; likes and ratings answer 404; `/Items/Suggestions` is "implemented" in one file and "not built" in the other.
+  - Found on 2026-11-12 by the discovery pass (`docs/plans/proposals/discovery-and-profiles.md` §3.4), from `compat/endpoints.yaml` and `docs/status.md` at `93a0f3f`: `/Shows/NextUp` is a stub, so Octave's Next up row is empty there; `/Search/Hints` answers 404 and Octave's search suggestions call it; media segments are not built, so Skip intro has no data; likes and ratings answer 404; `/Items/Suggestions` is "implemented" in one file and "not built" in the other.
   - Size: M for the test pass; fixes are separate tasks.
   - 2026-11-15: the pinned jellyscale fixture server and its CI job are P17-04, and the tripwire against it is in P17-06. The compatibility test pass across sign-in, browse, and the routes above stays here.
 
@@ -80,7 +80,7 @@ Each line points at its full text in `docs/design/rework-plan.md` ("Decision log
 - P13-07 card lows: the accessible name without `remainingTicks`, `RowError` still in Home rows, the media mark in RTL, no e2e for the row position after Down.
 - P13-06: the "Browser development mode" label overlapping content on phone captures.
 - Error stripping (PR #128): the four test gaps.
-- Unverified on the dogfood server (`FLUSTER_DOGFOOD_SERVER`): the Jellyfin 10.11 and 12.4 response checks listed under P13-07, P13-08, P13-09, P13-10, P13-11, and P13-12, and the WebKitGTK checks listed beside them.
+- Unverified on the dogfood server (`OCTAVE_DOGFOOD_SERVER`): the Jellyfin 10.11 and 12.4 response checks listed under P13-07, P13-08, P13-09, P13-10, P13-11, and P13-12, and the WebKitGTK checks listed beside them.
 
 ## Loves (from the 2026-11-12 loves pass)
 
@@ -95,7 +95,7 @@ Research, verdicts, and the eight open decisions are in `docs/research/streaming
 **Jellyscale carry-over list (D8 A, owner, 2026-11-12).** For the owner to carry into Jellyscale's own backlog. It extends the list in `docs/plans/proposals/discovery-and-profiles.md` §3.4 A, whose first item is `GET /Shows/NextUp`. After Next Up, in this order:
 
 1. Media segments (`GET /MediaSegments/{itemId}`), from operator data or chapter markers as Jellyscale already decided. Skip intro has no data without it.
-2. Quick Connect (`/QuickConnect/Enabled` is a stub). Fluster's sign-in leads with it.
+2. Quick Connect (`/QuickConnect/Enabled` is a stub). Octave's sign-in leads with it.
 3. Trickplay, for scrub previews.
 4. `POST /Sessions/Capabilities` and `/Sessions/Capabilities/Full` (stubs), for remote control from a phone (P8-01).
 
@@ -199,7 +199,7 @@ The review is `docs/research/code-quality-review-2026-11-13.md` (commit `fb8d071
 ## Flaky e2e: Back keys (found 2026-11-13)
 
 - ~~`e2e/back-keys.spec.ts` fails intermittently in full `pnpm test:e2e` runs, on task branches and on main (different tests each time: ":89 Backspace closes the unencrypted-connection dialog", ":20 Backspace and Escape go back from item detail"). Each passes 5/5 alone with `--repeat-each 5`. It looks load-dependent; the cause is unverified. Find the race (as P13-14 did for three journeys) and make each test wait for the state it depends on; never weaken an assertion. Evidence: the P0-14 runs in `tasks/prd.json`. S to M.~~ Taken by P0-18.
-- ~~Also from the P0-14 runs: `FLUSTER_E2E_PORT` collides when port+1 is taken, because the web server uses both ports. Pick both ports free, or document it. S.~~ Taken by P0-18.
+- ~~Also from the P0-14 runs: `OCTAVE_E2E_PORT` collides when port+1 is taken, because the web server uses both ports. Pick both ports free, or document it. S.~~ Taken by P0-18.
 - From the P0-14 review (lows): `scripts/lint-boundaries.mjs:82` passes the violation count as the exit code, so exactly 256 violations exit 0 (use `exitCode > 0 ? 1 : 0`). The success line's `n/n source files` restates the coverage check rather than measuring it. Whether the Dependabot ignore for the `typescript-6` alias applies is unverified. S each.
 
 ## From P13-23 (Player Engine stream facts)
@@ -267,7 +267,7 @@ Measured by the worst-case artwork captures; see `docs/design/contrast-report.md
 
 ## Dependabot alert 34: glib 0.18 unsoundness (RUSTSEC-2024-0429), 2026-11-14
 
-- `glib 0.18.5` is pulled in by `gtk`, `gdk` and `webkit2gtk` 0.18 (Tauri 2's GTK3 stack on Linux). The fix is in glib 0.20, which needs the GTK4 stack; Fluster cannot bump it alone. Fluster does not call `glib::VariantStrIter` (grep of `src-tauri/src`, 2026-11-14), so the unsound path is not reached by our code; reach through Tauri or WebKitGTK is unverified. Revisit when Tauri moves to GTK4; decide whether to dismiss the alert with this reason (owner call). S.
+- `glib 0.18.5` is pulled in by `gtk`, `gdk` and `webkit2gtk` 0.18 (Tauri 2's GTK3 stack on Linux). The fix is in glib 0.20, which needs the GTK4 stack; Octave cannot bump it alone. Octave does not call `glib::VariantStrIter` (grep of `src-tauri/src`, 2026-11-14), so the unsound path is not reached by our code; reach through Tauri or WebKitGTK is unverified. Revisit when Tauri moves to GTK4; decide whether to dismiss the alert with this reason (owner call). S.
 
 ## Flaky `rust-audit` on a Dependabot PR (#149, 2026-11-14)
 
@@ -297,13 +297,13 @@ Measured by the worst-case artwork captures; see `docs/design/contrast-report.md
 - 10.11.7 has no `GET /Items/{itemId}/Collections` (404); the sequel rule needs a client-side join of collections and their members there. Plan it in the sequel task (P16-01).
 - Make the recorders' numbered `id-N` fakes stable across recordings (seed them in a fixed order), so a re-record diffs cleanly. S (P16-01).
 - `pnpm test -- fixtures` runs the whole Vitest suite, because vitest receives `-- fixtures` as an argument it does not treat as a filter; the task's `verify` string passes but proves less than it reads. Use `pnpm exec vitest run <file>` or fix the script. S (P16-01).
-- Jellyfin's NFO reader skips season and episode numbers for an episode added under a series that has `lockdata`; Fluster's own library tests may meet the same. Unverified outside the fixture servers (P16-01).
+- Jellyfin's NFO reader skips season and episode numbers for an episode added under a series that has `lockdata`; Octave's own library tests may meet the same. Unverified outside the fixture servers (P16-01).
 - Review lows (P16-01): add a `Path` allow-list (`/media/`) to the fixture scrubbing test; `tests/fixtures/jellyfin/*/discovery-suggestions.json`, `discovery-local-trailers.json`, `discovery-special-features.json` keep the CI container's sample paths. S (P16-01).
 - Review lows (P16-01): `docs/research/discovery-api.md` §1 rows marked "Same." compare item names and counts, not field shape; a later gateway task must not rely on identical fields across versions without a diff. S (P16-01).
 - Review lows (P16-01): `tests/integration/record-fixtures.mjs` was refactored onto `fixture-recording.mjs` and checked only with `node --check`; re-run it against both servers to confirm behavior. S (P16-01).
 - Review lows (P16-01): `record-discovery-fixtures.mjs:334` `makeSave()` builds a new scrubber and resets the `id-N` counter mid-recording, so the Next Up new-episode files reuse numbers (`id-57` vs `id-1`, and `id-1` is an image tag in `discovery-similar-movie.json:25`). Keep one scrubber or add `item-episode-3` to its known-id map. S (P16-01).
 - Review lows (P16-01): `src/lib/jellyfin/discovery-fixtures.test.ts:100` credential scan is weaker than `fixture-recording.mjs:107`; match the saver's pattern with the `i` flag and `(?:=|%3D)`. S (P16-01).
-- Review lows (P16-01): `record-discovery-fixtures.mjs:338-342` `finally` calls `waitFor` unguarded and the final `resetUser()` at line 344 sits outside any `finally`; a killed run leaves `Synthetic Show S01E03.mkv` in `tests/samples/shows/` and watch state on `fluster-discovery`. Remove a leftover copy at recorder start. S (P16-01).
+- Review lows (P16-01): `record-discovery-fixtures.mjs:338-342` `finally` calls `waitFor` unguarded and the final `resetUser()` at line 344 sits outside any `finally`; a killed run leaves `Synthetic Show S01E03.mkv` in `tests/samples/shows/` and watch state on `octave-discovery`. Remove a leftover copy at recorder start. S (P16-01).
 
 ## Hooks lint follow-ups (P0-16)
 
@@ -313,7 +313,7 @@ Measured by the worst-case artwork captures; see `docs/design/contrast-report.md
 
 - ~~Seen on the dogfood server: "File and streams" (`src/features/detail/file-and-streams.tsx`) lists every subtitle track on its own line; a film with 52 subtitle tracks fills the screen.~~ Taken by P17-02.
 - Owner decisions:
-  - ~~Show only the subtitle tracks in the viewer's Jellyfin preferred subtitle language (the user configuration's `SubtitleLanguagePreference`; Fluster does not read it today, so the gateway needs it, e.g. from `/Users/Me`).~~ Taken by P17-02 (the read) and P17-03 (setting it in Fluster).
+  - ~~Show only the subtitle tracks in the viewer's Jellyfin preferred subtitle language (the user configuration's `SubtitleLanguagePreference`; Octave does not read it today, so the gateway needs it, e.g. from `/Users/Me`).~~ Taken by P17-02 (the read) and P17-03 (setting it in Octave).
   - ~~When no preference is set, or the file has no track in that language: show the file's default subtitle track if it has one, plus a line like "51 more in 32 languages"; with no default either, only the count line.~~ Taken by P17-02.
   - ~~A "Show all 52 subtitles" button expands the full list in place (keyboard and TV form included).~~ Taken by P17-02.
 - Open: whether the audio list gets the same rule (not asked yet). M. Asked as L1 in the 2026-11-15 product-review pass and answered the same day: an audio dropdown on the page that Play uses. Taken by P17-08.
@@ -330,10 +330,10 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
   - P2-12 (track selector and poisoned lock): bound `PlayerSurfaceFrame::validate` in the same native pass (PR #165 low above), and consider the unmapped-track fields from P13-29.
   - P13-19 (design audit and docs sync): the `.ui-dialog-title` literal size, the two P13-33 contrast lows, the DESIGN.md §10 rows from P13-29, the spoken-slider wording, and the P13-31 "fresh visit" check are all its kind of finding.
   - P16-11 (wish-list fixtures): it uses the same recorder; take the P16-01 recorder lows above (one scrubber, stable `id-N`, the `finally` cleanup, the `Path` allow-list) while it is open. Its `verify` string has the `pnpm test -- fixtures` weakness; the new fixture tasks name their test file instead.
-  - P15-07 (remember tracks per series) and P15-12 (audio description): both read "the preferred language". After P17-03 that is the language set in Fluster; on jellyscale a remembered or described track may be hidden, and P17-07 always lists the playing track. P15-07's acceptance says "Jellyfin account preferences"; that wording still holds, because P17-03 saves to the account.
+  - P15-07 (remember tracks per series) and P15-12 (audio description): both read "the preferred language". After P17-03 that is the language set in Octave; on jellyscale a remembered or described track may be hidden, and P17-07 always lists the playing track. P15-07's acceptance says "Jellyfin account preferences"; that wording still holds, because P17-03 saves to the account.
 - Found by this pass:
-  - Ask jellyscale for a partial update of the user configuration, or a version check that refuses a stale save. `POST /Users/Configuration` replaces the whole object, so two apps saving at once can overwrite each other; P17-03 narrows the window with a fresh read but cannot close it. Asked in a comment on hankandre/fluster#178; not yet filed in jellyscale's tracker. S (P17-03).
-  - Ask jellyscale for a published, versioned image and the Babel Film fixture in a form Fluster's CI can fetch or generate. `scripts/generate-samples.sh` cannot make its PGS track, because ffmpeg cannot encode PGS (P0-03). Not yet filed. S (P17-04).
+  - Ask jellyscale for a partial update of the user configuration, or a version check that refuses a stale save. `POST /Users/Configuration` replaces the whole object, so two apps saving at once can overwrite each other; P17-03 narrows the window with a fresh read but cannot close it. Asked in a comment on hankandre/octave#178; not yet filed in jellyscale's tracker. S (P17-03).
+  - Ask jellyscale for a published, versioned image and the Babel Film fixture in a form Octave's CI can fetch or generate. `scripts/generate-samples.sh` cannot make its PGS track, because ffmpeg cannot encode PGS (P0-03). Not yet filed. S (P17-04).
   - ~~If the owner answers L1 with "the same rule for audio", the detail page's audio list needs a follow-up task; P17-02 does subtitles only. S.~~ Answered 2026-11-15 in the owner's own words: an audio dropdown that Play uses. Taken by P17-08. The audio lines in "File and streams" stay whole.
   - How long an audio pick on a title's page lasts is question L8; P17-08 is written for "while the page is open". S.
   - The glib 0.18 alert (entry above) was dismissed by the owner on 2026-11-14; only the revisit when Tauri moves to GTK4 remains.
@@ -364,7 +364,7 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 
 - Check the Chromium source for revision 1254 (158.0.8127.18) for a switch or feature that stops `NetworkChangeNotifier` from aborting loopback requests, so local runs would not need `scripts/netns.sh`. The binary's strings show no such switch; this is unverified. S (P0-18).
 - The visual `results.json` records `config.argv` and attachment paths, which are runner-local paths. They hold no tokens, but strip them in `scripts/visual-accept.mjs` consumers or the reporter if the artifact is ever shared outside the repo. S (P0-18).
-- Harden the e2e and visual tooling lows from the P0-18 review: confirm every `openItem` caller in `e2e/back-keys.spec.ts` passes its item's title; make `scripts/visual-accept.mjs` refuse positional-file, `--project`, and two-token `--grep-invert` runs; probe `::1` and `0.0.0.0` in `scripts/e2e-ports.mjs`; clear `FLUSTER_E2E_PORTS_CHECKED` after the config's first use and ignore an inherited value. S (P0-18).
+- Harden the e2e and visual tooling lows from the P0-18 review: confirm every `openItem` caller in `e2e/back-keys.spec.ts` passes its item's title; make `scripts/visual-accept.mjs` refuse positional-file, `--project`, and two-token `--grep-invert` runs; probe `::1` and `0.0.0.0` in `scripts/e2e-ports.mjs`; clear `OCTAVE_E2E_PORTS_CHECKED` after the config's first use and ignore an inherited value. S (P0-18).
 
 ## Player page clip fix and Home checkmark follow-ups (2026-11-16)
 
@@ -377,7 +377,7 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 
 - Split `scripts/generate-samples.sh` (about 470 lines) by sample family (movies, shows, staging, verify) so CI's sample step stays readable. S (P17-01).
 - `record-fixtures.mjs` and `record-discovery-fixtures.mjs` do not reproduce the committed fixtures on a fresh server (numbered `id-N` values, online-matched titles, `DateCreated`); even two runs in a row differ in `DateCreated` of the staged episode and in the online-matched title of the HEVC film (`discovery-suggestions`, because that film has no locked NFO). Lock the HEVC sample with an NFO or normalize the dates in the scrubber so a re-record can be diffed. S (P17-01).
-- The recorders log a user in on a fixed device id, so a second login as the same user ends the first token (seen when the language recorder logged `fluster-test` in twice). Note it in `tests/integration/` or give each login its own device id. S (P17-01).
+- The recorders log a user in on a fixed device id, so a second login as the same user ends the first token (seen when the language recorder logged `octave-test` in twice). Note it in `tests/integration/` or give each login its own device id. S (P17-01).
 - `ARCHITECTURE.md` §3 line 187 holds on both versions (recorded A2); no change needed. It could add that `OriginalLanguage` gives the file's default audio track on plain Jellyfin and that a `ger` preference matches audio tagged `deu`. S (P17-01).
 
 ## Detail subtitle list follow-ups (P17-02, 2026-11-16)
@@ -400,11 +400,11 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 - ~~P17-08 Guardian L3: Play original after an in-mpv audio switch on a converted stream restores the first pick (`coordinator.ts:151-156`).~~ Taken by P3-33.
 - P17-08 Guardian L4: no notice when mpv's fallback track is unmapped (`coordinator.ts:380`).
 - P17-08 design lows: the selected picker row repeats the codec; the TV audio sheet is tall and mostly empty; the phone "More" button indent should be checked against the old baseline.
-- P17-08 guardian (second pass) lows: for a direct-played pick that is not an embedded track, the plan's `defaultAudioStreamIndex` is the echoed pick (fixtures show `DefaultAudioStreamIndex: 2` for pick 2), so mpv falls back to its own choice, not necessarily the file's flagged default that the notice names; set it to the source's flagged default in that branch. The visual config always starts a second Vite on port+1, so two worktrees with adjacent `FLUSTER_VISUAL_PORT`s collide. S.
+- P17-08 guardian (second pass) lows: for a direct-played pick that is not an embedded track, the plan's `defaultAudioStreamIndex` is the echoed pick (fixtures show `DefaultAudioStreamIndex: 2` for pick 2), so mpv falls back to its own choice, not necessarily the file's flagged default that the notice names; set it to the source's flagged default in that branch. The visual config always starts a second Vite on port+1, so two worktrees with adjacent `OCTAVE_VISUAL_PORT`s collide. S.
 
 ## Settings in the player (owner request, 2026-11-16)
 
-- ~~Owner: changing a client setting today means leaving playback, going Home, opening Settings, then starting again. Add a Settings sheet to the player beside Info, Audio & Subtitles, and Chapters. When a change affects the stream, Fluster refreshes the stream and resumes at the same position, keeping the current audio and subtitle tracks. Findings from 2026-11-16:~~ Taken by P3-32 (the sheet and the settings that apply at once) and P3-33 (the streaming limit and the refresh). The owner answered S1 to S4 on 2026-11-19 and corrected S1 and S4 the same day: every Settings section is in the sheet, and languages in it are P3-34. The findings below stay as the record:
+- ~~Owner: changing a client setting today means leaving playback, going Home, opening Settings, then starting again. Add a Settings sheet to the player beside Info, Audio & Subtitles, and Chapters. When a change affects the stream, Octave refreshes the stream and resumes at the same position, keeping the current audio and subtitle tracks. Findings from 2026-11-16:~~ Taken by P3-32 (the sheet and the settings that apply at once) and P3-33 (the streaming limit and the refresh). The owner answered S1 to S4 on 2026-11-19 and corrected S1 and S4 the same day: every Settings section is in the sheet, and languages in it are P3-34. The findings below stay as the record:
   - The streaming limits already renegotiate mid-playback while keeping the position and tracks (`use-playback-session.ts` `checkLimit`, `coordinator.ts` `renegotiate`/`restart`, `track-choice.ts` merge). The sheet can reuse that path.
   - The account audio and subtitle languages (P17-03) shape the server's starting tracks (P17-01 fixtures), so a change made in the player would need a renegotiation to take effect. Nothing applies them mid-playback today. Decide whether a language change in the player also switches the current tracks, or only applies from the next title.
   - The Continue watching window only affects Home and does not belong in the player sheet. Auto-play next and skip intros have no Settings rows yet (P3-23, P3-24). Once they exist they apply live, with no refresh.
@@ -427,15 +427,15 @@ The triage of every entry added since 2026-11-13, issue #178, and the detail-pag
 - ~~Owner: rate your own films, and get lists of your top-rated ones, "above four stars or in the top 25% of movies that they've rated". Findings from 2026-11-17 (SDK 1.0.2 and Jellyfin source):~~ Taken by P16-13 (fixtures), P16-14 (rate a film on its page), P16-15 (the Top rated view), and P16-16 (the Home row). The prompt when a film ends is P16-17. The owner answered R1 to R4 on 2026-11-19: half stars, the page then a prompt, a view and a Home row, 4 stars and up. The findings below stay as the record:
   - Jellyfin stores a per-user 0-10 `UserItemData.Rating`, separate from the community and critic ratings. `Likes` is derived from it: Rating >= 6.5 counts as liked, setting like stores 10, setting dislike stores 1 (`MediaBrowser.Controller/Entities/UserItemData.cs`).
   - A rating is set with `POST /UserItems/{id}/UserData` carrying `Rating`; the server saves it (`Emby.Server.Implementations/Library/UserDataManager.cs`). Thumbs use `POST`/`DELETE /UserItems/{id}/Rating?likes=`.
-  - The server has no sort by the user's rating (`ItemSortBy` has CommunityRating, CriticRating, IsFavoriteOrLiked) and no threshold filter beyond `Likes` (>= 6.5). So "4 stars and up" (>= 8/10) and "top 25% of what you rated" must be computed in Fluster from one request for the user's rated items.
-  - Unverified: which other Jellyfin clients set a numeric rating. Fluster may be where most ratings come from.
+  - The server has no sort by the user's rating (`ItemSortBy` has CommunityRating, CriticRating, IsFavoriteOrLiked) and no threshold filter beyond `Likes` (>= 6.5). So "4 stars and up" (>= 8/10) and "top 25% of what you rated" must be computed in Octave from one request for the user's rated items.
+  - Unverified: which other Jellyfin clients set a numeric rating. Octave may be where most ratings come from.
   - Open design questions for the owner:
     - how you rate (5 stars, half stars, or thumbs);
     - where you rate (the title page, and/or a prompt at the end of a film);
     - where the lists live (a Home row, a library filter, or both);
     - the cutoff (4 stars and up, the top 25%, or both), and a minimum number of rated titles before a top-25% list shows.
   - Hierarchy (owner, 2026-11-17): clearly distinguish the viewer's own rating from audience and critic scores. The viewer's own rating is more prominent, in its own place and not on the facts line. Audience and critic scores stay, because they help decide what to watch, but they are secondary and labelled by source ("7.8 audience · 91% critics", applied to P15-03).
-  - ~~Possible Jellyscale request (from:fluster): server-side sort and threshold filter by the user's own rating.~~ Owner, 2026-11-19: no. Fluster computes the lists itself.
+  - ~~Possible Jellyscale request (from:octave): server-side sort and threshold filter by the user's own rating.~~ Owner, 2026-11-19: no. Octave computes the lists itself.
   - Checked against both servers by P16-13 (2026-11-19): see `tests/fixtures/jellyfin/README.md` "Personal ratings (P16-13)". Findings for P16-14 to P16-16: `DELETE /UserItems/{id}/Rating` is the only call that clears a rating (no `UserData` body does; `{ Rating: 0 }` stores 0); the thumbs routes overwrite a number (like stores 10, dislike stores 1); `filters=Likes` is enough for the cutoff of 8; `Dislikes` and `IsFavoriteOrLikes` do not behave as named and `Likes,Dislikes` is a 400 on 12.4.0.
   - M.
 
@@ -450,7 +450,7 @@ The triage of every entry added since the 2026-11-15 pass, and the two owner req
   - P16-11 and P16-13 (fixtures): the recorder does not reproduce committed fixtures and logs in on a fixed device id (P17-01 follow-ups).
   - P3-33's spec: P17-08 follow-up (a), a retry that does not keep an audio track switched in mpv, sits on the same restart path; P3-33 takes guardian L3 only.
 - Found by this pass:
-  - ~~Languages in the player's Settings sheet have no task.~~ Taken by P3-34 (owner, S1 and S4 corrected, 2026-11-19: every Settings section is in the sheet, and a language change switches the playing tracks). For the record: a renegotiation asks for the playing tracks by index (`currentSelection`, `src/domain/track-choice.ts`), so P3-34 is where Fluster first picks a track by language itself.
+  - ~~Languages in the player's Settings sheet have no task.~~ Taken by P3-34 (owner, S1 and S4 corrected, 2026-11-19: every Settings section is in the sheet, and a language change switches the playing tracks). For the record: a renegotiation asks for the playing tracks by index (`currentSelection`, `src/domain/track-choice.ts`), so P3-34 is where Octave first picks a track by language itself.
   - ~~A rating prompt when a film ends has no task.~~ Taken by P16-17 (owner, R2 B).
   - Whether a renegotiation keeps a paused title paused, and whether direct play after a renegotiation selects the kept subtitle track in mpv, are unverified; P3-33's spec records both. S (P3-33).
   - CI retries end-to-end journeys twice and visual captures once (`playwright.config.ts:19`, `playwright.visual.config.ts:17`), so the `e2e/tv/settings-languages.spec.ts:28` flake (2 of 10 on main without retries) rarely fails a pull request. It stays an entry; promote it if it fails a CI run. S.
@@ -527,7 +527,7 @@ The triage of every entry added since the 2026-11-15 pass, and the two owner req
 
 - Run the Rust tests on a libmpv 0.42 built with libcurl (Arch once it ships, or a local build) and record the result: `every_handle_refuses_the_curl_backend_when_libmpv_has_one`, `curl_backend_redirects_are_refused_too`, and the `CurlBackendOn` cases of `hls_segment_redirects_are_refused_on_nested_opens` have only run their 0.41 (no curl) branch. S.
 - The probe treats a definite "no such option" for `curl-enabled` as "no curl backend". If mpv ever renames the option without an alias, a curl build would go unguarded. Recheck `curl-enabled` in each mpv release's `options.rst`. S.
-- On the curl path, whether libcurl reads the `http_proxy` environment variable is unverified; Fluster relies on `curl-enabled=no` so curl never runs. S.
+- On the curl path, whether libcurl reads the `http_proxy` environment variable is unverified; Octave relies on `curl-enabled=no` so curl never runs. S.
 - Under `HAVE_LIBCURL`, mpv 0.42 sets `http_persistent=0` and `http_multiple=1` on lavf HLS opens even with `curl-enabled=no` (`demux/demux_lavf.c` v0.42.0 lines 1575-1588). Check HLS playback and segment requests still behave on 0.42. S.
 - The release AppImage's bundled libmpv must pass the curl guard tests before it moves to mpv 0.42. S.
 

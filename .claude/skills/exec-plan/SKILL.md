@@ -1,6 +1,6 @@
 ---
 name: exec-plan
-description: Create, resume, or close a Fluster execution plan. Use for work that spans more than one session or more than one domain, or when claiming a milestone in parallel work.
+description: Create, resume, or close a Octave execution plan. Use for work that spans more than one session or more than one domain, or when claiming a milestone in parallel work.
 ---
 
 # Execution plans

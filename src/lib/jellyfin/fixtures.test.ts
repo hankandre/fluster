@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { LibraryItem } from "../../domain/catalog";
 import { PlaybackRefusedError } from "../../domain/playback";
-import { FLUSTER_PROFILE } from "./device-profile";
+import { OCTAVE_PROFILE } from "./device-profile";
 import { JellyfinGateway } from "./gateway";
 import type { HttpRequestConfig, HttpTransport, PlaybackInfoResponse } from "./types";
 
@@ -87,7 +87,7 @@ describe.each(versions)("PlaybackInfo fixtures from Jellyfin %s", (version) => {
     expect(result.tracks.every((track) => !track.external)).toBe(true);
   });
 
-  it("sends the Fluster profile in the body and the decision 0002 flags in body and query", async () => {
+  it("sends the Octave profile in the body and the decision 0002 flags in body and query", async () => {
     const { transport, run } = await plan(version, "h264-profile", "item-h264");
     await run();
     const [request] = transport.posts;
@@ -98,14 +98,14 @@ describe.each(versions)("PlaybackInfo fixtures from Jellyfin %s", (version) => {
       UserId: "user-test",
       StartTimeTicks: 0,
       MaxStreamingBitrate: 1000000000,
-      DeviceProfile: FLUSTER_PROFILE,
+      DeviceProfile: OCTAVE_PROFILE,
     });
     expect(request.params).toEqual({ ...FLAGS, UserId: "user-test", StartTimeTicks: 0, MaxStreamingBitrate: 1000000000 });
   });
 
   // The empty-codec assumption: a profile whose DirectPlayProfiles name no
   // container or codec still lets the server report direct play.
-  it("plays the H.264 movie recorded with the Fluster profile", async () => {
+  it("plays the H.264 movie recorded with the Octave profile", async () => {
     const response = fixture(version, "h264-profile");
     expect(response.MediaSources?.[0].SupportsDirectPlay).toBe(true);
     const { run } = await planFrom(response, "item-h264");
@@ -212,7 +212,7 @@ describe.each(versions)("PlaybackInfo fixtures from Jellyfin %s", (version) => {
       StartTimeTicks: 0,
       MaxStreamingBitrate: 1000000000,
       MediaSourceId: "source-versions-2",
-      DeviceProfile: FLUSTER_PROFILE,
+      DeviceProfile: OCTAVE_PROFILE,
     });
     expect(request.params).toEqual({ ...FLAGS, UserId: "user-test", StartTimeTicks: 0, MaxStreamingBitrate: 1000000000 });
   });

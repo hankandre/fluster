@@ -1,5 +1,5 @@
 // Records scrubbed PlaybackInfo contract fixtures from the two fixture servers.
-// Conversion fixtures also need FLUSTER_CONVERSION_SAMPLES=1 pnpm samples:generate (dvdsub and ISO).
+// Conversion fixtures also need OCTAVE_CONVERSION_SAMPLES=1 pnpm samples:generate (dvdsub and ISO).
 // Usage: pnpm fixture:up && pnpm fixture:setup && node tests/integration/record-fixtures.mjs [file ...]
 // Naming fixture files (for example playbackinfo-av1-profile) records only those;
 // the name "conversion" records every conversion-* fixture.
@@ -79,8 +79,8 @@ const only = new Set(process.argv.slice(2));
 // The name "conversion" records every conversion-* fixture and nothing else.
 const wanted = (file) => only.size === 0 || only.has(file) || (only.has("conversion") && file.startsWith("conversion-"));
 
-const FLUSTER_PROFILE = {
-  Name: "Fluster",
+const OCTAVE_PROFILE = {
+  Name: "Octave",
   MaxStreamingBitrate: 1000000000,
   MaxStaticBitrate: 1000000000,
   DirectPlayProfiles: [{ Type: "Video" }, { Type: "Audio" }],
@@ -109,7 +109,7 @@ const FLAGS = {
 // CodecProfiles and ContainerProfiles empty; SubtitleProfiles unchanged, no Hls method.
 // P10-03 owns the production profile; this copy only exists to record fixtures.
 const CONVERSION_PROFILE = {
-  ...FLUSTER_PROFILE,
+  ...OCTAVE_PROFILE,
   TranscodingProfiles: [
     {
       Type: "Video",
@@ -150,14 +150,14 @@ async function findItems(base, token) {
     await sleep(2000);
   }
   const missing = allCases.filter((c) => !items.some((i) => i.Path?.endsWith(c.path))).map((c) => c.path);
-  const hint = missing.some((m) => /DVDSub|ISO/.test(m)) ? " Conversion fixtures need the dvdsub and ISO samples: run FLUSTER_CONVERSION_SAMPLES=1 pnpm samples:generate first." : "";
+  const hint = missing.some((m) => /DVDSub|ISO/.test(m)) ? " Conversion fixtures need the dvdsub and ISO samples: run OCTAVE_CONVERSION_SAMPLES=1 pnpm samples:generate first." : "";
   throw new Error(`library scan did not finish; missing: ${missing.join(", ")}.${hint}`);
 }
 
 function requestFor(userId, withProfile, mediaSourceId) {
   const body = { ...FLAGS, UserId: userId, StartTimeTicks: 0, MaxStreamingBitrate: 1000000000 };
   if (mediaSourceId) body.MediaSourceId = mediaSourceId;
-  if (withProfile) body.DeviceProfile = FLUSTER_PROFILE;
+  if (withProfile) body.DeviceProfile = OCTAVE_PROFILE;
   return { body, query: { ...FLAGS, UserId: userId, StartTimeTicks: 0 } };
 }
 

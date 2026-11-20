@@ -13,17 +13,17 @@ Researched 2026-11-12 for [`docs/plans/proposals/discovery-and-profiles.md`](../
   - *Widespread*: mainstream coverage in several outlets, a survey, or the vendor shipped a fix.
   - *Common*: recurring articles or forum threads.
   - *Niche*: a few sources, sometimes intense.
-- **Complaints are weighed against use (§5).** The owner asked on 2026-11-12 that Fluster "shouldn't just follow the loudest malcontents" and should ask "is this actually something that is widely used despite the fact that it is also something widely complained about". Every gripe has a verdict in §5, with whatever usage or adoption evidence exists. Vendors publish almost none, and §5 says "no usage data" where that is so.
+- **Complaints are weighed against use (§5).** The owner asked on 2026-11-12 that Octave "shouldn't just follow the loudest malcontents" and should ask "is this actually something that is widely used despite the fact that it is also something widely complained about". Every gripe has a verdict in §5, with whatever usage or adoption evidence exists. Vendors publish almost none, and §5 says "no usage data" where that is so.
 - Nothing here was observed in a running app. Netflix, Prime Video, Disney+, Max, and Plex were not installed or used for this document.
-- "Applies to a personal library?" asks whether Fluster could fall into the same trap, not whether the business reason exists there.
+- "Applies to a personal library?" asks whether Octave could fall into the same trap, not whether the business reason exists there.
 
 ## 1. Summary
 
 | # | Gripe | How often | Why the service does it | Applies to a personal library? | Verdict (§5) |
 |---|---|---|---|---|---|
-| 1 | Previews that play by themselves while browsing | Widespread | Capture attention inside about 90 seconds | Only if Fluster chooses to. No incentive. | Used despite complaints; size of the unhappy group unknown |
+| 1 | Previews that play by themselves while browsing | Widespread | Capture attention inside about 90 seconds | Only if Octave chooses to. No incentive. | Used despite complaints; size of the unhappy group unknown |
 | 2 | Too much to scroll; minutes lost choosing | Widespread (survey) | A large catalogue is the product; abandonment is churn | Yes. A big library has the same problem. | Real friction; the remedy is unproven |
-| 3 | Rows and artwork that change between visits | Common | Per-visit ranking and per-viewer artwork raise plays | Only if Fluster chooses to. | Mixed: moving the viewer's own row is real friction; "reshuffling" in general is loud, unmeasured |
+| 3 | Rows and artwork that change between visits | Common | Per-visit ranking and per-viewer artwork raise plays | Only if Octave chooses to. | Mixed: moving the viewer's own row is real friction; "reshuffling" in general is loud, unmeasured |
 | 4 | Continue Watching fills with things you gave up on | Common | The row competes with discovery rows; removal came late | Yes, and Jellyfin has no removal today. | Real friction, on a heavily used row |
 | 5 | Other people see or alter your profile | Common | Profiles are a convenience, not a boundary; social features drive engagement | Yes. This is the owner's "Who's watching?" concern. | Real for those affected; how many is unknown |
 | 6 | "Are you still watching?" | Common, low intensity | Saves the viewer's place and data (Netflix's words) | Partly. A conversion left running costs the user's own server. | Loud; no data either way |
@@ -49,7 +49,7 @@ Researched 2026-11-12 for [`docs/plans/proposals/discovery-and-profiles.md`](../
 
 **How often:** widespread. Mainstream coverage in 2020 and again in 2025, and Netflix shipped a setting.
 **Why:** attention. The 90-second figure is Netflix's own.
-**Personal library:** nothing pushes Fluster to do it. `DESIGN.md` already keeps the Home backdrop still and silent: it follows focus after a 300 ms dwell and plays nothing (§7.2).
+**Personal library:** nothing pushes Octave to do it. `DESIGN.md` already keeps the Home backdrop still and silent: it follows focus after a 300 ms dwell and plays nothing (§7.2).
 
 ### 2.2 Too much to scroll
 
@@ -71,7 +71,7 @@ Researched 2026-11-12 for [`docs/plans/proposals/discovery-and-profiles.md`](../
 
 **How often:** common. The artwork dispute and the redesign are well covered. "The rows change every visit" is mostly anecdote in what was found.
 **Why:** ranking and artwork chosen per viewer raise the chance of a play. The paper says the system also picks "which image out of several versions".
-**Personal library:** Fluster has no reason to do either. Artwork is the library's own. Stable rows are a choice Fluster can simply make.
+**Personal library:** Octave has no reason to do either. Artwork is the library's own. Stable rows are a choice Octave can simply make.
 
 ### 2.4 Continue Watching clutter
 
@@ -82,9 +82,9 @@ Researched 2026-11-12 for [`docs/plans/proposals/discovery-and-profiles.md`](../
 - A user in that thread reported in February 2024 that posting `PlaybackPositionTicks: 0` to the item's user data removes it from the row and keeps the play count and last-played date. The Jellyfin version was not stated and no maintainer confirmed it (https://github.com/jellyfin/jellyfin-meta/discussions/50). **Unverified on 10.11 and 12.4.**
 - A third-party plugin implements removal without resetting progress (snippet) (https://github.com/jon4hz/jellyfin-plugin-discontinue-watching).
 
-**How often:** common. The Jellyfin vote count makes it the strongest signal in this document for Fluster's own users.
+**How often:** common. The Jellyfin vote count makes it the strongest signal in this document for Octave's own users.
 **Why:** unverified for Netflix. Its engineering post implies the row competes with discovery rows for position.
-**Personal library:** it applies in full, and Fluster's users have asked for it louder than Netflix's have.
+**Personal library:** it applies in full, and Octave's users have asked for it louder than Netflix's have.
 
 ### 2.5 Other people in your profile
 
@@ -114,7 +114,7 @@ Researched 2026-11-12 for [`docs/plans/proposals/discovery-and-profiles.md`](../
 
 **How often:** common. The volume of "secret codes" guides shows that people want to browse everything.
 **Why:** licences are time-limited and regional. The Netflix paper states the philosophy: what customers ask for ("comprehensive search and navigation tools") differs from "what actually works (a few compelling choices simply presented)".
-**Personal library:** it does not apply. Nothing leaves unless the owner deletes it, and Fluster's library pages already sort and filter the whole library.
+**Personal library:** it does not apply. Nothing leaves unless the owner deletes it, and Octave's library pages already sort and filter the whole library.
 
 ### 2.8 Recommendations that serve the service
 
@@ -137,7 +137,7 @@ Researched 2026-11-12 for [`docs/plans/proposals/discovery-and-profiles.md`](../
 
 **How often:** common for binge auto-play. Niche but intense for credits.
 **Why:** more viewing per session. The Chicago result is the best evidence.
-**Personal library:** next-episode auto-play is wanted. The owner said so: "if they're watching a TV series, they're going to want to binge that TV series most likely." The abuses are separate and optional: starting something unrelated after a film, shrinking credits, and hiding the off switch. Fluster already has a countdown card with Hide (`DESIGN.md` §7.15) and plans a switch and a countdown length (P3-23).
+**Personal library:** next-episode auto-play is wanted. The owner said so: "if they're watching a TV series, they're going to want to binge that TV series most likely." The abuses are separate and optional: starting something unrelated after a film, shrinking credits, and hiding the off switch. Octave already has a countdown card with Hide (`DESIGN.md` §7.15) and plans a switch and a countdown length (P3-23).
 
 ### 2.10 Skip intro
 
@@ -147,7 +147,7 @@ Researched 2026-11-12 for [`docs/plans/proposals/discovery-and-profiles.md`](../
 
 **How often:** the demand is widespread, by Netflix's own numbers. Complaints that it is missing or uneven are common in Jellyfin.
 **Why:** it removes friction in a binge. Plex charges for it.
-**Personal library:** it applies, and it depends on the server having segments. Fluster already skips from Jellyfin media segments (P3-11). Jellyscale's status page lists media segments as not built, with segments coming only from operator data or chapter markers (`~/Code/jellyscale/docs/status.md`, read 2026-11-12).
+**Personal library:** it applies, and it depends on the server having segments. Octave already skips from Jellyfin media segments (P3-11). Jellyscale's status page lists media segments as not built, with segments coming only from operator data or chapter markers (`~/Code/jellyscale/docs/status.md`, read 2026-11-12).
 
 ### 2.11 Audio and subtitles
 
@@ -184,7 +184,7 @@ Researched 2026-11-12 for [`docs/plans/proposals/discovery-and-profiles.md`](../
 
 **How often:** widespread for the redesign. The keyboard point is unverified beyond practitioners.
 **Why:** larger tiles and previews promote featured titles (unverified; Netflix cites its tests).
-**Personal library:** it will apply to Fluster's TV shell. `DESIGN.md` already fixes six posters or four thumbs per TV row and one-press resume.
+**Personal library:** it will apply to Octave's TV shell. `DESIGN.md` already fixes six posters or four thumbs per TV row and one-press resume.
 
 ### 2.15 Ads and outside content
 
@@ -193,7 +193,7 @@ Researched 2026-11-12 for [`docs/plans/proposals/discovery-and-profiles.md`](../
 
 **How often:** widespread among Plex users.
 **Why:** ad-supported viewing earns from users who never buy Plex Pass (the NASCompares author's reasoning).
-**Personal library:** Fluster has no such incentive, and `PRODUCT.md` principle 6 rules out third-party services. This gripe is a reason people move to Jellyfin.
+**Personal library:** Octave has no such incentive, and `PRODUCT.md` principle 6 rules out third-party services. This gripe is a reason people move to Jellyfin.
 
 ## 3. What personal-library users ask for instead
 
@@ -209,7 +209,7 @@ No thread about the quality of "recommended" rows in Jellyfin was found: **unver
 
 | Advantage | Why a service can't | What it allows |
 |---|---|---|
-| **No engagement incentive.** | Hours watched and renewals pay the bills (§2.8, §2.9). | Fluster can recommend one good thing and stop. It can suggest a 90-minute film at 22:30, or nothing. Success is "found something in under a minute", not "watched longer". |
+| **No engagement incentive.** | Hours watched and renewals pay the bills (§2.8, §2.9). | Octave can recommend one good thing and stop. It can suggest a 90-minute film at 22:30, or nothing. Success is "found something in under a minute", not "watched longer". |
 | **A catalogue the viewer chose.** | A service must sell what it licensed, including what the viewer would never pick. | Every title is already wanted by someone in the household. Discovery becomes "what did I mean to watch", not "is this any good". Unwatched and recently added are strong signals by themselves. |
 | **No licensing churn.** | Licences expire (§2.7). | Rows can stay put for months. "Leaving soon" pressure does not exist. A watchlist never loses items. |
 | **The whole catalogue is browsable.** | Services hide breadth behind rows (§2.7). | Full sort and filter stays one step from every row. Search is exact (§2.12). |
@@ -217,7 +217,7 @@ No thread about the quality of "recommended" rows in Jellyfin was found: **unver
 | **Local signals, kept local.** | A service has the signals but uses them centrally, and the viewer cannot see or reset them. | History lives on the user's own server, per account. A profile can be shown, explained ("because you watched …"), reset, or turned off. Nothing leaves the server. |
 | **No ads, no outside content.** | Ad tiers and promotions pay (§2.15). | The first screen is the library. |
 | **Real accounts.** | A profile is a convenience inside one paid account (§2.5). | Each person has their own server account, password, and parental limits. The client's job is not to weaken that. |
-| **The file is known.** | A service hides delivery. | Fluster can show runtime, quality, and languages before play, and say when the server converts (`PRODUCT.md` pillar 4). |
+| **The file is known.** | A service hides delivery. | Octave can show runtime, quality, and languages before play, and say when the server converts (`PRODUCT.md` pillar 4). |
 
 Where a personal library is weaker, to be honest about it:
 
@@ -262,5 +262,5 @@ What the weighing changes:
 
 1. **The best-supported complaints are about the viewer's own things**: where Continue Watching sits, what clutters it, and track choices that are forgotten. These rank first.
 2. **Three of the loudest complaints are about features people keep using**: previews, next-episode auto-play, and recommendations. The evidence supports giving control over them. It does not support removing them.
-3. **Several complaints have no measurement at all**: reshuffling rows, "Are you still watching?", cut credits, and the wish to browse everything. Fluster should not build its identity on them. Where the fix costs nothing, it can still take it.
+3. **Several complaints have no measurement at all**: reshuffling rows, "Are you still watching?", cut credits, and the wish to browse everything. Octave should not build its identity on them. Where the fix costs nothing, it can still take it.
 

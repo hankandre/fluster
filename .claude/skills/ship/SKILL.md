@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Open a pull request for a finished Fluster branch, wait for CI, merge it, and clean up. Use after verify and review pass, or when the human asks to ship.
+description: Open a pull request for a finished Octave branch, wait for CI, merge it, and clean up. Use after verify and review pass, or when the human asks to ship.
 ---
 
 # Ship

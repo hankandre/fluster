@@ -124,7 +124,7 @@ describe("JellyfinGateway redirects", () => {
   });
 });
 
-// What WebKitGTK's fetch returns for `redirect: "manual"`: an opaque redirect
+// What a browser-engine fetch returns for `redirect: "manual"`: an opaque redirect
 // with status 0, which Axios resolves rather than rejects.
 function opaqueRedirect(): Response {
   const response = new Response(null, { status: 200 });

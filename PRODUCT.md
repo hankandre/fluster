@@ -1,25 +1,25 @@
 # Product
 
-## What Fluster is
+## What Octave is
 
-Fluster is a client for watching video from a Jellyfin or Jellyscale server. It aims to give **the best possible watching experience**: it should feel like a streaming service such as Netflix, on your own library, **without having to finagle with the client** (the owner, 2026-11-12).
+Octave is a client for watching video from a Jellyfin or Jellyscale server. It aims to give **the best possible watching experience**: it should feel like a streaming service such as Netflix, on your own library, **without having to finagle with the client** (the owner, 2026-11-12).
 
-Fluster is for video only: movies and shows. It does not play music, audiobooks, or photos; better apps exist for those.
+Octave is for video only: movies and shows. It does not play music, audiobooks, or photos; better apps exist for those.
 
 Four pillars carry that:
 
 1. **It feels like a streaming service.** Open it and something to watch is in front of you. Resume takes one press. The next episode, the intro skip, and the artwork are where you expect them.
-2. **Native, not painted.** Fluster runs as a real application on each platform. It does not draw its interface on a canvas-like layer the way Flutter clients do, and it uses the device's own hardware and hardware acceleration wherever it can.
-3. **It just works.** Fluster supports as much of the server's video features as each device allows, with the right defaults. Nobody should have to tune a client to make their library play correctly.
-4. **Honest about the file.** Fluster plays your media **exactly as it is stored whenever it can**. The original file is streamed byte-for-byte and decoded locally with mpv, on the GPU when possible. When the original can't be played (a slow or limited connection, a disc folder, an admin policy), the server repackages or converts it, and Fluster always shows that it is doing so and why ([decision 0002](docs/decisions/0002-server-transcoding-fallback.md)).
+2. **Native, not painted.** Octave runs as a real application on each platform. It does not draw its interface on a canvas-like layer the way Flutter clients do, and it uses the device's own hardware and hardware acceleration wherever it can.
+3. **It just works.** Octave supports as much of the server's video features as each device allows, with the right defaults. Nobody should have to tune a client to make their library play correctly.
+4. **Honest about the file.** Octave plays your media **exactly as it is stored whenever it can**. The original file is streamed byte-for-byte and decoded locally with mpv, on the GPU when possible. When the original can't be played (a slow or limited connection, a disc folder, an admin policy), the server repackages or converts it, and Octave always shows that it is doing so and why ([decision 0002](docs/decisions/0002-server-transcoding-fallback.md)).
 
 It is built for people who chose to own their media and expect the client to respect that: full-quality video, untouched audio tracks, correct subtitles, and a server that stays idle while you watch anything the client can play. It started on the desktop, and the living room now leads: Android TV and Apple TV are the first-class clients, phones and tablets come next, and the desktop follows (owner decision, 2026-11-20). The long-term aim is to replace the other Jellyfin video clients, including the cross-platform Flutter ones, on every screen it supports.
 
-Where Fluster leads other clients today, and where it does not yet, is recorded in [`docs/research/jellyfin-clients.md`](docs/research/jellyfin-clients.md).
+Where Octave leads other clients today, and where it does not yet, is recorded in [`docs/research/jellyfin-clients.md`](docs/research/jellyfin-clients.md).
 
 ## Principles
 
-1. **Original first, honest fallback.** Fluster plays the original file whenever mpv can, and mpv can decode nearly everything. It asks the server to repackage or convert only when the original can't be played, in the order direct play, direct stream, transcode. Every conversion is shown with its reason. Quality never drops silently.
+1. **Original first, honest fallback.** Octave plays the original file whenever mpv can, and mpv can decode nearly everything. It asks the server to repackage or convert only when the original can't be played, in the order direct play, direct stream, transcode. Every conversion is shown with its reason. Quality never drops silently.
 2. **The client does the work.** Decoding, tone-mapping, subtitle rendering, and audio handling happen locally. A Raspberry Pi or underpowered NAS can serve a household.
 3. **Native feel, everywhere.** It should feel like a real application on each platform: fast startup, correct window behavior, keyboard and remote navigation, platform media keys. It must not feel like a web page in a frame.
 4. **No Flutter.** The UI is React/TypeScript. TV and mobile use a native shell (decision 0003, leaning React Native with native player modules); the desktop is a Tauri shell (see `ARCHITECTURE.md`).
@@ -29,13 +29,13 @@ Where Fluster leads other clients today, and where it does not yet, is recorded 
 
 ## Better than a streaming service
 
-Fluster borrows the feel of a streaming service and leaves out what such a service does for its own benefit. A personal library has no reason to keep anyone watching, and nothing in it expires. These rules follow from that (owner, 2026-11-12). The research and the weighing behind them are in [`docs/research/streaming-ux-gripes.md`](docs/research/streaming-ux-gripes.md) and [`docs/plans/proposals/discovery-and-profiles.md`](docs/plans/proposals/discovery-and-profiles.md).
+Octave borrows the feel of a streaming service and leaves out what such a service does for its own benefit. A personal library has no reason to keep anyone watching, and nothing in it expires. These rules follow from that (owner, 2026-11-12). The research and the weighing behind them are in [`docs/research/streaming-ux-gripes.md`](docs/research/streaming-ux-gripes.md) and [`docs/plans/proposals/discovery-and-profiles.md`](docs/plans/proposals/discovery-and-profiles.md).
 
 1. **Your next episode comes first.** The first thing on Home is what you were in the middle of, and one press plays it.
 2. **Home stays where you left it.** The rows and their order are the same on every visit. A row's contents change only when the library or your own history does.
 3. **The first row holds what you're watching now.** A title you last played more than two weeks ago leaves Continue watching; the length is a setting. Its position is kept, and its own page still offers Resume.
 4. **The end of a film is the end.** In a series the next episode plays after a countdown you can see, hide, or turn off. Nothing unrelated starts by itself.
-5. **Your account is yours.** Remembering several accounts must not let one person open another's. What Fluster learns about a viewer stays on that viewer's server, under their account.
+5. **Your account is yours.** Remembering several accounts must not let one person open another's. What Octave learns about a viewer stays on that viewer's server, under their account.
 6. **Nothing from outside.** No ads, no promoted titles, and nothing that is not in the library.
 7. **Nothing plays by itself unless you turn it on.** Previews while browsing are off by default.
 
@@ -52,7 +52,7 @@ Fluster borrows the feel of a streaming service and leaves out what such a servi
 ## Not for
 
 - Server administration. Use Jellyfin's web dashboard.
-- Music, audiobooks, and photos. Fluster is a video client (the owner, 2026-11-12). Better apps exist for these, and Fluster will not grow them.
+- Music, audiobooks, and photos. Octave is a video client (the owner, 2026-11-12). Better apps exist for these, and Octave will not grow them.
 - Live TV and DVR. Out of scope (the owner, 2026-11-12), although most other clients have it.
 - Books.
 
@@ -64,7 +64,7 @@ Owner decision, 2026-11-20: Android TV and Apple TV are first-class clients and 
 
 | Stage | Platform | Shell |
 |---|---|---|
-| First | Android TV / Google TV (and Fire TV on Fire OS), then Apple TV | Native TV shell sharing Fluster's TypeScript core and Rust security layer (decision 0003) |
+| First | Android TV / Google TV (and Fire TV on Fire OS), then Apple TV | Native TV shell sharing Octave's TypeScript core and Rust security layer (decision 0003) |
 | Next | Android phones and tablets, iPhone and iPad | The same shell |
 | Then | Desktop: Linux x86_64 Wayland (beta today), macOS, Windows | Tauri + embedded libmpv. The Linux beta stays maintained (playback and security fixes) |
 
@@ -72,15 +72,15 @@ X11, ARM64 Linux, and Flatpak are deferred, not rejected.
 
 ### Servers
 
-- **Jellyfin** 10.11.x and 12.x with default settings. Jellyfin 12 disables legacy query-string authorization by default, so Fluster authenticates media requests with headers (see `ARCHITECTURE.md` §3).
-- **Jellyscale**, a scale-out video server that speaks the Jellyfin client API and is meant as a drop-in replacement for a Jellyfin server. It is still being built. Fluster aims to be the first client to support it directly, and assumes Jellyscale will provide the APIs needed to stream. Fluster is tested against it when Jellyscale reaches its client-integration work (`tasks/backlog.md`); nothing is verified against it today.
+- **Jellyfin** 10.11.x and 12.x with default settings. Jellyfin 12 disables legacy query-string authorization by default, so Octave authenticates media requests with headers (see `ARCHITECTURE.md` §3).
+- **Jellyscale**, a scale-out video server that speaks the Jellyfin client API and is meant as a drop-in replacement for a Jellyfin server. It is still being built. Octave aims to be the first client to support it directly, and assumes Jellyscale will provide the APIs needed to stream. Octave is tested against it when Jellyscale reaches its client-integration work (`tasks/backlog.md`); nothing is verified against it today.
 
 ### Original first: what users see
 
 - **Direct play** (the normal case): no indicator beyond the player information panel, which says "Original file".
 - **Direct stream** (the server repackages without re-encoding, for example a disc folder): "Repackaging on server, original quality: {reason}".
 - **Transcode** (the server re-encodes, for example a remote bitrate limit): "Converting on server: {reason}", naming what is converted (video, audio, or burned-in subtitles). If the user's own streaming limit is the only reason, the indicator offers "Play original".
-- **Refusal** (nothing can be played or converted): Fluster stops before playback and explains why in plain language, for example the admin turned off conversion for this user, or the item is a live channel. Retry and Back are always available.
+- **Refusal** (nothing can be played or converted): Octave stops before playback and explains why in plain language, for example the admin turned off conversion for this user, or the item is a live channel. Retry and Back are always available.
 
 A streaming-limit setting holds a local and a remote maximum bitrate; both default to no limit (the server's own remote limit still applies). Local means the server address is on this device or the home network.
 
@@ -108,7 +108,7 @@ The client someone could use every evening instead of the web UI.
 - **Track defaults:** respect the user's Jellyfin audio and subtitle language preferences.
 - **Input:** full keyboard navigation, media keys and MPRIS on Linux, mouse-idle hiding.
 
-Done when: a week of normal evening use needs no fallback to the web UI, the server runs no conversion for any file Fluster could play as stored, and every flow above has a Playwright journey.
+Done when: a week of normal evening use needs no fallback to the web UI, the server runs no conversion for any file Octave could play as stored, and every flow above has a Playwright journey.
 
 ### M1b — Playback parity (decision 0002)
 
@@ -122,7 +122,7 @@ Done when: every sample mpv can play still direct plays (tripwire), disc folders
 - Audio passthrough/bitstreaming (AC3, E-AC3, TrueHD, DTS-HD) as an explicit setting.
 - Display refresh-rate matching where the platform allows.
 - Subtitle styling options that don't override ASS authoring.
-- Dolby Vision: what Fluster does with it is decided after the HDR spike (P5-01) reports on profiles 5 and 8.
+- Dolby Vision: what Octave does with it is decided after the HDR spike (P5-01) reports on profiles 5 and 8.
 
 Done when: the `docs/validation.md` codec matrix passes, plus HDR and passthrough gates on reference hardware.
 
@@ -141,7 +141,7 @@ Composition spike first: transparent WebView2 over an mpv D3D11 surface. Then D3
 
 ### M6 — Living room and mobile
 
-A TV/mobile shell that reuses Fluster's domain, gateway, and playback policy. Android TV and Apple TV come first, as first-class clients; phones and tablets come next (owner decision, 2026-11-20). Decision 0003 picks the shell and the playback engines.
+A TV/mobile shell that reuses Octave's domain, gateway, and playback policy. Android TV and Apple TV come first, as first-class clients; phones and tablets come next (owner decision, 2026-11-20). Decision 0003 picks the shell and the playback engines.
 
 - Act as a Jellyfin cast target, so a phone can be the TV's remote and other clients can send play, pause and seek (P8-01, moved here from M5 by the owner, 2026-11-12, D4 B).
 
@@ -153,13 +153,13 @@ M0, M1, M1b (done or in progress on the Linux desktop), then **M6 first**: the T
 
 | Measure | Target |
 |---|---|
-| Server transcode/remux jobs started by Fluster for a file it could play as stored | **0**, always. A failure here is a P0 bug. |
+| Server transcode/remux jobs started by Octave for a file it could play as stored | **0**, always. A failure here is a P0 bug. |
 | Server conversions shown to the user with a reason | **100%** |
-| Server jobs still running 10 s after Fluster stops | **0** |
+| Server jobs still running 10 s after Octave stops | **0** |
 | Time from Play to first frame (LAN, H.264/HEVC) | < 1.5 s at p50, recorded in the dogfood log (P4-01) |
 | Resume accuracy (position reported vs. resumed elsewhere) | within 10 s |
 | Hardware decode engaged on supported GPU | 100% of validation matrix |
-| Crashes during the dogfood week | 0. Fluster has no analytics, so a percentage cannot be measured. |
+| Crashes during the dogfood week | 0. Octave has no analytics, so a percentage cannot be measured. |
 | Authenticated URLs or tokens in logs/diagnostics | 0 |
 
 ## Open product questions

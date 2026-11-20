@@ -14,7 +14,7 @@ describe("diagnosticsText", () => {
   it("is exactly seven lines with fixed prefixes", () => {
     const lines = diagnosticsText(native).split("\n");
     expect(lines).toEqual([
-      "Fluster 0.1.0",
+      "Octave 0.1.0",
       "OS: Linux",
       "Player: native, libmpv 0.41.0",
       "Renderer: gl",
