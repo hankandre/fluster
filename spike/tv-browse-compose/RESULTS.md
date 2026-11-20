@@ -9,11 +9,14 @@ with the **same driver and oracle** (`spike/tv-browse/run-falsifier.sh` and
 
 On the **emulator** the first-pass Compose screen:
 
-- **Focus:** 297–299 of 299 single presses correct and **0 of 12 bursts diverged in all four
-  clean runs**, against the React Native spike's 294–298/299 and 3–6/12 bursts with 12–77 presses
-  misrouted. No recycled-cell jumps, no Right-past-the-end escapes, no Left stuck at column 0, and
-  every row reached column 49 in the memory pass. One defect remains: Down on the last rail item
-  sometimes leaves the rail for a card (2 presses in 1 of 4 runs).
+- **Focus:** 297–299 of 299 single presses scored correct and **0 of 12 bursts diverged in all
+  four clean runs**, against the React Native spike's 294–298/299 and 3–6/12 bursts with 12–77
+  presses misrouted. No recycled-cell jumps, no Right-past-the-end escapes, no Left stuck at
+  column 0, and every row reached column 49 in the memory pass. But the oracle is lenient on
+  Up/Down, and three defects remain: Up drifts 2–6 columns sideways and per-row focus memory does
+  not work; Left enters the rail at its bottom item; and Down from that item leaves the rail
+  (2 of 2 times it was pressed). The drift also kept the plan's rail rounds from reaching the rail
+  in three of four runs, so rail coverage is thin.
 - **Frames:** 2–6 % janky on held Right and held Down (one outlier run at 31–35 % while the host
   ran three emulators). Frame times are higher than React Native's on swiftshader (p50 16–24 ms
   against 15–16 ms); emulator frame times say little about a Shield.
@@ -42,7 +45,8 @@ matches the React Native app's content one for one:
   overlays the rows (with the drawer's scrim) instead of pushing them. Initial focus is rail item 0
   through a `FocusRequester`, as the React Native rail's `autoFocus` gives.
 - **Focus memory.** `focusRestorer()` on the `LazyColumn`, on every `LazyRow`, and on the rail
-  column. Right from the rail returns to the last focused card (1 of 1 in every run).
+  column. Right from the rail returns to the last focused card (1 of 1 in every run); the row and
+  rail restorers did not take effect on 2D-search entry (defects 2 and 3).
 - **Images.** Coil 3.6.3 (`coil-compose` + `coil-network-okhttp`), defaults otherwise. Posters
   request the same 300 px variant as React Native and are decoded at the card's size
   (`ImageRequest.size(w, h)`, ~248×372 px); backdrops request the 1920 px file at the window size.
@@ -152,30 +156,49 @@ The AVD is `~/.android/avd/fluster_tv_compose.{avd,ini}`; delete both to remove 
 | tv-speedprofile-run2 | speed-profile | 299/299 | 0 | 0/12 | 0 | 0 | 52 ms |
 | *React Native, flag off (5 runs)* | — | *294–297/299* | *2–5* | *6/12* | *69–70* | *4–5* | *64–67 ms* |
 
-- **Up/Down column.** 41–49 of 91–95 row changes kept the column (mean offset 3.3–3.5, max 33–35),
-  against React Native's 86 of 95. This is `focusRestorer` on each row: Down into a row returns to
-  the card last focused in *that* row, the Netflix "each row remembers its place" behaviour that
-  React Native lacked (its defect 5). The oracle accepts any card in the adjacent row.
-- **Rail.** Left from column 0 always reached the rail and Right returned to the remembered card.
+- **The oracle is lenient on Up/Down** (any card in the adjacent row is "ok"), so 299/299 does not
+  mean the column held. Split by plan step:
+  - first Down pass (presses 102–121, rows never focused before): 19 of 19 on column 0 in every run;
+  - first Up pass (presses 122–140, every row focused at column 0 moments earlier): the **same
+    path in all four runs**, `18,0 → 17,6 → 16,2 → … → 8,2 → 7,6 → 6,6 → 5,6 → 4,2 → … → 0,2`.
+    Up neither keeps the column nor restores the card last focused in that row (see defect 2);
+  - overall 41–49 of 91–95 row changes kept the column, against React Native's 86 of 95.
+- **Rail coverage.** The plan's eight rail rounds (step 3, presses 141–268) assume each round
+  starts at column 0. After the Up pass leaves focus on column 2, Left×5 then Left lands on a card,
+  not the rail: step 3 reached the rail **0 times** in tv-run1 and both speed-profile runs, and
+  2 times in tv-run2. So in three of four runs the rail was only exercised by step 1 (press 100)
+  and the step-4 Left bursts. Left from column 0 reached the rail every time it was tried, and
+  Right from the rail returned to the last card (1 of 1 per run).
 
 **Defects found** (no workarounds applied):
 
-1. **Down on the last rail item can leave the rail.** `rail,4` + Down landed on `14,0` and `15,0`
-   in tv-run2 (presses 250 and 266), and also in the manual smoke test and the discarded runs on
-   the shared emulator. It did not happen in the other three runs. The drawer is a focus group
-   with no `down` exit rule, so 2D search finds the card below. Fix cost: one
-   `focusProperties { onExit = { if (requestedFocusDirection == Down || … Up) cancelFocusChange() } }`
-   on the rail column.
-2. **Left enters the rail at the geometrically nearest item, not the remembered one.** Left from a
+1. **Down on the last rail item leaves the rail.** Left from a row enters the rail at `rail,4`
+   (defect 3), and Down from `rail,4` moved to a card in **every case observed**: 2 of 2 in tv-run2
+   (presses 250 and 266, to `14,0` and `15,0`), plus the manual smoke test and the discarded
+   shared-emulator runs. The other three runs never pressed Down on `rail,4`. The drawer is a focus
+   group with no exit rule, so 2D search finds the card below. Fix cost: on the rail column,
+   `focusProperties { onExit = { if (requestedFocusDirection == FocusDirection.Down || requestedFocusDirection == FocusDirection.Up) cancelFocusChange() } }`
+   (**unverified**).
+2. **Up drifts sideways and row memory does not work.** Every Up in the first Up pass landed 2 or
+   6 columns to the right of the column the row was left on (above). Each `LazyRow` has
+   `focusRestorer()`, but entering a row by 2D search did not restore its last focused card here,
+   just as the rail's restorer did not (defect 3). Down did keep the column on rows never
+   focused. Cause **unverified** (no layout inspection); the up-row is partly scrolled out of the
+   column's viewport when the search runs, which is a candidate. Fix cost: likely an explicit
+   `focusProperties { up = …; down = … }` per row or a `BringIntoViewSpec` that keeps the next row
+   fully visible; neither tried.
+3. **Left enters the rail at the geometrically nearest item, not the remembered one.** Left from a
    row lands on `rail,4` (the item nearest the rows), although rail item 0 was focused last. The
    `focusRestorer` on the rail column did not take effect on a 2D search entry into the
    `ModalNavigationDrawer`'s focus group. The oracle and the owner's rule ("Left reaches the rail")
    accept it; a Google TV-style rail would land on the current page's item. Fix cost: a
    `FocusRequester` per rail item and `focusProperties { onEnter = { selected.requestFocus() } }`
    on the rail (**unverified**).
-3. **None of React Native's defects 1–5 reproduced:** no recycled-cell jumps, Left on the rail stays
-   on the rail, Left at column 0 always reached the rail, Right at column 49 stays in the row, and
-   rows keep their own scroll position (all 20 rows reached column 49 in every memory pass).
+4. **React Native's defects 1–4 did not reproduce:** no recycled-cell jumps, Left on the rail stays
+   on the rail, Left at column 0 always reached the rail, and Right at column 49 stays in the row
+   (all 20 rows reached column 49 in every memory pass). Its defect 5 (a row's scroll offset
+   leaking into other rows) did not either: rows keep their own scroll state. Rail coverage in
+   these runs was thin (above), so "Left on the rail stays" rests on the step-4 Left bursts.
 
 ### Frames (`dumpsys gfxinfo`, held key via monkey, ~51–83 ms per press)
 
@@ -194,8 +217,10 @@ The AVD is `~/.android/avd/fluster_tv_compose.{avd,ini}`; delete both to remove 
 - Each segment's focus path was checked: hold Right logs 49 card events (plus the next launch's
   `rail,0`, which this app focuses at boot before the driver's `seg launch` marker), hold Down 19
   events ending on `19,0`.
-- **tv-run1 is an outlier**: 51 "slow UI thread" frames, while three emulators (this one and the
-  React Native agent's two) and two drivers shared the host. tv-run2, with the same APK, had none.
+- **tv-run1 is an outlier**: 51 "slow UI thread" frames. Its cause is **unverified**: it was the
+  first run about a minute after a `-wipe-data` boot (background dexopt and first-boot jobs), and
+  the host was also running the React Native agent's emulators; but tv-speedprofile-run2 overlapped
+  the other agent's emulator run and was fine. tv-run2, with the same APK, had 0 slow UI frames.
 - Janky frames in the other runs are "slow issue draw commands" / "frame deadline missed". On
   swiftshader every draw runs on the host CPU, so these numbers say little about a Tegra X1.
 
