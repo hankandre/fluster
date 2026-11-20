@@ -60,13 +60,16 @@ async function prepare(setStatus: (text: string) => void): Promise<Ready | undef
   log(`signed in after ${Date.now() - started}ms`);
 
   setStatus(`Looking up ${config.title}`);
-  const page = await gateway.searchItems(config.title, { startIndex: 0, limit: 25 });
-  const card = page.cards.find((c) => c.title.toLowerCase() === config.title!.toLowerCase()
-    && c.kind === "Movie" && (!config.year || c.subtitle === config.year))
-    ?? page.cards.find((c) => c.title.toLowerCase() === config.title!.toLowerCase() && (!config.year || c.subtitle === config.year));
+  const page = await gateway.searchItems(config.title.split(":")[0].trim(), { startIndex: 0, limit: 25 });
+  // Titles are compared on letters and digits only ("Spider-Man: Into the Spider-Verse").
+  const norm = (text: string) => text.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const wanted = norm(config.title);
+  const matches = page.cards.filter((c) => norm(c.title) === wanted);
+  const card = matches.find((c) => c.kind === "Movie" && (!config.year || c.subtitle === config.year))
+    ?? matches.find((c) => !config.year || c.subtitle === config.year);
   if (!card) {
     setStatus(`Not found: ${config.title} ${config.year ?? ""}`);
-    log(`lookup failed results=${page.cards.length}`);
+    log(`lookup failed results=${page.cards.length} titleMatches=${matches.length} years=[${matches.map((c) => c.subtitle ?? "-").join(",")}]`);
     return undefined;
   }
   log(`lookup ok kind=${card.kind} year=${card.subtitle}`);
@@ -107,7 +110,10 @@ export default function App() {
     }).catch((error: unknown) => {
       const name = error instanceof Error ? error.constructor.name : "unknown";
       const kind = (error as { kind?: string }).kind ?? "";
-      log(`prepare failed ${name} ${kind}`);
+      const message = error instanceof Error ? error.message : "";
+      // Redacted: no URL, no Token="...", no long hex (tokens, ids).
+      const safe = message.replace(/https?:\/\/\S*/g, "<url>").replace(/Token="[^"]*"/g, "Token=<r>").replace(/[0-9a-f]{16,}/gi, "<hex>").slice(0, 300);
+      log(`prepare failed ${name} ${kind} ${safe}`);
       setStatus(`Failed: ${name} ${kind}`);
     });
   }, []);

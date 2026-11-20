@@ -1,0 +1,34 @@
+{
+  "pass": true,
+  "checks": {
+    "everyRequestHasAuthorization": true,
+    "tokenOnEveryNonPublicRequest": true,
+    "noCredentialInAnyUrl": true,
+    "zeroRedirectsFollowed": true,
+    "zeroOtherOrigins": true,
+    "apiKeyProbeNeverSent": true,
+    "upstreamRelayedNoRedirect": true
+  },
+  "counts": {
+    "requests": 17,
+    "missingAuth": 0,
+    "tokenless": 4,
+    "tokenlessNotAllowed": 0,
+    "credentialParam": 0,
+    "tokenInUrl": 0,
+    "wrongHost": 0,
+    "upstream3xx": 0,
+    "upstreamErrors": 0,
+    "probeRedirectsServed": 6,
+    "probeTargetHits": 0,
+    "probeApiKeyReached": 0,
+    "canaryHits": 0,
+    "streamRequests": 3,
+    "streamBytes": 1405548,
+    "status401": 0,
+    "injectedStreamRedirects": 0
+  },
+  "tokensSeen": 2,
+  "redirectStreamMode": false,
+  "durationMs": 146151
+}

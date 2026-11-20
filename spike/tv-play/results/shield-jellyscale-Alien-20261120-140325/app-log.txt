@@ -1,0 +1,10 @@
+--------- beginning of system
+--------- beginning of main
+11-20 14:08:15.379  7540  7569 I ReactNativeJS: Running "main"
+11-20 14:08:15.394  7540  7569 I OCTAVE_PLAY: launch config keys: [canary, pass, server, title, user, year]
+11-20 14:08:15.510  7540  7569 I ReactNativeJS: OCTAVE_JS connected version=12.4.0 hostClass=loopback confirm=false
+11-20 14:08:15.688  7540  7569 I ReactNativeJS: OCTAVE_JS signed in after 293ms
+11-20 14:08:15.727  7540  7569 I ReactNativeJS: OCTAVE_JS lookup ok kind=Movie year=1979
+11-20 14:08:15.770  7540  7569 I ReactNativeJS: OCTAVE_JS plan delivery=static playMethod=DirectPlay reasons=[] tracks=27
+11-20 14:08:15.783  7540  7569 I ReactNativeJS: OCTAVE_JS js probes {"redirectSameStatus":302,"redirectCanaryStatus":302}
+11-20 14:08:15.816  7540  7569 I ReactNativeJS: OCTAVE_JS prepare failed CodedError 

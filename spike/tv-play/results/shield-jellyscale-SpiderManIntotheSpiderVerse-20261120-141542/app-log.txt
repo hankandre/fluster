@@ -1,0 +1,7 @@
+--------- beginning of main
+--------- beginning of system
+11-20 14:15:44.793 15658 15687 I ReactNativeJS: Running "main"
+11-20 14:15:44.809 15658 15687 I OCTAVE_PLAY: launch config keys: [canary, pass, server, title, user, year]
+11-20 14:15:44.970 15658 15687 I ReactNativeJS: OCTAVE_JS connected version=12.4.0 hostClass=loopback confirm=false
+11-20 14:15:45.080 15658 15687 I ReactNativeJS: OCTAVE_JS signed in after 270ms
+11-20 14:15:45.104 15658 15687 I ReactNativeJS: OCTAVE_JS lookup failed results=0

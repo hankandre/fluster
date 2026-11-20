@@ -1,0 +1,3 @@
+{"seq":1,"tMs":6454,"method":"GET","path":"/System/Info/Public","queryNames":[],"auth":"MediaBrowser","authToken":false,"authClient":"Octave","range":false,"hostOk":true,"status":200,"bytes":214}
+{"seq":2,"tMs":6477,"method":"POST","path":"/Users/AuthenticateByName","queryNames":[],"auth":"MediaBrowser","authToken":false,"authClient":"Octave","range":false,"hostOk":true,"status":200,"bytes":2894}
+{"seq":3,"tMs":6591,"method":"GET","path":"/Items","queryNames":["userId","searchTerm","recursive","includeItemTypes","sortBy","sortOrder","startIndex","limit","enableUserData","enableTotalRecordCount","fields","imageTypeLimit","enableImageTypes"],"auth":"MediaBrowser","authToken":true,"authClient":"Octave","range":false,"hostOk":true,"status":200,"bytes":49}

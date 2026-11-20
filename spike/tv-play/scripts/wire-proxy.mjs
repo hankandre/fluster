@@ -130,10 +130,12 @@ const server = http.createServer((req, res) => {
     const outHeaders = { ...upstreamRes.headers };
     res.writeHead(status, outHeaders);
     let bytes = 0;
-    upstreamRes.on("data", (chunk) => { bytes += chunk.length; });
+    upstreamRes.on("data", (chunk) => {
+      bytes += chunk.length;
+      if (isStream) counts.streamBytes += chunk.length;
+    });
     upstreamRes.pipe(res);
     const done = () => {
-      if (isStream) counts.streamBytes += bytes;
       finish(status, bytes, isStream ? { contentRange: Boolean(upstreamRes.headers["content-range"]) } : {});
     };
     upstreamRes.on("end", done);
