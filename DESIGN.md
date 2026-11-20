@@ -93,12 +93,14 @@ How:
 | `--type-hero` | `clamp(2.5rem, 1.5rem + 2.6vw, 4.5rem)` / 1.02 | 700 | -0.02em | Hero and detail title without a logo |
 | `--type-code` | the `--type-hero` size / 1.02, in Mono | 700 | 0 | The Quick Connect code (`tnum`) |
 | `--type-title` | 2rem / 1.15 | 650 | -0.01em | Page titles (library, Settings), dialog titles at 1.5rem |
-| `--type-heading` | 1.375rem / 1.25 | 600 | 0 | Row and section titles, sentence case |
-| `--type-body-lg` | 1.125rem / 1.55 | 400 | 0 | Overview (max 62ch) |
-| `--type-body` | 1rem / 1.5 | 400 | 0 | Body, settings descriptions |
-| `--type-label` | 0.9375rem / 1.3 | 600 | 0 | Buttons, card titles, tabs |
-| `--type-meta` | 0.8125rem / 1.35 | 500 | 0.01em | Card subtitles, facts line, badges |
-| `--type-mono` | 0.875rem / 1.3 | 500 | 0 | Timecodes, codes, technical values (`tnum`) |
+| `--type-heading` | 1.625rem / 1.25 | 600 | 0 | Row and section titles, sentence case |
+| `--type-body-lg` | 1.3125rem / 1.55 | 400 | 0 | Overview (max 62ch) |
+| `--type-body` | 1.1875rem / 1.5 | 400 | 0 | Body, settings descriptions |
+| `--type-label` | 1.125rem / 1.3 | 600 | 0 | Buttons, card titles, tabs |
+| `--type-meta` | 1rem / 1.35 | 500 | 0.01em | Card subtitles, facts line, badges |
+| `--type-mono` | 1rem / 1.3 | 500 | 0 | Timecodes, codes, technical values (`tnum`) |
+
+The desktop sizes are two steps up from the first scale (owner, 2026-11-19): meta 13 to 16 px, label 15 to 18, body 16 to 19, heading 22 to 26, overview 18 to 21, and mono 14 to 16. Hero and title are unchanged, and the TV form keeps its own sizes (§6). The root stays 16 px times `--ui-scale` in every form, so rem never follows `--type-body`; `body` takes `--type-body`.
 
 Rules: sentence case everywhere (no uppercase-tracked labels, no eyebrow or kicker labels). Text is never smaller than 13 px on desktop or 24 px on TV. Titles truncate to one line in cards and two lines in headers, with the full title in the accessible name.
 
@@ -174,7 +176,7 @@ Reduced motion (`prefers-reduced-motion: reduce`):
 ### 10-foot (TV shell, M6)
 
 - Logical canvas 1920×1080, which the shell scales to the panel. **Title-safe inset** is 5%: 96 px left and right, 54 px top and bottom. Nothing focusable or textual goes outside it, except artwork bleeding to the edges.
-- `--ui-scale: 1.5` (root 24 px). The type scale multiplies with it. The TV block raises `--type-body` to `1.1667rem` (28 px), `--type-body-lg` to `1.3125rem` (31.5 px), and `--type-label`, `--type-meta`, and `--type-mono` to `1rem` (24 px), so body text is 28 px and labels, timecodes, and codes meet the 24 px floor; the TV `body` takes `--type-body`. The root size is set in the base layer, after the `font` shorthand, so rem scales with it.
+- `--ui-scale: 1.5` (root 24 px). The type scale multiplies with it. The TV block keeps `--type-heading` at `1.375rem` (33 px), raises `--type-body` to `1.1667rem` (28 px), `--type-body-lg` to `1.3125rem` (31.5 px), and `--type-label`, `--type-meta`, and `--type-mono` to `1rem` (24 px), so body text is 28 px and labels, timecodes, and codes meet the 24 px floor; the TV `body` takes `--type-body`. The root size is set in the base layer, after the `font` shorthand, so rem scales with it.
 - **TV body text is 28 px and no TV text is under 24 px** (UX audit D13 B): the sizes tvOS, Fire TV, and Xbox agree on. The type tokens are raised for the TV form; the scale, and six posters across, stay. The tokens are raised in the §8 block (P13-34).
 - Posters are 248 px (6 visible). Thumbs are 416 px (4 visible). Row gap is 48 px. Focus lift is `scale(1.08)` with `--shadow-lift`.
 - **No hover and no pointer.** All functions work with D-pad, OK, Back, Play/Pause, and Menu or Info. Text entry happens only in search and sign-in, through the shell's on-screen keyboard; sign-in leads with discovered servers and Quick Connect, so typing is the fallback (Q25 A).
@@ -259,7 +261,7 @@ Each component lists its anatomy, variants, states, and accessibility notes. All
 ### 7.8 Action bar (`ActionBar`)
 
 - Order: **Primary** (`Resume 41:00` with a small progress ring, or `Play`), then the version `Picker` pill (only with two or more versions), then the audio `Picker` pill (only when the chosen version has two or more audio tracks), then `Start over` (secondary, only when resuming), then icon toggles `Watched` and `Favorite` (each `aria-pressed`, label visible on desktop, tooltip plus accessible name on TV). Last comes `More` (from P15-02; Q7 A left it out of P13-09): a `Menu` (§7.10) holding File and streams, Go to series (on episodes), and Mark season watched. The version picker is not in it (Q6 A).
-- The bar may run wider than the text column, up to the page's content width, so the six controls (Resume, version, audio, Start over, Watched, Favorite) share one row at 1440 px. Labels stay as they are and the synopsis keeps its line length (five of twelve columns). The bar wraps only when the window is too narrow (owner decision, 2026-11-16). **The audio pill never shortens its label** (owner decision, 2026-11-16): it shows the full track label with no ellipsis, no clipping, and no maximum width, so a long title such as "English · Director's commentary with cast · AC-3 Stereo" widens the pill and the bar wraps to a second row when the controls no longer fit. A wrapped bar never overlaps its controls. A label wider than the window itself (a phone) wraps inside its pill rather than scroll the page sideways; nothing is ever cut.
+- The bar may run wider than the text column, up to the page's content width, so the six controls (Resume, version, audio, Start over, Watched, Favorite) share one row at 1440 px with a typical audio label. Labels stay as they are and the synopsis keeps its line length (five of twelve columns). The bar wraps only when the window is too narrow (owner decision, 2026-11-16). **The audio pill never shortens its label** (owner decision, 2026-11-16): it shows the full track label with no ellipsis, no clipping, and no maximum width, so a long title such as "English · Director's commentary with cast · AC-3 Stereo" widens the pill and the bar wraps to a second row when the controls no longer fit. With the larger desktop labels that happens at 1440 px for that title with all six controls; at 1920 px they still share one row (owner decision, 2026-11-20). A wrapped bar never overlaps its controls. A label wider than the window itself (a phone) wraps inside its pill rather than scroll the page sideways; nothing is ever cut.
 - The primary button gets initial focus when the screen opens (TV and keyboard). On desktop, focus goes to the `h1` first for screen readers (as today), and one Tab reaches Play.
 - When the player cannot start (`usePlayerStatus` unavailable), the primary button stays enabled. An `InlineNotice` under the bar explains, and "Check again" sits beside it (as today, restyled).
 
@@ -439,12 +441,12 @@ Fluster remembers any number of accounts. An account is one user on one server. 
   --ui-scale: 1;
   --type-hero: 700 clamp(2.5rem, 1.5rem + 2.6vw, 4.5rem) / 1.02 var(--font-ui);
   --type-title: 650 2rem / 1.15 var(--font-ui);
-  --type-heading: 600 1.375rem / 1.25 var(--font-ui);
-  --type-body-lg: 400 1.125rem / 1.55 var(--font-ui);
-  --type-body: 400 1rem / 1.5 var(--font-ui);
-  --type-label: 600 0.9375rem / 1.3 var(--font-ui);
-  --type-meta: 500 0.8125rem / 1.35 var(--font-ui);
-  --type-mono: 500 0.875rem / 1.3 var(--font-mono);
+  --type-heading: 600 1.625rem / 1.25 var(--font-ui);
+  --type-body-lg: 400 1.3125rem / 1.55 var(--font-ui);
+  --type-body: 400 1.1875rem / 1.5 var(--font-ui);
+  --type-label: 600 1.125rem / 1.3 var(--font-ui);
+  --type-meta: 500 1rem / 1.35 var(--font-ui);
+  --type-mono: 500 1rem / 1.3 var(--font-mono);
   --type-code: 700 clamp(2.5rem, 1.5rem + 2.6vw, 4.5rem) / 1.02 var(--font-mono);
   --tracking-hero: -0.02em;
   --measure: 62ch;
@@ -542,6 +544,7 @@ Fluster remembers any number of accounts. An account is one user on one server. 
   --player-sheet-w: 33vw;
   --up-next-w: 560px;
   --scrub-preview-w: 384px;
+  --type-heading: 600 1.375rem / 1.25 var(--font-ui);
   --type-body: 400 1.1667rem / 1.5 var(--font-ui);
   --type-body-lg: 400 1.3125rem / 1.55 var(--font-ui);
   --type-label: 600 1rem / 1.3 var(--font-ui);
