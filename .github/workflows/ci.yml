@@ -66,12 +66,18 @@ jobs:
       - run: pnpm test:e2e
 
   # Visual regression gate (P13-25). Compares every capture with
-  # e2e/visual/baselines/; required through linux-wayland-beta. A failing run's
-  # visual-captures artifact is the candidate baseline set for
-  # `pnpm test:visual:accept <run-id>`.
-  visual:
+  # e2e/visual/baselines/ on 4 runners at once, one worker each, so rendering
+  # matches a single-runner run. The `visual` job below merges the shards and is
+  # the check linux-wayland-beta requires. A failing run's visual-captures
+  # artifact is the candidate baseline set for `pnpm test:visual:accept <run-id>`.
+  visual-shard:
     runs-on: ubuntu-22.04
     timeout-minutes: 45
+    strategy:
+      # Every shard must finish: a cancelled shard would leave the accept step a partial capture set.
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -90,8 +96,63 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
       - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm test:visual
-      # test:visual only writes the contact sheet when every test passes.
+      - run: pnpm exec playwright test -c playwright.visual.config.ts --shard=${{ matrix.shard }}/4 --reporter=list,blob
+      - name: Upload shard captures and report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: visual-shard-${{ matrix.shard }}
+          path: |
+            visual-captures/
+            blob-report/
+          retention-days: 1
+          if-no-files-found: warn
+      - name: Upload visual diffs
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: visual-diffs-${{ matrix.shard }}
+          path: test-results/visual-run/
+          retention-days: 14
+          if-no-files-found: warn
+
+  # Merges the shards into one visual-captures artifact (captures, contact sheet,
+  # and results.json for the accept step). results.json is written only when all
+  # 4 shard reports arrived; a merged report no longer says it was sharded, so
+  # this count is what keeps the accept step from taking a partial run.
+  visual:
+    needs: visual-shard
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          version: 11.3.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Download shard captures and reports
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: visual-shard-*
+          path: shards/
+      - name: Merge shard reports
+        run: |
+          mkdir -p visual-captures blob-report
+          for shard in shards/*/; do
+            if [ -d "$shard/visual-captures" ]; then cp -R "$shard/visual-captures/." visual-captures/; fi
+            if [ -d "$shard/blob-report" ]; then cp "$shard"/blob-report/*.zip blob-report/; fi
+          done
+          reports=$(find blob-report -name '*.zip' | wc -l)
+          echo "shard reports: $reports of 4"
+          test "$reports" -eq 4
+          PLAYWRIGHT_JSON_OUTPUT_NAME=visual-captures/results.json pnpm exec playwright merge-reports --reporter json blob-report
       - name: Build contact sheet
         if: always()
         run: node scripts/build-visual-index.mjs
@@ -103,14 +164,12 @@ jobs:
           path: visual-captures/
           retention-days: 14
           if-no-files-found: warn
-      - name: Upload visual diffs
-        if: failure()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: visual-diffs
-          path: test-results/visual-run/
-          retention-days: 14
-          if-no-files-found: warn
+      - name: Require every shard to pass
+        env:
+          SHARDS: ${{ needs.visual-shard.result }}
+        run: |
+          echo "visual-shard=$SHARDS"
+          test "$SHARDS" = success
 
   rust-checks:
     runs-on: ubuntu-22.04
