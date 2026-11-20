@@ -69,8 +69,10 @@ Applied, because an experienced Compose for TV developer would on a first pass:
   size, uiMode and density). `monkey`, which the driver uses for held keys, flips the
   configuration's touchscreen field (`Config changes=8` in ActivityTaskManager). Without this the
   activity was recreated at the first burst of each run and focus jumped back to rail item 0
-  (runs `tv-try1`/`tv-try2`, discarded). A real remote does not do this. React Native's template
-  already declares these config changes.
+  (runs `tv-try1`/`tv-try2`, discarded). A real remote does not do this. The React Native app's
+  generated manifest declares `keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode|
+  smallestScreenSize|assetsPaths` but not `touchscreen`; its burst paths show no reset to the rail,
+  and why it escapes the relaunch is **unverified**.
 
 **Not done** (would be optimisation, not a first pass): row-end and rail-end focus traps, a custom
 `BringIntoViewSpec`, an app-specific baseline profile, image prefetching, `Crossfade` replaced by a
