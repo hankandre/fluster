@@ -62,6 +62,9 @@ export function rebuildMasterUrl(transcodingUrl: string, context: HlsUrlContext)
   if (url.protocol !== "http:" && url.protocol !== "https:") return refuse("scheme");
   if (url.username || url.password) return refuse("user info");
   if (url.origin !== server.origin) return refuse("other origin");
+  // A fragment is never sent, so a server URL carrying one is not a URL this
+  // rebuild should guess at; Rust refuses it too (`validate_master_url`).
+  if (transcodingUrl.includes("#")) return refuse("fragment");
 
   const basePath = server.pathname.replace(/\/+$/, "");
   if (basePath && !url.pathname.startsWith(`${basePath}/`)) return refuse("path");

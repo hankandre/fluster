@@ -90,8 +90,9 @@ describe("HLS vectors shared with Rust", () => {
     // Both base paths reach the vectors: the master URL keeps `/jellyfin`.
     expect(vectors.some(({ plan }) => new URL(plan.streamUrl).pathname.startsWith("/jellyfin/videos/"))).toBe(true);
     if (process.env.FLUSTER_WRITE_HLS_VECTORS === "1") {
-      const description = "HLS plans built by src/lib/jellyfin/hls-rust-vectors.test.ts from the recorded conversion fixtures. Rust deserializes each plan and re-checks its master URL (src-tauri/src/player/hls/master_url_tests.rs).";
-      writeFileSync(VECTOR_FILE, `${JSON.stringify({ description, vectors }, null, 2)}\n`);
+      // The description and the `refusals` (hls-url.test.ts) are kept as they are.
+      const { description, refusals } = JSON.parse(readFileSync(VECTOR_FILE, "utf8")) as { description: string; refusals: unknown[] };
+      writeFileSync(VECTOR_FILE, `${JSON.stringify({ description, vectors, refusals }, null, 2)}\n`);
     }
     const committed = JSON.parse(readFileSync(VECTOR_FILE, "utf8")) as { vectors: Vector[] };
     expect(committed.vectors).toEqual(vectors);

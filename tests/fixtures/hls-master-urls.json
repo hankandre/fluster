@@ -1,5 +1,5 @@
 {
-  "description": "HLS plans built by src/lib/jellyfin/hls-rust-vectors.test.ts from the recorded conversion fixtures. Rust deserializes each plan and re-checks its master URL (src-tauri/src/player/hls/master_url_tests.rs).",
+  "description": "HLS master URLs. `vectors`: the plans src/lib/jellyfin/hls-rust-vectors.test.ts builds from the recorded conversion fixtures; Rust deserializes each plan and accepts its master URL (src-tauri/src/player/hls/master_url_tests.rs). `refusals`: master URLs Rust refuses; `typescript` says whether rebuildMasterUrl (src/lib/jellyfin/hls-url.ts) refuses it or rebuilds it into `url`, which Rust then accepts (hls-url.test.ts, master_url_tests.rs). See tests/fixtures/README.md.",
   "vectors": [
     {
       "name": "10.11.7 h264-force-fallback http://127.0.0.1:8096",
@@ -1819,6 +1819,751 @@
         "subtitlesBurnedIn": false,
         "playOriginalAvailable": false,
         "tracks": []
+      }
+    }
+  ],
+  "refusals": [
+    {
+      "name": "public host",
+      "rule": "origin",
+      "url": "http://203.0.113.5:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "user info",
+      "rule": "origin",
+      "url": "http://user@127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "variant path",
+      "rule": "path",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/main.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "nested master path",
+      "rule": "path",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/x/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "other item",
+      "rule": "path",
+      "url": "http://127.0.0.1:8096/videos/fedcba9876543210fedcba9876543210/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "item with an encoded dot",
+      "rule": "path",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef%2e/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "universal audio path",
+      "rule": "path",
+      "url": "http://127.0.0.1:8096/Audio/universal/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "items path",
+      "rule": "path",
+      "url": "http://127.0.0.1:8096/items/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "no EnableTrickplay",
+      "rule": "trickplay",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "rebuild",
+        "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false"
+      }
+    },
+    {
+      "name": "EnableTrickplay=true",
+      "rule": "trickplay",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=true",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "rebuild",
+        "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false"
+      }
+    },
+    {
+      "name": "EnableTrickplay twice",
+      "rule": "trickplay",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "rebuild",
+        "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false"
+      }
+    },
+    {
+      "name": "EnableSubtitlesInManifest",
+      "rule": "subtitles",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false&EnableSubtitlesInManifest=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "rebuild",
+        "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false"
+      }
+    },
+    {
+      "name": "SubtitleMethod=Hls",
+      "rule": "subtitles",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false&SubtitleMethod=Hls",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "SubtitleMethod=Hls with a space",
+      "rule": "subtitles",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false&SubtitleMethod=Hls%20",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "numeric SubtitleMethod",
+      "rule": "subtitles",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false&SubtitleMethod=3",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "empty SubtitleMethod",
+      "rule": "subtitles",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false&SubtitleMethod=",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "no MediaSourceId",
+      "rule": "media source",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "other MediaSourceId",
+      "rule": "media source",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=n&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "MediaSourceId twice",
+      "rule": "media source",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false&MediaSourceId=m",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "other PlaySessionId",
+      "rule": "play session",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=q&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "second PlaySessionId",
+      "rule": "play session",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false&PlaySessionId=q",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "ApiKey",
+      "rule": "credential",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false&ApiKey=secret",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "rebuild",
+        "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false"
+      }
+    },
+    {
+      "name": "api_key",
+      "rule": "credential",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false&api_key=secret",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "rebuild",
+        "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false"
+      }
+    },
+    {
+      "name": "ApiKey after a space",
+      "rule": "credential",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false&%20ApiKey=secret",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "ApiToken",
+      "rule": "credential",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false&ApiToken=secret",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "rebuild",
+        "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false"
+      }
+    },
+    {
+      "name": "AccessToken",
+      "rule": "credential",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false&AccessToken=secret",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "rebuild",
+        "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false"
+      }
+    },
+    {
+      "name": "percent-encoded ApiKey",
+      "rule": "credential",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false&Api%4Bey=secret",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "rebuild",
+        "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false"
+      }
+    },
+    {
+      "name": "name with a space",
+      "rule": "parameter name",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false&Api%20Key=1",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "name with a tab",
+      "rule": "parameter name",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false&Tag%09=1",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "fragment",
+      "rule": "fragment",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false#fragment",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "file scheme",
+      "rule": "origin",
+      "url": "file://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "audio path for a video source",
+      "rule": "path",
+      "url": "http://127.0.0.1:8096/audio/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "video path for an audio-only source",
+      "rule": "path",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "audio",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "master outside the base path",
+      "rule": "path",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096/jellyfin",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "base-path master on a bare server",
+      "rule": "path",
+      "url": "http://127.0.0.1:8096/jellyfin/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "master under a longer base path",
+      "rule": "path",
+      "url": "http://127.0.0.1:8096/jellyfinx/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096/jellyfin",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "server on neighbouring address",
+      "rule": "origin",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.2:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "server on https",
+      "rule": "origin",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "https://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "server on other port",
+      "rule": "origin",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8920",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "empty item id",
+      "rule": "path",
+      "url": "http://127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "10.11.7 h264-force-fallback http://127.0.0.1:8096: no EnableTrickplay",
+      "rule": "trickplay",
+      "url": "http://127.0.0.1:8096/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "item-h264",
+      "mediaSourceId": "item-h264",
+      "playSessionId": "play-session-1",
+      "typescript": {
+        "verdict": "rebuild",
+        "url": "http://127.0.0.1:8096/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false"
+      }
+    },
+    {
+      "name": "10.11.7 h264-force-fallback http://127.0.0.1:8096: EnableTrickplay twice",
+      "rule": "trickplay",
+      "url": "http://127.0.0.1:8096/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "item-h264",
+      "mediaSourceId": "item-h264",
+      "playSessionId": "play-session-1",
+      "typescript": {
+        "verdict": "rebuild",
+        "url": "http://127.0.0.1:8096/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false"
+      }
+    },
+    {
+      "name": "10.11.7 h264-force-fallback http://127.0.0.1:8096: ApiKey",
+      "rule": "credential",
+      "url": "http://127.0.0.1:8096/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false&ApiKey=k",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "item-h264",
+      "mediaSourceId": "item-h264",
+      "playSessionId": "play-session-1",
+      "typescript": {
+        "verdict": "rebuild",
+        "url": "http://127.0.0.1:8096/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false"
+      }
+    },
+    {
+      "name": "10.11.7 h264-force-fallback http://127.0.0.1:8096: ApiToken after a space",
+      "rule": "credential",
+      "url": "http://127.0.0.1:8096/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false&%20ApiToken=k",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "item-h264",
+      "mediaSourceId": "item-h264",
+      "playSessionId": "play-session-1",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "10.11.7 h264-force-fallback http://127.0.0.1:8096: SubtitleMethod=Hls",
+      "rule": "subtitles",
+      "url": "http://127.0.0.1:8096/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false&SubtitleMethod=Hls",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "item-h264",
+      "mediaSourceId": "item-h264",
+      "playSessionId": "play-session-1",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "10.11.7 h264-force-fallback http://127.0.0.1:8096: MediaSourceId twice",
+      "rule": "media source",
+      "url": "http://127.0.0.1:8096/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false&MediaSourceId=item-h264",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "item-h264",
+      "mediaSourceId": "item-h264",
+      "playSessionId": "play-session-1",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "10.11.7 h264-force-fallback http://127.0.0.1:8096: other PlaySessionId",
+      "rule": "play session",
+      "url": "http://127.0.0.1:8096/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=other&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "item-h264",
+      "mediaSourceId": "item-h264",
+      "playSessionId": "play-session-1",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "10.11.7 h264-force-fallback http://127.0.0.1:8096: variant path",
+      "rule": "path",
+      "url": "http://127.0.0.1:8096/videos/item-h264/main.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "item-h264",
+      "mediaSourceId": "item-h264",
+      "playSessionId": "play-session-1",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "10.11.7 h264-force-fallback https://media.test/jellyfin: no EnableTrickplay",
+      "rule": "trickplay",
+      "url": "https://media.test/jellyfin/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError",
+      "serverUrl": "https://media.test/jellyfin",
+      "mediaKind": "videos",
+      "itemId": "item-h264",
+      "mediaSourceId": "item-h264",
+      "playSessionId": "play-session-1",
+      "typescript": {
+        "verdict": "rebuild",
+        "url": "https://media.test/jellyfin/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false"
+      }
+    },
+    {
+      "name": "10.11.7 h264-force-fallback https://media.test/jellyfin: EnableTrickplay twice",
+      "rule": "trickplay",
+      "url": "https://media.test/jellyfin/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false&EnableTrickplay=false",
+      "serverUrl": "https://media.test/jellyfin",
+      "mediaKind": "videos",
+      "itemId": "item-h264",
+      "mediaSourceId": "item-h264",
+      "playSessionId": "play-session-1",
+      "typescript": {
+        "verdict": "rebuild",
+        "url": "https://media.test/jellyfin/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false"
+      }
+    },
+    {
+      "name": "10.11.7 h264-force-fallback https://media.test/jellyfin: ApiKey",
+      "rule": "credential",
+      "url": "https://media.test/jellyfin/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false&ApiKey=k",
+      "serverUrl": "https://media.test/jellyfin",
+      "mediaKind": "videos",
+      "itemId": "item-h264",
+      "mediaSourceId": "item-h264",
+      "playSessionId": "play-session-1",
+      "typescript": {
+        "verdict": "rebuild",
+        "url": "https://media.test/jellyfin/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false"
+      }
+    },
+    {
+      "name": "10.11.7 h264-force-fallback https://media.test/jellyfin: ApiToken after a space",
+      "rule": "credential",
+      "url": "https://media.test/jellyfin/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false&%20ApiToken=k",
+      "serverUrl": "https://media.test/jellyfin",
+      "mediaKind": "videos",
+      "itemId": "item-h264",
+      "mediaSourceId": "item-h264",
+      "playSessionId": "play-session-1",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "10.11.7 h264-force-fallback https://media.test/jellyfin: SubtitleMethod=Hls",
+      "rule": "subtitles",
+      "url": "https://media.test/jellyfin/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false&SubtitleMethod=Hls",
+      "serverUrl": "https://media.test/jellyfin",
+      "mediaKind": "videos",
+      "itemId": "item-h264",
+      "mediaSourceId": "item-h264",
+      "playSessionId": "play-session-1",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "10.11.7 h264-force-fallback https://media.test/jellyfin: MediaSourceId twice",
+      "rule": "media source",
+      "url": "https://media.test/jellyfin/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false&MediaSourceId=item-h264",
+      "serverUrl": "https://media.test/jellyfin",
+      "mediaKind": "videos",
+      "itemId": "item-h264",
+      "mediaSourceId": "item-h264",
+      "playSessionId": "play-session-1",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "10.11.7 h264-force-fallback https://media.test/jellyfin: other PlaySessionId",
+      "rule": "play session",
+      "url": "https://media.test/jellyfin/videos/item-h264/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=other&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
+      "serverUrl": "https://media.test/jellyfin",
+      "mediaKind": "videos",
+      "itemId": "item-h264",
+      "mediaSourceId": "item-h264",
+      "playSessionId": "play-session-1",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "10.11.7 h264-force-fallback https://media.test/jellyfin: variant path",
+      "rule": "path",
+      "url": "https://media.test/jellyfin/videos/item-h264/main.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&EnableTrickplay=false",
+      "serverUrl": "https://media.test/jellyfin",
+      "mediaKind": "videos",
+      "itemId": "item-h264",
+      "mediaSourceId": "item-h264",
+      "playSessionId": "play-session-1",
+      "typescript": {
+        "verdict": "refuse"
       }
     }
   ]

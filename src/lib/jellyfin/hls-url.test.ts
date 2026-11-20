@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { rebuildMasterUrl, type HlsUrlContext } from "./hls-url";
+import shared from "../../../tests/fixtures/hls-master-urls.json";
+import { rebuildMasterUrl, type HlsMediaKind, type HlsUrlContext } from "./hls-url";
 
 const ITEM = "0123456789abcdef0123456789abcdef";
 const context: HlsUrlContext = { serverUrl: "https://media.test", itemId: ITEM, mediaSourceId: ITEM, mediaKind: "videos", playSessionId: "p1" };
@@ -161,5 +162,46 @@ describe("rebuildMasterUrl", () => {
     const result = rebuilt(`https://evil.test/videos/${ITEM}/master.m3u8?ApiKey=secret-key`);
     expect(JSON.stringify(result)).not.toContain("secret-key");
     expect(JSON.stringify(result)).not.toContain("evil.test");
+  });
+  it("refuses a master URL with a fragment, as Rust does", () => {
+    expect(rebuilt(`${master()}#fragment`)).toEqual({ ok: false, detail: "fragment" });
+    expect(rebuilt(`${master()}#`)).toEqual({ ok: false, detail: "fragment" });
+  });
+});
+
+interface SharedRefusal {
+  name: string;
+  url: string;
+  serverUrl: string;
+  mediaKind: HlsMediaKind;
+  itemId: string;
+  mediaSourceId: string;
+  playSessionId: string;
+  typescript: { verdict: "refuse" } | { verdict: "rebuild"; url: string };
+}
+
+// Master URLs Rust refuses (tests/fixtures/hls-master-urls.json `refusals`,
+// also run by master_url_tests.rs): this rebuild refuses each one, or
+// rebuilds it into the recorded URL, which Rust accepts.
+describe("master URLs Rust refuses", () => {
+  const refusals = (shared as unknown as { refusals: SharedRefusal[] }).refusals;
+
+  it("are all here", () => {
+    expect(refusals).toHaveLength(56);
+  });
+
+  it.each(refusals.map((refusal) => [refusal.name, refusal] as const))("%s", (_name, refusal) => {
+    const result = rebuildMasterUrl(refusal.url, {
+      serverUrl: refusal.serverUrl,
+      itemId: refusal.itemId,
+      mediaSourceId: refusal.mediaSourceId,
+      mediaKind: refusal.mediaKind,
+      playSessionId: refusal.playSessionId,
+    });
+    if (refusal.typescript.verdict === "refuse") {
+      expect(result.ok).toBe(false);
+    } else {
+      expect(result).toMatchObject({ ok: true, url: refusal.typescript.url });
+    }
   });
 });
