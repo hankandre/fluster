@@ -1,8 +1,8 @@
 name: dependabot-auto-merge
 
-# Enables auto-merge on Dependabot's minor and patch npm and cargo updates.
-# GitHub still merges only after main's required checks pass. Majors, GitHub
-# Actions, and ignored crates (tauri, libmpv2 majors, cocoa) stay manual.
+# Enables auto-merge on Dependabot's minor and patch npm updates. GitHub still
+# merges only after main's required checks pass. Majors and GitHub Actions stay
+# manual.
 on: pull_request_target
 
 permissions:
@@ -17,8 +17,7 @@ jobs:
       - id: metadata
         uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
       - if: >-
-          (steps.metadata.outputs.package-ecosystem == 'npm_and_yarn' ||
-           steps.metadata.outputs.package-ecosystem == 'cargo') &&
+          steps.metadata.outputs.package-ecosystem == 'npm_and_yarn' &&
           (steps.metadata.outputs.update-type == 'version-update:semver-minor' ||
            steps.metadata.outputs.update-type == 'version-update:semver-patch')
         run: gh pr merge --auto --rebase "$PR_URL"

@@ -1,16 +1,23 @@
-// Hooks rules only, per D2 A; see docs/specs/P0-16.md.
+// The core must run on any host (DOMAINS.md, Dependency rules 1 and 2): no
+// browser globals and no UI or platform framework. Hosts come in through ports.
 import parser from "@typescript-eslint/parser";
-import reactHooks from "eslint-plugin-react-hooks";
+
+const platformImports = ["react", "react-*", "react-native", "react-native-*", "@react-native/*", "expo", "expo-*", "@expo/*"];
+const hostGlobals = ["window", "document", "localStorage", "sessionStorage", "navigator", "location"];
+const useAPort = "The core runs on any host. Take what you need through a port and let the app supply it.";
 
 export default [
   {
-    files: ["src/**/*.{ts,tsx}"],
+    files: ["src/**/*.ts"],
     languageOptions: { parser },
-    plugins: { "react-hooks": reactHooks },
     linterOptions: { reportUnusedDisableDirectives: "error" },
+  },
+  {
+    files: ["src/**/*.ts"],
+    ignores: ["src/**/*.test.ts"],
     rules: {
-      "react-hooks/rules-of-hooks": "error",
-      "react-hooks/exhaustive-deps": "error",
+      "no-restricted-globals": ["error", ...hostGlobals.map((name) => ({ name, message: useAPort }))],
+      "no-restricted-imports": ["error", { patterns: [{ group: platformImports, message: useAPort }] }],
     },
   },
 ];

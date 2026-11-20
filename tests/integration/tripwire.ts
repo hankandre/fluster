@@ -27,7 +27,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { LibraryItem } from "../../src/domain/catalog";
 import { PlaybackRefusedError, type PlaybackPlan } from "../../src/domain/playback";
-import { conversionIndicator } from "../../src/features/player/conversion-copy";
+import { conversionIndicator } from "../../src/domain/conversion-copy";
 import { JellyfinGateway } from "../../src/lib/jellyfin/gateway";
 import { MemoryLanHttpConfirmations } from "../../src/lib/lan-http-confirmations";
 import { MemoryStreamingLimits, type StreamingLimitStore } from "../../src/lib/streaming-limits";

@@ -144,7 +144,7 @@ describe("JellyfinGateway opaque redirects through the real Axios client", () =>
     await gateway.login("Louise", "hunter2");
 
     const realFetch = globalThis.fetch;
-    const fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const fetch = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
       const request = input instanceof Request ? input : new Request(input, init);
       expect(request.redirect).toBe("manual");
       return opaqueRedirect();

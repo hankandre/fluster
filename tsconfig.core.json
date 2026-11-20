@@ -1,8 +1,12 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022"],
-    "types": ["node"],
+    "lib": [
+      "ES2022"
+    ],
+    "types": [
+      "node"
+    ],
     "skipLibCheck": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
@@ -14,14 +18,9 @@
   },
   "include": [
     "src/domain/**/*.ts",
-    "src/lib/jellyfin/**/*.ts",
-    "src/lib/player/coordinator.ts",
-    "src/lib/player/playstate-reporter.ts",
-    "src/lib/player/session-state.ts",
-    "src/lib/preference-store.ts",
-    "src/lib/streaming-limits.ts",
-    "src/lib/redact.ts",
-    "src/lib/safe-reason.ts"
+    "src/lib/**/*.ts"
   ],
-  "exclude": ["**/*.test.ts", "**/*.test.tsx", "src/test/**"]
+  "exclude": [
+    "**/*.test.ts"
+  ]
 }

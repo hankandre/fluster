@@ -4,10 +4,10 @@ import { readdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const TEST_PATH = /\.test\.tsx?$|^src\/test\//;
+const TEST_PATH = /\.test\.ts$/;
 const MAX_NAMED = 20;
 const FIX_LINE =
-  "Fix: run pnpm install so the typescript-6 dev dependency is present. dependency-cruiser 18.7.2 needs TypeScript below 7 and loads it through scripts/typescript-6-resolve.mjs. Do not loosen .dependency-cruiser.cjs. See docs/specs/P0-14.md.";
+  "Fix: run pnpm install so the typescript-6 dev dependency is present. dependency-cruiser 18.7.2 needs TypeScript below 7 and loads it through scripts/typescript-6-resolve.mjs. Do not loosen .dependency-cruiser.cjs. See the mechanical enforcement backlog in WORKFLOW.md.";
 
 /**
  * Returns error messages for a dependency-cruiser JSON result that did not read the code.
