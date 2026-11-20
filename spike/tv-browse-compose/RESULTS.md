@@ -17,9 +17,11 @@ On the **emulator** the first-pass Compose screen:
   not work; Left enters the rail at its bottom item; and Down from that item leaves the rail
   (2 of 2 times it was pressed). The drift also kept the plan's rail rounds from reaching the rail
   in three of four runs, so rail coverage is thin.
-- **Frames:** 2–6 % janky on held Right and held Down (one outlier run at 31–35 % while the host
-  ran three emulators). Frame times are higher than React Native's on swiftshader (p50 16–24 ms
-  against 15–16 ms); emulator frame times say little about a Shield.
+- **Frames:** with the libraries' baseline profiles compiled (speed-profile), 2–6 % janky on
+  held Right and held Down. As installed by adb (no AOT code), held Down stayed at 3–6 % but held
+  Right was 35 %, 2.6 % and 65 % janky in three runs, with slow-UI-thread frames. Frame times are
+  higher than React Native's on swiftshader (p50 16–24 ms against 15–16 ms); emulator frame times
+  say little about a Shield.
 - **Memory:** 49–61 MB PSS, flat after loading ~455 images through all 20 rows. Graphics reads 0
   on swiftshader and Coil uses hardware bitmaps, so the image share is invisible here.
 - **Cold start:** slower than React Native on the emulator: 410–459 ms `TotalTime` median, or
@@ -152,6 +154,7 @@ The AVD is `~/.android/avd/fluster_tv_compose.{avd,ini}`; delete both to remove 
 |---|---|---|---|---|---|---|---|
 | tv-run1 | as installed | 299/299 | 0 | 0/12 | 0 | 0 | 54 ms |
 | tv-run2 | as installed | 297/299 | 2 (2 wrong: rail Down → card) | 0/12 | 0 | 0 | 51 ms |
+| tv-run3 | as installed | 299/299 | 0 | 0/12 | 0 | 0 | 51 ms |
 | tv-speedprofile-run1 | speed-profile | 299/299 | 0 | 0/12 | 0 | 0 | 55 ms |
 | tv-speedprofile-run2 | speed-profile | 299/299 | 0 | 0/12 | 0 | 0 | 52 ms |
 | *React Native, flag off (5 runs)* | — | *294–297/299* | *2–5* | *6/12* | *69–70* | *4–5* | *64–67 ms* |
@@ -208,6 +211,8 @@ The AVD is `~/.android/avd/fluster_tv_compose.{avd,ini}`; delete both to remove 
 | tv-run1 | as installed | hold Down, row 0 → row 19 | 94 | 30.85 % | 34 / 65 / 69 / 150 ms |
 | tv-run2 | as installed | hold Right | 191 | 2.62 % | 24 / 29 / 30 / 44 ms |
 | tv-run2 | as installed | hold Down | 104 | 5.77 % | 24 / 32 / 36 / 42 ms |
+| tv-run3 | as installed | hold Right | 178 | **65.17 %** | 69 / 93 / 97 / 150 ms |
+| tv-run3 | as installed | hold Down | 102 | 3.92 % | 16 / 27 / 31 / 40 ms |
 | tv-speedprofile-run1 | speed-profile | hold Right | 207 | 5.80 % | 23 / 36 / 44 / 61 ms |
 | tv-speedprofile-run1 | speed-profile | hold Down | 97 | 3.09 % | 16 / 24 / 25 / 46 ms |
 | tv-speedprofile-run2 | speed-profile | hold Right | 187 | 2.14 % | 16 / 26 / 28 / 53 ms |
@@ -217,7 +222,11 @@ The AVD is `~/.android/avd/fluster_tv_compose.{avd,ini}`; delete both to remove 
 - Each segment's focus path was checked: hold Right logs 49 card events (plus the next launch's
   `rail,0`, which this app focuses at boot before the driver's `seg launch` marker), hold Down 19
   events ending on `19,0`.
-- **tv-run1 is an outlier**: 51 "slow UI thread" frames. Its cause is **unverified**: it was the
+- **As installed, held Right is unstable**: 35 %, 2.6 % and 65 % janky in three runs, with 51,
+  0 and 95 "slow UI thread" frames; in tv-run3 the held Right also slowed to a 100 ms median gap.
+  With speed-profile code it was 5.8 % and 2.1 % with 3 and 0 slow UI frames. This points at
+  interpreted/JIT code on the UI thread (status `verify`), but which methods is **unverified**.
+- **tv-run1**: 51 "slow UI thread" frames. Its cause is **unverified**: it was the
   first run about a minute after a `-wipe-data` boot (background dexopt and first-boot jobs), and
   the host was also running the React Native agent's emulators; but tv-speedprofile-run2 overlapped
   the other agent's emulator run and was fine. tv-run2, with the same APK, had 0 slow UI frames.
@@ -231,6 +240,7 @@ The AVD is `~/.android/avd/fluster_tv_compose.{avd,ini}`; delete both to remove 
 | tv-run1 | idle after launch | 54 | 4 | 37 | 3 | 2 | 0* | 43 | |
 | tv-run1 | after the scroll pass | 55 | 8 | 31 | 3 | 2 | 0* | 41 | 457 |
 | tv-run2 | idle / after | 49 / 52 | 4 / 4 | 33 / 31 | 3 / 3 | 2 / 2 | 0* | 39 / 37 | 456 |
+| tv-run3 | idle / after | 45 / 56 | 4 / 5 | 29 / 36 | 3 / 3 | 2 / 2 | 0* | 35 / 43 | 458 |
 | tv-speedprofile-run1 | idle / after | 53 / 60 | 4 / 8 | 33 / 35 | 6 / 6 | 2 / 2 | 0* | 39 / 45 | 455 |
 | tv-speedprofile-run2 | idle / after | 61 / 55 | 4 / 6 | 41 / 31 | 6 / 6 | 2 / 2 | 0* | 47 / 39 | 458 |
 | *React Native, deliverable* | *after* | *155* | *10* | *88* | | *23* | *0** | *121* | *365* |
@@ -250,7 +260,9 @@ The AVD is `~/.android/avd/fluster_tv_compose.{avd,ini}`; delete both to remove 
 |---|---|---|---|
 | tv-run1 | as installed | 459 ms (406–541) | 447 ms |
 | tv-run2 | as installed | 456 ms (452–495) | 441 ms |
+| tv-run3 | as installed | 389 ms (367–438) | 375 ms |
 | tv-speedprofile-run1 | speed-profile | 345 ms (340–431) | 333 ms |
+| tv-sp-wrappercheck (cold start only) | speed-profile | 352 ms (351–358) | 338 ms |
 | tv-speedprofile-run2 | speed-profile | 410 ms (355–487) | 392 ms |
 | *React Native, deliverable* | — | *133 ms (121–156)* | *125 ms (first React commit)* |
 
