@@ -16,6 +16,8 @@ export type Arm = {
   rowDrawDistance: number | undefined; // horizontal rows' drawDistance
   rowPool: number | undefined; // rows' maxItemsInRecyclePool
   plainLift: boolean; // focus lift without Reanimated: a static focused style set from onFocus
+  trapsOff: string[]; // parts of traps to leave out when bisecting: "row" | "edge" | "return" | "rail"
+  lazyPosters: boolean; // while Up/Down is held, recycled rows show placeholders; posters load once it settles
 };
 
 export const STOCK: Arm = {
@@ -31,7 +33,11 @@ export const STOCK: Arm = {
   rowDrawDistance: undefined,
   rowPool: undefined,
   plainLift: false,
+  trapsOff: [],
+  lazyPosters: false,
 };
+
+export const trap = (part: "row" | "edge" | "return" | "rail") => ARM.traps && !ARM.trapsOff.includes(part);
 
 export let ARM: Arm = STOCK;
 

@@ -5,11 +5,13 @@
 // - trapFocusLeft, so Left on the rail never escapes into off-screen cards under it;
 // - a thin guide at the content's left edge (rendered by App) whose destination is the rail
 //   item last used, so Left from any row's first card reaches the rail;
-// - a return guide just right of the expanded rail whose destination is the card the user
-//   left, so Right goes back to it (only while that card's view still shows it).
+// - nextFocusRight on the rail items, set to the card the user left while the rail is open, so
+//   Right goes back to it (only while that card's view still shows it). A return guide right
+//   of the expanded rail was tried first: together with the edge guide it bounced focus
+//   between the rail and the card on every Right (emulator, 2026-11-20).
 import { createRef, useCallback, useEffect, useRef, useState } from "react";
-import { Dimensions, Pressable, StyleSheet, Text, TVFocusGuideView, View } from "react-native";
-import { ARM } from "./arm";
+import { Dimensions, Pressable, findNodeHandle, StyleSheet, Text, TVFocusGuideView, View } from "react-native";
+import { trap } from "./arm";
 import { color, design } from "./tokens";
 
 const { width: W } = Dimensions.get("window");
@@ -37,7 +39,9 @@ const ITEMS = [
 
 type ItemView = React.ComponentRef<typeof Pressable>;
 
-function RailItem({ index, expanded, onFocused }: { index: number; expanded: boolean; onFocused: (v: ItemView) => void }) {
+type RailItemProps = { index: number; expanded: boolean; rightTo: number | undefined; onFocused: (v: ItemView) => void };
+
+function RailItem({ index, expanded, rightTo, onFocused }: RailItemProps) {
   const [focused, setFocused] = useState(false);
   const ref = useRef<ItemView>(null);
   const { label, glyph } = ITEMS[index];
@@ -46,6 +50,7 @@ function RailItem({ index, expanded, onFocused }: { index: number; expanded: boo
       ref={ref}
       // The old full-width rail took the first press by tree order; the overlay rail asks for it.
       hasTVPreferredFocus={index === 0}
+      nextFocusRight={rightTo}
       onFocus={() => {
         setFocused(true);
         if (ref.current) onFocused(ref.current);
@@ -65,8 +70,7 @@ function RailItem({ index, expanded, onFocused }: { index: number; expanded: boo
 
 export function Rail({ returnTo }: { returnTo: () => unknown }) {
   const [expanded, setExpanded] = useState(false);
-  const [canReturn, setCanReturn] = useState(false);
-  const returnGuide = useRef<Guide>(null);
+  const [rightTo, setRightTo] = useState<number | undefined>(undefined);
   const first = useRef<ItemView | null>(null);
   const onFocused = useCallback((v: ItemView) => {
     if (!first.current) first.current = v;
@@ -77,29 +81,25 @@ export function Rail({ returnTo }: { returnTo: () => unknown }) {
   }, []);
   const onEnter = useCallback(() => {
     setExpanded(true);
-    if (!ARM.traps) return;
+    if (!trap("return")) return;
     const card = returnTo();
-    if (card) returnGuide.current?.setDestinations([card]);
-    setCanReturn(Boolean(card));
+    setRightTo(card ? (findNodeHandle(card as Parameters<typeof findNodeHandle>[0]) ?? undefined) : undefined);
   }, [returnTo]);
   const onLeave = useCallback(() => {
     setExpanded(false);
-    setCanReturn(false);
+    setRightTo(undefined);
   }, []);
   return (
     <>
-      {ARM.traps ? (
-        <GuideView ref={returnGuide} enabled={expanded && canReturn} style={styles.returnGuide} />
-      ) : null}
       <TVFocusGuideView
         autoFocus
-        trapFocusLeft={ARM.traps}
+        trapFocusLeft={trap("rail")}
         onFocusEnter={onEnter}
         onFocusLeave={onLeave}
         style={[styles.rail, expanded && styles.railExpanded]}
       >
         {ITEMS.map((it, i) => (
-          <RailItem key={it.label} index={i} expanded={expanded} onFocused={onFocused} />
+          <RailItem key={it.label} index={i} expanded={expanded} rightTo={rightTo} onFocused={onFocused} />
         ))}
       </TVFocusGuideView>
     </>
@@ -119,7 +119,6 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   railExpanded: { width: RAIL_EXPANDED_W, backgroundColor: color.railScrimOpen },
-  returnGuide: { zIndex: 2, position: "absolute", left: RAIL_EXPANDED_W, top: 0, bottom: 0, width: 2 },
   item: {
     flexDirection: "row",
     alignItems: "center",

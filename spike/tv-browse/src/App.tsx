@@ -7,7 +7,7 @@ import { Dimensions, Pressable, StyleSheet, Text, TVFocusGuideView, View, useTVE
 import { FlashList, type FlashListRef } from "@shopify/flash-list";
 import { Image } from "expo-image";
 import Animated, { interpolateColor, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
-import { ARM, loadArm } from "./arm";
+import { ARM, loadArm, trap } from "./arm";
 import { PerfOverlay } from "./PerfOverlay";
 import { GuideView, Rail, RAIL_COLLAPSED_W, edgeGuideRef } from "./Rail";
 import { ART_BASE, BACKDROPS, COLS, POSTERS, ROWS, backdropOf, posterOf, rowTitle, titleOf } from "./data";
@@ -48,6 +48,30 @@ function lastCardView(): CardView | undefined {
 // Each row's own horizontal offset (arm rowMemory).
 const rowOffsets: number[] = [];
 
+// Held Up/Down detection (arm lazyPosters): two row changes less than HELD_MS apart.
+const HELD_MS = 150;
+let focusedRow = -1;
+let lastRowChange = 0;
+let holding = false;
+function noteRow(row: number) {
+  if (row === focusedRow) return;
+  const now = Date.now();
+  holding = now - lastRowChange < HELD_MS;
+  lastRowChange = now;
+  focusedRow = row;
+}
+// Resolves once no row change has happened for HELD_MS.
+function whenSettled(cb: () => void) {
+  const wait = () => {
+    const quiet = Date.now() - lastRowChange;
+    if (quiet >= HELD_MS) {
+      holding = false;
+      cb();
+    } else setTimeout(wait, HELD_MS - quiet);
+  };
+  return setTimeout(wait, HELD_MS);
+}
+
 function Hero() {
   const [item, setItem] = useState({ row: 0, col: 0 });
   useEffect(() => {
@@ -83,7 +107,8 @@ function useCardView(row: number, col: number, ref: React.RefObject<CardView | n
   return key;
 }
 
-function Poster({ row, col }: { row: number; col: number }) {
+function Poster({ row, col, show }: { row: number; col: number; show: boolean }) {
+  if (!show) return null;
   return (
     <Image
       style={styles.poster}
@@ -97,7 +122,9 @@ function Poster({ row, col }: { row: number; col: number }) {
   );
 }
 
-const AnimatedCard = memo(function AnimatedCard({ row, col }: { row: number; col: number }) {
+type CardProps = { row: number; col: number; show: boolean };
+
+const AnimatedCard = memo(function AnimatedCard({ row, col, show }: CardProps) {
   const ref = useRef<CardView>(null);
   const key = useCardView(row, col, ref);
   const focus = useSharedValue(0);
@@ -108,6 +135,7 @@ const AnimatedCard = memo(function AnimatedCard({ row, col }: { row: number; col
   const onFocus = useCallback(() => {
     focus.value = withTiming(1, { duration: design.liftMs });
     lastCard = key;
+    noteRow(row);
     console.log(`FOCUS ${key}`);
     scheduleHero(row, col);
   }, [focus, key, row, col]);
@@ -118,20 +146,21 @@ const AnimatedCard = memo(function AnimatedCard({ row, col }: { row: number; col
   return (
     <Pressable ref={ref} onFocus={onFocus} onBlur={onBlur} style={styles.card}>
       <Animated.View style={[styles.frame, frame]}>
-        <Poster row={row} col={col} />
+        <Poster row={row} col={col} show={show} />
       </Animated.View>
     </Pressable>
   );
 });
 
 // Arm plainLift: the same lift and ring as a static style switched from onFocus, no animation.
-const PlainCard = memo(function PlainCard({ row, col }: { row: number; col: number }) {
+const PlainCard = memo(function PlainCard({ row, col, show }: CardProps) {
   const ref = useRef<CardView>(null);
   const key = useCardView(row, col, ref);
   const [focused, setFocused] = useState(false);
   const onFocus = useCallback(() => {
     setFocused(true);
     lastCard = key;
+    noteRow(row);
     console.log(`FOCUS ${key}`);
     scheduleHero(row, col);
   }, [key, row, col]);
@@ -142,7 +171,7 @@ const PlainCard = memo(function PlainCard({ row, col }: { row: number; col: numb
   return (
     <Pressable ref={ref} onFocus={onFocus} onBlur={onBlur} style={styles.card}>
       <View style={[styles.frame, focused && styles.frameFocused]}>
-        <Poster row={row} col={col} />
+        <Poster row={row} col={col} show={show} />
       </View>
     </Pressable>
   );
@@ -150,7 +179,21 @@ const PlainCard = memo(function PlainCard({ row, col }: { row: number; col: numb
 
 const Row = memo(function Row({ row }: { row: number }) {
   const Card = ARM.plainLift ? PlainCard : AnimatedCard;
-  const renderCard = useCallback(({ item }: { item: number }) => <Card row={row} col={item} />, [row, Card]);
+  // Arm lazyPosters: a row recycled during a held Up/Down renders without poster images and
+  // loads them once the key is released, so the held key does not start ~8 image loads per row.
+  const [show, setShow] = useState(true);
+  const deferred = ARM.lazyPosters && holding;
+  useLayoutEffect(() => {
+    if (!deferred) return;
+    setShow(false);
+    const t = whenSettled(() => setShow(true));
+    return () => clearTimeout(t);
+  }, [row, deferred]);
+  const showNow = show && !deferred;
+  const renderCard = useCallback(
+    ({ item }: { item: number }) => <Card row={row} col={item} show={showNow} />,
+    [row, Card, showNow],
+  );
   const listRef = useRef<FlashListRef<number>>(null);
   const shown = useRef(row);
   // FlashList recycles this row's view, with its horizontal scroll view and offset, for
@@ -183,7 +226,7 @@ const Row = memo(function Row({ row }: { row: number }) {
     <View style={styles.row}>
       <Text style={styles.rowTitle}>{rowTitle(row)}</Text>
       {/* Arm traps: Right past the last card stays in the row. */}
-      {ARM.traps ? <TVFocusGuideView trapFocusRight>{list}</TVFocusGuideView> : list}
+      {trap("row") ? <TVFocusGuideView trapFocusRight>{list}</TVFocusGuideView> : list}
     </View>
   );
 });
@@ -214,7 +257,7 @@ function Home() {
       <View style={styles.content}>
         {/* Arm traps: Left from a row's first card lands on this thin guide, which sends focus
             to the rail item the user last used. */}
-        {ARM.traps ? <GuideView ref={edgeGuideRef} style={styles.edgeGuide} /> : null}
+        {trap("edge") ? <GuideView ref={edgeGuideRef} style={styles.edgeGuide} /> : null}
         <FlashList
           data={rows}
           renderItem={renderRow}
