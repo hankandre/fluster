@@ -4,6 +4,7 @@
 - Date: 2026-11-20
 - Task: T2-01 (the TV task list on branch `docs/tv-prd`, commit `c2c224b`).
 - Follows: decision 0003 ("Decision (accepted)" items 3 and 6) and decision 0004 (branch `docs/decision-0004`, commit `931bc39`).
+- Changes, if accepted as recommended: decision 0003's Finding 3 table row "Where the token lives and who does HTTP" ("JS (core) with a native transport") and its security note "The token stays in the core's memory as on desktop". 0003 item 6 ("every native request … goes through one authenticated OkHttp client") is kept and extended to sign-in and catalog requests.
 - Touches: the `AGENTS.md` hard rules on tokens, `docs/security.md`, `ARCHITECTURE.md` §3 ("Token storage"), and tasks T2-04, T2-05, T3-11, T4-05 and T8-01.
 - Evidence: the play falsifier (`spike/tv-play/RESULTS.md` on branch `spike/tv-play-falsifier`, commit `af75d28`), the code named below, and the primary sources listed at the end, all read on 2026-11-20. **[unverified]** marks a claim no source or measurement backs. **[judgment]** marks an estimate.
 
@@ -41,6 +42,14 @@ Four facts about that shape, read from source:
 - **B. Kotlin only, with the gateway rewritten in Kotlin.** Sign-in, catalog calls and their parsing move to Kotlin. JavaScript receives view models.
 - **C. Kotlin owns the token; the core holds an opaque session handle.** The core keeps every rule it has today (requests, parsing, negotiation, reporting) but sends its HTTP through a narrow transport in the native module. Kotlin adds the header. The token never enters Hermes.
 
+**How these map to T2-01's wording.** T2-01 asks the record to choose between "the TypeScript core's memory, native memory only, or both".
+
+- "The TypeScript core's memory" alone cannot exist on Android. Media3 and the image loader send their requests from Kotlin, so Kotlin must hold the header whenever JavaScript does.
+- **A is "both"**: the token is in Hermes and in Kotlin.
+- **B and C are both "native memory only"**: JavaScript never sees the token and Kotlin sends all HTTP. They differ in where the gateway's logic lives. The handle in C is not the token and gives no access outside the app.
+
+So the recommendation below, C, is **native memory only**.
+
 B is rejected without a table row of its own. It discards the core that decision 0003 kept and the play falsifier proved under Hermes, and it buys nothing C does not.
 
 ### Against the rule: never in a URL, a prop, an event or a log
@@ -69,7 +78,7 @@ B is rejected without a table row of its own. It discards the core that decision
 
 What this shows:
 
-- **In a development build the options are equal.** The header is visible to the debugger either way. Development builds must only ever sign in to a development server.
+- **In a development build the options are equal.** The header is visible to the debugger either way. Whether development builds may sign in to a real server is a rule for the owner to set (decision 5 below).
 - **Against a compromised process the options are equal.**
 - **C's gain is in release builds against accidents and against JavaScript that Octave did not write.** It turns four conventions (prop, event, log, object dump) into things that cannot happen from JavaScript, and it downgrades a dependency compromise from "steals a durable credential" to "can act while the app is open".
 - **C's second gain is one client.** Every request that carries the header passes one interceptor with one origin pin, one credential-in-URL refusal and one redirect rule. Under A, catalog requests have none of those natively.
@@ -88,7 +97,7 @@ What this shows:
 
 ## Recommendation
 
-**Option C. Confidence: medium, about 65 %.**
+**Option C: native memory only, with the core kept and holding an opaque session handle. Confidence: medium, about 60 %.**
 
 - The rule the owner wants ("never in a URL, prop, event or log") becomes one stronger sentence that a test can check with no exemptions: **the token never enters JavaScript.**
 - It makes "one authenticated client" true, which the draft rules already assume.
@@ -100,6 +109,7 @@ Why not higher:
 - It protects against accidents and third-party JavaScript, not against a compromised process. If the owner judges those risks small for a single-user TV app with no crash reporter and no remote code, A with the hardening below is defensible and is the proven path.
 - It adds native surface, which the owner is wary of ("overhead that we don't need"), and the same surface again in Swift.
 - Catalog and sign-in over the native transport have not run against Jellyscale.
+- "Never enters JavaScript" rests on one filter, not only on construction: Jellyfin echoes the token inside some response bodies, and Kotlin must remove it before the body crosses (see "The seam").
 
 **What would change this to A:** the transport cannot stay narrow (it starts to need headers, absolute URLs or streaming bodies); or the catalog wire run through it fails for a reason that is not a quick fix; or the owner rules that same-process isolation is not worth 2 to 4 days.
 
@@ -127,12 +137,12 @@ These become requirements, because the spike left them open:
 
 ### The seam
 
-Four methods and one event. Each is an architecture change that this record asks the owner to approve; the exact shapes belong to the task specs.
+Four methods and one event. Each is an architecture change that this record asks the owner to approve; the exact shapes belong to the task specs. They belong in a session module of their own that shares the registry with the player module, so that `modules/player` keeps "exactly the PlayerEngine port's" methods (T8-01).
 
 | Method | Takes | Returns |
 |---|---|---|
 | `signIn` | origin, DeviceId, and a password credential or a Quick Connect secret | `{ session, userId, userName, serverId }` or an error code |
-| `request` | a session id (or, for the fixed pre-sign-in paths, an origin), a method (`GET`, `POST`, `DELETE`), a server path, query pairs, a JSON body | `{ status, body }` or an error code |
+| `request` | a session id (or, for the fixed pre-sign-in paths, an origin), a method (`GET`, `POST`, `DELETE`), a server path, query pairs, a JSON body, a timeout | `{ status, body }` or an error code |
 | `restoreSessions` | nothing | a list of `{ session, origin, userId, userName, serverId }` |
 | `endSession` | a session id | nothing; always succeeds locally |
 
@@ -143,7 +153,8 @@ Event: `sessionEnded { session, reason }`, where `reason` is a fixed code (`revo
 - It accepts no header and no absolute URL. The path must start with `/` and is resolved against the session's origin.
 - It sends through the one client: redirects off, no proxy, no cookies, any other origin refused, any URL with a credential parameter or the token value refused.
 - A 3xx or a status of 0 is returned as an error, never followed.
-- A response body that contains the session's token value fails closed and is not returned, the same rule the Rust playlist check applied.
+- **Jellyfin echoes the token in some bodies, and Kotlin removes it.** An external subtitle `DeliveryUrl` in a PlaybackInfo response arrives as `…/Stream.{fmt}?ApiKey=…` (`ARCHITECTURE.md` §3), and a `TranscodingUrl` carries `&ApiKey={token}` (decision 0002, Q1). Before a body crosses to JavaScript, Kotlin replaces every occurrence of the session's token value, as written and percent-encoded, with a fixed marker. The core already strips credential parameters by name, so it needs no change. Which other routes echo the token, and whether Jellyscale ever does, is **[unverified]**; the filter is by value, so it does not depend on the answer.
+- Cancellation (the core's `AbortSignal`) and the timeout are part of the call; how a cancel crosses is for the task spec.
 - Errors are codes. No error, result or event carries a header, a URL or a play-session id.
 
 ### How the player and the image loader get authority
@@ -163,7 +174,7 @@ This is an **exception to the hard rule "Never log, persist, or display tokens"*
 
 - **Where.** One encrypted record per session, written and read only by Kotlin: AES-256-GCM under a key generated in the Android Keystore, which keeps the key out of the app process ("Key material never enters the application process", Android Keystore docs). The record lives under `getNoBackupFilesDir()`, which Auto Backup always excludes, so no backup rule is needed.
 - **No user authentication on the key.** A TV has no screen lock to rely on **[judgment]**. The key protects the record at rest against a copy of the app's files; it does not protect against the app's own process.
-- **Not `androidx.security:security-crypto`.** Its 1.1.0 release notes say: "Deprecated all APIs in favour of existing platform APIs and direct use of Android Keystore".
+- **Not `androidx.security:security-crypto`.** Its release notes for 1.1.0-alpha07 and 1.1.0-beta01 say: "Deprecated all APIs in favour of existing platform APIs and direct use of Android Keystore". 1.1.0 is the current stable release.
 - **Not expo-secure-store under C.** It passes the maintenance rule: 58.0.3 is current on npm, the package had commits on 2026-10-28 and 2026-11-13, `expo/expo` is not archived, and its README has no deprecation or maintenance-mode note. It stores values in SharedPreferences encrypted with a Keystore key and excludes them from Auto Backup. But its API returns the value to JavaScript (`getItemAsync(): Promise<string | null>`), which is the crossing C removes. It is the right store under A. Expo's platform list for it names Android, iOS and tvOS and does not name Android TV, and it has not run on the Shield **[unverified on Android TV]**.
 - **Sign-out.** `endSession` removes the registry entry and deletes the stored record first, then sends `POST /Sessions/Logout` with the token it still holds in a local variable. A failed or refused logout is reported as a code and changes nothing locally.
 - **Revoked on the server** (the device deleted, the password changed). When an authenticated request gets 401, Kotlin sends `GET /Users/Me`. If that is also 401, it ends the session as sign-out does, without the logout call, stops any player using it, and emits `sessionEnded` with `revoked`. One 401 alone does not sign the user out.
@@ -182,7 +193,7 @@ Each test has a negative control: a planted leak must make it fail, as the repos
 | `logcat_and_console_hold_no_canary` (emulator) | The app's logcat and the captured JavaScript console contain no canary, no `Token="`, and no play-session id. A source tripwire fails on a log call in the HTTP and session packages that takes a request, header or URL, and on `HttpLoggingInterceptor`. | A planted `Log.i` of the header. |
 | Jellyscale wire test (the play falsifier's recording proxy, extended) | Every request, catalog and sign-in included, carries `Authorization: MediaBrowser …`; every request except the fixed pre-sign-in paths carries a token; no redirect is followed; no other origin is contacted; a tokenless control request gets 401. | The proxy strips the header from one request; a 302 to a canary origin. |
 | `no_url_carries_the_token` (proxy and unit) | The proxy scans every request URL, decoded up to four rounds, for the token value and each credential parameter name. A unit test shows the interceptor refuses such a URL before it leaves the device. | A request with `api_key` and one with the token in its path. |
-| `sign_in_result_has_no_token_field` and `a_response_that_echoes_the_token_fails_closed` | The sign-in response stays in Kotlin; an echoed token is not returned. | A mock that echoes the token in a catalog body. |
+| `sign_in_result_has_no_token_field` and `an_echoed_token_is_removed_from_response_bodies` | The sign-in response stays in Kotlin. A PlaybackInfo body whose subtitle `DeliveryUrl` and `TranscodingUrl` carry the token, as written and percent-encoded, reaches JavaScript without it. | The filter switched off. |
 | `request_refuses_headers_absolute_urls_and_other_origins` | The transport stays narrow. | Each refused shape. |
 | `stored_credential_is_ciphertext` (emulator) | After sign-in, no file in the app's data directory (shared preferences, files, databases, React Native storage) contains the canary. | A plain write of the token. |
 | `sign_out_clears_memory_and_store_even_when_logout_fails`, `a_confirmed_401_ends_the_session`, `an_unreadable_record_means_signed_out` | The sign-out and revoke rules above. | A logout that returns 500; a single 401 that must not sign out. |
@@ -191,7 +202,9 @@ Each test has a negative control: a planted leak must make it fail, as the repos
 
 ## security.md changes to apply
 
-**Not written into `docs/security.md` in this branch.** The file on `main` describes only the Tauri and mpv app, T1-07 rewrites it whole for the TV app, and T2-01 depends on T1-07. Editing the desktop text now would conflict with that rewrite. T2-01's last acceptance item ("`docs/security.md` is updated to match in the same PR") is therefore **not met by this branch**: once T1-07 lands and the owner accepts this record, rebase and apply the list below in the same pull request.
+**Not written into `docs/security.md` in this branch.** The file on `main` describes only the Tauri and mpv app, T1-07 rewrites it whole for the TV app, and T2-01 depends on T1-07. Editing the desktop text now would conflict with that rewrite. T2-01's last acceptance item ("`docs/security.md` is updated to match in the same PR") is therefore **not met by this branch**.
+
+The two tasks are circular: T1-07 must state "where the token is held", which is this decision, and T2-01 waits for T1-07. The owner or the Product Owner picks the order. The simplest is to accept this record first and let T1-07 write the list below as part of its rewrite, with T2-01 closing in that pull request.
 
 1. Replace "Jellyfin access tokens are session-only fields inside `JellyfinGateway`" with: on Android the token is held only by the native module's session registry and its encrypted store; it never enters JavaScript; the core holds an opaque session id.
 2. State which code does HTTP: Kotlin sends every request; the core decides catalog requests and parses their responses; Kotlin alone sends and parses the two sign-in calls.
@@ -200,7 +213,7 @@ Each test has a negative control: a planted leak must make it fail, as the repos
 5. Describe the session registry and that the player and image views name a session by id.
 6. Describe the store: Keystore key, AES-GCM, the no-backup directory, no user authentication, and the three ways a record is removed (sign-out, confirmed 401, unreadable).
 7. Reword the persistence rule: a token is persisted only as that encrypted record, by native code.
-8. State the development-build exposure: the debugger and the network inspector can read the header in a debug variant, so development builds sign in only to development servers.
+8. State the development-build exposure: the debugger and the network inspector can read the header in a debug variant. Add the rule the owner sets for it.
 9. State the residual risk: code running inside the app process, or root, can read the token; same-process Kotlin memory is not a boundary against it.
 10. List each test above against the claim it proves, marked as planned until it exists (T1-07, acceptance 4).
 
@@ -216,6 +229,7 @@ Related wording outside `docs/security.md`, for the same pull request or the Pro
 2. **The persistence exception.** May a token be stored, encrypted under a Keystore key, by native code only? T4-05 assumes yes.
 3. **Staying signed in: on by default, or opt-in?** `ARCHITECTURE.md` §3 proposed opt-in for desktop. Recommended for TV: on by default, because typing a password with a remote is the cost of the alternative, with sign-out one step away.
 4. **The four methods and one event** as new native surface.
+5. **Development builds.** The debugger and the network inspector can read the header in a debug variant under either option. Recommended rule: a development build signs in only to a development server, never to a server holding a real library.
 
 ## Revisit if
 
@@ -230,7 +244,7 @@ Related wording outside `docs/security.md`, for the same pull request or the Pro
 - expo-modules-core, same install: `kotlin/devtools/ExpoNetworkInspectOkHttpInterceptors.kt` (request and response capture, 1 MB body limit), `cdp/CdpNetworkTypes.kt` (headers are sent).
 - `expo/expo`, branch `sdk-58` (`e88ec73b49`): `packages/expo-dev-launcher/expo-dev-launcher-gradle-plugin/…/DevLauncherPlugin.kt` and `packages/expo-network-addons/expo-network-addons-gradle-plugin/…/NetworkAddonsPlugin.kt`. Neither package was installed in the spike, so the inspector's behaviour in an Octave debug build is read from source, not observed.
 - expo-secure-store 58.0.3 (npm tarball): `SecureStoreModule.kt`, `encryptors/AESEncryptor.kt`, `res/xml/secure_store_backup_rules.xml`, `build/SecureStore.d.ts`, `CHANGELOG.md`, `README.md`; npm registry metadata; `expo/expo` commit list for `packages/expo-secure-store`; <https://docs.expo.dev/versions/latest/sdk/securestore/>.
-- Android: <https://developer.android.com/privacy-and-security/keystore> ("Extraction prevention"); <https://developer.android.com/identity/data/autobackup> ("Files that are backed up"); <https://developer.android.com/jetpack/androidx/releases/security> (security-crypto 1.1.0).
+- Android: <https://developer.android.com/privacy-and-security/keystore> ("Extraction prevention"); <https://developer.android.com/identity/data/autobackup> ("Files that are backed up"); <https://developer.android.com/jetpack/androidx/releases/security> (security-crypto 1.1.0-alpha07, 1.1.0-beta01 and 1.1.0).
 - Expo: <https://docs.expo.dev/versions/latest/sdk/expo/> (the `expo` package's platform list; the page does not describe redirect handling).
 
 This record contains no address, serial, token or play-session id.
