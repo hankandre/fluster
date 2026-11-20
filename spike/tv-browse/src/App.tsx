@@ -93,6 +93,7 @@ function Hero() {
         transition={ARM.crossfadeMs > 0 ? { duration: ARM.crossfadeMs, effect: "cross-dissolve" } : 0}
         contentFit="cover"
         cachePolicy={ARM.diskOnly ? "disk" : "memory-disk"}
+        decodeFormat={ARM.rgbBackdrop ? "rgb" : "argb"}
       />
       <View style={styles.scrim} pointerEvents="none" />
       <View style={styles.heroText} pointerEvents="none">

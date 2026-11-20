@@ -14,7 +14,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const out = join(root, "art");
 const posters = Number(process.argv[2] ?? 400);
 const backdrops = Number(process.argv[3] ?? 60);
-for (const d of ["poster/1000", "poster/300", "backdrop/1920"]) mkdirSync(join(out, d), { recursive: true });
+for (const d of ["poster/1000", "poster/300", "backdrop/1920", "backdrop/1280"]) mkdirSync(join(out, d), { recursive: true });
 
 // Deterministic pseudo-random colours from the index.
 function hsl(seed, s, l) {
@@ -46,6 +46,8 @@ async function backdrop(i) {
     "-attenuate", "0.5", "+noise", "Gaussian",
     "-quality", "85", join(out, "backdrop/1920", `${i}.jpg`),
   ]);
+  // 1280x720 variant for the optimisation pass's backdropW arm.
+  await run("magick", [join(out, "backdrop/1920", `${i}.jpg`), "-resize", "1280x720", "-quality", "85", join(out, "backdrop/1280", `${i}.jpg`)]);
 }
 
 const jobs = [];

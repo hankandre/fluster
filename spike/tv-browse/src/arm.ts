@@ -10,7 +10,8 @@ export type Arm = {
   rowMemory: boolean; // each row restores its own horizontal offset when its view is recycled
   rgb: boolean; // posters decoded as RGB_565 (expo-image decodeFormat "rgb")
   diskOnly: boolean; // expo-image cachePolicy "disk": no decoded-bitmap memory cache
-  backdropW: number; // backdrop variant width requested (1920 = stock)
+  backdropW: number; // backdrop variant width requested (1920 = stock; 1280 also generated)
+  rgbBackdrop: boolean; // backdrop decoded as RGB_565 too
   crossfadeMs: number; // backdrop crossfade (300 = stock)
   drawDistance: number | undefined; // vertical list drawDistance (undefined = FlashList default)
   rowDrawDistance: number | undefined; // horizontal rows' drawDistance
@@ -28,6 +29,7 @@ export const STOCK: Arm = {
   rgb: false,
   diskOnly: false,
   backdropW: 1920,
+  rgbBackdrop: false,
   crossfadeMs: 300,
   drawDistance: undefined,
   rowDrawDistance: undefined,
