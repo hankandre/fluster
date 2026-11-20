@@ -271,7 +271,7 @@ Measured by the worst-case artwork captures; see `docs/design/contrast-report.md
 
 ## Flaky `rust-audit` on a Dependabot PR (#149, 2026-11-14)
 
-- `rustsec/audit-check` found no vulnerabilities but failed with `Not Found - https://docs.github.com/rest/checks/runs#update-a-check-run` while posting its check run. A rerun of the same job passed. If it recurs, run `cargo audit` directly in the job instead of the action, which needs no check-run API. S.
+- ~~`rustsec/audit-check` found no vulnerabilities but failed with `Not Found - https://docs.github.com/rest/checks/runs#update-a-check-run` while posting its check run. A rerun of the same job passed. If it recurs, run `cargo audit` directly in the job instead of the action, which needs no check-run API. S.~~ Taken by ci/cargo-audit (6 of 15 main runs failed; upstream rustsec/audit-check#56).
 
 - Cap kept browse data per account if memory grows; every visited screen is kept for the whole session (P13-31).
 - After sign-in, return to the route that sent the visitor to sign-in, so a reload keeps the place (P13-31).

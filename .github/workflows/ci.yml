@@ -25,19 +25,28 @@ jobs:
         with:
           fail-on-severity: moderate
 
+  # cargo-audit run directly: it fails on a vulnerability and reports
+  # unmaintained and unsound advisories as warnings. rustsec/audit-check failed
+  # intermittently with "Not Found" while updating its own check run
+  # (rustsec/audit-check#56). The release binary is pinned by version and SHA-256.
   rust-audit:
     runs-on: ubuntu-22.04
-    permissions:
-      checks: write
-      contents: read
+    env:
+      CARGO_AUDIT_VERSION: 0.22.2
+      CARGO_AUDIT_SHA256: 7fb9497f8594b389e5fce5ef9b92db08432996895b2e0c5a0167a69ed445c428
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998 # v2.0.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          working-directory: src-tauri
+      - name: Install cargo-audit
+        run: |
+          name="cargo-audit-x86_64-unknown-linux-musl-v${CARGO_AUDIT_VERSION}"
+          curl --fail --silent --show-error --location --retry 3 --output "$RUNNER_TEMP/$name.tgz" \
+            "https://github.com/rustsec/rustsec/releases/download/cargo-audit%2Fv${CARGO_AUDIT_VERSION}/$name.tgz"
+          echo "$CARGO_AUDIT_SHA256  $RUNNER_TEMP/$name.tgz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/$name.tgz" -C "$RUNNER_TEMP"
+          install -m 0755 "$RUNNER_TEMP/$name/cargo-audit" "$RUNNER_TEMP/cargo-audit"
+      - run: '"$RUNNER_TEMP/cargo-audit" audit --file src-tauri/Cargo.lock'
 
   frontend:
     runs-on: ubuntu-22.04
