@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Play Falsifier",
+    "slug": "octave-tv-play-falsifier",
+    "version": "0.0.1",
+    "orientation": "landscape",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#000000",
+    "android": {
+      "package": "dev.fluster.spike.play"
+    },
+    "plugins": [
+      [
+        "@react-native-tvos/config-tv",
+        {
+          "isTV": true
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "buildArchs": [
+              "arm64-v8a",
+              "x86_64"
+            ]
+          }
+        }
+      ],
+      "./plugins/with-cleartext-scope.js"
+    ]
+  }
+}

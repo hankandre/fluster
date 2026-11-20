@@ -1,0 +1,12 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@jellyfin/sdk": ["./node_modules/@jellyfin/sdk"],
+      "axios": ["./node_modules/axios"]
+    }
+  },
+  "include": ["src", "modules/octave-player/index.ts"]
+}

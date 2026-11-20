@@ -1,0 +1,9 @@
+node_modules/
+/android/
+/ios/
+.expo/
+dist/
+media/
+results/*/raw/
+__pycache__/
+modules/*/android/build/

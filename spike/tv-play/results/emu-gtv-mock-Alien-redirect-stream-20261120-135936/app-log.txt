@@ -1,0 +1,26 @@
+--------- beginning of main
+11-20 13:59:39.018  4139  4157 I ReactNativeJS: Running "main"
+11-20 13:59:39.022  4139  4157 I OCTAVE_PLAY: launch config keys: [canary, pass, server, title, user, year]
+11-20 13:59:39.119  4139  4157 I ReactNativeJS: OCTAVE_JS connected version=12.4.0 hostClass=loopback confirm=false
+11-20 13:59:39.123  4139  4157 I ReactNativeJS: OCTAVE_JS signed in after 101ms
+11-20 13:59:39.134  4139  4157 I ReactNativeJS: OCTAVE_JS lookup ok kind=Movie year=1979
+11-20 13:59:39.140  4139  4157 I ReactNativeJS: OCTAVE_JS plan delivery=static playMethod=DirectPlay reasons=[] tracks=2
+11-20 13:59:39.144  4139  4157 I ReactNativeJS: OCTAVE_JS js probes {"redirectSameStatus":302,"redirectCanaryStatus":302}
+11-20 13:59:39.144  4139  4157 I OCTAVE_HTTP: session started (scheme=http)
+11-20 13:59:39.148  4139  4164 W OCTAVE_HTTP: received a redirect (302); not followed
+11-20 13:59:39.150  4139  4164 W OCTAVE_HTTP: received a redirect (302); not followed
+11-20 13:59:39.150  4139  4164 W OCTAVE_HTTP: refused a request to another origin (count=1)
+11-20 13:59:39.150  4139  4164 W OCTAVE_HTTP: refused a URL that carries a credential (count=1)
+11-20 13:59:39.150  4139  4164 I OCTAVE_PLAY: native probes {redirectSameStatus=302, redirectCanaryStatus=302, offOriginStatus=-1, offOriginRefused=true, apiKeyUrlRefused=true}
+11-20 13:59:39.150  4139  4157 I ReactNativeJS: OCTAVE_JS native probes {"redirectSameStatus":302,"redirectCanaryStatus":302,"offOriginStatus":-1,"offOriginRefused":true,"apiKeyUrlRefused":true}
+11-20 13:59:39.150  4139  4157 I ReactNativeJS: OCTAVE_JS control requests=4 ready after 128ms
+11-20 13:59:39.169  4139  4139 I OCTAVE_PLAY: display[before-play] isHdr=false hdrTypes=[] mode=1920x1080@60.000004 maxLum=500.0
+11-20 13:59:39.172  4139  4139 I OCTAVE_PLAY: T+299ms state=BUFFERING rebuffers=0
+11-20 13:59:39.173  4139  4139 I OCTAVE_PLAY: T+296ms prepare
+11-20 13:59:39.181  4139  4196 W OCTAVE_HTTP: received a redirect (302); not followed
+11-20 13:59:39.185  4139  4196 W OCTAVE_HTTP: received a redirect (302); not followed
+11-20 13:59:40.186  4139  4196 W OCTAVE_HTTP: received a redirect (302); not followed
+11-20 13:59:42.187  4139  4196 W OCTAVE_HTTP: received a redirect (302); not followed
+11-20 13:59:42.192  4139  4139 E OCTAVE_PLAY: PLAYER_ERROR code=ERROR_CODE_IO_BAD_HTTP_STATUS causes=[mz0] httpStatus=302
+11-20 13:59:42.193  4139  4139 I OCTAVE_PLAY: T+3320ms state=IDLE rebuffers=0
+11-20 13:59:49.174  4139  4139 I OCTAVE_PLAY: stats[tick] T+10300ms pos=0ms rendered=null dropped=null maxConsecDropped=null skipped=null droppedEvents=0 rebuffers=0 http=6 redirects=6 refusedOffOrigin=1 refusedCredentialUrl=1

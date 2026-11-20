@@ -1,0 +1,31 @@
+{
+  "name": "octave-tv-play-falsifier",
+  "version": "0.0.1",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "prebuild:tv": "EXPO_TV=1 expo prebuild --clean --platform android --no-install",
+    "check:datasources": "bash scripts/check-no-default-datasources.sh"
+  },
+  "dependencies": {
+    "@jellyfin/sdk": "1.0.2",
+    "axios": "1.21.1",
+    "expo": "58.0.23",
+    "expo-build-properties": "~58.0.12",
+    "expo-crypto": "58.0.8",
+    "react": "19.3.0",
+    "react-native": "npm:react-native-tvos@0.88.1-0",
+    "react-native-url-polyfill": "4.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "7.29.13",
+    "@react-native-tvos/config-tv": "0.1.7",
+    "@types/react": "19.3.0",
+    "typescript": "6.0.3"
+  },
+  "expo": {
+    "install": {
+      "exclude": ["react-native"]
+    }
+  }
+}

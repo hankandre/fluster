@@ -1,0 +1,44 @@
+label=emu-gtv mode=mock title=Alien year=1979 negative=redirect-stream play_secs=5
+Status: ok
+TotalTime: 158
+WaitTime: 166
+OCTAVE_JS connected version=12.4.0 hostClass=loopback confirm=false
+OCTAVE_JS signed in after 101ms
+OCTAVE_JS lookup ok kind=Movie year=1979
+OCTAVE_JS plan delivery=static playMethod=DirectPlay reasons=[] tracks=2
+OCTAVE_JS js probes {"redirectSameStatus":302,"redirectCanaryStatus":302}
+OCTAVE_HTTP: refused a request to another origin (count=1)
+OCTAVE_HTTP: refused a URL that carries a credential (count=1)
+OCTAVE_PLAY: native probes {redirectSameStatus=302, redirectCanaryStatus=302, offOriginStatus=-1, offOriginRefused=true, apiKeyUrlRefused=true}
+OCTAVE_JS native probes {"redirectSameStatus":302,"redirectCanaryStatus":302,"offOriginStatus":-1,"offOriginRefused":true,"apiKeyUrlRefused":true}
+OCTAVE_JS control requests=4 ready after 128ms
+OCTAVE_PLAY: display[before-play] isHdr=false hdrTypes=[] mode=1920x1080@60.000004 maxLum=500.0
+OCTAVE_PLAY: PLAYER_ERROR code=ERROR_CODE_IO_BAD_HTTP_STATUS causes=[mz0] httpStatus=302
+OCTAVE_PLAY: stats[tick] T+10300ms pos=0ms rendered=null dropped=null maxConsecDropped=null skipped=null droppedEvents=0 rebuffers=0 http=6 redirects=6 refusedOffOrigin=1 refusedCredentialUrl=1
+--- control
+{"tokenlessStreamStatus": 401}
+--- proxy
+proxy verdict: PASS {"everyRequestHasAuthorization":true,"tokenOnEveryNonPublicRequest":true,"noCredentialInAnyUrl":true,"zeroRedirectsFollowed":true,"zeroOtherOrigins":true,"apiKeyProbeNeverSent":true,"upstreamRelayedNoRedirect":true}
+--- SurfaceFlinger (HDR / dataspace lines)
+      4 - inputDataspace: (deprecated) sRGB sRGB Full range
+      3 - outputDataspace: (deprecated) sRGB sRGB Full range
+      2 - outputDataspace: DCI-P3 sRGB Full range
+      2         {id=0, hwcId=0, resolution=1920x1080, vsyncRate=60.00 Hz, dpi=320.00x320.00, group=0, vrrConfig=N/A, supportedHdrTypes=SYSTEM}
+      2     activeMode={id=0, hwcId=0, resolution=1920x1080, vsyncRate=60.00 Hz, dpi=320.00x320.00, group=0, vrrConfig=N/A, supportedHdrTypes=SYSTEM}
+      1 true_hdr_screenshots: true
+      1 - outputDataspace: Default
+      1 + name:Wallpaper#1(BLAST Consumer)1, id:18, size:4.00KiB, w/h:128x128, usage: 0xb00, req fmt:1, fourcc/mod:875708993/0, dataspace: 0x8810000, compressed: false
+      1 + name:VRI[MainActivity]#0(BLAST Consumer)0, id:56, size:4.00KiB, w/h:1920x1080, usage: 0xb00, req fmt:1, fourcc/mod:875708993/0, dataspace: 0x8810000, compressed: false
+      1 + name:VRI[MainActivity]#0(BLAST Consumer)0, id:55, size:4.00KiB, w/h:1920x1080, usage: 0xb00, req fmt:1, fourcc/mod:875708993/0, dataspace: 0x8810000, compressed: false
+      1 + name:VRI[MainActivity]#0(BLAST Consumer)0, id:54, size:4.00KiB, w/h:1920x1080, usage: 0xb00, req fmt:1, fourcc/mod:875708993/0, dataspace: 0x8810000, compressed: false
+      1 + name:FramebufferSurface, id:5, size:4.00KiB, w/h:1920x1080, usage: 0x1b00, req fmt:1, fourcc/mod:875708993/0, dataspace: 0x0, compressed: false
+      1 + name:FramebufferSurface, id:4, size:4.00KiB, w/h:1920x1080, usage: 0x1b00, req fmt:1, fourcc/mod:875708993/0, dataspace: 0x0, compressed: false
+      1 	mDisplayModePtr={id=0, hwcId=0, resolution=1920x1080, vsyncRate=60.00 Hz, dpi=320.00x320.00, group=0, vrrConfig=N/A, supportedHdrTypes=SYSTEM}
+      1       mDataspace=Default (0)
+--- display (HDR state)
+HdrTypes=[]
+HdrTypes=[]
+mActiveColorMode=0
+HdrTypes=[]
+HdrTypes=[]
+HdrTypes=[]
