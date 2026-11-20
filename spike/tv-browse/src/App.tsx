@@ -48,6 +48,14 @@ function lastCardView(): CardView | undefined {
 // Each row's own horizontal offset (arm rowMemory).
 const rowOffsets: number[] = [];
 
+// Arm traps: when a row's first card takes focus, scroll the row fully home. Otherwise the
+// horizontal scroll view can still scroll the row's left padding, and Android spends the next
+// Left press on that scroll instead of leaving for the rail (the "stuck at column 0" defect).
+const rowLists = new Map<number, FlashListRef<number>>();
+function scrollRowHome(row: number) {
+  rowLists.get(row)?.scrollToOffset({ offset: 0, animated: false });
+}
+
 // Held Up/Down detection (arm lazyPosters): two row changes less than HELD_MS apart.
 const HELD_MS = 150;
 let focusedRow = -1;
@@ -136,6 +144,7 @@ const AnimatedCard = memo(function AnimatedCard({ row, col, show }: CardProps) {
     focus.value = withTiming(1, { duration: design.liftMs });
     lastCard = key;
     noteRow(row);
+    if (col === 0 && trap("row")) scrollRowHome(row);
     console.log(`FOCUS ${key}`);
     scheduleHero(row, col);
   }, [focus, key, row, col]);
@@ -161,6 +170,7 @@ const PlainCard = memo(function PlainCard({ row, col, show }: CardProps) {
     setFocused(true);
     lastCard = key;
     noteRow(row);
+    if (col === 0 && trap("row")) scrollRowHome(row);
     console.log(`FOCUS ${key}`);
     scheduleHero(row, col);
   }, [key, row, col]);
@@ -196,6 +206,12 @@ const Row = memo(function Row({ row }: { row: number }) {
   );
   const listRef = useRef<FlashListRef<number>>(null);
   const shown = useRef(row);
+  useEffect(() => {
+    if (listRef.current) rowLists.set(row, listRef.current);
+    return () => {
+      if (rowLists.get(row) === listRef.current) rowLists.delete(row);
+    };
+  }, [row]);
   // FlashList recycles this row's view, with its horizontal scroll view and offset, for
   // another row. Restore the new row's own offset before it paints.
   useLayoutEffect(() => {

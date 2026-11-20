@@ -2,7 +2,8 @@
 // expands to 300 px with labels while it holds focus, as an overlay, so the rows never reflow.
 //
 // Arm traps adds the focus work the stock rail lacks:
-// - trapFocusLeft, so Left on the rail never escapes into off-screen cards under it;
+// - trapFocusLeft, Up and Down, so Left, Up or Down on the rail never escape into the
+//   off-screen cards of a scrolled row, which sit under the rail;
 // - a thin guide at the content's left edge (rendered by App) whose destination is the rail
 //   item last used, so Left from any row's first card reaches the rail;
 // - nextFocusRight on the rail items, set to the card the user left while the rail is open, so
@@ -94,6 +95,8 @@ export function Rail({ returnTo }: { returnTo: () => unknown }) {
       <TVFocusGuideView
         autoFocus
         trapFocusLeft={trap("rail")}
+        trapFocusUp={trap("rail")}
+        trapFocusDown={trap("rail")}
         onFocusEnter={onEnter}
         onFocusLeave={onLeave}
         style={[styles.rail, expanded && styles.railExpanded]}
