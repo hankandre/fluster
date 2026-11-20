@@ -1928,6 +1928,66 @@
       }
     },
     {
+      "name": "EXT-X-MAP URI with a tab is not an attribute list",
+      "rule": "Attribute lists are parsed strictly (RFC 8216 section 4.2) and written back unchanged; forms other parsers read differently are refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:URI=\"a.mp4\t\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "structure: DEL control character in a segment URI",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nseg\u007f.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "structure: C1 next line control character in a segment URI",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nseg\u0085.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "segment URI line with a trailing space is trimmed",
+      "rule": "A URI with whitespace, a control character, a backslash, or a fragment, or an empty URI, is refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4 \n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1:8096/videos/abc/a.mp4\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
+      "name": "segment URI line with a trailing tab is trimmed",
+      "rule": "A URI with whitespace, a control character, a backslash, or a fragment, or an empty URI, is refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4\t\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1:8096/videos/abc/a.mp4\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
       "name": "media playlist without EXT-X-ENDLIST",
       "rule": "A media playlist must end with EXT-X-ENDLIST: only complete (VOD) playlists are served.",
       "playlistKind": "media",
