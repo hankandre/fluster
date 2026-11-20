@@ -13,7 +13,7 @@ Four pillars carry that:
 3. **It just works.** Fluster supports as much of the server's video features as each device allows, with the right defaults. Nobody should have to tune a client to make their library play correctly.
 4. **Honest about the file.** Fluster plays your media **exactly as it is stored whenever it can**. The original file is streamed byte-for-byte and decoded locally with mpv, on the GPU when possible. When the original can't be played (a slow or limited connection, a disc folder, an admin policy), the server repackages or converts it, and Fluster always shows that it is doing so and why ([decision 0002](docs/decisions/0002-server-transcoding-fallback.md)).
 
-It is built for people who chose to own their media and expect the client to respect that: full-quality video, untouched audio tracks, correct subtitles, and a server that stays idle while you watch anything the client can play. It starts on the desktop. The long-term aim is to replace the other Jellyfin video clients, including the cross-platform Flutter ones, on every screen it supports: the desk first, and later the living room and phone.
+It is built for people who chose to own their media and expect the client to respect that: full-quality video, untouched audio tracks, correct subtitles, and a server that stays idle while you watch anything the client can play. It started on the desktop, and the living room now leads: Android TV and Apple TV are the first-class clients, phones and tablets come next, and the desktop follows (owner decision, 2026-11-20). The long-term aim is to replace the other Jellyfin video clients, including the cross-platform Flutter ones, on every screen it supports.
 
 Where Fluster leads other clients today, and where it does not yet, is recorded in [`docs/research/jellyfin-clients.md`](docs/research/jellyfin-clients.md).
 
@@ -22,7 +22,7 @@ Where Fluster leads other clients today, and where it does not yet, is recorded 
 1. **Original first, honest fallback.** Fluster plays the original file whenever mpv can, and mpv can decode nearly everything. It asks the server to repackage or convert only when the original can't be played, in the order direct play, direct stream, transcode. Every conversion is shown with its reason. Quality never drops silently.
 2. **The client does the work.** Decoding, tone-mapping, subtitle rendering, and audio handling happen locally. A Raspberry Pi or underpowered NAS can serve a household.
 3. **Native feel, everywhere.** It should feel like a real application on each platform: fast startup, correct window behavior, keyboard and remote navigation, platform media keys. It must not feel like a web page in a frame.
-4. **No Flutter.** The UI is React/TypeScript in a Tauri shell on desktop, with native shells where a WebView cannot go (see `ARCHITECTURE.md`).
+4. **No Flutter.** The UI is React/TypeScript. TV and mobile use a native shell (decision 0003, leaning React Native with native player modules); the desktop is a Tauri shell (see `ARCHITECTURE.md`).
 5. **Honest diagnostics.** The player always shows what is really happening: which decoder, whether hardware acceleration is active, dropped frames. It never claims hardware acceleration it cannot verify.
 6. **Private by default.** No analytics and no third-party services. Credentials are held as securely as the platform allows, and authenticated URLs never reach logs.
 7. **Small and sharp.** Do a few things very well. Every feature has to justify itself against the playback core.
@@ -47,7 +47,7 @@ Fluster borrows the feel of a streaming service and leaves out what such a servi
 | **Low-power self-hoster** | Jellyfin on a NAS or Pi that cannot transcode 4K | Assurance the server never converts what the client can play. Clear reasons when it must. |
 | **Remote viewer** | Watching away from home over a limited uplink, or on an account with a bitrate limit | Automatic conversion that fits the connection, a streaming-limit setting, and a visible "Converting on server" indicator |
 | **Linux desktop user** | Wayland desktop, NVIDIA or AMD | A first-class client that isn't X11-only, isn't Electron-heavy, and uses VA-API/NVDEC properly |
-| **Household viewer** (later) | Living-room TV, phone, tablet | Resume where someone left off. Next episode. Skip intro. Simple navigation. |
+| **Household viewer** | Living-room TV first, then phone and tablet | Resume where someone left off. Next episode. Skip intro. Simple navigation. |
 
 ## Not for
 
@@ -60,13 +60,13 @@ Fluster borrows the feel of a streaming service and leaves out what such a servi
 
 ### Platforms
 
+Owner decision, 2026-11-20: Android TV and Apple TV are first-class clients and the TV app is the priority. Phones and tablets come next. The desktop follows.
+
 | Stage | Platform | Shell |
 |---|---|---|
-| Now (beta) | Linux x86_64, Wayland | Tauri + embedded libmpv |
-| Next | macOS (Apple Silicon) | Tauri + embedded libmpv |
-| Then | Windows x64 | Tauri + embedded libmpv (needs a composition spike first) |
-| Early (spike after the fallback core lands) | Android TV, then Android phones | Native shell sharing Fluster's TypeScript core (see `ARCHITECTURE.md`) |
-| Later | Apple TV, iOS | The same shell, or SwiftUI for Apple TV |
+| First | Android TV / Google TV (and Fire TV on Fire OS), Apple TV | Native TV shell sharing Fluster's TypeScript core and Rust security layer (decision 0003) |
+| Next | Android phones and tablets, iPhone and iPad | The same shell |
+| Then | Desktop: Linux x86_64 Wayland (beta today), macOS, Windows | Tauri + embedded libmpv. The Linux beta stays maintained (playback and security fixes) |
 
 X11, ARM64 Linux, and Flatpak are deferred, not rejected.
 
@@ -141,13 +141,13 @@ Composition spike first: transparent WebView2 over an mpv D3D11 surface. Then D3
 
 ### M6 — Living room and mobile
 
-A TV/mobile shell that reuses Fluster's domain, gateway, and playback policy. Android TV comes first, then Android phones; Apple TV follows. The shell spike starts as soon as the fallback core (M1b negotiation) lands, in parallel with the desktop milestones.
+A TV/mobile shell that reuses Fluster's domain, gateway, and playback policy. Android TV and Apple TV come first, as first-class clients; phones and tablets come next (owner decision, 2026-11-20). Decision 0003 picks the shell and the playback engines.
 
 - Act as a Jellyfin cast target, so a phone can be the TV's remote and other clients can send play, pause and seek (P8-01, moved here from M5 by the owner, 2026-11-12, D4 B).
 
 ### Order
 
-M0, M1, M1b, then M6's shell spike in parallel with M2, then M3, M4, M5. Milestone numbers are names, not the order.
+M0, M1, M1b (done or in progress on the Linux desktop), then **M6 first**: the TV app on Android TV and Apple TV, then phones and tablets. M2, M3, M4 and M5 follow; the Linux desktop beta gets playback and security fixes meanwhile (owner decision, 2026-11-20). Milestone numbers are names, not the order.
 
 ## Success measures
 
