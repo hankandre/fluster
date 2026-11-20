@@ -198,3 +198,15 @@ fn private_lan_subtitles_must_share_the_stream_scheme_host_and_port() {
         assert!(matches!(error, MpvError::UnsafeSubtitleUrl));
     }
 }
+
+/// Source guard that needs no libmpv, so it runs where the loopback tests
+/// skip: every handle's hardening sets `tls-verify=yes`.
+#[test]
+fn every_handle_sets_tls_verify() {
+    let source = include_str!("network.rs");
+    let start = source
+        .find("pub(super) fn harden_network_options(")
+        .expect("harden_network_options");
+    let end = start + source[start..].find("\n}\n").expect("end of function");
+    assert!(source[start..end].contains("init.set_option(\"tls-verify\", true)?;"));
+}

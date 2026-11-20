@@ -81,14 +81,23 @@ fn serve_tls(listener: TcpListener, certificate: &SelfSigned) -> Requests {
     requests
 }
 
-fn pem_file(certificate: &SelfSigned) -> PathBuf {
+/// The test CA file, removed when dropped, including on an early return.
+struct PemFile(PathBuf);
+
+impl Drop for PemFile {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.0);
+    }
+}
+
+fn pem_file(certificate: &SelfSigned) -> PemFile {
     let path = std::env::temp_dir().join(format!(
         "fluster-tls-test-{}-{:?}.pem",
         std::process::id(),
         thread::current().id()
     ));
     std::fs::write(&path, &certificate.pem).expect("write the test CA file");
-    path
+    PemFile(path)
 }
 
 #[test]
@@ -106,7 +115,7 @@ fn https_servers_with_an_untrusted_certificate_are_refused() {
         let verifying: bool = mpv.get_property("tls-verify").expect("tls-verify");
         assert!(verifying, "{label}: production handles verify");
         if trust_the_certificate {
-            mpv.set_property("tls-ca-file", ca_file.to_str().expect("UTF-8 path"))
+            mpv.set_property("tls-ca-file", ca_file.0.to_str().expect("UTF-8 path"))
                 .expect("tls-ca-file");
         }
         if !verify {
@@ -137,5 +146,4 @@ fn https_servers_with_an_untrusted_certificate_are_refused() {
             assert_single_exact_header(head);
         }
     }
-    let _ = std::fs::remove_file(ca_file);
 }
