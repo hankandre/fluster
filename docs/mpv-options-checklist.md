@@ -39,7 +39,7 @@ Citations are to commit `ba55ef2` on `main` (after PR #221, merged as `288ce46`)
   - mpv splits string-list options on commas, and the MediaBrowser header has several.
   - A backslash right before a comma keeps the comma in the item and is itself removed. Other backslashes stay (mpv `options/m_option.c` `get_nextsep`).
   - The handle lives for one session, so the header goes with it. Read back in `network_tests.rs:142`.
-- [ ] **`tls-verify=yes`, set explicitly. Not set today.** Nothing under `src-tauri/src` sets `tls-verify` (checked with `grep -rn tls src-tauri/src` at `ba55ef2`).
+- [ ] **`tls-verify=yes`, set explicitly.** Not set at `ba55ef2` (checked with `grep -rn tls src-tauri/src`); branch `fix/mpv-tls-verify` (commit `05752e4`) sets it in `harden_network_options` and adds `https_servers_with_an_untrusted_certificate_are_refused`, a loopback HTTPS test with a self-signed certificate.
   - mpv v0.42.0 defaults it to `yes` only when mpv is built with libcurl or libavformat is 63 or newer (`stream/network.c` lines 54-56; `DOCS/man/options.rst` lines 5807-5816; `DOCS/interface-changes.rst` line 69, "change `--tls-verify` default to `yes`").
   - Otherwise FFmpeg gets `tls_verify=0` (`stream/stream_lavf.c` line 174), and an HTTPS server's certificate is not checked.
   - mpv 0.41 defaults it to `no`: `mpv --list-options` on the local mpv v0.41.0 prints `--tls-verify  Flag (default: no)`. Any desktop install on mpv 0.41 (this development host included) has the gap today, logged in `tasks/backlog.md`.
