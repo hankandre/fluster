@@ -60,11 +60,11 @@ Fluster borrows the feel of a streaming service and leaves out what such a servi
 
 ### Platforms
 
-Owner decision, 2026-11-20: Android TV and Apple TV are first-class clients and the TV app is the priority. Phones and tablets come next. The desktop follows.
+Owner decision, 2026-11-20: Android TV and Apple TV are first-class clients and the TV app is the priority. Android TV is built first; Apple TV development is postponed until it is under way (owner, 2026-11-20), but nothing on Android TV may close the door on it. Phones and tablets come next. The desktop follows.
 
 | Stage | Platform | Shell |
 |---|---|---|
-| First | Android TV / Google TV (and Fire TV on Fire OS), Apple TV | Native TV shell sharing Fluster's TypeScript core and Rust security layer (decision 0003) |
+| First | Android TV / Google TV (and Fire TV on Fire OS), then Apple TV | Native TV shell sharing Fluster's TypeScript core and Rust security layer (decision 0003) |
 | Next | Android phones and tablets, iPhone and iPad | The same shell |
 | Then | Desktop: Linux x86_64 Wayland (beta today), macOS, Windows | Tauri + embedded libmpv. The Linux beta stays maintained (playback and security fixes) |
 
