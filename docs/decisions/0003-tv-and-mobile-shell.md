@@ -1,6 +1,6 @@
 # 0003: The TV and mobile shell and its playback engines
 
-- Status: Proposed. Waiting for the owner's approval (P12-02 acceptance 5).
+- Status: **Accepted** by the owner on 2026-11-20, with the shell changed to React Native (see "Decision (accepted)"). The sections after it record the research and the earlier proposal, which leaned on a WebView shell; where they differ, "Decision (accepted)" wins.
 - Date: 2026-11-20
 - Task: P12-02. It decides what P9-01 (the Android TV spike) must prove.
 - Touches: `ARCHITECTURE.md` §1 ("TV and mobile direction", constraint 4), the `AGENTS.md` hard rules on the DeviceProfile and HLS validation, PRODUCT.md principle 3 and the M6 order.
@@ -88,7 +88,21 @@ mpv 0.42.0 (2026-11-05) added a libcurl HTTP backend that also serves FFmpeg's n
 | Where the token lives and who does HTTP | JS (core) with a native transport; persisted token in Keystore/Keychain via native code | Kotlin | Kotlin | JS in the WebView, as on desktop; a persisted token needs Keystore storage owned by native code (each native call is a new command, I3); Android's network security config scopes cleartext by domain, not address range, so decision 0001's private-LAN HTTP rule likely needs cleartext allowed app-wide with Fluster's own host classifier as the guard **[unverified]** |
 | Main risks | Two UIs to keep in step; Android TV focus regressions (#1087, #1162); the player chrome ends up native anyway | Two cores or a JS bridge; still needs SwiftUI for tvOS | No Apple path | Old or unknown WebViews (Amazon's on Fire OS); 1 GB TV boxes (TV-ME caps a low-RAM app at 280 MB); PRODUCT.md "must not feel like a web page in a frame"; Tauri mobile is thin for this (hand-maintained `gen/android`) |
 
-## Decision (proposed)
+## Decision (accepted, 2026-11-20)
+
+The owner made Android TV and Apple TV the first-class clients (PRODUCT.md), with Android TV built first and Apple TV development postponed. On that basis:
+
+1. **Shell: React Native** (Expo SDK 58 + react-native-tvos 0.88.x, TypeScript). It is the only option that reaches Android TV and tvOS with one UI and keeps one implementation of the TypeScript rules. The browse UI is React Native; the player screen is native per platform (Streamyfin's shape). The WebView shell and the Kotlin options are not pursued.
+2. **Engines (D2: E1).** Android: Media3 primary (HDR, Dolby Vision, passthrough), libmpv later as the second engine for what Media3 cannot decode. Apple (later): mpv via MPVKit, with AVPlayer beside it.
+3. **HLS on Android (D6): Media3 plays every converted stream.** Its playlist parser hook validates every URI against the shared vectors (`hls-playlists.json`, `hls-master-urls.json`). mpv, when it arrives, plays original files only, so Android needs no loopback server and no Rust. Apple brings the validator back (MPVKit), decided when Apple TV work starts.
+4. **Licence (D3): Octave is GPL-3.0**, so the standard libmpv-android and Jellyfin Media3 FFmpeg builds can be used.
+5. **The TypeScript core is kept** (domain, gateway, negotiation, coordinator, reporter, redaction and their tests and fixtures); its browser and Tauri adapters are dropped. **The Rust layer is not carried over FFI**: its playlist rules become JSON vectors every validator must pass, and its mpv options become a checklist for when mpv returns.
+6. **Tokens and Jellyscale.** Jellyscale is a first-class server and requires a token on every media request. On Android every native request, artwork included, goes through one authenticated OkHttp client: the Authorization header added, redirects off, any other origin refused, never a token in a URL, prop, event or log. The default Media3 data sources and an ExoPlayer built without Octave's media source factory are forbidden. A playback task passes only when its wire test passes against Jellyscale.
+7. **The negotiation change (D7)** is accepted: when no engine can play a source on the device, the client asks for a conversion with direct play and stream copy off; decision 0002's flag table, I1 and the tripwire become per device.
+8. **Order.** First two throwaway falsifiers on the owner's Nvidia Shield TV Pro: browse (react-native-tvos rows and focus, against an installed Compose client for feel) and play (Media3 direct-plays an HDR10 file from Jellyscale with the header on every request). The owner's go or no-go becomes decision 0004. Then the clean slate: the desktop app is tagged `desktop-tauri-final` and deleted, the core is extracted to `packages/core`, and the product is renamed Octave.
+9. **P9-01 (D5)** is replaced by the falsifiers and the first TV tasks in the new task list.
+
+## Earlier proposal (superseded by the accepted decision above)
 
 1. **Rule out Kotlin Multiplatform and native Kotlin, on their merits.** Either means porting or bridging the TypeScript core (about 5.3k lines and 595 tests), which puts a second implementation of negotiation and the HLS URL rules into a one-owner project, a security liability; neither reaches Apple TV without another UI; and the owner's agents are strongest in TypeScript. The honest cost: native Kotlin with Compose for TV is what Wholphin, Findroid and jellyfin-androidtv ship, and it is the lowest-risk route to a TV-native feel on Android alone.
 2. **Part 0, a falsifier first (days, not weeks).** Put the existing TV form in a plain Android WebView wrapper around a built bundle (no Tauri, no engine) on the test devices. It answers the WebView version, memory against TV-ME, D-pad focus and frame pacing, and lets the owner judge "must not feel like a web page in a frame" from the sofa. If it fails, React Native becomes the shell and part A's engine is built as a React Native-compatible native module from the start.
