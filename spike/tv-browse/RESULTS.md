@@ -7,12 +7,18 @@ below).
 
 ## Verdict so far
 
-**Update (optimisation pass, same day):** the React Native screen's Shield problems turned
-out fixable. With six focus fixes, a static lift, 16-bit art and compiled code, it passes the
-500-press focus test with no failures, holds Down at 0 % janky (p99 13 ms), and meets
-Google's 1 GB-box memory targets on the Shield (PSS 242–246 MB). The costs are a Baseline
-Profile requirement, design concessions, and thin margins. See "React Native optimisation
-pass" below. The text in this section is the state before that pass.
+**Update (optimisation pass, same day; see "React Native optimisation pass" below).** Focus
+is fixable, vertical jank is fixable once the code is compiled, and memory reaches Google's
+targets only with design concessions. The text after this table is the state before that pass.
+
+| Arm | What it changes | Focus (500 presses) | Frames, held Down, compiled | Memory vs the 1 GB targets |
+|---|---|---|---|---|
+| **F1** | Focus fixes, RGB_565 posters. **Design unchanged.** | **Clean** (0 failures, 0/12 bursts) | 3.4–7.9 % janky, p99 23–31 ms | **Not met**: PSS 328, Anon+Swap+Graphics 253, Graphics 62 |
+| F5 (one run) | F1 + no image memory cache + RGB_565 backdrop. Design unchanged except 16-bit art. | not run | not run | **Not met**: PSS 303, 230, Graphics 41 |
+| **F4** | F1 + static lift, row `drawDistance` 0, no image memory cache, RGB_565 1280 px backdrop | 0 single failures, but **4/12 bursts lost one press** | **0 % janky, p99 13 ms** | **Met**: PSS 242–246, 169–172, Graphics 33 |
+
+**No single measured arm passes all three.** F1 is the like-for-like comparison with the
+Compose build; F4 changes the content (no animated lift, 16-bit art, 1280 px backdrop).
 
 On the **Shield**, the canonical implementation has three problems.
 
@@ -476,7 +482,8 @@ that change.
   key, so bursts and holds now use `monkey -f` scripts by default on every device.
   `FALSIFIER_BURST=paced` restores the `input` loop, and `oneshot` is a key-flood stress test whose
   results are not comparable.)
-- what costs the vertical jank on the Shield (no profiler run);
+- what costs the vertical jank on the Shield (answered by the optimisation pass's profile:
+  expo-image and Fabric prop updates on the UI thread, slow under JIT);
 - the decoded-image share of the Shield's native heap;
 - whether the Google TV image behaves the same;
 - whether a Compose for TV client avoids these defects. The decision's "feel" comparison is the
@@ -558,8 +565,10 @@ problem: 45 % janky, p99 61 ms, 14 slow-UI-thread frames.
 - **Ruled out:** the hero and backdrop. With a 300 ms dwell that resets on every focus, they
   never update during a 65 ms-cadence hold, so a "throttle during held keys" change has nothing
   to remove. The JS thread (`mqt_v_js`, 689 ms of 6 s) is busy but is not where frames are lost.
-- `Choreographer#doFrame` ran 342 times for 90 draws: Reanimated's frame callback runs every
-  vsync while a lift animation is live. It costs ~0.3 ms per idle frame (p50).
+- `Choreographer#doFrame` ran 342 times for 90 draws, and `BatchEventDispatchedListeners`
+  also ran 342 times, so something registers a frame callback on every vsync. It may be React
+  Native's own per-frame event dispatch, Reanimated, or both: **unverified**. It costs
+  ~0.3 ms per frame (p50).
 
 ### Frames (Shield, held key at ~65 ms; three runs per arm, range shown)
 
@@ -623,6 +632,11 @@ Shield section above (Graphics = EGL mtrack + Other mtrack).
 | F4, repeat | 417, 20/19 | 185 | 242 | 11 | 103 | 48 | 33 | 136 | 169 | 241 |
 | stock, repeat | 301, 19/19 | 233 | 350 | 15 | 140 | 48 | 93 | 180 | 273 | 334 |
 | F4, after reinstall (`reason=install`) | 420, 20/20 | 183 | 244 | 12 | 102 | 48 | 33 | 138 | 171 | 239 |
+| F5 = F1 + no image memory cache + RGB_565 backdrop (lift and `drawDistance` stock), one run | 432, 20/20 | 249* | 303 | 16 | 133 | 48 | 41 | 189 | 230 | 291 |
+
+\* F5's idle reading is unusually high (Java 19 MB). It started at 15:31, just after the
+Compose agent's aborted launch on the Shield (15:30–15:31). Its after-pass figures are in line
+with F1 and F3, but it is a single run.
 
 How to read it:
 - **The focus fixes raise the workload.** With rows that keep their place and a trap at the
@@ -660,11 +674,13 @@ How to read it:
 
 Burst cadence 58–67 ms. Up/Down landed on the same column 70 of 79 times with F1 and F4.
 
-**F4's four diverged bursts are a cost of row `drawDistance` 0.** In each, a held Right of
-15 or 20 presses lost exactly its last press (`0,19` instead of `0,20`, `0,33` instead of
-`0,34`): with no card mounted beyond the screen edge, a fast press can find no card to the
-right. A `drawDistance` of about one card (~150 dp) should keep both the memory saving and
-the press; that was **not tested**.
+**F4's four diverged bursts each lost one press.** A held Right of 15 or 20 presses ended
+one card short (`0,19` instead of `0,20`, `0,33` instead of `0,34`); the oracle shows one
+focus event fewer, not where in the burst it was lost. The likely cause is row
+`drawDistance` 0 (no card mounted past the screen edge, so a fast press can find no card to
+the right), but F4 differs from F1 in five flags and the F2/F4 hold-Right frame runs lost
+nothing, so the cause is **unverified**. A `drawDistance` of about one card (~150 dp) was not
+tried.
 
 The focus fixes that made it clean (all in the `traps`, `mvcpOff` and `rowMemory` arms):
 1. `maintainVisibleContentPosition={{ disabled: true }}` on the row FlashLists: no recycled
@@ -687,8 +703,17 @@ The focus fixes that made it clean (all in the `traps`, `mvcpOff` and `rowMemory
 
 ### Verdict
 
-**React Native can meet the Shield frame budget and most of Google's memory targets, but
-not out of the box, and not all of them.**
+| Arm | What it changes | Focus (500 presses) | Frames, held Down, compiled | Memory vs the 1 GB targets |
+|---|---|---|---|---|
+| **F1** | Focus fixes, RGB_565 posters. **Design unchanged.** | **Clean** (0 failures, 0/12 bursts) | 3.4–7.9 % janky, p99 23–31 ms | **Not met**: PSS 328, Anon+Swap+Graphics 253, Graphics 62 |
+| F5 (one run) | F1 + no image memory cache + RGB_565 backdrop. Design unchanged except 16-bit art. | not run | not run | **Not met**: PSS 303, 230, Graphics 41 |
+| **F4** | F1 + static lift, row `drawDistance` 0, no image memory cache, RGB_565 1280 px backdrop | 0 single failures, but **4/12 bursts lost one press** | **0 % janky, p99 13 ms** | **Met**: PSS 242–246, 169–172, Graphics 33 |
+
+**No single measured arm passes all three.** F1 is the like-for-like comparison with the
+Compose build; F4 changes the content (no animated lift, 16-bit art, 1280 px backdrop).
+
+Taken one test at a time, React Native can meet each Shield target, but not out of the box,
+and not all of them with the design unchanged.
 
 - **Focus: fixed.** Six explicit fixes (about 60 lines) take the 500-press test from
   3 failures, 6 diverged bursts and 12 recycled-cell jumps to zero, on the Shield and the
@@ -706,6 +731,8 @@ not out of the box, and not all of them.**
   345–350 / 271–273 / 93 for stock, while loading 40 % more images. It needs RGB_565 for
   posters *and* backdrop, no decoded-image memory cache, the static lift and fewer mounted
   posters per row. The same numbers hold after a reinstall (244 MB).
+  With the lift and `drawDistance` left as designed (F5, one run) it is **not met**: PSS 303,
+  Anon+Swap+Graphics 230, Graphics 41.
 - **What remains:**
   - The memory margins are thin and depend on design costs: 16-bit art everywhere, no
     decoded-image cache, a static lift. Graphics at 33 MB is inside the 30–40 MB band with
@@ -719,10 +746,38 @@ not out of the box, and not all of them.**
   - The Compose build must be measured in both ART states (JIT after `adb install`, and
     speed-profile after warm-up), or the comparison is confounded.
 
+### Shield runs still needed
+
+1. F5 (F1 + no image memory cache + RGB_565 backdrop): memory again and frames ×3, to settle
+   whether the design-preserving arm can get under 280 MB.
+2. F4 with row `drawDistance` ≈ 150 dp instead of 0: focus, memory and frames ×3, to test
+   whether that removes the lost press and keeps the memory result.
+3. Recycling pools (`rowPool`) and the vertical list's `drawDistance`: memory and frames.
+4. An animated lift without Reanimated (needs code), frames.
+5. A Baseline Profile build installed fresh (no warm-up compile), frames, to see how close a
+   shipped profile gets to the speed-profile result.
+
+### Each suggested fix and what happened to it
+
+| Suggested fix | Outcome |
+|---|---|
+| `maintainVisibleContentPosition` off on rows | Done (a1). Removes the recycled-cell jumps; frames unchanged. |
+| `trapFocusLeft` / focus guides for the rail | Done (a2), plus Up/Down traps, an edge guide and `nextFocusRight` return. |
+| Per-row remembered focus | Done (a3) as per-row scroll offsets; with it, Rail → Right returns to the card left 9 of 9 times. |
+| Smaller poster decode (UI size) | Already in effect: the trace shows posters decoded at 244×366 (expo-image downscaling). Nothing to change. |
+| RGB_565 | Done for posters (a4) and backdrop (F4b/F4). The big memory win. |
+| Throttle backdrop and hero during held keys | Ruled out by reasoning, not measured: the 300 ms dwell already resets on each focus, so neither updates during a 65 ms hold. A "lazy posters while held" variant (a6) was measured and dropped. |
+| Memoised rows | Already in place (memo rows and cards, stable `renderItem`). The remaining per-row cost is inherent to recycling: each card's props change. |
+| FlashList `drawDistance` tuning | Row `drawDistance` 0 tried (a7): frames slightly better, memory lower, possibly a lost press in fast bursts. The vertical list's `drawDistance` was **not tried**. |
+| Recycling pools | **Not tried** (`rowPool` exists as an arm but was never run). |
+
+Memory and focus were measured only for stock and the F arms, not after each step.
+
 ### Cold start (Shield, `am start -W`, 5 runs, compiled)
 
-TotalTime median 340–369 ms across the compiled runs (348 ms on the final APK, range
-333–358). Process start to first React commit 472–482 ms. The commit now waits for the arm
+TotalTime median 340–369 ms across the compiled runs (`opt-compile-a0`, `-v2`, `-v3`).
+Process start to first React commit 472–480 ms. The `opt-compile-v4` cold start (348 ms) is
+excluded: the Compose agent was sending keys to the Shield during it (14:22–14:28). The commit now waits for the arm
 fetch from the art server, so it is not comparable to the earlier 555 ms.
 
 ### Files and how to rerun
