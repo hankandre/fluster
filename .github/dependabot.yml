@@ -8,34 +8,11 @@ updates:
     commit-message:
       prefix: "chore(deps)"
     ignore:
-      # Must match the Rust tauri crate's minor (pinned in src-tauri/Cargo.toml).
-      - dependency-name: "@tauri-apps/api"
-        update-types: ["version-update:semver-minor", "version-update:semver-major"]
-      # dependency-cruiser and @typescript-eslint/parser need TypeScript below 7 (P0-14, P0-16); a 7.x alias would break both lints.
+      # dependency-cruiser and @typescript-eslint/parser need TypeScript below 7; a 7.x alias would break both lints.
       - dependency-name: "typescript-6"
         update-types: ["version-update:semver-major"]
     groups:
       npm-minor-patch:
-        update-types: [minor, patch]
-
-  - package-ecosystem: cargo
-    directory: /src-tauri
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
-    commit-message:
-      prefix: "chore(deps)"
-    ignore:
-      # Tauri is pinned exactly because native composition uses WebView handles.
-      - dependency-name: tauri
-      # Upgraded deliberately with playback checks (P2-06).
-      - dependency-name: libmpv2
-        update-types: ["version-update:semver-major"]
-      # macOS-only; revisit with macOS validation (P6-01).
-      - dependency-name: cocoa
-        update-types: ["version-update:semver-minor", "version-update:semver-major"]
-    groups:
-      cargo-minor-patch:
         update-types: [minor, patch]
 
   - package-ecosystem: github-actions

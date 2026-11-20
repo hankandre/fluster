@@ -21,11 +21,11 @@ function nonRustSteps(steps: string[]): string[] {
   return steps.filter((step) => !step.startsWith("cargo "));
 }
 
-function frontendRunSteps(ciYaml: string): string[] {
+function checksRunSteps(ciYaml: string): string[] {
   const lines = ciYaml.split("\n");
-  const start = lines.findIndex((line) => line === "  frontend:");
+  const start = lines.findIndex((line) => line === "  checks:");
   if (start === -1) {
-    throw new Error("ERROR ci parity: no 'frontend:' job found in ci.yml");
+    throw new Error("ERROR ci parity: no 'checks:' job found in ci.yml");
   }
   const steps: string[] = [];
   for (const line of lines.slice(start + 1)) {
@@ -35,7 +35,7 @@ function frontendRunSteps(ciYaml: string): string[] {
     const value = match[1].trim();
     if (value.startsWith("|") || value.startsWith(">")) {
       throw new Error(
-        "ERROR ci parity: the frontend job has a multi-line run step; this test reads single-line run steps only",
+        "ERROR ci parity: the checks job has a multi-line run step; this test reads single-line run steps only",
       );
     }
     // A run value that itself contains ' #' is cut here and then fails as a missing step.
@@ -49,19 +49,19 @@ function findParityGaps(check: string[], ci: string[]): string[] {
     .filter((step) => !ci.includes(step))
     .map(
       (step) =>
-        `ERROR ci parity: pnpm check runs '${step}' but CI's frontend job does not. Add '- run: ${step}' to the frontend job in .github/workflows/ci.yml in pnpm check's order.`,
+        `ERROR ci parity: pnpm check runs '${step}' but CI's checks job does not. Add '- run: ${step}' to the checks job in .github/workflows/ci.yml in pnpm check's order.`,
     );
   if (missing.length > 0) return missing;
   const ciOrder = ci.filter((step) => check.includes(step));
   const inOrder = check.every((step, i) => ciOrder[i] === step);
   if (inOrder) return [];
   return [
-    `ERROR ci parity: CI's frontend job runs pnpm check's steps in a different order: ${ciOrder.join(", ")}; pnpm check order: ${check.join(", ")}.`,
+    `ERROR ci parity: CI's checks job runs pnpm check's steps in a different order: ${ciOrder.join(", ")}; pnpm check order: ${check.join(", ")}.`,
   ];
 }
 
 const ci = (jobBody: string, after = "") =>
-  `jobs:\n  frontend:\n    steps:\n${jobBody}\n${after}`;
+  `jobs:\n  checks:\n    steps:\n${jobBody}\n${after}`;
 
 describe("findParityGaps", () => {
   it("reports a check step that CI lacks, by name", () => {
@@ -95,34 +95,34 @@ describe("checkSteps and nonRustSteps", () => {
   );
 });
 
-describe("frontendRunSteps", () => {
+describe("checksRunSteps", () => {
   it("reads single-line run steps in order, with or without a name", () => {
     const yaml = ci("      - run: pnpm a\n      - name: x\n        run: pnpm b # note");
-    expect(frontendRunSteps(yaml)).toEqual(["pnpm a", "pnpm b"]);
+    expect(checksRunSteps(yaml)).toEqual(["pnpm a", "pnpm b"]);
   });
 
-  it("throws on a block scalar run in the frontend job", () => {
-    expect(() => frontendRunSteps(ci("      - run: |\n          pnpm a"))).toThrow(
+  it("throws on a block scalar run in the checks job", () => {
+    expect(() => checksRunSteps(ci("      - run: |\n          pnpm a"))).toThrow(
       "multi-line run step",
     );
   });
 
   it("ignores a block scalar run in another job", () => {
     const yaml = ci("      - run: pnpm a", "  other:\n    steps:\n      - run: |\n          x");
-    expect(frontendRunSteps(yaml)).toEqual(["pnpm a"]);
+    expect(checksRunSteps(yaml)).toEqual(["pnpm a"]);
   });
 
   it("does not count steps from a later job", () => {
     const yaml = ci("      - run: pnpm a", "  other:\n    steps:\n      - run: pnpm z");
-    expect(frontendRunSteps(yaml)).toEqual(["pnpm a"]);
+    expect(checksRunSteps(yaml)).toEqual(["pnpm a"]);
   });
 
-  it("throws when there is no frontend job", () => {
-    expect(() => frontendRunSteps("jobs:\n  other:\n")).toThrow("no 'frontend:' job");
+  it("throws when there is no checks job", () => {
+    expect(() => checksRunSteps("jobs:\n  other:\n")).toThrow("no 'checks:' job");
   });
 
   it("cuts a run value that contains ' #', which then fails as a missing step", () => {
-    const steps = frontendRunSteps(ci('      - run: pnpm a "x #y"'));
+    const steps = checksRunSteps(ci('      - run: pnpm a "x #y"'));
     expect(findParityGaps(['pnpm a "x #y"'], steps)).toHaveLength(1);
   });
 });
@@ -130,23 +130,15 @@ describe("frontendRunSteps", () => {
 describe("real files", () => {
   const read = (path: string) => readFileSync(fileURLToPath(new URL(path, import.meta.url)), "utf8");
   const pkg = JSON.parse(read("../package.json")) as { scripts: { check: string } };
-  const ciSteps = frontendRunSteps(read("../.github/workflows/ci.yml"));
+  const ciSteps = checksRunSteps(read("../.github/workflows/ci.yml"));
 
-  it("runs every non-Rust pnpm check step in the frontend job, in order", () => {
+  it("runs every pnpm check step in the checks job, in order", () => {
     expect(findParityGaps(nonRustSteps(checkSteps(pkg.scripts.check)), ciSteps)).toEqual([]);
   });
 
-  it("runs the guards directly after build and before e2e", () => {
-    const at = (step: string) => ciSteps.indexOf(step);
-    const order = [
-      "pnpm build",
-      "pnpm test:no-test-engine",
-      "pnpm typecheck:integration",
-      "pnpm typecheck:core",
-      "pnpm test:e2e",
-    ];
-    expect(order.map(at).every((i) => i !== -1)).toBe(true);
-    expect(ciSteps[at("pnpm build") + 1]).toBe("pnpm test:no-test-engine");
-    expect(order.map(at)).toEqual([...order.map(at)].sort((a, b) => a - b));
+  it("runs the type-check and the workflow tests", () => {
+    for (const step of ["pnpm typecheck", "pnpm test:workflow"]) {
+      expect(ciSteps).toContain(step);
+    }
   });
 });

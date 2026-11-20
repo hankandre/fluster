@@ -1,5 +1,5 @@
 # the name by which the project can be referenced within Serena/when chatting with the LLM.
-project_name: "fluster"
+project_name: "octave"
 
 # list of language servers to start when using the LSP backend; choose from:
 #   ada                    al                     angular                ansible                bash
@@ -37,7 +37,6 @@ project_name: "fluster"
 # Note that when using the JetBrains backend, language servers are not used and this list is correspondingly ignored.
 language_servers:
 - typescript
-- rust
 
 # the encoding used by text files in the project
 # For a list of possible encodings, see https://docs.python.org/3.11/library/codecs.html#standard-encodings

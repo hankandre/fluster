@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { SubtitleInfo } from "./catalog";
 import type { LanguageCulture } from "./languages";
 import { subtitleListView } from "./subtitle-list";
-import { showAllSubtitlesLabel, showFewerSubtitlesLabel, subtitleCountLine } from "../features/detail/format";
+import { showAllSubtitlesLabel, showFewerSubtitlesLabel, subtitleCountLine } from "./media-format";
 
 const cultures: LanguageCulture[] = [
   { displayName: "German", threeLetterName: "deu", threeLetterNames: ["deu", "ger"], twoLetterName: "de" },

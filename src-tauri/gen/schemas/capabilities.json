@@ -1,1 +1,0 @@
-{"default":{"identifier":"default","description":"Default capability for the Fluster library window","local":true,"windows":["main"],"permissions":["core:default","core:window:allow-destroy"]}}

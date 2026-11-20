@@ -1,7 +1,7 @@
 allowBuilds:
+  '@tauri-apps/cli': set this to true or false
   esbuild: true
-  '@tauri-apps/cli': true
 
-# typescript-estree 8.72.2 asks for minimatch ^10.2.2, which has an open advisory (GHSA-g3hv-75wg-m249, patched in 11.0.1); P0-16.
+# typescript-estree 8.72.2 asks for minimatch ^10.2.2, which has an open advisory (GHSA-g3hv-75wg-m249, patched in 11.0.1).
 overrides:
   'minimatch@^10.2.2': 11.0.8

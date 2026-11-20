@@ -8,7 +8,7 @@
 
 ## Tasks
 
-<!-- tasks/prd.json task ids and plan link. -->
+<!-- Task ids and plan link. -->
 
 ## Testing
 
@@ -20,4 +20,4 @@
 
 ## Untested gates
 
-<!-- Wayland, GPU, Jellyfin version, and AppImage gates not run. -->
+<!-- Device (emulator, Shield, cheap box), Android version, Jellyfin version, and Jellyscale gates not run. -->

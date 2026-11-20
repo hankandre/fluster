@@ -4,7 +4,7 @@ import type { PlaybackPlan, PlaybackSnapshot, PlayerEngine, PlayerEvent } from "
 import { JellyfinGateway } from "./jellyfin/gateway";
 import type { HttpRequestConfig, HttpTransport } from "./jellyfin/types";
 import { PlaybackCoordinator, type PlaybackGateway } from "./player/coordinator";
-import { diagnosticsText } from "../features/settings/diagnostics";
+import { diagnosticsText } from "./diagnostics";
 import { redactError, redactText, redactUrl } from "./redact";
 import { safeReason } from "./safe-reason";
 

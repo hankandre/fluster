@@ -1,14 +1,10 @@
-import { readFileSync } from "node:fs";
 import { defineConfig } from "vitest/config";
 
-const { version } = JSON.parse(readFileSync("package.json", "utf8")) as { version: string };
-
+// The core's tests run in Node: no DOM, no browser globals.
 export default defineConfig({
-  define: { __APP_VERSION__: JSON.stringify(version) },
   test: {
-    environment: "jsdom",
-    setupFiles: ["./src/test/setup.ts"],
-    include: ["src/**/*.test.{ts,tsx}", "tests/integration/**/*.test.ts", "scripts/**/*.test.ts"],
+    environment: "node",
+    include: ["src/**/*.test.ts", "tests/integration/**/*.test.ts", "scripts/**/*.test.ts"],
     coverage: { reporter: ["text", "html"] },
   },
 });
