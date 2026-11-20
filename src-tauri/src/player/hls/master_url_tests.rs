@@ -98,6 +98,57 @@ fn hls_master_urls_from_the_typescript_rebuild_pass_the_rust_rules() {
     assert_eq!(base_path_vectors, 22);
 }
 
+/// The `refusals` in `tests/fixtures/hls-master-urls.json`: Rust refuses
+/// each URL, and accepts the URL TypeScript rebuilds it into, if any
+/// (`hls-url.test.ts` checks the TypeScript side).
+#[test]
+fn hls_master_url_refusals_shared_with_typescript_are_refused() {
+    let table: serde_json::Value = serde_json::from_str(VECTORS).expect("valid vectors");
+    let refusals = table["refusals"].as_array().expect("refusals");
+    assert_eq!(refusals.len(), 56);
+    let text = |value: &serde_json::Value, key: &str| -> String {
+        value[key].as_str().expect(key).to_string()
+    };
+    for refusal in refusals {
+        let name = text(refusal, "name");
+        let server = Url::parse(&text(refusal, "serverUrl")).expect("serverUrl");
+        let media_kind = match text(refusal, "mediaKind").as_str() {
+            "videos" => HlsMediaKind::Videos,
+            "audio" => HlsMediaKind::Audio,
+            other => panic!("{name}: mediaKind {other}"),
+        };
+        let (item_id, media_source_id, play_session_id) = (
+            text(refusal, "itemId"),
+            text(refusal, "mediaSourceId"),
+            text(refusal, "playSessionId"),
+        );
+        let rules = MasterRules {
+            server: &server,
+            item_id: &item_id,
+            media_source_id: &media_source_id,
+            play_session_id: &play_session_id,
+            media_kind,
+        };
+        assert_eq!(
+            validate_master_url(&text(refusal, "url"), &rules).err(),
+            Some(HlsError::UnsafeMasterUrl),
+            "{name}"
+        );
+        let typescript = &refusal["typescript"];
+        match typescript["verdict"].as_str() {
+            Some("refuse") => {}
+            Some("rebuild") => {
+                let rebuilt = text(typescript, "url");
+                assert!(
+                    validate_master_url(&rebuilt, &rules).is_ok(),
+                    "{name}: Rust refused the TypeScript rebuild"
+                );
+            }
+            other => panic!("{name}: typescript verdict {other:?}"),
+        }
+    }
+}
+
 #[test]
 fn hls_master_urls_follow_the_hls_url_rules() {
     let server = "http://192.168.1.5:8096";
