@@ -1,6 +1,6 @@
 ---
 name: ci-triage
-description: Read failing test, build, clippy, or CI output for Octave and return the root cause with file:line. Use when a check fails and the output is long.
+description: Read failing test, build, lint, or CI output for Octave and return the root cause with file:line. Use when a check fails and the output is long.
 model: haiku
 tools: Read, Grep, Glob, Bash, mcp__serena__find_symbol, mcp__serena__get_symbols_overview, mcp__semble__search
 ---

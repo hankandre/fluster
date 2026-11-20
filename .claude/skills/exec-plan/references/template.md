@@ -5,15 +5,19 @@
 <one-sentence goal>
 
 - [ ] <observable outcome>
-- [ ] `pnpm check`, `pnpm test:e2e`, clippy are green
+- [ ] `pnpm check` is green, and every other check the tasks name
 
 ## Context and domains touched
 
 <links to ARCHITECTURE.md / DOMAINS.md sections; invariants touched (I1–I9)>
 
+## Dependencies
+
+<each dependency adopted, with its maintenance check from primary sources>
+
 ## Milestones
 
-1. **<name>.** <what changes>. Validation: `<command>`. Model: <haiku|sonnet|opus>.
+1. **<name>.** <what changes>. Validation: `<command>`. Model: <haiku|sonnet|opus|fable>.
 
 ## Progress
 

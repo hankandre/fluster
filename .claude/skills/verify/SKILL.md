@@ -7,32 +7,34 @@ description: Run Octave's checks and record evidence before asking for review. U
 
 ## Always
 
-- Run `pnpm check`.
+- Run `mise exec -- pnpm check`.
 - Read every failure in full before fixing it.
 - Fix failures at the cause, never in the test.
 
-## When TypeScript UI or flows changed
-
-- Run `pnpm test:e2e`.
-- Drive the changed flow in browser mode with Playwright.
-- For visible UI changes run `pnpm test:visual` and attach the affected captures from `visual-captures/` (contact sheet: `index.html`). `pnpm check` does not run it, but CI gates on `e2e/visual/baselines/`; for an intended change run `pnpm test:visual:accept <run-id>` (see `WORKFLOW.md` §5).
-
-## When Rust changed
-
-- Run `cargo fmt --manifest-path src-tauri/Cargo.toml --check`.
-- Run `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings`.
-- Run `cargo test --release --manifest-path src-tauri/Cargo.toml`.
-
-## When playback negotiation changed
+## When playback negotiation or reporting changed
 
 - Run the gateway tests.
 - Confirm the tests assert both the request body and the query string.
-- Run the server tripwire when it exists.
+- Run `pnpm test:tripwire` against the pinned servers.
+
+## When Kotlin or a native module changed (from T3-01)
+
+- Run `pnpm tv:native:test`.
+
+## When the app changed (from T3-02)
+
+- Run `pnpm tv:e2e` on the emulator.
+- For visible changes run `pnpm tv:visual` (T3-07) and attach the changed images.
+
+## When the app sends a request (from T3-05)
+
+- Run the task's wire test with `pnpm tv:wire` against the pinned Jellyscale.
+- A playback task passes only when its wire test passes.
 
 ## Evidence
 
 - Record each command and a short result in the plan or PR.
 - Quote failures verbatim.
 - Never claim a pass without output.
-- Never treat browser-mode success as evidence for native playback.
-- List every native, GPU, compositor, Jellyfin-version, and AppImage gate you did not run.
+- Never treat emulator success as evidence for the Shield, or Jellyfin success as evidence for Jellyscale.
+- List every device, Android version, Jellyfin version, and Jellyscale gate you did not run.

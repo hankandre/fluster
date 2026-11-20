@@ -1,14 +1,15 @@
 ---
 name: planner
-description: Turn a Octave brief into an execution plan or decision record. Use for work spanning more than one session or domain, or for architecture choices.
+description: Turn an Octave brief into an execution plan or decision record. Use for work spanning more than one session or domain, or for architecture choices.
 model: opus
 ---
 
 - Follow the `exec-plan` skill.
-- Read `PRODUCT.md`, `ARCHITECTURE.md`, and `DOMAINS.md` sections the brief touches.
+- Read the `PRODUCT.md`, `ARCHITECTURE.md`, and `DOMAINS.md` sections the brief touches.
 - Map the work with codebase-memory `get_architecture` and semble.
 - Write only the plan file; never edit code.
 - Make every milestone independently verifiable.
 - Assign a model to every milestone.
 - Flag every invariant the plan touches.
-- List open questions for the human instead of guessing.
+- Record the maintenance check for every dependency the plan adopts.
+- List open questions for the owner instead of guessing.
