@@ -512,3 +512,8 @@ The triage of every entry added since the 2026-11-15 pass, and the two owner req
 - Guardian low: no test covers silence after a real `stop` timeout or the `commands.rs` panic fallback wiring (`force_finish` on a JoinError). S.
 - `launch_playback` maps a panicked launch to "The player launch task did not finish." without cleaning up a session it may have installed. S.
 - `e2e/tv/settings-languages.spec.ts:8` is flaky on main (1 of 3 fails with --repeat-each 3 on 6458d46): Audio language trigger not focused after ArrowRight. S.
+
+## Sharded visual job (#215)
+
+- `scripts/visual-accept.mjs`: a merged sharded report no longer records `config.shard`, so `planAccept` can't see a shard that produced a report but ran no tests (for example a web server that never started). If the baselines-match test also failed, that shard's baselines would be planned for deletion. Refuse unless the merged test count matches the scenario passes. S.
+- The contrast report (`scripts/build-contrast-report.mjs`) no longer runs in CI. It was never uploaded or gated there; merge `test-results/contrast` across shards if it should be. S.
