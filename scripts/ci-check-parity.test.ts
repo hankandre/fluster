@@ -136,8 +136,8 @@ describe("real files", () => {
     expect(findParityGaps(nonRustSteps(checkSteps(pkg.scripts.check)), ciSteps)).toEqual([]);
   });
 
-  it("runs the type-check and the workflow tests", () => {
-    for (const step of ["pnpm typecheck", "pnpm test:workflow"]) {
+  it("runs the ghost-term check, the type-check, and the workflow tests", () => {
+    for (const step of ["pnpm lint:ghost-terms", "pnpm typecheck", "pnpm test:workflow"]) {
       expect(ciSteps).toContain(step);
     }
   });
