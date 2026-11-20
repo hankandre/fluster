@@ -530,3 +530,9 @@ The triage of every entry added since the 2026-11-15 pass, and the two owner req
 - On the curl path, whether libcurl reads the `http_proxy` environment variable is unverified; Fluster relies on `curl-enabled=no` so curl never runs. S.
 - Under `HAVE_LIBCURL`, mpv 0.42 sets `http_persistent=0` and `http_multiple=1` on lavf HLS opens even with `curl-enabled=no` (`demux/demux_lavf.c` v0.42.0 lines 1575-1588). Check HLS playback and segment requests still behave on 0.42. S.
 - The release AppImage's bundled libmpv must pass the curl guard tests before it moves to mpv 0.42. S.
+
+## HLS playlist vectors and mpv checklist (decision 0003, 2026-11-20)
+
+- libmpv handles never set `tls-verify`. mpv v0.42.0 defaults it to `yes` only with libcurl or libavformat >= 63 (`stream/network.c` lines 54-56, `DOCS/interface-changes.rst` line 69); otherwise FFmpeg gets `tls_verify=0` and media over HTTPS is not certificate-checked. The 0.41 default is unverified. Set `tls-verify=yes` on every playback handle and read it back in `libmpv_accepts_the_network_hardening_options`, or carry it in `docs/mpv-options-checklist.md` if the desktop player is gone first. Found while writing the checklist. S.
+- Builtin mpv scripts other than `osc` and `ytdl` (stats, console, select, positioning, commands, context-menu) are not turned off; they default to `yes` in mpv v0.42.0 (`options/options.c` lines 1029-1040) and load when libmpv has Lua. Set `load-scripts=no` and each `load-*=no`. Same source. S.
+- Check that the Media3 playlist parser hook can resolve URIs as WHATWG does: `tests/fixtures/hls-playlists.json` accepts `0x7f.0.0.1`, `HTTP://`, and `http:%2F%2F…` spellings as same-origin (see `tests/fixtures/README.md`). Unverified for OkHttp `HttpUrl` and `java.net.URI`. S.
