@@ -15,6 +15,9 @@ import sys
 import time
 from pathlib import Path
 
+# Logcat tag of the app's FOCUS/BLUR/BOOT lines: ReactNativeJS for the React Native spike,
+# FlusterBrowse for the Compose baseline (spike/tv-browse-compose). Set by --tag.
+APP_TAG = "ReactNativeJS"
 KEYS = {"RIGHT": 22, "LEFT": 21, "DOWN": 20, "UP": 19}
 # Bursts and holds: by default a `monkey -f` script (one process, DispatchPress + UserWait
 # 50 ms), which imitates a held key on every device. `input` starts a JVM per call (~700 ms on
@@ -85,7 +88,7 @@ class Logcat:
         self.path = path
         self.fh = open(path, "w")
         self.proc = subprocess.Popen(
-            ["adb", "-s", serial, "logcat", "-v", "epoch", "-s", "ReactNativeJS:I", "FLUSTER_PRESS:I", "FLUSTER_FLAG:I"],
+            ["adb", "-s", serial, "logcat", "-v", "epoch", "-s", f"{APP_TAG}:I", "FLUSTER_PRESS:I", "FLUSTER_FLAG:I"],
             stdout=self.fh, stderr=subprocess.DEVNULL, text=True)
 
     def stop(self):
@@ -505,7 +508,7 @@ def run_coldstart(serial, pkg, activity, out, runs=5):
         time.sleep(4)
         # Time to the app's first React commit: from ActivityManager's "Start proc" line to the
         # app's BOOT line (logged in a useEffect after the first render), both device clock.
-        lines = adb(serial, "logcat", "-d", "-v", "epoch", "-s", "ActivityManager:I", "ReactNativeJS:I").splitlines()
+        lines = adb(serial, "logcat", "-d", "-v", "epoch", "-s", "ActivityManager:I", f"{APP_TAG}:I").splitlines()
         start = next((float(l.split()[0]) for l in lines if "Start proc" in l and pkg in l), None)
         boot = next((float(l.split()[0]) for l in lines if "BOOT " in l and "window=" in l), None)
         js_ms = round((boot - start) * 1000) if start and boot else None
@@ -535,12 +538,14 @@ def main():
     ap.add_argument("--serial", required=True)
     ap.add_argument("--pkg", default="dev.fluster.spike.browse")
     ap.add_argument("--activity", default=".MainActivity")
+    ap.add_argument("--tag", default="ReactNativeJS", help="logcat tag of the app's FOCUS/BLUR/BOOT lines")
     ap.add_argument("--out", required=True)
     ap.add_argument("--settle", type=float, default=0.6, help="seconds after each single press")
     args = ap.parse_args()
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
-    global BURST_MODE
+    global BURST_MODE, APP_TAG
+    APP_TAG = args.tag
     tool, per = detect_input(args.serial)
     BURST_MODE = os.environ.get("FALSIFIER_BURST", "monkey")  # monkey | paced | oneshot
     if per > 0.1 and BURST_MODE == "paced":
