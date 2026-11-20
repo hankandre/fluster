@@ -1,12 +1,15 @@
 // Browse falsifier for decision 0003: react-native-tvos rows and focus on Android TV.
-// Canonical implementation on purpose: no nextFocus* props, no extra focus guides beyond
-// the rail, so focus defects show up instead of being papered over.
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+// The stock arm is the canonical implementation: no nextFocus* props and no focus guides beyond
+// the rail, so focus defects show up. The optimisation pass (RESULTS.md) adds fixes behind the
+// arm flags in ./arm.ts, one at a time, so each one can be measured on its own.
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Dimensions, Pressable, StyleSheet, Text, TVFocusGuideView, View, useTVEventHandler } from "react-native";
-import { FlashList } from "@shopify/flash-list";
+import { FlashList, type FlashListRef } from "@shopify/flash-list";
 import { Image } from "expo-image";
 import Animated, { interpolateColor, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import { ARM, loadArm } from "./arm";
 import { PerfOverlay } from "./PerfOverlay";
+import { GuideView, Rail, RAIL_COLLAPSED_W, edgeGuideRef } from "./Rail";
 import { ART_BASE, BACKDROPS, COLS, POSTERS, ROWS, backdropOf, posterOf, rowTitle, titleOf } from "./data";
 import { color, design } from "./tokens";
 
@@ -19,14 +22,8 @@ const POSTER_H = (POSTER_W * 3) / 2;
 const CARD_GAP = u(design.cardGap);
 const ROW_TITLE = u(design.typeHeading);
 const ROW_H = ROW_TITLE + u(16) + POSTER_H * 1.12 + u(design.rowGap);
-const RAIL_W = u(design.railW);
 const SAFE_Y = u(54);
 const HERO_H = H * 0.42;
-
-// Experiment switch, inlined at bundle time: EXPO_PUBLIC_ROW_MVCP=off builds a variant with
-// FlashList's maintainVisibleContentPosition disabled on the rows. The default build is stock.
-const ROW_MVCP_OFF = process.env.EXPO_PUBLIC_ROW_MVCP === "off";
-const rowMvcp = ROW_MVCP_OFF ? { disabled: true } : undefined;
 
 const rows = Array.from({ length: ROWS }, (_, r) => r);
 const cols = Array.from({ length: COLS }, (_, c) => c);
@@ -39,6 +36,18 @@ function scheduleHero(row: number, col: number) {
   dwellTimer = setTimeout(() => showHero(row, col), design.dwellMs);
 }
 
+// Which native view shows which card, so the rail can send Right back to the card the user
+// left, but only while that view still shows it (FlashList recycles views).
+type CardView = React.ComponentRef<typeof Pressable>;
+const cardViews = new Map<string, CardView>();
+let lastCard: string | undefined;
+function lastCardView(): CardView | undefined {
+  return lastCard ? cardViews.get(lastCard) : undefined;
+}
+
+// Each row's own horizontal offset (arm rowMemory).
+const rowOffsets: number[] = [];
+
 function Hero() {
   const [item, setItem] = useState({ row: 0, col: 0 });
   useEffect(() => {
@@ -48,10 +57,10 @@ function Hero() {
     <>
       <Image
         style={StyleSheet.absoluteFill}
-        source={{ uri: `${ART_BASE}/backdrop/1920/${backdropOf(item.row, item.col)}.jpg` }}
-        transition={{ duration: design.crossfadeMs, effect: "cross-dissolve" }}
+        source={{ uri: `${ART_BASE}/backdrop/${ARM.backdropW}/${backdropOf(item.row, item.col)}.jpg` }}
+        transition={ARM.crossfadeMs > 0 ? { duration: ARM.crossfadeMs, effect: "cross-dissolve" } : 0}
         contentFit="cover"
-        cachePolicy="memory-disk"
+        cachePolicy={ARM.diskOnly ? "disk" : "memory-disk"}
       />
       <View style={styles.scrim} pointerEvents="none" />
       <View style={styles.heroText} pointerEvents="none">
@@ -62,7 +71,35 @@ function Hero() {
   );
 }
 
-const Card = memo(function Card({ row, col }: { row: number; col: number }) {
+function useCardView(row: number, col: number, ref: React.RefObject<CardView | null>) {
+  const key = `${row},${col}`;
+  useEffect(() => {
+    const view = ref.current;
+    if (view) cardViews.set(key, view);
+    return () => {
+      if (cardViews.get(key) === view) cardViews.delete(key);
+    };
+  }, [key, ref]);
+  return key;
+}
+
+function Poster({ row, col }: { row: number; col: number }) {
+  return (
+    <Image
+      style={styles.poster}
+      source={{ uri: `${ART_BASE}/poster/300/${posterOf(row, col)}.jpg` }}
+      recyclingKey={`${row}-${col}`}
+      cachePolicy={ARM.diskOnly ? "disk" : "memory-disk"}
+      decodeFormat={ARM.rgb ? "rgb" : "argb"}
+      contentFit="cover"
+      transition={0}
+    />
+  );
+}
+
+const AnimatedCard = memo(function AnimatedCard({ row, col }: { row: number; col: number }) {
+  const ref = useRef<CardView>(null);
+  const key = useCardView(row, col, ref);
   const focus = useSharedValue(0);
   const frame = useAnimatedStyle(() => ({
     transform: [{ scale: 1 + (design.lift - 1) * focus.value }],
@@ -70,70 +107,88 @@ const Card = memo(function Card({ row, col }: { row: number; col: number }) {
   }));
   const onFocus = useCallback(() => {
     focus.value = withTiming(1, { duration: design.liftMs });
-    console.log(`FOCUS ${row},${col}`);
+    lastCard = key;
+    console.log(`FOCUS ${key}`);
     scheduleHero(row, col);
-  }, [focus, row, col]);
+  }, [focus, key, row, col]);
   const onBlur = useCallback(() => {
     focus.value = withTiming(0, { duration: design.liftMs });
-    console.log(`BLUR ${row},${col}`);
-  }, [focus, row, col]);
+    console.log(`BLUR ${key}`);
+  }, [focus, key]);
   return (
-    <Pressable onFocus={onFocus} onBlur={onBlur} style={styles.card}>
+    <Pressable ref={ref} onFocus={onFocus} onBlur={onBlur} style={styles.card}>
       <Animated.View style={[styles.frame, frame]}>
-        <Image
-          style={styles.poster}
-          source={{ uri: `${ART_BASE}/poster/300/${posterOf(row, col)}.jpg` }}
-          recyclingKey={`${row}-${col}`}
-          cachePolicy="memory-disk"
-          contentFit="cover"
-          transition={0}
-        />
+        <Poster row={row} col={col} />
       </Animated.View>
     </Pressable>
   );
 });
 
+// Arm plainLift: the same lift and ring as a static style switched from onFocus, no animation.
+const PlainCard = memo(function PlainCard({ row, col }: { row: number; col: number }) {
+  const ref = useRef<CardView>(null);
+  const key = useCardView(row, col, ref);
+  const [focused, setFocused] = useState(false);
+  const onFocus = useCallback(() => {
+    setFocused(true);
+    lastCard = key;
+    console.log(`FOCUS ${key}`);
+    scheduleHero(row, col);
+  }, [key, row, col]);
+  const onBlur = useCallback(() => {
+    setFocused(false);
+    console.log(`BLUR ${key}`);
+  }, [key]);
+  return (
+    <Pressable ref={ref} onFocus={onFocus} onBlur={onBlur} style={styles.card}>
+      <View style={[styles.frame, focused && styles.frameFocused]}>
+        <Poster row={row} col={col} />
+      </View>
+    </Pressable>
+  );
+});
+
 const Row = memo(function Row({ row }: { row: number }) {
-  const renderCard = useCallback(({ item }: { item: number }) => <Card row={row} col={item} />, [row]);
+  const Card = ARM.plainLift ? PlainCard : AnimatedCard;
+  const renderCard = useCallback(({ item }: { item: number }) => <Card row={row} col={item} />, [row, Card]);
+  const listRef = useRef<FlashListRef<number>>(null);
+  const shown = useRef(row);
+  // FlashList recycles this row's view, with its horizontal scroll view and offset, for
+  // another row. Restore the new row's own offset before it paints.
+  useLayoutEffect(() => {
+    if (!ARM.rowMemory || shown.current === row) return;
+    shown.current = row;
+    listRef.current?.scrollToOffset({ offset: rowOffsets[row] ?? 0, animated: false });
+  }, [row]);
+  const onScroll = useCallback((e: { nativeEvent: { contentOffset: { x: number } } }) => {
+    rowOffsets[shown.current] = e.nativeEvent.contentOffset.x;
+  }, []);
+  const list = (
+    <FlashList
+      ref={listRef}
+      horizontal
+      data={cols}
+      renderItem={renderCard}
+      keyExtractor={(c) => String(c)}
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ paddingHorizontal: u(24) }}
+      style={{ height: POSTER_H * 1.12 }}
+      maintainVisibleContentPosition={ARM.mvcpOff ? { disabled: true } : undefined}
+      onScroll={ARM.rowMemory ? onScroll : undefined}
+      drawDistance={ARM.rowDrawDistance}
+      maxItemsInRecyclePool={ARM.rowPool}
+    />
+  );
   return (
     <View style={styles.row}>
       <Text style={styles.rowTitle}>{rowTitle(row)}</Text>
-      <FlashList
-        horizontal
-        data={cols}
-        renderItem={renderCard}
-        keyExtractor={(c) => String(c)}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: u(24) }}
-        style={{ height: POSTER_H * 1.12 }}
-        maintainVisibleContentPosition={rowMvcp}
-      />
+      {/* Arm traps: Right past the last card stays in the row. */}
+      {ARM.traps ? <TVFocusGuideView trapFocusRight>{list}</TVFocusGuideView> : list}
     </View>
   );
 });
 
-const RAIL = ["Home", "Search", "Movies", "Shows", "Settings"];
-
-function RailItem({ label, index }: { label: string; index: number }) {
-  const [focused, setFocused] = useState(false);
-  return (
-    <Pressable
-      onFocus={() => {
-        setFocused(true);
-        console.log(`FOCUS rail,${index}`);
-      }}
-      onBlur={() => {
-        setFocused(false);
-        console.log(`BLUR rail,${index}`);
-      }}
-      style={[styles.railItem, focused && styles.railItemFocused]}
-    >
-      <Text style={[styles.railText, focused && styles.railTextFocused]}>{label}</Text>
-    </Pressable>
-  );
-}
-
-export default function App() {
+function Home() {
   const [overlay, setOverlay] = useState(false);
   const renderRow = useCallback(({ item }: { item: number }) => <Row row={item} />, []);
   const toggled = useRef(false);
@@ -146,46 +201,53 @@ export default function App() {
     }
   });
   useEffect(() => {
-    console.log(`BOOT rowMvcpOff=${ROW_MVCP_OFF} window=${W}x${H} posters=${POSTERS} backdrops=${BACKDROPS} rows=${ROWS} cols=${COLS}`);
+    console.log(
+      `BOOT arm=${JSON.stringify(ARM)} rowMvcpOff=${ARM.mvcpOff} window=${W}x${H} posters=${POSTERS} backdrops=${BACKDROPS} rows=${ROWS} cols=${COLS}`,
+    );
   }, []);
   return (
     <View style={styles.root}>
       <Hero />
-      <View style={styles.layout}>
-        <TVFocusGuideView autoFocus style={styles.rail}>
-          {RAIL.map((label, i) => (
-            <RailItem key={label} label={label} index={i} />
-          ))}
-        </TVFocusGuideView>
-        <View style={styles.content}>
-          <FlashList
-            data={rows}
-            renderItem={renderRow}
-            keyExtractor={(r) => String(r)}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: SAFE_Y }}
-          />
-        </View>
+      {/* First in tree order, so the first D-pad press lands on the rail as before; zIndex
+          draws it over the rows when it expands. */}
+      <Rail returnTo={lastCardView} />
+      <View style={styles.content}>
+        {/* Arm traps: Left from a row's first card lands on this thin guide, which sends focus
+            to the rail item the user last used. */}
+        {ARM.traps ? <GuideView ref={edgeGuideRef} style={styles.edgeGuide} /> : null}
+        <FlashList
+          data={rows}
+          renderItem={renderRow}
+          keyExtractor={(r) => String(r)}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: SAFE_Y }}
+          drawDistance={ARM.drawDistance}
+        />
       </View>
       {overlay ? <PerfOverlay /> : null}
     </View>
   );
 }
 
+export default function App() {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    loadArm().then(() => setReady(true));
+  }, []);
+  return ready ? <Home /> : <View style={styles.root} />;
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: color.surface0 },
   // DESIGN.md §7.2: Home shows the backdrop dimmed under a scrim.
   scrim: { ...StyleSheet.absoluteFill, backgroundColor: color.surface0, opacity: 0.55 },
-  heroText: { position: "absolute", left: RAIL_W + u(24), top: SAFE_Y + u(60), width: u(900) },
+  heroText: { position: "absolute", left: RAIL_COLLAPSED_W + u(24), top: SAFE_Y + u(60), width: u(900) },
   heroTitle: { color: color.text1, fontSize: u(design.typeDisplay), fontWeight: "700" },
   heroMeta: { color: color.text2, fontSize: u(design.typeBody), marginTop: u(16) },
-  layout: { flex: 1, flexDirection: "row" },
-  rail: { width: RAIL_W, paddingTop: SAFE_Y + u(40), paddingLeft: u(48), paddingRight: u(16), backgroundColor: color.railScrim },
-  railItem: { paddingVertical: u(14), paddingHorizontal: u(20), borderRadius: u(design.radiusControl), marginBottom: u(8) },
-  railItemFocused: { backgroundColor: color.text1 },
-  railText: { color: color.text2, fontSize: u(design.typeLabel), fontWeight: "600" },
-  railTextFocused: { color: color.onLight },
-  content: { flex: 1, marginTop: HERO_H },
+  // The rail is collapsed to icons and overlays the content when it expands, so the content
+  // starts at the collapsed rail's edge and never reflows.
+  content: { position: "absolute", left: RAIL_COLLAPSED_W, right: 0, top: HERO_H, bottom: 0 },
+  edgeGuide: { position: "absolute", left: 0, top: 0, bottom: 0, width: 2 },
   row: { height: ROW_H },
   rowTitle: { color: color.text1, fontSize: ROW_TITLE, fontWeight: "600", marginLeft: u(24), marginBottom: u(16) },
   card: { width: POSTER_W + CARD_GAP, height: POSTER_H * 1.12, justifyContent: "center" },
@@ -194,8 +256,10 @@ const styles = StyleSheet.create({
     height: POSTER_H,
     borderRadius: u(design.radiusArt),
     borderWidth: u(3),
+    borderColor: "rgba(255,244,220,0)",
     overflow: "hidden",
     backgroundColor: color.surface2,
   },
+  frameFocused: { borderColor: color.focus, transform: [{ scale: design.lift }] },
   poster: { width: "100%", height: "100%" },
 });

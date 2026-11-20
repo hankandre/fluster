@@ -474,7 +474,12 @@ def run_memory(serial, pkg, activity, out, tool):
             hold(serial, tool, "DOWN", 1, label=f"row {r} down")
     time.sleep(5)
     after, raw1 = meminfo(serial, pkg)
-    (out / "meminfo-raw.txt").write_text(raw0 + "\n\n====\n\n" + raw1)
+    # A third reading after a critical trim separates reclaimable caches (sized for this
+    # device's RAM) from the floor. The untrimmed reading stays the headline figure.
+    sh(serial, f"am send-trim-memory {pkg} RUNNING_CRITICAL")
+    time.sleep(5)
+    trimmed, raw2 = meminfo(serial, pkg)
+    (out / "meminfo-raw.txt").write_text(raw0 + "\n\n====\n\n" + raw1 + "\n\n==== after trim\n\n" + raw2)
     lines = log.stop()
     segs = segments(lines)
     visited = {}
@@ -485,9 +490,28 @@ def run_memory(serial, pkg, activity, out, tool):
             visited[r] = max(visited.get(r, 0), c)
     rows_reached = {str(r): visited[r] for r in sorted(visited)}  # row -> furthest column focused
     res = {"idle_after_launch": idle, "after_scrolling_all_rows": after,  # i.e. after the scroll pass
+           "after_trim_running_critical": trimmed,
            "rows_focused_furthest_col": rows_reached, "segments": segs}
     (out / "memory.json").write_text(json.dumps(res, indent=1))
     return res
+
+
+# ---------------------------------------------------------------- warm-up (for compile)
+
+def run_warmup(serial, pkg, activity, tool, rounds=3):
+    """Exercises the hot paths (hold Right along rows, hold Down through them, rail in and
+    out) so ART's profile covers them before `cmd package compile -m speed-profile`. This stands
+    in for the profile a user's device builds over days of use (or a shipped Baseline Profile)."""
+    for _ in range(rounds):
+        launch(serial, pkg, activity, settle=6)
+        hold(serial, tool, "RIGHT", 1, label="warm enter")
+        for r in range(6):
+            hold(serial, tool, "RIGHT", 30, label="warm right")
+            hold(serial, tool, "LEFT", 31, label="warm left")
+            hold(serial, tool, "RIGHT", 1, label="warm back")
+            hold(serial, tool, "DOWN", 3, label="warm down")
+        hold(serial, tool, "UP", 19, label="warm up")
+    time.sleep(5)
 
 
 # ---------------------------------------------------------------- cold start
@@ -531,7 +555,7 @@ def device_info(serial):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=["focus", "frames", "memory", "coldstart", "all"])
+    ap.add_argument("what", choices=["focus", "frames", "memory", "coldstart", "all", "warmup"])
     ap.add_argument("--serial", required=True)
     ap.add_argument("--pkg", default="dev.fluster.spike.browse")
     ap.add_argument("--activity", default=".MainActivity")
@@ -546,7 +570,14 @@ def main():
     if per > 0.1 and BURST_MODE == "paced":
         print(f"WARNING: one key injection takes {per * 1000:.0f} ms; paced bursts will be slower than a held key", file=sys.stderr)
     sh(args.serial, "input keyevent 224")  # KEYCODE_WAKEUP: a sleeping TV swallows the first press
+    if args.what == "warmup":
+        run_warmup(args.serial, args.pkg, args.activity, tool)
+        return 0
     info = device_info(args.serial)
+    # ART compile state of the app, which the run inherits (see FALSIFIER_COMPILE).
+    dex = sh(args.serial, f"dumpsys package dexopt | grep -A3 '\\[{args.pkg}\\]'")
+    info["dexopt"] = " ".join(dex.split())
+    info["arm"] = os.environ.get("FLUSTER_ARM", "{}")
     info["injector"] = f"{tool} ({per * 1000:.0f} ms per call incl. adb round trip / 5)"
     info["burst_mode"] = {"monkey": "monkey script, press + 50 ms wait",
                           "paced": "input loop, one call per key + 50 ms",

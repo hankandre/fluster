@@ -3,11 +3,18 @@
 // force-overrides ReactNativeFeatureFlags.enableCustomFocusSearchOnClippedElementsAndroid
 // to true after loadReactNative(); the default build leaves it at the shipped default.
 // The effective value is logged to logcat under FLUSTER_FLAG.
-const { withAppBuildGradle, withMainApplication } = require("expo/config-plugins");
+const { withAndroidManifest, withAppBuildGradle, withMainApplication } = require("expo/config-plugins");
 
 const FIELD = `buildConfigField "boolean", "FOCUS_CLIPPED", (project.findProperty("focusClipped") ?: "false")`;
 
 module.exports = function withFocusFlag(config) {
+  // Optimisation pass: <profileable android:shell="true"/> lets simpleperf sample the release
+  // build on a non-rooted device (Android 10+). It does not change the build's code.
+  config = withAndroidManifest(config, (c) => {
+    const app = c.modResults.manifest.application[0];
+    app.profileable = [{ $: { "android:shell": "true" } }];
+    return c;
+  });
   config = withAppBuildGradle(config, (c) => {
     if (!c.modResults.contents.includes("FOCUS_CLIPPED")) {
       c.modResults.contents = c.modResults.contents.replace(/defaultConfig\s*\{/, (m) => `${m}\n        ${FIELD}`);

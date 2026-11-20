@@ -7,13 +7,15 @@ export const color = {
   onLight: "#0b0c0e",
   focus: "#fff4dc",
   railScrim: "rgba(11,12,14,0.72)",
+  railScrimOpen: "rgba(11,12,14,0.92)",
 };
 
 export const design = {
   posterW: 248, // DESIGN.md §6: posters 248 px on the 1920 canvas
   cardGap: 24,
   rowGap: 48,
-  railW: 300,
+  railW: 300, // expanded rail
+  railCollapsedW: 88, // owner decision 2026-11-20: collapsed icon rail, 72-96 px at 1080p
   typeDisplay: 64,
   typeHeading: 33,
   typeBody: 28,

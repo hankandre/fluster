@@ -14,6 +14,13 @@ let served = 0;
 
 createServer((req, res) => {
   const path = normalize(decodeURIComponent(new URL(req.url, "http://x").pathname)).replace(/^(\.\.[/\\])+/, "");
+  // The optimisation pass's arm: FLUSTER_ARM (a JSON object of flags) is served as
+  // /config.json, so one APK covers every arm and the arm is chosen per run.
+  if (path === "/config.json") {
+    const body = process.env.FLUSTER_ARM ?? "{}";
+    res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" }).end(body);
+    return;
+  }
   const file = join(root, path);
   if (!file.startsWith(root) || !file.endsWith(".jpg")) {
     res.writeHead(404).end();
