@@ -7,7 +7,8 @@ Language-neutral vectors that every implementation of a rule must pass, so two i
 | `host-classes.json` | Host classes from decision 0001: loopback, private LAN, public | `src/domain/host-class.test.ts`, `src-tauri/src/url_policy.rs`, `src-tauri/src/discovery/tests.rs` |
 | `hls-master-urls.json` | The HLS master URL rules (`ARCHITECTURE.md` "HLS URL rules"), as the plans TypeScript Playback Negotiation builds from the recorded conversions | written by `src/lib/jellyfin/hls-rust-vectors.test.ts`, read by `src-tauri/src/player/hls/master_url_tests.rs` |
 | `hls-playlists.json` | The HLS playlist rules: every URI same-origin and credential-free, and only complete, well-formed playlists | `src-tauri/src/player/hls/playlist_vectors_tests.rs` |
-| `jellyfin/` | Scrubbed server answers; see `jellyfin/README.md` | gateway and negotiation tests |
+| `jellyfin/` | Scrubbed server answers; see `jellyfin/README.md` | TypeScript tests under `src/lib/jellyfin/`, `src/domain/`, and `src/features/` (for example `src/lib/jellyfin/conversion-negotiation.test.ts`) |
+| `playback-info-direct.json`, `playback-info-transcode-rejected.json` | Older PlaybackInfo samples | no reader at `ba55ef2` (`git grep` finds none) |
 
 ## `hls-playlists.json`
 
@@ -39,7 +40,7 @@ The rules of the desktop validator (`src-tauri/src/player/hls/playlist.rs`, `uri
 - `expected` is `{"verdict": "accept", …}` or `{"verdict": "refuse", "reason": <code>}`.
   - `servedBody` is the copy the player reads, LF line ends, every URI written in its absolute resolved form, and each child playlist named by its own absolute URL. The desktop app swaps each child for a loopback URL; that swap is not part of the vector.
   - `children` (masters only) lists the child playlists in order: `EXT-X-MEDIA` renditions with a `URI` and `EXT-X-STREAM-INF` variants, as they appear. A validator fetches and checks each one as a `media` playlist before the player opens it.
-- Hosts are synthetic: `127.0.0.1` and names under `example.test`. `hls_playlist_vectors_name_no_real_server` enforces it.
+- Hosts are synthetic: `127.0.0.1` and names under `example.test`. `hls_playlist_vectors_name_no_real_server` checks `baseUrl` and `serverOrigin` and that no `192.168.` address appears anywhere in the file; hosts inside bodies are checked by review only.
 
 ### Reason codes
 
@@ -62,7 +63,7 @@ A body with more than one fault is refused with the reason of the first check th
    - A comment (`#` not followed by `EXT`) must not contain `uri=` (any case); it is left out of the copy.
    - A tag name must be upper-case letters, digits, and `-`. `EXT-X-DEFINE` and a second `#EXTM3U` are `malformed`.
    - Attribute lists are strict RFC 8216 section 4.2: no spaces, no empty list, no trailing comma, no repeated name, no backslash or control character in a quoted value, no quote, backslash, or comma in a plain value. A list that breaks this is `malformed`.
-   - Every attribute that names a resource is resolved against `baseUrl` and must be same-origin: `URI`, any `*-URI`, `X-ASSET-LIST`, and any value that starts with `/`, contains `//`, or starts with a URI scheme. `EXT-X-STREAM-INF` and `EXT-X-START` may name no resource (`unsafe-uri`).
+   - Every attribute that names a resource is resolved against `baseUrl` and must be same-origin: `URI`, any `*-URI`, `X-ASSET-LIST`, and any value that starts with `/`, contains `//`, or starts with a URI scheme (letters, digits, `+`, `-`, `.`, then `:`) and has no whitespace; so `NAME="Commentary: Director"` is not a resource. `EXT-X-STREAM-INF` and `EXT-X-START` may name no resource (`unsafe-uri`).
    - The number of `uri=` on a line (any case) must equal the number of `URI`/`*-URI` attributes the parser read (`unsafe-uri`). An unknown tag whose value is not an attribute list may not contain `//` (`unsafe-uri`).
    - `EXT-X-MAP` needs a `URI`, and so does `EXT-X-KEY` unless `METHOD=NONE` (`malformed`).
    - A URI line must follow `EXT-X-STREAM-INF` (a child) or `EXTINF` (a segment); any other URI line is `malformed`. Two `EXT-X-STREAM-INF` or two `EXTINF` in a row are `malformed`. A 17th child is `malformed`.
@@ -72,7 +73,7 @@ A body with more than one fault is refused with the reason of the first check th
 
 ### Using it in a new validator
 
-1. Load the file and fail if it has fewer vectors than the Rust driver's `VECTOR_COUNT` (162), or if names repeat.
+1. Load the file and fail if it has fewer vectors than the Rust driver's `VECTOR_COUNT` (167), or if names repeat.
 2. For each vector, run the validator on `body` with `baseUrl`, `serverOrigin`, `token`, and `playlistKind`. Do no network I/O.
 3. Compare the verdict and, for a refusal, the reason code.
 4. For an acceptance, compare `children`. A validator that writes a copy for the player compares `servedBody` byte for byte. A validator that hands a parsed playlist to its player (Media3) must hand it only the absolute URIs that appear in `servedBody`, and must drop the tags that `servedBody` leaves out.

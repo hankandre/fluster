@@ -10,7 +10,7 @@ use std::collections::HashSet;
 use url::Url;
 
 const VECTORS: &str = include_str!("../../../../tests/fixtures/hls-playlists.json");
-const VECTOR_COUNT: usize = 162;
+const VECTOR_COUNT: usize = 167;
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -47,7 +47,8 @@ enum PlaylistKind {
 enum Expected {
     #[serde(rename_all = "camelCase")]
     Accept {
-        served_body: Option<String>,
+        served_body: String,
+        /// Required for a master, absent for a media playlist.
         #[serde(default)]
         children: Option<Vec<String>>,
     },
@@ -141,9 +142,13 @@ fn hls_playlist_vectors_match_the_rust_validator() {
                 },
                 Ok(accepted),
             ) => {
-                served_body
-                    .as_ref()
-                    .is_none_or(|body| *body == accepted.served_body)
+                assert_eq!(
+                    children.is_some(),
+                    vector.playlist_kind == PlaylistKind::Master,
+                    "{}: children is required for a master and only for a master",
+                    vector.name
+                );
+                *served_body == accepted.served_body
                     && children
                         .as_ref()
                         .is_none_or(|children| *children == accepted.children)
@@ -194,4 +199,25 @@ fn hls_playlist_vectors_name_no_real_server() {
         }
     }
     assert!(!VECTORS.contains("192.168."));
+}
+
+/// The schema is closed: a misspelled key fails instead of being ignored.
+#[test]
+fn hls_playlist_vectors_refuse_unknown_keys() {
+    let vector = r#"{"name":"n","rule":"r","playlistKind":"media","body":"","baseUrl":"http://127.0.0.1:8096/","serverOrigin":"http://127.0.0.1:8096","expected":{"verdict":"refuse","reason":"malformed"}}"#;
+    assert!(serde_json::from_str::<Vector>(vector).is_ok());
+    for misspelled in [
+        vector.replace("\"reason\"", "\"reasons\""),
+        vector.replace("\"baseUrl\"", "\"baseURL\""),
+        vector.replace("\"malformed\"", "\"malformd\""),
+        vector.replace(
+            "{\"verdict\":\"refuse\",\"reason\":\"malformed\"}",
+            "{\"verdict\":\"accept\",\"servedBody\":\"\",\"servedbody\":\"\"}",
+        ),
+    ] {
+        assert!(
+            serde_json::from_str::<Vector>(&misspelled).is_err(),
+            "{misspelled}"
+        );
+    }
 }

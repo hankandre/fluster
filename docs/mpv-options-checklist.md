@@ -16,7 +16,7 @@ Citations are to commit `ba55ef2` on `main` (after PR #221, merged as `288ce46`)
   - **Option probe.** Decide from the loaded libmpv, never from a failed `set_option`.
     - Read `option-info/curl-enabled/name` on a throwaway handle (`src-tauri/src/player/version.rs:62-71`).
     - A definite "no such property" means no curl backend on any version, because the backend and its options share the `HAVE_LIBCURL` gate. Any other answer turns the guard on (`version.rs:84-108`; mpv `options/options.c` v0.42.0 lines 940-941). This also covers git builds that report `0.41.0` but have the backend.
-    - Then build a second throwaway handle with the guard applied (`version.rs:45-52`). If the guard cannot apply, refuse the launch before any server request (`LibmpvRuntime::launch_http`, `version.rs:22-27`; called at `src-tauri/src/player/controller.rs:115-117`).
+    - Then build a second throwaway handle with the guard applied (`version.rs:45-52`). If the guard cannot apply, refuse the launch before any server request (`LibmpvRuntime::launch_http`, `version.rs:22-27`; called at `src-tauri/src/player/controller.rs:115-118`).
     - A guard failure on a playback handle is its own typed refusal (`MpvError::RedirectGuard`), never a generic initialization error (`network.rs:103-109`).
   - Tests:
     - `every_handle_refuses_the_curl_backend_when_libmpv_has_one` (`src-tauri/src/player/network_curl_tests.rs:42`).
@@ -41,8 +41,8 @@ Citations are to commit `ba55ef2` on `main` (after PR #221, merged as `288ce46`)
   - The handle lives for one session, so the header goes with it. Read back in `network_tests.rs:142`.
 - [ ] **`tls-verify=yes`, set explicitly. Not set today.** Nothing under `src-tauri/src` sets `tls-verify` (checked with `grep -rn tls src-tauri/src` at `ba55ef2`).
   - mpv v0.42.0 defaults it to `yes` only when mpv is built with libcurl or libavformat is 63 or newer (`stream/network.c` lines 54-56; `DOCS/man/options.rst` lines 5807-5816; `DOCS/interface-changes.rst` line 69, "change `--tls-verify` default to `yes`").
-  - Otherwise, and on mpv before 0.42, FFmpeg gets `tls_verify=0` (`stream/stream_lavf.c` line 174), and an HTTPS server's certificate is not checked.
-  - The pre-0.42 default comes from the 0.42 changelog line above; the 0.41 source was not checked (unverified). Logged in `tasks/backlog.md`.
+  - Otherwise FFmpeg gets `tls_verify=0` (`stream/stream_lavf.c` line 174), and an HTTPS server's certificate is not checked.
+  - mpv 0.41 defaults it to `no`: `mpv --list-options` on the local mpv v0.41.0 prints `--tls-verify  Flag (default: no)`. Any desktop install on mpv 0.41 (this development host included) has the gap today, logged in `tasks/backlog.md`.
   - Rust's own playlist fetches always verify, using the platform roots (`src-tauri/src/player/hls/fetch.rs:23-51`).
 
 ## Config, scripts, and input
