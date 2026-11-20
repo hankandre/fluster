@@ -1,7 +1,7 @@
 // Records scrubbed personal-rating contract fixtures (P16-13) from the two fixture servers.
 // Usage: pnpm samples:generate && pnpm fixture:up && pnpm fixture:setup
 //        && node tests/integration/record-rating-fixtures.mjs
-// Every rating is set on a throwaway user (fluster-ratings, fluster-ratings-list), never on a fixture
+// Every rating is set on a throwaway user (octave-ratings, octave-ratings-list), never on a fixture
 // user. Deleting the user deletes its user data. Never run it against a real server: it creates and
 // deletes users. Credentials come from tests/integration/.credentials and are never printed.
 // Scrubbing and the leak checks are shared with the other recorders (fixture-recording.mjs).
@@ -13,8 +13,8 @@ import { call, callStatus, makeSaver, makeScrubber, readCredentials } from "./fi
 
 const here = dirname(fileURLToPath(import.meta.url));
 const outRoot = join(here, "..", "fixtures", "jellyfin");
-const USER_A = "fluster-ratings";
-const USER_B = "fluster-ratings-list";
+const USER_A = "octave-ratings";
+const USER_B = "octave-ratings-list";
 const THROWAWAY = [USER_A, USER_B];
 const OLD = "2026-01-05T12:00:00Z";
 const RECENT = "2026-06-01T12:00:00Z";

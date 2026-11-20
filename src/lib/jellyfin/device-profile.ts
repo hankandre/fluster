@@ -1,10 +1,12 @@
-// The DeviceProfile Fluster sends with every PlaybackInfo request
+// The DeviceProfile Octave sends with every PlaybackInfo request
 // (ARCHITECTURE.md §3, decision 0002). Jellyfin runs its direct-play checks
 // and fills in subtitle DeliveryUrl values only when a profile is present.
 // The profile accepts every container and codec for direct play, so a codec
 // never causes a conversion, and offers one HLS target per media type for
 // the fallback. It has no codec or container conditions and no `Hls`
 // subtitle method: HLS subtitle renditions carry ApiKey={token}.
+
+import { APP_NAME } from "../../domain/app-identity";
 
 export interface DirectPlayProfile {
   readonly Type: "Video" | "Audio";
@@ -47,8 +49,8 @@ function subtitleProfiles(formats: string[], method: SubtitleProfile["Method"]):
   return formats.map((format) => Object.freeze({ Format: format, Method: method }));
 }
 
-export const FLUSTER_PROFILE: DeviceProfile = Object.freeze({
-  Name: "Fluster",
+export const OCTAVE_PROFILE: DeviceProfile = Object.freeze({
+  Name: APP_NAME,
   MaxStreamingBitrate: MAX_BITRATE,
   MaxStaticBitrate: MAX_BITRATE,
   DirectPlayProfiles: Object.freeze([

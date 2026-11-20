@@ -12,7 +12,7 @@ Language-neutral vectors that every implementation of a rule must pass, so two i
 
 ## `hls-master-urls.json`
 
-- `vectors` (44): the plans TypeScript Playback Negotiation builds from every recorded conversion, on a server with and without a base path. Rust deserializes each plan and accepts its master URL. Regenerate with `FLUSTER_WRITE_HLS_VECTORS=1 pnpm vitest run hls-rust-vectors`; that keeps `description` and `refusals` as they are.
+- `vectors` (44): the plans TypeScript Playback Negotiation builds from every recorded conversion, on a server with and without a base path. Rust deserializes each plan and accepts its master URL. Regenerate with `OCTAVE_WRITE_HLS_VECTORS=1 pnpm vitest run hls-rust-vectors`; that keeps `description` and `refusals` as they are.
 - `refusals` (56): master URLs Rust refuses, each with the context it is checked in (`serverUrl`, `mediaKind`, `itemId`, `mediaSourceId`, `playSessionId`) and a `rule` tag. `typescript` says what `rebuildMasterUrl` (`src/lib/jellyfin/hls-url.ts`) does with the same input:
   - `{"verdict": "refuse"}`: it refuses too.
   - `{"verdict": "rebuild", "url": "…"}`: it removes the offending part (a credential parameter, `EnableTrickplay`, `EnableSubtitlesInManifest=false`) and returns `url`, which Rust then accepts.

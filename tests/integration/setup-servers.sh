@@ -9,12 +9,12 @@ umask 077
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 credentials_file="$script_dir/.credentials"
-user_name="fluster-test"
+user_name="octave-test"
 # A second user whose policy forbids all conversion (P10-02, decision 0002 "conversion-not-allowed").
-restricted_user_name="fluster-noconv"
+restricted_user_name="octave-noconv"
 # A third user for the discovery recorder (P16-01), so the watch state its scenes set never
-# mixes with fluster-test, whose positions the tripwire leaves behind.
-discovery_user_name="fluster-discovery"
+# mixes with octave-test, whose positions the tripwire leaves behind.
+discovery_user_name="octave-discovery"
 
 # Name and URL of each fixture server.
 servers=(
@@ -84,7 +84,7 @@ run_wizard() {
 # never appears in output or in the URL.
 authenticate() {
   local url="$1" password="$2" response token
-  local client='MediaBrowser Client="Fluster Tests", Device="ci", DeviceId="fluster-ci", Version="0"'
+  local client='MediaBrowser Client="Octave Tests", Device="ci", DeviceId="octave-ci", Version="0"'
   response="$(printf '{"Username":"%s","Pw":"%s"}' "$user_name" "$password" |
     curl -fsS -X POST "$url/Users/AuthenticateByName" \
       -H "Authorization: $client" \

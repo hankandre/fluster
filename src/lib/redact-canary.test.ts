@@ -33,8 +33,8 @@ function errorTexts(): string[] {
     `timeout of 10000ms exceeded (${url})`,
   ]);
   texts.push(
-    `Authorization: MediaBrowser Client="Fluster", Token="${CANARY}"`,
-    `Authorization: MediaBrowser Client="Fluster", Token=${CANARY}`,
+    `Authorization: MediaBrowser Client="Octave", Token="${CANARY}"`,
+    `Authorization: MediaBrowser Client="Octave", Token=${CANARY}`,
     `Authorization: Bearer ${CANARY}`,
     `X-Emby-Token: ${CANARY}`,
     `X-MediaBrowser-Token: ${CANARY}`,

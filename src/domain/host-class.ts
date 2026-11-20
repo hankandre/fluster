@@ -1,7 +1,7 @@
 // Host classes for plain-HTTP decisions (docs/decisions/0001).
 // The classifier reads only the literal host of a parsed URL, never a DNS
-// answer. src-tauri/src/url_policy.rs implements the same rules, and both are
-// tested against tests/fixtures/host-classes.json.
+// answer. Every native classifier implements the same rules (Kotlin in
+// T3-03), and each is tested against tests/fixtures/host-classes.json.
 
 export type HostClass = "loopback" | "private-lan" | "public";
 
@@ -76,9 +76,10 @@ function classifyDomain(host: string): HostClass {
   const name = host.endsWith(".") ? host.slice(0, -1) : host;
   const labels = name.split(".");
   if (labels.some((label) => label === "")) return "public";
-  // Internationalized names are not admitted for plain HTTP. The URL parser
-  // here accepts some invalid punycode that the Rust url crate refuses, so an
-  // `xn--` name could pass sign-in and then fail every stream and socket.
+  // Internationalized names are not admitted for plain HTTP. URL parsers
+  // disagree on invalid punycode (WHATWG parsers accept some that stricter
+  // native parsers refuse), so an `xn--` name could pass sign-in and then
+  // fail every stream and socket.
   if (labels.some((label) => label.startsWith("xn--"))) return "public";
   const count = labels.length;
   if (count >= 2 && labels[count - 1] === "local") return "private-lan";

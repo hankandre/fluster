@@ -11,7 +11,7 @@ export const PLAYBACK_POLICY = Object.freeze({
   allowSoftwareDecode: true,
 });
 
-// Why Fluster refused every media source a PlaybackInfo response offered.
+// Why Octave refused every media source a PlaybackInfo response offered.
 // Each value maps to one source decision rule in ARCHITECTURE.md §3.
 // `disc-source` and `iso-source` remain only for a disc the server still offers for direct play
 // after the forced-fallback request.
@@ -72,13 +72,13 @@ export interface PlaybackRefusal {
 
 const REFUSAL_MESSAGES: Record<RefusalReason, string> = {
   "no-sources": "Jellyfin returned no media source for this item.",
-  "not-a-file": "This item is not a file on the server, so Fluster cannot play it directly.",
-  "live-source": "This item is a live stream, which Fluster cannot play directly.",
-  "disc-source": "This item is a Blu-ray or DVD folder, which Fluster cannot play directly.",
-  "iso-source": "This item is a disc image (ISO), which Fluster does not play yet.",
+  "not-a-file": "This item is not a file on the server, so Octave cannot play it directly.",
+  "live-source": "This item is a live stream, which Octave cannot play directly.",
+  "disc-source": "This item is a Blu-ray or DVD folder, which Octave cannot play directly.",
+  "iso-source": "This item is a disc image (ISO), which Octave does not play yet.",
   "missing-source-data": "Jellyfin returned an incomplete media source for this item.",
   "conversion-not-allowed": "This item needs converting, and the server does not allow that for this account.",
-  "unsafe-transcoding-url": "Jellyfin offered a stream address Fluster will not use.",
+  "unsafe-transcoding-url": "Jellyfin offered a stream address Octave will not use.",
 };
 
 // An engine was handed a plan whose delivery it cannot play. It refuses
@@ -125,7 +125,7 @@ export interface MediaTrack {
   index: number;
   type: "Audio" | "Subtitle" | "Video";
   displayTitle: string;
-  // ffprobe codec name; Rust uses it to verify a track mapping.
+  // ffprobe codec name; an engine uses it to verify a track mapping.
   codec?: string;
   language?: string;
   external: boolean;
@@ -155,9 +155,9 @@ export interface PlayerTrack {
 export type HlsMediaKind = "videos" | "audio";
 
 // A static plan plays the original file; an hls plan plays a server
-// conversion whose master playlist URL Playback Negotiation rebuilt. Rust
-// re-checks the master URL against `serverUrl` (the signed-in server, with
-// any base path) and `mediaKind`, and refuses it otherwise.
+// conversion whose master playlist URL Playback Negotiation rebuilt. Native
+// code re-checks the master URL against `serverUrl` (the signed-in server,
+// with any base path) and `mediaKind`, and refuses it otherwise.
 export type PlaybackDelivery =
   | { delivery: "static"; playMethod: "DirectPlay"; conversionReasons: readonly [] }
   | {

@@ -16,7 +16,7 @@ export function readCredentials() {
   return values;
 }
 
-export const CLIENT = 'MediaBrowser Client="Fluster Tests", Device="ci", DeviceId="fluster-fixtures", Version="0"';
+export const CLIENT = 'MediaBrowser Client="Octave Tests", Device="ci", DeviceId="octave-fixtures", Version="0"';
 
 export async function call(base, token, method, path, { query, body } = {}) {
   const url = new URL(base + path);

@@ -3,7 +3,7 @@
 Recorded by P16-01 with `tests/integration/record-discovery-fixtures.mjs` on 2026-11-15. Every fact below names the fixture that shows it (`tests/fixtures/jellyfin/<version>/discovery-<name>.json`) and the test that asserts it (`src/lib/jellyfin/discovery-fixtures.test.ts`, the `it` whose name repeats the sentence).
 
 - Servers: `jellyfin/jellyfin:10.11.7` and `jellyfin/jellyfin:12.4.20261026-211555` (reports itself as 12.4.0), from `tests/integration/docker-compose.yml`, on a fresh volume. The recorder reads the synthetic samples in `tests/samples/` (no third-party media).
-- Viewer: a non-admin user `fluster-discovery`. Only `POST /Library/Refresh` and `POST /Collections` use the admin `fluster-test` user.
+- Viewer: a non-admin user `octave-discovery`. Only `POST /Library/Refresh` and `POST /Collections` use the admin `octave-test` user.
 - Jellyscale: `compat/endpoints.yaml` as last changed by `8720816` (repo HEAD `d0a05e8`). `docs/status.md` there says Suggestions is "partial" (random items of the asked types) while `endpoints.yaml` says "implemented"; the table shows the file's word and this note adds the other.
 - Dates: fixed absolute dates (January and June 2026) are set with `POST /UserItems/{id}/UserData`. Both servers keep a client-supplied `LastPlayedDate` (the recorder reads each item back and fails if not), so no fallback was needed.
 - Ids in the fixtures are fake (`item-h264`, `series-synthetic`, and so on); the numbered `id-N` values change between recordings.
@@ -35,7 +35,7 @@ Sentences the tests assert, by name: "GET /Items sorted by DatePlayed lists fini
 
 What this means for the discovery tasks:
 
-- Similar, Suggestions, and Recommendations do not drop watched titles, so Fluster filters on `UserData.Played` (P16-04).
+- Similar, Suggestions, and Recommendations do not drop watched titles, so Octave filters on `UserData.Played` (P16-04).
 - The film-only Recommendations route gains actor rows only on 12.4. A client must accept one category on 10.11.
 - LocalTrailers and SpecialFeatures return bare arrays, unlike every other list.
 - A trailer's name is not a label on 12.4 (`Trailer`). Show the parent film's title with it.

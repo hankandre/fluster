@@ -2,7 +2,7 @@
 
 Researched 2026-11-12 for the product review in [`docs/plans/proposals/product-review.md`](../plans/proposals/product-review.md).
 
-Scope note, 2026-11-12: after this research the owner made Fluster video only. Music, audiobooks, photos, and Live TV are out of scope (`PRODUCT.md` "Not for"). The music and Live TV rows below are kept as a record of what other clients do, not as gaps for Fluster to close.
+Scope note, 2026-11-12: after this research the owner made Octave video only. Music, audiobooks, photos, and Live TV are out of scope (`PRODUCT.md` "Not for"). The music and Live TV rows below are kept as a record of what other clients do, not as gaps for Octave to close.
 
 ## Method and limits
 
@@ -304,7 +304,7 @@ Context: the Jellyfin server is versioned 12.x. v12.0 shipped 2026-09-08 and v12
 | Moonfin | Windows, macOS, Linux, Android, Android TV, iOS, tvOS, web | Flutter (desktop engine unverified) | Jellyfin, Emby, and Plex in one app; **merged library across servers**; Live TV, SyncPlay, downloads | 3.1.0, 2026-11-12 | https://github.com/Moonfin-Client/Moonfin-Core |
 | Plezy | macOS, Linux, Windows, iOS, tvOS | Flutter (engine unverified) | Plex, Jellyfin, and Emby; **cross-server search and a deduplicated Continue Watching** | 2.26.0, 2026-11-09, 4.2k stars | https://github.com/edde746/plezy |
 | Fathom | Linux, Windows, Android | Flutter, mpv through media_kit | A Playback Info overlay with the live hardware-decode path; SyncPlay | v0.13.1, 2026-10-09 | https://github.com/TraceApps/fathom |
-| MediaFlick Desktop | Windows, Linux (X11), macOS | Rust and React with libmpv | The same stack shape as Fluster; quality cap with transcode fallback | v0.1.6, 2026-07-16, 10 stars | https://github.com/phob/MediaFlick-Desktop |
+| MediaFlick Desktop | Windows, Linux (X11), macOS | Rust and React with libmpv | The same stack shape as Octave; quality cap with transcode fallback | v0.1.6, 2026-07-16, 10 stars | https://github.com/phob/MediaFlick-Desktop |
 | Delfin | Linux | Rust, GTK, mpv | Direct playback only; appears stalled since November 2024 | 0.4.8 | https://codeberg.org/avery42/delfin |
 
 Multi-server support for Jellium, Tsukimi, Switchfin, Fathom, and MPV Shim: unverified.
@@ -429,9 +429,9 @@ Sources:
 
 ## 7. Feature matrix
 
-Key: **Y** yes · **N** no · **P** partial or experimental · **?** unverified · **opt-in** behind a menu or setting. Sources are in the client sections above. The Fluster column is the code on `main` at `2245150` and `tasks/prd.json`.
+Key: **Y** yes · **N** no · **P** partial or experimental · **?** unverified · **opt-in** behind a menu or setting. Sources are in the client sections above. The Octave column is the code on `main` at `2245150` and `tasks/prd.json`.
 
-| | jellyfin-web | Jellyfin Desktop | Android TV | Swiftfin | Findroid | Wholphin | Fladder | Streamyfin | Infuse | **Fluster today** |
+| | jellyfin-web | Jellyfin Desktop | Android TV | Swiftfin | Findroid | Wholphin | Fladder | Streamyfin | Infuse | **Octave today** |
 |---|---|---|---|---|---|---|---|---|---|---|
 | Platforms | Browsers | Linux, macOS, Windows | Android TV, Fire TV | iOS, tvOS | Android | Android TV | All desktop, mobile, TV, web | iOS, Android, TVs | Apple only | Linux Wayland |
 | Engine | Browser + hls.js | libmpv | ExoPlayer | mpv, AVPlayer | ExoPlayer, mpv | ExoPlayer, mpv | libmpv, MDK, native | mpv, ExoPlayer | Own (unnamed) | libmpv |
@@ -468,28 +468,28 @@ Key: **Y** yes · **N** no · **P** partial or experimental · **?** unverified 
 | Tokens kept out of URLs | N (issue open since 2019) | ? | ? | ? | ? | ? | N (shows stream URL) | ? | ? | **Y** |
 | Tokens in an OS secure store | N | N? | N | Y | N | N | N | Y | ? | N (session-only; P3-02) |
 
-## 8. Where Fluster can win, and where it can't
+## 8. Where Octave can win, and where it can't
 
 ### Can win
 
-1. **Telling the truth about conversions, unprompted.** Every other client that shows the play method hides it behind a debug overlay or a menu. Android TV still gives no reason. Plex desktop has no overlay at all. Fluster shows "Converting on server: {reason}" in plain words at the start of every converted session, and says nothing when the file plays as stored. This is the one feature no surveyed client matches, and it is already built (P10-06, P13-13).
-2. **Never transcoding for a codec or a range type.** The loudest complaints against Android TV, Wholphin, and Swiftfin are `VideoRangeTypeNotSupported` and capability-detection transcodes. Fluster's DeviceProfile carries no codec or container conditions, and a CI tripwire fails if the server converts a playable file. Jellyfin Desktop takes the same profile approach but adds six force-transcode toggles and falls back silently to the web player.
+1. **Telling the truth about conversions, unprompted.** Every other client that shows the play method hides it behind a debug overlay or a menu. Android TV still gives no reason. Plex desktop has no overlay at all. Octave shows "Converting on server: {reason}" in plain words at the start of every converted session, and says nothing when the file plays as stored. This is the one feature no surveyed client matches, and it is already built (P10-06, P13-13).
+2. **Never transcoding for a codec or a range type.** The loudest complaints against Android TV, Wholphin, and Swiftfin are `VideoRangeTypeNotSupported` and capability-detection transcodes. Octave's DeviceProfile carries no codec or container conditions, and a CI tripwire fails if the server converts a playable file. Jellyfin Desktop takes the same profile approach but adds six force-transcode toggles and falls back silently to the web player.
 3. **The Linux desktop slot.** The official desktop client has had no stable release since March 2025, was deprecated and revived inside one year, and has no supported HDR. The rewrite left the organisation. Fladder's open desktop issues are stutter, ASS under transcode, and a broken Flatpak. A stable Wayland-first client with correct mpv playback has a real opening now.
-4. **A designed interface that is not jellyfin-web in a frame.** Jellyfin Desktop and MPV Shim's rivals mostly wrap the web UI. Fluster's artwork-first design and one-press resume are its own.
-5. **Token handling.** Fluster never puts a token in a URL and validates every HLS playlist in Rust. jellyfin-web's token issue has been open since 2019, and Fladder shows the stream URL with a copy button. This matters to the self-hosting audience and to nobody else's marketing.
+4. **A designed interface that is not jellyfin-web in a frame.** Jellyfin Desktop and MPV Shim's rivals mostly wrap the web UI. Octave's artwork-first design and one-press resume are its own.
+5. **Token handling.** Octave never puts a token in a URL and validates every HLS playlist in Rust. jellyfin-web's token issue has been open since 2019, and Fladder shows the stream URL with a copy button. This matters to the self-hosting audience and to nobody else's marketing.
 6. **Subtitles that are simply correct.** mpv renders ASS and PGS in the client with no burn-in and no engine switch. Clients on ExoPlayer or AVPlayer trade this away for HDR.
 
 ### Cannot win today
 
-1. **HDR and Dolby Vision output.** Tsukimi already ships Rec. 2100 HDR on Linux with gpu-next. Jellium has native HDR. Fluster's Render API path cannot do it until the P5-01 spike succeeds. Until then the home-theater persona in PRODUCT.md is not served, and Fluster should not claim otherwise.
-2. **Audio passthrough.** Jellyfin Desktop has had it for years. Fluster's is P5-03, not started.
-3. **Platform reach.** Fladder, Moonfin, and Plezy run on every desktop, phone, and TV. Fluster runs on Linux Wayland only. It cannot be "the client for every screen" for a long time.
+1. **HDR and Dolby Vision output.** Tsukimi already ships Rec. 2100 HDR on Linux with gpu-next. Jellium has native HDR. Octave's Render API path cannot do it until the P5-01 spike succeeds. Until then the home-theater persona in PRODUCT.md is not served, and Octave should not claim otherwise.
+2. **Audio passthrough.** Jellyfin Desktop has had it for years. Octave's is P5-03, not started.
+3. **Platform reach.** Fladder, Moonfin, and Plezy run on every desktop, phone, and TV. Octave runs on Linux Wayland only. It cannot be "the client for every screen" for a long time.
 4. **Breadth.** No downloads, SyncPlay, Live TV, or music yet. jellyfin-web has all four except downloads. Fladder has three.
-5. **Accounts.** Every surveyed client saves several servers and switches users. Fluster signs out when the window closes.
-6. **Settings depth.** Competitors expose dozens of options, including raw `mpv.conf`. Fluster's invariant I9 forbids user mpv config, on purpose. Fluster will always have fewer knobs; it has to win on defaults being right.
+5. **Accounts.** Every surveyed client saves several servers and switches users. Octave signs out when the window closes.
+6. **Settings depth.** Competitors expose dozens of options, including raw `mpv.conf`. Octave's invariant I9 forbids user mpv config, on purpose. Octave will always have fewer knobs; it has to win on defaults being right.
 7. **Unified multi-server libraries.** Plezy and Moonfin merge servers into one Home. Matching that is a large project (see the proposal).
 8. **A team.** Fladder, Streamyfin, and Wholphin ship releases every few weeks with many contributors.
 
 ### The honest summary
 
-Fluster's defensible edge is narrow and real: **on the desktop, it plays the original file, proves it, and says so in plain words when it can't.** That edge is already built. It is not enough to replace another client until the daily-driver basics around it exist: staying signed in, several servers and users, the playback settings every rival has, and then HDR.
+Octave's defensible edge is narrow and real: **on the desktop, it plays the original file, proves it, and says so in plain words when it can't.** That edge is already built. It is not enough to replace another client until the daily-driver basics around it exist: staying signed in, several servers and users, the playback settings every rival has, and then HDR.

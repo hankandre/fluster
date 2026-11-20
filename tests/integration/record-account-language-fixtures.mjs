@@ -1,7 +1,7 @@
 // Records scrubbed account-language contract fixtures (P17-01) from the two fixture servers.
 // Usage: pnpm samples:generate && pnpm fixture:up && pnpm fixture:setup
 //        && node tests/integration/record-account-language-fixtures.mjs
-// Every change is made on a throwaway non-admin user (fluster-languages), never on a fixture user.
+// Every change is made on a throwaway non-admin user (octave-languages), never on a fixture user.
 // The recorder still snapshots the three fixture users' Configuration first and restores it at the
 // end, also after a failed run or SIGINT/SIGTERM. It stages tests/samples/staging/Synthetic Languages
 // (2024) into movies/ for its run and removes it again. Never run it against a real server: it
@@ -19,7 +19,7 @@ const samplesDir = join(here, "..", "samples");
 const stagedFolder = join(samplesDir, "staging", "Synthetic Languages (2024)");
 const copiedFolder = join(samplesDir, "movies", "Synthetic Languages (2024)");
 const SAMPLE_FILE = "Synthetic Languages (2024).mkv";
-const THROWAWAY = "fluster-languages";
+const THROWAWAY = "octave-languages";
 
 const servers = [
   { name: "jellyfin-10-11", folder: "10.11.7", fakeServerId: "server-1011" },
@@ -27,8 +27,8 @@ const servers = [
 ];
 
 // Same profile and flags the gateway sends (copied from record-fixtures.mjs, which does not export them).
-const FLUSTER_PROFILE = {
-  Name: "Fluster",
+const OCTAVE_PROFILE = {
+  Name: "Octave",
   MaxStreamingBitrate: 1000000000,
   MaxStaticBitrate: 1000000000,
   DirectPlayProfiles: [{ Type: "Video" }, { Type: "Audio" }],
@@ -50,7 +50,7 @@ const FLAGS = {
 };
 function requestFor(userId) {
   return {
-    body: { ...FLAGS, UserId: userId, StartTimeTicks: 0, MaxStreamingBitrate: 1000000000, DeviceProfile: FLUSTER_PROFILE },
+    body: { ...FLAGS, UserId: userId, StartTimeTicks: 0, MaxStreamingBitrate: 1000000000, DeviceProfile: OCTAVE_PROFILE },
     query: { ...FLAGS, UserId: userId, StartTimeTicks: 0 },
   };
 }
@@ -107,9 +107,9 @@ const failures = [];
 let stagedByThisRun = false;
 
 const fixtureUserKeys = [
-  ["fluster-test", ""],
-  ["fluster-noconv", "_restricted"],
-  ["fluster-discovery", "_discovery"],
+  ["octave-test", ""],
+  ["octave-noconv", "_restricted"],
+  ["octave-discovery", "_discovery"],
 ];
 
 async function adminItemsByPath(conn) {
@@ -129,8 +129,8 @@ async function connect(server) {
     const username = credentials[`${server.name}${infix}_username`];
     const password = credentials[`${server.name}${infix}_password`];
     if (!username || !password) throw new Error(`${server.name}: fixture user ${userName} is missing; run pnpm fixture:setup`);
-    // fluster-test is the admin: a second login on the same device would end the admin's token.
-    const session = userName === "fluster-test" ? admin : await login(base, username, password);
+    // octave-test is the admin: a second login on the same device would end the admin's token.
+    const session = userName === "octave-test" ? admin : await login(base, username, password);
     const me = await call(base, session.token, "GET", "/Users/Me");
     conn.fixtureUsers.push({ userName, token: session.token, userId: session.userId, snapshot: me.Configuration });
   }
@@ -224,8 +224,8 @@ async function record(conn) {
     { real: userId.toLowerCase(), fake: "user-languages" },
     { real: conn.admin.userId.toLowerCase(), fake: "user-test" },
     ...conn.fixtureUsers
-      .filter((u) => u.userName !== "fluster-test")
-      .map((u) => ({ real: u.userId.toLowerCase(), fake: u.userName === "fluster-noconv" ? "user-noconv" : "user-discovery" })),
+      .filter((u) => u.userName !== "octave-test")
+      .map((u) => ({ real: u.userId.toLowerCase(), fake: u.userName === "octave-noconv" ? "user-noconv" : "user-discovery" })),
   ];
   const outDir = join(outRoot, server.folder);
   mkdirSync(outDir, { recursive: true });
@@ -279,7 +279,7 @@ async function record(conn) {
     const restored = await postStep(`whole object restored${suffix}`, second.configuration, query);
     await postStep(
       `whole object plus an unknown field${suffix}`,
-      { ...restored.configuration, SubtitleLanguagePreference: "spa", FlusterUnknownField: "fixture" },
+      { ...restored.configuration, SubtitleLanguagePreference: "spa", OctaveUnknownField: "fixture" },
       query,
     );
     return true;

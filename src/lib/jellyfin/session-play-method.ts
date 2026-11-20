@@ -1,6 +1,6 @@
 import { CONVERSION_REASONS, type ConversionReason, type PlayMethod, type ServerPlayMethod } from "../../domain/playback";
 
-// The fields Fluster reads from GET /Sessions (SessionInfoDto in
+// The fields Octave reads from GET /Sessions (SessionInfoDto in
 // @jellyfin/sdk 1.0.2: DeviceId, NowPlayingItem, PlayState with MediaSourceId
 // and PlayMethod, TranscodingInfo with IsVideoDirect, IsAudioDirect, and
 // TranscodeReasons). The DTO has no PlaySessionId, so a session is matched by

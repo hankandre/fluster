@@ -1,8 +1,8 @@
 // Records scrubbed discovery contract fixtures (P16-01) from the two fixture servers.
 // Usage: pnpm samples:generate && pnpm fixture:up && pnpm fixture:setup
 //        && node tests/integration/record-discovery-fixtures.mjs
-// Every scene runs as the fluster-discovery user, so the watch state it sets never mixes with
-// fluster-test. The admin fluster-test user is used only for /Library/Refresh and POST /Collections.
+// Every scene runs as the octave-discovery user, so the watch state it sets never mixes with
+// octave-test. The admin octave-test user is used only for /Library/Refresh and POST /Collections.
 // Credentials come from tests/integration/.credentials and are never printed.
 // Scrubbing and the leak checks are shared with record-fixtures.mjs (fixture-recording.mjs).
 import { copyFileSync, mkdirSync, rmSync } from "node:fs";

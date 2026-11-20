@@ -1,6 +1,6 @@
 ---
 name: jellyfin-api
-description: Add or change Jellyfin server calls, playback negotiation, playstate reporting, or track mapping in Fluster. Use for any edit to src/lib/jellyfin/ or to PLAYBACK_POLICY.
+description: Add or change Jellyfin server calls, playback negotiation, playstate reporting, or track mapping in Octave. Use for any edit to src/lib/jellyfin/ or to PLAYBACK_POLICY.
 ---
 
 # Jellyfin API
@@ -31,7 +31,7 @@ description: Add or change Jellyfin server calls, playback negotiation, playstat
 
 ## Negotiation
 
-- Send the Fluster DeviceProfile with every PlaybackInfo request.
+- Send the Octave DeviceProfile with every PlaybackInfo request.
 - Send the same flags in body and query.
 - Decide each source with the `ARCHITECTURE.md` §3 rules: DirectPlay, DirectStream, Transcode, or Refuse.
 - Return a typed refusal reason when no source can be played or converted.

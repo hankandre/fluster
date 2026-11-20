@@ -2,7 +2,7 @@ export const meta = {
   name: 'task',
   description: 'Run tasks/prd.json tasks in order: spec, check, implement, review, ship; park tasks with open design questions',
   whenToUse:
-    'Build Fluster tasks end to end. args: {tasks: ["P13-08", "P13-09"], risk: "routine" | "high", native: false} or {task: "P0-13", from: "check" | "implement" | "review", notes: [...], evidence: "...", models: {spec: {high: "opus"}}}',
+    'Build Octave tasks end to end. args: {tasks: ["P13-08", "P13-09"], risk: "routine" | "high", native: false} or {task: "P0-13", from: "check" | "implement" | "review", notes: [...], evidence: "...", models: {spec: {high: "opus"}}}',
   phases: [
     { title: 'Spec', detail: 'refiner writes docs/specs/<TASK>.md' },
     { title: 'Check', detail: 'fresh spec-checker; blocks only on critical or high' },
@@ -133,7 +133,7 @@ const HIGH_RISK_PATH = /^(src-tauri\/|src\/lib\/jellyfin\/|src\/lib\/player\/|sr
 const denied = (result) => (result && result.deniedCommands && result.deniedCommands.length ? result.deniedCommands : null);
 const numbered = (list) => list.map((item, i) => `${i + 1}. ${item}`).join('\n');
 const VERIFY_STEPS =
-  'Run the verify skill before you return: mise exec -- pnpm check, then pnpm test:e2e with FLUSTER_E2E_PORT set to a free port; if the diff against origin/main touches src/features/ or src/styles/, also pnpm test:visual with FLUSTER_VISUAL_PORT set to a free port. Never run pkill or killall: stop only processes you started, with TaskStop or their own PID, and pick a fresh port instead of clearing a busy one. If a test fails, rerun it alone with --repeat-each 5 and on origin/main before blaming or fixing the change, and say which in the evidence. Return checksPassed, the evidence (commands with their result lines), and each failure with file:line.';
+  'Run the verify skill before you return: mise exec -- pnpm check, then pnpm test:e2e with OCTAVE_E2E_PORT set to a free port; if the diff against origin/main touches src/features/ or src/styles/, also pnpm test:visual with OCTAVE_VISUAL_PORT set to a free port. Never run pkill or killall: stop only processes you started, with TaskStop or their own PID, and pick a fresh port instead of clearing a busy one. If a test fails, rerun it alone with --repeat-each 5 and on origin/main before blaming or fixing the change, and say which in the evidence. Return checksPassed, the evidence (commands with their result lines), and each failure with file:line.';
 
 async function runTask(task, opts) {
   const highRisk = opts.risk === 'high';
@@ -163,7 +163,7 @@ async function runTask(task, opts) {
     }
   };
 
-  const worktree = `/home/handre/Code/fluster-${task}`;
+  const worktree = `/home/handre/Code/octave-${task}`;
   const branch = `task/${task}`;
   const spec = `docs/specs/${task}.md`;
   const common = `Task ${task} in tasks/prd.json. Worktree: ${worktree} (branch ${branch}). Spec: ${spec} in that worktree. Work only in that worktree. Answered questions in docs/specs/decisions-*.md and decisions the spec marks as confirmed by the human are settled human decisions. If a command is denied, report it in deniedCommands and do not work around it.`;
@@ -201,7 +201,7 @@ async function runTask(task, opts) {
   if (!skipSpec) {
     const specResult = await agent(
       `${common}
-Create the worktree if it is missing: git -C /home/handre/Code/fluster fetch -q && git -C /home/handre/Code/fluster worktree add ${worktree} -b ${branch} origin/main.
+Create the worktree if it is missing: git -C /home/handre/Code/octave fetch -q && git -C /home/handre/Code/octave worktree add ${worktree} -b ${branch} origin/main.
 If a task in this task's depends_on is not done on origin/main, return that as the only open question ("blocked by <ID>").
 If ${spec} already exists with every section, keep it and report on it. Otherwise write it. Do not commit.
 Resolve gaps yourself from the task, the code, the docs, and the settled decisions, and write the answers into the spec. Return as open questions only product or design choices the human must make that no settled decision covers; give each its options and a recommendation. Set touchesNative=true if the spec's files to touch include anything under src-tauri/ or the PlayerEngine port (src/domain/playback.ts engine interface, src/lib/player/native-player.ts).`,
@@ -258,7 +258,7 @@ Commit the spec with the work, one milestone per commit. Set the task's status t
   // 4. Review (one round)
   const review = await agent(
     `${common}
-Review git diff origin/main...${branch} against the spec, the task acceptance, and the hard rules. If the diff touches src/features/ or src/styles/, also do the design review: follow .claude/skills/change-review/references/design-checklist.md against DESIGN.md and look at the captures in visual-captures/ (run pnpm test:visual with FLUSTER_VISUAL_PORT set to a free port if they are missing). This is the only review round. Change no files. Return every finding with its severity, file:line, and a concrete failure scenario. Return filesChanged: every path from git diff --name-only origin/main...${branch}. Set needsGuardian=true if the diff touches src/lib/jellyfin/, src/lib/player/, redaction, tokens, PlaybackInfo or negotiation, a Tauri command, or src-tauri/, or if the task's acceptance asks for a guardian review.`,
+Review git diff origin/main...${branch} against the spec, the task acceptance, and the hard rules. If the diff touches src/features/ or src/styles/, also do the design review: follow .claude/skills/change-review/references/design-checklist.md against DESIGN.md and look at the captures in visual-captures/ (run pnpm test:visual with OCTAVE_VISUAL_PORT set to a free port if they are missing). This is the only review round. Change no files. Return every finding with its severity, file:line, and a concrete failure scenario. Return filesChanged: every path from git diff --name-only origin/main...${branch}. Set needsGuardian=true if the diff touches src/lib/jellyfin/, src/lib/player/, redaction, tokens, PlaybackInfo or negotiation, a Tauri command, or src-tauri/, or if the task's acceptance asks for a guardian review.`,
     { agentType: reviewAgent, model: reviewModel, schema: REVIEW, phase: 'Review', label: `review ${task}` },
   );
   if (!review) return result('failed', 'The reviewer returned nothing.');
@@ -294,7 +294,7 @@ Use ciOnly only for a step that a local run cannot produce (for example acceptin
 
   // 5. Ship (CI fixes go through the same retry and Fable escalation)
   const shipPrompt = `${common}
-Ship with the ship skill: rebase onto origin/main if it moved (force-with-lease is allowed on this branch), push, open the PR if none exists, enable auto-merge with rebase, and wait for CI with gh pr checks --watch. The PR body must explain user impact, testing (use the evidence below), conversion and security implications, untested gates, and call out any change to invariants, docs/security.md, release signing, or CI. For a UI change, add a Screenshots section that links the visual-captures artifact from the PR's CI run (gh api repos/hankandre/fluster/actions/runs/<run>/artifacts) and names the captures that changed, plus a Design review notes section from the review. Change no source files. If CI is red, return merged=false with each failing check and its cause. After a merge, run git -C /home/handre/Code/fluster pull --ff-only and remove the worktree and branch.
+Ship with the ship skill: rebase onto origin/main if it moved (force-with-lease is allowed on this branch), push, open the PR if none exists, enable auto-merge with rebase, and wait for CI with gh pr checks --watch. The PR body must explain user impact, testing (use the evidence below), conversion and security implications, untested gates, and call out any change to invariants, docs/security.md, release signing, or CI. For a UI change, add a Screenshots section that links the visual-captures artifact from the PR's CI run (gh api repos/hankandre/octave/actions/runs/<run>/artifacts) and names the captures that changed, plus a Design review notes section from the review. Change no source files. If CI is red, return merged=false with each failing check and its cause. After a merge, run git -C /home/handre/Code/octave pull --ff-only and remove the worktree and branch.
 Evidence: ${evidence}
 Review: ${blocking.length} fixed, ${lows.length} low logged in the plan.${ciSteps.length ? `
 Before enabling auto-merge, do these CI-dependent acceptance steps on this PR branch. Temporary commits are allowed only when a step asks for one, and each must be reverted in a later commit. Record each run URL in the task's evidence. Then, if every acceptance item is met, set the task's status to done and passes to true, commit, and push. If any listed step cannot be completed (for example it needs a review or a human), do not enable auto-merge; return merged=false and put the reason in ciFailures. This is the one case where the Ship phase changes files:

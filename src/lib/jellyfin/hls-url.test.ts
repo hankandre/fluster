@@ -7,7 +7,7 @@ const context: HlsUrlContext = { serverUrl: "https://media.test", itemId: ITEM, 
 const SOURCE = `MediaSourceId=${ITEM}`;
 
 // The 10.11.7 shape: a leading "?&", ApiKey, no EnableTrickplay (P10-02).
-const RECORDED = `/videos/${ITEM}/master.m3u8?&DeviceId=fluster&${SOURCE}&VideoCodec=h264,hevc,av1,vp9&AudioCodec=aac&AudioStreamIndex=1&SegmentContainer=mp4&PlaySessionId=p1&ApiKey=secret-key&Tag=t&TranscodeReasons=ContainerBitrateExceedsLimit`;
+const RECORDED = `/videos/${ITEM}/master.m3u8?&DeviceId=octave&${SOURCE}&VideoCodec=h264,hevc,av1,vp9&AudioCodec=aac&AudioStreamIndex=1&SegmentContainer=mp4&PlaySessionId=p1&ApiKey=secret-key&Tag=t&TranscodeReasons=ContainerBitrateExceedsLimit`;
 
 // A master URL for the item that names the chosen source, plus `query`.
 function master(query = "", path = `/videos/${ITEM}/master.m3u8`): string {
@@ -45,7 +45,7 @@ describe("rebuildMasterUrl", () => {
     expect(rebuilt(master("", `/jellyfin/videos/${ITEM}/master.m3u8`), { serverUrl: "https://media.test/jellyfin" })).toEqual({ ok: false, detail: "path" });
   });
 
-  it("accepts any case in the fixed path segments, as Rust does", () => {
+  it("accepts any case in the fixed path segments, as the shared vectors do", () => {
     expect(urlOf(master("", `/Audio/${ITEM}/Master.M3U8`), { mediaKind: "audio" }).pathname).toBe(`/Audio/${ITEM}/Master.M3U8`);
     expect(rebuilt(master("", `/audio/${ITEM}/master.m3u8`), { mediaKind: "audio" })).toMatchObject({ ok: true, kind: "audio" });
     expect(rebuilt(master("", `/VIDEOS/${ITEM}/master.m3u8`))).toMatchObject({ ok: true, kind: "videos" });
@@ -163,7 +163,7 @@ describe("rebuildMasterUrl", () => {
     expect(JSON.stringify(result)).not.toContain("secret-key");
     expect(JSON.stringify(result)).not.toContain("evil.test");
   });
-  it("refuses a master URL with a fragment, as Rust does", () => {
+  it("refuses a master URL with a fragment, as the shared vectors do", () => {
     expect(rebuilt(`${master()}#fragment`)).toEqual({ ok: false, detail: "fragment" });
     expect(rebuilt(`${master()}#`)).toEqual({ ok: false, detail: "fragment" });
   });
@@ -180,10 +180,10 @@ interface SharedRefusal {
   typescript: { verdict: "refuse" } | { verdict: "rebuild"; url: string };
 }
 
-// Master URLs Rust refuses (tests/fixtures/hls-master-urls.json `refusals`,
-// also run by master_url_tests.rs): this rebuild refuses each one, or
-// rebuilds it into the recorded URL, which Rust accepts.
-describe("master URLs Rust refuses", () => {
+// Master URLs every native validator refuses (tests/fixtures/hls-master-urls.json
+// `refusals`): this rebuild refuses each one, or rebuilds it into the recorded
+// URL, which a validator accepts.
+describe("master URLs every validator refuses", () => {
   const refusals = (shared as unknown as { refusals: SharedRefusal[] }).refusals;
 
   it("are all here", () => {

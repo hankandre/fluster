@@ -10,7 +10,7 @@ describe("credential redaction", () => {
   });
 
   it("redacts Jellyfin authorization headers", () => {
-    const result = redactText('Authorization: MediaBrowser Client="Fluster", Token=secret');
+    const result = redactText('Authorization: MediaBrowser Client="Octave", Token=secret');
     expect(result).not.toContain("Token=secret");
     expect(result).toContain("[redacted]");
   });

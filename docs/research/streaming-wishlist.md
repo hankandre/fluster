@@ -37,7 +37,7 @@ It completes a trio with [`streaming-ux-gripes.md`](streaming-ux-gripes.md) (wha
 
 Ordered inside each area by evidence. Task ids are from `tasks/prd.json`.
 
-| # | Wish | Verdict | Strength | Fits? | Fluster today |
+| # | Wish | Verdict | Strength | Fits? | Octave today |
 |---|---|---|---|---|---|
 | **Watching** | | | | | |
 | W1 | Dialogue you can hear | Strong unmet need (the problem); use of any remedy unmeasured | Medium to strong | Yes, on the device | Backlog |
@@ -92,11 +92,11 @@ Ordered inside each area by evidence. Task ids are from `tasks/prd.json`.
 | W42 | Picture-in-picture, screenshots, bookmarks | Real but niche | Weak | Yes | Backlog (PiP) |
 | **Control** | | | | | |
 | W43 | Settings that follow the account | Real | Medium | Yes | One set per computer (Q9 A) |
-| W44 | Play the original; say what is happening | Fluster's core | Medium | Yes | Have |
+| W44 | Play the original; say what is happening | Octave's core | Medium | Yes | Have |
 | W45 | Versions and extras, clearly labelled | Already solved elsewhere | Medium to strong | Yes | P3-08 (done), P16-08 |
 | W46 | Filter out profanity or scenes | Real but niche | Medium | No (needs outside data) | None |
 
-The short reading: **the wishes with the most votes are mostly ones Fluster has already decided** (a watch list, clearing Continue Watching, watch together, playlists). **The best openings are quieter**: the problems with the broadest evidence and the fewest working answers are hearing the dialogue, catching the line you missed, and keeping a series page from spoiling the series. All three can be done on the device with nothing from outside.
+The short reading: **the wishes with the most votes are mostly ones Octave has already decided** (a watch list, clearing Continue Watching, watch together, playlists). **The best openings are quieter**: the problems with the broadest evidence and the fewest working answers are hearing the dialogue, catching the line you missed, and keeping a series page from spoiling the series. All three can be done on the device with nothing from outside.
 
 ## 2. The wishes
 
@@ -106,7 +106,7 @@ The short reading: **the wishes with the most votes are mostly ones Fluster has 
 - *Who wants it.* A survey by a language-tutoring company (1,265 US respondents, self-selected, updated 30 September 2026): half usually watch with subtitles; 55% find dialogue harder to hear than it used to be, and 78% of those blame loud background music; about three-quarters of subtitle users cite muddled audio (https://preply.com/en/blog/americas-subtitles-use/). Netflix says nearly half of US viewing hours have subtitles on (Gripes §5, row 11). A UK poll found four in five viewers aged 18 to 24 use subtitles, and few of them are deaf (snippet) (https://www.stagetext.org/news/yougov-survey-supports-stagetexts-findings/). The vote boards are quieter: Plex "Global Audio Boost and Normalization" has 170 votes (#700726) and "Let me boost the voice channel!" 5 (#733741); Jellyfin's nearest post is "increase volume to more than 100%" with 126 (#150), and no dialogue post is in its top 300.
 - *Who does it.* TVs, soundbars, Fire TV, and Apple TV have speech modes (Loves L32; no usage figures). In personal media, Plex shipped "Boost Dialog" in server 1.43.4: it needs a Plex Pass, and "enabling either of these options will cause the audio to be transcoded" (https://support.plex.tv/articles/audio-track-enhancements-for-video/). A November 2025 Infuse thread describes needing a 12 dB centre boost and finding no control for it (#58032). A Jellyfin developer's answer is to configure mpv by hand (snippet) (https://forum.jellyfin.org/t-volume-normalization).
 - *Verdict.* **Strong unmet need for the problem.** The demand for a remedy inside the app is modest on vote boards, and nobody publishes how many people use a speech mode (Loves L32). The honest reading: many people cope with subtitles; a smaller group asks for an audio fix; the one personal-media answer is paid and converts on the server.
-- *Fits?* Yes, and it fits Fluster's identity: the player can raise the centre channel or apply a speech filter on the device while the server still sends the original file. FFmpeg lists `dialoguenhance`, `speechnorm`, `dynaudnorm`, `loudnorm`, `acompressor`, and `pan` among its audio filters (https://ffmpeg.org/ffmpeg-filters.html), and mpv takes them through its `af` option (https://mpv.io/manual/stable/). How well each sounds, and what each costs, is **unverified**: nobody has tried them in Fluster. Two limits are known: a filter cannot touch audio that is passed through untouched to a receiver (P5-03), and it needs a typed player command (invariant I3).
+- *Fits?* Yes, and it fits Octave's identity: the player can raise the centre channel or apply a speech filter on the device while the server still sends the original file. FFmpeg lists `dialoguenhance`, `speechnorm`, `dynaudnorm`, `loudnorm`, `acompressor`, and `pan` among its audio filters (https://ffmpeg.org/ffmpeg-filters.html), and mpv takes them through its `af` option (https://mpv.io/manual/stable/). How well each sounds, and what each costs, is **unverified**: nobody has tried them in Octave. Two limits are known: a filter cannot touch audio that is passed through untouched to a receiver (P5-03), and it needs a typed player command (invariant I3).
 - *Server.* None. A loudness figure per audio track would help W2; see there.
 
 **W2. Night mode.** Quiet scenes up, explosions down, so the volume can stay put.
@@ -190,7 +190,7 @@ The short reading: **the wishes with the most votes are mostly ones Fluster has 
 **W23. Two accounts watching in the same room.** A couple watch an episode on one screen; only the signed-in account gets the progress, and the other finds it unwatched.
 - *Who wants it.* Jellyfin "watch together (watch with multiples accounts)": 164 votes (#389). Plex "Allow Multiple Users to Viewing Session": 25 votes, opened January 2016, still open (#131160), with several closed duplicates. No survey was found on how much household viewing is shared: unverified.
 - *Who does it.* No app found. Workarounds are a shared "us" account, which defeats per-person history, and third-party scripts.
-- *Verdict.* **Real but niche; unsolved everywhere.** Medium evidence, and a problem Fluster is already close to: it will show "Who's watching?" when two accounts are signed in (product review Q5).
+- *Verdict.* **Real but niche; unsolved everywhere.** Medium evidence, and a problem Octave is already close to: it will show "Who's watching?" when two accounts are signed in (product review Q5).
 - *Fits?* Yes. Nothing leaves the server. It touches "Your account is yours": the second person must be signed in on this device and choose to join, and nothing may be written to an account that has not.
 - *Server.* Jellyfin has `POST` and `DELETE /Sessions/{sessionId}/User/{userId}` ("add user to session"; SDK `session-api`). Whether progress and Played then reach the added account on 10.11 and 12.x is **unverified**. The plain alternative is two calls: mark the episode played for each signed-in account (`POST /UserPlayedItems/{itemId}`, implemented on Jellyscale). The session routes are not in Jellyscale's `compat/endpoints.yaml`.
 
@@ -211,11 +211,11 @@ The short reading: **the wishes with the most votes are mostly ones Fluster has 
 
 **W28. Caption settings that are near, previewed, and kept.** A US rule in force since September 2024 judges caption settings by proximity, discoverability, previewability, and persistence (snippet) (https://www.wiley.law/alert-Readily-Accessible-Closed-Captioning-Requirements-Take-Effect-on-September-16-2024). Whether it binds a desktop app is unverified; it is a good checklist regardless. P5-05 plans styling. A live preview and reaching it from the player are not in its acceptance.
 
-**W29. A screen reader can drive the app.** No audit with numbers was found for any streaming app, and no vote. Fluster's interface is HTML in a WebView, which can expose roles and names; whether Orca reads it under WebKitGTK has not been tried: unverified.
+**W29. A screen reader can drive the app.** No audit with numbers was found for any streaming app, and no vote. Octave's interface is HTML in a WebView, which can expose roles and names; whether Orca reads it under WebKitGTK has not been tried: unverified.
 
 **W30. Plain, predictable layouts.** A study commissioned by the UK regulator with viewers aged 65 and over found that simple design changes cut usability barriers by almost half; the barriers were cluttered home screens, inconsistent menus, sign-in, and remotes (https://dtg.org.uk/2025/09/18/simple-design-changes-cut-streaming-tv-usability-barriers-in-half-for-older-viewers). It agrees with the fixed Home order (Q1 A).
 
-**W31. Flashing lights.** Apple dims flashing on the device; services warn (snippets). No personal-media app does either, and detecting it in Fluster is unexplored. **Unproven**; a research item at most.
+**W31. Flashing lights.** Apple dims flashing on the device; services warn (snippets). No personal-media app does either, and detecting it in Octave is unexplored. **Unproven**; a research item at most.
 
 ### 2.6 Curation by the viewer
 
@@ -229,7 +229,7 @@ The short reading: **the wishes with the most votes are mostly ones Fluster has 
 **W36. A sleep timer that ends with the episode.**
 - *Who wants it.* Plex: 7 votes on a thread open since 2014 (#72669). Jellyfin's Android app: 23 thumbs-up (https://github.com/jellyfin/jellyfin-android/issues/632). Not in Jellyfin's top 300. YouTube added one in 2024 without numbers (Loves L32).
 - *Verdict.* **Real but niche.** Weak evidence; small cost.
-- *Fits?* Yes. "Stop after this episode" is the form that suits a series, and on stop Fluster already reports the position and ends any server conversion. It also answers "Still watching?" (W18) with a control the viewer sets, not a prompt the app imposes.
+- *Fits?* Yes. "Stop after this episode" is the form that suits a series, and on stop Octave already reports the position and ends any server conversion. It also answers "Still watching?" (W18) with a control the viewer sets, not a prompt the app imposes.
 - *Server.* None.
 
 **W37. Theme music, video backdrops, a screensaver.** Jellyfin: theme-song volume 104, fade-in 57; an OLED screensaver was completed with 42. **Real but niche**, and "nothing plays by itself unless you turn it on" applies (rule 7).
@@ -249,7 +249,7 @@ The short reading: **the wishes with the most votes are mostly ones Fluster has 
 
 **W43. Settings that follow the account.** Jellyfin "Global defaults (clients)": 260 votes (#469); "Easy import/export of settings" was completed with 899. **Real.** Jellyfin and Jellyscale both implement `DisplayPreferences`, a per-account record with a free `CustomPrefs` map. The owner chose one set of settings per computer (Q9 A); see the proposal §3.
 
-**W44. Play the original; say what is happening.** Plex "Disable 4K transcoding": 249 votes; "Display Atmos, DTS:X correctly": 701; Jellyfin "force direct play" 49 thumbs-up and "stats for nerds" 219. This is what Fluster is built on (Loves L5, L18).
+**W44. Play the original; say what is happening.** Plex "Disable 4K transcoding": 249 votes; "Display Atmos, DTS:X correctly": 701; Jellyfin "force direct play" 49 thumbs-up and "stats for nerds" 219. This is what Octave is built on (Loves L5, L18).
 
 **W45. Versions and extras, labelled.** Plex multiple cuts: 1,459 votes, built; "More info in Play Version": 266, open. Jellyfin: 266, 146, 105. Infuse extras: 664 likes; Plex TV extras: 434. Done or planned: P3-08, P16-08.
 
@@ -257,7 +257,7 @@ The short reading: **the wishes with the most votes are mostly ones Fluster has 
 
 ## 3. What the weighing shows
 
-1. **The biggest numbers are settled or are the server's.** Of the ten most-voted wishes found (table below), Fluster has decided four, three are server features, and two are planned. That is a sign the earlier passes read the same boards correctly, not a gap.
+1. **The biggest numbers are settled or are the server's.** Of the ten most-voted wishes found (table below), Octave has decided four, three are server features, and two are planned. That is a sign the earlier passes read the same boards correctly, not a gap.
 2. **Surveys and vote boards disagree about audio.** The survey evidence says most subtitle use is a workaround for dialogue; the boards barely mention an audio fix. People ask for what they have seen. That is the best argument for W1 and also its risk: no one has shown that viewers use a speech mode when given one.
 3. **The persistent small requests are the unsolved ones.** Spoiler safety (2012 onward), two accounts in one room (2016 onward), and night mode (2012 onward) have modest votes and no good answer in any personal-media app. Persistence without resolution is weaker than a survey and stronger than a spike of votes.
 4. **Nobody asks for pickers, recaps, or a year in review on Jellyfin's board.** Each has a vendor behind it and no measured use.
@@ -266,7 +266,7 @@ The short reading: **the wishes with the most votes are mostly ones Fluster has 
 
 ### The ten most-wanted, by count
 
-| Wish | Best count | Verdict | Where Fluster stands |
+| Wish | Best count | Verdict | Where Octave stands |
 |---|---|---|---|
 | Watch together (remote) | 2,906 votes (Plex) | Loud wish, little use | P8-02, in M5 |
 | Remove from Continue Watching | 1,740 (Jellyfin) | Settled | P16-02 ages items out |
@@ -279,16 +279,16 @@ The short reading: **the wishes with the most votes are mostly ones Fluster has 
 | Personal ratings | 461 (Jellyfin) | Real but niche | None |
 | Spoiler-safe episodes | 120 (Jellyfin), 118 and 49 (Plex) | Real but niche; unsolved | None; **proposal D3** |
 
-## 4. Fluster could lead here
+## 4. Octave could lead here
 
-Ranked by evidence first and fit second. "Lead" means no personal-media client found does it well and Fluster's design makes it natural. None is a task yet; each is a decision in the proposal.
+Ranked by evidence first and fit second. "Lead" means no personal-media client found does it well and Octave's design makes it natural. None is a task yet; each is a decision in the proposal.
 
-| Rank | Idea | Evidence | Why Fluster | Cost and risk |
+| Rank | Idea | Evidence | Why Octave | Cost and risk |
 |---|---|---|---|---|
-| 1 | **Hear every line, with the original file.** A "Clear voices" control and a night mode, applied on the device. (W1, W2, W12) | Problem: medium to strong (a 1,265-person survey, Netflix's subtitle share). Demand for the remedy: medium (170, 134 votes; 96 likes). Use: none measured. | The one shipped answer in personal media is paid and makes the server convert. Fluster decodes locally, so the server stays idle and the file stays untouched. | A native spike, then a typed player command. Does not apply with passthrough. Sound quality untested. |
+| 1 | **Hear every line, with the original file.** A "Clear voices" control and a night mode, applied on the device. (W1, W2, W12) | Problem: medium to strong (a 1,265-person survey, Netflix's subtitle share). Demand for the remedy: medium (170, 134 votes; 96 likes). Use: none measured. | The one shipped answer in personal media is paid and makes the server convert. Octave decodes locally, so the server stays idle and the file stays untouched. | A native spike, then a typed player command. Does not apply with passthrough. Sound quality untested. |
 | 2 | **"What did they say?"** Skip back and the captions appear for the replayed stretch; resume starts a few seconds early. (W3, W4) | Habit: strong (half of hours with subtitles). Demand: weak (a few threads; 55 votes for rewind). One vendor ships it. | A player rule on data already present. No personal-media client found has the caption half. | Small. Needs a subtitle track to exist. |
-| 3 | **A series page that cannot spoil the series.** Unwatched episodes hide the still, the description, and optionally the title, everywhere they appear. (W13) | Medium: 120, 118, and 49 votes; four products; since 2012. One partial answer (a blur). | A display rule; Fluster controls every surface. Doing it completely is the improvement. | Small to medium. Every surface must be covered or it fails. |
-| 4 | **Two people, one screen, both up to date.** Add a second signed-in account to what is playing. (W23) | Medium: 164 and 25 votes; open since 2016; no app does it. | Fluster already holds several signed-in accounts and asks "Who's watching?". | Needs a server check first. Touches "Your account is yours". |
+| 3 | **A series page that cannot spoil the series.** Unwatched episodes hide the still, the description, and optionally the title, everywhere they appear. (W13) | Medium: 120, 118, and 49 votes; four products; since 2012. One partial answer (a blur). | A display rule; Octave controls every surface. Doing it completely is the improvement. | Small to medium. Every surface must be covered or it fails. |
+| 4 | **Two people, one screen, both up to date.** Add a second signed-in account to what is playing. (W23) | Medium: 164 and 25 votes; open since 2016; no app does it. | Octave already holds several signed-in accounts and asks "Who's watching?". | Needs a server check first. Touches "Your account is yours". |
 | 5 | **Described and captioned by default for those who need it.** Label description tracks, prefer them on request, preview caption styles from the player. (W27, W28) | Medium for need (a 483-person survey, 2016); no votes. | Costs little; decisive for a few; no personal-media client found does it. | Small. Depends on how files label tracks. |
 | 6 | **Stop when this episode ends.** A sleep timer in episode units. (W36, W18) | Weak: 23 thumbs-up, 7 votes. | Ends the session cleanly and stops any server job. Replaces a prompt with a choice. | Small. |
 | 7 | **"I have 90 minutes."** A runtime choice when browsing films. (W19) | Problem: strong. This remedy: none. | The library knows every runtime; a service has no reason to offer it. | Small, and may go unused. |

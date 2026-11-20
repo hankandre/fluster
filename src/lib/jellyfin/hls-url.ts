@@ -2,11 +2,11 @@
 // (ARCHITECTURE.md §3, decision 0002). The original is never followed,
 // logged, or returned: only the rebuilt URL leaves this module.
 //
-// Rust re-checks the result (`validate_master_url`,
-// src-tauri/src/player/hls/master_url.rs), so the two must agree; the URLs
-// this rebuild produces from the recorded fixtures, on a server with and
-// without a base path, are in tests/fixtures/hls-master-urls.json, and both
-// sides test them (hls-rust-vectors.test.ts, master_url_tests.rs).
+// Every native validator re-checks the result with the same rules (Kotlin in
+// T8-08), so they must agree: the URLs this rebuild produces from the
+// recorded fixtures, on a server with and without a base path, are the shared
+// vectors in tests/fixtures/hls-master-urls.json (written and checked by
+// hls-master-url-vectors.test.ts), and every validator must pass them.
 import type { HlsMediaKind } from "../../domain/playback";
 import { isCredentialQueryName } from "./credential-query";
 
@@ -32,7 +32,7 @@ const ITEM_ID = /^[0-9a-z-]+$/i;
 // Whitespace or control characters in a name could hide a credential name
 // from a parser that trims differently, so such a name is refused.
 const UNSAFE_NAME = /[\s\p{Cc}]/u;
-// SubtitleDeliveryMethod values Fluster accepts by name. Hls, numeric enum
+// SubtitleDeliveryMethod values Octave accepts by name. Hls, numeric enum
 // values, and anything else are refused.
 const SUBTITLE_METHODS = new Set(["encode", "embed", "external", "drop"]);
 
@@ -63,7 +63,7 @@ export function rebuildMasterUrl(transcodingUrl: string, context: HlsUrlContext)
   if (url.username || url.password) return refuse("user info");
   if (url.origin !== server.origin) return refuse("other origin");
   // A fragment is never sent, so a server URL carrying one is not a URL this
-  // rebuild should guess at; Rust refuses it too (`validate_master_url`).
+  // rebuild should guess at; the shared vectors refuse it too.
   if (transcodingUrl.includes("#")) return refuse("fragment");
 
   const basePath = server.pathname.replace(/\/+$/, "");

@@ -236,9 +236,9 @@ describe.each(versions)("account-language fixtures, Jellyfin %s", (version) => {
 
     it("accepts a field it does not know with 204, saves the rest, and drops the unknown field", () => {
       const s = step("whole object plus an unknown field");
-      expect(s.request.body.FlusterUnknownField).toBe("fixture");
+      expect(s.request.body.OctaveUnknownField).toBe("fixture");
       expect(s.configuration.SubtitleLanguagePreference).toBe("spa");
-      expect("FlusterUnknownField" in s.configuration).toBe(false);
+      expect("OctaveUnknownField" in s.configuration).toBe(false);
       expect(s.configuration).toEqual({ ...(step("whole object restored").configuration), SubtitleLanguagePreference: "spa" });
     });
   });

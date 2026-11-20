@@ -594,7 +594,7 @@ describe("PlaybackCoordinator", () => {
     expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal), true);
   });
 
-  it("redacts a launch failure that Tauri sends as a string, and still reports a failed stop", async () => {
+  it("redacts a launch failure that a native engine sends as a string, and still reports a failed stop", async () => {
     const gateway = {
       createPlaybackPlan: vi.fn(async () => plan),
       reportStart: vi.fn(async () => undefined),

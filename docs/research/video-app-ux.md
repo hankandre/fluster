@@ -21,7 +21,7 @@ This document is about **how** things should work. Which features to build is co
   - `support.plex.tv` (403), `kodi.wiki` (403), `viget.com` (429), `uxdesign.cc` (403), `m3.material.io` (empty), `sdkdocs-archive.roku.com` (DNS failure), one Baymard article (paywall).
   - Reddit was not read, as in the earlier studies.
 - No competing app was installed or run. "How the leading apps do it" comes from their help pages, vendor posts, and press, and is thin for Disney+, Kodi, and the Apple TV app. Gaps are marked.
-- Fluster's own state is not described here. The audit does that.
+- Octave's own state is not described here. The audit does that.
 
 ## 1. Summary
 
@@ -273,7 +273,7 @@ Shared across YouTube, Netflix, and Jellyfin: Space or K to play and pause, F fo
 - A wide, plain font.
 - A viewer changing the size must not open gaps between lines.
 
-**US law for devices** (47 CFR 79.103): the viewer can set text colour and opacity, size from 50% to 200%, font, background colour and opacity, and edge style (raised, depressed, uniform, drop shadow), can preview the result, and the device keeps it. (https://www.law.cornell.edu/cfr/text/47/79.103) Fluster is not a device under that rule; the list is the best available definition of "enough control".
+**US law for devices** (47 CFR 79.103): the viewer can set text colour and opacity, size from 50% to 200%, font, background colour and opacity, and edge style (raised, depressed, uniform, drop shadow), can preview the result, and the device keeps it. (https://www.law.cornell.edu/cfr/text/47/79.103) Octave is not a device under that rule; the list is the best available definition of "enough control".
 
 **Netflix's authoring rules:** 42 characters a line, two lines, 20 characters a second for adults. (https://partnerhelp.netflixstudios.com/hc/en-us/articles/217350977-English-USA-Timed-Text-Style-Guide)
 
@@ -456,4 +456,4 @@ Stated so that nobody mistakes convention for proof.
 - What the default should be for hiding spoilers.
 - Any usability study of a personal-media client: Plex, Infuse, Kodi, Emby, or a Jellyfin client.
 
-For each of these the dogfood week (P4-01) is better evidence for Fluster than anything found here, and the audit's protocol says what to watch for.
+For each of these the dogfood week (P4-01) is better evidence for Octave than anything found here, and the audit's protocol says what to watch for.

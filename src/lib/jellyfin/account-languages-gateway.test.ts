@@ -128,7 +128,7 @@ type Json = Record<string, unknown>;
 
 function newUserConfiguration(version: string): Json {
   const me = load<{ Configuration: Json }>(version, "users-me-new-user");
-  return { ...me.Configuration, FlusterUnknownField: { nested: [1, "two"] }, HidePlayedInLatest: false };
+  return { ...me.Configuration, OctaveUnknownField: { nested: [1, "two"] }, HidePlayedInLatest: false };
 }
 
 const CHOICES: [string, Json][] = [
@@ -164,7 +164,7 @@ describe.each(["10.11.7", "12.4.0"] as const)("saving the account languages, Jel
     expect(transport.calls[1]?.data).toStrictEqual({ ...snapshot, ...change });
     expect(Object.keys(saved).every((key) => ["audioLanguage", "playDefaultAudioTrack", "subtitleLanguage", "subtitleMode"].includes(key))).toBe(true);
     expect(JSON.stringify(saved)).not.toContain("IsAdministrator");
-    expect(JSON.stringify(saved)).not.toContain("FlusterUnknownField");
+    expect(JSON.stringify(saved)).not.toContain("OctaveUnknownField");
   });
 
   it("leaves AudioLanguagePreference absent when The file's default is saved for a new user", async () => {

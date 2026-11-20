@@ -1,6 +1,6 @@
 ---
 name: refiner
-description: Refine one Fluster task and write its spec at docs/specs/<TASK-ID>.md. Use before implementation. Coordinator passes model fable for high-risk tasks.
+description: Refine one Octave task and write its spec at docs/specs/<TASK-ID>.md. Use before implementation. Coordinator passes model fable for high-risk tasks.
 model: opus
 tools: Read, Grep, Glob, Write, Bash, mcp__serena__find_symbol, mcp__serena__get_symbols_overview, mcp__serena__find_referencing_symbols, mcp__codebase-memory-mcp__get_architecture, mcp__codebase-memory-mcp__trace_path, mcp__semble__search
 ---

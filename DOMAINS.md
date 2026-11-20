@@ -1,6 +1,6 @@
 # Domains
 
-Fluster's bounded contexts: what each owns, the language it uses, where its code lives, and which way dependencies may point. Use this to decide where new code goes and to scope agent tasks. A task that touches more than two domains probably needs a plan (`WORKFLOW.md`).
+Octave's bounded contexts: what each owns, the language it uses, where its code lives, and which way dependencies may point. Use this to decide where new code goes and to scope agent tasks. A task that touches more than two domains probably needs a plan (`WORKFLOW.md`).
 
 ## Map
 
@@ -32,7 +32,7 @@ Fluster's bounded contexts: what each owns, the language it uses, where its code
 
 **Classification:**
 
-- **Core** (where Fluster differs from every other client): Playback Negotiation, Player Engine, Video Surface & Window.
+- **Core** (where Octave differs from every other client): Playback Negotiation, Player Engine, Video Surface & Window.
 - **Supporting:** Playback Session, Playstate Reporting, Server Connection & Identity, Catalog, App Shell.
 - **Generic:** Distribution, Realtime.
 
@@ -93,7 +93,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 
 **Owns:**
 - `PLAYBACK_POLICY`
-- the Fluster DeviceProfile
+- the Octave DeviceProfile
 - the PlaybackInfo request (flags in body and query) and the streaming limit it sends
 - the source decision function (DirectPlay, DirectStream, Transcode, Refuse)
 - refusal reasons and conversion reasons
@@ -107,7 +107,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 **Code today.**
 - `PLAYBACK_POLICY`, `PlaybackPlan`, `resumeChoice` in `src/domain/playback.ts`
 - `PLAYBACK_INFO_FLAGS`, `buildStaticStreamUrl`, `createPlaybackPlan` (with the forced-fallback request) in `gateway.ts`
-- `decideSource`, `selectSource` in `source-acceptance.ts`; `rebuildMasterUrl` in `hls-url.ts`; `FLUSTER_PROFILE` in `device-profile.ts`
+- `decideSource`, `selectSource` in `source-acceptance.ts`; `rebuildMasterUrl` in `hls-url.ts`; `OCTAVE_PROFILE` in `device-profile.ts`
 - Rust `validate_playback_urls` in `src-tauri/src/player/network.rs`
 
 **Rules.**
@@ -214,7 +214,7 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 
 ## 8. Realtime & Remote Control (M5)
 
-**Purpose.** React to server-side changes and let other Jellyfin clients control Fluster.
+**Purpose.** React to server-side changes and let other Jellyfin clients control Octave.
 
 **Owns:**
 - the `/socket` connection and keepalive

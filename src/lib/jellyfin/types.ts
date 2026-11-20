@@ -162,7 +162,7 @@ export interface PlaybackInfoResponse {
   PlaySessionId?: string;
 }
 
-// The wire shapes of GET /Users/Me and GET /Localization/Cultures. Only the fields Fluster reads.
+// The wire shapes of GET /Users/Me and GET /Localization/Cultures. Only the fields Octave reads.
 export interface UserConfigurationDto {
   AudioLanguagePreference?: string | null;
   PlayDefaultAudioTrack?: boolean;

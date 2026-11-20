@@ -277,15 +277,15 @@ write_clpi() {
 [ -e "$bd_dir/CLIPINF/00000.clpi" ] && [ "$force" -eq 0 ] || write_clpi "$bd_dir/CLIPINF/00000.clpi"
 
 # Conversion-only samples (P10-02): a graphical DVD subtitle and an ISO image. They are opt-in
-# with FLUSTER_CONVERSION_SAMPLES=1 because the default run (and CI's sample step inside the
+# with OCTAVE_CONVERSION_SAMPLES=1 because the default run (and CI's sample step inside the
 # Jellyfin image) must not need python3, xorriso, or docker.
 conversion_samples=0
-[ "${FLUSTER_CONVERSION_SAMPLES:-0}" = 1 ] && conversion_samples=1
+[ "${OCTAVE_CONVERSION_SAMPLES:-0}" = 1 ] && conversion_samples=1
 dvdsub="$movies_dir/Synthetic DVDSub (2024)/Synthetic DVDSub (2024).mkv"
 iso="$movies_dir/Synthetic ISO (2024)/Synthetic ISO (2024).iso"
 
 if [ "$conversion_samples" -eq 1 ]; then
-command -v python3 > /dev/null || { echo "FLUSTER_CONVERSION_SAMPLES=1 needs python3 for the dvdsub sample" >&2; exit 1; }
+command -v python3 > /dev/null || { echo "OCTAVE_CONVERSION_SAMPLES=1 needs python3 for the dvdsub sample" >&2; exit 1; }
 
 # DVD subtitle (graphical, S_VOBSUB). ffmpeg cannot encode text to bitmap, so
 # scripts/make-vobsub.py writes a synthetic VobSub pair that ffmpeg copies into the mkv.
@@ -317,10 +317,10 @@ make_iso() {
     printf '%s\n' \
       'FROM alpine:3.24.4@sha256:93b41ef40b1677fce8fcc64ff4af09daddfacf5040afde618bc46c1e2d1cc7d4' \
       'RUN apk add --no-cache xorriso=1.5.8-r0' \
-      | docker build -q -t fluster-samples-xorriso - > /dev/null
+      | docker build -q -t octave-samples-xorriso - > /dev/null
     docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
       --user "$(id -u):$(id -g)" -v "$work_dir:/work:ro" -v "$(dirname "$out"):/out" \
-      fluster-samples-xorriso xorriso -as mkisofs -quiet -V SYNTHETIC_ISO \
+      octave-samples-xorriso xorriso -as mkisofs -quiet -V SYNTHETIC_ISO \
       -o "/out/$(basename "$out")" /work/iso-tree
   else
     return 1
@@ -330,7 +330,7 @@ if needs "$iso"; then
   if make_iso "$iso"; then
     echo "made   ${iso#"$samples_dir"/}"
   else
-    echo "FLUSTER_CONVERSION_SAMPLES=1 needs xorriso, genisoimage, mkisofs, or docker for the ISO sample" >&2
+    echo "OCTAVE_CONVERSION_SAMPLES=1 needs xorriso, genisoimage, mkisofs, or docker for the ISO sample" >&2
     exit 1
   fi
 else

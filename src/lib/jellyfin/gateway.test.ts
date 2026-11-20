@@ -2,7 +2,7 @@ import axios from "axios";
 import { describe, expect, it, vi } from "vitest";
 import type { LibraryItem } from "../../domain/catalog";
 import { PlaybackRefusedError, type PlaybackPlan, type PlaybackSnapshot } from "../../domain/playback";
-import { FLUSTER_PROFILE } from "./device-profile";
+import { OCTAVE_PROFILE } from "./device-profile";
 import {
   buildStaticStreamUrl,
   CONTROL_REQUEST_TIMEOUT_MS,
@@ -145,7 +145,7 @@ describe("JellyfinGateway direct-play contract", () => {
         adapter: "fetch",
         maxRedirects: 0,
       });
-      expect(isolatedAxios.defaults.headers.common.Authorization).toContain('Client="Fluster"');
+      expect(isolatedAxios.defaults.headers.common.Authorization).toContain('Client="Octave"');
       expect(get).toHaveBeenCalledWith("/System/Info/Public", {
         signal: undefined,
         timeout: CONTROL_REQUEST_TIMEOUT_MS,
@@ -170,7 +170,7 @@ describe("JellyfinGateway direct-play contract", () => {
     const transport = new FakeTransport();
     transport.responses.set("GET /System/Info/Public", { Version: version });
     await expect(new JellyfinGateway("https://media.test", transport).connect()).rejects.toThrow(
-      `Fluster needs Jellyfin 10.11 or newer; this server reports ${version}.`,
+      `Octave needs Jellyfin 10.11 or newer; this server reports ${version}.`,
     );
   });
 
@@ -194,7 +194,7 @@ describe("JellyfinGateway direct-play contract", () => {
   });
 
   // Decision 0002 "Negotiation" table, in the body and the query string.
-  it("sends the Fluster profile in the body and the decision 0002 flags in both body and query", async () => {
+  it("sends the Octave profile in the body and the decision 0002 flags in both body and query", async () => {
     const { gateway, transport } = await authenticatedGateway();
     transport.responses.set("POST /Items/item%2Fone/PlaybackInfo", {
       PlaySessionId: "play-1",
@@ -214,7 +214,7 @@ describe("JellyfinGateway direct-play contract", () => {
       UserId: "user-1",
       StartTimeTicks: 42,
       MaxStreamingBitrate: 1000000000,
-      DeviceProfile: FLUSTER_PROFILE,
+      DeviceProfile: OCTAVE_PROFILE,
     });
     expect(request.params).toEqual({
       EnableDirectPlay: true,
@@ -329,7 +329,7 @@ describe("JellyfinGateway direct-play contract", () => {
       StartTimeTicks: 0,
       MaxStreamingBitrate: 1000000000,
       MediaSourceId: "source-2",
-      DeviceProfile: FLUSTER_PROFILE,
+      DeviceProfile: OCTAVE_PROFILE,
     });
     expect(request.params).not.toHaveProperty("MediaSourceId");
     expect(plan.mediaSourceId).toBe("source-2");
@@ -595,7 +595,7 @@ describe("playstate reports carry the plan's play method", () => {
   });
 });
 
-const LINUX_CLIENT: ClientIdentity = { version: "0.1.0", deviceName: "Fluster Linux" };
+const LINUX_CLIENT: ClientIdentity = { version: "0.1.0", deviceName: "Octave Linux" };
 
 async function loginWith(installId: string, serverId: string, username: string, client?: ClientIdentity) {
   const transport = new FakeTransport();
@@ -619,14 +619,14 @@ describe("JellyfinGateway device identity and logout", () => {
     expect(first.deviceId).toMatch(/^[0-9a-f]{64}$/);
     expect(again.deviceId).toBe(first.deviceId);
     expect(first.deviceId).toBe("07bce1a97d44b7008418adc02ad74694142287bef4bd4007377574dc451aaf78");
-    expect(first.header).toContain('Device="Fluster%20Linux"');
+    expect(first.header).toContain('Device="Octave%20Linux"');
     expect(first.header).toContain('Token=""');
   });
 
   it("sends the client identity it was given in the login and later headers", async () => {
-    const { gateway, header } = await loginWith("install-1", "server-1", "Louise", { version: "9.8.7", deviceName: "Fluster macOS" });
+    const { gateway, header } = await loginWith("install-1", "server-1", "Louise", { version: "9.8.7", deviceName: "Octave macOS" });
     expect(header).toContain('Version="9.8.7"');
-    expect(header).toContain('Device="Fluster%20macOS"');
+    expect(header).toContain('Device="Octave%20macOS"');
     expect(gateway.authorizationHeader()).toContain('Version="9.8.7"');
   });
 
@@ -726,7 +726,7 @@ describe("JellyfinGateway device identity and logout", () => {
     const request = transport.requests.at(-1)!;
     expect(request.method).toBe("GET");
     expect(request.url).toBe("/Sessions");
-    // Only the device id: the play-session id never leaves Fluster here.
+    // Only the device id: the play-session id never leaves Octave here.
     expect(request.params).toEqual({ deviceId });
     expect(JSON.stringify(request)).not.toContain("play-1");
     expect(request.signal).toBe(controller.signal);
@@ -778,7 +778,7 @@ describe("JellyfinGateway device identity and logout", () => {
       expect(transport.requests[0]).toMatchObject({ method: "GET", url: "/QuickConnect/Enabled" });
     });
 
-    it("initiates with POST and the Fluster device header", async () => {
+    it("initiates with POST and the Octave device header", async () => {
       const { gateway, transport } = quickConnectGateway();
       await gateway.connect();
       transport.responses.set("POST /QuickConnect/Initiate", { Secret: "s3cret", Code: "123456" });
@@ -1423,7 +1423,7 @@ describe("JellyfinGateway plain-HTTP policy (docs/decisions/0001)", () => {
   );
 });
 
-// In WebKitGTK the fetch adapter's `redirect: "manual"` yields an opaque
+// In a browser engine the fetch adapter's `redirect: "manual"` yields an opaque
 // redirect with status 0, and Axios resolves it instead of rejecting.
 describe("JellyfinGateway resolved redirect responses", () => {
   const plan: PlaybackPlan = { itemId: "i", mediaSourceId: "m", playSessionId: "p", startPositionTicks: 0, streamUrl: "", title: "t", tracks: [], delivery: "static", playMethod: "DirectPlay", conversionReasons: [] };

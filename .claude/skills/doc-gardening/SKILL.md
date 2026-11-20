@@ -1,6 +1,6 @@
 ---
 name: doc-gardening
-description: Find and fix drift between Fluster's docs and code. Use weekly, after large refactors, or when a doc looks stale.
+description: Find and fix drift between Octave's docs and code. Use weekly, after large refactors, or when a doc looks stale.
 ---
 
 # Doc gardening

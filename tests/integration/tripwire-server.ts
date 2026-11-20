@@ -6,7 +6,7 @@ import { listProcesses, sleep } from "./tripwire-container";
 
 const SCAN_TIMEOUT_MS = 300_000;
 const SESSION_POLL_MS = 250;
-const MONITOR_CLIENT = 'MediaBrowser Client="Fluster Tripwire", Device="ci", DeviceId="fluster-tripwire-monitor", Version="0"';
+const MONITOR_CLIENT = 'MediaBrowser Client="Octave Tripwire", Device="ci", DeviceId="octave-tripwire-monitor", Version="0"';
 
 export class MonitorClient {
   private token = "";

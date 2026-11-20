@@ -122,7 +122,7 @@
       "Formats": [],
       "Bitrate": 491424,
       "RequiredHttpHeaders": {},
-      "TranscodingUrl": "/videos/item-sidecar/master.m3u8?DeviceId=fluster-fixtures&MediaSourceId=item-sidecar&VideoCodec=h264,hevc,av1,vp9&AudioCodec=aac,ac3,eac3,opus,flac,mp3&AudioStreamIndex=2&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&ApiKey=REDACTED&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-5&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported,DirectPlayError",
+      "TranscodingUrl": "/videos/item-sidecar/master.m3u8?DeviceId=octave-fixtures&MediaSourceId=item-sidecar&VideoCodec=h264,hevc,av1,vp9&AudioCodec=aac,ac3,eac3,opus,flac,mp3&AudioStreamIndex=2&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&ApiKey=REDACTED&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-5&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported,DirectPlayError",
       "TranscodingSubProtocol": "hls",
       "TranscodingContainer": "mp4",
       "DefaultAudioStreamIndex": 2,

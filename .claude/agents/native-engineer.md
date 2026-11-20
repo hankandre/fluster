@@ -1,6 +1,6 @@
 ---
 name: native-engineer
-description: Implement Fluster changes under src-tauri/ (libmpv, platform surfaces, Tauri commands) or to the PlayerEngine port. Use for any native or FFI work.
+description: Implement Octave changes under src-tauri/ (libmpv, platform surfaces, Tauri commands) or to the PlayerEngine port. Use for any native or FFI work.
 model: opus
 ---
 

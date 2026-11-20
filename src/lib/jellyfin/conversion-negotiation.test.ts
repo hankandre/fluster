@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { LibraryItem } from "../../domain/catalog";
 import { PlaybackRefusedError, type PlaybackPlan } from "../../domain/playback";
-import { FLUSTER_PROFILE } from "./device-profile";
+import { OCTAVE_PROFILE } from "./device-profile";
 import { JellyfinGateway } from "./gateway";
 import type { HttpRequestConfig, HttpTransport, PlaybackInfoResponse } from "./types";
 
@@ -126,7 +126,7 @@ describe.each(["10.11.7", "12.4.0"])("negotiation with the conversion fixtures f
       UserId: "user-test",
       StartTimeTicks: 0,
       MaxStreamingBitrate: 1000000000,
-      DeviceProfile: FLUSTER_PROFILE,
+      DeviceProfile: OCTAVE_PROFILE,
     });
     expect(request.params).toEqual({ ...FLAGS, UserId: "user-test", StartTimeTicks: 0, MaxStreamingBitrate: 1000000000 });
   });
@@ -139,7 +139,7 @@ describe.each(["10.11.7", "12.4.0"])("negotiation with the conversion fixtures f
     const [first, second] = transport.posts;
     expect(first.data).toMatchObject({ EnableDirectPlay: true });
     expect(first.data).not.toHaveProperty("MediaSourceId");
-    expect(second.data).toMatchObject({ ...FLAGS, EnableDirectPlay: false, MediaSourceId: "item-iso", DeviceProfile: FLUSTER_PROFILE });
+    expect(second.data).toMatchObject({ ...FLAGS, EnableDirectPlay: false, MediaSourceId: "item-iso", DeviceProfile: OCTAVE_PROFILE });
     expect(second.params).toEqual({ ...FLAGS, EnableDirectPlay: false, UserId: "user-test", StartTimeTicks: 0, MaxStreamingBitrate: 1000000000 });
     // The URL's AudioCodec lists the profile's codecs, not the source's ac3,
     // so the audio may be re-encoded: Transcode.
