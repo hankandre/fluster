@@ -2,13 +2,26 @@
 
 Throwaway spike for decision 0003 (`docs/decisions/0003-tv-and-mobile-shell.md`), "Order" item 8: does a
 react-native-tvos browse screen hold up on Android TV? This file records what was measured on
-emulators on 2026-11-20. **No real TV hardware has been measured yet.** The Shield numbers come from
-`run-falsifier.sh` on the owner's device.
+emulators and on the owner's **Nvidia Shield TV** on 2026-11-20 (see "Results: Nvidia Shield"
+below).
 
-## Verdict so far (emulator only)
+## Verdict so far
 
-Frame time passes on the emulator, and memory is within Google's targets *excluding Graphics*, which the emulator cannot measure, so memory stays unverified until the Shield run. **Focus does not pass.** The canonical implementation has
-five reproducible focus defects; all appear with the clipped-element flag both on and off.
+On the **Shield**, the canonical implementation has three problems.
+
+1. **Focus.** Five focus defects reproduce exactly as on the emulator, with the clipped-element flag
+   both on and off.
+2. **Vertical frame pacing.** Holding Down through the rows is janky: 30–33 % janky frames, p90
+   29–30 ms, p99 69–73 ms. The cost is on the UI thread; GPU p99 stays at 11–12 ms. Holding Right
+   along a row is smooth: 1.1–1.7 % janky, p99 17 ms.
+3. **Memory.** It is over Google's 1 GB-box targets.
+   - PSS is 312 MB after the scroll pass, against the 280 MB total.
+   - Graphics, including the driver's "Other mtrack", is ~91 MB, against 30–40.
+   - Anon+Swap+Graphics is ~262 MB, against ≤200.
+   - The Shield has 3 GB, so this does not hurt it, but it would on a 1 GB box.
+
+On the emulator, frames were fine and memory looked lower, because the emulator cannot see GPU
+memory.
 
 - Rows are react-native-tvos 0.88.1-0 + FlashList v2.3.3 + Reanimated 4.7.1.
 - The worst defect, a focused cell recycled under the user, which snaps the row back ~20–34
@@ -16,7 +29,9 @@ five reproducible focus defects; all appear with the clipped-element flag both o
   turned off.
 - The rest need explicit focus work: a rail trap, row-end traps, and per-row scroll restoration.
 
-That is ordinary TV engineering, not a dead end, but it is real cost the decision should price in.
+The focus defects are ordinary TV engineering, not a dead end. The vertical jank and the memory
+figure are the open questions for decision 0004: neither has been tried with fixes (smaller row
+windows, fewer rows mounted, image downsizing, `drawDistance`).
 
 ## What was built
 
@@ -127,8 +142,9 @@ prints `rowMvcpOff=` so the arm can be checked.
 - Before each press the device logs `FLUSTER_PRESS "<n> ..."`. The app's `FOCUS`/`BLUR` lines
   between two markers belong to that press, so no timing guesses are needed.
 - Single presses wait 0.6 s.
-- Bursts imitate a held key: one press every 50 ms, which achieved a 66 ms median gap between focus
-  events.
+- Bursts imitate a held key: one press every 50 ms. The emulator runs used a paced `input` loop, and
+  the Shield runs a `monkey` script (now the default). Both achieved a 64–67 ms median gap between
+  focus events.
 - The sequence:
   1. Right through row 0 and one past the end, Left back, Left into the rail.
   2. Down through all 20 rows and one past the bottom, then Up.
@@ -342,6 +358,86 @@ The driver as committed was validated by `results/tv-final-driver-frames`:
   p90/p99 16/16 ms;
 - hold Down: 19 events ending on `19,0`, 98 frames, 4.08 % janky, 16/16 ms.
 
+## Results: Nvidia Shield TV (owner's device)
+
+The device is a SHIELD Android TV (`darcy`): Android 11 (API 30), arm64-v8a, 3 GB RAM. The panel is
+3840×2160 with a 1920×1080 UI override at 320 dpi, so the app's window is 960×540 dp, the same as
+the emulator's. It was connected over network adb (address not recorded), with `svc power stayon
+true` during the runs, reset to false afterwards. All runs used the flag-off deliverable APK,
+except the experiment.
+
+**Why the coordinator's first two runs were invalid** (`results/shield-INVALID-*`, kept as
+evidence):
+- The driver chose `cmd input keyevent`. On Android 11 that prints "No shell command implementation."
+  to stderr and exits 0 **without injecting anything**.
+- The detector read only stdout, so it accepted it.
+- Every scripted press was lost: 152 single-press failures, null burst gaps.
+- gfxinfo reported 0 frames simply because nothing moved, so nothing redrew. gfxinfo works on the
+  Shield once input works (`results/shield-fixcheck-frames`).
+- The fix:
+  - the probe now merges stderr and rejects any tool that prints anything;
+  - single presses use `input`, which costs ~700 ms per call on the Shield because it starts a JVM;
+  - bursts and holds use a `monkey -f` script (DispatchPress plus UserWait 50 ms), which achieved
+    a 64–73 ms median gap, the same cadence as the emulator's 65–67 ms.
+- `adb reverse` over network adb worked (183–297 images served per run).
+
+### Focus (500 presses)
+
+| Run | Single presses ok | Single failures | Bursts diverged | Presses after divergence | Recycled-cell BLURs | Burst gap |
+|---|---|---|---|---|---|---|
+| Shield, flag off (deliverable) | 296/299 | 3 (1 nowhere, 2 stuck) | 6/12 | 70 | 4 | 64.5 ms |
+| Shield, experiment: row MVCP off | 298/299 | 1 (1 stuck) | 3/12 | 12 | **0** | 64.5 ms |
+
+The failing presses are the **same indices as on the emulator**:
+- 153 stuck;
+- bursts 290, 292, 299, 301, 308 and 310;
+- recycled-cell jumps at 42, 292, 301 and 310.
+
+In the experiment, the rail escape (bursts 290, 299 and 308) and stuck press 100 remain, again
+matching the emulator. So defects 1–3 are verified on hardware, and so is "MVCP off removes defect
+1" (two runs: one emulator, one Shield). Up/Down landed on the same column 86 of 95 times.
+
+### Frames (`dumpsys gfxinfo`, held key via monkey at ~65 ms per press)
+
+| Run | Segment | Frames | Janky | p50 / p90 / p95 / p99 | GPU p50 / p90 / p99 | Slow UI thread |
+|---|---|---|---|---|---|---|
+| fixcheck | hold Right, row 0 → col 49 (49 events) | 178 | 1.12 % | 9 / 13 / 15 / 17 ms | 2 / 3 / 11 ms | 1 |
+| fixcheck | hold Down, row 0 → row 19 (19 events) | 79 | **32.91 %** | 10 / 29 / 36 / 73 ms | 2 / 7 / 11 ms | 15 |
+| run 1 | hold Right | 177 | 1.69 % | 9 / 14 / 15 / 17 ms | 2 / 7 / 12 ms | 1 |
+| run 1 | hold Down | 86 | **30.23 %** | 10 / 30 / 34 / 69 ms | 2 / 10 / 11 ms | 13 |
+
+Moving down a row mounts a new horizontal FlashList with about 7 posters, starts their loads, and
+runs the hero dwell. On the Shield's Tegra X1 that blows the 16 ms budget on roughly one frame in
+three, on the UI thread. Which part costs most (layout, image decode, list mount) is **unverified**;
+no profiler was run.
+
+### Memory (`dumpsys meminfo`, MB; 297 images served)
+
+| Phase | Total PSS | Java | Native | Code | Graphics (EGL mtrack) | Other mtrack (GPU, in Private Other) | ~Anon+Swap | Graphics incl. mtrack |
+|---|---|---|---|---|---|---|---|---|
+| idle after launch | 196 | 6 | 94 | 23 | 8 | 31 | 114 | 39 |
+| after the scroll pass | **312** | 10 | 137 | 24 | 8 | 83 | 171 | **91** |
+
+- Rows 0–3 and 5–19 were focused; row 4 was skipped by defect 4, as on the emulator.
+- Android 11 prints no "Bitmap (malloced)" line, so the decoded-image share of the 137 MB native
+  heap is **unverified**.
+- ~Anon+Swap = Java + Native + (Private Other − Other mtrack) + swap. This is an approximation of
+  Google's counter, not the same counter.
+
+Against Google's 1 GB TV targets:
+- **280 MB total: exceeded** (312).
+- **≤200 MB Anon+Swap plus Graphics: exceeded** (~171 + ~91 = ~262).
+- **30–40 MB Graphics: exceeded** (~91, of which 83 is the Tegra driver's "Other mtrack").
+
+The Shield is a 3 GB device, so none of this is a problem there. It is the figure to fix before a
+1 GB box.
+
+### Cold start (`am start -W`, 5 runs)
+
+TotalTime median **387 ms** (373–398). Process start to first React commit, median **555 ms**. The
+first React commit lands after the activity's first frame, so the user briefly sees the empty dark
+root. The time to first poster is **unverified** (not instrumented).
+
 ## Results: `fluster_googletv`
 
 Not run (time). `run-falsifier.sh emulator-XXXX dist/browse-falsifier.apk all googletv` runs it.
@@ -356,26 +452,24 @@ Not run (time). `run-falsifier.sh emulator-XXXX dist/browse-falsifier.apk all go
 - that the flag's effective value is set per arm;
 - that art comes over `adb reverse` with no address baked in;
 - defects 1, 4 and 5 by screenshot or log in a manual replay;
-- defects 1–3 at the same press indices across runs.
+- defects 1–3 at the same press indices across runs, **including on the Shield**;
+- on the Shield: arm64-v8a on API 30 launches and renders, `adb reverse` works over network adb,
+  and gfxinfo and meminfo work;
 
-**Partly verified:** that FlashList's default `maintainVisibleContentPosition` causes defect 1 (one
-run).
+**Partly verified:** that FlashList's default `maintainVisibleContentPosition` causes defect 1. It
+is absent with it disabled in two runs (emulator and Shield) and present in all ten runs without
+that change.
 
 **Unverified:**
-- anything about real hardware: frame pacing, Graphics memory, cold start, and how D-pad key repeat
-  on a real remote compares with the injected 50 ms bursts;
-- whether `input keyevent` on API 30 is fast enough to imitate a held key.
-  - Bursts are always paced: one call per key, then 50 ms. On a slow injector they run slower
-    than a held key.
-  - The driver warns when one injection takes over 100 ms, and records the achieved gap
-    (`burst_achieved_median_gap_ms`, `median_gap_ms` per segment), which should be compared before
-    comparing devices.
-  - `FALSIFIER_BURST=oneshot` sends a whole burst in one call. That is a stress test, not a held
-    key (see "One-call bursts" below), and its results are not comparable with paced ones;
-- that the APK runs on arm64 or API 30. Neither the arm64 slice nor API 30 has ever been launched;
-  only the x86_64 slice ran, on API 36;
-- `adb reverse` over network adb (the Shield's connection). It was only used over the emulator's
-  local transport;
+- on hardware other than the Shield: low-RAM boxes, Google TV Streamer, Fire TV;
+- how key repeat on a real remote compares with the injected ~65 ms monkey presses. The owner's
+  sofa test is still the "feel" verdict;
+- (Answered on the Shield: `input` costs ~700 ms per call on API 30, too slow to imitate a held
+  key, so bursts and holds now use `monkey -f` scripts by default on every device.
+  `FALSIFIER_BURST=paced` restores the `input` loop, and `oneshot` is a key-flood stress test whose
+  results are not comparable.)
+- what costs the vertical jank on the Shield (no profiler run);
+- the decoded-image share of the Shield's native heap;
 - whether the Google TV image behaves the same;
 - whether a Compose for TV client avoids these defects. The decision's "feel" comparison is the
   owner's to make;

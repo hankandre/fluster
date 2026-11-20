@@ -9,17 +9,28 @@ sys.path.insert(0, str(Path(__file__).parent))
 import falsifier as f  # noqa: E402
 
 for d in map(Path, sys.argv[1:]):
+    if not (d / "focus-logcat.txt").exists():
+        mp = d / "meminfo-raw.txt"
+        if mp.exists():
+            mem = json.loads((d / "memory.json").read_text())
+            for key, text in zip(("idle_after_launch", "after_scrolling_all_rows"), mp.read_text().split("====")):
+                f.sh = lambda s, c, text=text: text
+                mem[key] = f.meminfo(None, None)[0]
+            (d / "memory.json").write_text(json.dumps(mem, indent=1))
+            print(d, "memory reanalysed")
+        continue
     lines = (d / "focus-logcat.txt").read_text(errors="replace").splitlines()
     windows, flag, boot = f.parse_windows(lines)
     initial = None
     for line in lines:
-        if "FLUSTER_PRESS" in line:
+        if "FLUSTER_PRESS:" in line and line.split("FLUSTER_PRESS:")[-1].split()[0].isdigit():
             break
         m = f.FOCUS_RE.search(line)
         if m and m.group(1) == "FOCUS":
             initial = ("rail", int(m.group(3))) if m.group(2) == "rail" else ("card", int(m.group(2)), int(m.group(3)))
     stats, detail = f.analyse_focus(windows, initial)
-    old = json.loads((d / "focus.json").read_text())["stats"]
+    fj = d / "focus.json"
+    old = json.loads(fj.read_text())["stats"] if fj.exists() else {}
     for k in ("seconds", "injector", "settle_s", "burst_gap_s"):
         stats[k] = old.get(k)
     gaps = [b["median_gap_ms"] for b in f.segments(lines) if b["median_gap_ms"] is not None]

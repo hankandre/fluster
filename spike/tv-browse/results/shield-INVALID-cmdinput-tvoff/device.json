@@ -1,0 +1,13 @@
+{
+ "ro.product.model": "SHIELD Android TV",
+ "ro.product.manufacturer": "NVIDIA",
+ "ro.build.version.release": "11",
+ "ro.build.version.sdk": "30",
+ "ro.config.low_ram": "",
+ "ro.product.cpu.abi": "arm64-v8a",
+ "ro.hardware": "darcy",
+ "mem_total": "MemTotal:        3016708 kB",
+ "display": "Physical size: 3840x2160; Override size: 1920x1080; Physical density: 320",
+ "injector": "cmd input (18 ms per call incl. adb round trip / 5)",
+ "burst_mode": "paced loop, one call per key + 50 ms"
+}

@@ -1,0 +1,46 @@
+{
+ "ro.product.model": "SHIELD Android TV",
+ "ro.product.manufacturer": "NVIDIA",
+ "ro.build.version.release": "11",
+ "ro.build.version.sdk": "30",
+ "ro.config.low_ram": "",
+ "ro.product.cpu.abi": "arm64-v8a",
+ "ro.hardware": "darcy",
+ "mem_total": "MemTotal:        3016708 kB",
+ "display": "Physical size: 3840x2160; Override size: 1920x1080; Physical density: 320",
+ "injector": "input (701 ms per call incl. adb round trip / 5)",
+ "burst_mode": "monkey script, press + 50 ms wait"
+}
+coldstart {
+ "runs": [
+  {
+   "total_ms": 398,
+   "wait_ms": 399,
+   "proc_start_to_first_react_commit_ms": 555
+  },
+  {
+   "total_ms": 387,
+   "wait_ms": 389,
+   "proc_start_to_first_react_commit_ms": 551
+  },
+  {
+   "total_ms": 388,
+   "wait_ms": 393,
+   "proc_start_to_first_react_commit_ms": 568
+  },
+  {
+   "total_ms": 374,
+   "wait_ms": 378,
+   "proc_start_to_first_react_commit_ms": 554
+  },
+  {
+   "total_ms": 373,
+   "wait_ms": 377,
+   "proc_start_to_first_react_commit_ms": 570
+  }
+ ],
+ "median_total_ms": 387,
+ "median_first_react_commit_ms": 555,
+ "min_total_ms": 373,
+ "max_total_ms": 398
+}

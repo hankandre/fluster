@@ -16,18 +16,25 @@ import time
 from pathlib import Path
 
 KEYS = {"RIGHT": 22, "LEFT": 21, "DOWN": 20, "UP": 19}
-# Bursts are always a paced loop (one call per key, then 50 ms), so on a slow injector they
-# run slower than a held key; the achieved gap is recorded. FALSIFIER_BURST=oneshot sends all
-# keycodes in one call instead. That is a stress test, not a held key: on the emulator 49
-# back-to-back Rights gave 19 focus events (RESULTS.md, "One-call bursts").
-SLOW_INJECTOR = False
+# Bursts and holds: by default a `monkey -f` script (one process, DispatchPress + UserWait
+# 50 ms), which imitates a held key on every device. `input` starts a JVM per call (~700 ms on
+# the Shield, Android 11), so a paced `input` loop cannot. FALSIFIER_BURST=paced uses that loop
+# anyway; FALSIFIER_BURST=oneshot sends all keycodes in one `input` call, a key flood (stress,
+# not a held key: on the emulator 49 Rights gave 19 focus events).
+BURST_MODE = "monkey"
+ROWS, COLS, RAIL = 20, 50, 5
+KEYNAMES = {"RIGHT": "KEYCODE_DPAD_RIGHT", "LEFT": "KEYCODE_DPAD_LEFT", "DOWN": "KEYCODE_DPAD_DOWN", "UP": "KEYCODE_DPAD_UP"}
 
 
 def burst_cmd(tool, key, n, gap):
-    if SLOW_INJECTOR:
+    if BURST_MODE == "oneshot":
         return f"{tool} keyevent {' '.join([str(KEYS[key])] * n)}"
-    return f"for k in $(seq {n}); do {tool} keyevent {KEYS[key]}; sleep {gap}; done"
-ROWS, COLS, RAIL = 20, 50, 5
+    if BURST_MODE == "paced":
+        return f"for k in $(seq {n}); do {tool} keyevent {KEYS[key]}; sleep {gap}; done"
+    body = "".join(f"DispatchPress({KEYNAMES[key]})\\nUserWait({int(gap * 1000)})\\n" for _ in range(n))
+    path = "/data/local/tmp/fluster-burst.txt"
+    return (f"printf 'type= raw events\\ncount= 1\\nspeed= 1.0\\nstart data >>\\n{body}' > {path}; "
+            f"monkey -f {path} 1 >/dev/null 2>&1")
 
 
 def adb(serial, *args, check=True, capture=True):
@@ -47,9 +54,11 @@ def detect_input(serial):
     best = None
     for tool in ("cmd input", "input"):
         t0 = time.time()
-        out = sh(serial, f"for i in 1 2 3 4 5; do {tool} keyevent 0 || echo FAIL; done")
+        out = sh(serial, f"for i in 1 2 3 4 5; do {tool} keyevent 0 2>&1 || echo FAIL; done")
         dt = (time.time() - t0) / 5
-        if "FAIL" in out or "Unknown" in out or "Error" in out:
+        # Android 11 has a `cmd input` service that prints "No shell command implementation."
+        # and exits 0 without injecting anything, so any output at all disqualifies a tool.
+        if out.strip():
             continue
         if best is None or dt < best[1]:
             best = (tool, dt)
@@ -435,13 +444,22 @@ def meminfo(serial, pkg):
     else:
         m = re.search(r"TOTAL:\s+(\d+)", text)
         res["total_pss_mb"] = int(m.group(1)) // 1024 if m else None
+    # GPU memory as the vendor driver tracks it. On the Shield (Tegra) most of it is "Other mtrack",
+    # which dumpsys counts under Private Other, not Graphics.
+    for label, key in (("EGL mtrack", "egl_mtrack_mb"), ("GL mtrack", "gl_mtrack_mb"), ("Other mtrack", "other_mtrack_mb")):
+        mt = re.search(rf"^\s*{label}\s+(\d+)", text, re.M)
+        if mt:
+            res[key] = int(mt.group(1)) // 1024
     b = re.search(r"Bitmap \(malloced\):\s+(\d+)\s+(\d+)", text)
     if b:
         res["bitmaps_malloced"] = int(b.group(1))
         res["bitmaps_malloced_mb"] = int(b.group(2)) // 1024
     # Google TV memory guidance: anonymous + swap. Approximated as Java + Native + Private Other + swap.
     if None not in (res.get("java_heap_mb"), res.get("native_heap_mb"), res.get("private_other_mb")):
-        res["anon_swap_approx_mb"] = res["java_heap_mb"] + res["native_heap_mb"] + res["private_other_mb"] + res.get("total_swap_pss_mb", 0)
+        gpu_in_other = res.get("other_mtrack_mb", 0) + res.get("gl_mtrack_mb", 0)
+        res["anon_swap_approx_mb"] = (res["java_heap_mb"] + res["native_heap_mb"] + res["private_other_mb"]
+                                      - gpu_in_other + res.get("total_swap_pss_mb", 0))
+        res["graphics_incl_mtrack_mb"] = res["graphics_mb"] + gpu_in_other
     return res, text
 
 
@@ -522,16 +540,17 @@ def main():
     args = ap.parse_args()
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
-    global SLOW_INJECTOR
+    global BURST_MODE
     tool, per = detect_input(args.serial)
-    forced = os.environ.get("FALSIFIER_BURST", "auto")  # auto | paced | oneshot
-    SLOW_INJECTOR = forced == "oneshot"
-    if per > 0.1 and not SLOW_INJECTOR:
+    BURST_MODE = os.environ.get("FALSIFIER_BURST", "monkey")  # monkey | paced | oneshot
+    if per > 0.1 and BURST_MODE == "paced":
         print(f"WARNING: one key injection takes {per * 1000:.0f} ms; paced bursts will be slower than a held key", file=sys.stderr)
     sh(args.serial, "input keyevent 224")  # KEYCODE_WAKEUP: a sleeping TV swallows the first press
     info = device_info(args.serial)
     info["injector"] = f"{tool} ({per * 1000:.0f} ms per call incl. adb round trip / 5)"
-    info["burst_mode"] = "one call, back-to-back keycodes (stress, not a held key)" if SLOW_INJECTOR else "paced loop, one call per key + 50 ms"
+    info["burst_mode"] = {"monkey": "monkey script, press + 50 ms wait",
+                          "paced": "input loop, one call per key + 50 ms",
+                          "oneshot": "one input call, back-to-back keycodes (stress, not a held key)"}[BURST_MODE]
     (out / "device.json").write_text(json.dumps(info, indent=1))
     print(json.dumps(info, indent=1))
     if args.what in ("coldstart", "all"):

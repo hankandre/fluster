@@ -1,0 +1,110 @@
+Applications Memory Usage (in Kilobytes):
+Uptime: 3029042273 Realtime: 3029042273
+
+** MEMINFO in pid 31041 [dev.fluster.spike.browse] **
+                   Pss  Private  Private  SwapPss      Rss     Heap     Heap     Heap
+                 Total    Dirty    Clean    Dirty    Total     Size    Alloc     Free
+                ------   ------   ------   ------   ------   ------   ------   ------
+  Native Heap    96854    96728        0       19    97984   110600   102579     3401
+  Dalvik Heap     5344     5312        0       68     6136    11121     5561     5560
+ Dalvik Other     2659     2144        0        0     3804                           
+        Stack     1632     1632        0        0     1636                           
+       Ashmem        5        0        0        0       20                           
+    Other dev       16        0       16        0      200                           
+     .so mmap     8513      264      840       32    49356                           
+    .jar mmap     2818        0      840        0    23772                           
+    .apk mmap    17368      524    16368        0    30516                           
+    .ttf mmap      537        0      268        0      936                           
+    .dex mmap     5280        4     5276        0     5292                           
+    .oat mmap     1079        0      128        0    14788                           
+    .art mmap     1416     1088        0      107    14224                           
+   Other mmap     4259       12        0        0     9172                           
+   EGL mtrack     8832     8832        0        0     8832                           
+ Other mtrack    32500    32500        0        0    32500                           
+      Unknown    11967    11960        0        0    12352                           
+        TOTAL   201305   161000    23736      226   201305   121721   108140     8961
+ 
+ App Summary
+                       Pss(KB)                        Rss(KB)
+                        ------                         ------
+           Java Heap:     6400                          20360
+         Native Heap:    96728                          97984
+                Code:    24512                         125772
+               Stack:     1632                           1636
+            Graphics:     8832                           8832
+       Private Other:    46632
+              System:    16569
+             Unknown:                                   56936
+ 
+           TOTAL PSS:   201305            TOTAL RSS:   311520       TOTAL SWAP PSS:      226
+ 
+ Objects
+               Views:      290         ViewRootImpl:        1
+         AppContexts:        5           Activities:        1
+              Assets:        9        AssetManagers:        0
+       Local Binders:       17        Proxy Binders:       33
+       Parcel memory:        8         Parcel count:       33
+    Death Recipients:        1      OpenSSL Sockets:        0
+            WebViews:        0
+ 
+ SQL
+         MEMORY_USED:        0
+  PAGECACHE_OVERFLOW:        0          MALLOC_SIZE:        0
+ 
+
+
+====
+
+Applications Memory Usage (in Kilobytes):
+Uptime: 3029160435 Realtime: 3029160435
+
+** MEMINFO in pid 31041 [dev.fluster.spike.browse] **
+                   Pss  Private  Private  SwapPss      Rss     Heap     Heap     Heap
+                 Total    Dirty    Clean    Dirty    Total     Size    Alloc     Free
+                ------   ------   ------   ------   ------   ------   ------   ------
+  Native Heap   140891   140764        0       19   142012   153876   145052     5143
+  Dalvik Heap     8951     8852        0       30     9832    12731     6366     6365
+ Dalvik Other     3641     1928        0        0     5976                           
+        Stack     1216     1216        0        0     1220                           
+       Ashmem        5        0        0        0       24                           
+    Other dev        8        0        8        0      192                           
+     .so mmap     8547      268      840       33    49560                           
+    .jar mmap     3437        0     1172        0    25220                           
+    .apk mmap    17372      524    16368        0    30516                           
+    .ttf mmap      537        0      268        0      936                           
+    .dex mmap     5284        4     5280        0     5296                           
+    .oat mmap     1195        0      192        0    15140                           
+    .art mmap     2454     1956       56       89    15364                           
+   Other mmap     9139       12       12        0    18916                           
+   EGL mtrack     8832     8832        0        0     8832                           
+ Other mtrack    85044    85044        0        0    85044                           
+      Unknown    23439    23432        0        0    23824                           
+        TOTAL   320163   272832    24196      171   320163   166607   151418    11508
+ 
+ App Summary
+                       Pss(KB)                        Rss(KB)
+                        ------                         ------
+           Java Heap:    10864                          25196
+         Native Heap:   140764                         142012
+                Code:    24916                         130180
+               Stack:     1216                           1220
+            Graphics:     8832                           8832
+       Private Other:   110436
+              System:    23135
+             Unknown:                                  130464
+ 
+           TOTAL PSS:   320163            TOTAL RSS:   437904       TOTAL SWAP PSS:      171
+ 
+ Objects
+               Views:      384         ViewRootImpl:        1
+         AppContexts:        5           Activities:        1
+              Assets:        9        AssetManagers:        0
+       Local Binders:       17        Proxy Binders:       34
+       Parcel memory:        8         Parcel count:       33
+    Death Recipients:        1      OpenSSL Sockets:        0
+            WebViews:        0
+ 
+ SQL
+         MEMORY_USED:        0
+  PAGECACHE_OVERFLOW:        0          MALLOC_SIZE:        0
+ 

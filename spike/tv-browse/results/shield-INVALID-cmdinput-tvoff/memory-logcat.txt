@@ -1,0 +1,47 @@
+--------- beginning of system
+--------- beginning of main
+         1795197179.588  6040  6040 I FLUSTER_FLAG: enableCustomFocusSearchOnClippedElementsAndroid=false
+         1795197180.048  6040  6067 I ReactNativeJS: Running "main"
+         1795197180.082  6040  6067 I ReactNativeJS: BOOT rowMvcpOff=false window=960x540 posters=400 backdrops=60 rows=20 cols=50
+         1795197187.920  6106  6106 I FLUSTER_PRESS: seg launch
+         1795197188.201  6040  6067 I ReactNativeJS: FOCUS rail,0
+         1795197189.865  6135  6135 I FLUSTER_PRESS: seg enter
+         1795197190.990  6145  6145 I FLUSTER_PRESS: seg row 0 right
+         1795197195.821  6354  6354 I FLUSTER_PRESS: seg row 0 down
+         1795197196.944  6369  6369 I FLUSTER_PRESS: seg row 1 right
+         1795197201.785  6579  6579 I FLUSTER_PRESS: seg row 1 down
+         1795197202.909  6590  6590 I FLUSTER_PRESS: seg row 2 right
+         1795197207.734  6814  6814 I FLUSTER_PRESS: seg row 2 down
+         1795197208.865  6826  6826 I FLUSTER_PRESS: seg row 3 right
+         1795197213.692  7055  7055 I FLUSTER_PRESS: seg row 3 down
+         1795197214.814  7065  7065 I FLUSTER_PRESS: seg row 4 right
+         1795197219.676  7273  7273 I FLUSTER_PRESS: seg row 4 down
+         1795197220.799  7283  7283 I FLUSTER_PRESS: seg row 5 right
+         1795197225.652  7495  7495 I FLUSTER_PRESS: seg row 5 down
+         1795197226.798  7509  7509 I FLUSTER_PRESS: seg row 6 right
+         1795197231.650  7717  7717 I FLUSTER_PRESS: seg row 6 down
+         1795197232.777  7727  7727 I FLUSTER_PRESS: seg row 7 right
+         1795197237.632  7938  7938 I FLUSTER_PRESS: seg row 7 down
+         1795197238.760  7948  7948 I FLUSTER_PRESS: seg row 8 right
+         1795197243.612  8165  8165 I FLUSTER_PRESS: seg row 8 down
+         1795197244.738  8175  8175 I FLUSTER_PRESS: seg row 9 right
+         1795197249.608  8384  8384 I FLUSTER_PRESS: seg row 9 down
+         1795197250.739  8395  8395 I FLUSTER_PRESS: seg row 10 right
+         1795197255.549  8604  8604 I FLUSTER_PRESS: seg row 10 down
+         1795197256.670  8614  8614 I FLUSTER_PRESS: seg row 11 right
+         1795197261.516  8821  8821 I FLUSTER_PRESS: seg row 11 down
+         1795197262.643  8831  8831 I FLUSTER_PRESS: seg row 12 right
+         1795197267.496  9041  9041 I FLUSTER_PRESS: seg row 12 down
+         1795197268.618  9051  9051 I FLUSTER_PRESS: seg row 13 right
+         1795197273.483  9258  9258 I FLUSTER_PRESS: seg row 13 down
+         1795197274.606  9268  9268 I FLUSTER_PRESS: seg row 14 right
+         1795197279.475  9482  9482 I FLUSTER_PRESS: seg row 14 down
+         1795197280.600  9492  9492 I FLUSTER_PRESS: seg row 15 right
+         1795197285.454  9698  9698 I FLUSTER_PRESS: seg row 15 down
+         1795197286.576  9709  9709 I FLUSTER_PRESS: seg row 16 right
+         1795197291.443  9931  9931 I FLUSTER_PRESS: seg row 16 down
+         1795197292.571  9941  9941 I FLUSTER_PRESS: seg row 17 right
+         1795197297.429 10151 10151 I FLUSTER_PRESS: seg row 17 down
+         1795197298.549 10161 10161 I FLUSTER_PRESS: seg row 18 right
+         1795197303.408 10372 10372 I FLUSTER_PRESS: seg row 18 down
+         1795197304.535 10382 10382 I FLUSTER_PRESS: seg row 19 right

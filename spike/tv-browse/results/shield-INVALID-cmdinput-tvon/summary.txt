@@ -1,0 +1,514 @@
+{
+ "ro.product.model": "SHIELD Android TV",
+ "ro.product.manufacturer": "NVIDIA",
+ "ro.build.version.release": "11",
+ "ro.build.version.sdk": "30",
+ "ro.config.low_ram": "",
+ "ro.product.cpu.abi": "arm64-v8a",
+ "ro.hardware": "darcy",
+ "mem_total": "MemTotal:        3016708 kB",
+ "display": "Physical size: 3840x2160; Override size: 1920x1080; Physical density: 320",
+ "injector": "cmd input (48 ms per call incl. adb round trip / 5)",
+ "burst_mode": "paced loop, one call per key + 50 ms"
+}
+coldstart {
+ "runs": [
+  {
+   "total_ms": 568,
+   "wait_ms": 573,
+   "proc_start_to_first_react_commit_ms": 688
+  },
+  {
+   "total_ms": 450,
+   "wait_ms": 456,
+   "proc_start_to_first_react_commit_ms": 617
+  },
+  {
+   "total_ms": 372,
+   "wait_ms": 376,
+   "proc_start_to_first_react_commit_ms": 557
+  },
+  {
+   "total_ms": 367,
+   "wait_ms": 370,
+   "proc_start_to_first_react_commit_ms": 546
+  },
+  {
+   "total_ms": 388,
+   "wait_ms": 392,
+   "proc_start_to_first_react_commit_ms": 571
+  }
+ ],
+ "median_total_ms": 388,
+ "median_first_react_commit_ms": 571,
+ "min_total_ms": 367,
+ "max_total_ms": 568
+}
+focus {
+ "presses": 500,
+ "ok": 348,
+ "unexpected_place": 0,
+ "nowhere": 0,
+ "stuck": 152,
+ "burst_presses_after_divergence": 0,
+ "blur_of_recycled_cell": 0,
+ "column_offset_on_row_change": {
+  "n": 0,
+  "same_col": 0,
+  "mean_abs": null,
+  "max_abs": null
+ },
+ "rail_exit_returns_to_last_card": {
+  "same_card": 0,
+  "other_card": 0
+ },
+ "incidents": {
+  "single_press_failures": 152,
+  "bursts_diverged": 0,
+  "bursts_total": 12,
+  "singles_total": 299
+ },
+ "burst_achieved_median_gap_ms": null,
+ "flag_enableCustomFocusSearchOnClippedElementsAndroid": "false",
+ "boot": "rowMvcpOff=false window=960x540 posters=400 backdrops=60 rows=20 cols=50",
+ "initial_focus": [
+  "rail",
+  0
+ ],
+ "windows": 311,
+ "seconds": 221.5,
+ "injector": "cmd input",
+ "settle_s": 0.6,
+ "burst_gap_s": 0.05
+}
+   {'press': 0, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 1, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 2, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 3, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 4, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 5, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 6, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 7, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 8, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 9, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 10, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 11, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 12, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 13, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 14, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 15, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 16, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 17, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 18, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 19, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 20, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 21, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 22, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 23, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 24, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 25, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 26, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 27, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 28, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 29, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 30, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 31, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 32, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 33, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 34, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 35, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 36, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 37, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 38, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+   {'press': 39, 'key': 'RIGHT', 'from': ('rail', 0), 'expected': 'a card', 'got': ('rail', 0), 'verdict': 'stuck'}
+frames {
+ "row_hold_right": {
+  "frames": 0,
+  "janky": 0,
+  "janky_pct": 0.0,
+  "p50_ms": 4950,
+  "p90_ms": 4950,
+  "p95_ms": 4950,
+  "p99_ms": 4950,
+  "missed_vsync": 0,
+  "slow_ui": 0,
+  "slow_draw": 0,
+  "frame_deadline_missed": 0
+ },
+ "rows_hold_down": {
+  "frames": 0,
+  "janky": 0,
+  "janky_pct": 0.0,
+  "p50_ms": 4950,
+  "p90_ms": 4950,
+  "p95_ms": 4950,
+  "p99_ms": 4950,
+  "missed_vsync": 0,
+  "slow_ui": 0,
+  "slow_draw": 0,
+  "frame_deadline_missed": 0
+ },
+ "segments": [
+  {
+   "segment": "seg launch",
+   "focus_events": 1,
+   "first": "rail,0",
+   "final": "rail,0",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row_hold_right enter",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row_hold_right hold RIGHT",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg launch",
+   "focus_events": 1,
+   "first": "rail,0",
+   "final": "rail,0",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg rows_hold_down enter",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg rows_hold_down hold DOWN",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  }
+ ]
+}
+memory {
+ "idle_after_launch": {
+  "java_heap_mb": 5,
+  "native_heap_mb": 44,
+  "code_mb": 25,
+  "stack_mb": 0,
+  "graphics_mb": 8,
+  "private_other_mb": 45,
+  "system_mb": 19,
+  "total_pss_mb": 149,
+  "total_rss_mb": 255,
+  "total_swap_pss_mb": 0,
+  "anon_swap_approx_mb": 94
+ },
+ "after_scrolling_all_rows": {
+  "java_heap_mb": 9,
+  "native_heap_mb": 44,
+  "code_mb": 25,
+  "stack_mb": 0,
+  "graphics_mb": 8,
+  "private_other_mb": 47,
+  "system_mb": 19,
+  "total_pss_mb": 155,
+  "total_rss_mb": 262,
+  "total_swap_pss_mb": 0,
+  "anon_swap_approx_mb": 100
+ },
+ "rows_focused_furthest_col": {},
+ "segments": [
+  {
+   "segment": "seg launch",
+   "focus_events": 1,
+   "first": "rail,0",
+   "final": "rail,0",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg enter",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 0 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 0 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 1 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 1 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 2 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 2 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 3 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 3 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 4 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 4 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 5 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 5 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 6 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 6 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 7 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 7 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 8 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 8 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 9 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 9 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 10 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 10 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 11 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 11 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 12 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 12 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 13 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 13 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 14 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 14 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 15 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 15 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 16 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 16 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 17 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 17 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 18 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 18 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 19 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  }
+ ]
+}
+art server: served 41 images

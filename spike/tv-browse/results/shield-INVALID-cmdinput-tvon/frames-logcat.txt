@@ -1,0 +1,16 @@
+--------- beginning of system
+--------- beginning of main
+         1795199157.255 16941 16941 I FLUSTER_FLAG: enableCustomFocusSearchOnClippedElementsAndroid=false
+         1795199157.751 16941 16977 I ReactNativeJS: Running "main"
+         1795199157.784 16941 16977 I ReactNativeJS: BOOT rowMvcpOff=false window=960x540 posters=400 backdrops=60 rows=20 cols=50
+         1795199163.568 17009 17009 I FLUSTER_PRESS: seg launch
+         1795199163.839 16941 16977 I ReactNativeJS: FOCUS rail,0
+         1795199165.316 17028 17028 I FLUSTER_PRESS: seg row_hold_right enter
+         1795199168.499 17044 17044 I FLUSTER_PRESS: seg row_hold_right hold RIGHT
+         1795199173.698 17267 17267 I FLUSTER_FLAG: enableCustomFocusSearchOnClippedElementsAndroid=false
+         1795199174.132 17267 17293 I ReactNativeJS: Running "main"
+         1795199174.167 17267 17293 I ReactNativeJS: BOOT rowMvcpOff=false window=960x540 posters=400 backdrops=60 rows=20 cols=50
+         1795199180.014 17320 17320 I FLUSTER_PRESS: seg launch
+         1795199180.291 17267 17293 I ReactNativeJS: FOCUS rail,0
+         1795199181.765 17340 17340 I FLUSTER_PRESS: seg rows_hold_down enter
+         1795199184.922 17360 17360 I FLUSTER_PRESS: seg rows_hold_down hold DOWN
