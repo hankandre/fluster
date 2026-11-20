@@ -86,12 +86,8 @@ impl Checker<'_> {
         let body = self
             .fetcher
             .fetch(url, self.authorization, PLAYLIST_TIMEOUT)?;
-        self.refuse_secret(&body)?;
-        let playlist = Playlist::parse(&body, url, &self.server)?;
-        if playlist.kind() != expected {
-            return Err(HlsError::Malformed);
-        }
-        Ok(playlist)
+        let token = self.authorization.token().unwrap_or("");
+        check_playlist_body(&body, url, &self.server, token, expected)
     }
 
     /// `Ok(None)` when the subtitle is unavailable (`subtitle_unavailable`).
@@ -113,6 +109,27 @@ impl Checker<'_> {
         *budget -= body.len() as u64;
         Ok(Some(body))
     }
+}
+
+/// Every check one fetched playlist body goes through, in order: the token
+/// echo (decision 0002, E2), the playlist rules (`Playlist::parse`), and the
+/// kind the URL was fetched as. `tests/fixtures/hls-playlists.json` runs
+/// through this function (`playlist_vectors_tests.rs`).
+pub(super) fn check_playlist_body(
+    body: &str,
+    url: &Url,
+    server: &Origin,
+    token: &str,
+    expected: Kind,
+) -> Result<Playlist, HlsError> {
+    if contains_secret(body, token) {
+        return Err(HlsError::CredentialInPlaylist);
+    }
+    let playlist = Playlist::parse(body, url, server)?;
+    if playlist.kind() != expected {
+        return Err(HlsError::Malformed);
+    }
+    Ok(playlist)
 }
 
 /// An external subtitle URL Rust may fetch: the URL policy, the server's

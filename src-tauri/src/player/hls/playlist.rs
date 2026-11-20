@@ -63,9 +63,8 @@ const MEDIA_ONLY_PLAIN_TAGS: [&str; 7] = [
     "#EXT-X-DISCONTINUITY",
 ];
 /// Master tags FFmpeg ignores; each URI in them is still checked.
-const IGNORED_MASTER_TAGS: [&str; 5] = [
+const IGNORED_MASTER_TAGS: [&str; 4] = [
     "#EXT-X-I-FRAME-STREAM-INF",
-    "#EXT-X-IMAGE-STREAM-INF",
     "#EXT-X-SESSION-DATA",
     "#EXT-X-SESSION-KEY",
     "#EXT-X-CONTENT-STEERING",
@@ -206,6 +205,13 @@ impl Parser<'_> {
             "#EXT-X-MEDIA" => {
                 self.master = true;
                 let attributes = self.checked_attributes(line, rest, true)?;
+                // A master never lists subtitle renditions (AGENTS.md): the
+                // server would name subtitle playlists that carry `ApiKey`.
+                if attributes.iter().any(|attribute| {
+                    attribute.name == "TYPE" && attribute.value.text() == "SUBTITLES"
+                }) {
+                    return Err(HlsError::Malformed);
+                }
                 if attributes.iter().any(|attribute| attribute.name == "URI") {
                     let index = self.child(&attributes)?;
                     self.lines
@@ -235,6 +241,11 @@ impl Parser<'_> {
                 Ok(())
             }
             "#EXT-X-DEFINE" | "#EXTM3U" => Err(HlsError::Malformed),
+            // A master never lists trickplay (AGENTS.md): checked, then refused.
+            "#EXT-X-IMAGE-STREAM-INF" => {
+                self.checked_attributes(line, rest, true)?;
+                Err(HlsError::Malformed)
+            }
             _ if IGNORED_MASTER_TAGS.contains(&tag) => {
                 self.master = true;
                 self.checked_attributes(line, rest, true).map(drop)

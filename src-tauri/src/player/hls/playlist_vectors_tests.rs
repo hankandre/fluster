@@ -2,15 +2,15 @@
 //! decision 0003) run through the real validator. Every validator that
 //! replaces this one must give the same verdict and reason for each vector.
 
-use super::playlist::{Kind, Playlist};
-use super::uri::contains_secret;
+use super::playlist::Kind;
+use super::session::check_playlist_body;
 use super::HlsError;
 use serde::Deserialize;
 use std::collections::HashSet;
 use url::Url;
 
 const VECTORS: &str = include_str!("../../../../tests/fixtures/hls-playlists.json");
-const VECTOR_COUNT: usize = 167;
+const VECTOR_COUNT: usize = 207;
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -81,8 +81,8 @@ fn reason(error: &HlsError) -> Reason {
     }
 }
 
-/// What a session does with one fetched body (`session.rs` `Checker::playlist`),
-/// with each child written as its own absolute URL instead of a loopback copy.
+/// The session's own body check (`session::check_playlist_body`), with each
+/// child written as its own absolute URL instead of a loopback copy.
 fn validate(vector: &Vector) -> Result<Accepted, HlsError> {
     let base = Url::parse(&vector.base_url).expect("baseUrl");
     let server = Url::parse(&vector.server_origin).expect("serverOrigin");
@@ -92,19 +92,12 @@ fn validate(vector: &Vector) -> Result<Accepted, HlsError> {
         "{}: serverOrigin must be a bare origin",
         vector.name
     );
-    if let Some(token) = &vector.token {
-        if contains_secret(&vector.body, token) {
-            return Err(HlsError::CredentialInPlaylist);
-        }
-    }
-    let playlist = Playlist::parse(&vector.body, &base, &server.origin())?;
-    let expected_kind = match vector.playlist_kind {
+    let kind = match vector.playlist_kind {
         PlaylistKind::Master => Kind::Master,
         PlaylistKind::Media => Kind::Media,
     };
-    if playlist.kind() != expected_kind {
-        return Err(HlsError::Malformed);
-    }
+    let token = vector.token.as_deref().unwrap_or("");
+    let playlist = check_playlist_body(&vector.body, &base, &server.origin(), token, kind)?;
     let children: Vec<String> = playlist
         .children()
         .iter()

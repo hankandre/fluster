@@ -171,13 +171,28 @@ fn escape_list_item(item: &str) -> String {
     item.replace(',', "\\,")
 }
 
-// Query names Jellyfin accepts as a token, compared in lower case.
+// Query names Jellyfin accepts as a token, compared after `fold_case`.
 pub(super) const CREDENTIAL_QUERY_NAMES: [&str; 5] =
     ["apikey", "api_key", "access_token", "token", "x-emby-token"];
 
+/// Lower-cases ASCII, and also folds the three non-ASCII letters whose
+/// simple case mapping is an ASCII letter (`ı` U+0131 to `i`, `ſ` U+017F to
+/// `s`, Kelvin `K` U+212A to `k`), so a server that compares names with
+/// Unicode case-insensitivity cannot read a name this check missed.
+pub(crate) fn fold_case(text: &str) -> String {
+    text.chars()
+        .map(|character| match character {
+            '\u{131}' => 'i',
+            '\u{17f}' => 's',
+            '\u{212a}' => 'k',
+            other => other.to_ascii_lowercase(),
+        })
+        .collect()
+}
+
 pub(super) fn has_credential_query(url: &url::Url) -> bool {
     url.query_pairs()
-        .any(|(name, _)| CREDENTIAL_QUERY_NAMES.contains(&name.to_ascii_lowercase().as_str()))
+        .any(|(name, _)| CREDENTIAL_QUERY_NAMES.contains(&fold_case(&name).as_str()))
 }
 
 pub(super) fn validate_playback_urls(request: &LaunchRequest) -> Result<(), MpvError> {
