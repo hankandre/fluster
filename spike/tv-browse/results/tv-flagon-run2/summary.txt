@@ -1,0 +1,489 @@
+{
+ "ro.product.model": "sdk_google_atv64_x86_64",
+ "ro.product.manufacturer": "Google",
+ "ro.build.version.release": "16",
+ "ro.build.version.sdk": "36",
+ "ro.config.low_ram": "",
+ "ro.product.cpu.abi": "x86_64",
+ "ro.hardware": "ranchu",
+ "mem_total": "MemTotal:        2018820 kB",
+ "display": "Physical size: 1920x1080; Physical density: 320",
+ "injector": "cmd input (6 ms per call incl. adb round trip / 5)",
+ "burst_mode": "paced loop, 50 ms gap"
+}
+coldstart {
+ "runs": [
+  {
+   "total_ms": 122,
+   "wait_ms": 127,
+   "proc_start_to_first_react_commit_ms": 122
+  },
+  {
+   "total_ms": 111,
+   "wait_ms": 116,
+   "proc_start_to_first_react_commit_ms": 128
+  },
+  {
+   "total_ms": 131,
+   "wait_ms": 139,
+   "proc_start_to_first_react_commit_ms": 138
+  },
+  {
+   "total_ms": 130,
+   "wait_ms": 133,
+   "proc_start_to_first_react_commit_ms": 115
+  },
+  {
+   "total_ms": 131,
+   "wait_ms": 134,
+   "proc_start_to_first_react_commit_ms": 138
+  }
+ ],
+ "median_total_ms": 130,
+ "median_first_react_commit_ms": 128,
+ "min_total_ms": 111,
+ "max_total_ms": 131
+}
+focus {
+ "presses": 500,
+ "ok": 421,
+ "unexpected_place": 0,
+ "nowhere": 1,
+ "stuck": 1,
+ "burst_presses_after_divergence": 77,
+ "blur_of_recycled_cell": 4,
+ "column_offset_on_row_change": {
+  "n": 97,
+  "same_col": 86,
+  "mean_abs": 2.36,
+  "max_abs": 31
+ },
+ "rail_exit_returns_to_last_card": {
+  "same_card": 1,
+  "other_card": 0
+ },
+ "incidents": {
+  "single_press_failures": 2,
+  "bursts_diverged": 6,
+  "bursts_total": 12,
+  "singles_total": 299
+ },
+ "burst_achieved_median_gap_ms": 67.0,
+ "flag_enableCustomFocusSearchOnClippedElementsAndroid": "true",
+ "boot": "rowMvcpOff=false window=960x540 posters=400 backdrops=60 rows=20 cols=50",
+ "initial_focus": [
+  "rail",
+  0
+ ],
+ "windows": 311,
+ "seconds": 211.4,
+ "injector": "cmd input",
+ "settle_s": 0.6,
+ "burst_gap_s": 0.05
+}
+   {'press': 42, 'key': 'RIGHT', 'verdict': 'BLUR of recycled cell', 'focused_was': ('card', 0, 41), 'blur_reported': ('card', 0, 8)}
+   {'press': 42, 'key': 'RIGHT', 'from': ('card', 0, 41), 'expected': '0,42', 'got': None, 'verdict': 'nowhere'}
+   {'press': 153, 'key': 'LEFT', 'from': ('card', 2, 0), 'expected': 'rail', 'got': ('card', 2, 0), 'verdict': 'stuck'}
+   {'press': 290, 'key': 'burst LEFTx10', 'from': ('card', 1, 5), 'expected_final': ('rail', None), 'got': ('card', 0, 28), 'verdict': '5 presses misrouted', 'first_divergence': ('card', 0, 31)}
+   {'press': 292, 'key': 'LEFT', 'verdict': 'BLUR of recycled cell', 'focused_was': ('card', 0, 24), 'blur_reported': ('card', 0, 9)}
+   {'press': 292, 'key': 'burst LEFTx30', 'from': ('card', 0, 28), 'expected_final': ('rail', None), 'got': ('rail', 0), 'verdict': '26 presses misrouted', 'first_divergence': ('card', 0, 4)}
+   {'press': 299, 'key': 'burst LEFTx10', 'from': ('card', 4, 5), 'expected_final': ('rail', None), 'got': ('card', 3, 26), 'verdict': '5 presses misrouted', 'first_divergence': ('card', 3, 29)}
+   {'press': 301, 'key': 'LEFT', 'verdict': 'BLUR of recycled cell', 'focused_was': ('card', 3, 24), 'blur_reported': ('card', 3, 2)}
+   {'press': 301, 'key': 'burst LEFTx30', 'from': ('card', 2, 0), 'expected_final': ('rail', None), 'got': ('rail', 1), 'verdict': '30 presses misrouted', 'first_divergence': ('card', 3, 26)}
+   {'press': 308, 'key': 'burst LEFTx10', 'from': ('card', 3, 5), 'expected_final': ('rail', None), 'got': ('card', 2, 26), 'verdict': '5 presses misrouted', 'first_divergence': ('card', 2, 29)}
+   {'press': 310, 'key': 'LEFT', 'verdict': 'BLUR of recycled cell', 'focused_was': ('card', 2, 24), 'blur_reported': ('card', 2, 2)}
+   {'press': 310, 'key': 'burst LEFTx6', 'from': ('card', 1, 0), 'expected_final': ('rail', None), 'got': ('rail', 2), 'verdict': '6 presses misrouted', 'first_divergence': ('card', 2, 26)}
+frames {
+ "row_hold_right": {
+  "frames": 206,
+  "janky": 3,
+  "janky_pct": 1.46,
+  "p50_ms": 16,
+  "p90_ms": 16,
+  "p95_ms": 16,
+  "p99_ms": 16,
+  "missed_vsync": 0,
+  "slow_ui": 0,
+  "slow_draw": 3,
+  "frame_deadline_missed": 3
+ },
+ "rows_hold_down": {
+  "frames": 98,
+  "janky": 3,
+  "janky_pct": 3.06,
+  "p50_ms": 16,
+  "p90_ms": 16,
+  "p95_ms": 16,
+  "p99_ms": 16,
+  "missed_vsync": 0,
+  "slow_ui": 0,
+  "slow_draw": 3,
+  "frame_deadline_missed": 3
+ },
+ "segments": [
+  {
+   "segment": "seg row_hold_right enter",
+   "focus_events": 1,
+   "first": "0,0",
+   "final": "0,0",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row_hold_right hold RIGHT",
+   "focus_events": 50,
+   "first": "0,1",
+   "final": "rail,0",
+   "median_gap_ms": 65
+  },
+  {
+   "segment": "seg rows_hold_down enter",
+   "focus_events": 1,
+   "first": "0,0",
+   "final": "0,0",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg rows_hold_down hold DOWN",
+   "focus_events": 19,
+   "first": "1,0",
+   "final": "19,0",
+   "median_gap_ms": 66.0
+  }
+ ]
+}
+memory {
+ "idle_after_launch": {
+  "java_heap_mb": 13,
+  "native_heap_mb": 46,
+  "code_mb": 23,
+  "stack_mb": 0,
+  "graphics_mb": 0,
+  "private_other_mb": 13,
+  "system_mb": 7,
+  "total_pss_mb": 104,
+  "total_rss_mb": 216,
+  "total_swap_pss_mb": 0,
+  "bitmaps_malloced": 41,
+  "bitmaps_malloced_mb": 21,
+  "anon_swap_approx_mb": 72
+ },
+ "after_scrolling_all_rows": {
+  "java_heap_mb": 12,
+  "native_heap_mb": 89,
+  "code_mb": 23,
+  "stack_mb": 0,
+  "graphics_mb": 0,
+  "private_other_mb": 24,
+  "system_mb": 7,
+  "total_pss_mb": 158,
+  "total_rss_mb": 273,
+  "total_swap_pss_mb": 0,
+  "bitmaps_malloced": 58,
+  "bitmaps_malloced_mb": 50,
+  "anon_swap_approx_mb": 125
+ },
+ "rows_whose_scroll_ended_on_a_card": [
+  0,
+  1,
+  2,
+  3,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16,
+  17,
+  18,
+  19
+ ],
+ "segments": [
+  {
+   "segment": "seg enter",
+   "focus_events": 1,
+   "first": "0,0",
+   "final": "0,0",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 0 right",
+   "focus_events": 49,
+   "first": "0,1",
+   "final": "0,49",
+   "median_gap_ms": 66.0
+  },
+  {
+   "segment": "seg row 0 down",
+   "focus_events": 1,
+   "first": "1,5",
+   "final": "1,5",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 1 right",
+   "focus_events": 46,
+   "first": "1,6",
+   "final": "2,5",
+   "median_gap_ms": 66
+  },
+  {
+   "segment": "seg row 1 down",
+   "focus_events": 1,
+   "first": "3,5",
+   "final": "3,5",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 2 right",
+   "focus_events": 48,
+   "first": "3,6",
+   "final": "2,8",
+   "median_gap_ms": 66
+  },
+  {
+   "segment": "seg row 2 down",
+   "focus_events": 1,
+   "first": "3,49",
+   "final": "3,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 3 right",
+   "focus_events": 48,
+   "first": "2,8",
+   "final": "5,10",
+   "median_gap_ms": 66
+  },
+  {
+   "segment": "seg row 3 down",
+   "focus_events": 1,
+   "first": "6,49",
+   "final": "6,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 4 right",
+   "focus_events": 40,
+   "first": "5,10",
+   "final": "5,49",
+   "median_gap_ms": 66
+  },
+  {
+   "segment": "seg row 4 down",
+   "focus_events": 1,
+   "first": "6,49",
+   "final": "6,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 5 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 5 down",
+   "focus_events": 1,
+   "first": "7,49",
+   "final": "7,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 6 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 6 down",
+   "focus_events": 1,
+   "first": "8,49",
+   "final": "8,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 7 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 7 down",
+   "focus_events": 1,
+   "first": "9,49",
+   "final": "9,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 8 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 8 down",
+   "focus_events": 1,
+   "first": "10,49",
+   "final": "10,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 9 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 9 down",
+   "focus_events": 1,
+   "first": "11,49",
+   "final": "11,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 10 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 10 down",
+   "focus_events": 1,
+   "first": "12,49",
+   "final": "12,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 11 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 11 down",
+   "focus_events": 1,
+   "first": "13,49",
+   "final": "13,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 12 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 12 down",
+   "focus_events": 1,
+   "first": "14,49",
+   "final": "14,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 13 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 13 down",
+   "focus_events": 1,
+   "first": "15,49",
+   "final": "15,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 14 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 14 down",
+   "focus_events": 1,
+   "first": "16,49",
+   "final": "16,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 15 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 15 down",
+   "focus_events": 1,
+   "first": "17,49",
+   "final": "17,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 16 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 16 down",
+   "focus_events": 1,
+   "first": "18,49",
+   "final": "18,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 17 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 17 down",
+   "focus_events": 1,
+   "first": "19,49",
+   "final": "19,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 18 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 18 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 19 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  }
+ ]
+}
+art server: served 368 images

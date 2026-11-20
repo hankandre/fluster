@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "Browse Falsifier",
+    "slug": "fluster-tv-browse-falsifier",
+    "version": "0.0.1",
+    "orientation": "landscape",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0b0c0e",
+    "android": {
+      "package": "dev.fluster.spike.browse"
+    },
+    "plugins": [
+      [
+        "@react-native-tvos/config-tv",
+        {
+          "isTV": true
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true,
+            "buildArchs": [
+              "arm64-v8a",
+              "x86_64"
+            ]
+          }
+        }
+      ],
+      "./plugins/with-focus-flag.js"
+    ]
+  }
+}

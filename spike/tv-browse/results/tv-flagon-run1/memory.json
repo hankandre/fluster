@@ -1,0 +1,32 @@
+{
+ "idle_after_launch": {
+  "java_heap_mb": 13,
+  "native_heap_mb": 46,
+  "code_mb": 23,
+  "stack_mb": 0,
+  "graphics_mb": 0,
+  "private_other_mb": 13,
+  "system_mb": 7,
+  "total_pss_mb": 104,
+  "total_rss_mb": 232,
+  "total_swap_pss_mb": 0,
+  "bitmaps_malloced": 41,
+  "bitmaps_malloced_mb": 21,
+  "anon_swap_approx_mb": 72
+ },
+ "after_scrolling_all_rows": {
+  "java_heap_mb": 7,
+  "native_heap_mb": 102,
+  "code_mb": 23,
+  "stack_mb": 0,
+  "graphics_mb": 0,
+  "private_other_mb": 38,
+  "system_mb": 8,
+  "total_pss_mb": 181,
+  "total_rss_mb": 313,
+  "total_swap_pss_mb": 0,
+  "bitmaps_malloced": 91,
+  "bitmaps_malloced_mb": 46,
+  "anon_swap_approx_mb": 147
+ }
+}

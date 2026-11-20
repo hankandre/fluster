@@ -1,0 +1,12 @@
+{
+ "ro.product.model": "sdk_google_atv64_x86_64",
+ "ro.product.manufacturer": "Google",
+ "ro.build.version.release": "16",
+ "ro.build.version.sdk": "36",
+ "ro.config.low_ram": "",
+ "ro.product.cpu.abi": "x86_64",
+ "ro.hardware": "ranchu",
+ "mem_total": "MemTotal:        2018820 kB",
+ "display": "Physical size: 1920x1080; Physical density: 320",
+ "injector": "cmd input (6 ms per call incl. adb round trip / 5)"
+}

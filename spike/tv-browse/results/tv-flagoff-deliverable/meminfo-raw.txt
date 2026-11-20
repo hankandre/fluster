@@ -1,0 +1,118 @@
+Applications Memory Usage (in Kilobytes):
+Uptime: 325586 Realtime: 325586
+
+** MEMINFO in pid 5892 [dev.fluster.spike.browse] **
+                   Pss  Private  Private     Swap      Rss     Heap     Heap     Heap
+                 Total    Dirty    Clean    Dirty    Total     Size    Alloc     Free
+                ------   ------   ------   ------   ------   ------   ------   ------
+  Native Heap    47874    47784        0        0    51680    61728    55277     2185
+  Dalvik Heap    10748    10528        0        0    18388     8824     4412     4412
+ Dalvik Other      952      856        0        0     1892                           
+        Stack      664      664        0        0      672                           
+       Ashmem       15        0        0        0      564                           
+    Other dev       10        0        8        0      240                           
+     .so mmap     4789      276      608        0    43752                           
+    .jar mmap     1532        0      120        0    34236                           
+    .apk mmap    17907      512    17056        0    19880                           
+    .ttf mmap      676        0      396        0     1148                           
+    .dex mmap     4923        0     4852        0     5868                           
+    .oat mmap      721        0        0        0    11928                           
+    .art mmap     3493     2712       20        0    33860                           
+   Other mmap     1042        4      996        0     2108                           
+      Unknown    11521    11512        0        0    12508                           
+        TOTAL   106867    74848    24056        0   238724    70552    59689     6597
+ 
+ App Summary
+                       Pss(KB)                        Rss(KB)
+                        ------                         ------
+           Java Heap:    13260                          52248
+         Native Heap:    47784                          51680
+                Code:    23832                         116972
+               Stack:      664                            672
+            Graphics:        0                              0
+       Private Other:    13364
+              System:     7963
+             Unknown:                                   17152
+ 
+           TOTAL PSS:   106867            TOTAL RSS:   238724      TOTAL SWAP (KB):        0
+ 
+ Objects
+               Views:      290         ViewRootImpl:        1
+         AppContexts:        7           Activities:        1
+              Assets:       19        AssetManagers:        0
+       Local Binders:       18        Proxy Binders:       52
+       Parcel memory:        9         Parcel count:       28
+    Death Recipients:        0             WebViews:        0
+ 
+ Native Allocations
+                         Count                       Total(kB)
+                        ------                         ------
+   Bitmap (malloced):       41                          22053
+    Other (malloced):     1721                            163
+ Other (nonmalloced):       92                             66
+ 
+ SQL
+         MEMORY_USED:        0
+  PAGECACHE_OVERFLOW:        0          MALLOC_SIZE:        0
+ 
+
+
+====
+
+Applications Memory Usage (in Kilobytes):
+Uptime: 429685 Realtime: 429685
+
+** MEMINFO in pid 5892 [dev.fluster.spike.browse] **
+                   Pss  Private  Private     Swap      Rss     Heap     Heap     Heap
+                 Total    Dirty    Clean    Dirty    Total     Size    Alloc     Free
+                ------   ------   ------   ------   ------   ------   ------   ------
+  Native Heap    90719    90640        0        0    94500   105976    95950     4907
+  Dalvik Heap     8214     8024        0        0    15820    10564     5282     5282
+ Dalvik Other     1327      832        0        0     2648                           
+        Stack     1084     1084        0        0     1092                           
+       Ashmem       15        0        0        0      564                           
+    Other dev       10        0        8        0      240                           
+     .so mmap     4750      276      672        0    44392                           
+    .jar mmap     1760        0      128        0    36176                           
+    .apk mmap    17907      512    17056        0    19880                           
+    .ttf mmap      676        0      396        0     1148                           
+    .dex mmap     4923        0     4852        0     5868                           
+    .oat mmap      841        0       60        0    12372                           
+    .art mmap     3561     2728       52        0    34120                           
+   Other mmap     1158        4      928        0     2408                           
+      Unknown    22189    22180        0        0    23168                           
+        TOTAL   159134   126280    24152        0   294396   116540   101232    10189
+ 
+ App Summary
+                       Pss(KB)                        Rss(KB)
+                        ------                         ------
+           Java Heap:    10804                          49940
+         Native Heap:    90640                          94500
+                Code:    23960                         120800
+               Stack:     1084                           1092
+            Graphics:        0                              0
+       Private Other:    23944
+              System:     8702
+             Unknown:                                   28064
+ 
+           TOTAL PSS:   159134            TOTAL RSS:   294396      TOTAL SWAP (KB):        0
+ 
+ Objects
+               Views:      372         ViewRootImpl:        1
+         AppContexts:        5           Activities:        1
+              Assets:       19        AssetManagers:        0
+       Local Binders:       18        Proxy Binders:       49
+       Parcel memory:        9         Parcel count:       36
+    Death Recipients:        0             WebViews:        0
+ 
+ Native Allocations
+                         Count                       Total(kB)
+                        ------                         ------
+    Other (malloced):     1456                            137
+ Other (nonmalloced):       79                             58
+   Bitmap (malloced):       57                          50888
+ 
+ SQL
+         MEMORY_USED:        0
+  PAGECACHE_OVERFLOW:        0          MALLOC_SIZE:        0
+ 

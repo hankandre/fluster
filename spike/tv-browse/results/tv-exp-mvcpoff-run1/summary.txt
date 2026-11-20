@@ -1,0 +1,55 @@
+{
+ "ro.product.model": "sdk_google_atv64_x86_64",
+ "ro.product.manufacturer": "Google",
+ "ro.build.version.release": "16",
+ "ro.build.version.sdk": "36",
+ "ro.config.low_ram": "",
+ "ro.product.cpu.abi": "x86_64",
+ "ro.hardware": "ranchu",
+ "mem_total": "MemTotal:        2018820 kB",
+ "display": "Physical size: 1920x1080; Physical density: 320",
+ "injector": "cmd input (6 ms per call incl. adb round trip / 5)",
+ "burst_mode": "paced loop, 50 ms gap"
+}
+focus {
+ "presses": 500,
+ "ok": 487,
+ "unexpected_place": 0,
+ "nowhere": 0,
+ "stuck": 1,
+ "burst_presses_after_divergence": 12,
+ "blur_of_recycled_cell": 0,
+ "column_offset_on_row_change": {
+  "n": 95,
+  "same_col": 86,
+  "mean_abs": 1.86,
+  "max_abs": 31
+ },
+ "rail_exit_returns_to_last_card": {
+  "same_card": 0,
+  "other_card": 0
+ },
+ "incidents": {
+  "single_press_failures": 1,
+  "bursts_diverged": 3,
+  "bursts_total": 12,
+  "singles_total": 299
+ },
+ "burst_achieved_median_gap_ms": 66.0,
+ "flag_enableCustomFocusSearchOnClippedElementsAndroid": "false",
+ "boot": null,
+ "initial_focus": [
+  "rail",
+  0
+ ],
+ "windows": 311,
+ "seconds": 211.6,
+ "injector": "cmd input",
+ "settle_s": 0.6,
+ "burst_gap_s": 0.05
+}
+   {'press': 100, 'key': 'LEFT', 'from': ('card', 0, 0), 'expected': 'rail', 'got': ('card', 0, 0), 'verdict': 'stuck'}
+   {'press': 290, 'key': 'burst LEFTx10', 'from': ('card', 1, 5), 'expected_final': ('rail', None), 'got': ('card', 0, 27), 'verdict': '4 presses misrouted', 'first_divergence': ('card', 0, 29)}
+   {'press': 299, 'key': 'burst LEFTx10', 'from': ('card', 1, 5), 'expected_final': ('rail', None), 'got': ('card', 0, 25), 'verdict': '4 presses misrouted', 'first_divergence': ('card', 0, 27)}
+   {'press': 308, 'key': 'burst LEFTx10', 'from': ('card', 1, 5), 'expected_final': ('rail', None), 'got': ('card', 0, 25), 'verdict': '4 presses misrouted', 'first_divergence': ('card', 0, 27)}
+art server: served 2 images

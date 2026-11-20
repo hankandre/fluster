@@ -1,0 +1,156 @@
+{
+ "ro.product.model": "sdk_google_atv64_x86_64",
+ "ro.product.manufacturer": "Google",
+ "ro.build.version.release": "16",
+ "ro.build.version.sdk": "36",
+ "ro.config.low_ram": "",
+ "ro.product.cpu.abi": "x86_64",
+ "ro.hardware": "ranchu",
+ "mem_total": "MemTotal:        2018820 kB",
+ "display": "Physical size: 1920x1080; Physical density: 320",
+ "injector": "cmd input (6 ms per call incl. adb round trip / 5)"
+}
+coldstart {
+ "runs": [
+  {
+   "total_ms": 152,
+   "wait_ms": 159,
+   "proc_start_to_first_react_commit_ms": 153
+  },
+  {
+   "total_ms": 134,
+   "wait_ms": 141,
+   "proc_start_to_first_react_commit_ms": 144
+  },
+  {
+   "total_ms": 158,
+   "wait_ms": 165,
+   "proc_start_to_first_react_commit_ms": 162
+  },
+  {
+   "total_ms": 146,
+   "wait_ms": 151,
+   "proc_start_to_first_react_commit_ms": 162
+  },
+  {
+   "total_ms": 164,
+   "wait_ms": 168,
+   "proc_start_to_first_react_commit_ms": 155
+  }
+ ],
+ "median_total_ms": 152,
+ "median_first_react_commit_ms": 155,
+ "min_total_ms": 134,
+ "max_total_ms": 164
+}
+focus {
+ "presses": 500,
+ "ok": 419,
+ "unexpected_place": 1,
+ "nowhere": 2,
+ "stuck": 1,
+ "burst_presses_after_divergence": 77,
+ "blur_of_recycled_cell": 5,
+ "column_offset_on_row_change": {
+  "n": 97,
+  "same_col": 86,
+  "mean_abs": 2.36,
+  "max_abs": 31
+ },
+ "rail_exit_returns_to_last_card": {
+  "same_card": 1,
+  "other_card": 0
+ },
+ "incidents": {
+  "single_press_failures": 4,
+  "bursts_diverged": 6,
+  "bursts_total": 12,
+  "singles_total": 299
+ },
+ "flag_enableCustomFocusSearchOnClippedElementsAndroid": "true",
+ "boot": "window=960x540 posters=400 backdrops=60 rows=20 cols=50",
+ "initial_focus": [
+  "rail",
+  0
+ ],
+ "windows": 311,
+ "seconds": 211.2,
+ "injector": "cmd input",
+ "settle_s": 0.6,
+ "burst_gap_s": 0.05
+}
+   {'press': 9, 'key': 'RIGHT', 'from': ('card', 0, 8), 'expected': '0,9', 'got': None, 'verdict': 'nowhere'}
+   {'press': 27, 'key': 'RIGHT', 'verdict': 'BLUR of recycled cell', 'focused_was': ('card', 0, 19), 'blur_reported': ('card', 0, 9)}
+   {'press': 27, 'key': 'RIGHT', 'from': ('card', 0, 19), 'expected': '0,20', 'got': None, 'verdict': 'nowhere'}
+   {'press': 61, 'key': 'LEFT', 'verdict': 'BLUR of recycled cell', 'focused_was': ('card', 0, 15), 'blur_reported': ('card', 0, 4)}
+   {'press': 61, 'key': 'LEFT', 'from': ('card', 0, 15), 'expected': '0,14', 'got': ('card', 0, 3), 'verdict': 'unexpected'}
+   {'press': 153, 'key': 'LEFT', 'from': ('card', 2, 0), 'expected': 'rail', 'got': ('card', 2, 0), 'verdict': 'stuck'}
+   {'press': 290, 'key': 'burst LEFTx10', 'from': ('card', 1, 5), 'expected_final': ('rail', None), 'got': ('card', 0, 28), 'verdict': '5 presses misrouted', 'first_divergence': ('card', 0, 31)}
+   {'press': 292, 'key': 'LEFT', 'verdict': 'BLUR of recycled cell', 'focused_was': ('card', 0, 24), 'blur_reported': ('card', 0, 9)}
+   {'press': 292, 'key': 'burst LEFTx30', 'from': ('card', 0, 28), 'expected_final': ('rail', None), 'got': ('rail', 0), 'verdict': '26 presses misrouted', 'first_divergence': ('card', 0, 8)}
+   {'press': 299, 'key': 'burst LEFTx10', 'from': ('card', 4, 5), 'expected_final': ('rail', None), 'got': ('card', 3, 26), 'verdict': '5 presses misrouted', 'first_divergence': ('card', 3, 29)}
+   {'press': 301, 'key': 'LEFT', 'verdict': 'BLUR of recycled cell', 'focused_was': ('card', 3, 23), 'blur_reported': ('card', 3, 2)}
+   {'press': 301, 'key': 'burst LEFTx30', 'from': ('card', 2, 0), 'expected_final': ('rail', None), 'got': ('rail', 1), 'verdict': '30 presses misrouted', 'first_divergence': ('card', 3, 26)}
+   {'press': 308, 'key': 'burst LEFTx10', 'from': ('card', 3, 5), 'expected_final': ('rail', None), 'got': ('card', 2, 26), 'verdict': '5 presses misrouted', 'first_divergence': ('card', 2, 29)}
+   {'press': 310, 'key': 'LEFT', 'verdict': 'BLUR of recycled cell', 'focused_was': ('card', 2, 24), 'blur_reported': ('card', 2, 3)}
+   {'press': 310, 'key': 'burst LEFTx6', 'from': ('card', 1, 0), 'expected_final': ('rail', None), 'got': ('card', 2, 0), 'verdict': '6 presses misrouted', 'first_divergence': ('card', 2, 26)}
+frames {
+ "row_right_left": {
+  "frames": 318,
+  "janky": 8,
+  "janky_pct": 2.52,
+  "p50_ms": 16,
+  "p90_ms": 16,
+  "p95_ms": 16,
+  "p99_ms": 16,
+  "missed_vsync": 0,
+  "slow_ui": 0,
+  "slow_draw": 8,
+  "frame_deadline_missed": 8
+ },
+ "rows_down_up": {
+  "frames": 174,
+  "janky": 11,
+  "janky_pct": 6.32,
+  "p50_ms": 16,
+  "p90_ms": 16,
+  "p95_ms": 16,
+  "p99_ms": 16,
+  "missed_vsync": 0,
+  "slow_ui": 0,
+  "slow_draw": 11,
+  "frame_deadline_missed": 11
+ }
+}
+memory {
+ "idle_after_launch": {
+  "java_heap_mb": 13,
+  "native_heap_mb": 46,
+  "code_mb": 23,
+  "stack_mb": 0,
+  "graphics_mb": 0,
+  "private_other_mb": 13,
+  "system_mb": 7,
+  "total_pss_mb": 104,
+  "total_rss_mb": 232,
+  "total_swap_pss_mb": 0,
+  "bitmaps_malloced": 41,
+  "bitmaps_malloced_mb": 21,
+  "anon_swap_approx_mb": 72
+ },
+ "after_scrolling_all_rows": {
+  "java_heap_mb": 7,
+  "native_heap_mb": 102,
+  "code_mb": 23,
+  "stack_mb": 0,
+  "graphics_mb": 0,
+  "private_other_mb": 38,
+  "system_mb": 8,
+  "total_pss_mb": 181,
+  "total_rss_mb": 313,
+  "total_swap_pss_mb": 0,
+  "bitmaps_malloced": 91,
+  "bitmaps_malloced_mb": 46,
+  "anon_swap_approx_mb": 147
+ }
+}

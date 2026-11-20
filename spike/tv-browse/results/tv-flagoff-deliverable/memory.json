@@ -1,0 +1,335 @@
+{
+ "idle_after_launch": {
+  "java_heap_mb": 12,
+  "native_heap_mb": 46,
+  "code_mb": 23,
+  "stack_mb": 0,
+  "graphics_mb": 0,
+  "private_other_mb": 13,
+  "system_mb": 7,
+  "total_pss_mb": 104,
+  "total_rss_mb": 233,
+  "total_swap_pss_mb": 0,
+  "bitmaps_malloced": 41,
+  "bitmaps_malloced_mb": 21,
+  "anon_swap_approx_mb": 71
+ },
+ "after_scrolling_all_rows": {
+  "java_heap_mb": 10,
+  "native_heap_mb": 88,
+  "code_mb": 23,
+  "stack_mb": 1,
+  "graphics_mb": 0,
+  "private_other_mb": 23,
+  "system_mb": 8,
+  "total_pss_mb": 155,
+  "total_rss_mb": 287,
+  "total_swap_pss_mb": 0,
+  "bitmaps_malloced": 57,
+  "bitmaps_malloced_mb": 49,
+  "anon_swap_approx_mb": 121
+ },
+ "rows_visited_furthest_col": {
+  "0": 49,
+  "1": 5,
+  "2": 49,
+  "3": 49,
+  "5": 49,
+  "6": 49,
+  "7": 49,
+  "8": 49,
+  "9": 49,
+  "10": 49,
+  "11": 49,
+  "12": 49,
+  "13": 49,
+  "14": 49,
+  "15": 49,
+  "16": 49,
+  "17": 49,
+  "18": 49,
+  "19": 49
+ },
+ "segments": [
+  {
+   "segment": "seg enter",
+   "focus_events": 1,
+   "first": "0,0",
+   "final": "0,0",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 0 right",
+   "focus_events": 49,
+   "first": "0,1",
+   "final": "0,49",
+   "median_gap_ms": 66.0
+  },
+  {
+   "segment": "seg row 0 down",
+   "focus_events": 1,
+   "first": "1,5",
+   "final": "1,5",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 1 right",
+   "focus_events": 46,
+   "first": "1,6",
+   "final": "2,5",
+   "median_gap_ms": 66
+  },
+  {
+   "segment": "seg row 1 down",
+   "focus_events": 1,
+   "first": "3,5",
+   "final": "3,5",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 2 right",
+   "focus_events": 48,
+   "first": "3,6",
+   "final": "2,8",
+   "median_gap_ms": 65
+  },
+  {
+   "segment": "seg row 2 down",
+   "focus_events": 1,
+   "first": "3,49",
+   "final": "3,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 3 right",
+   "focus_events": 42,
+   "first": "2,8",
+   "final": "2,49",
+   "median_gap_ms": 66
+  },
+  {
+   "segment": "seg row 3 down",
+   "focus_events": 1,
+   "first": "3,49",
+   "final": "3,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 4 right",
+   "focus_events": 45,
+   "first": "5,5",
+   "final": "5,49",
+   "median_gap_ms": 66.0
+  },
+  {
+   "segment": "seg row 4 down",
+   "focus_events": 1,
+   "first": "6,49",
+   "final": "6,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 5 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 5 down",
+   "focus_events": 1,
+   "first": "7,49",
+   "final": "7,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 6 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 6 down",
+   "focus_events": 1,
+   "first": "8,49",
+   "final": "8,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 7 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 7 down",
+   "focus_events": 1,
+   "first": "9,49",
+   "final": "9,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 8 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 8 down",
+   "focus_events": 1,
+   "first": "10,49",
+   "final": "10,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 9 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 9 down",
+   "focus_events": 1,
+   "first": "11,49",
+   "final": "11,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 10 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 10 down",
+   "focus_events": 1,
+   "first": "12,49",
+   "final": "12,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 11 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 11 down",
+   "focus_events": 1,
+   "first": "13,49",
+   "final": "13,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 12 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 12 down",
+   "focus_events": 1,
+   "first": "14,49",
+   "final": "14,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 13 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 13 down",
+   "focus_events": 1,
+   "first": "15,49",
+   "final": "15,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 14 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 14 down",
+   "focus_events": 1,
+   "first": "16,49",
+   "final": "16,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 15 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 15 down",
+   "focus_events": 1,
+   "first": "17,49",
+   "final": "17,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 16 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 16 down",
+   "focus_events": 1,
+   "first": "18,49",
+   "final": "18,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 17 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 17 down",
+   "focus_events": 1,
+   "first": "19,49",
+   "final": "19,49",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 18 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 18 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 19 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  }
+ ]
+}

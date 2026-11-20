@@ -1,0 +1,27 @@
+{
+ "runs": [
+  {
+   "total_ms": 170,
+   "wait_ms": 180
+  },
+  {
+   "total_ms": 149,
+   "wait_ms": 151
+  },
+  {
+   "total_ms": 160,
+   "wait_ms": 163
+  },
+  {
+   "total_ms": 157,
+   "wait_ms": 162
+  },
+  {
+   "total_ms": 147,
+   "wait_ms": 156
+  }
+ ],
+ "median_total_ms": 157,
+ "min_total_ms": 147,
+ "max_total_ms": 170
+}

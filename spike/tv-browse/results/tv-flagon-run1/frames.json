@@ -1,0 +1,28 @@
+{
+ "row_right_left": {
+  "frames": 318,
+  "janky": 8,
+  "janky_pct": 2.52,
+  "p50_ms": 16,
+  "p90_ms": 16,
+  "p95_ms": 16,
+  "p99_ms": 16,
+  "missed_vsync": 0,
+  "slow_ui": 0,
+  "slow_draw": 8,
+  "frame_deadline_missed": 8
+ },
+ "rows_down_up": {
+  "frames": 174,
+  "janky": 11,
+  "janky_pct": 6.32,
+  "p50_ms": 16,
+  "p90_ms": 16,
+  "p95_ms": 16,
+  "p99_ms": 16,
+  "missed_vsync": 0,
+  "slow_ui": 0,
+  "slow_draw": 11,
+  "frame_deadline_missed": 11
+ }
+}
