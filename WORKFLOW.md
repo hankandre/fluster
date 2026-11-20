@@ -19,7 +19,7 @@ Agents read the short map first and load detail only when needed.
 
 | File | Role | Size target |
 |---|---|---|
-| `AGENTS.md` | Rules: short imperative sentences, no justification. Commands, hard rules, pointers. | ≤ ~170 lines |
+| `AGENTS.md` | Rules: short imperative sentences, no justification. Commands, hard rules, pointers. | ≤ ~200 lines |
 | `CLAUDE.md` | Imports `AGENTS.md` so Claude Code and Codex share one rulebook | 1 line |
 | `.claude/skills/<name>/SKILL.md` | Repeatable processes as short imperative steps; procedures and context in `references/` | ≤ ~60 lines each |
 | `PRODUCT.md` | What Octave is, for whom, scope and non-goals, roadmap | stable |
