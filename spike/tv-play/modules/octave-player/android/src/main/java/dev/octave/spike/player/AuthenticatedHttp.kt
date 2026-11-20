@@ -38,17 +38,19 @@ object AuthenticatedHttp {
       .build()
   }
 
-  // Called once per launch. The header is held in memory only and never logged or returned.
+  // The header is held in memory only and never logged or returned. Called once per JS start: a recreated activity re-runs the JS flow in the same process and signs in
+  // again, so a repeat start for the same origin replaces the header; another origin is refused.
   @Synchronized
   fun start(originText: String, authorization: String) {
-    check(session == null) { "The session was already started." }
     val origin = originText.toHttpUrlOrNull() ?: throw IllegalArgumentException("invalid origin")
     require(origin.username.isEmpty() && origin.password.isEmpty()) { "origin carries credentials" }
     require(origin.encodedPath == "/" && origin.query == null && origin.fragment == null) { "origin is not bare" }
     val token = Regex("""Token="([^"]+)"""").find(authorization)?.groupValues?.get(1)
       ?: throw IllegalArgumentException("authorization has no token")
+    val previous = session
+    check(previous == null || previous.origin == origin) { "A session for another origin is already active." }
     session = Session(origin, authorization, token)
-    Log.i(TAG, "session started (scheme=${origin.scheme})")
+    Log.i(TAG, if (previous == null) "session started (scheme=${origin.scheme})" else "session restarted for the same origin")
   }
 
   fun isStarted(): Boolean = session != null

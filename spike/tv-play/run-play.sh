@@ -120,8 +120,10 @@ unset pass
 # Evidence while playing: wait for the first frame (or an error), then sample.
 first=""
 for _ in $(seq 1 60); do
-  if adb_ logcat -d -s OCTAVE_PLAY | grep -qE "FIRST_FRAME|PLAYER_ERROR"; then first=1; break; fi
-  if adb_ logcat -d | grep -q "OCTAVE_JS prepare failed\|OCTAVE_JS plan delivery=hls\|lookup failed"; then break; fi
+  # Captured first: `grep -q` on a live pipe can SIGPIPE adb, which pipefail turns into "no match".
+  app_log="$(adb_ logcat -d -s OCTAVE_PLAY ReactNativeJS 2>/dev/null || true)"
+  if grep -qE "FIRST_FRAME|PLAYER_ERROR" <<<"$app_log"; then first=1; break; fi
+  if grep -qE "OCTAVE_JS (prepare failed|lookup failed|Not direct|plan delivery=hls)" <<<"$app_log"; then break; fi
   sleep 1
 done
 sleep 10
@@ -137,7 +139,7 @@ adb_ logcat -d -v threadtime | grep -E "OCTAVE_|ReactNativeJS|ExoPlayer|MediaCod
 adb_ logcat -d -s OCTAVE_PLAY OCTAVE_HTTP ReactNativeJS | redact > "$out/app-log.txt" || true
 
 # Tokenless control request straight to the server (D-026): status code only.
-item="$(grep -o '"path":"/Videos/[^/]*/stream"' "$out/wire.jsonl" 2>/dev/null | head -1 | sed -E 's#.*/Videos/([^/]*)/stream.*#\1#')"
+item="$( (grep -o '"path":"/Videos/[^/]*/stream"' "$out/wire.jsonl" 2>/dev/null || true) | head -1 | sed -E 's#.*/Videos/([^/]*)/stream.*#\1#')"
 if [ -n "$item" ]; then
   code="$(curl -s -o /dev/null -m 10 -w '%{http_code}' -r 0-1023 "$upstream/Videos/$item/stream?static=true&mediaSourceId=$item" || true)"
   echo "{\"tokenlessStreamStatus\": $code}" > "$out/control.json"
@@ -147,16 +149,18 @@ cleanup
 trap - EXIT
 wait "$proxy_pid" 2>/dev/null || true
 
-# Summary (no addresses, no secrets).
+# Summary (no addresses, no secrets). Each step may find nothing; none of them ends the script.
 {
+  set +e
   echo "label=$label mode=$mode title=$title year=$year negative=${negative:-none} play_secs=$play_secs"
   cat "$out/am-start.txt" 2>/dev/null
-  grep -hE "OCTAVE_JS|VIDEO_DECODER|VIDEO_FORMAT|AUDIO_|FIRST_FRAME|PLAYER_ERROR|display\[|stats\[|native probes|refused" "$out/app-log.txt" | sed -E 's/^.*(OCTAVE_JS|OCTAVE_PLAY|OCTAVE_HTTP)/\1/' | tail -40
+  grep -hE "OCTAVE_JS|VIDEO_DECODER|VIDEO_FORMAT|AUDIO_|FIRST_FRAME|PLAYER_ERROR|display\[|stats\[|native probes|refused|session" "$out/app-log.txt" | sed -E 's/^.*(OCTAVE_JS|OCTAVE_PLAY|OCTAVE_HTTP)/\1/' | tail -40
   echo "--- control"; cat "$out/control.json" 2>/dev/null || echo "no stream request seen"
   echo "--- proxy"; tail -1 "$raw/proxy.log"
-  echo "--- SurfaceFlinger (HDR / dataspace lines)"
-  grep -iE "BT2020|2084|PQ|HDR|dataspace" "$raw/surfaceflinger.txt" | grep -v "^\s*$" | sort | uniq -c | sort -rn | head -15
+  echo "--- HWC"; grep -m1 "HWC Support" "$raw/surfaceflinger.txt"
+  echo "--- app video layer (SurfaceFlinger)"
+  grep -A40 -E "SurfaceView\[?.*$pkg" "$raw/surfaceflinger.txt" | grep -iE "^\+ |dataspace|hdr metadata|composition|format" | head -16
   echo "--- display (HDR state)"
-  grep -ioE "(isHdr[^,]*|mHdrCapabilities[^}]*}|hdrTypes[^]]*]|mActiveColorMode[^,]*|activeMode[^}]*})" "$raw/display-playing.txt" | head -6
-} | redact | tee "$out/summary.txt"
+  grep -ioE "(mHdrCapabilities[^}]*}|HdrCapabilities\{[^}]*\}|mActiveColorMode[^,]*)" "$raw/display-playing.txt" | sort -u | head -6
+} 2>&1 | redact | tee "$out/summary.txt" || true
 echo "results in ${out#$here/}"

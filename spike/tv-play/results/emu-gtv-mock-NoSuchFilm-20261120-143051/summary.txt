@@ -1,0 +1,17 @@
+label=emu-gtv mode=mock title=No Such Film year=1900 negative=none play_secs=130
+Status: ok
+TotalTime: 163
+WaitTime: 171
+OCTAVE_JS connected version=12.4.0 hostClass=loopback confirm=false
+OCTAVE_JS signed in after 106ms
+OCTAVE_JS lookup failed results=0 titleMatches=0 years=[]
+--- control
+no stream request seen
+--- proxy
+proxy verdict: PASS {"everyRequestHasAuthorization":true,"tokenOnEveryNonPublicRequest":true,"noCredentialInAnyUrl":true,"zeroRedirectsFollowed":true,"zeroOtherOrigins":true,"apiKeyProbeNeverSent":true,"upstreamRelayedNoRedirect":true}
+--- HWC
+   HWC Support: wideColorGamut=false hdr10plus=false hdr10=false hlg=false dv=false metadata=0 
+--- app video layer (SurfaceFlinger)
+--- display (HDR state)
+HdrCapabilities{mSupportedHdrTypes=[], mMaxLuminance=500.0, mMaxAverageLuminance=500.0, mMinLuminance=0.0}
+mActiveColorMode=0

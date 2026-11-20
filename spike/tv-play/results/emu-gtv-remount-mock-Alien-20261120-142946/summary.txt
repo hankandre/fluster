@@ -1,0 +1,70 @@
+label=emu-gtv-remount mode=mock title=Alien year=1979 negative=none play_secs=40
+Status: ok
+TotalTime: 211
+WaitTime: 217
+OCTAVE_JS lookup ok kind=Movie year=1979
+OCTAVE_JS plan delivery=static playMethod=DirectPlay reasons=[] tracks=2
+OCTAVE_JS js probes {"redirectSameStatus":302,"redirectCanaryStatus":302}
+OCTAVE_HTTP: session restarted for the same origin
+OCTAVE_HTTP: refused a request to another origin (count=2)
+OCTAVE_HTTP: refused a URL that carries a credential (count=2)
+OCTAVE_PLAY: native probes {redirectSameStatus=302, redirectCanaryStatus=302, offOriginStatus=-1, offOriginRefused=true, apiKeyUrlRefused=true}
+OCTAVE_JS native probes {"redirectSameStatus":302,"redirectCanaryStatus":302,"offOriginStatus":-1,"offOriginRefused":true,"apiKeyUrlRefused":true}
+OCTAVE_JS control requests=4 ready after 127ms
+OCTAVE_PLAY: display[before-play] isHdr=false hdrTypes=[] mode=1920x1080@60.000004 maxLum=500.0
+OCTAVE_PLAY: VIDEO_DECODER name=c2.goldfish.hevc.decoder initMs=29
+OCTAVE_PLAY: VIDEO_FORMAT mime=video/hevc codecs=hvc1.1.6.L120.90 1920x1080 fps=-1.0 bitrate=-1 color=[space=6 transfer=6 range=2 hdrStaticInfo=false lumaBits=8]
+OCTAVE_PLAY: AUDIO_DECODER name=c2.android.aac.decoder
+OCTAVE_PLAY: AUDIO_FORMAT mime=audio/mp4a-latm codecs=mp4a.40.2 channels=2 rate=48000 lang=und
+OCTAVE_PLAY: AUDIO_TRACK encoding=2 rate=48000 channelConfig=12 tunneling=false offload=false
+OCTAVE_PLAY: FIRST_FRAME T+4862ms (launch to first frame), prepare to first frame 339ms
+OCTAVE_PLAY: display[after-first-frame] isHdr=false hdrTypes=[] mode=1920x1080@60.000004 maxLum=500.0
+OCTAVE_PLAY: stats[release] T+12486ms pos=7526ms rendered=180 dropped=0 maxConsecDropped=0 skipped=2 droppedEvents=0 rebuffers=0 http=10 redirects=4 refusedOffOrigin=2 refusedCredentialUrl=2
+OCTAVE_JS connected version=12.4.0 hostClass=loopback confirm=false
+OCTAVE_JS signed in after 99ms
+OCTAVE_JS lookup ok kind=Movie year=1979
+OCTAVE_JS plan delivery=static playMethod=DirectPlay reasons=[] tracks=2
+OCTAVE_JS js probes {"redirectSameStatus":302,"redirectCanaryStatus":302}
+OCTAVE_HTTP: session restarted for the same origin
+OCTAVE_HTTP: refused a request to another origin (count=3)
+OCTAVE_HTTP: refused a URL that carries a credential (count=3)
+OCTAVE_PLAY: native probes {redirectSameStatus=302, redirectCanaryStatus=302, offOriginStatus=-1, offOriginRefused=true, apiKeyUrlRefused=true}
+OCTAVE_JS native probes {"redirectSameStatus":302,"redirectCanaryStatus":302,"offOriginStatus":-1,"offOriginRefused":true,"apiKeyUrlRefused":true}
+OCTAVE_JS control requests=4 ready after 153ms
+OCTAVE_PLAY: display[before-play] isHdr=false hdrTypes=[] mode=1920x1080@60.000004 maxLum=500.0
+OCTAVE_PLAY: VIDEO_DECODER name=c2.goldfish.hevc.decoder initMs=14
+OCTAVE_PLAY: VIDEO_FORMAT mime=video/hevc codecs=hvc1.1.6.L120.90 1920x1080 fps=-1.0 bitrate=-1 color=[space=6 transfer=6 range=2 hdrStaticInfo=false lumaBits=8]
+OCTAVE_PLAY: AUDIO_DECODER name=c2.android.aac.decoder
+OCTAVE_PLAY: AUDIO_FORMAT mime=audio/mp4a-latm codecs=mp4a.40.2 channels=2 rate=48000 lang=und
+OCTAVE_PLAY: AUDIO_TRACK encoding=2 rate=48000 channelConfig=12 tunneling=false offload=false
+OCTAVE_PLAY: FIRST_FRAME T+13003ms (launch to first frame), prepare to first frame 367ms
+OCTAVE_PLAY: display[after-first-frame] isHdr=false hdrTypes=[] mode=1920x1080@60.000004 maxLum=500.0
+OCTAVE_PLAY: stats[tick] T+22640ms pos=9570ms rendered=231 dropped=0 maxConsecDropped=0 skipped=0 droppedEvents=0 rebuffers=0 http=15 redirects=6 refusedOffOrigin=3 refusedCredentialUrl=3
+OCTAVE_PLAY: stats[tick] T+32640ms pos=19522ms rendered=471 dropped=0 maxConsecDropped=0 skipped=0 droppedEvents=0 rebuffers=0 http=15 redirects=6 refusedOffOrigin=3 refusedCredentialUrl=3
+OCTAVE_PLAY: stats[tick] T+42640ms pos=29523ms rendered=711 dropped=0 maxConsecDropped=0 skipped=0 droppedEvents=0 rebuffers=0 http=15 redirects=6 refusedOffOrigin=3 refusedCredentialUrl=3
+--- control
+{"tokenlessStreamStatus": 401}
+--- proxy
+proxy verdict: PASS {"everyRequestHasAuthorization":true,"tokenOnEveryNonPublicRequest":true,"noCredentialInAnyUrl":true,"zeroRedirectsFollowed":true,"zeroOtherOrigins":true,"apiKeyProbeNeverSent":true,"upstreamRelayedNoRedirect":true}
+--- HWC
+   HWC Support: wideColorGamut=false hdr10plus=false hdr10=false hlg=false dv=false metadata=0 
+--- app video layer (SurfaceFlinger)
+      forceClientComposition=true clearClientTarget=false displayFrame=[0 0 1920 1080] sourceCrop=[0.000000 0.000000 1920.000000 1080.000000] bufferTransform=0 (0) dataspace=BT2020_ITU_PQ (298188800) whitePointNits=-1.000000 dimmingRatio=1.000000 override buffer=0x0 override acquire fence=0x0 override display frame=[0 0 -1 -1] override dataspace=UNKNOWN (0) override display space=ProjectionSpace{bounds=Rect(0, 0, -1, -1), content=Rect(0, 0, -1, -1), orientation=ROTATION_0} override damage region=  Region  (this=0x723d0f3dd750, count=1)
+      hwc: layer=0x08a composition=CLIENT (1) 
+      forceClientComposition=false clearClientTarget=false displayFrame=[0 0 1920 1080] sourceCrop=[0.000000 0.000000 1920.000000 1080.000000] bufferTransform=0 (0) dataspace=V0_SRGB (142671872) whitePointNits=-1.000000 dimmingRatio=1.000000 override buffer=0x0 override acquire fence=0x0 override display frame=[0 0 -1 -1] override dataspace=UNKNOWN (0) override display space=ProjectionSpace{bounds=Rect(0, 0, -1, -1), content=Rect(0, 0, -1, -1), orientation=ROTATION_0} override damage region=  Region  (this=0x723d0f3e17b0, count=1)
+      hwc: layer=0x088 composition=CLIENT (1) 
++ name:dc681de SurfaceView[dev.fluster.spike.play/dev.fluster.spike.play.MainActivity]#3(BLAST Consumer)3, id:67, size:3040.00KiB, w/h:1920x1080, usage: 0x400933, req fmt:35, fourcc/mod:842093913/0, dataspace: 0x11c60000, compressed: false
++ name:dc681de SurfaceView[dev.fluster.spike.play/dev.fluster.spike.play.MainActivity]#3(BLAST Consumer)3, id:65, size:3040.00KiB, w/h:1920x1080, usage: 0x400933, req fmt:35, fourcc/mod:842093913/0, dataspace: 0x11c60000, compressed: false
++ name:dc681de SurfaceView[dev.fluster.spike.play/dev.fluster.spike.play.MainActivity]#3(BLAST Consumer)3, id:64, size:3040.00KiB, w/h:1920x1080, usage: 0x400933, req fmt:35, fourcc/mod:842093913/0, dataspace: 0x11c60000, compressed: false
++ name:dc681de SurfaceView[dev.fluster.spike.play/dev.fluster.spike.play.MainActivity]#3(BLAST Consumer)3, id:63, size:3040.00KiB, w/h:1920x1080, usage: 0x400933, req fmt:35, fourcc/mod:842093913/0, dataspace: 0x11c60000, compressed: false
++ name:dc681de SurfaceView[dev.fluster.spike.play/dev.fluster.spike.play.MainActivity]#3(BLAST Consumer)3, id:59, size:3040.00KiB, w/h:1920x1080, usage: 0x400933, req fmt:35, fourcc/mod:842093913/0, dataspace: 0x11c60000, compressed: false
++ name:dc681de SurfaceView[dev.fluster.spike.play/dev.fluster.spike.play.MainActivity]#3(BLAST Consumer)3, id:58, size:3040.00KiB, w/h:1920x1080, usage: 0x400933, req fmt:35, fourcc/mod:842093913/0, dataspace: 0x11c60000, compressed: false
++ name:dc681de SurfaceView[dev.fluster.spike.play/dev.fluster.spike.play.MainActivity]#3(BLAST Consumer)3, id:60, size:3040.00KiB, w/h:1920x1080, usage: 0x400933, req fmt:35, fourcc/mod:842093913/0, dataspace: 0x11c60000, compressed: false
++ name:dc681de SurfaceView[dev.fluster.spike.play/dev.fluster.spike.play.MainActivity]#3(BLAST Consumer)3, id:57, size:3040.00KiB, w/h:1920x1080, usage: 0x400933, req fmt:35, fourcc/mod:842093913/0, dataspace: 0x11c60000, compressed: false
++ name:dc681de SurfaceView[dev.fluster.spike.play/dev.fluster.spike.play.MainActivity]#3(BLAST Consumer)3, id:55, size:3040.00KiB, w/h:1920x1080, usage: 0x400933, req fmt:35, fourcc/mod:842093913/0, dataspace: 0x11c60000, compressed: false
++ name:dc681de SurfaceView[dev.fluster.spike.play/dev.fluster.spike.play.MainActivity]#3(BLAST Consumer)3, id:53, size:3040.00KiB, w/h:1920x1080, usage: 0x400933, req fmt:35, fourcc/mod:842093913/0, dataspace: 0x11c60000, compressed: false
++ name:dc681de SurfaceView[dev.fluster.spike.play/dev.fluster.spike.play.MainActivity]#3(BLAST Consumer)3, id:56, size:3040.00KiB, w/h:1920x1080, usage: 0x400933, req fmt:35, fourcc/mod:842093913/0, dataspace: 0x11c60000, compressed: false
++ name:VRI[MainActivity]#2(BLAST Consumer)2, id:47, size:4.00KiB, w/h:1920x1080, usage: 0xb00, req fmt:1, fourcc/mod:875708993/0, dataspace: 0x8810000, compressed: false
+--- display (HDR state)
+HdrCapabilities{mSupportedHdrTypes=[], mMaxLuminance=500.0, mMaxAverageLuminance=500.0, mMinLuminance=0.0}
+mActiveColorMode=0

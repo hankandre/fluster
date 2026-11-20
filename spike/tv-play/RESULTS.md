@@ -21,6 +21,10 @@ Never to be merged.
   - zero redirects were followed;
   - zero requests went to another origin.
 
+  "No other origin" is scoped to the shared OkHttp client and the proxy's own traffic. The evidence is
+  the proxy's Host check, the canary (0 hits) and the interceptor's refusal counter. It does not cover
+  every socket in the process.
+
   A tokenless control request to Jellyscale got **401**.
 
 What it does **not** show is HDR reaching the screen.
@@ -41,8 +45,10 @@ Also seen:
   first frame came at 2.17 s, and 0 frames were dropped in 40 s. With no DV-capable output reported,
   this says nothing about whether the enhancement layer was used, or about the 1.11.1 P7 misroute
   (androidx/media#3486).
-- **Spider-Man: Into the Spider-Verse** did not get to play. The run's title lookup failed (fixed
-  since; see "Spider-Man").
+- **Spider-Man: Into the Spider-Verse** did not get to play on the Shield: the lookup failed. With the
+  fixed build, the emulator (going through the proxy to Jellyscale) found it: DirectPlay, Dolby Vision
+  `dvhe.08.06` (profile 8.6). The emulator's software decoder cannot decode it, so it still needs a
+  Shield run.
 - In the emulator negative run, the proxy answered every stream request with a 302 to the canary.
   Playback failed with `ERROR_CODE_IO_BAD_HTTP_STATUS` (HTTP 302) and the canary got **0** hits.
 
@@ -143,11 +149,18 @@ rebuffer in 128 s at its bitrate.
 | `shield-jellyscale-Alien-…141210` | Shield | Jellyscale | **played 128 s** | **2.48 s / 1.28 s** (`am start -W` TotalTime 509 ms) | **3 of 3,081** (max 3 in a row, at start) | **PASS** | **401** |
 | `shield-jellyscale-SpiderMan…-…141542`, `…141639` | Shield | Jellyscale | lookup failed (0, then 1 search hit; the title compare was too strict) | — | — | PASS (3 requests) | — |
 | `shield-jellyscale-Dune-…141914` | Shield | Jellyscale | played 40 s, DV P7 to `OMX.Nvidia.DOVI.decode` | 2.17 s / 1.35 s | 0 of 922 | PASS | 401 |
+| `emu-gtv-remount-mock-Alien-…142946` | emulator | mock, 8-bit | after the remount fix: `wm density 240` and then `reset` mid-playback recreated the activity twice. Each time it reused the launch config, signed in again, restarted the session for the same origin and played again | 1.06 s, then 0.34 s and 0.37 s after each recreation | 0 of 711 | PASS | 401 |
+| `emu-gtv-mock-NoSuchFilm-…143051` | emulator | mock | the failure path: lookup failed, so the run stopped in 16 s with a summary | — | — | PASS | none (no stream) |
+| `emu-gtv-jellyscale-SpiderMan…-…143113` | emulator | Jellyscale through the proxy | lookup and plan OK (DirectPlay, 56 tracks, DV `dvhe.08.06`); decode failed on `c2.goldfish.hevc.decoder`, as expected | — | — | PASS | 401 |
 
-The `fluster_tv` emulator (`emulator-5554`) was held by the Compose browse spike the whole time, and a
-second instance of the same AVD needs every instance to be read-only. So the emulator runs used the
-`fluster_googletv` AVD (Google TV system image, API 36, x86_64), started read-only on port 5556 and
-stopped afterwards.
+**Deviation: not `fluster_tv`.** The `fluster_tv` emulator (`emulator-5554`, which this spike did not
+start) was held by the Compose browse spike the whole time. A second instance of that AVD needs every
+instance to be read-only. So the emulator runs used the `fluster_googletv` AVD instead:
+- Google TV system image, API 36, x86_64;
+- started by this spike read-only on port 5556 (`nice 10`, 2 cores), and stopped afterwards.
+
+That second emulator ran **at the same time as the other agent's native work** on `emulator-5554`. It
+may have loaded the host while the browse spike was measuring.
 
 ### Proxy detail (Shield, Alien, `…141210/verdict.json`, `wire.jsonl`)
 
@@ -176,7 +189,19 @@ stopped afterwards.
   - `VIDEO_DECODER name=OMX.Nvidia.h265.decode`.
   - `media.metrics` lists an `OMX.Nvidia.h265.decode` session at height 2160 for the app's uid.
   - `dumpsys media.codec` does not exist on this Android 11 build (`Can't find service: media.codec`).
+  - **The video layer** (`raw/surfaceflinger.txt`, Alien and Dune runs):
+    `SurfaceView - dev.fluster.spike.play/...` is composed in hardware (`composition type=DEVICE (2)`,
+    HWC `Comp Type DEVICE`, display frame 3840×2160), with `dataspace=0xc (12) hdr metadata types=0`.
+    - The emulator layer carried `0x11c60000` (BT2020/PQ), but the Shield's layer did not.
+    - Dataspace 12 is not a standard composed value, and what Nvidia's decoder means by it is
+      **unverified**. A guess is that the decoder converts to SDR when the sink has no HDR.
+    - No HDR static metadata was attached to the layer.
   - The output side: HWC and display report no HDR (see "Verdict").
+  - **The TV's own state is unknown.** `mScreenState=ON` is the Shield's state, not the TV's. No tool
+    here reads the TV's power or input (the browse spike's `tvoff`/`tvon` labels were also manual).
+    - The 4K59.94 mode and the EDID mode list (3840×2160 at 23.976 Hz and up) show that a 4K sink was
+      attached.
+    - Decoder and renderer counters (frames, drops) do not depend on the TV. HDR output does.
   - Media3 read `hdrStaticInfo=false` from the container. Whether the file carries mastering metadata
     in the bitstream SEI was not checked.
 - **Audio.** Alien's default track is DTS-HD (`audio/vnd.dts.hd`, 6 ch). Media3 opened the AudioTrack
@@ -188,21 +213,34 @@ stopped afterwards.
 - **What happened.** In `…140325` the proxy saw two sign-ins (4 tokenless requests, 6 probe redirects)
   and 3 stream requests, and `media.metrics` shows a 2160p `OMX.Nvidia.h265.decode` session for the app
   at 14:08:12. Then JS logged `prepare failed CodedError`.
-- **Likely cause (unverified).** Playback started, and the activity was then recreated (probably a
-  display-mode change on the Shield). The recreated activity re-ran `prepare()`, and the native
-  `startSession` refused a second start ("The session was already started"). The app only logs a
-  redacted message since then, so the cause is not proven.
-- **What a real app needs.** It must survive activity recreation: one session per process, and a
-  player that is not rebuilt on remount.
-- The second attempt (`…141210`) did not hit this.
+- **Mechanism.** The proxy counts fit a second full JS cycle in one process (sign-in, probes) dying in
+  the native `startSession`, which then refused any second start.
+- **Trigger: unknown.** Playback had started (the codec session), so something recreated the activity
+  or restarted the JS app. Neither the first cycle's `session started` nor its `FIRST_FRAME` line is in
+  `app-log.txt`, although the script clears logcat only before launch. So something else may have
+  cleared logcat mid-run: another tool may have been active on the Shield.
+- **Fix** (in the APK now in `dist/`):
+  - the launch config is held per process, so a recreated activity, whose new intent carries the
+    extras again, gets the same config;
+  - `startSession` accepts a repeat for the same origin and replaces the header; another origin is
+    still refused.
+
+  So "the token is passed to native once" becomes **once per JS start**.
+- **Fix verified on the emulator** (`emu-gtv-remount-…`): two forced recreations each resumed
+  playback, and the proxy verdict was still PASS. Whether the old build fails the same way on that
+  test was not checked.
+- A real app should keep one player across recreation rather than rebuild it.
+- The second Shield attempt (`…141210`) did not hit this. The Shield has not run the fixed build.
 
 ### Spider-Man
 
-- **Cause.** The app searched for the whole title with its colon and compared titles exactly. The core's
-  search found 0 items, then 1 once the search used the part before the colon, but the exact compare
-  still failed.
-- **Fix.** The title compare now uses letters and digits only, and a failed lookup logs the match count
-  and years. The fixed build ran only against the mock, because the Shield window had closed.
+- **What failed.** The first Shield run searched for the full title and got 0 hits. The second searched
+  for the part before the colon and got 1 hit, which failed the exact title-and-year compare. Which of
+  the two (title or year) failed it was not logged.
+- **Fix.** The search uses the text before the colon, the compare uses letters and digits only, and a
+  failed lookup now logs the match count and years.
+- **Check.** With the fix, the emulator run through the proxy to Jellyscale (`emu-gtv-jellyscale-SpiderMan…`)
+  matched it: year 2018, DirectPlay, DV profile 8.6.
 
 ## Still needed (Shield, after 23:00 CST, by the coordinator)
 
@@ -233,7 +271,10 @@ stopped afterwards.
 | Launch to first frame | verified: 2.48 s (Alien), 2.17 s (Dune) from process start | `FIRST_FRAME` lines |
 | DV P7 (Dune) is decoded and output correctly | **unverified**: decoder chosen, output not DV-capable | `OMX.Nvidia.DOVI.decode` |
 | `expo/fetch` uses OkHttp with redirects off for `redirect: "manual"` | verified, source and probe | `expo/android/.../NativeRequest.kt:44-46`; JS probes got 302 |
-| The cause of the `CodedError` in the first Shield attempt | **unverified** (activity recreation is the likely cause) | see "Remount" |
+| The trigger of the `CodedError` in the first Shield attempt | **unknown**; the mechanism (a second `startSession`) fits the proxy counts | see "Remount" |
+| The app survives activity recreation mid-playback | verified on the emulator after the fix; not yet on the Shield | `emu-gtv-remount-…` |
+| The Shield's video layer is HDR-tagged | **no**: `dataspace=0xc`, `hdr metadata types=0`, composed in hardware | `raw/surfaceflinger.txt` (local, gitignored) |
+| The TV was on and on an HDR input | **unknown** | no tool reads it |
 | The `adb reverse` tunnel did not distort the Shield timings | **unverified** | not measured against a direct LAN path |
 
 ## Not tested
@@ -257,6 +298,17 @@ stopped afterwards.
   are out of scope here).
 - **Not built.** Subtitles, audio passthrough verification at an AVR, track selection, playstate
   reporting and seeking.
+
+## Checks run
+
+- `npm run check:datasources`: "datasource check: OK (only OkHttpDataSource over the shared client)".
+  A scratch file containing `ExoPlayer.Builder(context).build()` made the check fail, as it should.
+- `npx tsc --noEmit -p .` in `spike/tv-play`: no errors.
+- `pnpm check` at the worktree root (nothing under `src/` changed) passed:
+  - Vitest: "Test Files 223 passed (223)", "Tests 3364 passed (3364)";
+  - Rust tests: "test result: ok. 221 passed; 0 failed; 7 ignored".
+- Not run, because no desktop UI, flow, Rust or negotiation code changed: `pnpm test:e2e`, the visual
+  tests, cargo fmt/clippy beyond `pnpm check`, and the server tripwire.
 
 ## How to run
 

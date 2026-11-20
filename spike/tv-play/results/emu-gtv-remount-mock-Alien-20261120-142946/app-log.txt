@@ -1,0 +1,87 @@
+--------- beginning of main
+11-20 20:29:49.288  3487  3507 I ReactNativeJS: Running "main"
+11-20 20:29:49.298  3487  3507 I OCTAVE_PLAY: launch config keys: [canary, pass, server, title, user, year]
+11-20 20:29:49.444  3487  3507 I ReactNativeJS: OCTAVE_JS connected version=12.4.0 hostClass=loopback confirm=false
+11-20 20:29:49.449  3487  3507 I ReactNativeJS: OCTAVE_JS signed in after 151ms
+11-20 20:29:49.454  3487  3507 I ReactNativeJS: OCTAVE_JS lookup ok kind=Movie year=1979
+11-20 20:29:49.457  3487  3507 I ReactNativeJS: OCTAVE_JS plan delivery=static playMethod=DirectPlay reasons=[] tracks=2
+11-20 20:29:49.466  3487  3507 I ReactNativeJS: OCTAVE_JS js probes {"redirectSameStatus":302,"redirectCanaryStatus":302}
+11-20 20:29:49.466  3487  3507 I OCTAVE_HTTP: session started (scheme=http)
+11-20 20:29:49.468  3487  3511 W OCTAVE_HTTP: received a redirect (302); not followed
+11-20 20:29:49.468  3487  3511 W OCTAVE_HTTP: received a redirect (302); not followed
+11-20 20:29:49.468  3487  3511 W OCTAVE_HTTP: refused a request to another origin (count=1)
+11-20 20:29:49.468  3487  3511 W OCTAVE_HTTP: refused a URL that carries a credential (count=1)
+11-20 20:29:49.468  3487  3511 I OCTAVE_PLAY: native probes {redirectSameStatus=302, redirectCanaryStatus=302, offOriginStatus=-1, offOriginRefused=true, apiKeyUrlRefused=true}
+11-20 20:29:49.468  3487  3507 I ReactNativeJS: OCTAVE_JS native probes {"redirectSameStatus":302,"redirectCanaryStatus":302,"offOriginStatus":-1,"offOriginRefused":true,"apiKeyUrlRefused":true}
+11-20 20:29:49.468  3487  3507 I ReactNativeJS: OCTAVE_JS control requests=4 ready after 170ms
+11-20 20:29:49.486  3487  3487 I OCTAVE_PLAY: display[before-play] isHdr=false hdrTypes=[] mode=1920x1080@60.000004 maxLum=500.0
+11-20 20:29:49.490  3487  3487 I OCTAVE_PLAY: T+378ms state=BUFFERING rebuffers=0
+11-20 20:29:49.490  3487  3487 I OCTAVE_PLAY: T+374ms prepare
+11-20 20:29:49.796  3487  3487 I OCTAVE_PLAY: VIDEO_DECODER name=c2.goldfish.hevc.decoder initMs=91
+11-20 20:29:49.799  3487  3487 I OCTAVE_PLAY: VIDEO_FORMAT mime=video/hevc codecs=hvc1.1.6.L120.90 1920x1080 fps=-1.0 bitrate=-1 color=[space=6 transfer=6 range=2 hdrStaticInfo=false lumaBits=8]
+11-20 20:29:50.022  3487  3487 I OCTAVE_PLAY: AUDIO_DECODER name=c2.android.aac.decoder
+11-20 20:29:50.022  3487  3487 I OCTAVE_PLAY: AUDIO_FORMAT mime=audio/mp4a-latm codecs=mp4a.40.2 channels=2 rate=48000 lang=und
+11-20 20:29:50.084  3487  3487 I OCTAVE_PLAY: AUDIO_TRACK encoding=2 rate=48000 channelConfig=12 tunneling=false offload=false
+11-20 20:29:50.173  3487  3487 I OCTAVE_PLAY: FIRST_FRAME T+1060ms (launch to first frame), prepare to first frame 686ms
+11-20 20:29:50.214  3487  3487 I OCTAVE_PLAY: T+1102ms state=READY rebuffers=0
+11-20 20:29:50.215  3487  3487 I OCTAVE_PLAY: T+1102ms isPlaying=true
+11-20 20:29:53.176  3487  3487 I OCTAVE_PLAY: display[after-first-frame] isHdr=false hdrTypes=[] mode=1920x1080@60.000004 maxLum=500.0
+11-20 20:29:53.481  3487  3507 I ReactNativeJS: Running "main"
+11-20 20:29:53.485  3487  3507 I OCTAVE_PLAY: launch config reused (activity recreated)
+11-20 20:29:53.493  3487  3487 I OCTAVE_PLAY: stats[release] T+4381ms pos=3140ms rendered=74 dropped=1 maxConsecDropped=1 skipped=2 droppedEvents=0 rebuffers=0 http=5 redirects=2 refusedOffOrigin=1 refusedCredentialUrl=1
+11-20 20:29:53.497  3487  3507 I ReactNativeJS: OCTAVE_JS connected version=12.4.0 hostClass=loopback confirm=false
+11-20 20:29:53.574  3487  3507 I ReactNativeJS: OCTAVE_JS signed in after 89ms
+11-20 20:29:53.591  3487  3507 I ReactNativeJS: OCTAVE_JS lookup ok kind=Movie year=1979
+11-20 20:29:53.603  3487  3507 I ReactNativeJS: OCTAVE_JS plan delivery=static playMethod=DirectPlay reasons=[] tracks=2
+11-20 20:29:53.606  3487  3507 I ReactNativeJS: OCTAVE_JS js probes {"redirectSameStatus":302,"redirectCanaryStatus":302}
+11-20 20:29:53.606  3487  3507 I OCTAVE_HTTP: session restarted for the same origin
+11-20 20:29:53.608  3487  3511 W OCTAVE_HTTP: received a redirect (302); not followed
+11-20 20:29:53.608  3487  3511 W OCTAVE_HTTP: received a redirect (302); not followed
+11-20 20:29:53.608  3487  3511 W OCTAVE_HTTP: refused a request to another origin (count=2)
+11-20 20:29:53.612  3487  3511 W OCTAVE_HTTP: refused a URL that carries a credential (count=2)
+11-20 20:29:53.612  3487  3511 I OCTAVE_PLAY: native probes {redirectSameStatus=302, redirectCanaryStatus=302, offOriginStatus=-1, offOriginRefused=true, apiKeyUrlRefused=true}
+11-20 20:29:53.612  3487  3507 I ReactNativeJS: OCTAVE_JS native probes {"redirectSameStatus":302,"redirectCanaryStatus":302,"offOriginStatus":-1,"offOriginRefused":true,"apiKeyUrlRefused":true}
+11-20 20:29:53.612  3487  3507 I ReactNativeJS: OCTAVE_JS control requests=4 ready after 127ms
+11-20 20:29:53.635  3487  3487 I OCTAVE_PLAY: display[before-play] isHdr=false hdrTypes=[] mode=1920x1080@60.000004 maxLum=500.0
+11-20 20:29:53.636  3487  3487 I OCTAVE_PLAY: T+4524ms state=BUFFERING rebuffers=0
+11-20 20:29:53.637  3487  3487 I OCTAVE_PLAY: T+4523ms prepare
+11-20 20:29:53.784  3487  3487 I OCTAVE_PLAY: VIDEO_DECODER name=c2.goldfish.hevc.decoder initMs=29
+11-20 20:29:53.784  3487  3487 I OCTAVE_PLAY: VIDEO_FORMAT mime=video/hevc codecs=hvc1.1.6.L120.90 1920x1080 fps=-1.0 bitrate=-1 color=[space=6 transfer=6 range=2 hdrStaticInfo=false lumaBits=8]
+11-20 20:29:53.809  3487  3487 I OCTAVE_PLAY: AUDIO_DECODER name=c2.android.aac.decoder
+11-20 20:29:53.809  3487  3487 I OCTAVE_PLAY: AUDIO_FORMAT mime=audio/mp4a-latm codecs=mp4a.40.2 channels=2 rate=48000 lang=und
+11-20 20:29:53.813  3487  3487 I OCTAVE_PLAY: AUDIO_TRACK encoding=2 rate=48000 channelConfig=12 tunneling=false offload=false
+11-20 20:29:53.974  3487  3487 I OCTAVE_PLAY: FIRST_FRAME T+4862ms (launch to first frame), prepare to first frame 339ms
+11-20 20:29:54.004  3487  3487 I OCTAVE_PLAY: T+4892ms state=READY rebuffers=0
+11-20 20:29:54.008  3487  3487 I OCTAVE_PLAY: T+4895ms isPlaying=true
+11-20 20:29:56.975  3487  3487 I OCTAVE_PLAY: display[after-first-frame] isHdr=false hdrTypes=[] mode=1920x1080@60.000004 maxLum=500.0
+11-20 20:30:01.583  3487  3507 I ReactNativeJS: Running "main"
+11-20 20:30:01.583  3487  3507 I OCTAVE_PLAY: launch config reused (activity recreated)
+11-20 20:30:01.598  3487  3487 I OCTAVE_PLAY: stats[release] T+12486ms pos=7526ms rendered=180 dropped=0 maxConsecDropped=0 skipped=2 droppedEvents=0 rebuffers=0 http=10 redirects=4 refusedOffOrigin=2 refusedCredentialUrl=2
+11-20 20:30:01.675  3487  3507 I ReactNativeJS: OCTAVE_JS connected version=12.4.0 hostClass=loopback confirm=false
+11-20 20:30:01.682  3487  3507 I ReactNativeJS: OCTAVE_JS signed in after 99ms
+11-20 20:30:01.690  3487  3507 I ReactNativeJS: OCTAVE_JS lookup ok kind=Movie year=1979
+11-20 20:30:01.705  3487  3507 I ReactNativeJS: OCTAVE_JS plan delivery=static playMethod=DirectPlay reasons=[] tracks=2
+11-20 20:30:01.718  3487  3507 I ReactNativeJS: OCTAVE_JS js probes {"redirectSameStatus":302,"redirectCanaryStatus":302}
+11-20 20:30:01.718  3487  3507 I OCTAVE_HTTP: session restarted for the same origin
+11-20 20:30:01.733  3487  3511 W OCTAVE_HTTP: received a redirect (302); not followed
+11-20 20:30:01.736  3487  3511 W OCTAVE_HTTP: received a redirect (302); not followed
+11-20 20:30:01.736  3487  3511 W OCTAVE_HTTP: refused a request to another origin (count=3)
+11-20 20:30:01.736  3487  3511 W OCTAVE_HTTP: refused a URL that carries a credential (count=3)
+11-20 20:30:01.736  3487  3511 I OCTAVE_PLAY: native probes {redirectSameStatus=302, redirectCanaryStatus=302, offOriginStatus=-1, offOriginRefused=true, apiKeyUrlRefused=true}
+11-20 20:30:01.736  3487  3507 I ReactNativeJS: OCTAVE_JS native probes {"redirectSameStatus":302,"redirectCanaryStatus":302,"offOriginStatus":-1,"offOriginRefused":true,"apiKeyUrlRefused":true}
+11-20 20:30:01.736  3487  3507 I ReactNativeJS: OCTAVE_JS control requests=4 ready after 153ms
+11-20 20:30:01.749  3487  3487 I OCTAVE_PLAY: display[before-play] isHdr=false hdrTypes=[] mode=1920x1080@60.000004 maxLum=500.0
+11-20 20:30:01.750  3487  3487 I OCTAVE_PLAY: T+12637ms state=BUFFERING rebuffers=0
+11-20 20:30:01.751  3487  3487 I OCTAVE_PLAY: T+12636ms prepare
+11-20 20:30:01.886  3487  3487 I OCTAVE_PLAY: VIDEO_DECODER name=c2.goldfish.hevc.decoder initMs=14
+11-20 20:30:01.886  3487  3487 I OCTAVE_PLAY: VIDEO_FORMAT mime=video/hevc codecs=hvc1.1.6.L120.90 1920x1080 fps=-1.0 bitrate=-1 color=[space=6 transfer=6 range=2 hdrStaticInfo=false lumaBits=8]
+11-20 20:30:01.894  3487  3487 I OCTAVE_PLAY: AUDIO_DECODER name=c2.android.aac.decoder
+11-20 20:30:01.894  3487  3487 I OCTAVE_PLAY: AUDIO_FORMAT mime=audio/mp4a-latm codecs=mp4a.40.2 channels=2 rate=48000 lang=und
+11-20 20:30:01.899  3487  3487 I OCTAVE_PLAY: AUDIO_TRACK encoding=2 rate=48000 channelConfig=12 tunneling=false offload=false
+11-20 20:30:02.115  3487  3487 I OCTAVE_PLAY: FIRST_FRAME T+13003ms (launch to first frame), prepare to first frame 367ms
+11-20 20:30:02.150  3487  3487 I OCTAVE_PLAY: T+13038ms state=READY rebuffers=0
+11-20 20:30:02.150  3487  3487 I OCTAVE_PLAY: T+13038ms isPlaying=true
+11-20 20:30:05.116  3487  3487 I OCTAVE_PLAY: display[after-first-frame] isHdr=false hdrTypes=[] mode=1920x1080@60.000004 maxLum=500.0
+11-20 20:30:11.753  3487  3487 I OCTAVE_PLAY: stats[tick] T+22640ms pos=9570ms rendered=231 dropped=0 maxConsecDropped=0 skipped=0 droppedEvents=0 rebuffers=0 http=15 redirects=6 refusedOffOrigin=3 refusedCredentialUrl=3
+11-20 20:30:21.752  3487  3487 I OCTAVE_PLAY: stats[tick] T+32640ms pos=19522ms rendered=471 dropped=0 maxConsecDropped=0 skipped=0 droppedEvents=0 rebuffers=0 http=15 redirects=6 refusedOffOrigin=3 refusedCredentialUrl=3
+11-20 20:30:31.752  3487  3487 I OCTAVE_PLAY: stats[tick] T+42640ms pos=29523ms rendered=711 dropped=0 maxConsecDropped=0 skipped=0 droppedEvents=0 rebuffers=0 http=15 redirects=6 refusedOffOrigin=3 refusedCredentialUrl=3

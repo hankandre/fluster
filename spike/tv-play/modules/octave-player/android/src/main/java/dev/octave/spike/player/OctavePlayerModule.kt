@@ -10,13 +10,20 @@ private const val TAG = "OCTAVE_PLAY"
 
 private val LAUNCH_KEYS = listOf("server", "user", "pass", "title", "year", "canary")
 
+private var launchConfig: Map<String, String>? = null
+
 class OctavePlayerModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("OctavePlayer")
 
-    // Run-time inputs from `am start --es octave.<key> ...`. They are removed from the intent once
-    // read, so a later read (or a recreated activity) cannot see the password again. Never logged.
+    // Run-time inputs from `am start --es octave.<key> ...`, removed from the intent once read and
+    // never logged. Held in memory per process, so a recreated activity (whose new intent still
+    // carries the extras) gets the same config.
     Function("takeLaunchConfig") {
+      launchConfig?.let {
+        Log.i(TAG, "launch config reused (activity recreated)")
+        return@Function it
+      }
       val intent = appContext.currentActivity?.intent ?: return@Function emptyMap<String, String>()
       val config = mutableMapOf<String, String>()
       for (key in LAUNCH_KEYS) {
@@ -24,10 +31,11 @@ class OctavePlayerModule : Module() {
         intent.removeExtra("octave.$key")
       }
       Log.i(TAG, "launch config keys: ${config.keys.sorted()}")
+      if (config.isNotEmpty()) launchConfig = config
       config
     }
 
-    // The one hand-over of the Authorization header (and so the token) to native code.
+    // The hand-over of the Authorization header (and so the token) to native code, once per JS start.
     Function("startSession") { origin: String, authorization: String ->
       AuthenticatedHttp.start(origin, authorization)
     }

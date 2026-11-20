@@ -1,0 +1,34 @@
+label=emu-gtv mode=jellyscale title=Spider-Man: Into the Spider-Verse year=2018 negative=none play_secs=5
+Status: ok
+TotalTime: 190
+WaitTime: 195
+OCTAVE_JS connected version=12.4.0 hostClass=loopback confirm=false
+OCTAVE_JS signed in after 177ms
+OCTAVE_JS lookup ok kind=Movie year=2018
+OCTAVE_JS plan delivery=static playMethod=DirectPlay reasons=[] tracks=56
+OCTAVE_JS js probes {"redirectSameStatus":302,"redirectCanaryStatus":302}
+OCTAVE_HTTP: session started (scheme=http)
+OCTAVE_HTTP: refused a request to another origin (count=1)
+OCTAVE_HTTP: refused a URL that carries a credential (count=1)
+OCTAVE_PLAY: native probes {redirectSameStatus=302, redirectCanaryStatus=302, offOriginStatus=-1, offOriginRefused=true, apiKeyUrlRefused=true}
+OCTAVE_JS native probes {"redirectSameStatus":302,"redirectCanaryStatus":302,"offOriginStatus":-1,"offOriginRefused":true,"apiKeyUrlRefused":true}
+OCTAVE_JS control requests=4 ready after 256ms
+OCTAVE_PLAY: display[before-play] isHdr=false hdrTypes=[] mode=1920x1080@60.000004 maxLum=500.0
+OCTAVE_PLAY: VIDEO_DECODER name=c2.goldfish.hevc.decoder initMs=13
+OCTAVE_PLAY: VIDEO_FORMAT mime=video/dolby-vision codecs=dvhe.08.06 3840x2160 fps=-1.0 bitrate=-1 color=[space=6 transfer=6 range=2 hdrStaticInfo=false lumaBits=10]
+OCTAVE_PLAY: PLAYER_ERROR code=ERROR_CODE_DECODING_FAILED causes=[jp1, CodecException] httpStatus=null
+OCTAVE_PLAY: stats[tick] T+10462ms pos=0ms rendered=null dropped=null maxConsecDropped=null skipped=null droppedEvents=0 rebuffers=0 http=5 redirects=2 refusedOffOrigin=1 refusedCredentialUrl=1
+--- control
+{"tokenlessStreamStatus": 401}
+--- proxy
+proxy verdict: PASS {"everyRequestHasAuthorization":true,"tokenOnEveryNonPublicRequest":true,"noCredentialInAnyUrl":true,"zeroRedirectsFollowed":true,"zeroOtherOrigins":true,"apiKeyProbeNeverSent":true,"upstreamRelayedNoRedirect":true}
+--- HWC
+   HWC Support: wideColorGamut=false hdr10plus=false hdr10=false hlg=false dv=false metadata=0 
+--- app video layer (SurfaceFlinger)
+      forceClientComposition=false clearClientTarget=false displayFrame=[0 0 1920 1080] sourceCrop=[0.000000 0.000000 0.000000 0.000000] bufferTransform=0 (0) dataspace=V0_SRGB (142671872) whitePointNits=-1.000000 dimmingRatio=1.000000 override buffer=0x0 override acquire fence=0x0 override display frame=[0 0 -1 -1] override dataspace=UNKNOWN (0) override display space=ProjectionSpace{bounds=Rect(0, 0, -1, -1), content=Rect(0, 0, -1, -1), orientation=ROTATION_0} override damage region=  Region  (this=0x723d0f3c4830, count=1)
+      hwc: layer=0x0815 composition=SOLID_COLOR (3) 
+      forceClientComposition=false clearClientTarget=false displayFrame=[0 0 1920 1080] sourceCrop=[0.000000 0.000000 1920.000000 1080.000000] bufferTransform=0 (0) dataspace=V0_SRGB (142671872) whitePointNits=-1.000000 dimmingRatio=1.000000 override buffer=0x0 override acquire fence=0x0 override display frame=[0 0 -1 -1] override dataspace=UNKNOWN (0) override display space=ProjectionSpace{bounds=Rect(0, 0, -1, -1), content=Rect(0, 0, -1, -1), orientation=ROTATION_0} override damage region=  Region  (this=0x723d0f3edf40, count=1)
+      hwc: layer=0x0814 composition=DEVICE (2) 
+--- display (HDR state)
+HdrCapabilities{mSupportedHdrTypes=[], mMaxLuminance=500.0, mMaxAverageLuminance=500.0, mMinLuminance=0.0}
+mActiveColorMode=0

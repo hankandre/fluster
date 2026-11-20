@@ -1,0 +1,25 @@
+--------- beginning of main
+11-20 20:31:15.474  4075  4096 I ReactNativeJS: Running "main"
+11-20 20:31:15.479  4075  4096 I OCTAVE_PLAY: launch config keys: [canary, pass, server, title, user, year]
+11-20 20:31:15.549  4075  4096 I ReactNativeJS: OCTAVE_JS connected version=12.4.0 hostClass=loopback confirm=false
+11-20 20:31:15.656  4075  4096 I ReactNativeJS: OCTAVE_JS signed in after 177ms
+11-20 20:31:15.667  4075  4096 I ReactNativeJS: OCTAVE_JS lookup ok kind=Movie year=2018
+11-20 20:31:15.730  4075  4096 I ReactNativeJS: OCTAVE_JS plan delivery=static playMethod=DirectPlay reasons=[] tracks=56
+11-20 20:31:15.733  4075  4096 I ReactNativeJS: OCTAVE_JS js probes {"redirectSameStatus":302,"redirectCanaryStatus":302}
+11-20 20:31:15.733  4075  4096 I OCTAVE_HTTP: session started (scheme=http)
+11-20 20:31:15.735  4075  4103 W OCTAVE_HTTP: received a redirect (302); not followed
+11-20 20:31:15.735  4075  4103 W OCTAVE_HTTP: received a redirect (302); not followed
+11-20 20:31:15.735  4075  4103 W OCTAVE_HTTP: refused a request to another origin (count=1)
+11-20 20:31:15.735  4075  4103 W OCTAVE_HTTP: refused a URL that carries a credential (count=1)
+11-20 20:31:15.735  4075  4103 I OCTAVE_PLAY: native probes {redirectSameStatus=302, redirectCanaryStatus=302, offOriginStatus=-1, offOriginRefused=true, apiKeyUrlRefused=true}
+11-20 20:31:15.735  4075  4096 I ReactNativeJS: OCTAVE_JS native probes {"redirectSameStatus":302,"redirectCanaryStatus":302,"offOriginStatus":-1,"offOriginRefused":true,"apiKeyUrlRefused":true}
+11-20 20:31:15.735  4075  4096 I ReactNativeJS: OCTAVE_JS control requests=4 ready after 256ms
+11-20 20:31:15.751  4075  4075 I OCTAVE_PLAY: display[before-play] isHdr=false hdrTypes=[] mode=1920x1080@60.000004 maxLum=500.0
+11-20 20:31:15.755  4075  4075 I OCTAVE_PLAY: T+461ms state=BUFFERING rebuffers=0
+11-20 20:31:15.755  4075  4075 I OCTAVE_PLAY: T+457ms prepare
+11-20 20:31:16.203  4075  4075 I OCTAVE_PLAY: VIDEO_DECODER name=c2.goldfish.hevc.decoder initMs=13
+11-20 20:31:16.203  4075  4075 I OCTAVE_PLAY: VIDEO_FORMAT mime=video/dolby-vision codecs=dvhe.08.06 3840x2160 fps=-1.0 bitrate=-1 color=[space=6 transfer=6 range=2 hdrStaticInfo=false lumaBits=10]
+11-20 20:31:16.307  4075  4075 E OCTAVE_PLAY: VIDEO_CODEC_ERROR CodecException
+11-20 20:31:16.314  4075  4075 E OCTAVE_PLAY: PLAYER_ERROR code=ERROR_CODE_DECODING_FAILED causes=[jp1, CodecException] httpStatus=null
+11-20 20:31:16.314  4075  4075 I OCTAVE_PLAY: T+1021ms state=IDLE rebuffers=0
+11-20 20:31:25.755  4075  4075 I OCTAVE_PLAY: stats[tick] T+10462ms pos=0ms rendered=null dropped=null maxConsecDropped=null skipped=null droppedEvents=0 rebuffers=0 http=5 redirects=2 refusedOffOrigin=1 refusedCredentialUrl=1
