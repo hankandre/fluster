@@ -513,7 +513,7 @@
     },
     {
       "name": "segment URI refused: user name",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://user@127.0.0.1:8096/a.mp4\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -525,7 +525,7 @@
     },
     {
       "name": "segment URI refused: user name and password",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://user:pass@127.0.0.1:8096/a.mp4\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -957,7 +957,7 @@
     },
     {
       "name": "segment URI with credential query ApiKey",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?ApiKey=secret\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -969,7 +969,7 @@
     },
     {
       "name": "segment URI with credential query api_key",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?api_key=secret\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -981,7 +981,7 @@
     },
     {
       "name": "segment URI with credential query API_KEY",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?API_KEY=secret\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -993,7 +993,7 @@
     },
     {
       "name": "segment URI with credential query access_token",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?access_token=secret\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -1005,7 +1005,7 @@
     },
     {
       "name": "segment URI with credential query Token",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?Token=secret\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -1017,7 +1017,7 @@
     },
     {
       "name": "segment URI with credential query X-Emby-Token",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?X-Emby-Token=secret\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -1029,7 +1029,7 @@
     },
     {
       "name": "segment URI with credential query x%2Demby%2Dtoken",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?x%2Demby%2Dtoken=secret\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -1041,7 +1041,7 @@
     },
     {
       "name": "segment URI with credential query Api%4Bey",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?Api%4Bey=secret\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -1053,7 +1053,7 @@
     },
     {
       "name": "segment URI with credential query a=1&apikey=secret",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?a=1&apikey=secret\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -1065,7 +1065,7 @@
     },
     {
       "name": "credential in body: token",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "master",
       "body": "#EXTM3U\nmain.m3u8?token=secret\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
@@ -1077,7 +1077,7 @@
     },
     {
       "name": "credential in body: X-EMBY-TOKEN",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "master",
       "body": "#EXTM3U\nmain.m3u8?X-EMBY-TOKEN=secret\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
@@ -1089,7 +1089,7 @@
     },
     {
       "name": "credential in body: Token in an unknown tag",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "master",
       "body": "#EXTM3U\n#EXT-X-FOO:URI=\"x?Token=secret\"\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
@@ -1101,7 +1101,7 @@
     },
     {
       "name": "credential in body: ApiKey in a trickplay URI",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "master",
       "body": "#EXTM3U\n#EXT-X-IMAGE-STREAM-INF:URI=\"Trickplay/320/tiles.m3u8?ApiKey=secret\"\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
@@ -1113,7 +1113,7 @@
     },
     {
       "name": "credential in body: ApiKey in a comment",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "master",
       "body": "#EXTM3U\n# comment ApiKey=secret\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
@@ -1125,7 +1125,7 @@
     },
     {
       "name": "credential in body: ApiKey after a semicolon",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "master",
       "body": "#EXTM3U\nmain.m3u8;ApiKey=secret\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
@@ -1137,7 +1137,7 @@
     },
     {
       "name": "credential in body: encoded equals sign",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "master",
       "body": "#EXTM3U\nmain.m3u8?ApiKey%3Dsecret\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
@@ -1149,7 +1149,7 @@
     },
     {
       "name": "credential in body: double percent-encoded name",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "master",
       "body": "#EXTM3U\nmain.m3u8?Api%254Bey=secret\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
@@ -1161,7 +1161,7 @@
     },
     {
       "name": "credential in body: MediaBrowser header text",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "master",
       "body": "#EXTM3U\nMediaBrowser Token = \"secret\"\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
@@ -1173,7 +1173,7 @@
     },
     {
       "name": "credential in body: body without a header",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "master",
       "body": "ApiKey=secret",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
@@ -1185,7 +1185,7 @@
     },
     {
       "name": "credential in playlist: trickplay ApiKey",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "master",
       "body": "#EXTM3U\n#EXT-X-IMAGE-STREAM-INF:BANDWIDTH=1,URI=\"Trickplay/320/tiles.m3u8?ApiKey=canary\"\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nmain.m3u8?PlaySessionId=p\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
@@ -1197,7 +1197,7 @@
     },
     {
       "name": "credential in playlist: subtitle rendition api_key",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "master",
       "body": "#EXTM3U\n#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID=\"s\",NAME=\"x\",URI=\"subtitles.m3u8?SegmentLength=30&api_key=canary\"\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nmain.m3u8?PlaySessionId=p\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
@@ -1209,7 +1209,7 @@
     },
     {
       "name": "credential in playlist: access_token in a comment",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "master",
       "body": "#EXTM3U\n# access_token=canary\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nmain.m3u8?PlaySessionId=p\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
@@ -1221,7 +1221,7 @@
     },
     {
       "name": "credential in playlist: Token in an unknown media tag",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-UNKNOWN:X-T=\"Token=canary\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -1233,7 +1233,7 @@
     },
     {
       "name": "credential in playlist: X-Emby-Token in a Jellyfin segment",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:6\n#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-MAP:URI=\"hls1/main/-1.mp4?DeviceId=d&PlaySessionId=p\"\n#EXTINF:6.0060, nodesc\nhls1/main/0.mp4?DeviceId=d&PlaySessionId=p&X-Emby-Token=canary&runtimeTicks=0&actualSegmentLengthTicks=60060000\n#EXTINF:3.0030, nodesc\nhls1/main/1.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=60060000&actualSegmentLengthTicks=30030000\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -1245,7 +1245,7 @@
     },
     {
       "name": "credential in playlist: APIKEY in a Jellyfin segment",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:6\n#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-MAP:URI=\"hls1/main/-1.mp4?DeviceId=d&PlaySessionId=p\"\n#EXTINF:6.0060, nodesc\nhls1/main/0.mp4?DeviceId=d&PlaySessionId=p&APIKEY=canary&runtimeTicks=0&actualSegmentLengthTicks=60060000\n#EXTINF:3.0030, nodesc\nhls1/main/1.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=60060000&actualSegmentLengthTicks=30030000\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -1305,7 +1305,7 @@
     },
     {
       "name": "segment URI with a credential name and no value",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?ApiKey\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -1317,7 +1317,7 @@
     },
     {
       "name": "credential name with a dotless i that case-folds to ASCII",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?ap\u0131key=secret\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -1329,7 +1329,7 @@
     },
     {
       "name": "credential name with a long s that case-folds to ASCII",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?acce\u017fs_token=secret\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -1341,7 +1341,7 @@
     },
     {
       "name": "credential name with a Kelvin sign that case-folds to ASCII",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?to\u212aen=secret\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -1353,7 +1353,7 @@
     },
     {
       "name": "credential name percent-encoded four times",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?%25252541%25252570%25252569%2525254B%25252565%25252579=x\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -1365,7 +1365,7 @@
     },
     {
       "name": "credential name percent-encoded five times",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?%2525252541%2525252570%2525252569%252525254B%2525252565%2525252579=x\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -1377,7 +1377,7 @@
     },
     {
       "name": "harmless value that still decodes after four rounds",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?x=%2525252541\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -1389,7 +1389,7 @@
     },
     {
       "name": "harmless value percent-encoded four times",
-      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "rule": "No credential: no user info in a URI, no credential query name in a URI (with or without a value), and no ApiKey, api_key, access_token, Token, or X-Emby-Token followed by = anywhere in the body (case-folded, as written or after each of up to four rounds of percent decoding; a body that still decodes after four rounds is refused).",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?x=%25252541\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -1401,7 +1401,7 @@
     },
     {
       "name": "body echoes the token in a segment URI",
-      "rule": "A body that contains the signed-in token itself (any case, percent-encoded) is refused.",
+      "rule": "A body that contains the signed-in token itself (case-folded, as written or after each of up to four rounds of percent decoding) is refused.",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?x=0123456789abcdefCANARY\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -1414,7 +1414,7 @@
     },
     {
       "name": "body echoes the token in another case",
-      "rule": "A body that contains the signed-in token itself (any case, percent-encoded) is refused.",
+      "rule": "A body that contains the signed-in token itself (case-folded, as written or after each of up to four rounds of percent decoding) is refused.",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?x=0123456789abcdefcanary\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -1427,7 +1427,7 @@
     },
     {
       "name": "body echoes the token percent-encoded",
-      "rule": "A body that contains the signed-in token itself (any case, percent-encoded) is refused.",
+      "rule": "A body that contains the signed-in token itself (case-folded, as written or after each of up to four rounds of percent decoding) is refused.",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?x=%30%31%32%33%34%35%36%37%38%39%61%62%63%64%65%66%43%41%4E%41%52%59\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -1440,7 +1440,7 @@
     },
     {
       "name": "body echoes the token percent-encoded four times",
-      "rule": "A body that contains the signed-in token itself (any case, percent-encoded) is refused.",
+      "rule": "A body that contains the signed-in token itself (case-folded, as written or after each of up to four rounds of percent decoding) is refused.",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?x=%25252530%25252531%25252532%25252533%25252534%25252535%25252536%25252537%25252538%25252539%25252561%25252562%25252563%25252564%25252565%25252566%25252543%25252541%2525254E%25252541%25252552%25252559\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -1453,7 +1453,7 @@
     },
     {
       "name": "body echoes the token percent-encoded five times",
-      "rule": "A body that contains the signed-in token itself (any case, percent-encoded) is refused.",
+      "rule": "A body that contains the signed-in token itself (case-folded, as written or after each of up to four rounds of percent decoding) is refused.",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?x=%2525252530%2525252531%2525252532%2525252533%2525252534%2525252535%2525252536%2525252537%2525252538%2525252539%2525252561%2525252562%2525252563%2525252564%2525252565%2525252566%2525252543%2525252541%252525254E%2525252541%2525252552%2525252559\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -1466,7 +1466,7 @@
     },
     {
       "name": "body echoes the token in a comment",
-      "rule": "A body that contains the signed-in token itself (any case, percent-encoded) is refused.",
+      "rule": "A body that contains the signed-in token itself (case-folded, as written or after each of up to four rounds of percent decoding) is refused.",
       "playlistKind": "master",
       "body": "#EXTM3U\n# 0123456789abcdefCANARY\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nmain.m3u8?PlaySessionId=p\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
@@ -1479,7 +1479,7 @@
     },
     {
       "name": "body without the token is accepted",
-      "rule": "A body that contains the signed-in token itself (any case, percent-encoded) is refused.",
+      "rule": "A body that contains the signed-in token itself (case-folded, as written or after each of up to four rounds of percent decoding) is refused.",
       "playlistKind": "media",
       "body": "#EXTM3U\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:6\n#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-MAP:URI=\"hls1/main/-1.mp4?DeviceId=d&PlaySessionId=p\"\n#EXTINF:6.0060, nodesc\nhls1/main/0.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=0&actualSegmentLengthTicks=60060000\n#EXTINF:3.0030, nodesc\nhls1/main/1.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=60060000&actualSegmentLengthTicks=30030000\n#EXT-X-ENDLIST\n",
       "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
@@ -2341,6 +2341,42 @@
       "expected": {
         "verdict": "accept",
         "servedBody": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1:8096/videos/abc/hls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
+      "name": "structure: STREAM-INF left without its URI after a complete variant",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nmain.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=2\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "structure: EXTINF left without its URI after a complete segment",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nseg.mp4\n#EXTINF:1,\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "segment URI refused: server name with a trailing dot",
+      "rule": "A URI must be spelled so every URL parser reads the same host: a scheme is followed by //, no user info (even empty), the host exactly as parsed (dotted-decimal IPv4 only, no percent-encoding, no trailing dot), and a plain decimal port.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttps://media.example.test./jellyfin/a.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "https://media.example.test/jellyfin/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "https://media.example.test",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
       }
     },
     {
