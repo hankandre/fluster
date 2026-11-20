@@ -25,3 +25,6 @@ tests/samples/**/*
 # Generated synthetic art for the visual harness (scripts/generate-visual-art.mjs)
 e2e/fixtures/art/
 visual-captures/
+# Playwright blob reports from sharded visual runs
+blob-report/
+shards/
