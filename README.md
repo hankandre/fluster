@@ -1,63 +1,45 @@
 # Octave
 
-Octave is a Jellyfin 10.11 client that plays the original file whenever it can and shows every server conversion. The current beta target is Linux x86_64 on Wayland. It asks Jellyfin for the untouched original file and decodes it locally with embedded libmpv. Video is drawn by a native OpenGL surface beneath a transparent Tauri WebView, while React renders the in-shell controls and overlays.
+Octave is a Jellyfin and Jellyscale client for the TV that plays the original file whenever the device can and shows every server conversion. It is being built for Android TV first, with Apple TV kept possible, then phones and tablets, then the desktop.
 
-When mpv cannot play the original, Octave falls back to server repackaging (direct stream) or conversion (transcode) and shows which one and why in the player ([Decision 0002](docs/decisions/0002-server-transcoding-fallback.md); remaining work in `docs/plans/active/002-transcoding-fallback-and-parity.md`).
+It asks the server for the untouched original file and decodes it on the device: Media3 on Android, with libmpv to follow for original files Media3 cannot decode. When no engine on the device can play the original, the server repackages or converts it, and the player says which and why ([decision 0002](docs/decisions/0002-server-transcoding-fallback.md)). Every request carries the token in the `Authorization` header; a token never appears in a URL.
 
-## Current vertical slice
+## Status
 
-- Manual server URL and username/password or Quick Connect login. HTTPS works everywhere; plain HTTP works for loopback and, after a one-time warning, for private home-network addresses. The access token exists in memory only.
-- A risk-first library view containing the ten latest movies and episodes.
-- Jellyfin watched/resume state, with an explicit Resume or Start Over choice before negotiation.
-- Static `/Videos/{itemId}/stream` playback with direct play enabled and direct stream/transcoding disabled.
-- Embedded libmpv Render API output: GTK `GLArea` on Wayland and `NSOpenGLView` on macOS.
-- A dedicated React player view with play/pause, seek, volume, mute, tracks, fullscreen, status, and diagnostics.
-- Runtime hardware-decoder diagnostics, automatic local CPU fallback, and Jellyfin start/progress/stop reporting.
-- In-player failure recovery. Retry requests fresh PlaybackInfo and a new play session; Back to Library stays available.
-- A self-contained x86_64 AppImage with pinned libmpv 0.41, one media dependency closure, licenses, an SBOM, provenance, and an extraction test.
-- Tailwind CSS 4 through the Vite plugin, plus a small component layer for the editorial artwork treatment.
-- An embedded browser `<video>` engine for frontend development and CI. It never claims verified hardware acceleration and is not a desktop fallback.
+This is a clean slate. `main` holds the shared TypeScript core (domain rules, the Jellyfin gateway and playback negotiation, the playback coordinator, the playstate reporter, and redaction), its tests, the recorded Jellyfin fixtures, the shared validator vectors, and the server tripwire. The TV app does not exist yet: the work is planned task by task in `tasks/prd.json`, starting with phase T2 (core extraction) and T3 (the app scaffold). The stack is set by decisions [0003](docs/decisions/0003-tv-and-mobile-shell.md) and [0004](docs/decisions/0004-tv-shell-go-no-go.md): React Native with Expo SDK 58 and react-native-tvos 0.88.x, native Kotlin for networking and playback.
 
-GPU selection is automatic. There is no executable or GPU selector, and the desktop client never opens a separate player window.
-
-X11, Windows, ARM64 Linux, Flatpak, downloads, persistent login, live TV, and disc/ISO media are not in this slice. Server conversion fallback and an Android TV shell are planned next. Octave is a video client: music, audiobooks, and photos are out of scope. The macOS renderer remains experimental and is outside this beta's validation claim.
+An earlier desktop app is kept, unmaintained, at the tag `desktop-tauri-final`, together with its task list.
 
 ## Develop
 
-Requirements:
-
-- Node 26 LTS (pinned in `.node-version`) and pnpm 11
-- Rust 1.95.0 (pinned by `rust-toolchain.toml`)
-- Tauri 2 platform prerequisites
-- Linux: a Wayland session and libmpv 0.41+ development/runtime files
-- macOS: Apple Silicon and a staged `libmpv.dylib` (see the release guide)
+Requirements: Node 26 (pinned in `.node-version`, read by mise) and pnpm 11.
 
 ```sh
 pnpm install
-pnpm dev
-pnpm tauri dev
-```
-
-`pnpm dev` opens browser-development mode. It is useful for UI work, but the Jellyfin server must allow that browser origin. `pnpm tauri dev` runs the native embedded renderer and is the only mode with authoritative hardware-decoding diagnostics.
-
-On macOS development builds, stage the runtime first and expose it to the linker and loader:
-
-```sh
-./release/build-libmpv-macos.sh
-LIBRARY_PATH="$PWD/src-tauri/resources/lib" \
-DYLD_FALLBACK_LIBRARY_PATH="$PWD/src-tauri/resources/lib" \
-pnpm tauri dev
-```
-
-Authentication remains session-only: the server credential and Jellyfin token are not stored in local storage, cookies, a keyring, or a config file.
-
-## Verify
-
-```sh
 pnpm check
-pnpm test:e2e
-cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
-pnpm audit --audit-level moderate
 ```
 
-See [docs/architecture.md](docs/architecture.md) for the native composition, [docs/validation.md](docs/validation.md) for Jellyfin and hardware gates, and [release/README.md](release/README.md) for bundled-runtime release builds.
+`pnpm check` runs the import-boundary lint, ESLint, the ghost-term check, the core's tests in Node, the type-check, and the task workflow's tests.
+
+The server tripwire plays generated samples through the gateway against pinned Jellyfin servers in Docker:
+
+```sh
+pnpm samples:generate
+pnpm fixture:up
+pnpm fixture:setup
+pnpm test:tripwire
+pnpm fixture:down
+```
+
+## Read next
+
+- [PRODUCT.md](PRODUCT.md): what Octave is and for whom
+- [ARCHITECTURE.md](ARCHITECTURE.md): the stack, the engines, the Jellyfin API usage, and the invariants
+- [DOMAINS.md](DOMAINS.md): where code goes
+- [DESIGN.md](DESIGN.md): the TV design system
+- [docs/security.md](docs/security.md): the token and network boundary
+- [AGENTS.md](AGENTS.md) and [WORKFLOW.md](WORKFLOW.md): how the work is done
+
+## Licence
+
+Octave is free software under the [GNU General Public License, version 3](LICENSE).

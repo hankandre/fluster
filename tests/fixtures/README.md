@@ -1,30 +1,30 @@
 # Shared test vectors
 
-Language-neutral vectors that every implementation of a rule must pass, so two implementations cannot drift. Decision 0003 (`docs/decisions/0003-tv-and-mobile-shell.md`) keeps them as the contract for the TV and mobile validators after the desktop Rust code is gone.
+Language-neutral vectors that every implementation of a rule must pass, so two implementations cannot drift. Decision 0003 (`docs/decisions/0003-tv-and-mobile-shell.md`) keeps them as the contract for the TV and mobile validators after the desktop Rust code is gone. Rust source paths below are in the desktop app's Rust crate (`src/` under its crate directory) at the tag `desktop-tauri-final`; on `main` only the TypeScript side and the shape test run them until a native validator lands (Kotlin in T3-03 and T8-08).
 
 | File | Rule | Read by |
 | --- | --- | --- |
-| `host-classes.json` | Host classes from decision 0001: loopback, private LAN, public | `src/domain/host-class.test.ts`, `src-tauri/src/url_policy.rs`, `src-tauri/src/discovery/tests.rs` |
-| `hls-master-urls.json` | The HLS master URL rules (`ARCHITECTURE.md` "HLS URL rules"): accepted plans and refused URLs | `src/lib/jellyfin/hls-rust-vectors.test.ts` (writes `vectors`), `src/lib/jellyfin/hls-url.test.ts` (`refusals`), `src-tauri/src/player/hls/master_url_tests.rs` (both) |
-| `hls-playlists.json` | The HLS playlist rules: every URI same-origin, unambiguous, and credential-free; only complete, well-formed playlists | `src-tauri/src/player/hls/playlist_vectors_tests.rs` |
-| `jellyfin/` | Scrubbed server answers; see `jellyfin/README.md` | TypeScript tests under `src/lib/jellyfin/`, `src/domain/`, and `src/features/` (for example `src/lib/jellyfin/conversion-negotiation.test.ts`) |
+| `host-classes.json` | Host classes from decision 0001: loopback, private LAN, public | `src/domain/host-class.test.ts`; at the tag, `url_policy.rs` and `discovery/tests.rs`; next, the Kotlin classifier (T3-03) |
+| `hls-master-urls.json` | The HLS master URL rules (`ARCHITECTURE.md` "HLS URL rules"): accepted plans and refused URLs | `src/lib/jellyfin/hls-master-url-vectors.test.ts` (writes `vectors`), `src/lib/jellyfin/hls-url.test.ts` (`refusals`); at the tag, `player/hls/master_url_tests.rs` (both); next, Kotlin (T8-08) |
+| `hls-playlists.json` | The HLS playlist rules: every URI same-origin, unambiguous, and credential-free; only complete, well-formed playlists | `src/lib/jellyfin/hls-playlist-vectors.test.ts` (shape); at the tag, `player/hls/playlist_vectors_tests.rs`; next, Kotlin (T8-08) |
+| `jellyfin/` | Scrubbed server answers; see `jellyfin/README.md` | TypeScript tests under `src/lib/jellyfin/` and `src/domain/` (for example `src/lib/jellyfin/conversion-negotiation.test.ts`) |
 | `playback-info-direct.json`, `playback-info-transcode-rejected.json` | Older PlaybackInfo samples | no reader at `ba55ef2` (`git grep` finds none) |
 
 ## `hls-master-urls.json`
 
-- `vectors` (44): the plans TypeScript Playback Negotiation builds from every recorded conversion, on a server with and without a base path. Rust deserializes each plan and accepts its master URL. Regenerate with `OCTAVE_WRITE_HLS_VECTORS=1 pnpm vitest run hls-rust-vectors`; that keeps `description` and `refusals` as they are.
-- `refusals` (56): master URLs Rust refuses, each with the context it is checked in (`serverUrl`, `mediaKind`, `itemId`, `mediaSourceId`, `playSessionId`) and a `rule` tag. `typescript` says what `rebuildMasterUrl` (`src/lib/jellyfin/hls-url.ts`) does with the same input:
+- `vectors` (44): the plans TypeScript Playback Negotiation builds from every recorded conversion, on a server with and without a base path. Every native validator deserializes each plan and accepts its master URL. Regenerate with `OCTAVE_WRITE_HLS_VECTORS=1 pnpm vitest run hls-master-url-vectors`; that keeps `description` and `refusals` as they are.
+- `refusals` (56): master URLs every validator refuses, each with the context it is checked in (`serverUrl`, `mediaKind`, `itemId`, `mediaSourceId`, `playSessionId`) and a `rule` tag. `typescript` says what `rebuildMasterUrl` (`src/lib/jellyfin/hls-url.ts`) does with the same input:
   - `{"verdict": "refuse"}`: it refuses too.
-  - `{"verdict": "rebuild", "url": "…"}`: it removes the offending part (a credential parameter, `EnableTrickplay`, `EnableSubtitlesInManifest=false`) and returns `url`, which Rust then accepts.
+  - `{"verdict": "rebuild", "url": "…"}`: it removes the offending part (a credential parameter, `EnableTrickplay`, `EnableSubtitlesInManifest=false`) and returns `url`, which a validator then accepts.
 
-A new client checks the master URL the way the side it replaces does: the rebuild, then Rust's check of the result.
+A new client checks the master URL the way the side it replaces does: the rebuild, then the native check of the result.
 
 ## `hls-playlists.json`
 
-The rules of the desktop validator (`src-tauri/src/player/hls/playlist.rs`, `uri.rs`, `attributes.rs`, and the body check in `session.rs`) as data. Every validator that replaces it must give the same verdict and reason for every vector: Kotlin in Media3's playlist parser hook first, then Swift or an IO-free Rust crate.
+The rules of the desktop validator (`player/hls/playlist.rs`, `uri.rs`, `attributes.rs`, and the body check in `session.rs`) as data. Every validator that replaces it must give the same verdict and reason for every vector: Kotlin in Media3's playlist parser hook first, then Swift or an IO-free Rust crate.
 
-- Vectors: 210. SHA-256 of the file at this count: `4395202a97006337c2bc12262760a52e4fd277ce1d60c5d607a12a4911f2e3e3`.
-- Run by `hls_playlist_vectors_match_the_rust_validator` through `session::check_playlist_body`, the function a desktop session uses on every fetched body.
+- Vectors: 210. SHA-256 of the file at this count: `536984c5135a40c83a7f06c88adaeb47eb77b8498f8008fdfb2deae22f756221`.
+- At the tag, run by `hls_playlist_vectors_match_the_rust_validator` through `session::check_playlist_body`, the function a desktop session used on every fetched body. On `main`, `src/lib/jellyfin/hls-playlist-vectors.test.ts` checks the file's shape.
 
 ### Schema
 
@@ -52,8 +52,8 @@ The rules of the desktop validator (`src-tauri/src/player/hls/playlist.rs`, `uri
 - `expected` is `{"verdict": "accept", …}` or `{"verdict": "refuse", "reason": <code>}`.
   - `servedBody` (every accept) is the copy the player reads: LF line ends, every URI in its absolute resolved form, and each child playlist named by its own absolute URL. The desktop app swaps each child for a loopback URL; that swap is not part of the vector.
   - `children` (every master accept, and only those) lists the child playlists in order: `EXT-X-MEDIA` renditions with a `URI` and `EXT-X-STREAM-INF` variants, as they appear. A validator fetches and checks each one as a `media` playlist before the player opens it.
-- The schema is closed: an unknown key fails the Rust driver (`hls_playlist_vectors_refuse_unknown_keys`).
-- Hosts are synthetic: `127.0.0.1` and names under `example.test`. `hls_playlist_vectors_name_no_real_server` checks `baseUrl` and `serverOrigin`, and that no `192.168.` address appears anywhere in the file; hosts inside bodies are checked by review only.
+- The schema is closed: an unknown key fails every driver (on `main`, `hls-playlist-vectors.test.ts`).
+- Hosts are synthetic: `127.0.0.1` and names under `example.test`. the shape test checks `baseUrl` and `serverOrigin`, and that no `192.168.` address appears anywhere in the file; hosts inside bodies are checked by review only.
 
 ### Reason codes
 
@@ -105,11 +105,11 @@ A body with more than one fault is refused with the reason of the first check th
 
 These rules are not in the vectors, because they need I/O. They are part of the contract and leave with the Rust code, so they are written here.
 
-- Every playlist and subtitle request carries exactly one `Authorization` header with the typed value, and no token in the URL (`src-tauri/src/player/hls/fetch.rs:86`).
+- Every playlist and subtitle request carries exactly one `Authorization` header with the typed value, and no token in the URL (`player/hls/fetch.rs:86`).
 - No redirects: a 3xx is refused (`HlsError::Redirect`) and never followed (`fetch.rs:50`, `:90-92`). No proxy (`fetch.rs:51`), no cookies.
 - Only HTTP 200 is accepted; any other status is refused (`fetch.rs:93-95`).
 - TLS uses the platform's root certificates (`fetch.rs:23-47`).
-- Playlists: at most 8 MiB (`fetch.rs:14`), a 20 s timeout per request (`fetch.rs:19`), and the body must be valid UTF-8, or it is `malformed` (`fetch.rs:68`). The master is fetched and checked first, then each of its `children` as `media`, before the player opens anything (`session.rs` `open_until`). All checks share a 60 s deadline (`src-tauri/src/player/pending.rs:18`).
+- Playlists: at most 8 MiB (`fetch.rs:14`), a 20 s timeout per request (`fetch.rs:19`), and the body must be valid UTF-8, or it is `malformed` (`fetch.rs:68`). The master is fetched and checked first, then each of its `children` as `media`, before the player opens anything (`session.rs` `open_until`). All checks share a 60 s deadline (`player/pending.rs:18`).
 - External subtitles on a converted stream are fetched the same way, from the server's origin with no credential query (`session.rs:137-141`), at most 64 MiB each and 96 MiB per session (`fetch.rs:16`, `:18`), with a 45 s timeout (`fetch.rs:21`).
   - The body is refused if it echoes the token (`session.rs:107`).
   - It is refused if it names a playlist or reference format anywhere, in any ASCII case: `#extm3u`, `#ext-x-`, `#extinf`, `# mpv edl`, `edl://`, `[playlist]`, `ffconcat`, `<asx`, `<smil`, `[reference]` (`subtitle.rs:16-30`).
@@ -126,8 +126,8 @@ These rules are not in the vectors, because they need I/O. They are part of the 
 
 ### Changing it
 
-- Add a vector here first and run `cargo test --manifest-path src-tauri/Cargo.toml playlist_vectors`. A vector that disagrees with the Rust validator fails the build, and the failure lists every disagreement.
-- Update `VECTOR_COUNT` in `playlist_vectors_tests.rs`, the count and SHA-256 above, and the count in "Using it" when the file changes.
+- Add a vector here first and run `pnpm test`. Once a native validator exists (T8-08), a vector that disagrees with it fails the build. Until then, check a new vector against the Rust validator at the tag (its `playlist_vectors` test).
+- Update the count in `hls-playlist-vectors.test.ts`, the count and SHA-256 above, and the count in "Using it" when the file changes.
 - Never change a vector's `expected` to make a validator pass. A rule change is an architecture change (`ARCHITECTURE.md` invariant I2).
 
 ### Rule coverage
@@ -194,7 +194,7 @@ Each rule was deleted, one at a time, from a scratch copy of the Rust validator,
 
 ### Rust-only tests
 
-These stay in Rust, because a vector cannot express them:
+These lived in Rust at the tag, because a vector cannot express them; a native validator needs its own equivalents:
 
 - `playlist_tests.rs`: `hls_jellyfin_master_points_its_variant_at_the_loopback_copy` and `hls_renditions_with_a_uri_become_loopback_children` check the desktop loopback swap of child URLs.
 - `uri_tests.rs`: `hls_uris_refuse_credential_queries_and_tabs_on_their_own` checks that `resolve_same_origin` refuses a credential query and a trailing tab by itself. Inside a playlist, the body credential scan refuses the first, line trimming removes the second from a URI line, and a quoted attribute refuses it as a control character (`malformed`).

@@ -1,12 +1,14 @@
 # Domains
 
-Octave's bounded contexts: what each owns, the language it uses, where its code lives, and which way dependencies may point. Use this to decide where new code goes and to scope agent tasks. A task that touches more than two domains probably needs a plan (`WORKFLOW.md`).
+Octave's bounded contexts: what each owns, the language it uses, where its code lives, and which way dependencies may point. Use this to decide where new code goes and to scope agent tasks. A task that touches more than two domains probably needs a plan (`WORKFLOW.md`). Every task in `tasks/prd.json` names one of these domains.
+
+Paths: **Today** is where the code is on `main`. **Target** is where it moves: `packages/core` (T2-02), `apps/tv` (T3-01), `modules/player` (T8-01), and the native HTTP module (T3-03). A target path does not exist until its task lands.
 
 ## Map
 
 ```text
                           ┌──────────────────────────────┐
-                          │  App Shell & Presentation     │  (UI features, navigation, input)
+                          │  App Shell & Presentation     │  (screens, navigation, focus, remote keys)
                           └──────┬──────────┬────────────┘
                                  │          │
           ┌──────────────────────▼─┐   ┌────▼────────────────────────┐
@@ -23,20 +25,21 @@ Octave's bounded contexts: what each owns, the language it uses, where its code 
                                       └───────┬─────────────────────┘
                                               │ PlayerEngine port
                                       ┌───────▼─────────────────────┐
-                                      │ Player Engine               │──► Video Surface & Window
+                                      │ Player Engine  (CORE)        │  Media3 now, libmpv later
                                       └─────────────────────────────┘
-   Realtime & Remote Control (M5) ──► feeds Catalog (UserDataChanged) and Playback Session (remote Play/Playstate)
-   Distribution ── packages everything; owns the native runtime closure
-   Cross-cutting: Security & Redaction · Diagnostics
+   Realtime & Remote Control (later) ──► feeds Catalog (UserDataChanged) and Playback Session (remote Play)
+   Distribution ── builds, signs and ships the TV app
+   Cross-cutting: Security & Redaction · Diagnostics · Performance · Device lab
+   Repository: Process · Workflow
 ```
 
 **Classification:**
 
-- **Core** (where Octave differs from every other client): Playback Negotiation, Player Engine, Video Surface & Window.
-- **Supporting:** Playback Session, Playstate Reporting, Server Connection & Identity, Catalog, App Shell.
-- **Generic:** Distribution, Realtime.
+- **Core** (where Octave differs from every other client): Playback Negotiation, Player Engine, Security & Redaction.
+- **Supporting:** Playback Session, Playstate Reporting, Server Connection & Identity, Catalog, App Shell & Presentation.
+- **Generic:** Distribution, Realtime, Performance, Device lab, Process, Workflow.
 
-Spend the most rigor (Opus, plans, adversarial review) on the core.
+Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 ---
 
@@ -44,76 +47,55 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 
 **Purpose.** Know which server we talk to, as whom, and what that server supports.
 
-**Owns:**
-- server URL normalization, the host-class plain-HTTP policy, and the private-LAN confirmation
-- LAN discovery
-- the public server info probe and version/feature gating
-- password and Quick Connect sign-in
-- the stable DeviceId
-- the access token lifecycle (hold, validate via `/Users/Me`, revoke via `/Sessions/Logout`)
-- the optional credential vault (M1)
-- the account's language settings (read and whole-object save)
+**Owns:** server URL normalization, the host-class plain-HTTP policy and the private-LAN confirmation; LAN discovery; the public server info probe and feature gating; Quick Connect (code and QR) and password sign-in; the stable DeviceId; the access token lifecycle (hold, validate via `/Users/Me`, revoke via `/Sessions/Logout`); the credential store; saved accounts and "Who's watching?"; the account's language settings.
 
-**Language.** Server, ServerId, User, Session, DeviceId, Access token, Quick Connect code, Server capabilities.
+**Language.** Server, ServerId, User, Account, Session, DeviceId, Access token, Quick Connect code, Server capabilities.
 
-**Code today.** `JellyfinGateway.connect/login`, `JellyfinGateway.saveAccountLanguages`, `normalizeServerUrl`, `createSdkApi` in `src/lib/jellyfin/gateway.ts`; the Languages rows in `src/features/settings/languages-section.tsx`; the sign-in UI in `src/features/sign-in/`; LAN discovery in `src-tauri/src/discovery.rs` (`discover_servers`), the `ServerDiscovery` port in `src/domain/server-discovery.ts`, and its desktop adapter in `src/lib/discovery/native-discovery.ts`.
+**Today.** `JellyfinGateway.connect/login`, `normalizeServerUrl`, `saveAccountLanguages` in `src/lib/jellyfin/gateway.ts`; `src/domain/host-class.ts`, `src/domain/server-connection.ts`, `src/domain/server-discovery.ts` (the discovery port), `src/domain/sign-in-failure.ts`; the confirmation port in `src/lib/lan-http-confirmations.ts`.
+
+**Target.** `packages/core` for the rules and the gateway; the sign-in screens in `apps/tv`; the native session module (sign-in, the session registry, `request`; T3-03, T3-05), discovery (T4-01), and the Keystore credential store (T4-05) as native code behind core ports.
 
 **Rules.**
-- The token is held only by the gateway (and later by the Rust-owned vault). It is never in React state, Query caches, or WebView storage.
+- The token is held only in native memory and its encrypted Keystore record (decision 0005); the core holds an opaque session id. Kotlin alone performs sign-in.
 - Saved servers are keyed by `ServerId`, not URL.
 
 ---
 
 ## 2. Catalog
 
-**Purpose.** Let the user find something to watch.
+**Purpose.** Let the viewer find something to watch.
 
-**Owns:**
-- libraries (UserViews)
-- browse queries, sorting, filters, and search
-- home rows (one Continue watching row merging in-progress items and next episodes, then Latest) and the Up next hero pick (`src/domain/up-next.ts`)
-- the series → season → episode hierarchy
-- item detail and multiple versions as *display* data
-- image URL construction and caching by tag
-- user data (played, favorite, resume position) and refresh on `UserDataChanged`
+**Owns:** libraries (UserViews); browse queries, the remembered sort, the letter rail, filters, and search as you type; Home's rows (Continue watching merging in-progress items and next episodes, then one Recently added row) and the Up next hero pick (`src/domain/up-next.ts`); the series, season and episode hierarchy; item detail and versions as display data; image requests by item, type, tag and size; user data (played, favorite, resume position).
 
-**Language.** Library (UserView), Item, Movie, Series, Season, Episode, Collection, Card, Row, Resume position, Played, Favorite, Image tag.
+**Language.** Library (UserView), Item, Movie, Series, Season, Episode, Collection, Card, Row, Rail, Resume position, Played, Favorite, Image tag.
 
-**Code today.** `JellyfinGateway.latest`, the `LibraryItem` type in `src/domain/catalog.ts`, the home and browse views in `src/features/home/` and `src/features/browse/`, and the detail subtitle list in `src/domain/subtitle-list.ts` and `src/domain/languages.ts`.
+**Today.** `JellyfinGateway` catalog calls, `src/lib/jellyfin/cards.ts`, `src/lib/jellyfin/item-detail.ts`, `src/domain/catalog.ts`, `src/domain/up-next.ts`, `src/domain/subtitle-list.ts`, `src/domain/languages.ts`, `src/domain/media-format.ts`.
+
+**Target.** `packages/core` for queries and rules; Home, library, search, and detail screens in `apps/tv`; the native image view (T3-11).
 
 **Rules.**
 - Catalog code never builds stream URLs or decides playability. It hands an `itemId` (and optionally a `mediaSourceId`) to Playback Negotiation.
-- Request only the fields a view needs (see `ARCHITECTURE.md` §3).
+- Request only the fields a view needs (`ARCHITECTURE.md` §4).
+- Images never take a URL, header, or token from React; only an item id, type, tag, and size.
 
 ---
 
 ## 3. Playback Negotiation — core
 
-**Purpose.** Turn "play this item" into a `PlaybackPlan` that uses the original file whenever possible and a server conversion only when it must ([decision 0002](docs/decisions/0002-server-transcoding-fallback.md)), or a typed refusal. This is where the product's defining rule lives.
+**Purpose.** Turn "play this item" into a `PlaybackPlan` that uses the original file whenever an engine on this device can, and a server conversion only when it must ([decision 0002](docs/decisions/0002-server-transcoding-fallback.md)), or a typed refusal.
 
-**Owns:**
-- `PLAYBACK_POLICY`
-- the Octave DeviceProfile
-- the PlaybackInfo request (flags in body and query) and the streaming limit it sends
-- the source decision function (DirectPlay, DirectStream, Transcode, Refuse)
-- refusal reasons and conversion reasons
-- static stream URL construction and HLS URL rebuilding (credentials stripped, `EnableTrickplay=false`)
-- external subtitle validation
-- the PlaySessionId
-- start position (`PlaybackStartChoice`)
+**Owns:** `PLAYBACK_POLICY`; the Octave DeviceProfile; the PlaybackInfo request (flags in body and query) and the streaming limit; the device capability list as the source decision reads it (T2-07); the source decision (DirectPlay, DirectStream, Transcode, Refuse); refusal and conversion reasons and their copy; static stream URL construction and HLS URL rebuilding; external subtitle validation; the PlaySessionId; the start position.
 
-**Language.** Direct play, Direct stream, Transcode, Remux, Play method, Conversion reason, Streaming limit, Media source, Version, Device profile, Play session, Playback plan, Refusal reason, Start choice (resume / start over), Ticks.
+**Language.** Direct play, Direct stream, Transcode, Remux, Play method, Conversion reason, Device capabilities, Streaming limit, Media source, Version, Device profile, Play session, Playback plan, Refusal reason, Start choice, Ticks.
 
-**Code today.**
-- `PLAYBACK_POLICY`, `PlaybackPlan`, `resumeChoice` in `src/domain/playback.ts`
-- `PLAYBACK_INFO_FLAGS`, `buildStaticStreamUrl`, `createPlaybackPlan` (with the forced-fallback request) in `gateway.ts`
-- `decideSource`, `selectSource` in `source-acceptance.ts`; `rebuildMasterUrl` in `hls-url.ts`; `OCTAVE_PROFILE` in `device-profile.ts`
-- Rust `validate_playback_urls` in `src-tauri/src/player/network.rs`
+**Today.** `PLAYBACK_POLICY`, `PlaybackPlan`, `resumeChoice` in `src/domain/playback.ts`; `src/domain/conversion-copy.ts`; `PLAYBACK_INFO_FLAGS`, `buildStaticStreamUrl`, `createPlaybackPlan` in `gateway.ts`; `decideSource`, `selectSource` in `source-acceptance.ts`; `rebuildMasterUrl` in `hls-url.ts`; `OCTAVE_PROFILE` in `device-profile.ts`.
+
+**Target.** `packages/core`; the native re-check of master URLs and playlists lives with the Player Engine (T8-08) and passes the same shared vectors.
 
 **Rules.**
 - No other domain may construct a media URL, use a `TranscodingUrl`, or bypass the source decision.
-- Remote-control `Play` commands (M5) go through this domain exactly like a local click.
-- Every rule change needs an Opus-level review and a fixture-backed test (`WORKFLOW.md`).
+- Remote `Play` commands go through this domain exactly like a local press.
+- Every rule change needs an Opus- or Fable-level review and a fixture-backed test.
 
 ---
 
@@ -121,18 +103,13 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 
 **Purpose.** Run one viewing from negotiation to teardown, including retry and what happens next.
 
-**Owns:**
-- playback attempts and cancellation
-- launch, first-frame, and end handling
-- retry (a fresh plan and play session, from the last position the player reported once a first frame was shown)
-- stop and back
-- the UI-facing session state reducer
-- later: next-episode auto-play, intro/credits skip using media segments, trickplay scrubbing data
-- stopping server conversions (`DELETE /Videos/ActiveEncodings`) before a new play session for the same item
+**Owns:** playback attempts and cancellation; launch, first-frame, and end handling; retry; stop and Back; the session state reducer; next-episode auto-play, intro and credits skip from media segments, trickplay data; renegotiation for track and limit changes; stopping server conversions before a new play session for the same item.
 
 **Language.** Attempt, Operation, First frame, End reason (eof / stopped / quit / error), Retry, Up next, Segment (intro / outro / recap).
 
-**Code today.** `PlaybackCoordinator` (`src/lib/player/coordinator.ts`), `playbackSessionReducer` (`src/lib/player/session-state.ts`), the player wiring in `src/features/player/use-playback-session.ts`.
+**Today.** `PlaybackCoordinator` (`src/lib/player/coordinator.ts`), `playbackSessionReducer` (`src/lib/player/session-state.ts`), `src/lib/player/session-failure.ts`, `src/domain/track-choice.ts`, `src/domain/media-segments.ts`.
+
+**Target.** `packages/core`; the player screen in `modules/player` and `apps/tv`.
 
 **Rules.**
 - Talks to the player only through the `PlayerEngine` port.
@@ -144,17 +121,13 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 
 **Purpose.** Keep the server's idea of what we're watching accurate, without ever blocking playback.
 
-**Owns:**
-- start, progress, and stopped reports
-- the ordered report queue
-- bounded draining on stop or close
-- tick conversion
-- `PlayMethod` from the plan (`DirectPlay`, `DirectStream`, or `Transcode`)
-- `Failed: true` on error stops
+**Owns:** start, progress, and stopped reports; the ordered queue; bounded draining; tick conversion; `PlayMethod` from the plan; `Failed: true` on error stops.
 
 **Language.** Report, Progress interval, Drain, PositionTicks.
 
-**Code today.** `PlaystateReporter` in `src/lib/player/playstate-reporter.ts` (ordered queue, progress timer, bounded drain), driven by `PlaybackCoordinator`; `JellyfinGateway.report*`.
+**Today.** `PlaystateReporter` in `src/lib/player/playstate-reporter.ts`, `src/lib/player/confirm-play-method.ts`, `JellyfinGateway.report*`.
+
+**Target.** `packages/core`.
 
 **Rules.**
 - Reporting failures become warnings, never playback errors.
@@ -165,112 +138,77 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 
 ## 6. Player Engine — core
 
-**Purpose.** Decode and present media locally and report what is really happening.
+**Purpose.** Decode and present media on the device and report what is really happening.
 
-**Owns:**
-- the `PlayerEngine` port and `PlayerEvent` stream
-- the native mpv adapter (`NativePlayerEngine` → Tauri commands → `MpvController`)
-- the dev-only `BrowserPlayerEngine`
-- the fixed command surface
-- track listing and **Jellyfin ↔ mpv track mapping**
-- decode diagnostics (hardware/software, hwdec, codec, dropped frames)
-- the libmpv version gate
-- snapshot coalescing
+**Owns:** the `PlayerEngine` port and `PlayerEvent` stream; the device capability report; the player module's fixed methods; Media3 with Octave's media source factory and HLS parser hook; libmpv for originals only (T13); the native video view; track listing and Jellyfin index mapping; decode diagnostics.
 
-**Language.** Engine, Snapshot, Player track (playerId vs. jellyfinIndex), Decode mode, hwdec, Render API, First frame.
+**Language.** Engine, Launch request (original file or HLS session), Capabilities, Snapshot, Player track (player id vs. Jellyfin index), Decode mode, First frame.
 
-**Code today.**
-- `src/lib/player/native-player.ts`, `src/lib/player/browser-player.ts`
-- `src-tauri/src/player/` (controller, events, properties, track mapping, diagnostics), `src-tauri/src/model.rs`, `src-tauri/src/commands.rs`
+**Today.** The port types in `src/domain/playback.ts`, exercised by the coordinator's tests with fake engines. There is no engine on `main`.
+
+**Target.** `modules/player` (T8-01; Kotlin behind an interface a Swift implementation can mirror).
 
 **Rules.**
-- No generic command bridge.
-- Adding a command means updating the command allowlist test and `docs/security.md`.
-- The browser engine is never a production fallback.
-- mpv user config, scripts, and input bindings stay disabled.
+- No generic command, property, option, or header bridge.
+- Adding a method or event means updating the allowlist test and `docs/security.md`.
+- An engine never receives a token or header from JavaScript; the launch request names a session id and the engine asks the native session registry for the client (decision 0005).
+- No engine plays what cannot carry the header; libmpv never plays HLS.
 
 ---
 
-## 7. Video Surface & Window — core
+## 7. Realtime & Remote Control (later)
 
-**Purpose.** Put decoded frames on screen under the UI on each platform.
+**Purpose.** React to server-side changes and let a phone control the TV.
 
-**Owns:**
-- platform surfaces (GTK GLArea on Wayland, NSOpenGLView on macOS, D3D11 on Windows planned, the Wayland subsurface + `gpu-next` HDR path planned)
-- geometry sync from the DOM rectangle
-- fullscreen
-- UI-thread affinity of render contexts
+**Owns:** the `/socket` connection and keepalive; capabilities registration; message routing (`UserDataChanged` to Catalog; `Play`, `Playstate`, `GeneralCommand` to Playback Session).
 
-**Language.** Surface, Surface frame, Scale factor, Composition, Render context.
+**Today.** The `RealtimeConnection` port in `src/domain/realtime.ts`; no adapter.
 
-**Code today.** `src/features/player/native-video-surface.tsx`, `src-tauri/src/surface.rs`, `src-tauri/src/surface/{linux,macos}.rs`.
-
-**Rules.**
-- Renderer objects stay on the platform UI thread.
-- Geometry updates are coalesced so that only the newest one is in flight.
-- Work here is serial and needs real hardware validation (`WORKFLOW.md`).
-
----
-
-## 8. Realtime & Remote Control (M5)
-
-**Purpose.** React to server-side changes and let other Jellyfin clients control Octave.
-
-**Owns:**
-- the `/socket` connection and keepalive
-- capabilities registration
-- message routing (`UserDataChanged` → Catalog; `Play`/`Playstate`/`GeneralCommand` → Playback Session)
-- SyncPlay, later
-
-**Code today.** `src-tauri/src/realtime.rs` (the `/socket` connection, keepalive, typed events), `src/lib/realtime/` (native and no-op adapters), the `RealtimeConnection` port in `src/domain/realtime.ts`, and socket lifecycle in `src/app/session.tsx`.
+**Target.** A native socket adapter behind the port (T12-06); the socket carries the header, never a token in its URL.
 
 **Rules.**
 - Inbound commands are translated into existing use cases. They never get a privileged path around Playback Negotiation.
 
 ---
 
-## 9. App Shell & Presentation
+## 8. App Shell & Presentation
 
-**Purpose.** Everything the user sees and touches that isn't the video itself.
+**Purpose.** Everything the viewer sees and touches that isn't the video itself.
 
-**Owns:**
-- routing and navigation
-- the feature views (sign-in, home, browse, detail, player chrome)
-- the dialogs (resume / start over)
-- the design system (Tailwind tokens, components)
-- keyboard, remote, and focus navigation
-- media keys (MPRIS, Now Playing, SMTC; these are wired natively but are presentation concerns)
-- non-secret preferences for this computer (the preferences store)
+**Owns:** navigation (the collapsed side rail); screens; focus, the D-pad, select, Back, and held keys; the design tokens and shared controls; dialogs and toasts; the non-secret preferences store (`src/lib/preference-store.ts` port, `src/lib/streaming-limits.ts`).
 
-**Code today.** `src/features/routes.ts` (every route, built and parsed), `src/app/App.tsx` (renders the parsed route; `src/features/shell/sign-in-guard.tsx` guards it), `src/features/` (the views), `src/features/player/player-screen.tsx` (player shortcuts in `src/features/player/player-keymap.ts`), the player chrome in `src/features/player/chrome/` (top bar, scrubber and preview, transport, track panel, info sheet, settings sheet, OSD, status, loading), `src/features/roving-focus.ts` (arrow keys in card lists), `src/features/use-escape-key.ts`, `src/features/player/use-idle-cursor.ts`, the preferences store (`src/lib/preference-store.ts` port, `src/lib/browser-preference-store.ts` adapter), `src/styles.css`. MPRIS: `src-tauri/src/media_controls.rs` (routing and state) and `src-tauri/src/media_controls/mpris.rs` (the D-Bus service, Linux only), with the stop request handled by `src/app/media-controls.ts` and `use-playback-session.ts`.
+**Today.** Only the preference and streaming-limit ports, and the plain-copy helpers (`src/lib/safe-reason.ts`, `src/lib/transport-error.ts`, `src/lib/diagnostics.ts`).
+
+**Target.** `apps/tv` (T3-01), with the tokens and base controls from T3-06 and the shell from T3-09.
 
 **Rules.**
-- Media-control requests become existing player operations (pause, seek) or the Back path (stop). They never add a command or carry ids, URLs, or tokens.
-- Views call application use cases. They do not instantiate gateways or engines (`src/app/compose.ts` builds them and hands them to views through context).
+- Screens call application use cases. They do not instantiate gateways, transports, or engines; the composition root builds them.
+- Every screen works with the D-pad, select, and Back alone (`DESIGN.md`).
 
 ---
 
-## 10. Distribution
+## 9. Distribution
 
-**Purpose.** Ship a self-contained, verifiable build per platform.
+**Purpose.** Ship a signed, verifiable TV app.
 
-**Owns:**
-- AppImage and DMG builds
-- the pinned libmpv/FFmpeg closure (`release/components.lock`)
-- SBOM, provenance, notices, licenses
-- extraction and launch tests
-- CI release workflows
+**Owns:** the release build and its Baseline Profile; the Play bundle with 16 KB page alignment; signing; licences, notices, and the source offer (GPL-3.0); the Play TV track.
 
-**Code today.** `release/`, `.github/workflows/release-appimage.yml`, `src-tauri/tauri.conf.json`.
+**Today.** Nothing on `main`.
+
+**Target.** `apps/tv` build configuration and the release workflows of phase T11.
 
 ---
 
 ## Cross-cutting
 
-| Concern | Owns | Code |
-|---|---|---|
-| **Security & Redaction** | URL redaction (TS + Rust), credential-in-URL rejection, canary tests, CSP | `src/lib/redact.ts`, `src/lib/safe-reason.ts`, `src-tauri/src/redaction.rs`, `docs/security.md` |
-| **Diagnostics** | Player information panel, decoder labels, exportable diagnostics (must pass redaction) | player information panel (`tasks/prd.json` P3-18), diagnostics in `src-tauri/src/player/diagnostics.rs` |
+| Concern | Owns | Today | Target |
+|---|---|---|---|
+| **Security & Redaction** | Token boundary, the one authenticated client, URL and playlist validation, redaction, canary tests | `src/lib/redact.ts`, `src/lib/safe-reason.ts`, `src/lib/transport-error.ts`, `src/domain/host-class.ts`, `tests/fixtures/`, `docs/security.md` | `packages/core`, the native HTTP module (T3-03), `modules/player` (T8-08) |
+| **Diagnostics** | The player's info sheet, decoder labels, exportable diagnostics that pass redaction | `src/lib/diagnostics.ts` | `apps/tv` and `modules/player` |
+| **Performance** | The budget (cold start, key to focus, janky frames, memory), Baseline Profile, image loading | n/a | T3-12, T3-13, T3-14 |
+| **Device lab** | The Shield and the cheap box, on-device checks | n/a | T0-06, the Shield checks |
+
+**Process** and **Workflow** own the repository itself: the rule files, `tasks/`, `.claude/`, CI, and the checks in `scripts/`.
 
 ---
 
@@ -279,76 +217,40 @@ Spend the most rigor (Opus, plans, adversarial review) on the core.
 TypeScript layers. Arrows point in the only allowed import direction:
 
 ```text
-ui (features) ──► application (use cases, coordinators, reducers) ──► domain (pure)
+screens (apps/tv) ──► application (use cases, coordinator, reducers) ──► domain (pure)
             │                              │
-            │                              └──► ports (interfaces only: PlayerEngine, PlaybackGateway, CredentialVault)
+            │                              └──► ports (interfaces only: Transport, PlayerEngine, PlaybackGateway, stores)
             └──► composition root only: may construct adapters
-adapters (jellyfin gateway, native/browser engines) ──► domain, ports
+adapters (gateway transport, native modules) ──► domain, ports
 ```
 
-1. **`domain/` imports nothing** outside itself: no React, no SDK, no Tauri, no Axios.
-2. **Adapters never import UI or application code.**
-3. **Only the composition root** (`main.tsx` or a dedicated `app/compose.ts`) constructs `JellyfinGateway`, `NativePlayerEngine`, and `BrowserPlayerEngine`. Feature views receive use cases through props or context.
-4. **Only Playback Negotiation constructs media URLs.**
-5. **Rust side:**
-   - `lib.rs` holds command registration only; `commands.rs` holds the thin handlers.
-   - `player/` never touches platform windowing.
-   - `surface/*` never touches Jellyfin data.
-   - `redaction.rs` is used by every error path that can carry a URL.
+1. **`domain/` imports nothing** outside itself: no React, React Native, Expo, SDK, or HTTP client.
+2. **The core imports no platform:** nothing from React, React Native, Expo, a native module, or a browser or desktop API. It takes what it needs through ports.
+3. **Adapters never import screens or application code.**
+4. **Only the composition root** constructs the gateway, the transport, and engines. Screens receive use cases through props or context.
+5. **Only Playback Negotiation constructs media URLs.**
+6. **Native side:** every request goes through the one OkHttp client; the token stays in the session registry; the player module never touches Jellyfin data other than its typed launch request.
 
-These rules become an import-boundary lint (`WORKFLOW.md` → Mechanical enforcement backlog), so agents get a failing check instead of a review comment.
-
-## Target layout
-
-The core (domain, gateway, coordinator, native player, surfaces, redaction) moves here incrementally, one domain per PR, keeping its tests. The proof-of-concept UI is deleted (P3-16); all views live under `src/features/`.
-
-```text
-src/
-  domain/            identity.ts · catalog.ts · playback.ts · tracks.ts   (pure types + rules)
-  application/       sign-in.ts · catalog-queries.ts · playback-session.ts · playstate-reporter.ts · session-state.ts
-  ports/             player-engine.ts · playback-gateway.ts · credential-vault.ts
-  adapters/
-    jellyfin/        gateway.ts · device-profile.ts · source-acceptance.ts · types.ts
-    player/          native-player.ts · browser-player.ts
-  features/
-    sign-in/         SignInView.tsx · QuickConnect.tsx
-    home/            HomeView.tsx
-    browse/          LibraryView.tsx · SeriesView.tsx · SearchView.tsx
-    detail/          ItemDetailView.tsx · ResumeDialog.tsx
-    player/          player-screen.tsx · native-video-surface.tsx · chrome/info-sheet.tsx
-  app/               App.tsx (routing only) · compose.ts (composition root)
-src-tauri/src/
-  lib.rs             command registration and glue (window-close deadline)
-  commands.rs        typed command handlers
-  close_guard.rs     exits a closed window after a deadline
-  lock.rs · trace.rs poison-tolerant locks; debug traces that never panic
-  player/            controller.rs · controller_stop.rs · events.rs · properties.rs · track_list.rs · tracks.rs · diagnostics.rs · network.rs · version.rs
-  model.rs           command request/response types
-  surface/           linux.rs · macos.rs · windows.rs (planned)
-  security/          redaction.rs · url_policy.rs
-  vault.rs           (M1, OS keyring)
-```
-
-`AGENTS.md`'s structure section should be updated as each move lands.
+`pnpm lint:boundaries` (dependency-cruiser, `.dependency-cruiser.cjs`) enforces rules 1, 2, 3 and no circular imports today; T2-02 moves it onto `packages/core`, and T3-04 adds the native checks.
 
 ## Ubiquitous language
 
 | Term | Meaning |
 |---|---|
-| **Direct play** | Streaming the original file byte-for-byte (`Static=true`) and decoding it locally. The preferred mode. |
+| **Direct play** | Streaming the original file byte for byte (`Static=true`) and decoding it on the device. The preferred mode. |
 | **Remux / Direct stream** | The server repackages streams into HLS segments without re-encoding. Allowed only when direct play is impossible, and always shown. |
 | **Transcode** | The server re-encodes video or audio, or burns in subtitles. Allowed only when direct play is impossible, and always shown with its reason. |
-| **Play method** | `DirectPlay`, `DirectStream`, or `Transcode`: the method a plan uses, shown in the player and reported to the server |
-| **Conversion reason** | The server's `TranscodeReasons` for a DirectStream or Transcode plan, shown as "Converting on server: {reason}" |
-| **Streaming limit** | The user's maximum streaming bitrate, with a local and a remote value, sent as `MaxStreamingBitrate` |
-| **Media source** | One playable version of an item (`MediaSourceInfo`). An item can have several. |
+| **Play method** | `DirectPlay`, `DirectStream`, or `Transcode`: the method a plan uses |
+| **Conversion reason** | The server's `TranscodeReasons`, or the client-side "this device cannot play the original", shown in the player |
+| **Device capabilities** | What the engines on this device can decode and output, reported by the engine and read by the source decision; never written into the DeviceProfile |
+| **Streaming limit** | The viewer's maximum streaming bitrate, with a local and a remote value, sent as `MaxStreamingBitrate` |
+| **Media source** | One playable version of an item (`MediaSourceInfo`) |
 | **Refusal reason** | A typed explanation for why no media source can be played or converted |
-| **Playback plan** | The output of negotiation: play method, stream URL, conversion reasons, media source, play session, start position, tracks |
+| **Playback plan** | The output of negotiation: play method, token-free stream URL, conversion reasons, media source, play session, start position, tracks |
 | **Play session** | The server-issued `PlaySessionId` for one negotiation. Retry creates a new one. |
 | **Attempt** | One coordinator run from negotiation to teardown. Stale attempts are discarded. |
 | **Start choice** | Resume from the saved position, or start over |
 | **Ticks** | Jellyfin time unit; 10,000,000 per second |
-| **Jellyfin index vs. player id** | A Jellyfin `MediaStream.Index` (external streams numbered first) vs. mpv's track `id`. Mapping between them belongs to Player Engine. |
-| **Surface frame** | DOM rectangle + scale factor + visibility, sent to Rust to position video |
-| **Decode mode** | `hardware` / `software` / `unknown`, from runtime mpv properties, never assumed |
-| **First frame** | The moment video is actually presented. Gates the start report and the UI's "ready" state. |
+| **Jellyfin index vs. player id** | A Jellyfin `MediaStream.Index` (external streams numbered first) vs. the engine's track id. Mapping between them belongs to Player Engine. |
+| **Wire test** | A test that records every request the app makes against a pinned server and fails on a request without the header, a credential in a URL, a followed redirect, or another origin (T3-05, T10-01) |
+| **First frame** | The moment video is actually presented. Gates the start report and the UI's ready state. |

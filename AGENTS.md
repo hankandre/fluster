@@ -1,24 +1,31 @@
 # Octave agent rules
 
-Octave is a Jellyfin client that plays the original file whenever it can and shows every server conversion: Tauri 2 + React/TypeScript + Rust with embedded libmpv.
+Octave is a Jellyfin and Jellyscale client for the TV that plays the original file whenever the device can and shows every server conversion: React Native (Expo, react-native-tvos) over a shared TypeScript core, with native Kotlin for networking and playback (Media3 first, libmpv later for originals only).
 
 ## Read first
 
 - Read `PRODUCT.md` before changing scope or user-facing behavior.
-- Read `ARCHITECTURE.md` before changing server calls, playback, or invariants.
+- Read `ARCHITECTURE.md` before changing server calls, playback, native code, or invariants.
 - Read `DOMAINS.md` before adding or moving code.
 - Read `WORKFLOW.md` before planning multi-step work.
+- Read `docs/security.md` before touching tokens, the network, or redaction.
+
+## Layout
+
+- Today the core lives in `src/` (`src/domain/`, `src/lib/jellyfin/`, `src/lib/player/`, `src/lib/`) with its fixtures in `tests/fixtures/`.
+- Planned: `packages/core` (T2-02), `apps/tv` (T3-01), and `modules/player` (T8-01). Until a task creates a path, do not write rules or code that assume it.
 
 ## Tasks
 
-- Pick work from `tasks/prd.json` and follow its `rules`.
+- Read tasks through `pnpm task` (`next`, `show`, `list`, `set`; T1-13 adds it). Until it exists, read one task with `jq` or `python3`; never load `tasks/prd.json` whole.
+- Follow the `rules` array at the top of `tasks/prd.json`.
 - Change only a task's `status`, `owner`, `passes`, and `evidence` fields.
-- Append deferred or newly found work to `tasks/backlog.md`; any agent or pull request may.
-- Add tasks to `tasks/prd.json` only in a Fable 5.2 product-review pass that triages `tasks/backlog.md` and gives each new task a priority and a place.
-- Never edit acceptance items without human approval.
+- Keep evidence to 600 characters and name the PR or commit.
+- Append deferred or newly found work to `tasks/backlog.md` (`tasks/backlog.jsonl` once T1-10 lands); any agent or pull request may.
+- Only a Product Owner pass (Fable 5.2) adds, splits, reorders, or drops tasks, after triaging the backlog; the owner can veto any of it.
+- Never edit acceptance items without the owner's approval.
 - Link the task id in commits, plans, and PRs.
-- Read the dogfood server URL from `OCTAVE_DOGFOOD_SERVER`; never commit it.
-
+- Read the dogfood server URL from `OCTAVE_DOGFOOD_SERVER`; never commit a server address, a credential, or the owner's name.
 
 ## Subagents
 
@@ -28,7 +35,7 @@ Octave is a Jellyfin client that plays the original file whenever it can and sho
 - `spec-checker` (Opus; Fable for high-risk tasks): fresh-context spec check.
 - `implementer` (Sonnet): one specified TypeScript milestone.
 - `reviewer` (Sonnet): routine diff review.
-- `native-engineer` (Opus): `src-tauri/` and player engine work.
+- `native-engineer` (Opus): Kotlin, Expo native modules, Media3, and the native HTTP client.
 - `guardian` (Opus): high-risk diff review.
 - `planner` (Opus): plans and decision records.
 
@@ -36,37 +43,60 @@ Octave is a Jellyfin client that plays the original file whenever it can and sho
 
 - Use the Node version in `.node-version` (mise reads it via `mise.toml`; run `mise exec --` in non-interactive shells).
 - Install: `pnpm install`
-- Browser dev: `pnpm dev`
-- Desktop dev: `pnpm tauri dev`
-- Unit tests: `pnpm test`
-- Build and type-check: `pnpm build`
+- Core unit tests (Vitest, Node environment): `pnpm test`
+- Type-check: `pnpm typecheck`
+- Lint: `pnpm lint`, `pnpm lint:boundaries`, `pnpm lint:ghost-terms`
+- Task workflow tests: `pnpm test:workflow`
 - All checks: `pnpm check`
-- End-to-end: `pnpm test:e2e`
-- Rust lint: `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings`
-- Format Rust: `cargo fmt --manifest-path src-tauri/Cargo.toml`
+- Server tripwire (needs `pnpm samples:generate`, `pnpm fixture:up`, `pnpm fixture:setup`): `pnpm test:tripwire`
+- Not yet built: `pnpm task` (T1-13), `pnpm --filter @octave/core test` (T2-02), `pnpm tv:native:test` (T3-01), `pnpm tv:e2e` (T3-02), `pnpm tv:wire` (T3-05), `pnpm tv:visual` (T3-07).
 
 ## Hard rules
 
+Playback
+
 - Prefer direct play; fall back to direct stream, then transcode, only through Playback Negotiation.
-- Never request conversion for a source that passes the direct-play rules in `ARCHITECTURE.md` §3.
+- Never request a conversion for a source that an engine on this device can play under the direct-play rules in `ARCHITECTURE.md` §3.
 - Show every server conversion and its reason in the player.
 - Send the same PlaybackInfo flags in the request body and the query string.
 - Send the Octave DeviceProfile with every PlaybackInfo request.
 - Never add codec or container conditions to the DeviceProfile.
 - Use a `TranscodingUrl` only after Playback Negotiation validates and rebuilds it.
 - Never let an HLS master playlist list subtitle or trickplay renditions.
-- Validate every HLS playlist in Rust before mpv reads it; reject any URI that is not same-origin and credential-free.
+- Validate every HLS playlist natively before the player reads it (Media3's playlist parser hook on Android); refuse any URI that is not same-origin and credential-free. Every validator passes `tests/fixtures/hls-playlists.json` and `tests/fixtures/hls-master-urls.json`.
 - Refuse media sources that `ARCHITECTURE.md` §3 can neither play nor convert.
-- Never add a generic mpv command, property, or option bridge.
-- Treat every new Tauri command as an architecture change.
-- Never log, persist, or display tokens, passwords, authenticated URLs, or play-session IDs.
-- Never put a token in a URL; authenticate HLS playlists and segments with the header.
-- Never store tokens in WebView storage, Query caches, or React state.
-- Never use the browser player as a fallback for the native player.
-- Talk to Jellyfin only through `src/lib/jellyfin/gateway.ts`.
+- Never add a generic player command, property, option, or header bridge.
+- Treat every new native module method or event as an architecture change.
+- Never fall back to a player or image path that cannot send the header (a web video element, Media3's default data sources).
+
+Tokens and network
+
+- Keep the token in native memory only (decision 0005): Kotlin's session registry holds it, and JavaScript holds an opaque session id and never sees the token. Kotlin alone sends and parses the sign-in calls.
+- Send every server request (sign-in, catalog, artwork, playlists, segments, media, subtitles) through the one authenticated OkHttp client; it adds the header only for the session's origin, follows no redirect, uses no proxy, stores no cookie, and refuses any other origin.
+- Strip the session's token value, as written and percent-encoded, from every response body before it crosses to JavaScript.
+- Keep the native session surface to `signIn`, `request`, `restoreSessions`, `endSession`, and the `sessionEnded` event; `request` takes no header and no absolute URL. Adding a method or event needs a decision record.
+- Never use `DefaultHttpDataSource`, `DefaultDataSource.Factory`, or an ExoPlayer built without Octave's media source factory.
+- Treat a 3xx answer and a status of 0 as errors everywhere. A host with no native transport (Node tests, the tripwire) sets `redirect: "manual"` in one place, the core's transport adapter.
+- Never put a token in a URL, a React prop, an event, or a log; authenticate media, playlists, segments, and images with the header.
+- Never log or display tokens, passwords, authenticated URLs, or play-session IDs.
+- Never persist a token, except as the one encrypted record native code writes under an Android Keystore key in the no-backup directory (decision 0005); users stay signed in by default.
+- Never let a token reach JavaScript storage, Query caches, React state, a prop, an event, or a log.
+- Sign in from a development build only to a development server, never to a server holding a real library.
+- A playback task passes only when its wire test passes against Jellyscale: the header on every request, no token in any URL, no redirect followed, no other origin contacted.
+- Never work around a missing Jellyscale feature with a token in a URL.
+
+Code boundaries
+
+- Talk to Jellyfin and Jellyscale only through `src/lib/jellyfin/gateway.ts`.
 - Build media URLs only in Playback Negotiation.
-- Keep `src/domain/` free of React, SDK, Tauri, and HTTP imports.
+- Keep `src/domain/` free of React, React Native, Expo, SDK, and HTTP imports.
+- Keep the core free of platform APIs; take them through ports.
 - Never introduce Flutter.
+
+Dependencies
+
+- Before adopting a dependency, verify from primary sources that it is actively maintained: recent releases and commits, not archived, and no maintainer statement of maintenance mode or supersession. Record the check in the task's spec.
+- Re-check every dependency when a phase starts.
 
 ## Code style
 
@@ -74,27 +104,24 @@ Octave is a Jellyfin client that plays the original file whenever it can and sho
 - Use `switch` statements in reducers.
 - Use two-space indentation and semicolons in TypeScript.
 - Use camelCase identifiers, PascalCase components, kebab-case multiword module files.
-- Use snake_case functions and PascalCase types in Rust.
+- Follow the Kotlin coding conventions; keep Kotlin behind interfaces a Swift implementation can mirror.
 - Keep player commands typed and narrow.
-- Document every `unsafe` block with a `SAFETY:` comment.
-- Never put side effects inside `debug_assert!`.
 - Split files that grow past about 400 lines along domain lines.
-- Build new UI only under `src/features/`.
 
 ## Design
 
 - Follow `DESIGN.md` for every UI change.
-- Use tokens from `src/styles/tokens.css`; never hard-code colours, sizes, radii, or durations.
-- Build UI from `src/features/shared/ui/`; never use a native select, radio, or checkbox in a feature.
-- Make every screen work with arrow keys, Enter, and Escape alone, and honour reduced motion.
+- Use the design tokens (T3-06 adds them in TypeScript); never hard-code colours, sizes, radii, or durations.
+- Build screens from the shared controls; never use a platform picker or dialog the D-pad cannot style or focus.
+- Make every screen work with the D-pad, select, and Back alone, and honour reduced motion.
 - Map errors to plain copy; never show a transport error message.
-- Include before/after screenshots at 1440×900 and 1920×1080 in UI PRs.
+- Include before and after screenshots at 1920×1080 in UI PRs.
 
 ## Tests
 
 - Add a focused test with every behavior change.
-- Place unit tests beside modules as `*.test.ts` or `*.test.tsx`.
-- Use Vitest for reducers and gateways, Testing Library for views, Rust tests for native code, Playwright for flows.
+- Place unit tests beside modules as `*.test.ts`.
+- Use Vitest for the core, JVM tests for Kotlin, and the emulator tests T3-02 and T3-10 add for the app.
 - Never skip, weaken, or delete a test to pass a check.
 - Never stub a function to make a build pass.
 - Use fixtures; never commit credentials or copyrighted media.
@@ -135,20 +162,20 @@ Octave is a Jellyfin client that plays the original file whenever it can and sho
 - Rebase your own unmerged PR branch, then `git push --force-with-lease`.
 - Resolve PR conflicts by rebasing, as the `ship` skill describes.
 - Never edit another agent's claimed milestone.
-- Keep native surface and mpv work serial.
+- Keep native module, player, and on-device work serial.
 
 ## Models
 
 - Run each task as: refine + spec, spec check, implement, verify, one review round, ship.
 - Use Haiku for search, log triage, commit messages, and watching PRs.
 - Use Sonnet for the coordinator, TypeScript implementation, tests, verify, and routine review.
-- Use Opus for specs and spec checks on routine tasks, native Rust, `guardian` review, and plans.
+- Use Opus for specs and spec checks on routine tasks, native Kotlin, `guardian` review, and plans.
 - Use Fable for specs and spec checks on high-risk tasks (native, security, architecture, ADRs), and after Opus fails twice on the same problem.
 - Run one review round; fix critical, high, and medium findings; log lows in the plan.
 - Lower effort before choosing a weaker model.
 - Escalate one tier after two failed attempts.
 - Switch models only at task boundaries.
-- The task workflow's model choices live in MODELS in .claude/workflows/task.js; override per run with args.models.
+- The task workflow's model choices live in MODELS in `.claude/workflows/task.js`; override per run with args.models.
 
 ## Pull requests
 
@@ -157,6 +184,6 @@ Octave is a Jellyfin client that plays the original file whenever it can and sho
 - Merge only with green CI.
 - Call out changes to invariants, `docs/security.md`, release signing, or CI in the PR; merge on green.
 - Explain user impact, testing performed, and direct-play, conversion, and security implications.
-- List every untested Wayland, GPU, Jellyfin, or AppImage gate.
+- List every untested device, Jellyfin, and Jellyscale gate.
 - Include screenshots for visible UI changes.
 - Link the plan or issue.

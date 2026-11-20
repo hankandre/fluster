@@ -1,6 +1,6 @@
 # Streaming wish list: what viewers wish their video apps did
 
-Researched 2026-11-12 for [`docs/plans/proposals/streaming-wishlist.md`](../plans/proposals/streaming-wishlist.md). The owner asked for it the same day: "look on forums and elsewhere for wish list items that people wish they had in their video watching apps, so that we can actually not only take features that exist today in different apps and hopefully improve upon them, but also look for new features that could put our app above and beyond."
+Researched 2026-11-12 for `docs/plans/proposals/streaming-wishlist.md` (at the tag `desktop-tauri-final`). The owner asked for it the same day: "look on forums and elsewhere for wish list items that people wish they had in their video watching apps, so that we can actually not only take features that exist today in different apps and hopefully improve upon them, but also look for new features that could put our app above and beyond."
 
 It completes a trio with [`streaming-ux-gripes.md`](streaming-ux-gripes.md) (what people dislike) and [`streaming-ux-loves.md`](streaming-ux-loves.md) (what they praise and use). Those two are cited as **Gripes** and **Loves** and are not repeated here.
 
@@ -211,7 +211,7 @@ The short reading: **the wishes with the most votes are mostly ones Octave has a
 
 **W28. Caption settings that are near, previewed, and kept.** A US rule in force since September 2024 judges caption settings by proximity, discoverability, previewability, and persistence (snippet) (https://www.wiley.law/alert-Readily-Accessible-Closed-Captioning-Requirements-Take-Effect-on-September-16-2024). Whether it binds a desktop app is unverified; it is a good checklist regardless. P5-05 plans styling. A live preview and reaching it from the player are not in its acceptance.
 
-**W29. A screen reader can drive the app.** No audit with numbers was found for any streaming app, and no vote. Octave's interface is HTML in a WebView, which can expose roles and names; whether Orca reads it under WebKitGTK has not been tried: unverified.
+**W29. A screen reader can drive the app.** No audit with numbers was found for any streaming app, and no vote. The desktop app's interface was HTML in a WebView, which can expose roles and names; whether a screen reader read it was never tried. On TV this becomes a TalkBack question: unverified.
 
 **W30. Plain, predictable layouts.** A study commissioned by the UK regulator with viewers aged 65 and over found that simple design changes cut usability barriers by almost half; the barriers were cluttered home screens, inconsistent menus, sign-in, and remotes (https://dtg.org.uk/2025/09/18/simple-design-changes-cut-streaming-tv-usability-barriers-in-half-for-older-viewers). It agrees with the fixed Home order (Q1 A).
 

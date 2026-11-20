@@ -1,6 +1,6 @@
 # Streaming UX loves: what viewers praise, use, and choose apps for
 
-Researched 2026-11-12 for [`docs/plans/proposals/streaming-loves.md`](../plans/proposals/streaming-loves.md). The owner asked for it the same day: "it might be worth having Fable also doing some research into what users love about Netflix or any streaming service, what features they like. If they make statements about, hey, I really like this streaming application because of this feature, or any evidence of users preferring features they see in other applications over another one, we should evaluate that evidence, look for research on that evidence, and then determine if that's something that we should adopt."
+Researched 2026-11-12 for `docs/plans/proposals/streaming-loves.md` (at the tag `desktop-tauri-final`). The owner asked for it the same day: "it might be worth having Fable also doing some research into what users love about Netflix or any streaming service, what features they like. If they make statements about, hey, I really like this streaming application because of this feature, or any evidence of users preferring features they see in other applications over another one, we should evaluate that evidence, look for research on that evidence, and then determine if that's something that we should adopt."
 
 It is the companion to [`streaming-ux-gripes.md`](streaming-ux-gripes.md) and uses the same weighing rule, turned around: praise is not use.
 

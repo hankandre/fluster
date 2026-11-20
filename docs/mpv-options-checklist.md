@@ -2,27 +2,27 @@
 
 Status: parked. Decision 0003 (`docs/decisions/0003-tv-and-mobile-shell.md`) drops the desktop Rust layer; this list keeps what it set on every libmpv handle, for when libmpv returns as Android's second engine (original files only). Set every item on every playback handle before it opens anything, and keep a test that reads each one back.
 
-Citations are to commit `ba55ef2` on `main` (after PR #221, merged as `288ce46`), and to the mpv v0.42.0 source.
+Citations are to commit `ba55ef2` (after PR #221, merged as `288ce46`), which the tag `desktop-tauri-final` contains, and to the mpv v0.42.0 source. Source paths such as `player/network.rs` are in the desktop app's Rust crate at that tag.
 
 ## Network
 
-- [ ] **No redirects, no proxy, on FFmpeg's HTTP stack.** `stream-lavf-o=max_redirects=0,http_proxy=direct://` (`src-tauri/src/player/network.rs:16`, set at `:83`).
+- [ ] **No redirects, no proxy, on FFmpeg's HTTP stack.** `stream-lavf-o=max_redirects=0,http_proxy=direct://` (`player/network.rs:16`, set at `:83`).
   - FFmpeg sends custom headers, including `Authorization`, to every redirect target, whatever its origin. So redirects are refused (`network.rs:11-12`).
   - FFmpeg also tunnels through the `http_proxy` environment variable unless the option is set. Any value that does not start with `http://` turns the proxy off (`network.rs:13-15`, FFmpeg `libavformat/http.c` `http_open_cnx_internal`).
-  - Read back by `libmpv_accepts_the_network_hardening_options` (`src-tauri/src/player/network_tests.rs:142`).
+  - Read back by `libmpv_accepts_the_network_hardening_options` (`player/network_tests.rs:142`).
 - [ ] **Turn off mpv 0.42's libcurl backend, and cap its redirects as a second guard.** Set `curl-enabled=no`, then `curl-max-redirects=0` (`network.rs:30-31`, set at `:113-120`).
   - The backend is on by default when mpv is built with libcurl and a recent enough libavformat. It follows up to 16 redirects, sends `http-header-fields`, and serves HLS nested opens (`network.rs:17-29`, mpv `stream/stream_curl.c` v0.42.0 lines 91-97, 124, 127, 932-934, 972-973; `demux/demux_lavf.c` lines 1016-1023).
   - With `curl-enabled=no`, the stream and nested opens fall back to FFmpeg, the stack the options above harden.
   - **Option probe.** Decide from the loaded libmpv, never from a failed `set_option`.
-    - Read `option-info/curl-enabled/name` on a throwaway handle (`src-tauri/src/player/version.rs:62-71`).
+    - Read `option-info/curl-enabled/name` on a throwaway handle (`player/version.rs:62-71`).
     - A definite "no such property" means no curl backend on any version, because the backend and its options share the `HAVE_LIBCURL` gate. Any other answer turns the guard on (`version.rs:84-108`; mpv `options/options.c` v0.42.0 lines 940-941). This also covers git builds that report `0.41.0` but have the backend.
-    - Then build a second throwaway handle with the guard applied (`version.rs:45-52`). If the guard cannot apply, refuse the launch before any server request (`LibmpvRuntime::launch_http`, `version.rs:22-27`; called at `src-tauri/src/player/controller.rs:115-118`).
+    - Then build a second throwaway handle with the guard applied (`version.rs:45-52`). If the guard cannot apply, refuse the launch before any server request (`LibmpvRuntime::launch_http`, `version.rs:22-27`; called at `player/controller.rs:115-118`).
     - A guard failure on a playback handle is its own typed refusal (`MpvError::RedirectGuard`), never a generic initialization error (`network.rs:103-109`).
   - Tests:
-    - `every_handle_refuses_the_curl_backend_when_libmpv_has_one` (`src-tauri/src/player/network_curl_tests.rs:42`).
+    - `every_handle_refuses_the_curl_backend_when_libmpv_has_one` (`player/network_curl_tests.rs:42`).
     - `a_handle_that_cannot_refuse_the_curl_backend_is_never_built` (`:76`).
     - `only_a_curl_guard_failure_becomes_the_redirect_refusal` (`:99`).
-    - The wire tests in `src-tauri/src/player/media_auth_wire/headers.rs:52-90`.
+    - The wire tests in `player/media_auth_wire/headers.rs:52-90`.
 - [ ] **Protocol whitelist for HLS only.** Set `demuxer-lavf-o=protocol_whitelist=[http,https,tcp,tls]` on a validated-HLS handle (`network.rs:34`, set at `:95`).
   - mpv copies this FFmpeg option onto every nested open (`nested_io_open`).
   - A list value that holds commas must be wrapped in `[ ]` (`network.rs:32-33`).
@@ -39,11 +39,11 @@ Citations are to commit `ba55ef2` on `main` (after PR #221, merged as `288ce46`)
   - mpv splits string-list options on commas, and the MediaBrowser header has several.
   - A backslash right before a comma keeps the comma in the item and is itself removed. Other backslashes stay (mpv `options/m_option.c` `get_nextsep`).
   - The handle lives for one session, so the header goes with it. Read back in `network_tests.rs:142`.
-- [ ] **`tls-verify=yes`, set explicitly.** Not set at `ba55ef2` (checked with `grep -rn tls src-tauri/src`); branch `fix/mpv-tls-verify` (commit `05752e4`) sets it in `harden_network_options` and adds `https_servers_with_an_untrusted_certificate_are_refused`, a loopback HTTPS test with a self-signed certificate.
+- [ ] **`tls-verify=yes`, set explicitly.** Not set at `ba55ef2` (checked with `grep -rn tls` over the Rust crate); branch `fix/mpv-tls-verify` (commit `05752e4`) sets it in `harden_network_options` and adds `https_servers_with_an_untrusted_certificate_are_refused`, a loopback HTTPS test with a self-signed certificate.
   - mpv v0.42.0 defaults it to `yes` only when mpv is built with libcurl or libavformat is 63 or newer (`stream/network.c` lines 54-56; `DOCS/man/options.rst` lines 5807-5816; `DOCS/interface-changes.rst` line 69, "change `--tls-verify` default to `yes`").
   - Otherwise FFmpeg gets `tls_verify=0` (`stream/stream_lavf.c` line 174), and an HTTPS server's certificate is not checked.
   - mpv 0.41 defaults it to `no`: `mpv --list-options` on the local mpv v0.41.0 prints `--tls-verify  Flag (default: no)`. Any desktop install on mpv 0.41 (this development host included) has the gap today, logged in `tasks/backlog.md`.
-  - Rust's own playlist fetches always verify, using the platform roots (`src-tauri/src/player/hls/fetch.rs:23-51`).
+  - Rust's own playlist fetches always verify, using the platform roots (`player/hls/fetch.rs:23-51`).
 - [ ] **A CA source for FFmpeg's TLS on Android.** With `curl-enabled=no`, HTTPS goes through FFmpeg's TLS backend, which checks the peer only against the CAs it can find.
   - FFmpeg's OpenSSL backend loads `tls-ca-file` when it is set and otherwise calls `SSL_CTX_set_default_verify_paths`, whose failure is only a warning (`libavformat/tls_openssl.c` `openssl_init_ca_key_cert`, FFmpeg `master` read on 2026-11-20). Peer verification is on only when `verify` is set (`tls_open`).
   - OpenSSL's default paths are its build-time `OPENSSLDIR`, not Android's system store (`/system/etc/security/cacerts`, plus user CAs), so an Android build of FFmpeg probably finds no CA and refuses every HTTPS server once `tls-verify=yes` (unverified on a device).
@@ -67,3 +67,17 @@ Citations are to commit `ba55ef2` on `main` (after PR #221, merged as `288ce46`)
   - External subtitles must have the stream's origin.
 - [ ] Issue `loadfile` from the two typed loaders only (`network.rs:129-143`; `media_tests::loadfile_is_issued_only_by_the_two_typed_loaders`).
 - [ ] Converted streams: validate each playlist against `tests/fixtures/hls-playlists.json` before the player reads it. See `tests/fixtures/README.md`.
+
+## What the desktop security document proved
+
+`docs/security.md` at the tag `desktop-tauri-final` described the desktop boundary in full. Its desktop-only sections are not carried into the TV document; this is what they proved, with the test at the tag that proved each, so a libmpv engine on any platform can port it.
+
+- **References inside downloaded content are never opened.** With `access-references=no`, a playlist, PLS, EDL, or HLS body served as the movie or as a subtitle contacts no second origin (`references_inside_the_stream_body_are_never_opened`, `references_inside_a_subtitle_body_are_never_opened` in `player/media_auth_wire/references.rs`).
+- **The header reaches redirect targets on FFmpeg's HTTP stack unless redirects are off.** `redirects_are_refused_while_the_header_is_set` shows the redirect target receives nothing with `max_redirects=0`. FFmpeg 7.0 lacks the option, so a bundled FFmpeg must be 6.1, 7.1, or later.
+- **No proxy.** `static_and_hls_handles_never_use_an_http_proxy`.
+- **The curl guard.** The tests listed under "Network" above, each with a raised-limit positive control; only mpv 0.41.0 ran them.
+- **HLS through a validated loopback copy.** `hls_launch_sends_the_header_on_every_request_and_never_follows_a_segment_redirect`, `hls_launch_with_a_cross_origin_playlist_is_refused_and_contacts_nobody_else`, `hls_failed_hls_open_never_falls_back_to_playlist_entries`, and `redaction_canary_in_a_playlist_body_fails_the_launch_closed`. On Android, mpv plays original files only, so these apply only if a later platform lets libmpv play HLS.
+- **The header value.** It was validated as a `MediaBrowser` value with a token, at most 4 KB, with no control character, redacted from `Debug`, and set as the single `http-header-fields` item before `loadfile` (`auth_header.rs`).
+- **No logger.** `logger_guard` failed if a logger crate entered the lockfile, because a WebSocket library trace-logged the handshake header.
+- **External subtitles share the header.** `sub-add` opens through the same stream layer, so external subtitles got the same header; a loopback test checked the exact request bytes.
+- **Only typed loaders call `loadfile`** (`loadfile_is_issued_only_by_the_two_typed_loaders`), and a fixed command allowlist kept the native surface narrow (`command_allowlist.rs`).
