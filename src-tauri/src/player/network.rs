@@ -4,6 +4,7 @@ use super::hls::HlsSession;
 use super::MpvError;
 use crate::auth_header::MediaBrowserAuthorization;
 use crate::model::LaunchRequest;
+use crate::redaction::safe_error;
 use crate::url_policy::parse_allowed_url;
 use libmpv2::{Mpv, MpvInitializer};
 
@@ -13,6 +14,18 @@ use libmpv2::{Mpv, MpvInitializer};
 // environment variable unless the option is set; any value that does not
 // start with `http://` turns the proxy off (http.c `http_open_cnx_internal`).
 const STREAM_LAVF_OPTIONS: &str = "max_redirects=0,http_proxy=direct://";
+// mpv 0.42 adds a libcurl backend for HTTP(S), on by default when mpv is
+// built with libcurl and libavformat >= 62.15.101 (`stream/stream_curl.c`
+// v0.42.0 lines 91-97, 124). It sets `CURLOPT_FOLLOWLOCATION` with
+// `--curl-max-redirects` (default 16, lines 127, 972-973) and sends
+// `http-header-fields` (lines 932-934), and demux_lavf routes nested opens
+// such as HLS segments through it (`demux/demux_lavf.c` lines 1016-1023).
+// `curl-enabled=no` makes both the stream and the nested opens fall back to
+// FFmpeg (stream_curl.c lines 1145-1146, 1361-1364; `stream/stream.c` lines
+// 455-460 move on to the next backend), the one HTTP path the
+// options above harden; `curl-max-redirects=0` stays as a second guard.
+const CURL_ENABLED: &str = "curl-enabled";
+const CURL_MAX_REDIRECTS: &str = "curl-max-redirects";
 // FFmpeg AVFormatContext option, copied onto every nested open by mpv
 // (`nested_io_open`). mpv quotes a list value that holds commas with `[ ]`.
 const HLS_PROTOCOL_WHITELIST: &str = "protocol_whitelist=[http,https,tcp,tls]";
@@ -27,10 +40,43 @@ pub(super) enum MediaDelivery {
     ValidatedHls,
 }
 
+/// The HTTP stacks the loaded libmpv has (`version::http_stacks`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum HttpStacks {
+    /// FFmpeg's http protocol only (mpv 0.41 without the curl backend).
+    LavfOnly,
+    /// mpv's libcurl backend too, which must be turned off on every handle.
+    LavfAndCurl,
+}
+
+/// Why a handle's network options could not be set.
+#[derive(Debug)]
+pub(super) enum HardeningError {
+    /// The curl backend could not be turned off: the handle must not play.
+    CurlGuard(libmpv2::Error),
+    Option(libmpv2::Error),
+}
+
+impl From<libmpv2::Error> for HardeningError {
+    fn from(error: libmpv2::Error) -> Self {
+        Self::Option(error)
+    }
+}
+
+impl From<HardeningError> for libmpv2::Error {
+    fn from(error: HardeningError) -> Self {
+        match error {
+            HardeningError::CurlGuard(error) | HardeningError::Option(error) => error,
+        }
+    }
+}
+
 pub(super) fn harden_network_options(
     init: &MpvInitializer,
     delivery: MediaDelivery,
-) -> libmpv2::Result<()> {
+    http: HttpStacks,
+) -> Result<(), HardeningError> {
+    refuse_curl_backend(init, http).map_err(HardeningError::CurlGuard)?;
     init.set_option("stream-lavf-o", STREAM_LAVF_OPTIONS)?;
     // The builtin ytdl_hook script retries a failed load by running yt-dlp
     // with the full stream URL as a process argument.
@@ -40,10 +86,33 @@ pub(super) fn harden_network_options(
     // a subtitle) makes mpv or FFmpeg open the URLs inside it, which never
     // passed validate_playback_urls, and send them the header.
     match delivery {
-        MediaDelivery::Static => init.set_option("access-references", false),
+        MediaDelivery::Static => init.set_option("access-references", false)?,
         MediaDelivery::ValidatedHls => {
             init.set_option("access-references", true)?;
-            init.set_option("demuxer-lavf-o", HLS_PROTOCOL_WHITELIST)
+            init.set_option("demuxer-lavf-o", HLS_PROTOCOL_WHITELIST)?;
+        }
+    }
+    Ok(())
+}
+
+/// The launch error for a failed handle: a curl guard failure is its own
+/// typed refusal, never a generic initialization error.
+pub(super) fn initialize_error(error: libmpv2::Error, curl_guard_failed: bool) -> MpvError {
+    if curl_guard_failed {
+        MpvError::RedirectGuard
+    } else {
+        MpvError::Initialize(safe_error(error))
+    }
+}
+
+// Decided from the probed runtime, never from a failed `set_option`: on
+// `LavfAndCurl` a failure here fails the launch.
+fn refuse_curl_backend(init: &MpvInitializer, http: HttpStacks) -> libmpv2::Result<()> {
+    match http {
+        HttpStacks::LavfOnly => Ok(()),
+        HttpStacks::LavfAndCurl => {
+            init.set_option(CURL_ENABLED, false)?;
+            init.set_option(CURL_MAX_REDIRECTS, 0i64)
         }
     }
 }
@@ -135,198 +204,9 @@ pub(super) fn validate_playback_urls(request: &LaunchRequest) -> Result<(), MpvE
 }
 
 #[cfg(test)]
-mod tests {
-    use super::super::test_support::{launch_request, test_authorization};
-    use super::super::version::ensure_numeric_locale;
-    use super::*;
-    use libmpv2::Mpv;
+#[path = "network_curl_tests.rs"]
+mod curl_tests;
 
-    #[test]
-    fn media_urls_allow_https_and_loopback_or_private_lan_http() {
-        for stream_url in [
-            "https://media.example/Videos/1/stream?Static=true&MediaSourceId=s&PlaySessionId=p",
-            "http://localhost:8096/video.mkv",
-            "http://127.0.0.1:8096/video.mkv",
-            "http://127.12.34.56:8096/video.mkv",
-            "http://[::1]:8096/video.mkv",
-            "http://192.168.1.5:8096/video.mkv?Static=true",
-            "http://10.0.0.7/video.mkv",
-            "http://172.16.0.2/video.mkv",
-            "http://169.254.3.4/video.mkv",
-            "http://[fd00::5]:8096/video.mkv",
-            "http://[fe80::5]:8096/video.mkv",
-            "http://nas.local:8096/video.mkv",
-            "http://jellyfin.home.arpa/video.mkv",
-        ] {
-            assert!(validate_playback_urls(&launch_request(stream_url, None)).is_ok());
-        }
-    }
-
-    #[test]
-    fn media_urls_reject_plaintext_public_hosts_and_embedded_credentials() {
-        for stream_url in [
-            "http://media.example/video.mkv?api_key=secret",
-            "http://localhost.example/video.mkv",
-            "http://100.64.0.1:8096/video.mkv",
-            "http://8.8.8.8/video.mkv",
-            "http://[::ffff:8.8.8.8]/video.mkv",
-            "http://jellyfin.lan/video.mkv",
-            "http://192.168.1.5.nip.io/video.mkv",
-            "https://user:password@media.example/video.mkv",
-            "https://media.example/video.mkv#fragment",
-            "file:///tmp/video.mkv",
-        ] {
-            let error = validate_playback_urls(&launch_request(stream_url, None))
-                .expect_err("unsafe stream must be rejected");
-            assert!(matches!(error, MpvError::UnsafeStreamUrl));
-            assert!(!error.to_string().contains("secret"));
-            assert!(!error.to_string().contains("password"));
-        }
-    }
-
-    #[test]
-    fn external_subtitles_must_share_the_stream_origin() {
-        let same_origin = launch_request(
-            "https://media.example/video.mkv",
-            Some("https://media.example/subtitle.ass?format=ass"),
-        );
-        assert!(validate_playback_urls(&same_origin).is_ok());
-
-        let cross_origin = launch_request(
-            "https://media.example/video.mkv",
-            Some("https://cdn.example/subtitle.ass?api_key=subtitle-secret"),
-        );
-        let error = validate_playback_urls(&cross_origin)
-            .expect_err("cross-origin subtitle must be rejected");
-        assert!(matches!(error, MpvError::UnsafeSubtitleUrl));
-        assert!(!error.to_string().contains("stream-secret"));
-        assert!(!error.to_string().contains("subtitle-secret"));
-    }
-
-    #[test]
-    fn media_urls_must_not_carry_a_credential_in_any_case() {
-        for key in [
-            "api_key",
-            "ApiKey",
-            "apikey",
-            "API_KEY",
-            "access_token",
-            "Token",
-            "token",
-            "X-Emby-Token",
-            "x-emby-token",
-        ] {
-            let stream = format!("https://media.example/Videos/1/stream?Static=true&{key}=secret");
-            let error = validate_playback_urls(&launch_request(&stream, None))
-                .expect_err("a stream URL credential must be rejected");
-            assert!(matches!(error, MpvError::CredentialInUrl), "{key}");
-
-            let subtitle = format!("https://media.example/Subtitles/0/Stream.srt?{key}=secret");
-            let error = validate_playback_urls(&launch_request(
-                "https://media.example/video.mkv",
-                Some(&subtitle),
-            ))
-            .expect_err("a subtitle URL credential must be rejected");
-            assert!(matches!(error, MpvError::CredentialInUrl), "{key}");
-            assert!(!error.to_string().contains("secret"));
-        }
-        // Names that only contain a credential word are not credentials.
-        assert!(validate_playback_urls(&launch_request(
-            "https://media.example/video.mkv?PlaySessionId=p&tokenless=1",
-            None
-        ))
-        .is_ok());
-    }
-
-    #[test]
-    fn launch_requests_require_a_valid_authorization_header() {
-        let plan = serde_json::json!({
-            "itemId": "item",
-            "title": "Test video",
-            "streamUrl": "https://media.example/video.mkv",
-            "mediaSourceId": "source",
-            "playSessionId": "session",
-            "startPositionTicks": 0,
-            "tracks": [],
-            "delivery": "static",
-        });
-        let valid: LaunchRequest = serde_json::from_value(serde_json::json!({
-            "plan": plan,
-            "authorization": test_authorization().expose(),
-        }))
-        .expect("a launch request with a header deserializes");
-        assert_eq!(valid.authorization, test_authorization());
-        assert!(!format!("{valid:?}").contains("header-secret"));
-
-        for authorization in [
-            serde_json::Value::Null,
-            serde_json::json!("Bearer header-secret"),
-            serde_json::json!("MediaBrowser Token=\"header-secret\"\r\nX-Injected: 1"),
-        ] {
-            let error = serde_json::from_value::<LaunchRequest>(serde_json::json!({
-                "plan": plan,
-                "authorization": authorization,
-            }))
-            .expect_err("an invalid header must be rejected");
-            assert!(!error.to_string().contains("header-secret"));
-        }
-        let missing = serde_json::from_value::<LaunchRequest>(serde_json::json!({ "plan": plan }));
-        assert!(missing.is_err());
-    }
-
-    #[test]
-    fn libmpv_accepts_the_network_hardening_options() {
-        ensure_numeric_locale().expect("numeric locale");
-        let created = Mpv::with_initializer(|init| {
-            init.set_option("config", false)?;
-            init.set_option("vo", "null")?;
-            init.set_option("ao", "null")?;
-            harden_network_options(&init, MediaDelivery::Static)?;
-            set_media_authorization(&init, &test_authorization())
-        });
-        // CI's Ubuntu 22.04 runner ships libmpv 0.34, older than the API this
-        // crate links. Only that mismatch is skipped; mpv 0.41+ runs the test.
-        let mpv = match created {
-            Err(libmpv2::Error::VersionMismatch { linked, loaded }) => {
-                eprintln!("SKIP libmpv_accepts_the_network_hardening_options: loaded libmpv API {loaded:#x} is older than linked {linked:#x}");
-                return;
-            }
-            other => other.expect("libmpv accepts the options"),
-        };
-        let lavf_options: String = mpv.get_property("stream-lavf-o").expect("stream-lavf-o");
-        assert_eq!(lavf_options, STREAM_LAVF_OPTIONS);
-        let ytdl: bool = mpv.get_property("ytdl").expect("ytdl");
-        assert!(!ytdl);
-        let access_references: bool = mpv
-            .get_property("access-references")
-            .expect("access-references");
-        assert!(!access_references);
-        let headers: String = mpv
-            .get_property("http-header-fields")
-            .expect("http-header-fields");
-        assert_eq!(
-            headers,
-            format!("Authorization: {}", test_authorization().expose())
-        );
-    }
-
-    #[test]
-    fn private_lan_subtitles_must_share_the_stream_scheme_host_and_port() {
-        let stream = "http://192.168.1.5:8096/video.mkv?Static=true";
-        assert!(validate_playback_urls(&launch_request(
-            stream,
-            Some("http://192.168.1.5:8096/subtitle.ass")
-        ))
-        .is_ok());
-        for subtitle in [
-            "https://192.168.1.5:8096/subtitle.ass",
-            "http://192.168.1.5:8920/subtitle.ass",
-            "http://192.168.1.6:8096/subtitle.ass",
-            "http://media.example:8096/subtitle.ass",
-        ] {
-            let error = validate_playback_urls(&launch_request(stream, Some(subtitle)))
-                .expect_err(subtitle);
-            assert!(matches!(error, MpvError::UnsafeSubtitleUrl));
-        }
-    }
-}
+#[cfg(test)]
+#[path = "network_tests.rs"]
+mod tests;

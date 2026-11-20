@@ -94,3 +94,20 @@ pub(super) fn player_track(id: i64, jellyfin_index: i64, selected: bool) -> Play
         selected,
     }
 }
+
+/// The HTTP stacks of the loaded libmpv, probed the way a launch does.
+/// `None` where CI's libmpv is older than the linked API (see `idle_mpv`).
+pub(super) fn probed_http_stacks() -> Option<super::network::HttpStacks> {
+    use super::version::{ensure_numeric_locale, probe_options, probe_runtime};
+    ensure_numeric_locale().expect("numeric locale");
+    match libmpv2::Mpv::with_initializer(probe_options) {
+        Err(libmpv2::Error::VersionMismatch { linked, loaded }) => {
+            eprintln!("SKIP probe: loaded libmpv API {loaded:#x} is older than linked {linked:#x}");
+            None
+        }
+        other => {
+            let mpv = other.expect("libmpv starts the probe handle");
+            Some(probe_runtime(&mpv).expect("a supported libmpv").http)
+        }
+    }
+}

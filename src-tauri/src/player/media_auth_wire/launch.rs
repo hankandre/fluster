@@ -56,13 +56,14 @@ fn is_rust_request(head: &str) -> bool {
 
 /// The production handle for `media`, headless.
 fn handle_for(media: &LaunchMedia, request: &LaunchRequest) -> Option<Mpv> {
+    let http = probed_http_stacks()?;
     ensure_numeric_locale().expect("numeric locale");
     let created = Mpv::with_initializer(|init| {
         init.set_option("config", false)?;
         init.set_option("vo", "null")?;
         init.set_option("ao", "null")?;
         init.set_option("autoload-files", false)?;
-        media.configure(&init, request)
+        Ok(media.configure(&init, request, http)?)
     });
     match created {
         Err(libmpv2::Error::VersionMismatch { linked, loaded }) => {

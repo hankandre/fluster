@@ -12,7 +12,7 @@ mod tracks;
 
 use super::network::{harden_network_options, set_media_authorization, MediaDelivery};
 use super::test_http::{authorization_lines, listener, read_request_head, Requests};
-use super::test_support::test_authorization;
+use super::test_support::{probed_http_stacks, test_authorization};
 use super::version::ensure_numeric_locale;
 use crate::auth_header::MediaBrowserAuthorization;
 use libmpv2::events::Event;
@@ -81,13 +81,14 @@ fn serve(listener: TcpListener, redirect_to: String) -> Requests {
 
 /// The production session network options on a headless handle.
 fn headless_player(authorization: &MediaBrowserAuthorization) -> Option<Mpv> {
+    let http = probed_http_stacks()?;
     ensure_numeric_locale().expect("numeric locale");
     let created = Mpv::with_initializer(|init| {
         init.set_option("config", false)?;
         init.set_option("vo", "null")?;
         init.set_option("ao", "null")?;
         init.set_option("autoload-files", false)?;
-        harden_network_options(&init, MediaDelivery::Static)?;
+        harden_network_options(&init, MediaDelivery::Static, http)?;
         set_media_authorization(&init, authorization)
     });
     match created {
