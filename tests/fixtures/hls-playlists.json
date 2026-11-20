@@ -1,0 +1,1991 @@
+{
+  "description": "HLS playlist rules from the desktop Rust validator (src-tauri/src/player/hls/playlist.rs, uri.rs, attributes.rs), as language-neutral vectors every validator must pass (decision 0003). Read by src-tauri/src/player/hls/playlist_vectors_tests.rs. Schema, reason codes, and check order: tests/fixtures/README.md.",
+  "vectors": [
+    {
+      "name": "jellyfin fMP4 master",
+      "rule": "Jellyfin's own master and media playlists are accepted; every URI in the copy is absolute and same-origin.",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=2483431,AVERAGE-BANDWIDTH=2483431,VIDEO-RANGE=SDR,CODECS=\"avc1.640028,mp4a.40.2\",RESOLUTION=1920x1080,FRAME-RATE=23.976\nmain.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false&TranscodeReasons=ContainerBitrateExceedsLimit\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=2483431,AVERAGE-BANDWIDTH=2483431,VIDEO-RANGE=SDR,CODECS=\"avc1.640028,mp4a.40.2\",RESOLUTION=1920x1080,FRAME-RATE=23.976\nhttp://127.0.0.1:8096/videos/abc/main.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false&TranscodeReasons=ContainerBitrateExceedsLimit\n",
+        "children": [
+          "http://127.0.0.1:8096/videos/abc/main.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false&TranscodeReasons=ContainerBitrateExceedsLimit"
+        ]
+      }
+    },
+    {
+      "name": "jellyfin fMP4 media playlist",
+      "rule": "Jellyfin's own master and media playlists are accepted; every URI in the copy is absolute and same-origin.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:6\n#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-MAP:URI=\"hls1/main/-1.mp4?DeviceId=d&PlaySessionId=p\"\n#EXTINF:6.0060, nodesc\nhls1/main/0.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=0&actualSegmentLengthTicks=60060000\n#EXTINF:3.0030, nodesc\nhls1/main/1.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=60060000&actualSegmentLengthTicks=30030000\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:6\n#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-MAP:URI=\"http://127.0.0.1:8096/videos/abc/hls1/main/-1.mp4?DeviceId=d&PlaySessionId=p\"\n#EXTINF:6.0060, nodesc\nhttp://127.0.0.1:8096/videos/abc/hls1/main/0.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=0&actualSegmentLengthTicks=60060000\n#EXTINF:3.0030, nodesc\nhttp://127.0.0.1:8096/videos/abc/hls1/main/1.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=60060000&actualSegmentLengthTicks=30030000\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
+      "name": "jellyfin media playlist on an https server with a base path",
+      "rule": "Jellyfin's own master and media playlists are accepted; every URI in the copy is absolute and same-origin.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:6\n#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-MAP:URI=\"hls1/main/-1.mp4?DeviceId=d&PlaySessionId=p\"\n#EXTINF:6.0060, nodesc\nhls1/main/0.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=0&actualSegmentLengthTicks=60060000\n#EXTINF:3.0030, nodesc\nhls1/main/1.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=60060000&actualSegmentLengthTicks=30030000\n#EXT-X-ENDLIST\n",
+      "baseUrl": "https://media.example.test/jellyfin/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "https://media.example.test",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:6\n#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-MAP:URI=\"https://media.example.test/jellyfin/videos/abc/hls1/main/-1.mp4?DeviceId=d&PlaySessionId=p\"\n#EXTINF:6.0060, nodesc\nhttps://media.example.test/jellyfin/videos/abc/hls1/main/0.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=0&actualSegmentLengthTicks=60060000\n#EXTINF:3.0030, nodesc\nhttps://media.example.test/jellyfin/videos/abc/hls1/main/1.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=60060000&actualSegmentLengthTicks=30030000\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
+      "name": "jellyfin master on an https server with a base path",
+      "rule": "Jellyfin's own master and media playlists are accepted; every URI in the copy is absolute and same-origin.",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=2483431,AVERAGE-BANDWIDTH=2483431,VIDEO-RANGE=SDR,CODECS=\"avc1.640028,mp4a.40.2\",RESOLUTION=1920x1080,FRAME-RATE=23.976\nmain.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false&TranscodeReasons=ContainerBitrateExceedsLimit\n",
+      "baseUrl": "https://media.example.test/jellyfin/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "https://media.example.test",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=2483431,AVERAGE-BANDWIDTH=2483431,VIDEO-RANGE=SDR,CODECS=\"avc1.640028,mp4a.40.2\",RESOLUTION=1920x1080,FRAME-RATE=23.976\nhttps://media.example.test/jellyfin/videos/abc/main.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false&TranscodeReasons=ContainerBitrateExceedsLimit\n",
+        "children": [
+          "https://media.example.test/jellyfin/videos/abc/main.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false&TranscodeReasons=ContainerBitrateExceedsLimit"
+        ]
+      }
+    },
+    {
+      "name": "jellyfin media playlist with CRLF line ends",
+      "rule": "CRLF and lone CR line ends are accepted; the copy uses LF.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\r\n#EXT-X-PLAYLIST-TYPE:VOD\r\n#EXT-X-VERSION:7\r\n#EXT-X-TARGETDURATION:6\r\n#EXT-X-MEDIA-SEQUENCE:0\r\n#EXT-X-MAP:URI=\"hls1/main/-1.mp4?DeviceId=d&PlaySessionId=p\"\r\n#EXTINF:6.0060, nodesc\r\nhls1/main/0.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=0&actualSegmentLengthTicks=60060000\r\n#EXTINF:3.0030, nodesc\r\nhls1/main/1.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=60060000&actualSegmentLengthTicks=30030000\r\n#EXT-X-ENDLIST\r\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:6\n#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-MAP:URI=\"http://127.0.0.1:8096/videos/abc/hls1/main/-1.mp4?DeviceId=d&PlaySessionId=p\"\n#EXTINF:6.0060, nodesc\nhttp://127.0.0.1:8096/videos/abc/hls1/main/0.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=0&actualSegmentLengthTicks=60060000\n#EXTINF:3.0030, nodesc\nhttp://127.0.0.1:8096/videos/abc/hls1/main/1.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=60060000&actualSegmentLengthTicks=30030000\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
+      "name": "jellyfin media playlist with lone CR line ends",
+      "rule": "CRLF and lone CR line ends are accepted; the copy uses LF.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\r#EXT-X-PLAYLIST-TYPE:VOD\r#EXT-X-VERSION:7\r#EXT-X-TARGETDURATION:6\r#EXT-X-MEDIA-SEQUENCE:0\r#EXT-X-MAP:URI=\"hls1/main/-1.mp4?DeviceId=d&PlaySessionId=p\"\r#EXTINF:6.0060, nodesc\rhls1/main/0.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=0&actualSegmentLengthTicks=60060000\r#EXTINF:3.0030, nodesc\rhls1/main/1.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=60060000&actualSegmentLengthTicks=30030000\r#EXT-X-ENDLIST\r",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:6\n#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-MAP:URI=\"http://127.0.0.1:8096/videos/abc/hls1/main/-1.mp4?DeviceId=d&PlaySessionId=p\"\n#EXTINF:6.0060, nodesc\nhttp://127.0.0.1:8096/videos/abc/hls1/main/0.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=0&actualSegmentLengthTicks=60060000\n#EXTINF:3.0030, nodesc\nhttp://127.0.0.1:8096/videos/abc/hls1/main/1.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=60060000&actualSegmentLengthTicks=30030000\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
+      "name": "media playlist fetched as the master",
+      "rule": "A playlist must be the kind its URL was fetched as: a master at the master URL, a media playlist at a variant URL.",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:6\n#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-MAP:URI=\"hls1/main/-1.mp4?DeviceId=d&PlaySessionId=p\"\n#EXTINF:6.0060, nodesc\nhls1/main/0.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=0&actualSegmentLengthTicks=60060000\n#EXTINF:3.0030, nodesc\nhls1/main/1.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=60060000&actualSegmentLengthTicks=30030000\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "master playlist fetched as a variant",
+      "rule": "A playlist must be the kind its URL was fetched as: a master at the master URL, a media playlist at a variant URL.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=2483431,AVERAGE-BANDWIDTH=2483431,VIDEO-RANGE=SDR,CODECS=\"avc1.640028,mp4a.40.2\",RESOLUTION=1920x1080,FRAME-RATE=23.976\nmain.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false&TranscodeReasons=ContainerBitrateExceedsLimit\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "other origin in master variant URI line",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nhttp://other.example.test/main.m3u8\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "other origin in master EXT-X-I-FRAME-STREAM-INF URI",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-I-FRAME-STREAM-INF:BANDWIDTH=1,URI=\"http://other.example.test/i.m3u8\"\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nmain.m3u8?PlaySessionId=p\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "other origin in master EXT-X-MEDIA audio URI",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID=\"a\",NAME=\"x\",URI=\"http://other.example.test/a.m3u8\"\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nmain.m3u8?PlaySessionId=p\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "other origin in master EXT-X-MEDIA subtitles URI",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID=\"s\",NAME=\"x\",URI=\"http://other.example.test/s.m3u8\"\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nmain.m3u8?PlaySessionId=p\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "other origin in master EXT-X-SESSION-KEY URI",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-SESSION-KEY:METHOD=AES-128,URI=\"http://other.example.test/key\"\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nmain.m3u8?PlaySessionId=p\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "other origin in master EXT-X-SESSION-DATA URI",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-SESSION-DATA:DATA-ID=\"x\",URI=\"http://other.example.test/data.json\"\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nmain.m3u8?PlaySessionId=p\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "other origin in master EXT-X-IMAGE-STREAM-INF URI",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-IMAGE-STREAM-INF:BANDWIDTH=1,RESOLUTION=320x180,URI=\"http://other.example.test/tiles.m3u8\"\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nmain.m3u8?PlaySessionId=p\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "other origin in master EXT-X-CONTENT-STEERING SERVER-URI",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-CONTENT-STEERING:SERVER-URI=\"http://other.example.test/steer\"\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nmain.m3u8?PlaySessionId=p\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "other origin in master unknown tag attribute holding a URL",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-UNKNOWN-TAG:X-THING=\"http://other.example.test/thing\"\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nmain.m3u8?PlaySessionId=p\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "other origin in master unknown tag value holding a URL",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-UNKNOWN-TAG:http://other.example.test/thing\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nmain.m3u8?PlaySessionId=p\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "other origin in media EXT-X-MAP URI",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:URI=\"http://other.example.test/init.mp4\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "other origin in media EXT-X-KEY URI",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-KEY:METHOD=AES-128,URI=\"http://other.example.test/key\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "other origin in media EXT-X-PART URI",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-PART:DURATION=1,URI=\"http://other.example.test/part.mp4\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "other origin in media EXT-X-PRELOAD-HINT URI",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-PRELOAD-HINT:TYPE=PART,URI=\"http://other.example.test/hint.mp4\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "other origin in media EXT-X-RENDITION-REPORT URI",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-RENDITION-REPORT:URI=\"http://other.example.test/r.m3u8\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "other origin in media EXT-X-DATERANGE X-ASSET-URI",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-DATERANGE:ID=\"ad\",START-DATE=\"2026-01-01T00:00:00Z\",X-ASSET-URI=\"http://other.example.test/ad.m3u8\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "other origin in media EXT-X-DATERANGE X-ASSET-LIST",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-DATERANGE:ID=\"ad\",START-DATE=\"2026-01-01T00:00:00Z\",X-ASSET-LIST=\"http://other.example.test/ads.json\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "other origin in media segment URI line",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:1,\nhttp://other.example.test/segment.mp4\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "other origin in media scheme-relative EXT-X-MAP URI",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:URI=\"//other.example.test/init.mp4\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "segment URI: relative path with query",
+      "rule": "Relative, root-relative, scheme-relative, and differently spelled same-origin URIs resolve (WHATWG URL) to one absolute same-origin URI in the copy.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p&runtimeTicks=0\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1:8096/videos/abc/hls1/main/0.mp4?PlaySessionId=p&runtimeTicks=0\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
+      "name": "segment URI: parent directory",
+      "rule": "Relative, root-relative, scheme-relative, and differently spelled same-origin URIs resolve (WHATWG URL) to one absolute same-origin URI in the copy.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\n../xyz/main.m3u8\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1:8096/videos/xyz/main.m3u8\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
+      "name": "segment URI: root-relative path",
+      "rule": "Relative, root-relative, scheme-relative, and differently spelled same-origin URIs resolve (WHATWG URL) to one absolute same-origin URI in the copy.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\n/videos/abc/x.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1:8096/videos/abc/x.mp4\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
+      "name": "segment URI: absolute same-origin",
+      "rule": "Relative, root-relative, scheme-relative, and differently spelled same-origin URIs resolve (WHATWG URL) to one absolute same-origin URI in the copy.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1:8096/a.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1:8096/a.mp4\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
+      "name": "segment URI: upper-case scheme",
+      "rule": "Relative, root-relative, scheme-relative, and differently spelled same-origin URIs resolve (WHATWG URL) to one absolute same-origin URI in the copy.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nHTTP://127.0.0.1:8096/a.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1:8096/a.mp4\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
+      "name": "segment URI: scheme-relative same host",
+      "rule": "Relative, root-relative, scheme-relative, and differently spelled same-origin URIs resolve (WHATWG URL) to one absolute same-origin URI in the copy.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\n//127.0.0.1:8096/a.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1:8096/a.mp4\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
+      "name": "segment URI: encoded slashes in the path",
+      "rule": "Relative, root-relative, scheme-relative, and differently spelled same-origin URIs resolve (WHATWG URL) to one absolute same-origin URI in the copy.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1:8096/%2F%2Fother.example.test/a\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1:8096/%2F%2Fother.example.test/a\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
+      "name": "segment URI: same scheme without slashes is a relative path",
+      "rule": "Relative, root-relative, scheme-relative, and differently spelled same-origin URIs resolve (WHATWG URL) to one absolute same-origin URI in the copy.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp:%2F%2Fother.example.test/a\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1:8096/videos/abc/%2F%2Fother.example.test/a\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
+      "name": "segment URI: hexadecimal IPv4 spelling of the server",
+      "rule": "Relative, root-relative, scheme-relative, and differently spelled same-origin URIs resolve (WHATWG URL) to one absolute same-origin URI in the copy.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://0x7f.0.0.1:8096/a.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1:8096/a.mp4\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
+      "name": "segment URI refused: other host",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://other.example.test/a.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "segment URI refused: scheme-relative other host",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\n//other.example.test/a.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "segment URI refused: https on an http server",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttps://127.0.0.1:8096/a.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "segment URI refused: other port",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1:8920/a.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "segment URI refused: default port",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1/a.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "segment URI refused: neighbouring address",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.2:8096/a.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "segment URI refused: server as user info of another host",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1:8096@other.example.test/a.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "segment URI refused: encoded dot in the host",
+      "rule": "Every URI, in every tag and URI line, must resolve to the server's origin (scheme, host, and port).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1%2Eother.example.test:8096/a.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "segment URI refused: user name",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://user@127.0.0.1:8096/a.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "segment URI refused: user name and password",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://user:pass@127.0.0.1:8096/a.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "segment URI refused: backslash before user info",
+      "rule": "A URI with whitespace, a control character, a backslash, or a fragment, or an empty URI, is refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://other.example.test\\@127.0.0.1:8096/a.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "segment URI refused: leading backslashes",
+      "rule": "A URI with whitespace, a control character, a backslash, or a fragment, or an empty URI, is refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\n\\\\other.example.test/a.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "segment URI refused: slash then backslash",
+      "rule": "A URI with whitespace, a control character, a backslash, or a fragment, or an empty URI, is refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\n/\\other.example.test/a.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "segment URI refused: data",
+      "rule": "Only http and https URIs on the server's origin; data:, file:, javascript:, and other schemes are refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\ndata:video/mp4;base64,AAAA\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "segment URI refused: file",
+      "rule": "Only http and https URIs on the server's origin; data:, file:, javascript:, and other schemes are refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nfile:///etc/passwd\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "segment URI refused: crypto+http",
+      "rule": "Only http and https URIs on the server's origin; data:, file:, javascript:, and other schemes are refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\ncrypto+http://127.0.0.1:8096/a.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "segment URI refused: ftp",
+      "rule": "Only http and https URIs on the server's origin; data:, file:, javascript:, and other schemes are refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nftp://127.0.0.1:8096/a.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "segment URI refused: javascript",
+      "rule": "Only http and https URIs on the server's origin; data:, file:, javascript:, and other schemes are refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\njavascript:alert(1)\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "segment URI refused: fragment",
+      "rule": "A URI with whitespace, a control character, a backslash, or a fragment, or an empty URI, is refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1:8096/a.mp4#frag\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "segment URI refused: leading space",
+      "rule": "A URI with whitespace, a control character, a backslash, or a fragment, or an empty URI, is refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\n a.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "segment URI refused: inner space",
+      "rule": "A URI with whitespace, a control character, a backslash, or a fragment, or an empty URI, is refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na .mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "EXT-X-MAP URI refused: data",
+      "rule": "Only http and https URIs on the server's origin; data:, file:, javascript:, and other schemes are refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:URI=\"data:video/mp4;base64,AAAA\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "EXT-X-MAP URI refused: file",
+      "rule": "Only http and https URIs on the server's origin; data:, file:, javascript:, and other schemes are refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:URI=\"file:///etc/passwd\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "EXT-X-MAP URI refused: trailing space",
+      "rule": "A URI with whitespace, a control character, a backslash, or a fragment, or an empty URI, is refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:URI=\"a.mp4 \"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "EXT-X-MAP URI refused: empty",
+      "rule": "A URI with whitespace, a control character, a backslash, or a fragment, or an empty URI, is refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:URI=\"\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "EXT-X-MAP URI with a backslash is not an attribute list",
+      "rule": "A URI with whitespace, a control character, a backslash, or a fragment, or an empty URI, is refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:URI=\"a\\b.mp4\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "segment URI with credential query ApiKey",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?ApiKey=secret\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "segment URI with credential query api_key",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?api_key=secret\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "segment URI with credential query API_KEY",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?API_KEY=secret\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "segment URI with credential query access_token",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?access_token=secret\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "segment URI with credential query Token",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?Token=secret\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "segment URI with credential query X-Emby-Token",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?X-Emby-Token=secret\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "segment URI with credential query x%2Demby%2Dtoken",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?x%2Demby%2Dtoken=secret\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "segment URI with credential query Api%4Bey",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?Api%4Bey=secret\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "segment URI with credential query a=1&apikey=secret",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?a=1&apikey=secret\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "credential in body: token",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\nmain.m3u8?token=secret\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "credential in body: X-EMBY-TOKEN",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\nmain.m3u8?X-EMBY-TOKEN=secret\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "credential in body: Token in an unknown tag",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-FOO:URI=\"x?Token=secret\"\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "credential in body: ApiKey in a trickplay URI",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-IMAGE-STREAM-INF:URI=\"Trickplay/320/tiles.m3u8?ApiKey=secret\"\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "credential in body: ApiKey in a comment",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n# comment ApiKey=secret\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "credential in body: ApiKey after a semicolon",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\nmain.m3u8;ApiKey=secret\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "credential in body: encoded equals sign",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\nmain.m3u8?ApiKey%3Dsecret\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "credential in body: double percent-encoded name",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\nmain.m3u8?Api%254Bey=secret\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "credential in body: MediaBrowser header text",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\nMediaBrowser Token = \"secret\"\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "credential in body: body without a header",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "master",
+      "body": "ApiKey=secret",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "credential in playlist: trickplay ApiKey",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-IMAGE-STREAM-INF:BANDWIDTH=1,URI=\"Trickplay/320/tiles.m3u8?ApiKey=canary\"\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nmain.m3u8?PlaySessionId=p\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "credential in playlist: subtitle rendition api_key",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID=\"s\",NAME=\"x\",URI=\"subtitles.m3u8?SegmentLength=30&api_key=canary\"\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nmain.m3u8?PlaySessionId=p\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "credential in playlist: access_token in a comment",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n# access_token=canary\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nmain.m3u8?PlaySessionId=p\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "credential in playlist: Token in an unknown media tag",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-UNKNOWN:X-T=\"Token=canary\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "credential in playlist: X-Emby-Token in a Jellyfin segment",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:6\n#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-MAP:URI=\"hls1/main/-1.mp4?DeviceId=d&PlaySessionId=p\"\n#EXTINF:6.0060, nodesc\nhls1/main/0.mp4?DeviceId=d&PlaySessionId=p&X-Emby-Token=canary&runtimeTicks=0&actualSegmentLengthTicks=60060000\n#EXTINF:3.0030, nodesc\nhls1/main/1.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=60060000&actualSegmentLengthTicks=30030000\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "credential in playlist: APIKEY in a Jellyfin segment",
+      "rule": "No credential: no user info in a URI, and no ApiKey, api_key, access_token, Token, or X-Emby-Token parameter anywhere in the body (any case, up to three rounds of percent decoding).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:6\n#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-MAP:URI=\"hls1/main/-1.mp4?DeviceId=d&PlaySessionId=p\"\n#EXTINF:6.0060, nodesc\nhls1/main/0.mp4?DeviceId=d&PlaySessionId=p&APIKEY=canary&runtimeTicks=0&actualSegmentLengthTicks=60060000\n#EXTINF:3.0030, nodesc\nhls1/main/1.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=60060000&actualSegmentLengthTicks=30030000\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "segment URI: names that only contain a credential name",
+      "rule": "Names that only contain a credential name (PlaySessionId, tokenless, myapikey) are not credentials.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nmain.mp4?tokenless=1&apikeys=2&myapikey=3&x_token=4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1:8096/videos/abc/main.mp4?tokenless=1&apikeys=2&myapikey=3&x_token=4\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
+      "name": "segment URI: Jellyfin parameters are not credentials",
+      "rule": "Names that only contain a credential name (PlaySessionId, tokenless, myapikey) are not credentials.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nmain.mp4?PlaySessionId=p&DeviceId=d&Tag=t&MediaSourceId=m\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1:8096/videos/abc/main.mp4?PlaySessionId=p&DeviceId=d&Tag=t&MediaSourceId=m\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
+      "name": "comment that mentions a token without a value",
+      "rule": "Names that only contain a credential name (PlaySessionId, tokenless, myapikey) are not credentials.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n# The token is in the header\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1:8096/videos/abc/hls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
+      "name": "body echoes the token in a segment URI",
+      "rule": "A body that contains the signed-in token itself (any case, percent-encoded) is refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?x=0123456789abcdefCANARY\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "token": "0123456789abcdefCANARY",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "body echoes the token in another case",
+      "rule": "A body that contains the signed-in token itself (any case, percent-encoded) is refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?x=0123456789abcdefcanary\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "token": "0123456789abcdefCANARY",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "body echoes the token percent-encoded",
+      "rule": "A body that contains the signed-in token itself (any case, percent-encoded) is refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\na.mp4?x=%30%31%32%33%34%35%36%37%38%39%61%62%63%64%65%66%43%41%4E%41%52%59\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "token": "0123456789abcdefCANARY",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "body echoes the token in a comment",
+      "rule": "A body that contains the signed-in token itself (any case, percent-encoded) is refused.",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n# 0123456789abcdefCANARY\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nmain.m3u8?PlaySessionId=p\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "token": "0123456789abcdefCANARY",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "credential-in-playlist"
+      }
+    },
+    {
+      "name": "body without the token is accepted",
+      "rule": "A body that contains the signed-in token itself (any case, percent-encoded) is refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:6\n#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-MAP:URI=\"hls1/main/-1.mp4?DeviceId=d&PlaySessionId=p\"\n#EXTINF:6.0060, nodesc\nhls1/main/0.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=0&actualSegmentLengthTicks=60060000\n#EXTINF:3.0030, nodesc\nhls1/main/1.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=60060000&actualSegmentLengthTicks=30030000\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "token": "0123456789abcdefCANARY",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:6\n#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-MAP:URI=\"http://127.0.0.1:8096/videos/abc/hls1/main/-1.mp4?DeviceId=d&PlaySessionId=p\"\n#EXTINF:6.0060, nodesc\nhttp://127.0.0.1:8096/videos/abc/hls1/main/0.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=0&actualSegmentLengthTicks=60060000\n#EXTINF:3.0030, nodesc\nhttp://127.0.0.1:8096/videos/abc/hls1/main/1.mp4?DeviceId=d&PlaySessionId=p&runtimeTicks=60060000&actualSegmentLengthTicks=30030000\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
+      "name": "second URI= hidden in another attribute value",
+      "rule": "Every URI= on a line must be an attribute the parser read; any other URI= fails closed.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:URI=\"init.mp4\",X-NOTE=\"URI=x\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "lower-case uri attribute",
+      "rule": "Every URI= on a line must be an attribute the parser read; any other URI= fails closed.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:uri=\"init.mp4\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "URI= in a comment",
+      "rule": "Every URI= on a line must be an attribute the parser read; any other URI= fails closed.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n# URI=\"http://other.example.test/x\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "unknown tag that is not an attribute list but holds URI=",
+      "rule": "Every URI= on a line must be an attribute the parser read; any other URI= fails closed.",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-UNKNOWN:YES,URI=x\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nmain.m3u8?PlaySessionId=p\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "EXTINF title holding URI=",
+      "rule": "Every URI= on a line must be an attribute the parser read; any other URI= fails closed.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:1,URI=x\nseg.mp4\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "ignored master tags with same-origin URIs are dropped from the copy",
+      "rule": "Tags FFmpeg ignores are still checked, then left out of the served copy; comments are dropped.",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-I-FRAME-STREAM-INF:BANDWIDTH=1,URI=\"iframes.m3u8\"\n#EXT-X-IMAGE-STREAM-INF:BANDWIDTH=1,URI=\"Trickplay/320/tiles.m3u8\"\n#EXT-X-SESSION-DATA:DATA-ID=\"x\",VALUE=\"y\"\n# a comment\n#EXT-X-VERSION:7\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nmain.m3u8?PlaySessionId=p\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nhttp://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p\n",
+        "children": [
+          "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p"
+        ]
+      }
+    },
+    {
+      "name": "ignored media tags with same-origin URIs are dropped from the copy",
+      "rule": "Tags FFmpeg ignores are still checked, then left out of the served copy; comments are dropped.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-PART:DURATION=1,URI=\"part.mp4\"\n#EXT-X-DATERANGE:ID=\"ad\",START-DATE=\"2026-01-01T00:00:00Z\",X-ASSET-URI=\"ad.m3u8\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1:8096/videos/abc/hls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
+      "name": "audio rendition with a URI is a child playlist",
+      "rule": "EXT-X-MEDIA renditions with a URI are child playlists, like variants.",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID=\"a\",NAME=\"English\",URI=\"audio.m3u8\"\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nmain.m3u8?PlaySessionId=p\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID=\"a\",NAME=\"English\",URI=\"http://127.0.0.1:8096/videos/abc/audio.m3u8\"\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nhttp://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p\n",
+        "children": [
+          "http://127.0.0.1:8096/videos/abc/audio.m3u8",
+          "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p"
+        ]
+      }
+    },
+    {
+      "name": "audio rendition without a URI is kept as is",
+      "rule": "EXT-X-MEDIA renditions with a URI are child playlists, like variants.",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID=\"a\",NAME=\"English\",DEFAULT=YES\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nmain.m3u8?PlaySessionId=p\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID=\"a\",NAME=\"English\",DEFAULT=YES\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nhttp://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p\n",
+        "children": [
+          "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p"
+        ]
+      }
+    },
+    {
+      "name": "EXT-X-DEFINE in a media playlist",
+      "rule": "EXT-X-DEFINE is refused: variable substitution could build a URI the validator never saw.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-DEFINE:NAME=\"h\",VALUE=\"other.example.test\"\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "EXT-X-DEFINE in an otherwise valid master",
+      "rule": "EXT-X-DEFINE is refused: variable substitution could build a URI the validator never saw.",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-DEFINE:NAME=\"h\",VALUE=\"x\"\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nmain.m3u8?PlaySessionId=p\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "EXT-X-DEFINE in an otherwise valid media playlist",
+      "rule": "EXT-X-DEFINE is refused: variable substitution could build a URI the validator never saw.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-DEFINE:IMPORT=\"h\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "attribute list with quoted and plain values is written back unchanged",
+      "rule": "Attribute lists are parsed strictly (RFC 8216 section 4.2) and written back unchanged; forms other parsers read differently are refused.",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1280000,CODECS=\"avc1.640028,mp4a.40.2\",RESOLUTION=1920x1080,NAME=\"Commentary: Director\",GROUP-ID=\"audio\",VIDEO-RANGE=SDR,START-DATE=\"2026-01-01T00:00:00Z\"\nmain.m3u8\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1280000,CODECS=\"avc1.640028,mp4a.40.2\",RESOLUTION=1920x1080,NAME=\"Commentary: Director\",GROUP-ID=\"audio\",VIDEO-RANGE=SDR,START-DATE=\"2026-01-01T00:00:00Z\"\nhttp://127.0.0.1:8096/videos/abc/main.m3u8\n",
+        "children": [
+          "http://127.0.0.1:8096/videos/abc/main.m3u8"
+        ]
+      }
+    },
+    {
+      "name": "EXT-X-MAP attribute list refused: \"\"",
+      "rule": "Attribute lists are parsed strictly (RFC 8216 section 4.2) and written back unchanged; forms other parsers read differently are refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "EXT-X-MAP attribute list refused: \"URI\"",
+      "rule": "Attribute lists are parsed strictly (RFC 8216 section 4.2) and written back unchanged; forms other parsers read differently are refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:URI\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "EXT-X-MAP attribute list refused: \"URI=\"",
+      "rule": "Attribute lists are parsed strictly (RFC 8216 section 4.2) and written back unchanged; forms other parsers read differently are refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:URI=\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "EXT-X-MAP attribute list refused: \"URI=\\\"a\\\",\"",
+      "rule": "Attribute lists are parsed strictly (RFC 8216 section 4.2) and written back unchanged; forms other parsers read differently are refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:URI=\"a\",\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "EXT-X-MAP attribute list refused: \"URI=\\\"a\\\",URI=\\\"b\\\"\"",
+      "rule": "Attribute lists are parsed strictly (RFC 8216 section 4.2) and written back unchanged; forms other parsers read differently are refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:URI=\"a\",URI=\"b\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "EXT-X-MAP attribute list refused: \"URI=\\\"a\\\\\\\"b\\\"\"",
+      "rule": "Attribute lists are parsed strictly (RFC 8216 section 4.2) and written back unchanged; forms other parsers read differently are refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:URI=\"a\\\"b\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "EXT-X-MAP attribute list refused: \"URI=\\\"unterminated\"",
+      "rule": "Attribute lists are parsed strictly (RFC 8216 section 4.2) and written back unchanged; forms other parsers read differently are refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:URI=\"unterminated\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "EXT-X-MAP attribute list refused: \"URI=a b\"",
+      "rule": "Attribute lists are parsed strictly (RFC 8216 section 4.2) and written back unchanged; forms other parsers read differently are refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:URI=a b\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "EXT-X-MAP attribute list refused: \"URI=a\\\"b\"",
+      "rule": "Attribute lists are parsed strictly (RFC 8216 section 4.2) and written back unchanged; forms other parsers read differently are refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:URI=a\"b\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "EXT-X-MAP attribute list refused: \" URI=\\\"a\\\"\"",
+      "rule": "Attribute lists are parsed strictly (RFC 8216 section 4.2) and written back unchanged; forms other parsers read differently are refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP: URI=\"a\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "EXT-X-MAP attribute list refused: \"URI =\\\"a\\\"\"",
+      "rule": "Attribute lists are parsed strictly (RFC 8216 section 4.2) and written back unchanged; forms other parsers read differently are refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:URI =\"a\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "EXT-X-MAP attribute list refused: \"URI=\\\"a\\\" ,METHOD=NONE\"",
+      "rule": "Attribute lists are parsed strictly (RFC 8216 section 4.2) and written back unchanged; forms other parsers read differently are refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:URI=\"a\" ,METHOD=NONE\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "EXT-X-MAP attribute list refused: \"URI=\\\"a\\\"METHOD=NONE\"",
+      "rule": "Attribute lists are parsed strictly (RFC 8216 section 4.2) and written back unchanged; forms other parsers read differently are refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:URI=\"a\"METHOD=NONE\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "EXT-X-MAP attribute list refused: \"URI=\\\"line\\u0007\\\"\"",
+      "rule": "Attribute lists are parsed strictly (RFC 8216 section 4.2) and written back unchanged; forms other parsers read differently are refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:URI=\"line\u0007\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "EXT-X-MAP attribute list refused: \"X_Y=1\"",
+      "rule": "Attribute lists are parsed strictly (RFC 8216 section 4.2) and written back unchanged; forms other parsers read differently are refused.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:X_Y=1\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "EXT-X-STREAM-INF attribute list with a trailing comma",
+      "rule": "Attribute lists are parsed strictly (RFC 8216 section 4.2) and written back unchanged; forms other parsers read differently are refused.",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1,\nmain.m3u8\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "EXT-X-STREAM-INF with no attribute list",
+      "rule": "Attribute lists are parsed strictly (RFC 8216 section 4.2) and written back unchanged; forms other parsers read differently are refused.",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-STREAM-INF\nmain.m3u8\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "EXT-X-STREAM-INF attribute names a resource: URI=main.m3u8",
+      "rule": "Tags that may not name a resource (EXT-X-STREAM-INF, EXT-X-START) are refused when an attribute names one, by name (URI, *-URI, X-ASSET-LIST) or by shape (a scheme, //, or a leading /).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1,URI=\"main.m3u8\"\nmain.m3u8\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "EXT-X-STREAM-INF attribute names a resource: SERVER-URI=steer.json",
+      "rule": "Tags that may not name a resource (EXT-X-STREAM-INF, EXT-X-START) are refused when an attribute names one, by name (URI, *-URI, X-ASSET-LIST) or by shape (a scheme, //, or a leading /).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1,SERVER-URI=\"steer.json\"\nmain.m3u8\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "EXT-X-STREAM-INF attribute names a resource: X-ASSET-URI=ad.m3u8",
+      "rule": "Tags that may not name a resource (EXT-X-STREAM-INF, EXT-X-START) are refused when an attribute names one, by name (URI, *-URI, X-ASSET-LIST) or by shape (a scheme, //, or a leading /).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1,X-ASSET-URI=\"ad.m3u8\"\nmain.m3u8\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "EXT-X-STREAM-INF attribute names a resource: X-ASSET-LIST=ads.json",
+      "rule": "Tags that may not name a resource (EXT-X-STREAM-INF, EXT-X-START) are refused when an attribute names one, by name (URI, *-URI, X-ASSET-LIST) or by shape (a scheme, //, or a leading /).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1,X-ASSET-LIST=\"ads.json\"\nmain.m3u8\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "EXT-X-STREAM-INF attribute names a resource: DATA-ID=https://other.example.test/x",
+      "rule": "Tags that may not name a resource (EXT-X-STREAM-INF, EXT-X-START) are refused when an attribute names one, by name (URI, *-URI, X-ASSET-LIST) or by shape (a scheme, //, or a leading /).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1,DATA-ID=\"https://other.example.test/x\"\nmain.m3u8\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "EXT-X-STREAM-INF attribute names a resource: X-CUSTOM=//other.example.test/x",
+      "rule": "Tags that may not name a resource (EXT-X-STREAM-INF, EXT-X-START) are refused when an attribute names one, by name (URI, *-URI, X-ASSET-LIST) or by shape (a scheme, //, or a leading /).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1,X-CUSTOM=\"//other.example.test/x\"\nmain.m3u8\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "EXT-X-STREAM-INF attribute names a resource: X-CUSTOM=/videos/x",
+      "rule": "Tags that may not name a resource (EXT-X-STREAM-INF, EXT-X-START) are refused when an attribute names one, by name (URI, *-URI, X-ASSET-LIST) or by shape (a scheme, //, or a leading /).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1,X-CUSTOM=\"/videos/x\"\nmain.m3u8\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "EXT-X-STREAM-INF attribute names a resource: X-CUSTOM=data:text/plain,hi",
+      "rule": "Tags that may not name a resource (EXT-X-STREAM-INF, EXT-X-START) are refused when an attribute names one, by name (URI, *-URI, X-ASSET-LIST) or by shape (a scheme, //, or a leading /).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1,X-CUSTOM=\"data:text/plain,hi\"\nmain.m3u8\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "EXT-X-STREAM-INF attribute names a resource: KEYFORMAT=urn:uuid:1",
+      "rule": "Tags that may not name a resource (EXT-X-STREAM-INF, EXT-X-START) are refused when an attribute names one, by name (URI, *-URI, X-ASSET-LIST) or by shape (a scheme, //, or a leading /).",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1,KEYFORMAT=\"urn:uuid:1\"\nmain.m3u8\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "EXT-X-START attribute names a resource",
+      "rule": "Tags that may not name a resource (EXT-X-STREAM-INF, EXT-X-START) are refused when an attribute names one, by name (URI, *-URI, X-ASSET-LIST) or by shape (a scheme, //, or a leading /).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-START:TIME-OFFSET=0,X-CUSTOM=\"/videos/x\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "unsafe-uri"
+      }
+    },
+    {
+      "name": "EXT-X-START without a resource is kept",
+      "rule": "Tags that may not name a resource (EXT-X-STREAM-INF, EXT-X-START) are refused when an attribute names one, by name (URI, *-URI, X-ASSET-LIST) or by shape (a scheme, //, or a leading /).",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-START:TIME-OFFSET=0,PRECISE=YES\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-START:TIME-OFFSET=0,PRECISE=YES\n#EXTINF:6.0,\nhttp://127.0.0.1:8096/videos/abc/hls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
+      "name": "structure: empty body",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "media",
+      "body": "",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "structure: header only",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "structure: byte order mark before the header",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "media",
+      "body": "\ufeff#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nmain.m3u8\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "structure: space before the header",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "media",
+      "body": " #EXTM3U\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "structure: URI line with no tag before it",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\nmain.m3u8\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "structure: STREAM-INF with no URI line",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "structure: two STREAM-INF tags in a row",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\n#EXT-X-STREAM-INF:BANDWIDTH=2\nmain.m3u8\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "structure: master and media tags mixed",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nmain.m3u8\n#EXTINF:1,\nseg.mp4\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "structure: EXTINF with no URI line",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:1,\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "structure: EXT-X-MAP with no URI",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-MAP:BYTERANGE=10\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "structure: lower-case tag",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#ext-x-version:7\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "structure: NUL in a segment URI",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:1,\nseg\u0000.mp4\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "structure: bell character in a comment",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n# ring\u0007\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "structure: second header",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTM3U\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "structure: line longer than 4000 bytes",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "structure: seventeen variants",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nv0.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=2\nv1.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=3\nv2.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=4\nv3.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=5\nv4.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=6\nv5.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=7\nv6.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=8\nv7.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=9\nv8.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=10\nv9.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=11\nv10.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=12\nv11.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=13\nv12.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=14\nv13.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=15\nv14.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=16\nv15.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=17\nv16.m3u8\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "structure: master with no variant",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-VERSION:7\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "structure: served line of exactly 4000 bytes",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nhttp://127.0.0.1:8096/videos/abc/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
+      "name": "structure: sixteen variants",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "master",
+      "body": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nv0.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=2\nv1.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=3\nv2.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=4\nv3.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=5\nv4.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=6\nv5.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=7\nv6.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=8\nv7.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=9\nv8.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=10\nv9.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=11\nv10.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=12\nv11.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=13\nv12.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=14\nv13.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=15\nv14.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=16\nv15.m3u8\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/master.m3u8?PlaySessionId=p&EnableTrickplay=false",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nhttp://127.0.0.1:8096/videos/abc/v0.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=2\nhttp://127.0.0.1:8096/videos/abc/v1.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=3\nhttp://127.0.0.1:8096/videos/abc/v2.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=4\nhttp://127.0.0.1:8096/videos/abc/v3.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=5\nhttp://127.0.0.1:8096/videos/abc/v4.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=6\nhttp://127.0.0.1:8096/videos/abc/v5.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=7\nhttp://127.0.0.1:8096/videos/abc/v6.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=8\nhttp://127.0.0.1:8096/videos/abc/v7.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=9\nhttp://127.0.0.1:8096/videos/abc/v8.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=10\nhttp://127.0.0.1:8096/videos/abc/v9.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=11\nhttp://127.0.0.1:8096/videos/abc/v10.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=12\nhttp://127.0.0.1:8096/videos/abc/v11.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=13\nhttp://127.0.0.1:8096/videos/abc/v12.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=14\nhttp://127.0.0.1:8096/videos/abc/v13.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=15\nhttp://127.0.0.1:8096/videos/abc/v14.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=16\nhttp://127.0.0.1:8096/videos/abc/v15.m3u8\n",
+        "children": [
+          "http://127.0.0.1:8096/videos/abc/v0.m3u8",
+          "http://127.0.0.1:8096/videos/abc/v1.m3u8",
+          "http://127.0.0.1:8096/videos/abc/v2.m3u8",
+          "http://127.0.0.1:8096/videos/abc/v3.m3u8",
+          "http://127.0.0.1:8096/videos/abc/v4.m3u8",
+          "http://127.0.0.1:8096/videos/abc/v5.m3u8",
+          "http://127.0.0.1:8096/videos/abc/v6.m3u8",
+          "http://127.0.0.1:8096/videos/abc/v7.m3u8",
+          "http://127.0.0.1:8096/videos/abc/v8.m3u8",
+          "http://127.0.0.1:8096/videos/abc/v9.m3u8",
+          "http://127.0.0.1:8096/videos/abc/v10.m3u8",
+          "http://127.0.0.1:8096/videos/abc/v11.m3u8",
+          "http://127.0.0.1:8096/videos/abc/v12.m3u8",
+          "http://127.0.0.1:8096/videos/abc/v13.m3u8",
+          "http://127.0.0.1:8096/videos/abc/v14.m3u8",
+          "http://127.0.0.1:8096/videos/abc/v15.m3u8"
+        ]
+      }
+    },
+    {
+      "name": "structure: tag shifted by a leading space becomes a URI line",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n #EXT-X-MAP:URI=\"http://other.example.test/init.mp4\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "structure: served line longer than 4000 bytes after resolution",
+      "rule": "The playlist must be well formed: #EXTM3U first, upper-case tags, each EXTINF or STREAM-INF followed by its URI line, no stray URI line, master and media tags not mixed, no control characters, lines at most 4000 bytes, at most 16 child playlists.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "media playlist without EXT-X-ENDLIST",
+      "rule": "A media playlist must end with EXT-X-ENDLIST: only complete (VOD) playlists are served.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:1,\nseg.mp4\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "not-complete"
+      }
+    },
+    {
+      "name": "event playlist without EXT-X-ENDLIST",
+      "rule": "A media playlist must end with EXT-X-ENDLIST: only complete (VOD) playlists are served.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-PLAYLIST-TYPE:EVENT\n#EXT-X-TARGETDURATION:6\n#EXTINF:1,\nseg.mp4\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "not-complete"
+      }
+    },
+    {
+      "name": "EXT-X-KEY METHOD=NONE needs no URI",
+      "rule": "EXT-X-KEY with METHOD=NONE needs no URI; any other method and EXT-X-MAP need one.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-KEY:METHOD=NONE\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-KEY:METHOD=NONE\n#EXTINF:6.0,\nhttp://127.0.0.1:8096/videos/abc/hls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n"
+      }
+    },
+    {
+      "name": "EXT-X-KEY METHOD=AES-128 without a URI",
+      "rule": "EXT-X-KEY with METHOD=NONE needs no URI; any other method and EXT-X-MAP need one.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-KEY:METHOD=AES-128\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "refuse",
+        "reason": "malformed"
+      }
+    },
+    {
+      "name": "EXT-X-KEY METHOD=AES-128 with a same-origin URI",
+      "rule": "EXT-X-KEY with METHOD=NONE needs no URI; any other method and EXT-X-MAP need one.",
+      "playlistKind": "media",
+      "body": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-KEY:METHOD=AES-128,URI=\"key.bin\"\n#EXTINF:6.0,\nhls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n",
+      "baseUrl": "http://127.0.0.1:8096/videos/abc/main.m3u8?PlaySessionId=p",
+      "serverOrigin": "http://127.0.0.1:8096",
+      "expected": {
+        "verdict": "accept",
+        "servedBody": "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXT-X-KEY:METHOD=AES-128,URI=\"http://127.0.0.1:8096/videos/abc/key.bin\"\n#EXTINF:6.0,\nhttp://127.0.0.1:8096/videos/abc/hls1/main/0.mp4?PlaySessionId=p\n#EXT-X-ENDLIST\n"
+      }
+    }
+  ]
+}

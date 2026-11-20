@@ -54,13 +54,13 @@ pub(crate) enum HlsError {
 }
 
 #[cfg(test)]
-mod attributes_tests;
-#[cfg(test)]
 mod loopback_tests;
 #[cfg(test)]
 mod master_url_tests;
 #[cfg(test)]
 mod playlist_tests;
+#[cfg(test)]
+mod playlist_vectors_tests;
 #[cfg(test)]
 mod session_tests;
 #[cfg(test)]
