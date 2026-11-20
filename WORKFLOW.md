@@ -101,7 +101,7 @@ The implementer never reviews its own work. Run one review round. Fix critical, 
 - stubs, skipped tests, or justified workarounds
 - tokens or authenticated URLs in logs, errors, props, or events
 
-Any diff on a high-risk path (the core's negotiation, gateway, player and redaction code, `modules/player`, the native HTTP client, `docs/security.md`) also gets a `guardian` review.
+Any diff on a high-risk path (the core's negotiation, gateway, player and redaction code, `modules/player` from T8-01, the native HTTP client from T3-03, `docs/security.md`) also gets a `guardian` review.
 
 ### 7. Owner gate
 
@@ -198,7 +198,7 @@ Relative API list prices (per million input/output tokens, as of 2026-10):
 - The owner makes every look, wording, and direction call. Before a batch, a Fable pass collects the batch's design questions into `docs/specs/decisions-<phase>.md` and the owner answers them in one sitting.
 - A task whose spec still needs a new design call is parked with its questions, and the run moves on.
 - The spec check blocks only on critical or high issues; medium and low issues go to the implementer.
-- Native work (Kotlin under `modules/` or `apps/tv/android`) routes to `native-engineer`, and any diff on a high-risk path adds a `guardian` review.
+- Native work (Kotlin under `modules/` or `apps/tv/android`, from T3-01) routes to `native-engineer`, and any diff on a high-risk path adds a `guardian` review.
 - The run stops early only on a denied command.
 
 Subagent definitions under `.claude/agents/*.md` set `model` in their frontmatter:
@@ -224,7 +224,7 @@ Three MCP servers let agents find code without reading whole files. **Rule: loca
 | Tool | Best at | Use for |
 |---|---|---|
 | **semble** (`search`, `find_related`) | Search by intent in natural language | First stop when you don't know the symbol name; finding similar code before writing new code |
-| **serena** (LSP-backed symbols) | `find_symbol`, `get_symbols_overview`, `find_referencing_symbols`, `rename_symbol` | Outlining a file before reading it; impact analysis; safe renames during the `packages/core` move |
+| **serena** (LSP-backed symbols) | `find_symbol`, `get_symbols_overview`, `find_referencing_symbols`, `rename_symbol` | Outlining a file before reading it; impact analysis; safe renames during the `packages/core` move (T2-02) |
 | **codebase-memory-mcp** (graph) | `get_architecture`, `search_graph`, `trace_path`, `detect_changes` | Architecture overviews, call paths across layers, the symbols a diff touches |
 
 Serena runs the TypeScript language server (`.serena/project.yml`); add Kotlin when T3-01 brings Kotlin source. After large moves, check codebase-memory's `check_index_coverage` before trusting a graph answer.

@@ -109,7 +109,7 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 **Today.** `PlaybackCoordinator` (`src/lib/player/coordinator.ts`), `playbackSessionReducer` (`src/lib/player/session-state.ts`), `src/lib/player/session-failure.ts`, `src/domain/track-choice.ts`, `src/domain/media-segments.ts`.
 
-**Target.** `packages/core`; the player screen in `modules/player` and `apps/tv`.
+**Target.** `packages/core` (T2-02); the player screen in `modules/player` (T8-01) and `apps/tv` (T3-01).
 
 **Rules.**
 - Talks to the player only through the `PlayerEngine` port.
@@ -127,7 +127,7 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 **Today.** `PlaystateReporter` in `src/lib/player/playstate-reporter.ts`, `src/lib/player/confirm-play-method.ts`, `JellyfinGateway.report*`.
 
-**Target.** `packages/core`.
+**Target.** `packages/core` (T2-02).
 
 **Rules.**
 - Reporting failures become warnings, never playback errors.
@@ -204,7 +204,7 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 | Concern | Owns | Today | Target |
 |---|---|---|---|
 | **Security & Redaction** | Token boundary, the one authenticated client, URL and playlist validation, redaction, canary tests | `src/lib/redact.ts`, `src/lib/safe-reason.ts`, `src/lib/transport-error.ts`, `src/domain/host-class.ts`, `tests/fixtures/`, `docs/security.md` | `packages/core`, the native HTTP module (T3-03), `modules/player` (T8-08) |
-| **Diagnostics** | The player's info sheet, decoder labels, exportable diagnostics that pass redaction | `src/lib/diagnostics.ts` | `apps/tv` and `modules/player` |
+| **Diagnostics** | The player's info sheet, decoder labels, exportable diagnostics that pass redaction | `src/lib/diagnostics.ts` | `apps/tv` (T3-01) and `modules/player` (T8-01) |
 | **Performance** | The budget (cold start, key to focus, janky frames, memory), Baseline Profile, image loading | n/a | T3-12, T3-13, T3-14 |
 | **Device lab** | The Shield and the cheap box, on-device checks | n/a | T0-06, the Shield checks |
 

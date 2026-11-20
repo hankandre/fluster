@@ -15,7 +15,7 @@
 
 ## Kotlin
 
-- Implement it in `modules/player` behind the engine interface.
+- Implement it in `modules/player` (T8-01) behind the engine interface.
 - Map every error to a typed code.
 - Add JVM tests for valid and invalid input.
 - Update the module's allowlist test (T8-01).
