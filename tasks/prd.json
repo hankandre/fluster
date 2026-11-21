@@ -738,7 +738,7 @@
           "status": "done",
           "owner": "implementer",
           "passes": true,
-          "evidence": "PR #244 (task/T2-08). CI tripwire green on all three servers: https://github.com/hankandre/octave/actions/runs/44902476673. Local 2026-11-21 three-server run: fixture:up, fixture:setup, fixture:check-jellyscale (37 routes match), pnpm --filter @octave/core test (2143 pass), pnpm check green, pnpm test:tripwire passed; stack torn down with compose down -v."
+          "evidence": "PR #244 (task/T2-08); review fix commit 1adce39a captures the gateway session token in the recorder. CI tripwire green on all three servers (run 44902476673). pnpm check green: 2143 core tests pass. Three-server local run 2026-11-21: fixture:check-jellyscale 37 routes match."
         },
         {
           "id": "T2-09",
