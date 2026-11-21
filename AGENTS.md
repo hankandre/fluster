@@ -23,7 +23,7 @@ Octave is a Jellyfin and Jellyscale client for the TV that plays the original fi
 - Keep evidence to 600 characters and name the PR or commit.
 - Append deferred or newly found work to `tasks/backlog.jsonl` as one JSON line (fields in `WORKFLOW.md` §2a); any agent or pull request may.
 - Only a Product Owner pass (Fable 5.2) adds, splits, reorders, or drops tasks, after triaging the backlog, through `scripts/task-owner.mjs` and a line in `tasks/product-owner-log.md`; the owner can veto any of it. `pnpm lint:flow` fails any other change.
-- Never edit acceptance items without the owner's approval.
+- Edit acceptance items only in a Product Owner pass: a scope-only edit needs the Product Owner's logged reason; an edit to on-screen wording, look or product direction needs an owner approval file. The owner can veto either.
 - Link the task id in commits, plans, and PRs.
 - Read the dogfood server URL from `OCTAVE_DOGFOOD_SERVER`; never commit a server address, a credential, or the owner's name.
 

@@ -7,7 +7,7 @@ Sources are listed at the end. Where a practice is adopted, the reason is stated
 ## Principles
 
 1. **The repository is the system of record.** If a decision, constraint, or plan lives only in a chat, a head, or an issue comment, agents cannot see it. Write it into the repo.
-2. **Humans steer, agents execute.** The owner owns intent (what and why), look, wording and direction, saying "no", the merge decision, and the on-device gates on the Shield. Agents own implementation, tests, and first-pass review. The Product Owner agent (Fable 5.2) owns the backlog and priorities, under the owner's veto.
+2. **Humans steer, agents execute.** The owner owns intent (what and why), look, wording and direction, saying "no", the merge decision, and the on-device gates on the Shield. Agents own implementation, tests, and first-pass review. The Product Owner agent (Fable 5.2) owns the backlog and priorities and approves scope-level acceptance edits, under the owner's veto.
 3. **The verifier is the ceiling.** Agents reliably reach whatever the checks can distinguish and no further. Invest in oracles before investing in more agent throughput.
 4. **Fix the process that generates the code, not the code.** When an agent makes the same class of mistake twice, add a test, lint, hook, or doc line.
 5. **Enforce invariants mechanically.** Prose rules are suggestions. A rule that must hold every time becomes a test, a lint, a type, or a hook, and its failure message tells the agent how to fix it.
@@ -55,6 +55,7 @@ For work spanning more than one session or more than one domain, create `docs/pl
 
 Each task runs: refine + spec → spec check → failing tests → implement → verify → one review round → ship (the full order is in "The task flow, in the order it runs").
 
+- `refiner` writes every task spec: Fable 5.2 for a high-risk task, Opus 5.5 otherwise. The Product Owner does not write specs.
 - `refiner` reads the task (`pnpm task show <id>`), its plan, and the relevant code and docs. It writes only `docs/specs/<TASK-ID>.md`: goal; acceptance items mapped to how each is met and tested; files to touch; approach; test plan; risks and out of scope; validation commands; and, for every dependency the task adopts, the maintenance check from primary sources.
 - `spec-checker` runs in a fresh context against the task, the `AGENTS.md` hard rules, `ARCHITECTURE.md`, `DESIGN.md` (for UI), and the code. It appends a verdict: "Approved" or "Changes needed" with numbered issues.
 - Allow one revision round. If the spec is still not approved, stop and ask the owner.
@@ -84,7 +85,10 @@ After the spec check and before implementation, `test-writer` turns each accepta
 
 ### 2c. Product Owner pass
 
-A Product Owner pass (`.claude/workflows/product-owner.js`, Fable 5.2) triages `tasks/backlog.jsonl` entries without `taken_by` into `tasks/prd.json`, and is the only step that adds, splits, reorders or drops tasks. It works through `scripts/task-owner.mjs`, which changes no status field and has no operation for the `rules`, and it needs an owner approval file naming the task to edit `acceptance`, `human` or `verify`. It logs each decision in `tasks/product-owner-log.md` and commits with a `Product-Owner-Pass:` trailer; `pnpm lint:flow` fails a task list change without both. The PR lists every decision; the owner can veto any of it, and the next pass reverts a veto and logs it.
+A Product Owner pass (`.claude/workflows/product-owner.js`, Fable 5.2) triages `tasks/backlog.jsonl` entries without `taken_by` into `tasks/prd.json`, and is the only step that adds, splits, reorders or drops tasks. It works through `scripts/task-owner.mjs`, which changes no status field and has no operation for the `rules`.
+
+- **Scope edits.** The Product Owner approves an acceptance edit that changes scope only (a path, a split, a dependency, what a task covers): the edit operation gives `scope`, its reason, and needs no approval file.
+- **Owner edits.** An acceptance edit that changes on-screen wording or copy, look, or product direction needs an owner approval file naming the task (`owner_approval`: a `docs/specs/decisions-*.md` or `docs/decisions/*.md` file), and so does any edit of `human` or `verify`. It logs each decision, each scope edit with its reason, in `tasks/product-owner-log.md` and commits with a `Product-Owner-Pass:` trailer; `pnpm lint:flow` fails a task list change without both. The PR lists every decision; the owner can veto any of it, and the next pass reverts a veto and logs it.
 
 ## The task flow, in the order it runs
 
@@ -204,7 +208,7 @@ Relative API list prices (per million input/output tokens, as of 2026-10):
 | Codebase search, CI log triage, commit messages, watching PRs, doc-gardening detection | **Haiku 5.5** | `scout`, `ci-triage` |
 | Refine + spec and spec check, routine tasks | **Opus 5.5** | `refiner`, `spec-checker` |
 | Refine + spec and spec check, high-risk tasks (native, security, architecture, decision records) | **Fable 5.2** | `refiner`, `spec-checker` with a spawn-time `model: fable` override |
-| Backlog triage, priorities, and frozen-test rulings (T1-12) | **Fable 5.2** | `product-owner` |
+| Backlog triage, priorities, scope-level acceptance edits, and frozen-test rulings (T1-12); never task specs | **Fable 5.2** | `product-owner` |
 | Failing acceptance tests before implementation | **Sonnet 5.5**; Opus 5.5 for Kotlin | `test-writer` |
 | Kotlin, Expo native modules, Media3, the native HTTP client | **Opus 5.5** | `native-engineer` |
 | TypeScript implementation and tests | **Sonnet 5.5** | `implementer` |
@@ -228,7 +232,7 @@ Relative API list prices (per million input/output tokens, as of 2026-10):
 
 `.claude/workflows/task.js` runs tasks in order through Spec, Check, Tests, Implement, Review, and Ship. Start it with the Workflow tool (`args: {tasks: ["T3-01", "T3-02"], risk: "routine" | "high", native: false}`). It builds each task's worktree as `../octave-<TASK-ID>` on the branch `task/<TASK-ID>` from the repository name. Its tests: `pnpm test:workflow`.
 
-- The owner makes every look, wording, and direction call. Before a batch, a Fable pass collects the batch's design questions into `docs/specs/decisions-<phase>.md` and the owner answers them in one sitting.
+- The owner makes every look, wording, and direction call; the Product Owner approves scope-level acceptance edits, and the owner can veto them. Before a batch, a Fable pass collects the batch's design questions into `docs/specs/decisions-<phase>.md` and the owner answers them in one sitting.
 - A task whose spec still needs a new design call is parked with its questions, and the run moves on.
 - The spec check blocks only on critical or high issues; medium and low issues go to the implementer.
 - Native work (Kotlin under `modules/` or `apps/tv/android`, from T3-01) routes to `native-engineer`, and any diff on a high-risk path adds a `guardian` review.
@@ -248,7 +252,7 @@ Subagent definitions under `.claude/agents/*.md` set `model` in their frontmatte
 | `guardian` | opus | Review of policy, native-method, token, and redaction changes |
 | `planner` | opus | Execution plans and decision records |
 | `test-writer` | sonnet | Failing acceptance tests and the manifest, before implementation |
-| `product-owner` | fable | Backlog triage, priorities, and frozen-test rulings |
+| `product-owner` | fable | Backlog triage, priorities, scope-level acceptance edits, and frozen-test rulings |
 
 What the Claude Code docs say (https://code.claude.com/docs/en/sub-agents): the frontmatter `model` field accepts the aliases `sonnet`, `opus`, `haiku`, `fable`, a full model ID, or `inherit`; the spawn-time `model` parameter wins over the frontmatter, then `CLAUDE_CODE_SUBAGENT_MODEL`, then the main session's model; the spawn-time parameter takes only an alias.
 
