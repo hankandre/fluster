@@ -619,7 +619,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "commit 31c607e0 on task/T2-04: Transport port, FetchTransport, gateway on the port, axios and SDK removed. check-red --expect green: items 1-6 green. Core suite 70 files, 1825 pass, 3 fail (frozen T2-03 gateway-crypto.test.ts needs the D9 ruling); typecheck fails on that file and on frozen gateway-transport.test.ts:401 (unused private field, D11). Tripwire and tv:wire not run locally (CI, T3-05)."
+          "evidence": "commit 99a25345 on task/T2-04 (6 commits, spec D1-D11): Transport port, FetchTransport, gateway on the port, axios and SDK removed. pnpm check exit 0: core 70 files 1828 pass; check-red items 1-6 green. Tripwire and tv:wire not run locally (CI, T3-05). Invariant change: decision 0005 amendment."
         },
         {
           "id": "T2-10",
