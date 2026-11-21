@@ -14,6 +14,7 @@ import type { Clock } from "../ports/clock";
 import { redactTransportError } from "../transport-error";
 import { confirmedPlan } from "./confirm-play-method";
 import { launchRequest } from "./launch-request";
+import { playerEvent } from "./player-event";
 import { PlaystateReporter, type PlaystateGateway } from "./playstate-reporter";
 
 // When a converted session asks the server what it really does: 3 s after
@@ -350,10 +351,12 @@ export class PlaybackCoordinator {
     }
   }
 
-  private async handleEvent(attempt: number, event: PlayerEvent): Promise<void> {
+  private async handleEvent(attempt: number, raw: PlayerEvent): Promise<void> {
     if (attempt !== this.attempt) return;
-    // An error event crosses with its code only; any other field an engine adds is dropped.
-    this.callbacks.onEvent(event.kind === "error" ? { kind: "error", code: playerErrorCode(event.code) } : event);
+    // Every event is rebuilt from its known fields; an unknown kind is dropped (D14).
+    const event = playerEvent(raw);
+    if (!event) return;
+    this.callbacks.onEvent(event);
     if ("snapshot" in event && event.snapshot) this.snapshot = event.snapshot;
     if (event.kind === "first-frame") this.firstFrameShown = true;
     if (this.firstFrameShown && this.snapshot) {
