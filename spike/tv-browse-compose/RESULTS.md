@@ -376,6 +376,105 @@ set `FALSIFIER_HOST_PORT` if a React Native run uses the same host at the same t
 Then fill the Focus, Memory and Cold start tables above from `focus.json`, `memory.json` and
 `coldstart.json` (or `python3 ../tv-browse/scripts/summarize.py results/<label>-*` for a one-line row).
 
+## Shield run, night of 2026-11-20
+
+Run by the coordinator's night agent between 23:05 and 23:29 CST. It held an exclusive lock on the
+Shield and was the only agent driving it. Before starting it checked that the Shield was idle: the
+focused app was `tvlauncher`, the device was asleep and no media app was in front. It set
+`svc power stayon true` for the session.
+
+| Results folder | What | Compile state (`dexopt.txt`) | Images served |
+|---|---|---|---|
+| `shield-run1-browse-compose-20261120-230522` | `all` | `speed-profile [reason=install]` | 458 |
+| `shield-run2-browse-compose-20261120-231648` | `frames` | `speed-profile [reason=install]` | 102 |
+| `shield-speedprofile-run1-browse-compose-20261120-231752` | `all`, `FALSIFIER_COMPILE=speed-profile` | `speed-profile [reason=unknown]` | 458 |
+
+**The speed-profile arm is not like for like with React Native's.** This wrapper's warm-up is one
+launch and a 12 s idle, so that `profileinstaller` writes the libraries' baseline profiles. Then it
+runs `cmd package compile -m speed-profile -f`. React Native's warm-up drives three rounds of row
+and rail traffic before it compiles. So the Compose profile covers the bundled library profiles,
+not this screen's own hot paths.
+
+### Focus (500 presses)
+
+| Run | Single presses ok | Bursts diverged | Presses after divergence | Recycled-cell BLURs | Burst gap | Rail → Right returns to the card left |
+|---|---|---|---|---|---|---|
+| shield-run1 (as installed) | **299/299** | **0/12** | 0 | 0 | 59.5 ms | 1 of 1 |
+| shield-speedprofile-run1 | **299/299** | **0/12** | 0 | 0 | 59 ms | 1 of 1 |
+
+The Compose baseline is clean on the Shield with no focus fixes. React Native needed F1's six
+fixes to reach the same result.
+
+### Frames (`dumpsys gfxinfo`, held key via monkey)
+
+| Run | Compile | Right: frames, janky | Right p50/p90/p95/p99 | Down: frames, janky | Down p50/p90/p95/p99 | Down slow UI / missed vsync | Down focus gap |
+|---|---|---|---|---|---|---|---|
+| shield-frames (15:28, earlier) | install | 216, 25.93 % | 10/26/32/38 | 91, 46.15 % | 14/81/121/150 | 19 / 18 | 112 ms |
+| shield-run1 | install | 216, **31.02 %** | 10/29/36/44 | 102, **33.33 %** | 10/65/105/121 | 19 / 18 | 115 ms |
+| shield-run2 | install | 216, **23.15 %** | 10/24/31/42 | 90, **48.89 %** | 16/105/129/150 | 18 / 18 | 115.5 ms |
+| **shield-speedprofile-run1** | **speed-profile** | 209, **0.48 %** | 7/11/12/15 | 111, **9.01 %** | 6/14/23/48 | 5 / 4 | **71.5 ms** |
+
+Every segment's focus path was complete: 49 card events on Right and 19 rows on Down. The segment's
+final `rail,0` is the next launch's initial focus, logged by a new process, not a misroute.
+
+- **As installed (3 runs):** Right is 23–31 % janky with p99 38–44 ms. Down is 33–49 % janky with
+  p99 121–150 ms. Focus lags the key on Down: 112–116 ms per move against 65 ms injected.
+- **Compiled once with the warm-up:** Right falls to 0.48 % janky (p99 15 ms). Down falls to 9 %
+  (p99 48 ms), and focus nearly keeps up (71.5 ms).
+- So on this device `reason=install` is not the same as a warm profile, although `status` reads
+  `speed-profile` in both cases. The install-time compile probably had little or no profile to work
+  from (**unverified**).
+- **Only one speed-profile run.** Its range is unknown, and React Native's compiled numbers come
+  from three runs per arm.
+
+### Memory (`dumpsys meminfo`, MB)
+
+| Run | Phase | PSS | Java | Native | Code | Graphics (EGL + Other mtrack) | ~Anon+Swap |
+|---|---|---|---|---|---|---|---|
+| shield-run1 | idle after launch | 66 | 3 | 7 | 6 | 30 (22 + 8) | 12 |
+| shield-run1 | after the scroll pass (20/20 rows to column 49) | 63 | 10 | 13 | 7 | **0 (no mtrack lines)** | 25 |
+| shield-speedprofile-run1 | idle | 67 | 4 | 7 | 6 | 30 (22 + 8) | 13 |
+| shield-speedprofile-run1 | after the scroll pass (20/20) | 63 | 13 | 14 | 6 | **0 (no mtrack lines)** | 29 |
+
+**The after-pass Graphics figure is not trustworthy.**
+- The app was in the foreground, with `mCurrentFocus` on its `MainActivity` and the display on.
+  The events log shows no pause between launch and the reading.
+- After run1, `dumpsys meminfo` for the foreground app still showed Graphics 0.
+- At the same moment, `dumpsys gfxinfo` reported **21.42 MB of GPU memory** (16.81 MB purgeable).
+- Coil decodes posters to hardware bitmaps, held in gralloc buffers. Tegra's memtrack evidently does
+  not attribute those buffers to the app once the pass is done. Why is **unverified**.
+- The same drop shows in `shield-INVALID-*` (30 → 0). That earlier run's "app in the background"
+  explanation is therefore probably wrong too.
+- **PSS 63 MB and Anon+Swap 25–29 MB are real.** They leave out the posters' GPU memory.
+- A fair Graphics figure needs another reading, such as gfxinfo's total or `dumpsys
+  SurfaceFlinger`'s GraphicBuffer list. A reading of roughly 21–30 MB is the best estimate here
+  (**unverified**).
+
+### Cold start (`am start -W`, 5 runs)
+
+| Run | TotalTime median (min–max) | Process start → first composition, median |
+|---|---|---|
+| shield-run1 (as installed) | 564 ms (549–1040) | 538 ms |
+| shield-speedprofile-run1 | **442 ms** (430–808) | **420 ms** |
+
+The earlier provisional figure was 554 ms. React Native's compiled cold start is 340–369 ms
+(`spike/tv-browse/RESULTS.md`).
+
+### Side by side with React Native, updated
+
+The React Native figures come from its "React Native optimisation pass" section. React Native F1
+has focus fixes and RGB_565 posters, and its design is unchanged. F4 adds the static lift, row
+`drawDistance` 0, 16-bit art and no image memory cache. All React Native figures are from compiled
+runs.
+
+| Measure | Compose, as installed | Compose, speed-profile (1 run) | RN F1, compiled | RN F4, compiled |
+|---|---|---|---|---|
+| Focus: singles / bursts diverged | 299/299, 0/12 | 299/299, 0/12 | 299/299, 0/12 | 299/299, 4/12 |
+| Hold Right: janky, p99 | 23–31 %, 38–44 ms | 0.48 %, 15 ms | 0.6–1.2 %, 15–18 ms | 0 %, 11 ms |
+| Hold Down: janky, p99 | 33–49 %, 121–150 ms | 9.01 %, 48 ms | 3.4–7.9 %, 23–31 ms | 0 %, 13 ms |
+| PSS after the scroll pass | 63 MB (Graphics unreliable) | 63 MB | 328 MB | 242–246 MB |
+| Cold start median | 564 ms | 442 ms | 340–369 ms | (same APK) |
+
 ## What is verified and what is not
 
 **Verified** (command output or logcat in `results/`):
