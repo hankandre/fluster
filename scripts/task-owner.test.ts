@@ -53,6 +53,12 @@ describe("applyOps", () => {
     expect(tasks(applyOps(files(), [{ op: "drop", id: "T9-03", why: "x" }], opts).prd)).toEqual(["T9-01", "T9-02"]);
   });
 
+  it("an id dropped in the same operations cannot be added again", () => {
+    const again = { ...NEW, id: "T9-03", depends_on: ["T9-01"], acceptance: ["REWRITTEN without owner approval"] };
+    const ops = [{ op: "drop", id: "T9-03", why: "x" }, { op: "add", phase: "T9", after: "T9-01", task: again, takes: ["Alpha"] }];
+    expect(() => applyOps(files(), ops, opts)).toThrow(/T9-03.*dropped/);
+  });
+
   it("move reorders", () => {
     const out = applyOps(files(), [{ op: "move", id: "T9-03", phase: "T9", before: "T9-01" }], opts);
     expect(tasks(out.prd)).toEqual(["T9-03", "T9-01", "T9-02"]);

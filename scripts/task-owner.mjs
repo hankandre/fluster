@@ -62,13 +62,15 @@ function approve(op, readApproval, summary) {
   summary.push(`approval: ${op.id} fields ${Object.keys(op.fields).filter((key) => NEEDS_APPROVAL.includes(key)).join(", ")} edited with owner approval ${path}`);
 }
 
-function addTask(prd, op, backlogLines, summary) {
+function addTask(prd, op, ctx) {
+  const { backlogLines, summary } = ctx;
   const phase = prd.phases.find((item) => item.id === op.phase) || fail(`add: no phase ${op.phase}`);
   const task = op.task || fail("add: task is missing");
   for (const key of Object.keys(task)) if (!TASK_KEYS.includes(key)) fail(`add ${task.id}: ${key} is not a task field to give (the status fields are set to their defaults)`);
   for (const key of TASK_KEYS) if (!(key in task)) fail(`add ${task.id}: ${key} is missing`);
   if (!new RegExp(`^${phase.id}-\\d{2}$`).test(task.id)) fail(`add ${task.id}: the id must match phase ${phase.id}, such as ${phase.id}-01`);
   if (find(prd, task.id)) fail(`add ${task.id}: ${task.id} already exists`);
+  if (ctx.dropped.has(task.id)) fail(`add ${task.id}: ${task.id} was dropped in these operations; an id cannot be dropped and added again, because that would rewrite its acceptance without owner approval`);
   const { id: newId, ...fields } = task;
   checkFields(prd, fields, newId);
   if (!Array.isArray(op.takes) || op.takes.length === 0 || !isStrings(op.takes)) fail(`add ${task.id}: takes must list at least one backlog entry's what`);
@@ -90,7 +92,7 @@ function addTask(prd, op, backlogLines, summary) {
 function applyOne(prd, op, ctx) {
   switch (op && op.op) {
     case "add":
-      return addTask(prd, op, ctx.backlogLines, ctx.summary);
+      return addTask(prd, op, ctx);
     case "drop": {
       const { phase, task } = need(prd, op.id);
       if (task.status === "in_progress" || task.status === "done") fail(`${op.id} is ${task.status}; only a todo or blocked task can be dropped`);
@@ -98,6 +100,7 @@ function applyOne(prd, op, ctx) {
       if (dependent) fail(`${dependent.task.id} depends on ${op.id}; edit or drop it first`);
       if (typeof op.why !== "string" || op.why.trim() === "") fail(`drop ${op.id}: why is missing`);
       phase.tasks.splice(phase.tasks.indexOf(task), 1);
+      ctx.dropped.add(op.id);
       ctx.summary.push(`dropped ${op.id}`);
       return undefined;
     }
@@ -135,7 +138,7 @@ export function applyOps(files, ops, { date, readApproval }) {
   if (!Array.isArray(ops) || ops.length === 0) fail("the operations file must hold a non-empty list");
   const prd = JSON.parse(files.prd);
   if (JSON.stringify(prd, null, 2) + "\n" !== files.prd) fail("tasks/prd.json is not in its canonical 2-space JSON format");
-  const ctx = { backlogLines: files.backlog.split("\n"), summary: [], readApproval };
+  const ctx = { backlogLines: files.backlog.split("\n"), summary: [], readApproval, dropped: new Set() };
   for (const op of ops) applyOne(prd, op, ctx);
   prd.updated = date;
   const backlog = ctx.backlogLines.join("\n");
