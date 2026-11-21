@@ -304,10 +304,10 @@
             "The roadmap is the phase list of this file"
           ],
           "verify": "pnpm check",
-          "status": "in_progress",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": "PR #226: draft PRODUCT.md for the TV order, with every T1-05 item addressed; waits for the owner's approval of the wording (choices listed in the PR body)."
+          "passes": true,
+          "evidence": "Owner approved the PRODUCT.md wording on 2026-11-20; landed in #226."
         },
         {
           "id": "T1-06",
@@ -380,10 +380,10 @@
             "The voice and copy table is kept and says Octave"
           ],
           "verify": "pnpm check",
-          "status": "in_progress",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": "PR #226: draft DESIGN.md with TV as the reference form, the collapsed rail, one Recently added row, full-grid libraries with remembered sort and letter rail, QR sign-in, React Native tokens awaiting a TV pass; waits for the owner's named calls (listed in the PR body)."
+          "passes": true,
+          "evidence": "Owner approved the DESIGN.md wording on 2026-11-20; landed in #226."
         },
         {
           "id": "T1-09",
