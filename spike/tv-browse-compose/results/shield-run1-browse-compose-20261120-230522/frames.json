@@ -1,0 +1,72 @@
+{
+ "row_hold_right": {
+  "frames": 216,
+  "janky": 67,
+  "janky_pct": 31.02,
+  "p50_ms": 10,
+  "p90_ms": 29,
+  "p95_ms": 36,
+  "p99_ms": 44,
+  "missed_vsync": 6,
+  "slow_ui": 11,
+  "slow_draw": 1,
+  "frame_deadline_missed": 11
+ },
+ "rows_hold_down": {
+  "frames": 102,
+  "janky": 34,
+  "janky_pct": 33.33,
+  "p50_ms": 10,
+  "p90_ms": 65,
+  "p95_ms": 105,
+  "p99_ms": 121,
+  "missed_vsync": 18,
+  "slow_ui": 19,
+  "slow_draw": 0,
+  "frame_deadline_missed": 19
+ },
+ "segments": [
+  {
+   "segment": "seg launch",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row_hold_right enter",
+   "focus_events": 1,
+   "first": "0,0",
+   "final": "0,0",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row_hold_right hold RIGHT",
+   "focus_events": 50,
+   "first": "0,1",
+   "final": "rail,0",
+   "median_gap_ms": 65
+  },
+  {
+   "segment": "seg launch",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg rows_hold_down enter",
+   "focus_events": 1,
+   "first": "0,0",
+   "final": "0,0",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg rows_hold_down hold DOWN",
+   "focus_events": 19,
+   "first": "1,0",
+   "final": "19,0",
+   "median_gap_ms": 115.0
+  }
+ ]
+}
