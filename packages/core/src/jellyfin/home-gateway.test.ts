@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { continueWatchingRow } from "../domain/up-next";
 import { HOME_ROW_LIMIT, JellyfinGateway } from "./gateway";
 import type { HttpRequestConfig, HttpResponse, HttpTransport } from "./types";
+import { webCrypto } from "../adapters/web-crypto";
 
 // Home's discovery requests, answered by the P16-01 and P16-02 fixtures of both pinned servers.
 const fixtureRoot = join(__dirname, "../../tests/fixtures/jellyfin");
@@ -41,7 +42,7 @@ class FixtureTransport implements HttpTransport {
 
 async function signedIn() {
   const transport = new FixtureTransport();
-  const gateway = new JellyfinGateway("https://media.test", transport, "install-1");
+  const gateway = new JellyfinGateway("https://media.test", webCrypto, transport, "install-1");
   await gateway.login("Louise", "password");
   transport.calls = [];
   return { gateway, transport };

@@ -5,6 +5,7 @@ import { limitIsOnlyReason } from "./client-limit";
 import { OCTAVE_PROFILE, MAX_BITRATE } from "./device-profile";
 import { JellyfinGateway } from "./gateway";
 import type { HttpRequestConfig, HttpTransport, PlaybackInfoResponse } from "./types";
+import { webCrypto } from "../adapters/web-crypto";
 
 const directPlay = (): PlaybackInfoResponse => ({
   PlaySessionId: "play-1",
@@ -60,7 +61,7 @@ async function negotiate(
   options?: { ignoreStreamingLimit?: boolean },
 ) {
   const transport = new Transport(answer);
-  const gateway = new JellyfinGateway(server, transport, "install-1", undefined, new MemoryStreamingLimits(limits));
+  const gateway = new JellyfinGateway(server, webCrypto, transport, "install-1", undefined, new MemoryStreamingLimits(limits));
   await gateway.login("tester", "password");
   const plan = await gateway.createPlaybackPlan(ITEM, 0, undefined, undefined, options);
   return { plan, posts: transport.posts };

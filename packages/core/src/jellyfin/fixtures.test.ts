@@ -4,6 +4,7 @@ import { PlaybackRefusedError } from "../domain/playback";
 import { OCTAVE_PROFILE } from "./device-profile";
 import { JellyfinGateway } from "./gateway";
 import type { HttpRequestConfig, HttpTransport, PlaybackInfoResponse } from "./types";
+import { webCrypto } from "../adapters/web-crypto";
 
 // Replays PlaybackInfo responses recorded from Jellyfin 10.11.7 and 12.4.0 servers
 // (tests/integration/record-fixtures.mjs) through the current gateway.
@@ -50,7 +51,7 @@ class FixtureTransport implements HttpTransport {
 
 async function planFrom(response: PlaybackInfoResponse, itemId: string) {
   const transport = new FixtureTransport(response);
-  const gateway = new JellyfinGateway("http://127.0.0.1:8096", transport, "install-1");
+  const gateway = new JellyfinGateway("http://127.0.0.1:8096", webCrypto, transport, "install-1");
   await gateway.login("tester", "password");
   const item: LibraryItem = { id: itemId, name: "Fixture", type: "Movie", resumePositionTicks: 0, played: false };
   return { transport, run: (mediaSourceId?: string) => gateway.createPlaybackPlan(item, 0, undefined, mediaSourceId) };

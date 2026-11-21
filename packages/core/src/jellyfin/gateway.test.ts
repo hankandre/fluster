@@ -16,6 +16,7 @@ import {
 } from "./gateway";
 import type { LanHttpConfirmation, LanHttpConfirmationStore } from "../lan-http-confirmations";
 import type { HttpRequestConfig, HttpResponse, HttpTransport } from "./types";
+import { webCrypto } from "../adapters/web-crypto";
 
 interface RequestRecord {
   method: "GET" | "POST" | "DELETE";
@@ -85,7 +86,7 @@ function authenticatedGateway() {
     AccessToken: "top-secret",
     User: { Id: "user-1", Name: "Louise" },
   });
-  const gateway = new JellyfinGateway("https://media.test/jellyfin/", transport, "install-1");
+  const gateway = new JellyfinGateway("https://media.test/jellyfin/", webCrypto, transport, "install-1");
   return gateway.login("Louise", "password").then(() => ({ gateway, transport }));
 }
 
@@ -101,7 +102,7 @@ describe("JellyfinGateway direct-play contract", () => {
     ["http://NAS.local:8096", "http://nas.local:8096", "private-lan"],
     ["https://192.168.1.5:8920", "https://192.168.1.5:8920", "private-lan"],
   ])("accepts %s as %s (%s)", (input, serverUrl, hostClass) => {
-    const gateway = new JellyfinGateway(input, new FakeTransport());
+    const gateway = new JellyfinGateway(input, webCrypto, new FakeTransport());
     expect(gateway.serverUrl).toBe(serverUrl);
     expect(gateway.hostClass).toBe(hostClass);
     expect(gateway.origin).toBe(new URL(serverUrl).origin);
@@ -119,7 +120,7 @@ describe("JellyfinGateway direct-play contract", () => {
   ])("rejects an unsafe server URL without echoing it: %s", (serverUrl) => {
     let message = "";
     try {
-      new JellyfinGateway(serverUrl, new FakeTransport());
+      new JellyfinGateway(serverUrl, webCrypto, new FakeTransport());
     } catch (error) {
       message = error instanceof Error ? error.message : String(error);
     }
@@ -137,7 +138,7 @@ describe("JellyfinGateway direct-play contract", () => {
     };
     const create = vi.spyOn(axios, "create").mockReturnValue(isolatedAxios as never);
     try {
-      const gateway = new JellyfinGateway("https://media.test/jellyfin/");
+      const gateway = new JellyfinGateway("https://media.test/jellyfin/", webCrypto);
       await gateway.connect();
       expect(create).toHaveBeenCalledWith({
         baseURL: "https://media.test/jellyfin",
@@ -158,7 +159,7 @@ describe("JellyfinGateway direct-play contract", () => {
   it.each(["10.11.7", "12.4.0"])("accepts Jellyfin %s", async (version) => {
     const transport = new FakeTransport();
     transport.responses.set("GET /System/Info/Public", { ServerName: "Home", Version: version });
-    await expect(new JellyfinGateway("https://media.test", transport).connect()).resolves.toEqual({
+    await expect(new JellyfinGateway("https://media.test", webCrypto, transport).connect()).resolves.toEqual({
       name: "Home",
       version,
       hostClass: "public",
@@ -169,7 +170,7 @@ describe("JellyfinGateway direct-play contract", () => {
   it.each(["10.10.7", "", "abc", "10", "10.x.1", "v12.4.0"])("rejects Jellyfin version %j", async (version) => {
     const transport = new FakeTransport();
     transport.responses.set("GET /System/Info/Public", { Version: version });
-    await expect(new JellyfinGateway("https://media.test", transport).connect()).rejects.toThrow(
+    await expect(new JellyfinGateway("https://media.test", webCrypto, transport).connect()).rejects.toThrow(
       `Octave needs Jellyfin 10.11 or newer; this server reports ${version}.`,
     );
   });
@@ -181,7 +182,7 @@ describe("JellyfinGateway direct-play contract", () => {
       User: { Id: "user-1", Name: "Louise" },
     });
     const signal = new AbortController().signal;
-    const gateway = new JellyfinGateway("https://media.test", transport);
+    const gateway = new JellyfinGateway("https://media.test", webCrypto, transport);
 
     await expect(gateway.login("Louise", "password", signal)).resolves.toEqual({
       userId: "user-1",
@@ -306,7 +307,7 @@ describe("JellyfinGateway direct-play contract", () => {
 
   it("refuses media segments before sending anything when signed out", async () => {
     const transport = new FakeTransport();
-    const gateway = new JellyfinGateway("https://media.test", transport, "install-1");
+    const gateway = new JellyfinGateway("https://media.test", webCrypto, transport, "install-1");
     await expect(gateway.mediaSegments("item-1")).rejects.toThrow("Sign in before using the library.");
     expect(transport.requests).toHaveLength(0);
   });
@@ -604,7 +605,7 @@ async function loginWith(installId: string, serverId: string, username: string, 
     AccessToken: "top-secret",
     User: { Id: "user-1", Name: username },
   });
-  const gateway = new JellyfinGateway("https://media.test", transport, installId, undefined, undefined, client);
+  const gateway = new JellyfinGateway("https://media.test", webCrypto, transport, installId, undefined, undefined, client);
   await gateway.connect();
   await gateway.login(username, "password");
   const login = transport.requests.find((request) => request.url === "/Users/AuthenticateByName")!;
@@ -652,7 +653,7 @@ describe("JellyfinGateway device identity and logout", () => {
   });
 
   it("exposes the display name only while signed in", async () => {
-    const before = new JellyfinGateway("https://media.test", new FakeTransport(), "install-1");
+    const before = new JellyfinGateway("https://media.test", webCrypto, new FakeTransport(), "install-1");
     expect(before.currentUserName()).toBeUndefined();
     const { gateway } = await loginWith("install-1", "server-1", "Louise");
     expect(gateway.currentUserName()).toBe("Louise");
@@ -671,7 +672,7 @@ describe("JellyfinGateway device identity and logout", () => {
   });
 
   it("refuses the authorization header before sign-in", () => {
-    const gateway = new JellyfinGateway("https://media.test", new FakeTransport(), "install-1");
+    const gateway = new JellyfinGateway("https://media.test", webCrypto, new FakeTransport(), "install-1");
     expect(() => gateway.authorizationHeader()).toThrow("Sign in");
   });
 
@@ -700,7 +701,7 @@ describe("JellyfinGateway device identity and logout", () => {
 
   it("refuses to stop an encoding before sign-in", async () => {
     const transport = new FakeTransport();
-    const gateway = new JellyfinGateway("https://media.test", transport, "install-1");
+    const gateway = new JellyfinGateway("https://media.test", webCrypto, transport, "install-1");
     await expect(gateway.stopActiveEncoding("play-1")).rejects.toThrow("Sign in");
     expect(transport.requests).toEqual([]);
   });
@@ -748,7 +749,7 @@ describe("JellyfinGateway device identity and logout", () => {
 
   it("refuses to read sessions before sign-in", async () => {
     const transport = new FakeTransport();
-    const gateway = new JellyfinGateway("https://media.test", transport, "install-1");
+    const gateway = new JellyfinGateway("https://media.test", webCrypto, transport, "install-1");
     await expect(gateway.sessionPlayMethod({ itemId: "i", mediaSourceId: "m" })).rejects.toThrow("Sign in");
     expect(transport.requests).toEqual([]);
   });
@@ -765,7 +766,7 @@ describe("JellyfinGateway device identity and logout", () => {
     function quickConnectGateway() {
       const transport = new FakeTransport();
       transport.responses.set("GET /System/Info/Public", { Version: "10.11.7", Id: "server-1" });
-      const gateway = new JellyfinGateway("https://media.test", transport, "install-1");
+      const gateway = new JellyfinGateway("https://media.test", webCrypto, transport, "install-1");
       return { gateway, transport };
     }
 
@@ -1271,7 +1272,7 @@ describe("JellyfinGateway home calls", () => {
   });
 
   it("requires a signed-in session", async () => {
-    const gateway = new JellyfinGateway("https://media.test", new FakeTransport(), "install-1");
+    const gateway = new JellyfinGateway("https://media.test", webCrypto, new FakeTransport(), "install-1");
     await expect(gateway.resumeItems()).rejects.toThrow("Sign in");
   });
 });
@@ -1305,12 +1306,12 @@ describe("JellyfinGateway plain-HTTP policy (docs/decisions/0001)", () => {
 
   it("refuses a public http:// server in the constructor, before any request", () => {
     const transport = new FakeTransport();
-    expect(() => new JellyfinGateway("http://media.example:8096", transport)).toThrow(PUBLIC_HTTP_REFUSED_MESSAGE);
+    expect(() => new JellyfinGateway("http://media.example:8096", webCrypto, transport)).toThrow(PUBLIC_HTTP_REFUSED_MESSAGE);
     expect(transport.requests).toEqual([]);
   });
 
   it("throws a SignInFailure of kind public-http for a public http:// server", () => {
-    expect(() => new JellyfinGateway("http://media.example:8096", new FakeTransport())).toThrow(
+    expect(() => new JellyfinGateway("http://media.example:8096", webCrypto, new FakeTransport())).toThrow(
       expect.objectContaining({ name: "SignInFailure", kind: "public-http" }),
     );
   });
@@ -1318,7 +1319,7 @@ describe("JellyfinGateway plain-HTTP policy (docs/decisions/0001)", () => {
   it("refuses a public http:// server without creating an HTTP client", () => {
     const create = vi.spyOn(axios, "create");
     try {
-      expect(() => new JellyfinGateway("http://8.8.8.8:8096")).toThrow(PUBLIC_HTTP_REFUSED_MESSAGE);
+      expect(() => new JellyfinGateway("http://8.8.8.8:8096", webCrypto)).toThrow(PUBLIC_HTTP_REFUSED_MESSAGE);
       expect(create).not.toHaveBeenCalled();
     } finally {
       create.mockRestore();
@@ -1327,7 +1328,7 @@ describe("JellyfinGateway plain-HTTP policy (docs/decisions/0001)", () => {
 
   it("probes a private-LAN server and reports that confirmation is needed", async () => {
     const transport = lanTransport();
-    const gateway = new JellyfinGateway(LAN_URL, transport, "install-1", new MemoryConfirmations());
+    const gateway = new JellyfinGateway(LAN_URL, webCrypto, transport, "install-1", new MemoryConfirmations());
     await expect(gateway.connect()).resolves.toEqual({
       name: "Living Room",
       id: "server-1",
@@ -1346,7 +1347,7 @@ describe("JellyfinGateway plain-HTTP policy (docs/decisions/0001)", () => {
     ["authenticateWithQuickConnect", (gateway: JellyfinGateway) => gateway.authenticateWithQuickConnect("s3cret")],
   ])("refuses %s on an unconfirmed private-LAN HTTP server without a request", async (_name, call) => {
     const transport = lanTransport();
-    const gateway = new JellyfinGateway(LAN_URL, transport, "install-1", new MemoryConfirmations());
+    const gateway = new JellyfinGateway(LAN_URL, webCrypto, transport, "install-1", new MemoryConfirmations());
     await gateway.connect();
     await expect(call(gateway)).rejects.toThrow(UNENCRYPTED_NOT_CONFIRMED_MESSAGE);
     expect(transport.requests.map((request) => request.url)).toEqual(["/System/Info/Public"]);
@@ -1354,7 +1355,7 @@ describe("JellyfinGateway plain-HTTP policy (docs/decisions/0001)", () => {
 
   it("refuses sign-in when connect() was skipped", async () => {
     const transport = lanTransport();
-    const gateway = new JellyfinGateway(LAN_URL, transport, "install-1", new MemoryConfirmations());
+    const gateway = new JellyfinGateway(LAN_URL, webCrypto, transport, "install-1", new MemoryConfirmations());
     expect(() => gateway.confirmUnencryptedConnection()).toThrow("Connect to the server");
     await expect(gateway.login("Louise", "hunter2")).rejects.toThrow(UNENCRYPTED_NOT_CONFIRMED_MESSAGE);
     expect(transport.requests).toEqual([]);
@@ -1362,35 +1363,35 @@ describe("JellyfinGateway plain-HTTP policy (docs/decisions/0001)", () => {
 
   it("signs in after confirmation and remembers it per server Id and origin", async () => {
     const confirmations = new MemoryConfirmations();
-    const first = new JellyfinGateway(LAN_URL, lanTransport(), "install-1", confirmations);
+    const first = new JellyfinGateway(LAN_URL, webCrypto, lanTransport(), "install-1", confirmations);
     await first.connect();
     first.confirmUnencryptedConnection();
     await expect(first.login("Louise", "hunter2")).resolves.toEqual({ userId: "user-1", username: "Louise" });
     expect(confirmations.records).toEqual([{ serverId: "server-1", origin: LAN_URL }]);
     expect(JSON.stringify(confirmations.records)).not.toContain("top-secret");
 
-    const again = new JellyfinGateway(`${LAN_URL}/`, lanTransport(), "install-1", confirmations);
+    const again = new JellyfinGateway(`${LAN_URL}/`, webCrypto, lanTransport(), "install-1", confirmations);
     await expect(again.connect()).resolves.toMatchObject({ needsUnencryptedConfirmation: false });
     await expect(again.login("Louise", "hunter2")).resolves.toMatchObject({ userId: "user-1" });
   });
 
   it("forgets a confirmation it recorded, so the next connect asks again", async () => {
     const confirmations = new MemoryConfirmations();
-    const gateway = new JellyfinGateway(LAN_URL, lanTransport(), "install-1", confirmations);
+    const gateway = new JellyfinGateway(LAN_URL, webCrypto, lanTransport(), "install-1", confirmations);
     await gateway.connect();
     gateway.confirmUnencryptedConnection();
     expect(confirmations.records).toHaveLength(1);
     gateway.forgetUnencryptedConnection();
     expect(confirmations.records).toEqual([]);
     await expect(gateway.login("Louise", "hunter2")).rejects.toMatchObject({ kind: "not-confirmed" });
-    await expect(new JellyfinGateway(LAN_URL, lanTransport(), "install-1", confirmations).connect())
+    await expect(new JellyfinGateway(LAN_URL, webCrypto, lanTransport(), "install-1", confirmations).connect())
       .resolves.toMatchObject({ needsUnencryptedConfirmation: true });
   });
 
   it("asks again for a different server Id at a confirmed origin", async () => {
     const confirmations = new MemoryConfirmations();
     confirmations.remember({ serverId: "server-1", origin: LAN_URL });
-    const gateway = new JellyfinGateway(LAN_URL, lanTransport("server-2"), "install-1", confirmations);
+    const gateway = new JellyfinGateway(LAN_URL, webCrypto, lanTransport("server-2"), "install-1", confirmations);
     await expect(gateway.connect()).resolves.toMatchObject({ needsUnencryptedConfirmation: true });
     await expect(gateway.login("Louise", "hunter2")).rejects.toThrow(UNENCRYPTED_NOT_CONFIRMED_MESSAGE);
   });
@@ -1400,13 +1401,13 @@ describe("JellyfinGateway plain-HTTP policy (docs/decisions/0001)", () => {
     async (serverUrl) => {
       const confirmations = new MemoryConfirmations();
       confirmations.remember({ serverId: "server-1", origin: LAN_URL });
-      const gateway = new JellyfinGateway(serverUrl, lanTransport(), "install-1", confirmations);
+      const gateway = new JellyfinGateway(serverUrl, webCrypto, lanTransport(), "install-1", confirmations);
       await expect(gateway.connect()).resolves.toMatchObject({ needsUnencryptedConfirmation: true });
     },
   );
 
   it("refuses a private-LAN HTTP server that does not report an Id", async () => {
-    const gateway = new JellyfinGateway(LAN_URL, lanTransport(null), "install-1", new MemoryConfirmations());
+    const gateway = new JellyfinGateway(LAN_URL, webCrypto, lanTransport(null), "install-1", new MemoryConfirmations());
     await expect(gateway.connect()).rejects.toThrow("did not report its Id");
   });
 
@@ -1414,7 +1415,7 @@ describe("JellyfinGateway plain-HTTP policy (docs/decisions/0001)", () => {
     "needs no confirmation for %s",
     async (serverUrl) => {
       const confirmations = new MemoryConfirmations();
-      const gateway = new JellyfinGateway(serverUrl, lanTransport(), "install-1", confirmations);
+      const gateway = new JellyfinGateway(serverUrl, webCrypto, lanTransport(), "install-1", confirmations);
       await expect(gateway.connect()).resolves.toMatchObject({ needsUnencryptedConfirmation: false });
       await expect(gateway.login("Louise", "hunter2")).resolves.toMatchObject({ userId: "user-1" });
       gateway.confirmUnencryptedConnection();
@@ -1433,13 +1434,13 @@ describe("JellyfinGateway resolved redirect responses", () => {
     const transport = new FakeTransport();
     transport.responses.set("GET /System/Info/Public", { ServerName: "Home", Version: "10.11.7", Id: "server-1" });
     transport.statuses.set("GET /System/Info/Public", status);
-    await expect(new JellyfinGateway("https://media.test", transport).connect()).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
+    await expect(new JellyfinGateway("https://media.test", webCrypto, transport).connect()).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
   });
 
   it("throws a SignInFailure of kind redirect on connect", async () => {
     const transport = new FakeTransport();
     transport.statuses.set("GET /System/Info/Public", 302);
-    await expect(new JellyfinGateway("https://media.test", transport).connect()).rejects.toMatchObject({
+    await expect(new JellyfinGateway("https://media.test", webCrypto, transport).connect()).rejects.toMatchObject({
       name: "SignInFailure",
       kind: "redirect",
     });
@@ -1448,7 +1449,7 @@ describe("JellyfinGateway resolved redirect responses", () => {
   it("refuses a sign-in that resolves with status 0", async () => {
     const transport = new FakeTransport();
     transport.statuses.set("POST /Users/AuthenticateByName", 0);
-    const gateway = new JellyfinGateway("https://media.test", transport, "install-1");
+    const gateway = new JellyfinGateway("https://media.test", webCrypto, transport, "install-1");
     await expect(gateway.login("Louise", "hunter2")).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
   });
 

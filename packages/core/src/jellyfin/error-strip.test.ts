@@ -7,6 +7,7 @@ import { failureAction, stopFailureAction } from "../player/session-failure";
 import { classifyTransportError } from "../transport-error";
 import { JellyfinGateway } from "./gateway";
 import type { HttpTransport } from "./types";
+import { webCrypto } from "../adapters/web-crypto";
 
 const CANARY = "CANARY-strip-4d2b8e";
 const SERVER = "https://media.test";
@@ -108,7 +109,7 @@ const cases = [
 describe("errors leaving a signed-in gateway", () => {
   for (const [kind, status] of cases) {
     it(`carry no token, config, or request for ${kind}`, async () => {
-      const gateway = new JellyfinGateway(SERVER, signedInTransport(axiosFailure(kind)));
+      const gateway = new JellyfinGateway(SERVER, webCrypto, signedInTransport(axiosFailure(kind)));
       await gateway.login("Louise", "password");
       const calls: Array<() => Promise<unknown>> = [
         () => gateway.resumeItems(),
