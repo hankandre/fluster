@@ -1,6 +1,6 @@
 {
   "product": "Octave",
-  "updated": "2026-11-20",
+  "updated": "2026-11-21",
   "rules": [
     "Pick the first task, in file order, whose status is todo and whose depends_on tasks all pass.",
     "Skip tasks with human set to true unless the owner is taking part; set them to blocked and state in evidence what the owner must decide or check.",
@@ -9,15 +9,15 @@
     "One task is one pull request, and the pull request marks the task done in this file.",
     "Set passes to true only after every acceptance item is verified.",
     "Put the verification command output summary in evidence.",
-    "Never edit, remove, or weaken acceptance items without the owner's approval.",
-    "Write the failing tests for a task's acceptance items before implementing, and never edit those tests while implementing (the Product Owner flow, T1-12).",
+    "Never edit, remove, or weaken acceptance items outside a Product Owner pass. The Product Owner approves a scope-only edit and logs its reason; an edit that changes on-screen wording, look or product direction needs an owner approval file. The owner can veto any of it.",
+    "Write the failing tests for a task's acceptance items before implementing, and never edit those tests while implementing.",
     "A playback task is one whose change makes the app send a media, playlist, segment, subtitle, trickplay or artwork request, or a playstate report. It passes only when its wire test passes against Jellyscale: the Authorization header on every request, no token in any URL, no redirect followed, no other origin contacted.",
     "A task whose title names a Jellyscale issue waits for that issue: set it to blocked with the issue's state in evidence. Nothing may depend on such a task, and the release does not wait for it. Never work around a missing server feature with a token in a URL.",
     "Set status to blocked and explain in evidence when a dependency, an owner decision, or a Shield check is missing.",
     "Use the model and skill named on the task.",
     "Tasks with human set to true need the owner: a decision on look, wording or direction, or a check on the Nvidia Shield. The acceptance names it.",
     "The Product Owner (Fable 5.2) owns the backlog and the priorities: only a Product Owner pass adds, splits, reorders or drops tasks, after triaging tasks/backlog.jsonl. The owner can veto any of it.",
-    "Append deferred or newly found work to the backlog (tasks/backlog.jsonl once T1-10 lands); any agent or pull request may.",
+    "Append deferred or newly found work to the backlog, tasks/backlog.jsonl; any agent or pull request may.",
     "Before adopting any dependency, verify from primary sources that it is actively maintained: recent releases and commits, not archived, and no maintainer statement of maintenance mode or supersession. Record the check in the task's spec, and re-check every dependency when a phase starts.",
     "There is no done.json. The desktop app's task list lives only in the tag desktop-tauri-final.",
     "Never commit a server address, a credential, or the owner's name.",
@@ -846,7 +846,7 @@
             "followRedirects and followSslRedirects are off: a 3xx answer is returned as an error and the redirect target receives nothing",
             "No proxy is used, whatever the system or environment says",
             "A URL with user info or a credential query parameter is refused",
-            "Plain HTTP is allowed only for hosts the shared host-class vectors call loopback or private LAN, and the Kotlin classifier passes tests/fixtures/host-classes.json",
+            "Plain HTTP is allowed only for hosts the shared host-class vectors call loopback or private LAN, and the Kotlin classifier passes packages/core/tests/fixtures/host-classes.json",
             "The header value is accepted only as a MediaBrowser value with a token, at most 4 KB, with no control character; it is never logged and its debug form is redacted",
             "MockWebServer tests cover each rule above with a second server standing in for the other origin"
           ],
@@ -1926,7 +1926,7 @@
             "T3-03"
           ],
           "acceptance": [
-            "modules/player is a local Expo module whose methods are exactly the PlayerEngine port's: initialize, launch, pause, seek, select track, stop; a test fails when one is added without updating the allowlist and docs/security.md",
+            "modules/player is a local Expo module whose methods are exactly the PlayerEngine port's: initialize, launch, pause, seek, select track, stop. The native session module's methods are exactly signIn, request, restoreSessions and endSession, plus its one event, sessionEnded (decision 0005). Each module has its own allowlist; a test fails when a method or event is added to either module without updating that module's allowlist and docs/security.md",
             "A launch takes the typed request union and refuses any other shape; it takes no header, token or free-form option",
             "The module gets its authority to send the header from native code as decision 0005 says, never from an argument",
             "Events map one to one to the core's player events, and errors are codes with no URL, path or player text",
@@ -2108,9 +2108,9 @@
             "T1-01"
           ],
           "acceptance": [
-            "An HLS launch is accepted only for a master URL that passes every vector in tests/fixtures/hls-master-urls.json's rules, checked again in Kotlin",
+            "An HLS launch is accepted only for a master URL that passes every vector in packages/core/tests/fixtures/hls-master-urls.json's rules, checked again in Kotlin",
             "Media3 reads playlists only through Octave's parser hook, which refuses the whole playlist unless every URI line and URI attribute is HTTP or HTTPS on the server's origin with no user info, fragment or credential parameter",
-            "The Kotlin validator gives the expected verdict for every vector in tests/fixtures/hls-playlists.json, in a JVM test that CI requires",
+            "The Kotlin validator gives the expected verdict for every vector in packages/core/tests/fixtures/hls-playlists.json, in a JVM test that CI requires",
             "A playlist that names a credential parameter or contains the token value fails the launch closed, and the token appears in no error, event or log",
             "EXT-X-DEFINE is refused, and the master playlist is refused if it lists subtitle or trickplay renditions",
             "A cross-origin variant, segment, map or key URI ends in the unsafe-stream refusal and the other origin receives nothing",
