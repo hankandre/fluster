@@ -591,10 +591,10 @@
             "A lint fails on a direct use of Date.now, setTimeout, crypto or Math.random outside the ports' adapters"
           ],
           "verify": "pnpm --filter @octave/core test",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "commit 9766585 (branch task/T2-03, 5 milestone commits): Clock and Crypto ports, host-globals.d.ts, @types/node dropped from core, core-host lint and cruiser rule. pnpm check green (core 60 files/1395 tests), check-red --expect green, tripwire passed."
+          "passes": true,
+          "evidence": "commit c78ba29 (branch task/T2-03, 6 commits): Clock and Crypto ports, host-globals.d.ts, @types/node dropped from core, core-host lint and cruiser rule. pnpm check green (core 60 files/1395 tests), tripwire passed. Lows logged in spec."
         },
         {
           "id": "T2-04",
