@@ -296,12 +296,12 @@ async function runTask(task, opts) {
     return out;
   };
 
-  // Gates: a small agent with no agent type relays one command's exit code and last line; the pure decide functions judge it.
+  // Gates: a small agent with no agent type relays one command's exit code and output; the pure decide functions judge it.
   const nodeCli = (script) => `mise exec -- node ${worktree}/scripts/${script}`;
   const redCommand = `mise exec -- node ${worktree}/scripts/check-red.mjs ${task} --repo ${worktree}`;
   const flowCommand = `${nodeCli('check-flow.mjs')} --repo ${worktree}${opts.preFlow ? '' : ` --task ${task}`} --json`;
   const gate = (command, label, phase) =>
-    agent(`Run exactly this command, change nothing, and return its exit code as exitCode and the last line it printed to standard output as output: ${command}\nIf a command is denied, report it in deniedCommands and do not work around it.`, { model: models.gate, schema: GATE, phase, label });
+    agent(`Run exactly this command, change nothing, and return its exit code as exitCode and everything it printed, unchanged and in full, as output (the JSON line on standard output must be in it; ERROR lines may follow): ${command}\nIf a command is denied, report it in deniedCommands and do not work around it.`, { model: models.gate, schema: GATE, phase, label });
   const runGate = async (command, label, phase, decide) => {
     let out = await gate(command, label, phase);
     if (denied(out)) return { action: 'denied', detail: denied(out) };
