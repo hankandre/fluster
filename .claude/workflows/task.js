@@ -126,13 +126,14 @@ function decideFrozen(gate, approvedPaths, pinned, final) {
   if (!json) return final ? { action: 'stop', unreadable: true, detail: 'the frozen-test check gave no readable result twice' } : unreadable('the frozen-test check');
   if (json.missingManifest) return { action: 'blocked', detail: 'no manifest: rerun with from: "tests", or pass preFlow: true for a branch that predates the flow' };
   if (gate.exitCode !== 0 || json.ok !== true) return { action: 'stop', detail: (json.problems || []).join('; ') || `the frozen-test check exited ${gate.exitCode}` };
-  const approved = approvedPaths || [];
-  const unapproved = (json.changes || []).map((change) => change.path).filter((path) => !approved.includes(path));
+  // A ruling may name a path absolutely (inside the worktree); check-flow reports it relative to the repo root.
+  const approvedPath = (path) => (approvedPaths || []).some((a) => a === path || a.endsWith(`/${path}`));
+  const unapproved = (json.changes || []).map((change) => change.path).filter((path) => !approvedPath(path));
   if (unapproved.length) return { action: 'stop', detail: `frozen test changes the Product Owner step did not return: ${unapproved.join(', ')}` };
   if (pinned) {
     const now = {};
     for (const entry of json.frozen || []) now[entry.path] = entry.blob;
-    const moved = Object.keys(pinned).filter((path) => !approved.includes(path) && now[path] !== pinned[path]);
+    const moved = Object.keys(pinned).filter((path) => !approvedPath(path) && now[path] !== pinned[path]);
     if (moved.length) return { action: 'stop', detail: `frozen files differ from the red gate's versions (an amended or squashed freeze commit): ${moved.join(', ')}` };
   }
   return { action: 'pass', detail: '' };
