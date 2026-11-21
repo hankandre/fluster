@@ -18,6 +18,11 @@ const TRANSCODE_MARKERS = [/\.m3u8/i, /\/hls/i, /TranscodingUrl/i, /\/universal/
 export function checkMediaRequest(rawUrl: string): MediaRequestCheck {
   const url = new URL(rawUrl);
   const full = url.pathname + url.search;
+  // A player authenticates with the header; a token in a media URL is a leak (hard rule).
+  const credential = [...url.searchParams.keys()].find(isCredentialName);
+  if (credential !== undefined) {
+    return { ok: false, kind: "other", reason: `credential parameter ${credential.trim()} in the media URL` };
+  }
   for (const marker of TRANSCODE_MARKERS) {
     if (marker.test(full)) {
       return { ok: false, kind: "other", reason: `transcode URL marker ${marker} in ${url.pathname}` };
@@ -99,15 +104,20 @@ export function findTranscodingSessions(sessions: SessionLike[]): TranscodingSes
 // sample expects. playback: the sample did not play. oracle: a signal could
 // not be read, so the run is blind.
 export type FailureKind = "I1" | "I2" | "method" | "playback" | "oracle";
-export type SampleStatus = "PASS" | "FAIL" | "EXPECTED-REFUSED" | "CONVERTED";
+export type SampleStatus = "PASS" | "FAIL" | "EXPECTED-REFUSED" | "CONVERTED" | "NOT-RUN";
 
 // What a sample must do. direct-play: the original file with no server job.
 // conversion: an HLS plan with one of the allowed methods, played under the
-// HLS request rules. refused: this exact refusal before any media request.
+// HLS request rules; clientReason is the reason the client's own request for
+// a conversion must carry. refused: this exact refusal before any media
+// request. not-run: nothing can be negotiated; the precondition is checked
+// instead, so the row cannot go stale unseen.
+export type Precondition = "no-restricted-credentials" | "not-listed";
 export type Expectation =
   | { kind: "direct-play"; externalSubtitle?: boolean }
-  | { kind: "conversion"; methods: readonly PlanMethod[]; reasonsAnyOf?: readonly string[] }
-  | { kind: "refused"; reason: string };
+  | { kind: "conversion"; methods: readonly PlanMethod[]; reasonsAnyOf?: readonly string[]; clientReason?: string }
+  | { kind: "refused"; reason: string }
+  | { kind: "not-run"; reason: string; precondition: Precondition };
 
 export type PlanMethod = "DirectStream" | "Transcode";
 
@@ -144,6 +154,9 @@ export function decideStatus(outcome: SampleOutcome): { status: SampleStatus; ex
       if (refusal) return { status: "FAIL", extraFailure: `playback: unexpected refusal ${refusal}` };
       if (delivery !== "hls") return { status: "FAIL", extraFailure: `method: expected a conversion, got ${got}` };
       return status("CONVERTED");
+    case "not-run":
+      if (refusal || delivery || mediaRequests > 0) return { status: "FAIL", extraFailure: "playback: a not-run row made a playback request" };
+      return status("NOT-RUN");
   }
 }
 
@@ -170,11 +183,16 @@ export interface HlsRequestCheck {
 // the fixed segments in any case, as ASP.NET routes them.
 const HLS_PATH = /^\/(?:videos|audio)\/[^/]+\/(?:(master\.m3u8)|(main\.m3u8)|hls1\/[^/]+\/-?\d+\.(?:ts|mp4|m4s|aac))$/i;
 
+export type ServerKind = "jellyfin" | "jellyscale";
+
 // A conversion may only request same-origin master.m3u8, main.m3u8, or hls1
-// segments, with no credential parameter and EnableTrickplay=false on every
-// request (the server copies the master's query onto the variant and segment
-// URLs, DynamicHlsHelper and DynamicHlsPlaylistGenerator in 10.11.7 and 12.4).
-export function checkHlsRequest(rawUrl: string, serverUrl: string): HlsRequestCheck {
+// segments, with no credential parameter. Jellyfin copies the master's query
+// onto the variant and segment URLs (DynamicHlsHelper and
+// DynamicHlsPlaylistGenerator in 10.11.7 and 12.4), so EnableTrickplay=false
+// is required on every request. Jellyscale writes those URLs itself without
+// the pair, so there it is required on the master the core built and, where
+// present, must still be false.
+export function checkHlsRequest(rawUrl: string, serverUrl: string, serverKind: ServerKind = "jellyfin"): HlsRequestCheck {
   let url: URL;
   try {
     url = new URL(rawUrl);
@@ -193,7 +211,9 @@ export function checkHlsRequest(rawUrl: string, serverUrl: string): HlsRequestCh
   const credential = names.find(isCredentialName);
   if (credential !== undefined) return { ok: false, kind, reason: `credential parameter ${credential.trim()}` };
   const trickplay = [...url.searchParams].filter(([key]) => key.trim().toLowerCase() === "enabletrickplay");
-  if (trickplay.length === 0) return { ok: false, kind, reason: "no EnableTrickplay=false parameter" };
+  if (trickplay.length === 0 && (serverKind === "jellyfin" || kind === "master")) {
+    return { ok: false, kind, reason: "no EnableTrickplay=false parameter" };
+  }
   const bad = trickplay.find(([, value]) => value.trim().toLowerCase() !== "false");
   if (bad) return { ok: false, kind, reason: `EnableTrickplay=${bad[1]}` };
   if (names.some((key) => /^static$/i.test(key.trim()))) return { ok: false, kind, reason: "a Static parameter on a conversion request" };
@@ -327,3 +347,6 @@ export function checkJobGone(observations: readonly AfterStopObservation[], dead
   for (let index = observations.length - 1; index >= 0 && clean(observations[index]); index -= 1) goneAfterMs = observations[index].msAfterStop;
   return { failures, goneAfterMs };
 }
+
+export * from "./tripwire-rules-servers";
+export { classifyJellyscaleFfmpeg } from "./tripwire-jellyscale-ffmpeg";
