@@ -685,10 +685,10 @@
             "The suite passes in Node"
           ],
           "verify": "pnpm --filter @octave/core test",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit c4ebf1d4: R1-R4 host rules, classifyServerAddress, runUrlConformance suite; pnpm check green (core 2076 tests). PR to call out I5 change (D2) and docs/security.md."
         },
         {
           "id": "T2-07",
