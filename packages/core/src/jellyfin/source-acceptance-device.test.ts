@@ -18,9 +18,9 @@ describe.each(VERSIONS)("T2-07 item 1: the decision on the Jellyfin %s first ans
     ["conversion-h264", withoutH264, { video: true, audio: false }],
     ["conversion-hevc-hdr10", listOf(["h264", "av1"], ["aac"]), { video: true, audio: false }],
     ["conversion-av1", listOf(["h264", "hevc"], ["aac"]), { video: true, audio: false }],
-  ] as const)("returns force-conversion for %s when the video decoder is missing", (name, caps) => {
+  ] as const)("returns force-conversion for %s when the video decoder is missing", (name, caps, cannotPlay) => {
     const decision = decideSource(sourceOf(version, name), context(caps));
-    expect(decision).toMatchObject({ kind: "force-conversion", cannotPlay: { video: true } });
+    expect(decision).toMatchObject({ kind: "force-conversion", cannotPlay });
     expect(decision.kind === "force-conversion" && decision.cannotPlay.audio).toBe(false);
   });
 
@@ -114,8 +114,10 @@ describe.each(VERSIONS)("T2-07 item 1: the decision on the Jellyfin %s first ans
       const refused: MediaSourceDto = { ...direct, Id: "refused-source", SupportsDirectPlay: false };
       expect(selectSource([refused, disc, direct], context(FAILED))).toMatchObject({ kind: "force-conversion", source: { Id: "item-h264" } });
       expect(selectSource([refused, disc], context(FAILED))).toMatchObject({ kind: "force-fallback", source: { Id: "disc-source" } });
-      const converted = sourceOf(version, "conversion-h264-limited");
-      expect(selectSource([direct, { ...converted, Id: "converted-source" }], context(FAILED))).toMatchObject({ kind: "convert" });
+      // The renamed version's URL names it too, as the HLS rebuild requires.
+      const limited = sourceOf(version, "conversion-h264-limited");
+      const converted: MediaSourceDto = { ...limited, Id: "converted-source", TranscodingUrl: limited.TranscodingUrl!.replace("MediaSourceId=item-h264", "MediaSourceId=converted-source") };
+      expect(selectSource([direct, converted], context(FAILED))).toMatchObject({ kind: "convert", source: { Id: "converted-source" } });
     });
   });
 });

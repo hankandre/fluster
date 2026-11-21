@@ -103,8 +103,9 @@ describe.each(VERSIONS)("T2-07 item 2: the forced request to Jellyfin %s", (vers
     expect(plan).toMatchObject({ delivery: "hls", playSessionId: FORCED });
   });
 
+  // A failed probe turns audio copy off too, so the forced answer replayed is the recording that shows both copies off.
   it("converts when the probe failed", async () => {
-    const { transport, result } = await negotiate("item-h264", [recorded(version, "conversion-h264"), recorded(version, "device-conversion-h264")], FAILED);
+    const { transport, result } = await negotiate("item-multitrack", [recorded(version, "conversion-multitrack"), recorded(version, "device-conversion-multitrack-audio")], FAILED);
     expect(planOf(result)).toMatchObject({ delivery: "hls" });
     expect(transport.posts).toHaveLength(2);
     expect(transport.posts[1].data).toMatchObject({ EnableDirectPlay: false, AllowVideoStreamCopy: false, AllowAudioStreamCopy: false });
