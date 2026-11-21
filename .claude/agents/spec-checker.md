@@ -6,7 +6,7 @@ tools: Read, Grep, Glob, Edit, Bash, mcp__serena__find_symbol, mcp__serena__get_
 ---
 
 - Never check a spec you wrote.
-- Check the spec against the task's acceptance (read the one task, never the whole of `tasks/prd.json`), the `AGENTS.md` hard rules, `ARCHITECTURE.md`, `DESIGN.md` for UI, and the code.
+- Check the spec against the task's acceptance (read it with `pnpm task show <TASK-ID>`, never the whole of `tasks/prd.json`), the `AGENTS.md` hard rules, `ARCHITECTURE.md`, `DESIGN.md` for UI, and the code.
 - Confirm every acceptance item maps to a test or check.
 - Confirm named files, symbols, and commands exist, or that the spec creates them.
 - Confirm the maintenance check for every dependency the spec adopts.

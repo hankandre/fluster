@@ -10,7 +10,7 @@ description: Create, resume, or close an Octave execution plan. Use for work tha
 - Use Opus (`planner`).
 - Number the plan after the highest existing number in `docs/plans/` (start at 001 when the folder is empty).
 - Create `docs/plans/active/NNN-slug.md` from `references/template.md`.
-- List the `tasks/prd.json` task ids the plan covers.
+- List the `tasks/prd.json` task ids the plan covers (read them with `pnpm task show <id>`).
 - Write "Done when" as observable, checkable outcomes.
 - Name the domains and invariants the work touches.
 - Give every milestone its own validation command.
@@ -53,5 +53,5 @@ description: Create, resume, or close an Octave execution plan. Use for work tha
 - Confirm every "Done when" item with evidence.
 - Write the outcome and retrospective.
 - Note model used and rough cost per milestone.
-- Set the covered tasks to `done` with `passes: true` and evidence of at most 600 characters naming the PR (`pnpm task set`, T1-13).
+- Set the covered tasks to `done` with `passes: true` and evidence of at most 600 characters naming the PR (`pnpm task set <id> --status done --evidence-file <file>`).
 - Move the file to `docs/plans/completed/`.

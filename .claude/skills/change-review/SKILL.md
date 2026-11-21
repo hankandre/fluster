@@ -12,7 +12,7 @@ description: Review an Octave diff in a fresh context against its task, invarian
 - Run one round only; log low findings in the plan instead of re-reviewing.
 - Use `guardian` (Opus) when the diff touches playback negotiation, the gateway, the player, a native method, the native HTTP client, tokens, redaction, Kotlin, or `docs/security.md`.
 - Use `reviewer` (Sonnet) otherwise.
-- Read the task (one task, never the whole of `tasks/prd.json`) and the plan first.
+- Read the task (`pnpm task show <id>`, never the whole of `tasks/prd.json`) and the plan first.
 - Get the diff with `git diff <base>...HEAD`.
 - List affected symbols and callers with codebase-memory `detect_changes`.
 

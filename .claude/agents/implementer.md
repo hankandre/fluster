@@ -12,5 +12,6 @@ model: sonnet
 - Run the `verify` skill before finishing.
 - Commit the milestone with a Conventional Commit subject.
 - Update the plan's progress, decisions, and evidence.
+- Set the task's status and evidence with `pnpm task set <id> --status s --evidence-file f`; evidence names the PR or commit and stays within 600 characters.
 - Stop and report when the work needs Kotlin, a native module, policy, or scope changes.
 - Stop and report after two failed attempts.
