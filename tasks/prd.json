@@ -712,10 +712,10 @@
             "Decision 0002's flag table and invariant I1 are amended in the same PR"
           ],
           "verify": "pnpm --filter @octave/core test",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit a02f5a18: implementation, spec notes and docs for T2-07. Core tests: 2562 pass, 4 frozen tests fail (contradictory pair, bad ranking fixture); pnpm check blocked by frozen files (lint:boundaries, 2 type errors). Tripwire not run."
         },
         {
           "id": "T2-08",
