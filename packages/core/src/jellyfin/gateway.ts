@@ -978,10 +978,12 @@ export class JellyfinGateway {
     return redactTransportError(error);
   }
 
-  // A signed-in call names its session. Before sign-in it names the server and the DeviceId of the tokenless header.
-  private target(deviceId = UNAUTHENTICATED_DEVICE_ID): TransportTarget {
+  // A call that names a DeviceId is a tokenless pre-sign-in route, signed in or not: Quick Connect must send the
+  // DeviceId the secret is bound to, never the token. Any other signed-in call names its session.
+  private target(deviceId?: string): TransportTarget {
+    if (deviceId !== undefined) return { server: this.serverUrl, deviceId };
     if (this.session) return { session: this.session };
-    return { server: this.serverUrl, deviceId };
+    return { server: this.serverUrl, deviceId: UNAUTHENTICATED_DEVICE_ID };
   }
 
   private async send<T>(method: "GET" | "POST" | "DELETE", path: string, options: RequestOptions, body?: unknown): Promise<{ data: T }> {
