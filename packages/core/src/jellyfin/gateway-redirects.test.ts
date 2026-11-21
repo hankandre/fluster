@@ -5,6 +5,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { AddressInfo } from "node:net";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { JellyfinGateway, REDIRECT_REFUSED_MESSAGE } from "./gateway";
+import { webCrypto } from "../adapters/web-crypto";
 
 type Handler = (request: IncomingMessage, response: ServerResponse) => void;
 
@@ -58,7 +59,7 @@ describe("JellyfinGateway redirects", () => {
           return redirect(response, status, `${target.origin}/UserViews`);
       }
     });
-    const gateway = new JellyfinGateway(server, undefined, "install-1");
+    const gateway = new JellyfinGateway(server, webCrypto, undefined, "install-1");
     await gateway.connect();
     await gateway.login("Louise", "hunter2");
 
@@ -84,7 +85,7 @@ describe("JellyfinGateway redirects", () => {
           return redirect(response, 307, `${target.origin}/Videos/ActiveEncodings`);
       }
     });
-    const gateway = new JellyfinGateway(server, undefined, "install-1");
+    const gateway = new JellyfinGateway(server, webCrypto, undefined, "install-1");
     await gateway.connect();
     await gateway.login("Louise", "hunter2");
     const deviceId = /DeviceId="([^"]+)"/.exec(gateway.authorizationHeader())?.[1];
@@ -107,7 +108,7 @@ describe("JellyfinGateway redirects", () => {
       if (request.url === "/System/Info/Public") return json(response, PUBLIC_INFO);
       return redirect(response, 307, `${target.origin}/Users/AuthenticateByName`);
     });
-    const gateway = new JellyfinGateway(server, undefined, "install-1");
+    const gateway = new JellyfinGateway(server, webCrypto, undefined, "install-1");
     await gateway.connect();
 
     await expect(gateway.login("Louise", "hunter2")).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
@@ -117,7 +118,7 @@ describe("JellyfinGateway redirects", () => {
   it("does not follow a redirect from the unauthenticated probe", async () => {
     const target = await listenForStolenRequests();
     const server = await listen((_request, response) => redirect(response, 302, `${target.origin}/System/Info/Public`));
-    const gateway = new JellyfinGateway(server, undefined, "install-1");
+    const gateway = new JellyfinGateway(server, webCrypto, undefined, "install-1");
 
     await expect(gateway.connect()).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
     expect(target.received).toEqual([]);
@@ -139,7 +140,7 @@ describe("JellyfinGateway opaque redirects through the real Axios client", () =>
       if (request.url === "/System/Info/Public") return json(response, PUBLIC_INFO);
       return json(response, AUTHENTICATION);
     });
-    const gateway = new JellyfinGateway(server, undefined, "install-1");
+    const gateway = new JellyfinGateway(server, webCrypto, undefined, "install-1");
     await gateway.connect();
     await gateway.login("Louise", "hunter2");
 
@@ -151,7 +152,7 @@ describe("JellyfinGateway opaque redirects through the real Axios client", () =>
     });
     vi.stubGlobal("fetch", fetch);
     await expect(gateway.userViews()).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
-    await expect(new JellyfinGateway(server, undefined, "install-1").connect()).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
+    await expect(new JellyfinGateway(server, webCrypto, undefined, "install-1").connect()).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
     expect(fetch).toHaveBeenCalledTimes(2);
     vi.stubGlobal("fetch", realFetch);
   });

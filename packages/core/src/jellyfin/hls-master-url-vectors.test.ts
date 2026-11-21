@@ -5,6 +5,7 @@ import type { LibraryItem } from "../domain/catalog";
 import type { PlaybackPlan } from "../domain/playback";
 import { JellyfinGateway } from "./gateway";
 import type { HttpTransport, PlaybackInfoResponse } from "./types";
+import { webCrypto } from "../adapters/web-crypto";
 
 // The HLS plans this negotiation builds from every recorded conversion
 // (P10-02 fixtures, both servers), on a server with and without a base path,
@@ -59,7 +60,7 @@ class AnswerTransport implements HttpTransport {
 }
 
 async function hlsPlan(server: string, answer: PlaybackInfoResponse, itemId: string): Promise<Vector["plan"]> {
-  const gateway = new JellyfinGateway(server, new AnswerTransport(answer), "install-1");
+  const gateway = new JellyfinGateway(server, webCrypto, new AnswerTransport(answer), "install-1");
   await gateway.login("tester", "password");
   const item: LibraryItem = { id: itemId, name: "Fixture", type: "Movie", resumePositionTicks: 0, played: false };
   const plan = await gateway.createPlaybackPlan(item);

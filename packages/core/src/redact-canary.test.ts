@@ -7,6 +7,7 @@ import { PlaybackCoordinator, type PlaybackGateway } from "./player/coordinator"
 import { diagnosticsText } from "./diagnostics";
 import { redactError, redactText, redactUrl } from "./redact";
 import { safeReason } from "./safe-reason";
+import { webCrypto } from "./adapters/web-crypto";
 
 const CANARY = "CANARY-7f3a9c1e5b";
 const SERVER = "https://media.test/jellyfin";
@@ -153,7 +154,7 @@ async function messageOf(operation: () => Promise<unknown>): Promise<string> {
 describe("redaction canary: JellyfinGateway", () => {
   it("never surfaces the canary in thrown errors or console output", async () => {
     for (const text of errorTexts()) {
-      const gateway = new JellyfinGateway(SERVER, new FailingTransport(text));
+      const gateway = new JellyfinGateway(SERVER, webCrypto, new FailingTransport(text));
       await gateway.login("Louise", "password");
       const messages = [
         await messageOf(() => gateway.connect()),
@@ -185,7 +186,7 @@ describe("redaction canary: JellyfinGateway", () => {
         } as T,
       };
     };
-    const gateway = new JellyfinGateway(SERVER, transport);
+    const gateway = new JellyfinGateway(SERVER, webCrypto, transport);
     await gateway.login("Louise", "password");
     expectClean("source refusal error", await messageOf(() => gateway.createPlaybackPlan(item)));
 
@@ -214,7 +215,7 @@ describe("redaction canary: JellyfinGateway", () => {
     for (const url of [`https://user:${CANARY}@media.test`, `https://${CANARY}@media.test`]) {
       let message = "";
       try {
-        new JellyfinGateway(url, new FailingTransport("x"));
+        new JellyfinGateway(url, webCrypto, new FailingTransport("x"));
       } catch (error) {
         message = (error as Error).message;
       }

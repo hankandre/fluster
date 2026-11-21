@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { languageKey } from "../domain/languages";
 import { CONTROL_REQUEST_TIMEOUT_MS, JellyfinGateway } from "./gateway";
 import type { HttpRequestConfig, HttpResponse, HttpTransport } from "./types";
+import { webCrypto } from "../adapters/web-crypto";
 
 interface Call {
   method: "GET" | "POST" | "DELETE";
@@ -42,7 +43,7 @@ class RecordingTransport implements HttpTransport {
 
 async function signedIn() {
   const transport = new RecordingTransport();
-  const gateway = new JellyfinGateway("https://media.test", transport, "install-1");
+  const gateway = new JellyfinGateway("https://media.test", webCrypto, transport, "install-1");
   await gateway.login("Louise", "password");
   transport.calls = [];
   return { gateway, transport };

@@ -55,6 +55,7 @@ import {
   type SampleResult,
   type ServerResult,
 } from "./tripwire-report";
+import { webCrypto } from "../../packages/core/src/adapters/web-crypto";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, "..", "..");
@@ -398,7 +399,7 @@ async function runServer(server: (typeof SERVERS)[number], credentials: Record<s
     const account = sample.user === "restricted" ? restricted : main;
     if (!account.username || !account.password) throw new Error(`no credentials for ${sample.user ?? "the test user"}; rerun pnpm fixture:setup`);
     const limits = sample.limitMbps === undefined ? new MemoryStreamingLimits() : fixedLimit(sample.limitMbps);
-    const gateway = new JellyfinGateway(url, undefined, randomUUID(), new MemoryLanHttpConfirmations(), limits, {
+    const gateway = new JellyfinGateway(url, webCrypto, undefined, randomUUID(), new MemoryLanHttpConfirmations(), limits, {
       version: (JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as { version: string }).version,
       deviceName: "Octave Linux",
     });

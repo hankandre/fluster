@@ -4,6 +4,7 @@ import { PlaybackRefusedError, type PlaybackPlan } from "../domain/playback";
 import { OCTAVE_PROFILE } from "./device-profile";
 import { JellyfinGateway } from "./gateway";
 import type { HttpRequestConfig, HttpTransport, PlaybackInfoResponse } from "./types";
+import { webCrypto } from "../adapters/web-crypto";
 
 // Replays the P10-02 conversion fixtures (recorded on Jellyfin 10.11.7 and
 // 12.4.0 with the decision 0002 profile and flags) through the gateway's
@@ -54,7 +55,7 @@ const SERVER = "http://127.0.0.1:8096";
 
 async function negotiate(itemId: string, answers: PlaybackInfoResponse[], mediaSourceId?: string) {
   const transport = new QueueTransport(answers);
-  const gateway = new JellyfinGateway(SERVER, transport, "install-1");
+  const gateway = new JellyfinGateway(SERVER, webCrypto, transport, "install-1");
   await gateway.login("tester", "password");
   const item: LibraryItem = { id: itemId, name: "Fixture", type: "Movie", resumePositionTicks: 0, played: false };
   const result = await gateway.createPlaybackPlan(item, 0, undefined, mediaSourceId).catch((error: unknown) => error);

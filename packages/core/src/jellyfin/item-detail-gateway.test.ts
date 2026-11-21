@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ItemNotFoundError } from "../domain/catalog";
 import { JellyfinGateway } from "./gateway";
 import type { HttpRequestConfig, HttpResponse, HttpTransport } from "./types";
+import { webCrypto } from "../adapters/web-crypto";
 
 interface Call {
   method: "GET" | "POST" | "DELETE";
@@ -34,7 +35,7 @@ class RecordingTransport implements HttpTransport {
 
 async function signedIn() {
   const transport = new RecordingTransport();
-  const gateway = new JellyfinGateway("https://media.test", transport, "install-1");
+  const gateway = new JellyfinGateway("https://media.test", webCrypto, transport, "install-1");
   await gateway.login("Louise", "password");
   transport.calls = [];
   return { gateway, transport };
@@ -115,7 +116,7 @@ describe("item detail gateway calls", () => {
   });
 
   it("requires a session", async () => {
-    const gateway = new JellyfinGateway("https://media.test", new RecordingTransport(), "install-1");
+    const gateway = new JellyfinGateway("https://media.test", webCrypto, new RecordingTransport(), "install-1");
     await expect(gateway.setFavorite("i", true)).rejects.toThrow("Sign in");
     await expect(gateway.itemDetail("i")).rejects.toThrow("Sign in");
   });

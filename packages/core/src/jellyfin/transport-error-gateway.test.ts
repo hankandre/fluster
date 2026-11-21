@@ -3,6 +3,7 @@ import type { LibraryItem } from "../domain/catalog";
 import { classifyTransportError } from "../transport-error";
 import { JellyfinGateway } from "./gateway";
 import type { HttpTransport } from "./types";
+import { webCrypto } from "../adapters/web-crypto";
 
 // A PlaybackInfo request that fails the way Axios reports it.
 function failingTransport(failure: Error): HttpTransport {
@@ -25,7 +26,7 @@ function failingTransport(failure: Error): HttpTransport {
 const item: LibraryItem = { id: "m1", name: "Fixture", type: "Movie", resumePositionTicks: 0, played: false };
 
 async function kindOfFailure(failure: Error) {
-  const gateway = new JellyfinGateway("http://127.0.0.1:8096", failingTransport(failure), "install-1");
+  const gateway = new JellyfinGateway("http://127.0.0.1:8096", webCrypto, failingTransport(failure), "install-1");
   await gateway.login("tester", "password");
   const error = await gateway.createPlaybackPlan(item, 0).catch((caught: unknown) => caught);
   expect(error).toBeInstanceOf(Error);

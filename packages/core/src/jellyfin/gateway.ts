@@ -18,6 +18,7 @@ import { redactText } from "../redact";
 import { redactTransportError } from "../transport-error";
 import { toBrowseCards, toEpisodeCards, toGenres, toNextEpisode, toHomeLibraries, toMediaCards, toRecentPlays, toSearchCards, toSearchHints, toSeasons, toSeriesNextUp } from "./cards";
 import { stripCredentialQuery } from "./credential-query";
+import type { Crypto } from "../ports/crypto";
 import { deriveDeviceId } from "./device-id";
 import { limitIsOnlyReason } from "./client-limit";
 import { OCTAVE_PROFILE, MAX_BITRATE } from "./device-profile";
@@ -217,8 +218,9 @@ export class JellyfinGateway {
 
   constructor(
     serverUrl: string,
+    private readonly crypto: Crypto,
     transport?: HttpTransport,
-    private readonly installId: string = crypto.randomUUID(),
+    private readonly installId: string = crypto.randomId(),
     private readonly confirmations: LanHttpConfirmationStore = new MemoryLanHttpConfirmations(),
     private readonly streamingLimits: StreamingLimitStore = new MemoryStreamingLimits(),
     private readonly client: ClientIdentity = UNIDENTIFIED_CLIENT,
@@ -298,7 +300,7 @@ export class JellyfinGateway {
   async login(username: string, password: string, signal?: AbortSignal): Promise<{ userId: string; username: string }> {
     this.requireTransportConsent();
     // Fall back to the server URL if connect() did not provide a server id.
-    const deviceId = await deriveDeviceId(this.installId, this.serverId ?? this.serverUrl, username);
+    const deviceId = await deriveDeviceId(this.crypto, this.installId, this.serverId ?? this.serverUrl, username);
     const { data } = await this.post<AuthenticationResult>("/Users/AuthenticateByName", {
       Username: username,
       Pw: password,
@@ -362,7 +364,7 @@ export class JellyfinGateway {
   // with a fixed placeholder. The id stays stable per install and server, and
   // it is the DeviceId the server binds the new token to.
   private quickConnectDeviceId(): Promise<string> {
-    return deriveDeviceId(this.installId, this.serverId ?? this.serverUrl, QUICK_CONNECT_DEVICE_USER);
+    return deriveDeviceId(this.crypto, this.installId, this.serverId ?? this.serverUrl, QUICK_CONNECT_DEVICE_USER);
   }
 
   private startSession(

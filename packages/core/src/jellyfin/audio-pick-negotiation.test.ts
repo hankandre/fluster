@@ -3,6 +3,7 @@ import type { LibraryItem } from "../domain/catalog";
 import type { PlaybackPlan, PlaybackPlanOptions } from "../domain/playback";
 import { JellyfinGateway } from "./gateway";
 import type { HttpRequestConfig, HttpTransport, MediaSourceDto, PlaybackInfoResponse } from "./types";
+import { webCrypto } from "../adapters/web-crypto";
 
 // P17-08: a viewer's audio pick on a first negotiation, replayed with the recorded fixtures from
 // Jellyfin 10.11.7 and 12.4.0 (ARCHITECTURE.md §3, "A viewer's audio pick").
@@ -52,7 +53,7 @@ const SERVER = "http://127.0.0.1:8096";
 
 async function negotiate(itemId: string, answers: PlaybackInfoResponse[], mediaSourceId: string | undefined, options: PlaybackPlanOptions, failAt?: number) {
   const transport = new QueueTransport(answers, failAt);
-  const gateway = new JellyfinGateway(SERVER, transport, "install-1");
+  const gateway = new JellyfinGateway(SERVER, webCrypto, transport, "install-1");
   await gateway.login("tester", "password");
   const item: LibraryItem = { id: itemId, name: "Fixture", type: "Movie", resumePositionTicks: 0, played: false };
   const result = await gateway.createPlaybackPlan(item, 0, undefined, mediaSourceId, options).catch((error: unknown) => error);
