@@ -1,0 +1,368 @@
+{
+ "ro.product.model": "SHIELD Android TV",
+ "ro.product.manufacturer": "NVIDIA",
+ "ro.build.version.release": "11",
+ "ro.build.version.sdk": "30",
+ "ro.config.low_ram": "",
+ "ro.product.cpu.abi": "arm64-v8a",
+ "ro.hardware": "darcy",
+ "mem_total": "MemTotal:        3016708 kB",
+ "display": "Physical size: 3840x2160; Override size: 1920x1080; Physical density: 320",
+ "dexopt": "[dev.fluster.spike.browse] path: /data/app/~~JN6kvjRfa3MqxRNWNCf9zw==/dev.fluster.spike.browse-VauMB5YZeA8WqgngO-Njtg==/base.apk arm64: [status=speed-profile] [reason=unknown] [com.android.soundpicker]",
+ "arm": "{\"name\":\"F5-vdd0\",\"mvcpOff\":true,\"traps\":true,\"rowMemory\":true,\"rgb\":true,\"diskOnly\":true,\"rgbBackdrop\":true,\"drawDistance\":0}",
+ "injector": "input (713 ms per call incl. adb round trip / 5)",
+ "burst_mode": "monkey script, press + 50 ms wait"
+}
+memory {
+ "idle_after_launch": {
+  "java_heap_mb": 7,
+  "native_heap_mb": 77,
+  "code_mb": 50,
+  "stack_mb": 1,
+  "graphics_mb": 8,
+  "private_other_mb": 28,
+  "system_mb": 17,
+  "total_pss_mb": 190,
+  "total_rss_mb": 293,
+  "total_swap_pss_mb": 0,
+  "egl_mtrack_mb": 8,
+  "other_mtrack_mb": 16,
+  "anon_swap_approx_mb": 96,
+  "graphics_incl_mtrack_mb": 24
+ },
+ "after_scrolling_all_rows": {
+  "java_heap_mb": 15,
+  "native_heap_mb": 107,
+  "code_mb": 51,
+  "stack_mb": 1,
+  "graphics_mb": 8,
+  "private_other_mb": 54,
+  "system_mb": 19,
+  "total_pss_mb": 258,
+  "total_rss_mb": 365,
+  "total_swap_pss_mb": 0,
+  "egl_mtrack_mb": 8,
+  "other_mtrack_mb": 28,
+  "anon_swap_approx_mb": 148,
+  "graphics_incl_mtrack_mb": 36
+ },
+ "after_trim_running_critical": {
+  "java_heap_mb": 10,
+  "native_heap_mb": 105,
+  "code_mb": 51,
+  "stack_mb": 1,
+  "graphics_mb": 8,
+  "private_other_mb": 51,
+  "system_mb": 19,
+  "total_pss_mb": 249,
+  "total_rss_mb": 356,
+  "total_swap_pss_mb": 0,
+  "egl_mtrack_mb": 8,
+  "other_mtrack_mb": 28,
+  "anon_swap_approx_mb": 138,
+  "graphics_incl_mtrack_mb": 36
+ },
+ "rows_focused_furthest_col": {
+  "0": 49,
+  "1": 49,
+  "2": 49,
+  "3": 49,
+  "4": 49,
+  "5": 49,
+  "6": 49,
+  "7": 49,
+  "8": 49,
+  "9": 49,
+  "10": 49
+ },
+ "segments": [
+  {
+   "segment": "seg launch",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg enter",
+   "focus_events": 1,
+   "first": "0,0",
+   "final": "0,0",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 0 right",
+   "focus_events": 49,
+   "first": "0,1",
+   "final": "0,49",
+   "median_gap_ms": 64.0
+  },
+  {
+   "segment": "seg row 0 down",
+   "focus_events": 1,
+   "first": "1,6",
+   "final": "1,6",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 1 right",
+   "focus_events": 43,
+   "first": "1,7",
+   "final": "1,49",
+   "median_gap_ms": 63.0
+  },
+  {
+   "segment": "seg row 1 down",
+   "focus_events": 1,
+   "first": "2,6",
+   "final": "2,6",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 2 right",
+   "focus_events": 43,
+   "first": "2,7",
+   "final": "2,49",
+   "median_gap_ms": 57.5
+  },
+  {
+   "segment": "seg row 2 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 3 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 3 down",
+   "focus_events": 1,
+   "first": "3,6",
+   "final": "3,6",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 4 right",
+   "focus_events": 43,
+   "first": "3,7",
+   "final": "3,49",
+   "median_gap_ms": 63.5
+  },
+  {
+   "segment": "seg row 4 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 5 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 5 down",
+   "focus_events": 1,
+   "first": "4,6",
+   "final": "4,6",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 6 right",
+   "focus_events": 43,
+   "first": "4,7",
+   "final": "4,49",
+   "median_gap_ms": 63.5
+  },
+  {
+   "segment": "seg row 6 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 7 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 7 down",
+   "focus_events": 1,
+   "first": "5,6",
+   "final": "5,6",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 8 right",
+   "focus_events": 43,
+   "first": "5,7",
+   "final": "5,49",
+   "median_gap_ms": 63.5
+  },
+  {
+   "segment": "seg row 8 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 9 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 9 down",
+   "focus_events": 1,
+   "first": "6,6",
+   "final": "6,6",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 10 right",
+   "focus_events": 43,
+   "first": "6,7",
+   "final": "6,49",
+   "median_gap_ms": 63.0
+  },
+  {
+   "segment": "seg row 10 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 11 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 11 down",
+   "focus_events": 1,
+   "first": "7,6",
+   "final": "7,6",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 12 right",
+   "focus_events": 43,
+   "first": "7,7",
+   "final": "7,49",
+   "median_gap_ms": 58.5
+  },
+  {
+   "segment": "seg row 12 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 13 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 13 down",
+   "focus_events": 1,
+   "first": "8,6",
+   "final": "8,6",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 14 right",
+   "focus_events": 43,
+   "first": "8,7",
+   "final": "8,49",
+   "median_gap_ms": 64.0
+  },
+  {
+   "segment": "seg row 14 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 15 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 15 down",
+   "focus_events": 1,
+   "first": "9,6",
+   "final": "9,6",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 16 right",
+   "focus_events": 43,
+   "first": "9,7",
+   "final": "9,49",
+   "median_gap_ms": 60.5
+  },
+  {
+   "segment": "seg row 16 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 17 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 17 down",
+   "focus_events": 1,
+   "first": "10,6",
+   "final": "10,6",
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 18 right",
+   "focus_events": 43,
+   "first": "10,7",
+   "final": "10,49",
+   "median_gap_ms": 64.0
+  },
+  {
+   "segment": "seg row 18 down",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  },
+  {
+   "segment": "seg row 19 right",
+   "focus_events": 0,
+   "first": null,
+   "final": null,
+   "median_gap_ms": null
+  }
+ ]
+}
+art server: served 435 images

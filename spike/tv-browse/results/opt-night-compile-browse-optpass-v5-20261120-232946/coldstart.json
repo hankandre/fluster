@@ -1,0 +1,33 @@
+{
+ "runs": [
+  {
+   "total_ms": 441,
+   "wait_ms": 444,
+   "proc_start_to_first_react_commit_ms": 628
+  },
+  {
+   "total_ms": 349,
+   "wait_ms": 351,
+   "proc_start_to_first_react_commit_ms": 474
+  },
+  {
+   "total_ms": 348,
+   "wait_ms": 355,
+   "proc_start_to_first_react_commit_ms": 499
+  },
+  {
+   "total_ms": 334,
+   "wait_ms": 336,
+   "proc_start_to_first_react_commit_ms": 476
+  },
+  {
+   "total_ms": 323,
+   "wait_ms": 324,
+   "proc_start_to_first_react_commit_ms": 471
+  }
+ ],
+ "median_total_ms": 348,
+ "median_first_react_commit_ms": 476,
+ "min_total_ms": 323,
+ "max_total_ms": 441
+}

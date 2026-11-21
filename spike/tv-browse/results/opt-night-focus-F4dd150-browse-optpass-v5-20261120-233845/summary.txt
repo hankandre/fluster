@@ -1,0 +1,53 @@
+{
+ "ro.product.model": "SHIELD Android TV",
+ "ro.product.manufacturer": "NVIDIA",
+ "ro.build.version.release": "11",
+ "ro.build.version.sdk": "30",
+ "ro.config.low_ram": "",
+ "ro.product.cpu.abi": "arm64-v8a",
+ "ro.hardware": "darcy",
+ "mem_total": "MemTotal:        3016708 kB",
+ "display": "Physical size: 3840x2160; Override size: 1920x1080; Physical density: 320",
+ "dexopt": "[dev.fluster.spike.browse] path: /data/app/~~JN6kvjRfa3MqxRNWNCf9zw==/dev.fluster.spike.browse-VauMB5YZeA8WqgngO-Njtg==/base.apk arm64: [status=speed-profile] [reason=unknown] [com.android.soundpicker]",
+ "arm": "{\"name\":\"F4-dd150\",\"mvcpOff\":true,\"traps\":true,\"rowMemory\":true,\"rgb\":true,\"plainLift\":true,\"diskOnly\":true,\"rgbBackdrop\":true,\"backdropW\":1280,\"rowDrawDistance\":150}",
+ "injector": "input (715 ms per call incl. adb round trip / 5)",
+ "burst_mode": "monkey script, press + 50 ms wait"
+}
+focus {
+ "presses": 500,
+ "ok": 500,
+ "unexpected_place": 0,
+ "nowhere": 0,
+ "stuck": 0,
+ "burst_presses_after_divergence": 0,
+ "blur_of_recycled_cell": 0,
+ "column_offset_on_row_change": {
+  "n": 79,
+  "same_col": 70,
+  "mean_abs": 2.09,
+  "max_abs": 29
+ },
+ "rail_exit_returns_to_last_card": {
+  "same_card": 9,
+  "other_card": 0
+ },
+ "incidents": {
+  "single_press_failures": 0,
+  "bursts_diverged": 0,
+  "bursts_total": 12,
+  "singles_total": 299
+ },
+ "burst_achieved_median_gap_ms": 55,
+ "flag_enableCustomFocusSearchOnClippedElementsAndroid": "false",
+ "boot": "arm={\"name\":\"F4-dd150\",\"mvcpOff\":true,\"traps\":true,\"rowMemory\":true,\"rgb\":true,\"diskOnly\":true,\"backdropW\":1280,\"rgbBackdrop\":true,\"crossfadeMs\":300,\"rowDrawDistance\":150,\"plainLift\":true,\"trapsOff\":[],\"lazyPosters\":false} rowMvcpOff=true window=960x540 posters=400 backdrops=60 rows=20 cols=50",
+ "initial_focus": [
+  "rail",
+  0
+ ],
+ "windows": 311,
+ "seconds": 429.4,
+ "injector": "input",
+ "settle_s": 0.6,
+ "burst_gap_s": 0.05
+}
+art server: served 237 images

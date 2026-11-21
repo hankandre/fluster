@@ -794,6 +794,97 @@ fetch from the art server, so it is not comparable to the earlier 555 ms.
   clash with the Compose worktree's server).
 - APK: `dist/browse-optpass-v5.apk` (all arms; stock unless an arm is served).
 
+### Shield run, night of 2026-11-20
+
+The coordinator's night agent ran items 1, 2 and 3 of "Shield runs still needed", from 23:29 to
+23:59 CST.
+- It held an exclusive lock on the Shield, and no other agent touched it.
+- Items 4 and 5 need code and were not run.
+
+**Compile state.**
+- One install of `dist/browse-optpass-v5.apk`, then a warm-up and compile under the stock arm with
+  `FALSIFIER_COMPILE=speed-profile` (`opt-night-compile-*`), as the earlier `opt-compile-*` runs
+  did.
+- Every arm run after that passed an APK path that does not exist, so nothing was reinstalled.
+- Every run's `device.json` shows `reason=unknown` (compiled).
+- Every run's logcat has a `BOOT arm=` line with the intended arm, so no run fell back to stock.
+
+**Arms.** The F5 and F4 flags were copied from the earlier runs' `device.json`. Two arms are this
+agent's own choice of values, because the list named none. Both are applied on F5 (the
+design-preserving arm), one flag at a time:
+- `F4-dd150` = F4 with `rowDrawDistance: 150` instead of 0. FlashList measures this in dp; its
+  default is 250, and one card plus its gap is about 136 dp.
+- `F5-pool2` = F5 + `rowPool: 2` (the rows' `maxItemsInRecyclePool`).
+- `F5-vdd0` = F5 + vertical `drawDistance: 0`.
+
+#### Frames (held key at ~65 ms, three runs per arm, compiled)
+
+| Arm | Down janky | Down p90 | Down p99 | Down slow UI | Down focus events | Right janky | Right p99 |
+|---|---|---|---|---|---|---|---|
+| F1 (earlier) | 3.4–7.9 % | 14–15 | 23–31 | 2 | 19 | 0.6–1.2 % | 15–18 |
+| F4 (earlier) | 0 % | 9–10 | 13 | 0 | 19 | 0 % | 11 |
+| **F5** | 3.8–8.5 % | 13–15 | 18–26 | 3 | **18**, 19, 19 | 1.2–2.9 % | 16–18 |
+| **F4-dd150** | **0 %** | 10–11 | **15–16** | 0 | 19, 19, 19 | 0–0.8 % | 9–11 |
+| F5-pool2 | 1.9–9.4 % | 13–16 | 16–25 | 2 | 19, 19, 19 | 1.2 % | 18–19 |
+| F5-vdd0 | 8.3–11.1 % | 15–17 | 23–25 | 1–4 | **10, 12, 10** | 0.6–1.1 % | 15–16 |
+
+- **F5 is like F1 for frames.** That is expected, because the memory flags do not touch the
+  UI-thread work. One run lost one Down press (18 of 19 rows).
+- **F4-dd150 keeps F4's frame result** (0 % janky Down in 3 of 3 runs, p99 15–16 ms).
+- **F5-pool2 is inside F5's noise.**
+- **F5-vdd0 breaks held Down.** Focus stops at row 10–12 of 19, because with no row mounted below
+  the screen, Down finds nothing to move to. Median focus gap is 133 ms. It is not a usable setting.
+
+#### Memory (MB, `dumpsys meminfo`, after the scroll pass, compiled)
+
+| Arm | Images, rows | Idle PSS | **PSS** | Java | Native | Code | Graphics | ~Anon+Swap | Anon+Swap+Graphics | PSS after critical trim |
+|---|---|---|---|---|---|---|---|---|---|---|
+| F5 (earlier, `reason=install`, after the Compose agent's launch) | 432, 20/20 | 249 | 303 | 16 | 133 | 48 | 41 | 189 | 230 | 291 |
+| **F5** | 419, 20/20 | 206 | **299** | 15 | 130 | 51 | 41 | 183 | **224** | 291 |
+| F4 (earlier, three readings) | 417–420, 20/19–20 | 183–185 | 242–246 | 11–14 | 102–103 | 48 | 33 | 136–139 | 169–172 | 239–241 |
+| **F4-dd150** | 423, 20/20 | 190 | **252** | 11 | 109 | 51 | 35 | 144 | **179** | 248 |
+| F5-pool2 | 427, 20/20 | 206 | 297 | 15 | 129 | 51 | 41 | 181 | 222 | 290 |
+| F5-vdd0 (pass reached only 11 rows) | 435, **11/11** | 190 | 258 | 15 | 107 | 51 | 36 | 148 | 184 | 249 |
+
+- **F5 is confirmed not to meet the targets.** A second, compiled reading gives PSS 299 (target
+  280), Anon+Swap+Graphics 224 (target ≤200), Graphics 41 (band 30–40). The design-preserving arm
+  stays over.
+- **F4-dd150 meets all three:** PSS 252, Anon+Swap+Graphics 179, Graphics 35. That is about 6–10 MB
+  over F4, from one more mounted card per row.
+- **F5-pool2 changes nothing** (−2 MB, within noise). The row recycle pool is not where the memory
+  goes.
+- **F5-vdd0's lower figure is not comparable.** Focus stuck at row 10, so the pass visited 11 rows.
+- Code reads 51 MB tonight, against 48 MB earlier, in every run. The cause is **unverified**
+  (possibly the fresh compile's profile).
+
+#### Focus (500 presses, compiled)
+
+| Arm | Single presses ok | Bursts diverged | Presses after divergence | Recycled-cell BLURs | Rail → Right returns to the card left | Burst gap |
+|---|---|---|---|---|---|---|
+| F1 (earlier) | 299/299 | 0/12 | 0 | 0 | 9 of 9 | 58–67 ms |
+| F4 (earlier) | 299/299 | 4/12 | 4 | 0 | 9 of 9 | 58–67 ms |
+| **F4-dd150** | **299/299** | **0/12** | **0** | **0** | **9 of 9** | 55 ms |
+
+Up/Down landed on the same column 70 of 79 times.
+
+**The lost press is fixed.** With a row `drawDistance` of about one card, F4's four short bursts are
+gone, so row `drawDistance` 0 was their likely cause. This is one focus run.
+
+#### What this changes in the verdict
+
+**F4-dd150 is the first arm that passes all three Shield tests in one build.**
+- Focus: 0 failures and 0/12 bursts.
+- Frames held Down, compiled: 0 % janky, p99 15–16 ms.
+- Memory: PSS 252, Anon+Swap+Graphics 179, Graphics 35.
+
+It still carries F4's design costs: a static lift, 16-bit art, a 1280 px backdrop and no
+decoded-image memory cache. It also still depends on compiled code.
+
+The design-preserving arm (F5) fails memory on a second reading. Neither the row recycle pool nor
+the vertical `drawDistance` rescues it.
+
+Results: `results/opt-night-*`.
+
 ## Files
 
 - `src/`: the app.
