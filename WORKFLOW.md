@@ -163,7 +163,7 @@ Octave's verifiers, from cheapest to most authoritative. New work should land a 
 | Lint | dependency-cruiser layer rules, ESLint, the ghost-term check; the native network build check | Layering, platform leaks, desktop-era text; default Media3 data sources, stray HTTP clients | today; T3-04 |
 | Unit | Vitest on the core in Node; JVM tests for Kotlin | Logic, policy flags, URL rules, redaction | today; T3-01 |
 | Contract | Recorded Jellyfin 10.11 and 12.4 responses (and Jellyscale from T2-08) as fixtures; gateway tests assert request bodies *and* query strings | API drift, silent conversion flags | today |
-| Shared vectors | `tests/fixtures/hls-master-urls.json`, `hls-playlists.json`, `host-classes.json`: every validator on every platform passes all three | Drift between the TypeScript rules and each native validator | today (TypeScript); Kotlin T3-03, T8-08 |
+| Shared vectors | `packages/core/tests/fixtures/hls-master-urls.json`, `hls-playlists.json`, `host-classes.json`: every validator on every platform passes all three | Drift between the TypeScript rules and each native validator | today (TypeScript); Kotlin T3-03, T8-08 |
 | **Server tripwire** | `pnpm test:tripwire` (`tests/integration/tripwire.ts`) plays every sample through the real gateway against pinned Jellyfin 10.11.7 and 12.4 (`tests/integration/docker-compose.yml`), watching ffmpeg in the container, `/Sessions` `TranscodingInfo`, and the transcode logs. Every playable sample must direct play with no job; the disc folder, the ISO, and a forced-limit run must convert with an indicator reason over same-origin, credential-free HLS; no job may outlive the stopped report by 10 s. Per device capability set and against Jellyscale from T2-09 | **The core invariant, independent of any UI** | today |
 | Device | The core's conformance suite under Hermes on the emulator; the 500-press scripted focus test | Host divergence (URL, crypto); focus jumps | T3-02, T3-10 |
 | **Wire** | `pnpm tv:wire`: tagged tests on the emulator against the pinned Jellyscale record every request and fail on one without the header, a credential in a URL, a followed redirect, or another origin. A playback task passes only when its wire test passes | Token leaks and unauthenticated paths, end to end | T3-05, T10-01 |
@@ -182,7 +182,7 @@ Rules stated in prose that should become checks:
 - **Redaction canaries across the JavaScript and native seam** (T3-05, T10-02).
 - **File size.** Flag source files over ~400 lines.
 
-Done and enforced today: dependency direction (`pnpm lint:boundaries`, which fails on zero modules read), no desktop-era terms (`pnpm lint:ghost-terms`), frozen tests and Product Owner changes to the task list (`pnpm lint:flow`), the task list's shape (`src/tasks/prd.test.ts`), the task file's size and evidence length (`scripts/task.test.ts`), and the backlog's shape (`scripts/check-backlog.test.ts`).
+Done and enforced today: dependency direction (`pnpm lint:boundaries`, which fails on zero modules read), no desktop-era terms (`pnpm lint:ghost-terms`), frozen tests and Product Owner changes to the task list (`pnpm lint:flow`), the task list's shape (`scripts/prd.test.ts`), the task file's size and evidence length (`scripts/task.test.ts`), and the backlog's shape (`scripts/check-backlog.test.ts`).
 
 ## Model routing
 

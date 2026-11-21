@@ -8,7 +8,7 @@
 
 ## TypeScript
 
-- Add the method to the `PlayerEngine` port in the core (`src/domain/playback.ts` today).
+- Add the method to the `PlayerEngine` port in the core (`packages/core/src/domain/playback.ts`).
 - Update the port's allowlist test (T2-05).
 - Implement it in the fake engines the coordinator's tests use.
 - Add Vitest coverage for the caller.

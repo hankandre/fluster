@@ -31,7 +31,7 @@ description: Change Octave's native code: the player module (Media3 now, libmpv 
 
 - Expose only the `PlayerEngine` port's methods; follow `references/adding-a-method.md` to change them.
 - Take a launch only as the typed request union with a session id; never a header, token, or free-form option.
-- Read HLS playlists only through Octave's parser hook, which must pass every vector in `tests/fixtures/hls-playlists.json` and re-check the master URL against `tests/fixtures/hls-master-urls.json`.
+- Read HLS playlists only through Octave's parser hook, which must pass every vector in `packages/core/tests/fixtures/hls-playlists.json` and re-check the master URL against `packages/core/tests/fixtures/hls-master-urls.json`.
 - Never let libmpv play HLS; pass every item of `docs/mpv-options-checklist.md` before libmpv ships.
 - Send errors to JavaScript as typed codes, never player text, URLs, or paths.
 - Keep Kotlin behind interfaces a Swift implementation can mirror; name no engine in TypeScript.

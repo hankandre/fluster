@@ -17,7 +17,7 @@
 
 ## Store
 
-- Save to `tests/fixtures/jellyfin/<server-version>/<endpoint>-<case>.json` (Jellyscale fixtures beside them from T2-08).
+- Save to `packages/core/tests/fixtures/jellyfin/<server-version>/<endpoint>-<case>.json` (Jellyscale fixtures beside them from T2-08).
 - Record one fixture per server version that behaves differently.
 - Name the case after the behavior, such as `playbackinfo-bluray-folder.json`.
 

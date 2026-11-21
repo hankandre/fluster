@@ -12,8 +12,8 @@ Octave is a Jellyfin and Jellyscale client for the TV that plays the original fi
 
 ## Layout
 
-- Today the core lives in `src/` (`src/domain/`, `src/lib/jellyfin/`, `src/lib/player/`, `src/lib/`) with its fixtures in `tests/fixtures/`.
-- Planned: `packages/core` (T2-02), `apps/tv` (T3-01), and `modules/player` (T8-01). Until a task creates a path, do not write rules or code that assume it.
+- The core is the pnpm workspace package `@octave/core` in `packages/core` (`packages/core/src/domain/`, `packages/core/src/jellyfin/`, `packages/core/src/player/`, `packages/core/src/`) with its fixtures in `packages/core/tests/fixtures/`.
+- Planned: `apps/tv` (T3-01) and `modules/player` (T8-01). Until a task creates a path, do not write rules or code that assume it.
 
 ## Tasks
 
@@ -45,14 +45,14 @@ Octave is a Jellyfin and Jellyscale client for the TV that plays the original fi
 
 - Use the Node version in `.node-version` (mise reads it via `mise.toml`; run `mise exec --` in non-interactive shells).
 - Install: `pnpm install`
-- Core unit tests (Vitest, Node environment): `pnpm test`
+- Core unit tests (Vitest, Node environment): `pnpm --filter @octave/core test`; `pnpm test` runs them, then the root scripts and workflow tests
 - Type-check: `pnpm typecheck`
 - Lint: `pnpm lint`, `pnpm lint:boundaries`, `pnpm lint:ghost-terms`, `pnpm lint:backlog`, `pnpm lint:flow`
 - Task workflow tests: `pnpm test:workflow`
 - All checks: `pnpm check`
 - Server tripwire (needs `pnpm samples:generate`, `pnpm fixture:up`, `pnpm fixture:setup`): `pnpm test:tripwire`
 - Task CLI: `pnpm task next`, `pnpm task show <id>`, `pnpm task list [--status s] [--phase p]`, `pnpm task set <id> --status s [--owner o] [--evidence-file f]`.
-- Not yet built: `pnpm --filter @octave/core test` (T2-02), `pnpm tv:native:test` (T3-01), `pnpm tv:e2e` (T3-02), `pnpm tv:wire` (T3-05), `pnpm tv:visual` (T3-07).
+- Not yet built: `pnpm tv:native:test` (T3-01), `pnpm tv:e2e` (T3-02), `pnpm tv:wire` (T3-05), `pnpm tv:visual` (T3-07).
 
 ## Hard rules
 
@@ -66,7 +66,7 @@ Playback
 - Never add codec or container conditions to the DeviceProfile.
 - Use a `TranscodingUrl` only after Playback Negotiation validates and rebuilds it.
 - Never let an HLS master playlist list subtitle or trickplay renditions.
-- Validate every HLS playlist natively before the player reads it (Media3's playlist parser hook on Android); refuse any URI that is not same-origin and credential-free. Every validator passes `tests/fixtures/hls-playlists.json` and `tests/fixtures/hls-master-urls.json`.
+- Validate every HLS playlist natively before the player reads it (Media3's playlist parser hook on Android); refuse any URI that is not same-origin and credential-free. Every validator passes `packages/core/tests/fixtures/hls-playlists.json` and `packages/core/tests/fixtures/hls-master-urls.json`.
 - Refuse media sources that `ARCHITECTURE.md` §3 can neither play nor convert.
 - Never add a generic player command, property, option, or header bridge.
 - Treat every new native module method or event as an architecture change.
@@ -91,9 +91,9 @@ Tokens and network
 
 Code boundaries
 
-- Talk to Jellyfin and Jellyscale only through `src/lib/jellyfin/gateway.ts`.
+- Talk to Jellyfin and Jellyscale only through `packages/core/src/jellyfin/gateway.ts`.
 - Build media URLs only in Playback Negotiation.
-- Keep `src/domain/` free of React, React Native, Expo, SDK, and HTTP imports.
+- Keep `packages/core/src/domain/` free of React, React Native, Expo, SDK, and HTTP imports.
 - Keep the core free of platform APIs; take them through ports.
 - Never introduce Flutter.
 

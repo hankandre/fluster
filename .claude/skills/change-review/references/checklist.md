@@ -17,7 +17,7 @@
 
 ## Domain rules (DOMAINS.md)
 
-- Does `src/domain/` import React, React Native, Expo, the SDK, or HTTP code?
+- Does `packages/core/src/domain/` import React, React Native, Expo, the SDK, or HTTP code?
 - Does the core import a platform API instead of taking a port?
 - Do screens construct gateways, transports, or engines outside the composition root?
 - Does Catalog code build media URLs or decide playability?

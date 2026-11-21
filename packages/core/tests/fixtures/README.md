@@ -4,16 +4,16 @@ Language-neutral vectors that every implementation of a rule must pass, so two i
 
 | File | Rule | Read by |
 | --- | --- | --- |
-| `host-classes.json` | Host classes from decision 0001: loopback, private LAN, public | `src/domain/host-class.test.ts`; at the tag, `url_policy.rs` and `discovery/tests.rs`; next, the Kotlin classifier (T3-03) |
-| `hls-master-urls.json` | The HLS master URL rules (`ARCHITECTURE.md` "HLS URL rules"): accepted plans and refused URLs | `src/lib/jellyfin/hls-master-url-vectors.test.ts` (writes `vectors`), `src/lib/jellyfin/hls-url.test.ts` (`refusals`); at the tag, `player/hls/master_url_tests.rs` (both); next, Kotlin (T8-08) |
-| `hls-playlists.json` | The HLS playlist rules: every URI same-origin, unambiguous, and credential-free; only complete, well-formed playlists | `src/lib/jellyfin/hls-playlist-vectors.test.ts` (shape); at the tag, `player/hls/playlist_vectors_tests.rs`; next, Kotlin (T8-08) |
-| `jellyfin/` | Scrubbed server answers; see `jellyfin/README.md` | TypeScript tests under `src/lib/jellyfin/` and `src/domain/` (for example `src/lib/jellyfin/conversion-negotiation.test.ts`) |
+| `host-classes.json` | Host classes from decision 0001: loopback, private LAN, public | `packages/core/src/domain/host-class.test.ts`; at the tag, `url_policy.rs` and `discovery/tests.rs`; next, the Kotlin classifier (T3-03) |
+| `hls-master-urls.json` | The HLS master URL rules (`ARCHITECTURE.md` "HLS URL rules"): accepted plans and refused URLs | `packages/core/src/jellyfin/hls-master-url-vectors.test.ts` (writes `vectors`), `packages/core/src/jellyfin/hls-url.test.ts` (`refusals`); at the tag, `player/hls/master_url_tests.rs` (both); next, Kotlin (T8-08) |
+| `hls-playlists.json` | The HLS playlist rules: every URI same-origin, unambiguous, and credential-free; only complete, well-formed playlists | `packages/core/src/jellyfin/hls-playlist-vectors.test.ts` (shape); at the tag, `player/hls/playlist_vectors_tests.rs`; next, Kotlin (T8-08) |
+| `jellyfin/` | Scrubbed server answers; see `jellyfin/README.md` | TypeScript tests under `packages/core/src/jellyfin/` and `packages/core/src/domain/` (for example `packages/core/src/jellyfin/conversion-negotiation.test.ts`) |
 | `playback-info-direct.json`, `playback-info-transcode-rejected.json` | Older PlaybackInfo samples | no reader at `ba55ef2` (`git grep` finds none) |
 
 ## `hls-master-urls.json`
 
-- `vectors` (44): the plans TypeScript Playback Negotiation builds from every recorded conversion, on a server with and without a base path. Every native validator deserializes each plan and accepts its master URL. Regenerate with `OCTAVE_WRITE_HLS_VECTORS=1 pnpm vitest run hls-master-url-vectors`; that keeps `description` and `refusals` as they are.
-- `refusals` (56): master URLs every validator refuses, each with the context it is checked in (`serverUrl`, `mediaKind`, `itemId`, `mediaSourceId`, `playSessionId`) and a `rule` tag. `typescript` says what `rebuildMasterUrl` (`src/lib/jellyfin/hls-url.ts`) does with the same input:
+- `vectors` (44): the plans TypeScript Playback Negotiation builds from every recorded conversion, on a server with and without a base path. Every native validator deserializes each plan and accepts its master URL. Regenerate with `OCTAVE_WRITE_HLS_VECTORS=1 pnpm --filter @octave/core exec vitest run hls-master-url-vectors`; that keeps `description` and `refusals` as they are.
+- `refusals` (56): master URLs every validator refuses, each with the context it is checked in (`serverUrl`, `mediaKind`, `itemId`, `mediaSourceId`, `playSessionId`) and a `rule` tag. `typescript` says what `rebuildMasterUrl` (`packages/core/src/jellyfin/hls-url.ts`) does with the same input:
   - `{"verdict": "refuse"}`: it refuses too.
   - `{"verdict": "rebuild", "url": "…"}`: it removes the offending part (a credential parameter, `EnableTrickplay`, `EnableSubtitlesInManifest=false`) and returns `url`, which a validator then accepts.
 
@@ -24,7 +24,7 @@ A new client checks the master URL the way the side it replaces does: the rebuil
 The rules of the desktop validator (`player/hls/playlist.rs`, `uri.rs`, `attributes.rs`, and the body check in `session.rs`) as data. Every validator that replaces it must give the same verdict and reason for every vector: Kotlin in Media3's playlist parser hook first, then Swift or an IO-free Rust crate.
 
 - Vectors: 210. SHA-256 of the file at this count: `536984c5135a40c83a7f06c88adaeb47eb77b8498f8008fdfb2deae22f756221`.
-- At the tag, run by `hls_playlist_vectors_match_the_rust_validator` through `session::check_playlist_body`, the function a desktop session used on every fetched body. On `main`, `src/lib/jellyfin/hls-playlist-vectors.test.ts` checks the file's shape.
+- At the tag, run by `hls_playlist_vectors_match_the_rust_validator` through `session::check_playlist_body`, the function a desktop session used on every fetched body. On `main`, `packages/core/src/jellyfin/hls-playlist-vectors.test.ts` checks the file's shape.
 
 ### Schema
 

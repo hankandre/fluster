@@ -66,7 +66,7 @@ Citations are to commit `ba55ef2` (after PR #221, merged as `288ce46`), which th
   - Refuse any credential query name (`network.rs:174-181`).
   - External subtitles must have the stream's origin.
 - [ ] Issue `loadfile` from the two typed loaders only (`network.rs:129-143`; `media_tests::loadfile_is_issued_only_by_the_two_typed_loaders`).
-- [ ] Converted streams: validate each playlist against `tests/fixtures/hls-playlists.json` before the player reads it. See `tests/fixtures/README.md`.
+- [ ] Converted streams: validate each playlist against `packages/core/tests/fixtures/hls-playlists.json` before the player reads it. See `packages/core/tests/fixtures/README.md`.
 
 ## What the desktop security document proved
 

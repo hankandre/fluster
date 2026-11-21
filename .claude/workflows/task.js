@@ -78,7 +78,7 @@ function taskPaths(task, root) {
 }
 // Paths whose change always needs a guardian review (AGENTS.md: policy, tokens, redaction, native).
 const HIGH_RISK_PATH =
-  /^(packages\/core\/.*(jellyfin|negotiat|gateway|player|playback|redact|safe-reason|transport|host-class|session)|src\/lib\/jellyfin\/|src\/lib\/player\/|src\/lib\/redact|src\/lib\/safe-reason|src\/lib\/transport-error|src\/lib\/lan-http|src\/domain\/(playback|host-class)|modules\/|apps\/tv\/android\/|docs\/security\.md|tests\/fixtures\/(hls-|host-classes))/;
+  /^(packages\/core\/.*(jellyfin|negotiat|gateway|player|playback|redact|safe-reason|transport|host-class|session|lan-http)|packages\/core\/tests\/fixtures\/(hls-|host-classes)|src\/lib\/jellyfin\/|src\/lib\/player\/|src\/lib\/redact|src\/lib\/safe-reason|src\/lib\/transport-error|src\/lib\/lan-http|src\/domain\/(playback|host-class)|modules\/|apps\/tv\/android\/|docs\/security\.md|tests\/fixtures\/(hls-|host-classes))/;
 // Kotlin and native module work goes to native-engineer.
 const NATIVE_PATH = /^(modules\/|apps\/tv\/android\/)/;
 // PATHS-END
@@ -355,7 +355,7 @@ You are the Product Owner. Rule on each. The frozen files are listed in docs/spe
 Create the worktree if it is missing: git -C ${main} fetch -q && git worktree add ${worktree} -b ${branch} origin/main (run from the main checkout).
 If a task in this task's depends_on is not done on origin/main, return that as the only open question ("blocked by <ID>").
 If ${spec} already exists with every section, keep it and report on it. Otherwise write it. Do not commit.
-Resolve gaps yourself from the task, the code, the docs, and the settled decisions, and write the answers into the spec. Return as open questions only product or design choices the human must make that no settled decision covers; give each its options and a recommendation. Set touchesNative=true if the spec's files to touch include anything under modules/ or apps/tv/android/, or the PlayerEngine port (the engine interface in src/domain/playback.ts, later packages/core).`,
+Resolve gaps yourself from the task, the code, the docs, and the settled decisions, and write the answers into the spec. Return as open questions only product or design choices the human must make that no settled decision covers; give each its options and a recommendation. Set touchesNative=true if the spec's files to touch include anything under modules/ or apps/tv/android/, or the PlayerEngine port (the engine interface in packages/core/src/domain/playback.ts).`,
       { agentType: 'refiner', model: specModel, schema: SPEC, phase: 'Spec', label: `spec ${task}` },
     );
     if (!specResult) return result('failed', 'The refiner returned nothing.');
@@ -368,7 +368,7 @@ Resolve gaps yourself from the task, the code, the docs, and the settled decisio
   if (!skipCheck) {
     const check = await agent(
       `${common}
-Check the spec and append your "## Spec check" verdict to it. Set approved=true unless an issue is critical or high; list medium and low issues anyway, prefixed with their severity, and the implementer will resolve them. Return approved and the numbered issues. Set touchesNative=true if the spec's files to touch include anything under modules/ or apps/tv/android/, or the PlayerEngine port (the engine interface in src/domain/playback.ts, later packages/core).`,
+Check the spec and append your "## Spec check" verdict to it. Set approved=true unless an issue is critical or high; list medium and low issues anyway, prefixed with their severity, and the implementer will resolve them. Return approved and the numbered issues. Set touchesNative=true if the spec's files to touch include anything under modules/ or apps/tv/android/, or the PlayerEngine port (the engine interface in packages/core/src/domain/playback.ts).`,
       { agentType: 'spec-checker', model: checkModel, schema: CHECK, phase: 'Check', label: `check ${task}` },
     );
     if (!check) return result('failed', 'The spec-checker returned nothing.');

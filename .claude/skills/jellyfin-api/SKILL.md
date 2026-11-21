@@ -1,6 +1,6 @@
 ---
 name: jellyfin-api
-description: Add or change Jellyfin and Jellyscale server calls, playback negotiation, playstate reporting, or track mapping in Octave. Use for any edit to the gateway (src/lib/jellyfin/, later packages/core) or to PLAYBACK_POLICY.
+description: Add or change Jellyfin and Jellyscale server calls, playback negotiation, playstate reporting, or track mapping in Octave. Use for any edit to the gateway (packages/core/src/jellyfin/) or to PLAYBACK_POLICY.
 ---
 
 # Jellyfin API
@@ -13,7 +13,7 @@ description: Add or change Jellyfin and Jellyscale server calls, playback negoti
 
 ## Calls
 
-- Add server calls only to `src/lib/jellyfin/gateway.ts`.
+- Add server calls only to `packages/core/src/jellyfin/gateway.ts`.
 - Use 10.9+ paths; never use `/Users/{userId}/…` routes.
 - Support Jellyfin 10.11.x and 12.x, and Jellyscale.
 - Gate features by detection, not by version string.
