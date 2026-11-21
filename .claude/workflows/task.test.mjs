@@ -300,6 +300,12 @@ test('decideFrozen stops on a trailered change the Product Owner step did not re
   assert.equal(decideFrozen(gateJson(changed), ['a.test.ts'], { 'a.test.ts': 'b1' }).action, 'pass');
 });
 
+test('decideFrozen accepts a ruling that names the changed path absolutely, inside the worktree', () => {
+  const changed = flow({ changes: [{ path: 'pkg/a.test.ts', commit: 'c', reason: 'r' }], frozen: [{ path: 'pkg/a.test.ts', blob: 'b2' }] });
+  assert.equal(decideFrozen(gateJson(changed), ['/home/x/octave-T9-99/pkg/a.test.ts'], { 'pkg/a.test.ts': 'b1' }).action, 'pass');
+  assert.equal(decideFrozen(gateJson(changed), ['/home/x/octave-T9-99/pkg/other.test.ts'], { 'pkg/a.test.ts': 'b1' }).action, 'stop');
+});
+
 test('decideFrozen stops when an amended freeze commit moved a frozen blob that was not approved', () => {
   const amended = flow({ frozen: [{ path: 'a.test.ts', blob: 'b2' }] });
   const out = decideFrozen(gateJson(amended), [], { 'a.test.ts': 'b1' });
