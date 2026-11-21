@@ -21,7 +21,7 @@ Octave is a Jellyfin and Jellyscale client for the TV that plays the original fi
 - Follow the `rules` array at the top of `tasks/prd.json`.
 - Change only a task's `status`, `owner`, `passes`, and `evidence` fields.
 - Keep evidence to 600 characters and name the PR or commit.
-- Append deferred or newly found work to `tasks/backlog.md` (`tasks/backlog.jsonl` once T1-10 lands); any agent or pull request may.
+- Append deferred or newly found work to `tasks/backlog.jsonl` as one JSON line (fields in `WORKFLOW.md` §2a); any agent or pull request may.
 - Only a Product Owner pass (Fable 5.2) adds, splits, reorders, or drops tasks, after triaging the backlog; the owner can veto any of it.
 - Never edit acceptance items without the owner's approval.
 - Link the task id in commits, plans, and PRs.
@@ -45,7 +45,7 @@ Octave is a Jellyfin and Jellyscale client for the TV that plays the original fi
 - Install: `pnpm install`
 - Core unit tests (Vitest, Node environment): `pnpm test`
 - Type-check: `pnpm typecheck`
-- Lint: `pnpm lint`, `pnpm lint:boundaries`, `pnpm lint:ghost-terms`
+- Lint: `pnpm lint`, `pnpm lint:boundaries`, `pnpm lint:ghost-terms`, `pnpm lint:backlog`
 - Task workflow tests: `pnpm test:workflow`
 - All checks: `pnpm check`
 - Server tripwire (needs `pnpm samples:generate`, `pnpm fixture:up`, `pnpm fixture:setup`): `pnpm test:tripwire`

@@ -30,7 +30,7 @@ Agents read the short map first and load detail only when needed.
 | `docs/security.md` | The token and network boundary, each claim with its test or task | as needed |
 | `docs/mpv-options-checklist.md` | What a future libmpv engine must pass | until T13 |
 | `tasks/prd.json` | Phases and tasks with acceptance items and `passes` flags; agents change only status fields, through `pnpm task` | living |
-| `tasks/backlog.md` | Deferred and newly found work; `tasks/backlog.jsonl` from T1-10 | living |
+| `tasks/backlog.jsonl` | Deferred and newly found work, one JSON object per line (§2a) | living |
 | `docs/specs/<TASK-ID>.md` | Per-task spec written by `refiner`, with the `spec-checker` verdict appended; the first spec creates the folder | one per task |
 | `docs/plans/active/`, `docs/plans/completed/` | Execution plans for work that needs more than one session; the first plan creates the folder | one per initiative |
 | `docs/decisions/NNNN-slug.md` | Decision records for choices that would otherwise be re-litigated; history, never rewritten (later changes are dated amendments) | ~1 page each |
@@ -56,7 +56,18 @@ Each task runs: refine + spec → spec check → implement → verify → one re
 - `refiner` reads the task (`pnpm task show <id>`), its plan, and the relevant code and docs. It writes only `docs/specs/<TASK-ID>.md`: goal; acceptance items mapped to how each is met and tested; files to touch; approach; test plan; risks and out of scope; validation commands; and, for every dependency the task adopts, the maintenance check from primary sources.
 - `spec-checker` runs in a fresh context against the task, the `AGENTS.md` hard rules, `ARCHITECTURE.md`, `DESIGN.md` (for UI), and the code. It appends a verdict: "Approved" or "Changes needed" with numbered issues.
 - Allow one revision round. If the spec is still not approved, stop and ask the owner.
-- Work a task defers goes to the backlog in the same pull request: what, why, where it came from, and a rough size.
+- Work a task defers goes to `tasks/backlog.jsonl` in the same pull request, as one JSON line with:
+  - `what`
+  - `why`
+  - `source` (a task id, PR, commit, or doc)
+  - `size` (`S`, `M` or `L`)
+  - `date` (`YYYY-MM-DD`)
+  - optionally `taken_by`, a task id
+- Append only, at the end of the file, and never delete or rewrite another entry.
+- When a task takes an entry, set `taken_by` on that line in the task's pull request.
+- A deferral names a task or a backlog entry.
+- `P…` sources refer to the desktop task list in the tag `desktop-tauri-final`.
+- Git merges the file with `union`, and `pnpm check` validates it. `pnpm lint:backlog` validates it alone.
 
 ### 2b. Tests first (T1-12)
 
@@ -149,7 +160,7 @@ Rules stated in prose that should become checks:
 - **Frozen tests.** A diff check that fails when an implementer changes a test written before implementation (T1-12).
 - **File size.** Flag source files over ~400 lines.
 
-Done and enforced today: dependency direction (`pnpm lint:boundaries`, which fails on zero modules read), no desktop-era terms (`pnpm lint:ghost-terms`), the task list's shape (`src/tasks/prd.test.ts`), and the task file's size and evidence length (`scripts/task.test.ts`).
+Done and enforced today: dependency direction (`pnpm lint:boundaries`, which fails on zero modules read), no desktop-era terms (`pnpm lint:ghost-terms`), the task list's shape (`src/tasks/prd.test.ts`), the task file's size and evidence length (`scripts/task.test.ts`), and the backlog's shape (`scripts/check-backlog.test.ts`).
 
 ## Model routing
 

@@ -30,7 +30,7 @@ Scrubbed answers from the two pinned fixture servers (`tests/integration/docker-
 
 ### Claims checked
 
-Claims are from `tasks/backlog.md` "Personal ratings and top-rated lists" (read from source on 2026-11-17) and `docs/plans/proposals/product-review.md`. Fixture names are under `rating-<name>.json` in both version folders; `it` names are in the test file. Both servers gave the same answer for every claim unless a row says so.
+Claims are from `tasks/backlog.md` in the tag `desktop-tauri-final` "Personal ratings and top-rated lists" (read from source on 2026-11-17) and `docs/plans/proposals/product-review.md`. Fixture names are under `rating-<name>.json` in both version folders; `it` names are in the test file. Both servers gave the same answer for every claim unless a row says so.
 
 | Claim | Verdict | Evidence |
 |---|---|---|
