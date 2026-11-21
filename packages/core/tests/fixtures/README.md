@@ -4,8 +4,8 @@ Language-neutral vectors that every implementation of a rule must pass, so two i
 
 | File | Rule | Read by |
 | --- | --- | --- |
-| `host-classes.json` | Host classes from decision 0001: loopback, private LAN, public | `packages/core/src/domain/host-class.test.ts`; at the tag, `url_policy.rs` and `discovery/tests.rs`; next, the Kotlin classifier (T3-03) |
-| `hls-master-urls.json` | The HLS master URL rules (`ARCHITECTURE.md` "HLS URL rules"): accepted plans and refused URLs | `packages/core/src/jellyfin/hls-master-url-vectors.test.ts` (writes `vectors`), `packages/core/src/jellyfin/hls-url.test.ts` (`refusals`); at the tag, `player/hls/master_url_tests.rs` (both); next, Kotlin (T8-08) |
+| `host-classes.json` | Host classes from decision 0001: loopback, private LAN, public | `packages/core/src/domain/host-class.test.ts`, `packages/core/src/conformance/url-conformance.ts` (also run on the device in T3-02); at the tag, `url_policy.rs` and `discovery/tests.rs`; next, the Kotlin classifier (T3-03) |
+| `hls-master-urls.json` | The HLS master URL rules (`ARCHITECTURE.md` "HLS URL rules"): accepted plans and refused URLs | `packages/core/src/jellyfin/hls-master-url-vectors.test.ts` (writes `vectors`), `packages/core/src/jellyfin/hls-url.test.ts` (`refusals`), `packages/core/src/conformance/url-conformance.ts` (all; also run on the device in T3-02); at the tag, `player/hls/master_url_tests.rs` (both); next, Kotlin (T8-08) |
 | `hls-playlists.json` | The HLS playlist rules: every URI same-origin, unambiguous, and credential-free; only complete, well-formed playlists | `packages/core/src/jellyfin/hls-playlist-vectors.test.ts` (shape); at the tag, `player/hls/playlist_vectors_tests.rs`; next, Kotlin (T8-08) |
 | `jellyfin/` | Scrubbed server answers; see `jellyfin/README.md` | TypeScript tests under `packages/core/src/jellyfin/` and `packages/core/src/domain/` (for example `packages/core/src/jellyfin/conversion-negotiation.test.ts`) |
 | `playback-info-direct.json`, `playback-info-transcode-rejected.json` | Older PlaybackInfo samples | no reader at `ba55ef2` (`git grep` finds none) |
@@ -13,9 +13,18 @@ Language-neutral vectors that every implementation of a rule must pass, so two i
 ## `hls-master-urls.json`
 
 - `vectors` (44): the plans TypeScript Playback Negotiation builds from every recorded conversion, on a server with and without a base path. Every native validator deserializes each plan and accepts its master URL. Regenerate with `OCTAVE_WRITE_HLS_VECTORS=1 pnpm --filter @octave/core exec vitest run hls-master-url-vectors`; that keeps `description` and `refusals` as they are.
-- `refusals` (56): master URLs every validator refuses, each with the context it is checked in (`serverUrl`, `mediaKind`, `itemId`, `mediaSourceId`, `playSessionId`) and a `rule` tag. `typescript` says what `rebuildMasterUrl` (`packages/core/src/jellyfin/hls-url.ts`) does with the same input:
+- `refusals` (64): master URLs every validator refuses, each with the context it is checked in (`serverUrl`, `mediaKind`, `itemId`, `mediaSourceId`, `playSessionId`) and a `rule` tag. `typescript` says what `rebuildMasterUrl` (`packages/core/src/jellyfin/hls-url.ts`) does with the same input:
   - `{"verdict": "refuse"}`: it refuses too.
   - `{"verdict": "rebuild", "url": "…"}`: it removes the offending part (a credential parameter, `EnableTrickplay`, `EnableSubtitlesInManifest=false`) and returns `url`, which a validator then accepts.
+
+## Host rules
+
+Written without reference to a parser, so Kotlin can mirror them. `host-classes.json` has 94 vectors.
+
+- R1, plain ASCII authority: after trimming, the address matches `^[Hh][Tt][Tt][Pp][Ss]?://(?:[A-Za-z0-9._-]+|\[[0-9A-Fa-f:.]+\])(?::[0-9]*)?(?:[/?#]|$)` with no case-insensitive and no Unicode flag (those match U+017F against `s` and U+212A against `k`).
+- R2, plain ASCII parsed host: a bracketed IPv6 literal, or only `A-Z a-z 0-9 . _ -`. Anything else is public, and so is a label starting with `xn--` in any case.
+- R3, server address class: not R1 is public; a URL the host cannot parse is public; otherwise the parsed host is classified, R2 first.
+- R4, HLS master URL: refuse with rule `host` when the server URL fails R1, when an absolute `TranscodingUrl` fails R1, or when the parsed host of the resolved or server URL fails R2.
 
 A new client checks the master URL the way the side it replaces does: the rebuild, then the native check of the result.
 
