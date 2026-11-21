@@ -616,10 +616,10 @@
             "A canary token appears in no thrown error, log call or redacted output"
           ],
           "verify": "pnpm --filter @octave/core test",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit 31c607e0 on task/T2-04: Transport port, FetchTransport, gateway on the port, axios and SDK removed. check-red --expect green: items 1-6 green. Core suite 70 files, 1825 pass, 3 fail (frozen T2-03 gateway-crypto.test.ts needs the D9 ruling); typecheck fails on that file and on frozen gateway-transport.test.ts:401 (unused private field, D11). Tripwire and tv:wire not run locally (CI, T3-05)."
         },
         {
           "id": "T2-10",
