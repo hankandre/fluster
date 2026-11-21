@@ -2,6 +2,7 @@
 // media source from a PlaybackInfo answer becomes DirectPlay, DirectStream,
 // Transcode, a forced-fallback request, or a typed refusal. Rules run in
 // order and the first that decides wins.
+import { devicePlayability, type DeviceCapabilities, type Playability, type SourceFormat } from "../domain/device-capabilities";
 import { CONVERSION_REASONS, type ConversionReason, type RefusalReason } from "../domain/playback";
 import { rebuildMasterUrl, type HlsMediaKind } from "./hls-url";
 import type { MediaSourceDto, MediaStreamDto } from "./types";
@@ -28,6 +29,9 @@ export type SourceDecision =
   // A disc folder or ISO the server offered for direct play: ask again for
   // this source with EnableDirectPlay false (rule 4).
   | { kind: "force-fallback"; source: IdentifiedSource; reason: "disc-source" | "iso-source" }
+  // The server offered direct play and the device cannot play the source: ask again with direct play and video
+  // stream copy off (rule 5, T2-07). `cannotPlay` says which stream the device cannot play.
+  | { kind: "force-conversion"; source: IdentifiedSource; cannotPlay: Playability }
   | { kind: "refused"; reason: RefusalReason; detail?: string };
 
 export interface SourceContext {
@@ -36,6 +40,10 @@ export interface SourceContext {
   itemId: string;
   // The PlaybackInfo answer's PlaySessionId, which the TranscodingUrl must repeat.
   playSessionId?: string;
+  // What the device can play. "full" states no limit (ARCHITECTURE.md §3 rule 3).
+  capabilities: DeviceCapabilities;
+  // The audio stream the request named; the judged audio stream, before the source's default.
+  audioStreamIndex?: number;
 }
 
 // A Static=true request for a disc folder makes the server start ffmpeg, so
@@ -72,6 +80,10 @@ export function decideSource(source: MediaSourceDto, context: SourceContext): So
   const offersDirectPlay = source.SupportsDirectPlay === true;
   // Rule 3.
   if (offersDirectPlay && !disc && source.Protocol === "File" && source.Path && !source.TranscodingUrl) {
+    const playable = sourcePlayability(source, context.capabilities, context.audioStreamIndex);
+    if (!playable.video || !playable.audio) {
+      return { kind: "force-conversion", source: identified, cannotPlay: { video: !playable.video, audio: !playable.audio } };
+    }
     return { kind: "direct-play", source: { ...identified, Path: source.Path } };
   }
   // Rule 4.
@@ -89,6 +101,53 @@ export function decideSource(source: MediaSourceDto, context: SourceContext): So
   // because the user may not transcode or remux. Both servers send no
   // ErrorCode in that case (P10-02 fixtures), so none is required here.
   return refused("conversion-not-allowed");
+}
+
+// The device's verdict on the two judged streams: the first video stream, and the audio stream the request names,
+// else the source's default, else the first audio stream.
+export function sourcePlayability(source: MediaSourceDto, capabilities: DeviceCapabilities, audioStreamIndex?: number): Playability {
+  const [video] = streamsOf(source, "Video");
+  const audioStreams = streamsOf(source, "Audio");
+  const audio = [audioStreamIndex, source.DefaultAudioStreamIndex]
+    .map((index) => audioStreams.find((stream) => stream.Index === index))
+    .find((stream) => stream !== undefined) ?? audioStreams[0];
+  const format: SourceFormat = {
+    ...(video ? { video: {
+      codec: video.Codec ?? undefined,
+      profile: video.Profile ?? undefined,
+      bitDepth: video.BitDepth ?? undefined,
+      width: video.Width ?? undefined,
+      height: video.Height ?? undefined,
+    } } : {}),
+    ...(audio ? { audio: { codec: audio.Codec ?? undefined } } : {}),
+  };
+  return devicePlayability(format, capabilities);
+}
+
+// The answer to the forced-conversion request, decided for one source (ARCHITECTURE.md §3 rule 5). A conversion
+// counts only when its URL shows stream copy is off; direct play offered again, or nothing offered, is the typed
+// refusal that says this device cannot play the file.
+export function decideForcedConversion(
+  sources: MediaSourceDto[] | null | undefined,
+  context: SourceContext,
+  mediaSourceId: string,
+  audioCopyOff: boolean,
+): SourceDecision {
+  const source = (sources ?? []).find((candidate) => candidate.Id === mediaSourceId);
+  if (!source?.Id) return refused("no-sources", "requested version not returned");
+  if (source.RequiresOpening === true) return refused("live-source");
+  const identified: IdentifiedSource = { ...source, Id: source.Id };
+  if (source.TranscodingUrl) {
+    const decision = decideConversion(identified, source.TranscodingUrl, context);
+    if (decision.kind !== "convert") return decision;
+    const params = new URL(decision.masterUrl).searchParams;
+    const videoOff = param(params, "AllowVideoStreamCopy")?.toLowerCase() === "false";
+    const audioOff = !audioCopyOff || param(params, "AllowAudioStreamCopy")?.toLowerCase() === "false";
+    return videoOff && audioOff ? decision : refused("device-cannot-play", "stream copy not turned off");
+  }
+  if (source.SupportsDirectPlay === true) return refused("device-cannot-play", "direct play offered again");
+  if (source.SupportsTranscoding === false) return refused("conversion-not-allowed");
+  return refused("device-cannot-play", "no conversion offered");
 }
 
 function decideConversion(source: IdentifiedSource, transcodingUrl: string, context: SourceContext): SourceDecision {
@@ -201,17 +260,19 @@ function rank(decision: SourceDecision): number {
       return 0;
     case "convert":
       return decision.playMethod === "DirectStream" ? 1 : 2;
-    case "force-fallback":
+    case "force-conversion":
       return 3;
-    case "refused":
+    case "force-fallback":
       return 4;
+    case "refused":
+      return 5;
   }
 }
 
 // Picks the requested version, or the best source: the first DirectPlay,
 // then the first DirectStream, then the first Transcode, then the first that
-// needs the forced fallback. When nothing plays, the first refusal explains
-// why. A requested MediaSourceId is never replaced by another version.
+// needs the forced conversion, then the first disc that needs the forced
+// fallback. When nothing plays, the first refusal explains why. A requested MediaSourceId is never replaced by another version.
 export function selectSource(
   sources: MediaSourceDto[] | null | undefined,
   context: SourceContext,

@@ -88,7 +88,7 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 **Language.** Direct play, Direct stream, Transcode, Remux, Play method, Conversion reason, Device capabilities, Streaming limit, Media source, Version, Device profile, Play session, Playback plan, Refusal reason, Start choice, Ticks.
 
-**Today.** `PLAYBACK_POLICY`, `PlaybackPlan`, `resumeChoice` in `packages/core/src/domain/playback.ts`; `packages/core/src/domain/conversion-copy.ts`; `PLAYBACK_INFO_FLAGS`, `buildStaticStreamUrl`, `createPlaybackPlan` in `gateway.ts`; `decideSource`, `selectSource` in `source-acceptance.ts`; `rebuildMasterUrl` in `hls-url.ts`; `OCTAVE_PROFILE` in `device-profile.ts`.
+**Today.** `PLAYBACK_POLICY`, `PlaybackPlan`, `resumeChoice` in `packages/core/src/domain/playback.ts`; `packages/core/src/domain/conversion-copy.ts`; `PLAYBACK_INFO_FLAGS`, `buildStaticStreamUrl`, `createPlaybackPlan` in `gateway.ts`; `decideSource`, `selectSource`, `decideForcedConversion` in `source-acceptance.ts`; `devicePlayability` in `packages/core/src/domain/device-capabilities.ts`; the `DeviceCapabilitySource` port on `JellyfinGateway`; `rebuildMasterUrl` in `hls-url.ts`; `OCTAVE_PROFILE` in `device-profile.ts`.
 
 **Target.** `packages/core`; the native re-check of master URLs and playlists lives with the Player Engine (T8-08) and passes the same shared vectors.
 

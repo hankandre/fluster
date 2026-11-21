@@ -43,10 +43,10 @@ mpv decodes nearly every codec and container Jellyfin stores, so for local playb
 
 | Field | Value | Note |
 |---|---|---|
-| `EnableDirectPlay` | `true` | `false` only on the forced-fallback request below |
+| `EnableDirectPlay` | `true` | `false` only on the forced-fallback request below and the forced-conversion request (amendment 2026-11-20) |
 | `EnableDirectStream` | `true` | The server ignores it for streaming unless `ForceDirectStream` ("direct-stream http streaming is currently broken", `MediaInfoHelper.cs` v10.11.7 lines 249-253), so remux arrives as HLS with stream copy |
 | `EnableTranscoding` | `true` | |
-| `AllowVideoStreamCopy`, `AllowAudioStreamCopy` | `true` | Lets the server copy instead of encode |
+| `AllowVideoStreamCopy`, `AllowAudioStreamCopy` | `true` | Lets the server copy instead of encode. `AllowVideoStreamCopy` is `false` on the forced-conversion request, and `AllowAudioStreamCopy` is `false` there too when the audio the device cannot play is the judged track |
 | `AlwaysBurnInSubtitleWhenTranscoding` | `false` | |
 | `AutoOpenLiveStream` | `false` | Until Live TV is planned |
 | `MaxStreamingBitrate` | the user's setting | The server lowers it further for remote clients (`GetMaxBitrate`, lines 495-517) |
@@ -185,9 +185,9 @@ No exception puts a token into a URL that Fluster builds or sends.
 Accepted by the owner with decision 0003 ("Decision (accepted)", item 7, D7), and recorded here by the clean-slate change (T1-06). The policy above was written for a client whose one engine, mpv, decodes nearly everything. On TV the device's engines decide what plays (Media3 first, libmpv later for originals only), so:
 
 - **I1 is per device.** The client plays the original file whenever the server offers direct play, the source passes the direct-play rules, and an engine on this device can play it. It never asks the server to convert such a source.
-- **The forced conversion.** When the server offers direct play but no engine on the device can play the source, the client sends one more PlaybackInfo for that `MediaSourceId` with `EnableDirectPlay: false` and `AllowVideoStreamCopy: false`, in body and query, and uses its answer with a client-side conversion reason that the indicator shows. If the answer still offers only direct play, the result is a typed refusal that says this device cannot play the file. There is never a third request. The flag table above holds for every other request.
+- **The forced conversion.** When the server offers direct play but no engine on the device can play the source, the client sends one more PlaybackInfo for that `MediaSourceId` with `EnableDirectPlay: false` and `AllowVideoStreamCopy: false`, in body and query, and uses its answer with a client-side conversion reason that the indicator shows. If the answer still offers only direct play, the result is a typed refusal that says this device cannot play the file. There is never a third request for the conversion. `AllowAudioStreamCopy` is also `false` when the judged audio is what the device cannot play, because the profile's `AudioCodec` list lets the server copy audio the device has no decoder for. The answer is used only when its URL shows stream copy is off (`AllowVideoStreamCopy=false`, and `AllowAudioStreamCopy=false` when the request turned it off); a conversion without them is refused, because the recorded forced-fallback answers show such a URL copies the source codec. Direct play offered again, or nothing offered, is the typed refusal, except that `SupportsTranscoding: false` keeps `conversion-not-allowed`. The flag table above holds for every other request.
 - **The DeviceProfile is unchanged.** It still has no codec or container condition; what the device can decode is a client-side capability list that the source decision reads, never something sent to the server.
 - **The tripwire is per device.** It runs with full capabilities (every playable sample must direct play with no job) and with capability sets that lack a sample's codec (that sample must convert with the client-side reason and leave no job), against Jellyfin 10.11, Jellyfin 12.4 and Jellyscale, each with its own expected result.
 - **Converted sessions on Android** are played by Media3 through a validating playlist parser, with the header on every request; mpv never plays HLS (decision 0003, D6). The HLS URL rules above are unchanged.
 
-Built by T2-07 (the decision and the second request) and T2-09 (the tripwire). `ARCHITECTURE.md` §3 and §4 carry the rule.
+Built by T2-07 (the decision and the second request; the audio flag rule and the answer table above) and T2-09 (the tripwire). `ARCHITECTURE.md` §3 and §4 carry the rule.

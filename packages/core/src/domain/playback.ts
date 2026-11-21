@@ -27,7 +27,9 @@ export type RefusalReason =
   | "iso-source"
   | "missing-source-data"
   | "conversion-not-allowed"
-  | "unsafe-transcoding-url";
+  | "unsafe-transcoding-url"
+  // The device cannot play the source and the server's answer to the forced conversion offered none (T2-07).
+  | "device-cannot-play";
 
 // How the media reaches the player (decision 0002). DirectPlay is the
 // original file; DirectStream is a server remux that copies video and audio;
@@ -69,6 +71,11 @@ export const CONVERSION_REASONS = [
 
 export type ConversionReason = (typeof CONVERSION_REASONS)[number];
 
+// Reasons Octave itself gives for a conversion; a server cannot set them (T2-07).
+export const CLIENT_CONVERSION_REASONS = ["DeviceCannotPlay"] as const;
+
+export type ClientConversionReason = (typeof CLIENT_CONVERSION_REASONS)[number];
+
 export interface PlaybackRefusal {
   reason: RefusalReason;
   detail?: string;
@@ -83,6 +90,7 @@ const REFUSAL_MESSAGES: Record<RefusalReason, string> = {
   "missing-source-data": "Jellyfin returned an incomplete media source for this item.",
   "conversion-not-allowed": "This item needs converting, and the server does not allow that for this account.",
   "unsafe-transcoding-url": "Jellyfin offered a stream address Octave will not use.",
+  "device-cannot-play": "This device cannot play the file, and the server offered no conversion.",
 };
 
 export class PlaybackRefusedError extends Error {
@@ -123,6 +131,8 @@ export type PlaybackDelivery =
     conversionReasons: readonly ConversionReason[];
     serverUrl: string;
     mediaKind: HlsMediaKind;
+    // Why Octave asked for this conversion itself; absent when the server chose it.
+    clientConversionReason?: ClientConversionReason;
   };
 
 export type PlaybackPlan = PlaybackPlanBase & PlaybackDelivery;

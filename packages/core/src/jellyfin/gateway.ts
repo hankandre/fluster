@@ -1,7 +1,8 @@
 import type { BrowseCard, BrowsePage, BrowseQuery, CardImageType, EpisodeCard, Genre, ItemDetail, LibraryItem, LibraryView, MediaCard, NextEpisode, SearchHint, SearchPage, SearchQuery, Season, SeriesNextUp } from "../domain/catalog";
 import { ItemNotFoundError } from "../domain/catalog";
 import type { RecentPlays } from "../domain/up-next";
-import type { PlaybackDelivery, PlaybackPlan, PlaybackPlanOptions, PlaybackSnapshot, ServerPlayMethod } from "../domain/playback";
+import type { DeviceCapabilities } from "../domain/device-capabilities";
+import type { ClientConversionReason, PlaybackDelivery, PlaybackPlan, PlaybackPlanOptions, PlaybackSnapshot, ServerPlayMethod } from "../domain/playback";
 import { PlaybackRefusedError, secondsToTicks } from "../domain/playback";
 import type { AccountLanguageChange, AccountLanguageSettings } from "../domain/account-language-choices";
 import type { AccountLanguages, LanguageCulture } from "../domain/languages";
@@ -26,7 +27,7 @@ import { AccountConfigurationUnreadable, isPlainRecord, toAccountLanguages, toAc
 import { toItemDetail } from "./item-detail";
 import { toMediaSegments, type MediaSegmentsResponse } from "./media-segments";
 import { findSessionPlayMethod, type SessionDto } from "./session-play-method";
-import { selectSource } from "./source-acceptance";
+import { decideForcedConversion, selectSource, sourcePlayability, type SourceDecision } from "./source-acceptance";
 import type {
   BaseItemDto,
   ItemsResult,
@@ -70,7 +71,13 @@ const QUICK_CONNECT_DEVICE_USER = "#quick-connect";
 
 // The decision 0002 "Negotiation" flags. They go in the body and the query
 // string, so a body-binding change on the server cannot flip them.
-// EnableDirectPlay is false only on the forced-fallback request.
+// EnableDirectPlay is false only on the forced-fallback request (a disc) and the
+// forced-conversion request, which also turns AllowVideoStreamCopy off (T2-07).
+// Where the gateway reads what the device can play, once per negotiation. The default states no limit.
+export interface DeviceCapabilitySource {
+  get(): DeviceCapabilities;
+}
+
 export const PLAYBACK_INFO_FLAGS = Object.freeze({
   EnableDirectPlay: true,
   EnableDirectStream: true,
@@ -186,6 +193,7 @@ export class JellyfinGateway {
     private readonly installId: string = crypto.randomId(),
     private readonly confirmations: LanHttpConfirmationStore = new MemoryLanHttpConfirmations(),
     private readonly streamingLimits: StreamingLimitStore = new MemoryStreamingLimits(),
+    private readonly deviceCapabilities: DeviceCapabilitySource = { get: () => "full" },
   ) {
     const { url, hostClass } = normalizeServerUrl(serverUrl);
     this.serverUrl = url.toString().replace(/\/$/, "");
@@ -765,30 +773,36 @@ export class JellyfinGateway {
     options: PlaybackPlanOptions = {},
   ): Promise<PlaybackPlan> {
     const limit = this.clientLimitBitrate(options);
+    const capabilities = this.deviceCapabilities.get();
+    const streams = streamIndices(options);
     const context = (answer: PlaybackInfoResponse) => ({
       serverUrl: this.serverUrl,
       itemId: item.id,
       playSessionId: answer.PlaySessionId,
+      capabilities,
+      audioStreamIndex: streams.AudioStreamIndex,
     });
-    const streams = streamIndices(options);
     // A viewer's audio pick (P17-08): the index, only when the session started from a pick and names its version.
     const picked = options.keepDirectPlay === true && mediaSourceId ? streams.AudioStreamIndex : undefined;
     let data = await this.playbackInfo(item.id, startPositionTicks, signal, mediaSourceId, true, limit, streams);
-    let decision = selectSource(data.MediaSources, context(data), mediaSourceId);
+    let decision: SourceDecision = selectSource(data.MediaSources, context(data), mediaSourceId);
     // Whether the answer in use was asked for with the pick.
     let carriesPick = streams.AudioStreamIndex !== undefined;
+    // The plain request is skipped when the first answer is a disc, or when the video cannot play: the plain answer
+    // judges the same video.
     if (picked !== undefined && decision.kind !== "force-fallback"
+      && !(decision.kind === "force-conversion" && decision.cannotPlay.video)
       && !(decision.kind === "direct-play" && hasEmbeddedAudio(decision.source, picked))) {
       // The same request without the index. A pick never costs a direct play (ARCHITECTURE.md §3, I1):
       // a plain answer that direct plays wins; otherwise the index's answer is kept unless it was refused.
       const { AudioStreamIndex: _dropped, ...plainStreams } = streams;
       const plain = await this.playbackInfo(item.id, startPositionTicks, signal, mediaSourceId, true, limit, plainStreams);
-      const plainDecision = selectSource(plain.MediaSources, context(plain), mediaSourceId);
+      const plainDecision = selectSource(plain.MediaSources, { ...context(plain), audioStreamIndex: undefined }, mediaSourceId);
       if (plainDecision.kind === "direct-play") {
         data = plain;
         decision = plainDecision;
         carriesPick = false;
-      } else if (decision.kind !== "convert" && decision.kind !== "direct-play") {
+      } else if (decision.kind !== "convert" && decision.kind !== "direct-play" && decision.kind !== "force-conversion") {
         // The first answer was refused, so the plain one is used. A first answer that direct plays or converts is kept and
         // carries the pick; a direct-played pick that is not an embedded track is dropped in mpv with a notice.
         data = plain;
@@ -805,12 +819,33 @@ export class JellyfinGateway {
       decision = selectSource(data.MediaSources, context(data), source.Id);
       if (decision.kind === "force-fallback") {
         decision = { kind: "refused", reason, detail: "direct play offered again" };
+      } else if (decision.kind === "force-conversion") {
+        // Never a second forced request for the same source.
+        decision = { kind: "refused", reason: "device-cannot-play", detail: "direct play offered again" };
       }
+    }
+    let clientConversionReason: ClientConversionReason | undefined;
+    if (decision.kind === "force-conversion") {
+      // Rule 5: the server offered direct play and the device cannot play the source. Ask once more for that source
+      // with direct play and video stream copy off; audio copy goes off too when the judged audio is what the device
+      // cannot play. The request carries the stream indices and the pick, and is never repeated.
+      const { source } = decision;
+      const audioCopyOff = !sourcePlayability(source, capabilities, streams.AudioStreamIndex).audio;
+      data = await this.playbackInfo(item.id, startPositionTicks, signal, source.Id, false, limit, streams, {
+        AllowVideoStreamCopy: false,
+        AllowAudioStreamCopy: !audioCopyOff,
+      });
+      carriesPick = streams.AudioStreamIndex !== undefined;
+      decision = decideForcedConversion(data.MediaSources, context(data), source.Id, audioCopyOff);
+      clientConversionReason = "DeviceCannotPlay";
     }
     if (decision.kind === "refused") {
       throw new PlaybackRefusedError({ reason: decision.reason, detail: decision.detail });
     }
     if (!data.PlaySessionId) throw new Error("Jellyfin did not provide a play-session ID.");
+    if (decision.kind === "force-conversion" || decision.kind === "force-fallback") {
+      throw new Error("Playback negotiation did not settle on a source.");
+    }
     const source = decision.source;
     const delivery: PlaybackDelivery = decision.kind === "direct-play"
       ? { delivery: "static", playMethod: "DirectPlay", conversionReasons: [] }
@@ -820,6 +855,7 @@ export class JellyfinGateway {
         conversionReasons: decision.conversionReasons,
         serverUrl: this.serverUrl,
         mediaKind: decision.mediaKind,
+        ...(clientConversionReason ? { clientConversionReason } : {}),
       };
     return {
       itemId: item.id,
@@ -834,7 +870,7 @@ export class JellyfinGateway {
       hasSegments: source.HasSegments === true,
       ...(typeof source.Bitrate === "number" ? { sourceBitrate: source.Bitrate } : {}),
       subtitlesBurnedIn: decision.kind === "convert" && decision.subtitlesBurnedIn,
-      playOriginalAvailable: decision.kind === "convert"
+      playOriginalAvailable: decision.kind === "convert" && clientConversionReason === undefined
         && limitIsOnlyReason(source, decision.conversionReasons, limit),
       tracks: (source.MediaStreams ?? []).flatMap((track) => {
         if (track.Index == null || !["Audio", "Subtitle", "Video"].includes(track.Type ?? "")) return [];
@@ -853,7 +889,8 @@ export class JellyfinGateway {
           ...(track.IsHearingImpaired ? { isHearingImpaired: true } : {}),
         }];
       }),
-      defaultAudioStreamIndex: picked !== undefined && (carriesPick || decision.kind === "direct-play") && hasEmbeddedAudio(source, picked)
+      defaultAudioStreamIndex: picked !== undefined && (carriesPick || (decision.kind === "direct-play" && sourcePlayability(source, capabilities, picked).audio))
+        && hasEmbeddedAudio(source, picked)
         ? picked
         : source.DefaultAudioStreamIndex ?? undefined,
       defaultSubtitleStreamIndex: source.DefaultSubtitleStreamIndex ?? undefined,
@@ -883,9 +920,10 @@ export class JellyfinGateway {
     enableDirectPlay: boolean,
     maxStreamingBitrate: number,
     streams: StreamIndexParams,
+    flagOverrides: { AllowVideoStreamCopy?: boolean; AllowAudioStreamCopy?: boolean } = {},
   ): Promise<PlaybackInfoResponse> {
     const { userId } = this.requireSession();
-    const flags = { ...PLAYBACK_INFO_FLAGS, EnableDirectPlay: enableDirectPlay };
+    const flags = { ...PLAYBACK_INFO_FLAGS, EnableDirectPlay: enableDirectPlay, ...flagOverrides };
     const request = {
       ...flags,
       AlwaysBurnInSubtitleWhenTranscoding: false,

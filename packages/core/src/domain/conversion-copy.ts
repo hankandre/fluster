@@ -1,4 +1,4 @@
-import type { ConversionReason, PlaybackPlan } from "./playback";
+import type { ClientConversionReason, ConversionReason, PlaybackPlan } from "./playback";
 
 // Plain-language reasons, written to follow "Converting on server: ". A
 // Record keyed by reason, so a new TranscodeReason fails compilation until it
@@ -34,6 +34,11 @@ export const CONVERSION_REASON_COPY: Record<ConversionReason, string> = {
   DirectPlayError: "playing the original file failed",
 };
 
+// Reasons Octave gives itself, worded like the server's.
+export const CLIENT_CONVERSION_REASON_COPY: Record<ClientConversionReason, string> = {
+  DeviceCannotPlay: "this device cannot play the original",
+};
+
 // The server sent no reason (a disc folder, for example).
 export const NO_REASON_COPY = "the server needs to convert this file";
 
@@ -65,6 +70,18 @@ export const BURNED_IN_COPY = "Subtitles are burned in";
 
 export function conversionIndicator(plan: PlaybackPlan | undefined): ConversionIndicator | undefined {
   if (!plan || plan.delivery === "static") return undefined;
+  const client = plan.clientConversionReason;
+  if (client) {
+    // The original is what the device cannot play, so this is always a conversion. DirectPlayError is what the
+    // server sends for every EnableDirectPlay:false request, so it is left out.
+    const server = plan.conversionReasons.filter((reason) => reason !== "DirectPlayError");
+    const clientCopy = CLIENT_CONVERSION_REASON_COPY[client];
+    return {
+      chip: `Converting on server: ${clientCopy}`,
+      reasons: [clientCopy, ...server.map((reason) => CONVERSION_REASON_COPY[reason])],
+      subtitlesBurnedIn: plan.subtitlesBurnedIn === true,
+    };
+  }
   const lead = leadingReason(plan.conversionReasons);
   const chip = plan.playMethod === "DirectStream"
     ? `Repackaging on server, original quality: ${lead}`
