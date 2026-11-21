@@ -666,7 +666,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "commit d0152073 (port, launch request, capabilities, typed errors) and commit 04a687dd (docs). check-red --expect green: items 1,2,3,4,6 green; item 5 red only by frozen T2-03 clock-driven.test.ts (passes on origin/main, fails here; D6 Product Owner ruling pending). core: 1912 passed, 2 failed. typecheck: 3 errors, all clock-driven.test.ts. No device, Android or server tested."
+          "evidence": "commit d0152073 (port, launch request, capabilities, typed errors; spec-check notes 1-12 resolved in spec) and commit 04a687dd (docs); PO ruling da3a8a59 on clock-driven.test.ts. pnpm check exit 0: core 78 files/1914 tests passed, workflow 20/314 passed, typecheck clean, flow ok. Items 1-6 all exit 0 (item 5: 14 files/168 tests). Not run: tripwire (no negotiation/reporting change), tv:wire/tv:e2e/tv:native:test (not built). No device, Android version, Jellyfin or Jellyscale server tested."
         },
         {
           "id": "T2-06",
