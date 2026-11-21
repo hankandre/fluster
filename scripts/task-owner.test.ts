@@ -81,6 +81,26 @@ describe("applyOps", () => {
     expect(wrongTask).toThrow(/T9-01/);
   });
 
+  it("a scope edit changes acceptance without an approval file and logs its reason", () => {
+    const out = applyOps(files(), [{ op: "edit", id: "T9-01", fields: { acceptance: ["moved path"] }, scope: "the fixtures moved" }], opts);
+    expect(JSON.parse(out.prd).phases[0].tasks[0].acceptance).toEqual(["moved path"]);
+    expect(out.summary.join("\n")).toMatch(/scope: T9-01 acceptance .*owner can veto.*the fixtures moved/);
+  });
+
+  it("a scope edit is refused for human or verify, and without a reason", () => {
+    const scope = (fields: Record<string, unknown>, reason: unknown = "why") => () => applyOps(files(), [{ op: "edit", id: "T9-01", fields, scope: reason }], opts);
+    expect(scope({ human: true })).toThrow(/owner_approval/);
+    expect(scope({ verify: "pnpm test" })).toThrow(/owner_approval/);
+    expect(scope({ acceptance: ["two"], verify: "pnpm test" })).toThrow(/owner_approval/);
+    expect(scope({ acceptance: ["two"] }, "")).toThrow(/scope/);
+    expect(scope({ acceptance: ["two"] }, 3)).toThrow(/scope/);
+  });
+
+  it("an owner_approval wins over scope and is still checked", () => {
+    const op = { op: "edit", id: "T9-01", fields: { acceptance: ["two"] }, scope: "why", owner_approval: "docs/specs/decisions-t9.md" };
+    expect(() => applyOps(files(), [op], opts)).toThrow(/does not name T9-01/);
+  });
+
   it("returns each approval path in the summary", () => {
     const out = applyOps(files(), [{ op: "edit", id: "T9-03", fields: { acceptance: ["two"] }, owner_approval: "docs/specs/decisions-t9.md" }], opts);
     expect(out.summary.join("\n")).toContain("docs/specs/decisions-t9.md");
