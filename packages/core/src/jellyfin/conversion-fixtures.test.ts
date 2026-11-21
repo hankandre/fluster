@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-// The wire fields these tests read. src/lib/jellyfin/types.ts gains them with P10-03.
+// The wire fields these tests read. packages/core/src/jellyfin/types.ts gains them with P10-03.
 interface FixtureStream {
   Type?: string;
   DeliveryMethod?: string;
@@ -25,7 +25,7 @@ interface PlaybackInfoResponse {
 // Replays conversion fixtures recorded with the decision 0002 profile and flags
 // (docs/decisions/0002-server-transcoding-fallback.md; tests/integration/record-fixtures.mjs).
 // These tests assert what the servers answered, so P10-03 can build the decision function on facts.
-const fixtureRoot = join(__dirname, "../../../tests/fixtures/jellyfin");
+const fixtureRoot = join(__dirname, "../../tests/fixtures/jellyfin");
 const versions = ["10.11.7", "12.4.0"] as const;
 
 function load(version: string, name: string): PlaybackInfoResponse {

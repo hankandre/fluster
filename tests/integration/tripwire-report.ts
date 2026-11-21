@@ -1,6 +1,6 @@
 // Result types, redaction, and the summary table for the tripwire (tripwire.ts).
-import type { ServerPlayMethod } from "../../src/domain/playback";
-import { redactText } from "../../src/lib/redact";
+import type { ServerPlayMethod } from "../../packages/core/src/domain/playback";
+import { redactText } from "../../packages/core/src/redact";
 import type { AfterStopObservation, Expectation, FailureKind, SampleStatus } from "./tripwire-rules";
 
 export interface MediaRequestLog {

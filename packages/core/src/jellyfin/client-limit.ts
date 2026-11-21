@@ -1,7 +1,7 @@
 // Decides whether the user's own streaming limit is the only reason the
 // server converts a source (decision 0002 policy 4), so "Play original" may be
 // offered. It never offers when the server's policy could be the cause.
-import type { ConversionReason } from "../../domain/playback";
+import type { ConversionReason } from "../domain/playback";
 import { MAX_BITRATE } from "./device-profile";
 import type { MediaSourceDto } from "./types";
 

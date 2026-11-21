@@ -1,5 +1,5 @@
-import type { PlayedEntry, RecentPlays } from "../../domain/up-next";
-import type { BrowseCard, CardImageType, EpisodeCard, Genre, ImageRef, LibraryView, MediaCard, NextEpisode, SearchCard, SeriesNextUp, SearchHint, SearchKind, Season } from "../../domain/catalog";
+import type { PlayedEntry, RecentPlays } from "../domain/up-next";
+import type { BrowseCard, CardImageType, EpisodeCard, Genre, ImageRef, LibraryView, MediaCard, NextEpisode, SearchCard, SeriesNextUp, SearchHint, SearchKind, Season } from "../domain/catalog";
 import type { BaseItemDto, SearchHintDto } from "./types";
 
 const POSTER_ASPECT_RATIO = 2 / 3;

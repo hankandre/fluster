@@ -5,9 +5,9 @@ import { toBrowseCards } from "./cards";
 import type { BaseItemDto } from "./types";
 
 // Replays the personal-rating fixtures (P16-13) recorded by tests/integration/record-rating-fixtures.mjs.
-// These tests assert what the two pinned servers answered; tests/fixtures/jellyfin/README.md states the
+// These tests assert what the two pinned servers answered; packages/core/tests/fixtures/jellyfin/README.md states the
 // same facts in the same words. Never edit a fixture to fit a test: record it again.
-const fixtureRoot = join(__dirname, "../../../tests/fixtures/jellyfin");
+const fixtureRoot = join(__dirname, "../../tests/fixtures/jellyfin");
 const versions = ["10.11.7", "12.4.0"] as const;
 
 interface WireUserData {

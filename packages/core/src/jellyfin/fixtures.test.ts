@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { LibraryItem } from "../../domain/catalog";
-import { PlaybackRefusedError } from "../../domain/playback";
+import type { LibraryItem } from "../domain/catalog";
+import { PlaybackRefusedError } from "../domain/playback";
 import { OCTAVE_PROFILE } from "./device-profile";
 import { JellyfinGateway } from "./gateway";
 import type { HttpRequestConfig, HttpTransport, PlaybackInfoResponse } from "./types";
@@ -9,7 +9,7 @@ import type { HttpRequestConfig, HttpTransport, PlaybackInfoResponse } from "./t
 // (tests/integration/record-fixtures.mjs) through the current gateway.
 // Tests named "current gap" document behavior that later tasks change; they
 // should be rewritten then.
-const fixtureFiles = import.meta.glob("../../../tests/fixtures/jellyfin/*/playbackinfo-*.json", {
+const fixtureFiles = import.meta.glob("../../tests/fixtures/jellyfin/*/playbackinfo-*.json", {
   eager: true,
   import: "default",
 }) as Record<string, PlaybackInfoResponse>;

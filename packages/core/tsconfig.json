@@ -17,8 +17,7 @@
     "noEmit": true
   },
   "include": [
-    "src/domain/**/*.ts",
-    "src/lib/**/*.ts"
+    "src/**/*.ts"
   ],
   "exclude": [
     "**/*.test.ts"

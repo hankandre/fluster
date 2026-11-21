@@ -1,7 +1,7 @@
 import axios from "axios";
 import { describe, expect, it, vi } from "vitest";
-import type { LibraryItem } from "../../domain/catalog";
-import { PlaybackRefusedError, type PlaybackPlan, type PlaybackSnapshot } from "../../domain/playback";
+import type { LibraryItem } from "../domain/catalog";
+import { PlaybackRefusedError, type PlaybackPlan, type PlaybackSnapshot } from "../domain/playback";
 import { OCTAVE_PROFILE } from "./device-profile";
 import {
   buildStaticStreamUrl,

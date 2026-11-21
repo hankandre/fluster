@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ItemNotFoundError } from "../../domain/catalog";
+import { ItemNotFoundError } from "../domain/catalog";
 import { JellyfinGateway } from "./gateway";
 import type { HttpRequestConfig, HttpResponse, HttpTransport } from "./types";
 

@@ -8,8 +8,8 @@ import type {
   SubtitleInfo,
   TrickplayInfo,
   VideoInfo,
-} from "../../domain/catalog";
-import { ticksToSeconds } from "../../domain/playback";
+} from "../domain/catalog";
+import { ticksToSeconds } from "../domain/playback";
 import { logoAndThumb, toGenres } from "./cards";
 import type { BaseItemDto, MediaSourceDto, MediaStreamDto, TrickplayInfoDto } from "./types";
 

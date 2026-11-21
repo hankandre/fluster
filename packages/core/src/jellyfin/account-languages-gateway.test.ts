@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { languageKey } from "../../domain/languages";
+import { languageKey } from "../domain/languages";
 import { CONTROL_REQUEST_TIMEOUT_MS, JellyfinGateway } from "./gateway";
 import type { HttpRequestConfig, HttpResponse, HttpTransport } from "./types";
 
@@ -48,7 +48,7 @@ async function signedIn() {
   return { gateway, transport };
 }
 
-const root = join(__dirname, "../../../tests/fixtures/jellyfin");
+const root = join(__dirname, "../../tests/fixtures/jellyfin");
 function load<T>(version: string, name: string): T {
   return JSON.parse(readFileSync(join(root, version, `account-language-${name}.json`), "utf8")) as T;
 }

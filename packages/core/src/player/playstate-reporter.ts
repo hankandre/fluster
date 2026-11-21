@@ -1,4 +1,4 @@
-import type { PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
+import type { PlaybackPlan, PlaybackSnapshot } from "../domain/playback";
 import { reportedPlan } from "./confirm-play-method";
 
 // The warning for a failed progress or stopped report. The view turns it into

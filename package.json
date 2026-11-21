@@ -6,7 +6,7 @@
   "license": "GPL-3.0-only",
   "type": "module",
   "scripts": {
-    "test": "vitest run",
+    "test": "pnpm --filter @octave/core --fail-if-no-match test && vitest run",
     "test:watch": "vitest",
     "task": "node scripts/task.mjs",
     "test:workflow": "node --test .claude/workflows/task.test.mjs",
@@ -20,12 +20,8 @@
     "lint:backlog": "node scripts/check-backlog.mjs",
     "lint:ghost-terms": "node scripts/check-ghost-terms.mjs",
     "lint:flow": "node scripts/check-flow.mjs",
-    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.core.json",
+    "typecheck": "tsc -p tsconfig.json && tsc -p packages/core/tsconfig.json",
     "check": "pnpm lint:boundaries && pnpm lint && pnpm lint:ghost-terms && pnpm lint:flow && pnpm test && pnpm typecheck && pnpm test:workflow"
-  },
-  "dependencies": {
-    "@jellyfin/sdk": "1.0.2",
-    "axios": "^1.21.1"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",

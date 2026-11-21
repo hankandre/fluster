@@ -1,7 +1,7 @@
 // Host classes for plain-HTTP decisions (docs/decisions/0001).
 // The classifier reads only the literal host of a parsed URL, never a DNS
 // answer. Every native classifier implements the same rules (Kotlin in
-// T3-03), and each is tested against tests/fixtures/host-classes.json.
+// T3-03), and each is tested against packages/core/tests/fixtures/host-classes.json.
 
 export type HostClass = "loopback" | "private-lan" | "public";
 

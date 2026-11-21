@@ -1,7 +1,7 @@
 import { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { describe, expect, it, vi } from "vitest";
-import type { LibraryItem } from "../../domain/catalog";
-import type { PlaybackPlan, PlaybackSnapshot, PlayerEngine } from "../../domain/playback";
+import type { LibraryItem } from "../domain/catalog";
+import type { PlaybackPlan, PlaybackSnapshot, PlayerEngine } from "../domain/playback";
 import { PlaybackCoordinator, type PlaybackGateway } from "../player/coordinator";
 import { failureAction, stopFailureAction } from "../player/session-failure";
 import { classifyTransportError } from "../transport-error";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PlaybackPlan } from "../domain/playback";
+import type { PlaybackPlan } from "./domain/playback";
 import { limitChangeAffects, limitMbpsFor, MemoryStreamingLimits, sanitizeLimits } from "./streaming-limits";
 
 describe("streaming limits", () => {

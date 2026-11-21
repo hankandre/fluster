@@ -4,16 +4,16 @@ import type { BaseItemDto, MediaSourceDto } from "./types";
 
 // Items recorded from Jellyfin 10.11.7 and 12.4.0 with the detail view's exact
 // request, GET /Items/{id}?userId and no fields (tests/integration/record-fixtures.mjs).
-const itemFixtures = import.meta.glob("../../../tests/fixtures/jellyfin/*/item-detail-no-fields-multi-version.json", {
+const itemFixtures = import.meta.glob("../../tests/fixtures/jellyfin/*/item-detail-no-fields-multi-version.json", {
   eager: true,
   import: "default",
 }) as Record<string, BaseItemDto>;
-const hdr10Fixtures = import.meta.glob("../../../tests/fixtures/jellyfin/*/item-detail-no-fields-hevc-hdr10.json", {
+const hdr10Fixtures = import.meta.glob("../../tests/fixtures/jellyfin/*/item-detail-no-fields-hevc-hdr10.json", {
   eager: true,
   import: "default",
 }) as Record<string, BaseItemDto>;
 
-const multitrackFixtures = import.meta.glob("../../../tests/fixtures/jellyfin/*/item-detail-no-fields-multitrack*.json", {
+const multitrackFixtures = import.meta.glob("../../tests/fixtures/jellyfin/*/item-detail-no-fields-multitrack*.json", {
   eager: true,
   import: "default",
 }) as Record<string, BaseItemDto>;

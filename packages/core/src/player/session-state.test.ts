@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PlaybackSnapshot } from "../../domain/playback";
+import type { PlaybackSnapshot } from "../domain/playback";
 import { initialPlaybackSessionState, playbackSessionReducer } from "./session-state";
 
 const snapshot: PlaybackSnapshot = {

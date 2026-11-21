@@ -3,8 +3,8 @@
 // in-memory store. A shell that can persist supplies its own store. The
 // values are non-secret preferences and are never stored with or derived from
 // a token.
-import type { HostClass } from "../domain/host-class";
-import type { PlaybackPlan } from "../domain/playback";
+import type { HostClass } from "./domain/host-class";
+import type { PlaybackPlan } from "./domain/playback";
 
 // Megabits per second; undefined is "No limit".
 export const STREAMING_LIMIT_CHOICES_MBPS = [120, 80, 40, 20, 10, 8, 4, 2] as const;

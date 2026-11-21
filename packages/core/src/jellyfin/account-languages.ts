@@ -1,5 +1,5 @@
-import type { AccountLanguageChange, AccountLanguageSettings } from "../../domain/account-language-choices";
-import type { AccountLanguages, LanguageCulture } from "../../domain/languages";
+import type { AccountLanguageChange, AccountLanguageSettings } from "../domain/account-language-choices";
+import type { AccountLanguages, LanguageCulture } from "../domain/languages";
 import type { CultureDto } from "./types";
 
 function isRecord(value: unknown): value is Record<string, unknown> {

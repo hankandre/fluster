@@ -1,4 +1,4 @@
-import { CONVERSION_REASONS, type ConversionReason, type PlayMethod, type ServerPlayMethod } from "../../domain/playback";
+import { CONVERSION_REASONS, type ConversionReason, type PlayMethod, type ServerPlayMethod } from "../domain/playback";
 
 // The fields Octave reads from GET /Sessions (SessionInfoDto in
 // @jellyfin/sdk 1.0.2: DeviceId, NowPlayingItem, PlayState with MediaSourceId
