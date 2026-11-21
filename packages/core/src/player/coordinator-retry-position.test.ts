@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { LibraryItem } from "../domain/catalog";
 import type { PlaybackPlan, PlaybackSnapshot, PlayerEngine, PlayerEvent } from "../domain/playback";
 import { PlaybackCoordinator, type PlaybackGateway } from "./coordinator";
+import { FakeClock } from "../ports/fake-clock";
 
 const item: LibraryItem = { id: "one", name: "One", type: "Movie", resumePositionTicks: 120_000_000, played: false };
 const item2: LibraryItem = { id: "two", name: "Two", type: "Movie", resumePositionTicks: 0, played: false };
@@ -65,7 +66,7 @@ function setup() {
     stopActiveEncoding: vi.fn(async () => undefined),
   } as PlaybackGateway;
   const player = new FakePlayer();
-  const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
+  const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
   const emit = async (event: PlayerEvent) => {
     player.listener?.(event);
     await coordinator.flush();
