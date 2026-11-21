@@ -256,6 +256,58 @@ may have loaded the host while the browse spike was measuring.
    `TITLE="Spider-Man: Into the Spider-Verse" YEAR=2018 MODE=jellyscale ./run-play.sh <serial> shield`.
 3. **Dune** for at least 2 minutes with DV output on, to see whether profile 7 shows as DV on the TV.
 
+## Shield run, night of 2026-11-20
+
+The coordinator's night agent ran this at 00:00–00:06 CST on 21 November.
+- It held an exclusive lock on the Shield, and no other agent was on it.
+- Both runs used `MODE=jellyscale` with `PLAY_SECS=130`, the fixed APK in `dist/`, and the server
+  address only in the shell environment.
+
+**HWC before each run:** `HWC Support: wideColorGamut=true hdr10plus=false hdr10=false hlg=false
+dv=false metadata=3`. `dumpsys display` reported `HdrCapabilities{mSupportedHdrTypes=[],
+mMaxLuminance=500.0}`, `mActiveColorMode=0`, and mode 3840×2160 at 59.94 Hz. So the sink reported
+no HDR. **Item 1 (Alien with HDR on) was not re-run**, because the condition `hdr10=true` was not
+met.
+- At 23:05 the Shield was asleep with display power off. Whether the TV was on, and on which
+  input, is unknown; no tool here reads it.
+
+| Run (`results/…`) | Title | Result | First frame (launch / prepare) | `am start` TotalTime | Rendered / dropped | Rebuffers | Proxy | Control |
+|---|---|---|---|---|---|---|---|---|
+| `shield-jellyscale-SpiderManIntotheSpiderVerse-20261121-000031` | Spider-Man: Into the Spider-Verse (2018) | **played 137 s** | 4.26 s / 2.99 s | 810 ms | 3,283 / **0** | 0 | **PASS** | **401** |
+| `shield-jellyscale-Dune-20261121-000314` | Dune (2021) | **played 139 s** | 2.29 s / 1.25 s | 519 ms | 3,325 / **0** | 0 | **PASS** | **401** |
+
+- **Lookup and plan.**
+  - Spider-Man: the fixed title compare found it (`lookup ok kind=Movie year=2018`).
+  - Both titles planned `delivery=static playMethod=DirectPlay reasons=[]`.
+  - Track counts: Spider-Man 56, Dune 17.
+- **Decoders.**
+  - Spider-Man is `video/dolby-vision`, `dvhe.08.06`, 3840×2160, BT.2020/ST 2084, 10-bit, decoded by
+    `OMX.Nvidia.h265.decode`. That is profile 8.6 as HEVC through its HDR10 base layer.
+  - Dune is `dvhe.07.06`, decoded by `OMX.Nvidia.DOVI.decode`.
+  - Audio for both is AC-3 5.1 passed through (`encoding=5`, tunneling and offload off).
+- **Proxy, per run.**
+  - 11 requests and 2 tokenless ones (public info and sign-in).
+  - 0 credential parameters, 0 tokens in URLs, 0 wrong hosts, 0 upstream 3xx.
+  - 4 probe redirects served, 0 probe target hits, 0 canary hits, 3 stream requests.
+  - The app refused the off-origin and `api_key` probes.
+  - Streamed: Spider-Man 1.07 GB, Dune 1.25 GB, counted per chunk now.
+- **The remount fix held on the Shield.** Each run had a single `session started`, and neither run
+  restarted.
+- **Video layer.**
+  - The app's layer is `appId=10154`, which is `dev.fluster.spike.play`'s uid. It was composed in
+    hardware (`DEVICE`, 3840×2160).
+  - Spider-Man's layer had `dataspace=0x41b41f30` and Dune's `0xd576d023`, both with `hdr metadata
+    types=2`. The afternoon runs showed `0xc` and types 0.
+  - Neither value is a standard `Dataspace`. What Nvidia's HWC means by them is **unverified**.
+  - Types bit 2 is CTA-861.3 content light level in the HWC metadata mask, so HDR metadata is now
+    attached to the layer.
+  - The display stayed `isHdr=false` before and after the first frame.
+- **HDR and DV output: still not shown.** With a sink that reports no HDR, neither title can show HDR
+  or DV on the TV. Item 3's question (whether profile 7 shows as DV on the TV) stays open, and so does
+  item 1.
+- **Still needed:** with the TV on an HDR/DV-capable input and the Shield allowing HDR (`hdr10=true`
+  and `dv=true` in HWC Support), re-run Alien and Dune.
+
 ## Verified vs unverified
 
 | Claim | Status | Evidence |

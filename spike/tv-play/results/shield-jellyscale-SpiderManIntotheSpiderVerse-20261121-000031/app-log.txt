@@ -1,0 +1,42 @@
+--------- beginning of system
+--------- beginning of main
+11-21 00:00:37.681 25482 25512 I ReactNativeJS: Running "main"
+11-21 00:00:37.695 25482 25512 I OCTAVE_PLAY: launch config keys: [canary, pass, server, title, user, year]
+11-21 00:00:37.804 25482 25512 I ReactNativeJS: OCTAVE_JS connected version=12.4.0 hostClass=loopback confirm=false
+11-21 00:00:37.929 25482 25512 I ReactNativeJS: OCTAVE_JS signed in after 233ms
+11-21 00:00:37.992 25482 25512 I ReactNativeJS: OCTAVE_JS lookup ok kind=Movie year=2018
+11-21 00:00:38.080 25482 25512 I ReactNativeJS: OCTAVE_JS plan delivery=static playMethod=DirectPlay reasons=[] tracks=56
+11-21 00:00:38.091 25482 25512 I ReactNativeJS: OCTAVE_JS js probes {"redirectSameStatus":302,"redirectCanaryStatus":302}
+11-21 00:00:38.091 25482 25512 I OCTAVE_HTTP: session started (scheme=http)
+11-21 00:00:38.097 25482 25517 W OCTAVE_HTTP: received a redirect (302); not followed
+11-21 00:00:38.099 25482 25517 W OCTAVE_HTTP: received a redirect (302); not followed
+11-21 00:00:38.100 25482 25517 W OCTAVE_HTTP: refused a request to another origin (count=1)
+11-21 00:00:38.100 25482 25517 W OCTAVE_HTTP: refused a URL that carries a credential (count=1)
+11-21 00:00:38.100 25482 25517 I OCTAVE_PLAY: native probes {redirectSameStatus=302, redirectCanaryStatus=302, offOriginStatus=-1, offOriginRefused=true, apiKeyUrlRefused=true}
+11-21 00:00:38.101 25482 25512 I ReactNativeJS: OCTAVE_JS native probes {"redirectSameStatus":302,"redirectCanaryStatus":302,"offOriginStatus":-1,"offOriginRefused":true,"apiKeyUrlRefused":true}
+11-21 00:00:38.101 25482 25512 I ReactNativeJS: OCTAVE_JS control requests=4 ready after 405ms
+11-21 00:00:38.158 25482 25482 I OCTAVE_PLAY: display[before-play] isHdr=false hdrTypes=[] mode=3840x2160@59.94006 maxLum=500.0
+11-21 00:00:38.174 25482 25482 I OCTAVE_PLAY: T+1286ms state=BUFFERING rebuffers=0
+11-21 00:00:38.175 25482 25482 I OCTAVE_PLAY: T+1269ms prepare
+11-21 00:00:40.666 25482 25482 I OCTAVE_PLAY: VIDEO_DECODER name=OMX.Nvidia.h265.decode initMs=56
+11-21 00:00:40.667 25482 25482 I OCTAVE_PLAY: VIDEO_FORMAT mime=video/dolby-vision codecs=dvhe.08.06 3840x2160 fps=-1.0 bitrate=-1 color=[space=6 transfer=6 range=2 hdrStaticInfo=false lumaBits=10]
+11-21 00:00:40.672 25482 25482 I OCTAVE_PLAY: AUDIO_FORMAT mime=audio/ac3 codecs=null channels=6 rate=48000 lang=en
+11-21 00:00:40.842 25482 25482 I OCTAVE_PLAY: AUDIO_TRACK encoding=5 rate=48000 channelConfig=252 tunneling=false offload=false
+11-21 00:00:41.147 25482 25482 I OCTAVE_PLAY: FIRST_FRAME T+4258ms (launch to first frame), prepare to first frame 2989ms
+11-21 00:00:41.250 25482 25482 I OCTAVE_PLAY: T+4361ms state=READY rebuffers=0
+11-21 00:00:41.250 25482 25482 I OCTAVE_PLAY: T+4362ms isPlaying=true
+11-21 00:00:44.149 25482 25482 I OCTAVE_PLAY: display[after-first-frame] isHdr=false hdrTypes=[] mode=3840x2160@59.94006 maxLum=500.0
+11-21 00:00:48.176 25482 25482 I OCTAVE_PLAY: stats[tick] T+11287ms pos=6816ms rendered=166 dropped=0 maxConsecDropped=0 skipped=0 droppedEvents=0 rebuffers=0 http=5 redirects=2 refusedOffOrigin=1 refusedCredentialUrl=1
+11-21 00:00:58.177 25482 25482 I OCTAVE_PLAY: stats[tick] T+21288ms pos=16825ms rendered=406 dropped=0 maxConsecDropped=0 skipped=0 droppedEvents=0 rebuffers=0 http=5 redirects=2 refusedOffOrigin=1 refusedCredentialUrl=1
+11-21 00:01:08.179 25482 25482 I OCTAVE_PLAY: stats[tick] T+31290ms pos=26831ms rendered=645 dropped=0 maxConsecDropped=0 skipped=0 droppedEvents=0 rebuffers=0 http=5 redirects=2 refusedOffOrigin=1 refusedCredentialUrl=1
+11-21 00:01:18.180 25482 25482 I OCTAVE_PLAY: stats[tick] T+41291ms pos=36826ms rendered=885 dropped=0 maxConsecDropped=0 skipped=0 droppedEvents=0 rebuffers=0 http=5 redirects=2 refusedOffOrigin=1 refusedCredentialUrl=1
+11-21 00:01:28.181 25482 25482 I OCTAVE_PLAY: stats[tick] T+51292ms pos=46833ms rendered=1125 dropped=0 maxConsecDropped=0 skipped=0 droppedEvents=0 rebuffers=0 http=5 redirects=2 refusedOffOrigin=1 refusedCredentialUrl=1
+11-21 00:01:38.181 25482 25482 I OCTAVE_PLAY: stats[tick] T+61292ms pos=56831ms rendered=1365 dropped=0 maxConsecDropped=0 skipped=0 droppedEvents=0 rebuffers=0 http=5 redirects=2 refusedOffOrigin=1 refusedCredentialUrl=1
+11-21 00:01:48.182 25482 25482 I OCTAVE_PLAY: stats[tick] T+71293ms pos=66827ms rendered=1605 dropped=0 maxConsecDropped=0 skipped=0 droppedEvents=0 rebuffers=0 http=5 redirects=2 refusedOffOrigin=1 refusedCredentialUrl=1
+11-21 00:01:58.183 25482 25482 I OCTAVE_PLAY: stats[tick] T+81294ms pos=76829ms rendered=1844 dropped=0 maxConsecDropped=0 skipped=0 droppedEvents=0 rebuffers=0 http=5 redirects=2 refusedOffOrigin=1 refusedCredentialUrl=1
+11-21 00:02:08.183 25482 25482 I OCTAVE_PLAY: stats[tick] T+91294ms pos=86837ms rendered=2084 dropped=0 maxConsecDropped=0 skipped=0 droppedEvents=0 rebuffers=0 http=5 redirects=2 refusedOffOrigin=1 refusedCredentialUrl=1
+11-21 00:02:18.184 25482 25482 I OCTAVE_PLAY: stats[tick] T+101295ms pos=96830ms rendered=2324 dropped=0 maxConsecDropped=0 skipped=0 droppedEvents=0 rebuffers=0 http=5 redirects=2 refusedOffOrigin=1 refusedCredentialUrl=1
+11-21 00:02:28.185 25482 25482 I OCTAVE_PLAY: stats[tick] T+111296ms pos=106837ms rendered=2564 dropped=0 maxConsecDropped=0 skipped=0 droppedEvents=0 rebuffers=0 http=5 redirects=2 refusedOffOrigin=1 refusedCredentialUrl=1
+11-21 00:02:38.186 25482 25482 I OCTAVE_PLAY: stats[tick] T+121297ms pos=116839ms rendered=2804 dropped=0 maxConsecDropped=0 skipped=0 droppedEvents=0 rebuffers=0 http=5 redirects=2 refusedOffOrigin=1 refusedCredentialUrl=1
+11-21 00:02:48.187 25482 25482 I OCTAVE_PLAY: stats[tick] T+131298ms pos=126830ms rendered=3043 dropped=0 maxConsecDropped=0 skipped=0 droppedEvents=0 rebuffers=0 http=5 redirects=2 refusedOffOrigin=1 refusedCredentialUrl=1
+11-21 00:02:58.188 25482 25482 I OCTAVE_PLAY: stats[tick] T+141299ms pos=136833ms rendered=3283 dropped=0 maxConsecDropped=0 skipped=0 droppedEvents=0 rebuffers=0 http=5 redirects=2 refusedOffOrigin=1 refusedCredentialUrl=1
