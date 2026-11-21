@@ -203,7 +203,7 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 | Concern | Owns | Today | Target |
 |---|---|---|---|
-| **Security & Redaction** | Token boundary, the one authenticated client, URL and playlist validation, redaction, canary tests | `packages/core/src/redact.ts`, `packages/core/src/safe-reason.ts`, `packages/core/src/transport-error.ts`, `packages/core/src/domain/host-class.ts`, `packages/core/tests/fixtures/`, `docs/security.md` | `packages/core`, the native HTTP module (T3-03), `modules/player` (T8-08) |
+| **Security & Redaction** | Token boundary, the one authenticated client, URL and playlist validation, redaction, canary tests | `packages/core/src/redact.ts`, `packages/core/src/safe-reason.ts`, `packages/core/src/transport-error.ts`, `packages/core/src/domain/host-class.ts`, `packages/core/src/conformance/`, `packages/core/tests/fixtures/`, `docs/security.md` | `packages/core`, the native HTTP module (T3-03), `modules/player` (T8-08) |
 | **Diagnostics** | The player's info sheet, decoder labels, exportable diagnostics that pass redaction | `packages/core/src/diagnostics.ts` | `apps/tv` (T3-01) and `modules/player` (T8-01) |
 | **Performance** | The budget (cold start, key to focus, janky frames, memory), Baseline Profile, image loading | n/a | T3-12, T3-13, T3-14 |
 | **Device lab** | The Shield and the cheap box, on-device checks | n/a | T0-06, the Shield checks |
