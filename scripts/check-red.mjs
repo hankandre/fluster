@@ -56,6 +56,29 @@ function runItem(entry, repo) {
   return { started: true, passed: out.status === 0 };
 }
 
+// The task's acceptance array in tasks/prd.json is the count check-flow uses, so check-red uses it too.
+function acceptanceCountOf(repo, id) {
+  try {
+    const prd = JSON.parse(readFileSync(join(repo, "tasks", "prd.json"), "utf8"));
+    for (const phase of prd.phases || []) {
+      for (const task of phase.tasks || []) if (task.id === id) return Array.isArray(task.acceptance) ? task.acceptance.length : null;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+// Every path the freeze commit (HEAD) changed, other than the manifest, must be a listed file, so none escapes the freeze.
+function unlistedFreezePaths(repo, manifestPath, files) {
+  try {
+    const out = execFileSync("git", ["diff-tree", "--no-commit-id", "--name-only", "-r", "-M", "--root", "HEAD"], { cwd: repo, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+    return out.split("\n").filter((path) => path && path !== manifestPath && !files.includes(path));
+  } catch {
+    return [];
+  }
+}
+
 export function checkRed({ id, repo, expect }) {
   const result = { task: id, expect, red: [], green: [], gates: [], blobs: {}, problems: [] };
   const manifestPath = `docs/specs/${id}.tests.json`;
@@ -69,8 +92,13 @@ export function checkRed({ id, repo, expect }) {
     return { result, status: 2 };
   }
   const rows = acceptanceRows(spec);
+  const count = acceptanceCountOf(repo, id);
+  if (count === null) result.problems.push(`ERROR red: ${id} has no acceptance items in tasks/prd.json`);
   if (rows.length === 0) result.problems.push(`ERROR red: docs/specs/${id}.md has no Acceptance table rows`);
-  result.problems.push(...validateManifest(manifest, id, rows.length));
+  else if (count !== null && rows.length !== count) {
+    result.problems.push(`ERROR red: docs/specs/${id}.md has ${rows.length} Acceptance rows but tasks/prd.json has ${count} acceptance items; the spec table must match the task`);
+  }
+  if (count !== null) result.problems.push(...validateManifest(manifest, id, count));
   if (result.problems.length === 0) result.problems.push(...compareGates(manifest, parseSpecGates(spec)));
   if (result.problems.length > 0) return { result, status: 2 };
   for (const path of [manifestPath, ...manifest.files]) {
@@ -79,6 +107,9 @@ export function checkRed({ id, repo, expect }) {
     } catch {
       result.problems.push(`ERROR red: ${path} is not committed at HEAD; commit the tests and the manifest first`);
     }
+  }
+  for (const path of unlistedFreezePaths(repo, manifestPath, manifest.files)) {
+    result.problems.push(`ERROR red: ${path} was changed by the freeze commit but is not in the manifest's files, so it would not be frozen; list it or leave it out of that commit`);
   }
   for (const entry of manifest.items) {
     if ("gate" in entry) {

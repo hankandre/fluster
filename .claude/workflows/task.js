@@ -83,17 +83,21 @@ const HIGH_RISK_PATH =
 const NATIVE_PATH = /^(modules\/|apps\/tv\/android\/)/;
 // PATHS-END
 // GATE-BEGIN (pure; extracted and tested by .claude/workflows/task.test.mjs)
-// A gate agent relays a script's exit code and its last stdout line (one JSON line). These functions decide what the run does with it.
+// A gate agent relays a script's exit code and its output: one JSON line on stdout, then any ERROR lines from stderr. These functions decide what the run does with it.
 const STOP_OUTCOMES = ['denied', 'tests-green', 'frozen-tests'];
 function readGate(gate) {
   if (!gate || typeof gate.exitCode !== 'number' || typeof gate.output !== 'string') return null;
   const lines = gate.output.split('\n').map((line) => line.trim()).filter(Boolean);
-  try {
-    const value = JSON.parse(lines[lines.length - 1]);
-    return value !== null && typeof value === 'object' && !Array.isArray(value) ? value : null;
-  } catch (error) {
-    return null;
+  // The last line that parses as a JSON object: ERROR lines may follow it.
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    try {
+      const value = JSON.parse(lines[i]);
+      if (value !== null && typeof value === 'object' && !Array.isArray(value)) return value;
+    } catch (error) {
+      // not JSON; keep looking
+    }
   }
+  return null;
 }
 const unreadable = (what) => ({ action: 'retry', unreadable: true, detail: `${what} gave no readable result` });
 // check-red.mjs <ID>: every run must be red before implementation. Returns the frozen blob ids and the gated items on pass.
@@ -496,7 +500,7 @@ ${ciSteps.join('\n')}` : ''}`;
   if (!ship) return result('failed', 'The ship agent returned nothing.');
   if (denied(ship)) return result('denied', denied(ship));
   if (!ship.merged && ship.ciFailures && ship.ciFailures.length) {
-    const fixedRun = await guarded(`CI failed on the PR. Fix the cause, commit, and push:\n${ship.ciFailures.join('\n')}`, `fix CI ${task}`, 'Ship');
+    const fixedRun = await guarded(`CI failed on the PR. Fix the cause and commit. Do not push, amend, squash or rebase: the run checks the frozen tests first, and the Ship step pushes afterwards.\n${ship.ciFailures.join('\n')}`, `fix CI ${task}`, 'Ship');
     if (fixedRun.stop) return fixedRun.stop;
     const fixed = fixedRun.out;
     if (denied(fixed)) return result('denied', denied(fixed));

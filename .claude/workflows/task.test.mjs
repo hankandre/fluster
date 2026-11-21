@@ -16,8 +16,8 @@ const { MODELS, resolveModels } = new Function(`${block}; return { MODELS, resol
 const stepBlock = src.split('// STEP-BEGIN')[1].split('\n').slice(1).join('\n').split('// STEP-END')[0];
 const { mergeUnique, decideStep } = new Function(`${stepBlock}; return { mergeUnique, decideStep };`)();
 const gateBlock = src.split('// GATE-BEGIN')[1].split('\n').slice(1).join('\n').split('// GATE-END')[0];
-const { STOP_OUTCOMES, decideRed, decideGreen, decideFrozen } = new Function(
-  `${gateBlock}; return { STOP_OUTCOMES, decideRed, decideGreen, decideFrozen };`,
+const { STOP_OUTCOMES, readGate, decideRed, decideGreen, decideFrozen } = new Function(
+  `${gateBlock}; return { STOP_OUTCOMES, readGate, decideRed, decideGreen, decideFrozen };`,
 )();
 
 test('no override returns the defaults', () => {
@@ -228,6 +228,23 @@ test('the from comment and whenToUse name the tests phase and the new args', () 
   assert.match(comment, /from: "check" \| "tests" \| "implement" \| "review"/);
   assert.match(comment, /preFlow/);
   assert.match(comment, /approvedFrozen/);
+});
+
+test('readGate takes the last JSON line even when ERROR lines follow it', () => {
+  const body = { ok: false, missingManifest: true, problems: ['x'] };
+  const gate = { exitCode: 1, output: `${JSON.stringify(body)}\nERROR frozen test: no manifest\n`, deniedCommands: [] };
+  assert.deepEqual(readGate(gate), body);
+  assert.equal(decideFrozen(gate, [], undefined, false).action, 'blocked');
+  assert.equal(readGate({ exitCode: 1, output: 'ERROR only\nmore', deniedCommands: [] }), null);
+});
+
+test('the CI fix does not push, and the Product Owner pass cleans up on every exit but a merge', () => {
+  const ciFix = between('const fixedRun = await guarded', "if (fixed && (fixed.ciOnly");
+  assert.match(ciFix, /Do not push/);
+  const pass = readFileSync(new URL('./product-owner.js', import.meta.url), 'utf8');
+  assert.match(pass, /worktree remove --force/);
+  for (const outcome of ['failed', 'denied', 'nothing-to-do', 'ci-red']) assert.match(pass, new RegExp(`leave\\(\\{ outcome: '${outcome}'`), outcome);
+  assert.doesNotMatch(pass, /return \{ outcome: '(failed|denied|nothing-to-do|ci-red)'/);
 });
 
 test('STOP_OUTCOMES holds the three outcomes that end a whole batch', () => {

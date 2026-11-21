@@ -20,15 +20,20 @@ const PASS = ["node", "-e", "process.exit(0)"];
 const FAIL = ["node", "-e", "process.exit(1)"];
 
 type Item = Record<string, unknown>;
-function setup(items: Item[], spec = "# spec\n\n## Acceptance\n\n| # | item | tested |\n|---|---|---|\n| 1 | a | b |\n| 2 | c | d |\n", extra: Record<string, unknown> = {}) {
+function setup(items: Item[], spec = "# spec\n\n## Acceptance\n\n| # | item | tested |\n|---|---|---|\n| 1 | a | b |\n| 2 | c | d |\n", extra: Record<string, unknown> = {}, acceptance = ["a", "c"], freezeExtra: string[] = []) {
   const dir = mkdtempSync(join(tmpdir(), "check-red-"));
   dirs.push(dir);
   mkdirSync(join(dir, "docs", "specs"), { recursive: true });
+  mkdirSync(join(dir, "tasks"), { recursive: true });
+  writeFileSync(join(dir, "docs", "specs", "T9-01.md"), spec);
+  writeFileSync(join(dir, "tasks", "prd.json"), JSON.stringify({ phases: [{ id: "T9", tasks: [{ id: "T9-01", acceptance }] }] }));
+  git(dir, "init", "-q");
+  git(dir, "add", "-A");
+  git(dir, "commit", "-q", "-m", "spec");
   const manifest = { task: "T9-01", files: ["a.test.ts"], items, ...extra };
   writeFileSync(join(dir, "docs", "specs", "T9-01.tests.json"), JSON.stringify(manifest));
-  writeFileSync(join(dir, "docs", "specs", "T9-01.md"), spec);
   writeFileSync(join(dir, "a.test.ts"), "// test\n");
-  git(dir, "init", "-q");
+  for (const path of freezeExtra) writeFileSync(join(dir, path), "// extra\n");
   git(dir, "add", "-A");
   git(dir, "commit", "-q", "-m", "freeze");
   return dir;
@@ -88,6 +93,19 @@ describe("check-red", () => {
     const r = run(setup([{ item: 1, run: PASS }, { item: 2, run: FAIL }]), "--expect", "green");
     expect(r.status).toBe(1);
     expect(r.json.red).toEqual([2]);
+  });
+
+  it("exits 2 when the spec table and the task's acceptance array disagree on the count", () => {
+    const spec = "## Acceptance\n\n| 1 | a | b |\n| 2 | c | d |\n| 3 | e | f |\n";
+    const r = run(setup([{ item: 1, run: FAIL }, { item: 2, run: FAIL }, { item: 3, run: FAIL }], spec));
+    expect(r.status).toBe(2);
+    expect(r.json.problems.join("\n")).toMatch(/3 Acceptance rows but tasks\/prd.json has 2/);
+  });
+
+  it("exits 2 when the freeze commit changed a file the manifest does not list", () => {
+    const r = run(setup([{ item: 1, run: FAIL }, { item: 2, run: FAIL }], undefined, {}, ["a", "c"], ["src-foo.test.ts"]));
+    expect(r.status).toBe(2);
+    expect(r.json.problems.join("\n")).toMatch(/src-foo\.test\.ts.*not in the manifest's files/);
   });
 
   it("refuses an unknown --expect", () => {
