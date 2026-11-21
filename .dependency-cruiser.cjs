@@ -1,5 +1,5 @@
 // Import-boundary rules from DOMAINS.md "Dependency rules", run on packages/core/src (T2-02).
-// Test files are exempt from every rule. Tighten these rules; never loosen them.
+// Test files are exempt from every rule except core-is-platform-free. Tighten these rules; never loosen them.
 const tests = "\\.test\\.ts$";
 
 module.exports = {
@@ -16,8 +16,8 @@ module.exports = {
       name: "core-is-platform-free",
       severity: "error",
       comment:
-        "DOMAINS.md > Dependency rules 2: the core runs on any host. It must not import React, React Native, Expo, or a native module, installed or not. Take what you need as a constructor argument or a port type, and let the app's composition root supply it.",
-      from: { path: "^packages/core/src/", pathNot: tests },
+        "DOMAINS.md > Dependency rules 2: the core runs on any host. No core file, tests included, may import React, React Native, Expo, or a native module, installed or not. Take what you need as a constructor argument or a port type, and let the app's composition root supply it.",
+      from: { path: "^packages/core/src/" },
       to: {
         path: "(^|node_modules/)(react|react-dom|react-native|react-native-[^/]+|expo|expo-[^/]+|@expo/[^/]+|@react-native/[^/]+|@react-native-[^/]+/[^/]+|@tanstack/[^/]+)(/|$)|^(apps|modules)/",
       },
@@ -43,6 +43,5 @@ module.exports = {
     // Check type-only imports too; domain types must not depend on the SDK.
     tsPreCompilationDeps: true,
     doNotFollow: { path: "node_modules" },
-    exclude: { path: tests },
   },
 };
