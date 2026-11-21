@@ -712,10 +712,10 @@
             "Decision 0002's flag table and invariant I1 are amended in the same PR"
           ],
           "verify": "pnpm --filter @octave/core test",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "commit 2110f86d (tip of task/T2-07; impl a02f5a18, frozen fixes 4fc62d06). pnpm check exit 0, core 2566 pass, check-red green 1-8, tripwire pass on pinned servers. Item 9 review gate open. Notes 1-12 are in the spec."
+          "passes": true,
+          "evidence": "commit 6fc83c99 (tip of task/T2-07; impl a02f5a18, frozen fixes 4fc62d06, review fixes 6fc83c99). pnpm check exit 0: core 2570 tests pass, workflow 335. check-red green items 1-8; item 9 met by review. pnpm test:tripwire pass on Jellyfin 10.11.7 and 12.4.0 (local fixtures, 2026-11-21). Untested gates: Jellyscale wire test (T8-07, pnpm tv:wire not built), tripwire per capability set (T2-09); no device tested. Review lows in docs/plans/active/001-t2-07-review-followups.md."
         },
         {
           "id": "T2-08",
