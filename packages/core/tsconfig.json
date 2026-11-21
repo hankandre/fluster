@@ -4,9 +4,7 @@
     "lib": [
       "ES2022"
     ],
-    "types": [
-      "node"
-    ],
+    "types": [],
     "skipLibCheck": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
@@ -17,7 +15,8 @@
     "noEmit": true
   },
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "host-globals.d.ts"
   ],
   "exclude": [
     "**/*.test.ts"
