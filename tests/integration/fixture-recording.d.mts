@@ -22,3 +22,4 @@ export function makeSaver(options: {
   scrub: (data: unknown) => unknown;
   secrets: string[];
 }): (file: string, data: unknown) => void;
+export function watchSignIns(secrets: string[]): () => void;

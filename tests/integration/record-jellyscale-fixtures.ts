@@ -18,7 +18,7 @@ import type { LibraryItem } from "../../packages/core/src/domain/catalog";
 import { OCTAVE_PROFILE } from "../../packages/core/src/jellyfin/device-profile";
 import { JellyfinGateway, PLAYBACK_INFO_FLAGS } from "../../packages/core/src/jellyfin/gateway";
 import type { Transport, TransportRequest, TransportResponse } from "../../packages/core/src/ports/transport";
-import { CLIENT, callStatus, makeSaver, makeScrubber, readCredentials } from "./fixture-recording.mjs";
+import { CLIENT, callStatus, makeSaver, makeScrubber, readCredentials, watchSignIns } from "./fixture-recording.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const composePath = join(here, "docker-compose.yml");
@@ -123,6 +123,8 @@ class RecordingTransport implements Transport {
 async function record(): Promise<void> {
   const raw = await signIn();
   const secrets = [raw.token];
+  // The gateway's own session has a token the core never sees; catch it as its sign-in answer passes.
+  const stopWatching = watchSignIns(secrets);
   const items = await findItems(raw.token);
   const h264 = need(items, "Movie", "Synthetic H264");
   const multitrack = need(items, "Movie", "Synthetic Multitrack");
@@ -146,6 +148,8 @@ async function record(): Promise<void> {
   // A second sign-in, through the transport, so the gateway holds a transport session. The raw one above is the
   // answer saved as signin-octave-test.json, because the transport hands the gateway a session id and no body.
   await gateway.login(username, password);
+  stopWatching();
+  if (secrets.length < 2) throw new Error("the gateway session's token was not captured; refusing to record.");
 
   mkdirSync(outDir, { recursive: true });
   const scrub = makeScrubber({

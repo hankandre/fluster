@@ -57,6 +57,29 @@ export async function callStatus(base, token, method, path, { query, body } = {}
   return { status: response.status, data };
 }
 
+// Adds the AccessToken of every sign-in answer that passes through fetch to `secrets`, so a session opened by another
+// client (the gateway's transport) is redacted and swept like the recorder's own. Call it before the first sign-in;
+// the returned function puts the original fetch back.
+export function watchSignIns(secrets) {
+  const original = globalThis.fetch;
+  globalThis.fetch = async (input, init) => {
+    const response = await original(input, init);
+    const url = String(input instanceof Request ? input.url : input);
+    if (response.ok && /\/Users\/Authenticate[^/?]*(?:\?|$)/.test(url)) {
+      try {
+        const token = (await response.clone().json())?.AccessToken;
+        if (typeof token === "string" && token && !secrets.includes(token)) secrets.push(token);
+      } catch {
+        // Not JSON: nothing to record.
+      }
+    }
+    return response;
+  };
+  return () => {
+    globalThis.fetch = original;
+  };
+}
+
 export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 
