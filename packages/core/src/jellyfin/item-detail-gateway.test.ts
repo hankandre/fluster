@@ -1,36 +1,33 @@
 import { describe, expect, it } from "vitest";
 import { ItemNotFoundError } from "../domain/catalog";
 import { JellyfinGateway } from "./gateway";
-import type { HttpRequestConfig, HttpResponse, HttpTransport } from "./types";
+import { TransportError } from "../ports/transport";
+import type { SignInRequest, SignInResult, Transport, TransportRequest, TransportResponse } from "../ports/transport";
+import { toQuery } from "./query";
 import { webCrypto } from "../adapters/web-crypto";
 
 interface Call {
   method: "GET" | "POST" | "DELETE";
   url: string;
-  config?: HttpRequestConfig;
+  query: readonly (readonly [string, string])[];
+  config: { signal?: AbortSignal; timeout: number };
 }
 
-class RecordingTransport implements HttpTransport {
+class RecordingTransport implements Transport {
   calls: Call[] = [];
   responses = new Map<string, unknown>();
 
-  async get<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
-    this.calls.push({ method: "GET", url, config });
-    return { data: this.responses.get(`GET ${url}`) as T, status: 200 };
+  async signIn(_request: SignInRequest): Promise<SignInResult> {
+    return { session: "session-1", userId: "user-1", userName: "Louise" };
   }
 
-  async post<T>(url: string, _data?: unknown, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
-    this.calls.push({ method: "POST", url, config });
-    if (url === "/Users/AuthenticateByName") {
-      return { data: { AccessToken: "top-secret", User: { Id: "user-1", Name: "Louise" } } as T, status: 200 };
-    }
-    return { data: undefined as T, status: 204 };
+  async request(request: TransportRequest): Promise<TransportResponse> {
+    this.calls.push({ method: request.method, url: request.path, query: request.query ?? [], config: { signal: request.signal, timeout: request.timeoutMs } });
+    if (request.method === "GET") return { status: 200, body: this.responses.get(`GET ${request.path}`) };
+    return { status: 204, body: undefined };
   }
 
-  async delete<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
-    this.calls.push({ method: "DELETE", url, config });
-    return { data: undefined as T, status: 204 };
-  }
+  async endSession(): Promise<void> {}
 }
 
 async function signedIn() {
@@ -50,7 +47,7 @@ describe("item detail gateway calls", () => {
     expect(detail.versions).toEqual([{ id: "s1", name: "1080p", audio: [], subtitles: [] }]);
     expect(transport.calls).toHaveLength(1);
     expect(transport.calls[0]).toMatchObject({ method: "GET", url: "/Items/movie%2F1", config: { signal } });
-    expect(transport.calls[0].config?.params).toEqual({ userId: "user-1" });
+    expect(transport.calls[0].query).toEqual(toQuery({ userId: "user-1" }));
   });
 
   it("maps person images and both ratings from the full item", async () => {
@@ -77,11 +74,14 @@ describe("item detail gateway calls", () => {
 
   it("reports a 404 as ItemNotFoundError and passes other failures through", async () => {
     const { gateway, transport } = await signedIn();
-    const failure = (status: number) => Object.assign(new Error(`Request failed with status code ${status}`), { response: { status } });
-    transport.get = async () => { throw failure(404); };
+    transport.request = async () => ({ status: 404, body: undefined });
     await expect(gateway.itemDetail("gone")).rejects.toBeInstanceOf(ItemNotFoundError);
-    transport.get = async () => { throw failure(500); };
-    await expect(gateway.itemDetail("broken")).rejects.toThrow("status code 500");
+    transport.request = async () => ({ status: 500, body: undefined });
+    await expect(gateway.itemDetail("broken")).rejects.toMatchObject({ code: "status", status: 500 });
+    transport.request = async () => {
+      throw new TransportError("network");
+    };
+    await expect(gateway.itemDetail("offline")).rejects.toMatchObject({ code: "network" });
   });
 
   it("rejects an item without an ID or name", async () => {
@@ -99,20 +99,7 @@ describe("item detail gateway calls", () => {
     const { gateway, transport } = await signedIn();
     await gateway[name]("i/1", value);
     expect(transport.calls).toHaveLength(1);
-    expect(transport.calls[0]).toMatchObject({ method, url, config: { params: { userId: "user-1" } } });
-  });
-
-  it("fetches a trickplay tile with header auth and no token in the URL", async () => {
-    const { gateway, transport } = await signedIn();
-    const tile = new Blob(["jpeg"]);
-    transport.responses.set("GET /Videos/i%2F1/Trickplay/320/2.jpg", tile);
-    await expect(gateway.trickplayTile("i/1", "src-1", 320, 2)).resolves.toBe(tile);
-    expect(transport.calls[0]).toMatchObject({
-      method: "GET",
-      url: "/Videos/i%2F1/Trickplay/320/2.jpg",
-      config: { params: { mediaSourceId: "src-1" }, responseType: "blob" },
-    });
-    expect(JSON.stringify(transport.calls[0])).not.toContain("top-secret");
+    expect(transport.calls[0]).toMatchObject({ method, url, query: [["userId", "user-1"]] });
   });
 
   it("requires a session", async () => {

@@ -3,7 +3,9 @@ import type { LibraryItem } from "../domain/catalog";
 import { PlaybackRefusedError, type PlaybackPlan } from "../domain/playback";
 import { OCTAVE_PROFILE } from "./device-profile";
 import { JellyfinGateway } from "./gateway";
-import type { HttpRequestConfig, HttpTransport, PlaybackInfoResponse } from "./types";
+import { toQuery } from "./query";
+import type { PlaybackInfoResponse } from "./types";
+import type { SignInRequest, SignInResult, Transport, TransportRequest, TransportResponse } from "../ports/transport";
 import { webCrypto } from "../adapters/web-crypto";
 
 // Replays the P10-02 conversion fixtures (recorded on Jellyfin 10.11.7 and
@@ -24,30 +26,26 @@ function fixture(version: string, name: string): PlaybackInfoResponse {
 interface PostRecord {
   url: string;
   data: Record<string, unknown>;
-  params: Record<string, unknown>;
+  query: readonly (readonly [string, string])[];
 }
 
 // Answers PlaybackInfo requests in order; the last answer repeats.
-class QueueTransport implements HttpTransport {
+class QueueTransport implements Transport {
   posts: PostRecord[] = [];
 
   constructor(private readonly answers: PlaybackInfoResponse[]) {}
 
-  async get<T>(): Promise<{ data: T }> {
-    throw new Error("unexpected GET");
+  async signIn(_request: SignInRequest): Promise<SignInResult> {
+    return { session: "session-1", userId: "user-test", userName: "tester" };
   }
 
-  async post<T>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<{ data: T }> {
-    if (url === "/Users/AuthenticateByName") {
-      return { data: { AccessToken: "test-token", User: { Id: "user-test", Name: "tester" } } as T };
-    }
-    this.posts.push({ url, data: data as Record<string, unknown>, params: config?.params ?? {} });
+  async endSession(): Promise<void> {}
+
+  async request(request: TransportRequest): Promise<TransportResponse> {
+    if (request.method !== "POST") throw new Error(`unexpected ${request.method}`);
+    this.posts.push({ url: request.path, data: request.body as Record<string, unknown>, query: request.query ?? [] });
     const answer = this.answers[Math.min(this.posts.length - 1, this.answers.length - 1)];
-    return { data: structuredClone(answer) as T };
-  }
-
-  async delete<T>(): Promise<{ data: T }> {
-    throw new Error("unexpected DELETE");
+    return { status: 200, body: structuredClone(answer) };
   }
 }
 
@@ -129,7 +127,7 @@ describe.each(["10.11.7", "12.4.0"])("negotiation with the conversion fixtures f
       MaxStreamingBitrate: 1000000000,
       DeviceProfile: OCTAVE_PROFILE,
     });
-    expect(request.params).toEqual({ ...FLAGS, UserId: "user-test", StartTimeTicks: 0, MaxStreamingBitrate: 1000000000 });
+    expect(request.query).toEqual(toQuery({ ...FLAGS, UserId: "user-test", StartTimeTicks: 0, MaxStreamingBitrate: 1000000000 }));
   });
 
   // The server offers direct play for the ISO (P10-02), so rule 4 applies.
@@ -141,7 +139,7 @@ describe.each(["10.11.7", "12.4.0"])("negotiation with the conversion fixtures f
     expect(first.data).toMatchObject({ EnableDirectPlay: true });
     expect(first.data).not.toHaveProperty("MediaSourceId");
     expect(second.data).toMatchObject({ ...FLAGS, EnableDirectPlay: false, MediaSourceId: "item-iso", DeviceProfile: OCTAVE_PROFILE });
-    expect(second.params).toEqual({ ...FLAGS, EnableDirectPlay: false, UserId: "user-test", StartTimeTicks: 0, MaxStreamingBitrate: 1000000000 });
+    expect(second.query).toEqual(toQuery({ ...FLAGS, EnableDirectPlay: false, UserId: "user-test", StartTimeTicks: 0, MaxStreamingBitrate: 1000000000 }));
     // The URL's AudioCodec lists the profile's codecs, not the source's ac3,
     // so the audio may be re-encoded: Transcode.
     expect(plan).toMatchObject({ delivery: "hls", playMethod: "Transcode", mediaSourceId: "item-iso" });

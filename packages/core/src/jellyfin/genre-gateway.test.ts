@@ -3,7 +3,9 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { JellyfinGateway } from "./gateway";
 import { toItemDetail } from "./item-detail";
-import type { BaseItemDto, HttpRequestConfig, HttpResponse, HttpTransport } from "./types";
+import type { BaseItemDto } from "./types";
+import type { SignInRequest, SignInResult, Transport, TransportRequest, TransportResponse } from "../ports/transport";
+import { toQuery } from "./query";
 import { webCrypto } from "../adapters/web-crypto";
 
 // Genre browsing's requests, answered by the P16-01 fixtures of both pinned servers.
@@ -13,28 +15,26 @@ const load = (version: string, name: string): unknown => JSON.parse(readFileSync
 
 interface Call {
   url: string;
-  params?: Record<string, unknown>;
+  query: readonly (readonly [string, string])[];
+  params: Record<string, string>;
 }
 
-class FixtureTransport implements HttpTransport {
+class FixtureTransport implements Transport {
   calls: Call[] = [];
   answers = new Map<string, unknown>();
 
-  async get<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
-    this.calls.push({ url, params: config?.params });
-    return { data: this.answers.get(url) as T, status: 200 };
+  async signIn(_request: SignInRequest): Promise<SignInResult> {
+    return { session: "session-1", userId: "user-1", userName: "Louise" };
   }
 
-  async post<T>(url: string): Promise<HttpResponse<T>> {
-    if (url === "/Users/AuthenticateByName") {
-      return { data: { AccessToken: "top-secret", User: { Id: "user-1", Name: "Louise" } } as T, status: 200 };
-    }
-    throw new Error(`unexpected POST ${url}`);
+  async request(request: TransportRequest): Promise<TransportResponse> {
+    if (request.method !== "GET") throw new Error(`unexpected ${request.method} ${request.path}`);
+    const query = request.query ?? [];
+    this.calls.push({ url: request.path, query, params: Object.fromEntries(query) });
+    return { status: 200, body: this.answers.get(request.path) };
   }
 
-  async delete<T>(): Promise<HttpResponse<T>> {
-    throw new Error("unexpected DELETE");
-  }
+  async endSession(): Promise<void> {}
 }
 
 async function signedIn() {
@@ -52,7 +52,8 @@ describe.each(versions)("Genre calls, Jellyfin %s", (version) => {
     const { gateway, transport } = await signedIn();
     transport.answers.set("/Genres", load(version, "discovery-genres-movies"));
     const genres = await gateway.libraryGenres("lib-1");
-    expect(transport.calls).toEqual([{ url: "/Genres", params: { userId: "user-1", parentId: "lib-1" } }]);
+    expect(transport.calls.map((call) => call.url)).toEqual(["/Genres"]);
+    expect(transport.calls[0]?.query).toEqual(toQuery({ userId: "user-1", parentId: "lib-1" }));
     expect(genres.map((genre) => genre.name)).toEqual(["Comedy", "Documentary", "Drama", "Mystery", "Science Fiction"]);
     expect(genres.map((genre) => genre.id)).toContain("genre-mystery");
   });
@@ -67,7 +68,7 @@ describe.each(versions)("Genre calls, Jellyfin %s", (version) => {
     const { gateway, transport } = await signedIn();
     transport.answers.set("/Items", load(version, "discovery-items-by-genre"));
     const result = await gateway.libraryItems("lib-1", { ...page, genreId: "genre-mystery" });
-    expect(transport.calls[0]?.params).toMatchObject({ parentId: "lib-1", genreIds: "genre-mystery", recursive: true, includeItemTypes: "Movie,Series" });
+    expect(transport.calls[0]?.params).toMatchObject({ parentId: "lib-1", genreIds: "genre-mystery", recursive: "true", includeItemTypes: "Movie,Series" });
     expect(result.cards.map((card) => card.title)).toEqual(["Synthetic ASS (2024)", "Synthetic H264 (2024)"]);
   });
 

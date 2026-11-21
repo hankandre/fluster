@@ -4,7 +4,8 @@ import { MemoryStreamingLimits, type StreamingLimits } from "../streaming-limits
 import { limitIsOnlyReason } from "./client-limit";
 import { OCTAVE_PROFILE, MAX_BITRATE } from "./device-profile";
 import { JellyfinGateway } from "./gateway";
-import type { HttpRequestConfig, HttpTransport, PlaybackInfoResponse } from "./types";
+import type { PlaybackInfoResponse } from "./types";
+import type { SignInRequest, SignInResult, Transport, TransportRequest, TransportResponse } from "../ports/transport";
 import { webCrypto } from "../adapters/web-crypto";
 
 const directPlay = (): PlaybackInfoResponse => ({
@@ -27,28 +28,24 @@ const limited = (reasons = "ContainerBitrateExceedsLimit", bitrate = 50_000_000)
 
 interface Post {
   data: Record<string, unknown>;
-  params: Record<string, unknown>;
+  params: Record<string, string>;
 }
 
-class Transport implements HttpTransport {
+class FakePlaybackTransport implements Transport {
   posts: Post[] = [];
 
   constructor(private readonly answer: (call: number) => PlaybackInfoResponse) {}
 
-  async get<T>(): Promise<{ data: T }> {
-    throw new Error("unexpected GET");
+  async signIn(_request: SignInRequest): Promise<SignInResult> {
+    return { session: "session-1", userId: "user-test", userName: "tester" };
   }
 
-  async post<T>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<{ data: T }> {
-    if (url === "/Users/AuthenticateByName") {
-      return { data: { AccessToken: "test-token", User: { Id: "user-test", Name: "tester" } } as T };
-    }
-    this.posts.push({ data: data as Record<string, unknown>, params: config?.params ?? {} });
-    return { data: structuredClone(this.answer(this.posts.length)) as T };
-  }
+  async endSession(): Promise<void> {}
 
-  async delete<T>(): Promise<{ data: T }> {
-    throw new Error("unexpected DELETE");
+  async request(request: TransportRequest): Promise<TransportResponse> {
+    if (request.method !== "POST") throw new Error(`unexpected ${request.method}`);
+    this.posts.push({ data: request.body as Record<string, unknown>, params: Object.fromEntries(request.query ?? []) });
+    return { status: 200, body: structuredClone(this.answer(this.posts.length)) };
   }
 }
 
@@ -60,7 +57,7 @@ async function negotiate(
   answer: (call: number) => PlaybackInfoResponse,
   options?: { ignoreStreamingLimit?: boolean },
 ) {
-  const transport = new Transport(answer);
+  const transport = new FakePlaybackTransport(answer);
   const gateway = new JellyfinGateway(server, webCrypto, transport, "install-1", undefined, new MemoryStreamingLimits(limits));
   await gateway.login("tester", "password");
   const plan = await gateway.createPlaybackPlan(ITEM, 0, undefined, undefined, options);
@@ -71,7 +68,7 @@ describe("MaxStreamingBitrate", () => {
   it("defaults to no limit: the existing large value in body, query, and profile", async () => {
     const { posts } = await negotiate("https://media.example.com", {}, directPlay);
     expect(posts[0].data.MaxStreamingBitrate).toBe(MAX_BITRATE);
-    expect(posts[0].params.MaxStreamingBitrate).toBe(MAX_BITRATE);
+    expect(posts[0].params.MaxStreamingBitrate).toBe(String(MAX_BITRATE));
     expect(posts[0].data.DeviceProfile).toEqual(OCTAVE_PROFILE);
   });
 
@@ -82,21 +79,21 @@ describe("MaxStreamingBitrate", () => {
   ])("sends the local limit to %s (%s) in body, query, and profile", async (server) => {
     const { posts } = await negotiate(server, { localMbps: 20, remoteMbps: 4 }, directPlay);
     expect(posts[0].data.MaxStreamingBitrate).toBe(20_000_000);
-    expect(posts[0].params.MaxStreamingBitrate).toBe(20_000_000);
+    expect(posts[0].params.MaxStreamingBitrate).toBe(String(20_000_000));
     expect((posts[0].data.DeviceProfile as { MaxStreamingBitrate: number }).MaxStreamingBitrate).toBe(20_000_000);
   });
 
   it("sends the remote limit to a public host in body and query", async () => {
     const { posts } = await negotiate("https://media.example.com", { localMbps: 20, remoteMbps: 4 }, directPlay);
     expect(posts[0].data.MaxStreamingBitrate).toBe(4_000_000);
-    expect(posts[0].params.MaxStreamingBitrate).toBe(4_000_000);
+    expect(posts[0].params.MaxStreamingBitrate).toBe(String(4_000_000));
   });
 
   it("does not apply the remote limit to a local server, or the local limit to a public one", async () => {
     const local = await negotiate("https://192.168.1.5:8920", { remoteMbps: 4 }, directPlay);
-    expect(local.posts[0].params.MaxStreamingBitrate).toBe(MAX_BITRATE);
+    expect(local.posts[0].params.MaxStreamingBitrate).toBe(String(MAX_BITRATE));
     const remote = await negotiate("https://media.example.com", { localMbps: 4 }, directPlay);
-    expect(remote.posts[0].params.MaxStreamingBitrate).toBe(MAX_BITRATE);
+    expect(remote.posts[0].params.MaxStreamingBitrate).toBe(String(MAX_BITRATE));
   });
 
   it("keeps the limit on every request of a negotiation", async () => {
@@ -107,7 +104,7 @@ describe("MaxStreamingBitrate", () => {
     expect(posts).toHaveLength(2);
     for (const post of posts) {
       expect(post.data.MaxStreamingBitrate).toBe(8_000_000);
-      expect(post.params.MaxStreamingBitrate).toBe(8_000_000);
+      expect(post.params.MaxStreamingBitrate).toBe(String(8_000_000));
     }
   });
 
@@ -119,7 +116,7 @@ describe("MaxStreamingBitrate", () => {
   it("sends no limit when the caller skips the user's limit", async () => {
     const { posts } = await negotiate("https://media.example.com", { remoteMbps: 4 }, directPlay, { ignoreStreamingLimit: true });
     expect(posts[0].data.MaxStreamingBitrate).toBe(MAX_BITRATE);
-    expect(posts[0].params.MaxStreamingBitrate).toBe(MAX_BITRATE);
+    expect(posts[0].params.MaxStreamingBitrate).toBe(String(MAX_BITRATE));
   });
 });
 

@@ -1,4 +1,3 @@
-import axios from "axios";
 import { describe, expect, it, vi } from "vitest";
 import type { LibraryItem } from "../domain/catalog";
 import { PlaybackRefusedError, type PlaybackPlan, type PlaybackSnapshot } from "../domain/playback";
@@ -8,69 +7,16 @@ import {
   CONTROL_REQUEST_TIMEOUT_MS,
   PLAYBACK_INFO_FLAGS,
   JellyfinGateway,
-  type ClientIdentity,
   PUBLIC_HTTP_REFUSED_MESSAGE,
   REDIRECT_REFUSED_MESSAGE,
   REPORT_REQUEST_TIMEOUT_MS,
   UNENCRYPTED_NOT_CONFIRMED_MESSAGE,
 } from "./gateway";
 import type { LanHttpConfirmation, LanHttpConfirmationStore } from "../lan-http-confirmations";
-import type { HttpRequestConfig, HttpResponse, HttpTransport } from "./types";
+import { TransportError } from "../ports/transport";
 import { webCrypto } from "../adapters/web-crypto";
-
-interface RequestRecord {
-  method: "GET" | "POST" | "DELETE";
-  url: string;
-  data?: unknown;
-  params?: Record<string, unknown>;
-  headers?: Record<string, string>;
-  signal?: AbortSignal;
-  timeout?: number;
-}
-
-class FakeTransport implements HttpTransport {
-  requests: RequestRecord[] = [];
-  responses = new Map<string, unknown>();
-  // Status codes to resolve with, as Axios does for a WebView opaque redirect.
-  statuses = new Map<string, number>();
-
-  async get<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
-    this.requests.push({
-      method: "GET",
-      url,
-      params: config?.params,
-      headers: config?.headers,
-      signal: config?.signal,
-      timeout: config?.timeout,
-    });
-    return { data: this.responses.get(`GET ${url}`) as T, status: this.statuses.get(`GET ${url}`) };
-  }
-
-  async post<T>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
-    this.requests.push({
-      method: "POST",
-      url,
-      data,
-      params: config?.params,
-      headers: config?.headers,
-      signal: config?.signal,
-      timeout: config?.timeout,
-    });
-    return { data: this.responses.get(`POST ${url}`) as T, status: this.statuses.get(`POST ${url}`) };
-  }
-
-  async delete<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
-    this.requests.push({
-      method: "DELETE",
-      url,
-      params: config?.params,
-      headers: config?.headers,
-      signal: config?.signal,
-      timeout: config?.timeout,
-    });
-    return { data: this.responses.get(`DELETE ${url}`) as T, status: this.statuses.get(`DELETE ${url}`) };
-  }
-}
+import { FakeTransport } from "./fake-transport";
+import { toQuery } from "./query";
 
 const item: LibraryItem = {
   id: "item/one",
@@ -129,31 +75,19 @@ describe("JellyfinGateway direct-play contract", () => {
     expect(message).not.toContain("swordfish");
   });
 
-  it("configures an isolated SDK transport with the Jellyfin base URL and device authorization", async () => {
-    const get = vi.fn().mockResolvedValue({ data: { ServerName: "Home", Version: "10.11.11" } });
-    const isolatedAxios = {
-      defaults: { headers: { common: {} as Record<string, string> } },
-      get,
-      post: vi.fn(),
-    };
-    const create = vi.spyOn(axios, "create").mockReturnValue(isolatedAxios as never);
-    try {
-      const gateway = new JellyfinGateway("https://media.test/jellyfin/", webCrypto);
-      await gateway.connect();
-      expect(create).toHaveBeenCalledWith({
-        baseURL: "https://media.test/jellyfin",
-        timeout: CONTROL_REQUEST_TIMEOUT_MS,
-        adapter: "fetch",
-        maxRedirects: 0,
-      });
-      expect(isolatedAxios.defaults.headers.common.Authorization).toContain('Client="Octave"');
-      expect(get).toHaveBeenCalledWith("/System/Info/Public", {
-        signal: undefined,
-        timeout: CONTROL_REQUEST_TIMEOUT_MS,
-      });
-    } finally {
-      create.mockRestore();
-    }
+  it("hands the transport the server's base URL, the placeholder DeviceId and the control timeout for the probe", async () => {
+    const transport = new FakeTransport();
+    transport.responses.set("GET /System/Info/Public", { ServerName: "Home", Version: "10.11.11" });
+    const gateway = new JellyfinGateway("https://media.test/jellyfin/", webCrypto, transport);
+    await gateway.connect();
+    expect(transport.requests).toHaveLength(1);
+    expect(transport.requests[0]).toMatchObject({
+      method: "GET",
+      url: "/System/Info/Public",
+      target: { server: "https://media.test/jellyfin", deviceId: "octave-unauthenticated" },
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+      signal: undefined,
+    });
   });
 
   it.each(["10.11.7", "12.4.0"])("accepts Jellyfin %s", async (version) => {
@@ -188,9 +122,9 @@ describe("JellyfinGateway direct-play contract", () => {
       userId: "user-1",
       username: "Louise",
     });
-    expect(transport.requests.at(-1)).toMatchObject({
+    expect(transport.signIns.at(-1)).toMatchObject({
       signal,
-      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+      timeoutMs: CONTROL_REQUEST_TIMEOUT_MS,
     });
   });
 
@@ -217,7 +151,7 @@ describe("JellyfinGateway direct-play contract", () => {
       MaxStreamingBitrate: 1000000000,
       DeviceProfile: OCTAVE_PROFILE,
     });
-    expect(request.params).toEqual({
+    expect(request.query).toEqual(toQuery({
       EnableDirectPlay: true,
       EnableDirectStream: true,
       EnableTranscoding: true,
@@ -227,7 +161,7 @@ describe("JellyfinGateway direct-play contract", () => {
       UserId: "user-1",
       StartTimeTicks: 42,
       MaxStreamingBitrate: 1000000000,
-    });
+    }));
   });
 
   // P10-08: a track change renegotiates with the chosen streams for the
@@ -244,7 +178,7 @@ describe("JellyfinGateway direct-play contract", () => {
     });
     const request = transport.requests.at(-1)!;
     expect(request.data).toMatchObject({ MediaSourceId: "source-1", StartTimeTicks: 420_000_000, AudioStreamIndex: 2, SubtitleStreamIndex: -1 });
-    expect(request.params).toMatchObject({ StartTimeTicks: 420_000_000, AudioStreamIndex: 2, SubtitleStreamIndex: -1 });
+    expect(request.params).toMatchObject({ StartTimeTicks: "420000000", AudioStreamIndex: "2", SubtitleStreamIndex: "-1" });
     expect(plan.sourceBitrate).toBe(8_000_000);
   });
 
@@ -256,7 +190,7 @@ describe("JellyfinGateway direct-play contract", () => {
     });
     await gateway.createPlaybackPlan(item, 0, undefined, "source-1", { audioStreamIndex: -1, subtitleStreamIndex: -2 });
     const request = transport.requests.at(-1)!;
-    for (const sent of [request.data as Record<string, unknown>, request.params as Record<string, unknown>]) {
+    for (const sent of [request.data as Record<string, unknown>, request.params]) {
       expect(sent).not.toHaveProperty("AudioStreamIndex");
       expect(sent).not.toHaveProperty("SubtitleStreamIndex");
     }
@@ -278,7 +212,7 @@ describe("JellyfinGateway direct-play contract", () => {
   it("asks for intro and outro segments with repeated type parameters and header auth", async () => {
     const { gateway, transport } = await authenticatedGateway();
     transport.responses.set(
-      "GET /MediaSegments/item%2Fone?includeSegmentTypes=Intro&includeSegmentTypes=Outro",
+      "GET /MediaSegments/item%2Fone",
       { Items: [{ Id: "s1", Type: "Intro", StartTicks: 100_000_000, EndTicks: 700_000_000 }], TotalRecordCount: 1 },
     );
     const signal = new AbortController().signal;
@@ -288,9 +222,9 @@ describe("JellyfinGateway direct-play contract", () => {
     ]);
 
     const request = transport.requests.at(-1)!;
-    expect(request.url).toBe("/MediaSegments/item%2Fone?includeSegmentTypes=Intro&includeSegmentTypes=Outro");
+    expect(request.url).toBe("/MediaSegments/item%2Fone");
     expect(request.url).not.toMatch(/token|api_key|ApiKey/i);
-    expect(request.params).toBeUndefined();
+    expect(request.query).toEqual([["includeSegmentTypes", "Intro"], ["includeSegmentTypes", "Outro"]]);
     expect(request.signal).toBe(signal);
     expect(JSON.stringify(request)).not.toContain("top-secret");
   });
@@ -411,7 +345,7 @@ describe("JellyfinGateway direct-play contract", () => {
     expect(plan.streamUrl).not.toContain("top-secret");
     expect(plan).not.toHaveProperty("authorization");
     expect(JSON.stringify(plan)).not.toContain("top-secret");
-    expect(gateway.authorizationHeader()).toContain('Token="top-secret"');
+    expect(JSON.stringify(gateway)).not.toContain("top-secret");
   });
 
   it("carries a stream's title, channels, and flags onto the plan's track, and leaves absent ones out", async () => {
@@ -596,39 +530,34 @@ describe("playstate reports carry the plan's play method", () => {
   });
 });
 
-const LINUX_CLIENT: ClientIdentity = { version: "0.1.0", deviceName: "Octave Linux" };
-
-async function loginWith(installId: string, serverId: string, username: string, client?: ClientIdentity) {
+async function loginWith(installId: string, serverId: string, username: string) {
   const transport = new FakeTransport();
   transport.responses.set("GET /System/Info/Public", { Version: "10.11.0", Id: serverId });
   transport.responses.set("POST /Users/AuthenticateByName", {
     AccessToken: "top-secret",
     User: { Id: "user-1", Name: username },
   });
-  const gateway = new JellyfinGateway("https://media.test", webCrypto, transport, installId, undefined, undefined, client);
+  const gateway = new JellyfinGateway("https://media.test", webCrypto, transport, installId);
   await gateway.connect();
   await gateway.login(username, "password");
-  const login = transport.requests.find((request) => request.url === "/Users/AuthenticateByName")!;
-  const header = login.headers?.Authorization ?? "";
-  return { gateway, transport, deviceId: /DeviceId="([^"]+)"/.exec(header)?.[1], header };
+  return { gateway, transport, deviceId: transport.signIns[0]!.deviceId };
 }
 
 describe("JellyfinGateway device identity and logout", () => {
-  it("sends a stable derived DeviceId on login and no token", async () => {
-    const first = await loginWith("install-1", "server-1", "Louise", LINUX_CLIENT);
+  // The header text, the client identity in it and Token="" are tested against a real server in
+  // adapters/fetch-transport.test.ts and authorization-header.test.ts.
+  it("sends a stable derived DeviceId and the password credential on sign-in", async () => {
+    const first = await loginWith("install-1", "server-1", "Louise");
     const again = await loginWith("install-1", "server-1", "louise");
     expect(first.deviceId).toMatch(/^[0-9a-f]{64}$/);
     expect(again.deviceId).toBe(first.deviceId);
     expect(first.deviceId).toBe("07bce1a97d44b7008418adc02ad74694142287bef4bd4007377574dc451aaf78");
-    expect(first.header).toContain('Device="Octave%20Linux"');
-    expect(first.header).toContain('Token=""');
-  });
-
-  it("sends the client identity it was given in the login and later headers", async () => {
-    const { gateway, header } = await loginWith("install-1", "server-1", "Louise", { version: "9.8.7", deviceName: "Octave macOS" });
-    expect(header).toContain('Version="9.8.7"');
-    expect(header).toContain('Device="Octave%20macOS"');
-    expect(gateway.authorizationHeader()).toContain('Version="9.8.7"');
+    expect(first.transport.signIns[0]).toMatchObject({
+      server: "https://media.test",
+      credential: { kind: "password", username: "Louise", password: "password" },
+      timeoutMs: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    expect(JSON.stringify(first.transport.signIns)).not.toContain("top-secret");
   });
 
   it("derives different DeviceIds per install, server, and user", async () => {
@@ -640,15 +569,12 @@ describe("JellyfinGateway device identity and logout", () => {
     expect(ids.size).toBe(4);
   });
 
-  it("posts /Sessions/Logout with the token and clears local state", async () => {
-    const { gateway, transport, deviceId } = await loginWith("install-1", "server-1", "Louise");
+  it("ends the transport's session with the report timeout and clears local state", async () => {
+    const { gateway, transport } = await loginWith("install-1", "server-1", "Louise");
+    const session = gateway.sessionId();
     await gateway.logout();
-    const logout = transport.requests.at(-1)!;
-    expect(logout.method).toBe("POST");
-    expect(logout.url).toBe("/Sessions/Logout");
-    expect(logout.timeout).toBe(REPORT_REQUEST_TIMEOUT_MS);
-    expect(logout.headers?.Authorization).toContain('Token="top-secret"');
-    expect(logout.headers?.Authorization).toContain(`DeviceId="${deviceId}"`);
+    expect(transport.ended).toEqual([session]);
+    expect(transport.endTimeouts).toEqual([REPORT_REQUEST_TIMEOUT_MS]);
     await expect(gateway.resumeItems()).rejects.toThrow("Sign in");
   });
 
@@ -661,24 +587,22 @@ describe("JellyfinGateway device identity and logout", () => {
     expect(gateway.currentUserName()).toBeUndefined();
   });
 
-  it("exposes the signed-in authorization header for the server socket only while signed in", async () => {
-    const { gateway, deviceId } = await loginWith("install-1", "server-1", "Louise");
-    const header = gateway.authorizationHeader();
-    expect(header).toMatch(/^MediaBrowser /);
-    expect(header).toContain('Token="top-secret"');
-    expect(header).toContain(`DeviceId="${deviceId}"`);
+  it("exposes the opaque session id only while signed in", async () => {
+    const { gateway } = await loginWith("install-1", "server-1", "Louise");
+    expect(gateway.sessionId()).toBe("session-1");
+    expect(gateway.sessionId()).not.toContain("top-secret");
     await gateway.logout();
-    expect(() => gateway.authorizationHeader()).toThrow("Sign in");
+    expect(() => gateway.sessionId()).toThrow("Sign in");
   });
 
-  it("refuses the authorization header before sign-in", () => {
+  it("refuses the session id before sign-in", () => {
     const gateway = new JellyfinGateway("https://media.test", webCrypto, new FakeTransport(), "install-1");
-    expect(() => gateway.authorizationHeader()).toThrow("Sign in");
+    expect(() => gateway.sessionId()).toThrow("Sign in");
   });
 
   it("clears local state even when the logout request fails", async () => {
     const { gateway, transport } = await loginWith("install-1", "server-1", "Louise");
-    vi.spyOn(transport, "post").mockRejectedValueOnce(new Error("network down"));
+    transport.endSessionError = new TransportError("network");
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     await expect(gateway.logout()).resolves.toBeUndefined();
     expect(warn).toHaveBeenCalled();
@@ -694,7 +618,7 @@ describe("JellyfinGateway device identity and logout", () => {
     const request = transport.requests.at(-1)!;
     expect(request.method).toBe("DELETE");
     expect(request.url).toBe("/Videos/ActiveEncodings");
-    expect(request.params).toEqual({ deviceId, playSessionId: "play-1" });
+    expect(request.query).toEqual(toQuery({ deviceId, playSessionId: "play-1" }));
     expect(request.signal).toBe(controller.signal);
     expect(request.timeout).toBe(REPORT_REQUEST_TIMEOUT_MS);
   });
@@ -728,7 +652,7 @@ describe("JellyfinGateway device identity and logout", () => {
     expect(request.method).toBe("GET");
     expect(request.url).toBe("/Sessions");
     // Only the device id: the play-session id never leaves Octave here.
-    expect(request.params).toEqual({ deviceId });
+    expect(request.query).toEqual(toQuery({ deviceId }));
     expect(JSON.stringify(request)).not.toContain("play-1");
     expect(request.signal).toBe(controller.signal);
     expect(request.timeout).toBe(REPORT_REQUEST_TIMEOUT_MS);
@@ -779,7 +703,7 @@ describe("JellyfinGateway device identity and logout", () => {
       expect(transport.requests[0]).toMatchObject({ method: "GET", url: "/QuickConnect/Enabled" });
     });
 
-    it("initiates with POST and the Octave device header", async () => {
+    it("initiates with POST, the server and the quick-connect DeviceId, and no token", async () => {
       const { gateway, transport } = quickConnectGateway();
       await gateway.connect();
       transport.responses.set("POST /QuickConnect/Initiate", { Secret: "s3cret", Code: "123456" });
@@ -787,9 +711,7 @@ describe("JellyfinGateway device identity and logout", () => {
       const request = transport.requests.at(-1)!;
       expect(request.method).toBe("POST");
       expect(request.url).toBe("/QuickConnect/Initiate");
-      expect(request.headers?.Authorization).toMatch(/^MediaBrowser /);
-      expect(request.headers?.Authorization).toContain('DeviceId="');
-      expect(request.headers?.Authorization).not.toMatch(/Token="[^"]/);
+      expect(request.target).toEqual({ server: "https://media.test", deviceId: expect.stringMatching(/^[0-9a-f]{64}$/) });
       expect(request.url).not.toContain("api_key");
     });
 
@@ -808,7 +730,7 @@ describe("JellyfinGateway device identity and logout", () => {
       const request = transport.requests.at(-1)!;
       expect(request).toMatchObject({ method: "GET", url: "/QuickConnect/Connect", params: { secret: "s3cret" } });
       expect(request.url).not.toContain("api_key");
-      expect(request.headers?.Authorization).not.toContain("s3cret");
+      expect("session" in request.target).toBe(false);
     });
 
     it("uses one device id for initiate and authenticate, then starts a session", async () => {
@@ -822,11 +744,11 @@ describe("JellyfinGateway device identity and logout", () => {
       await gateway.initiateQuickConnect();
       await expect(gateway.authenticateWithQuickConnect("s3cret")).resolves.toEqual({ userId: "user-1", username: "Louise" });
       expect(gateway.currentUserName()).toBe("Louise");
-      const [initiate, authenticate] = transport.requests.slice(-2);
-      expect(authenticate).toMatchObject({ method: "POST", url: "/Users/AuthenticateWithQuickConnect", data: { Secret: "s3cret" } });
-      expect(authenticate.params).toBeUndefined();
-      const deviceId = (header?: string) => header?.match(/DeviceId="([^"]+)"/)?.[1];
-      expect(deviceId(authenticate.headers?.Authorization)).toBe(deviceId(initiate.headers?.Authorization));
+      const initiate = transport.requests.at(-1)!;
+      const authenticate = transport.signIns.at(-1)!;
+      expect(authenticate).toMatchObject({ server: "https://media.test", credential: { kind: "quick-connect", secret: "s3cret" } });
+      expect(initiate).toMatchObject({ method: "POST", url: "/QuickConnect/Initiate" });
+      expect("deviceId" in initiate.target && initiate.target.deviceId).toBe(authenticate.deviceId);
 
       transport.responses.set("GET /UserItems/Resume", { Items: [] });
       await expect(gateway.resumeItems()).resolves.toEqual([]);
@@ -834,7 +756,7 @@ describe("JellyfinGateway device identity and logout", () => {
 
     it("does not leak the secret through errors", async () => {
       const { gateway, transport } = quickConnectGateway();
-      vi.spyOn(transport, "get").mockRejectedValueOnce(new Error("failed GET /QuickConnect/Connect?secret=qc-canary"));
+      transport.failures.set("GET /QuickConnect/Connect", new Error("failed GET /QuickConnect/Connect?secret=qc-canary"));
       await expect(gateway.pollQuickConnect("qc-canary")).rejects.toThrow(/^((?!qc-canary).)*$/);
     });
   });
@@ -867,7 +789,7 @@ describe("JellyfinGateway home calls", () => {
     ]);
     const request = transport.requests.at(-1);
     expect(request?.url).toBe("/UserViews");
-    expect(request?.params).toEqual({ userId: "user-1" });
+    expect(request?.query).toEqual(toQuery({ userId: "user-1" }));
     expect(request?.signal).toBe(controller.signal);
   });
 
@@ -904,14 +826,14 @@ describe("JellyfinGateway home calls", () => {
     }]);
     const request = transport.requests.at(-1);
     expect(request?.url).toBe("/UserItems/Resume");
-    expect(request?.params).toEqual({
+    expect(request?.query).toEqual(toQuery({
       userId: "user-1",
       mediaTypes: "Video",
       limit: 16,
       enableUserData: true,
       enableTotalRecordCount: false,
       ...cardParams,
-    });
+    }));
   });
 
   it("requests Next Up without rewatching or resumable episodes, with DateCreated", async () => {
@@ -926,7 +848,7 @@ describe("JellyfinGateway home calls", () => {
     })]);
     const request = transport.requests.at(-1);
     expect(request?.url).toBe("/Shows/NextUp");
-    expect(request?.params).toEqual({
+    expect(request?.query).toEqual(toQuery({
       userId: "user-1",
       limit: 16,
       enableRewatching: false,
@@ -934,7 +856,7 @@ describe("JellyfinGateway home calls", () => {
       enableTotalRecordCount: false,
       ...cardParams,
       fields: "PrimaryImageAspectRatio,DateCreated",
-    });
+    }));
   });
 
   it("requests the Next Up episode of one series with its resume position", async () => {
@@ -951,7 +873,7 @@ describe("JellyfinGateway home calls", () => {
     });
     const request = transport.requests.at(-1);
     expect(request?.url).toBe("/Shows/NextUp");
-    expect(request?.params).toEqual({
+    expect(request?.query).toEqual(toQuery({
       userId: "user-1",
       seriesId: "s1",
       limit: 1,
@@ -960,7 +882,7 @@ describe("JellyfinGateway home calls", () => {
       enableRewatching: false,
       enableImages: false,
       enableTotalRecordCount: false,
-    });
+    }));
   });
 
   it("returns undefined when the server offers no next episode", async () => {
@@ -986,13 +908,13 @@ describe("JellyfinGateway home calls", () => {
     }]);
     const request = transport.requests.at(-1);
     expect(request?.url).toBe("/Items/Latest");
-    expect(request?.params).toEqual({
+    expect(request?.query).toEqual(toQuery({
       userId: "user-1",
       parentId: "lib-1",
       limit: 16,
       groupItems: true,
       ...cardParams,
-    });
+    }));
   });
 
   it("never asks for fields that are always returned", async () => {
@@ -1026,20 +948,20 @@ describe("JellyfinGateway home calls", () => {
     expect(page.cards.map((card) => [card.id, card.kind])).toEqual([["s1", "Series"], ["m1", "Movie"]]);
     const request = transport.requests.at(-1);
     expect(request?.url).toBe("/Items");
-    expect(request?.params).toEqual({
+    expect(request?.query).toEqual(toQuery({
       userId: "user-1",
       parentId: "lib-1",
       recursive: true,
       includeItemTypes: "Movie,Series",
       sortBy: "DateCreated",
       sortOrder: "Descending",
-      filters: "IsUnplayed,IsFavorite",
       startIndex: 60,
       limit: 3,
       enableUserData: true,
       enableTotalRecordCount: false,
       ...cardParams,
-    });
+      filters: "IsUnplayed,IsFavorite",
+    }));
     expect(JSON.stringify(request?.params)).not.toMatch(/top-secret|api_key|token/i);
   });
 
@@ -1050,7 +972,7 @@ describe("JellyfinGateway home calls", () => {
 
     const page = await gateway.libraryItems("lib-1", first);
     expect(page.totalCount).toBe(248);
-    expect(transport.requests.at(-1)?.params?.enableTotalRecordCount).toBe(true);
+    expect(transport.requests.at(-1)?.params?.enableTotalRecordCount).toBe("true");
 
     transport.responses.set("GET /Items", { Items: [{ Id: "m1", Name: "Movie", Type: "Movie" }], TotalRecordCount: -1 });
     expect((await gateway.libraryItems("lib-1", first)).totalCount).toBeUndefined();
@@ -1060,7 +982,7 @@ describe("JellyfinGateway home calls", () => {
     transport.responses.set("GET /Items", { Items: [{ Id: "m1", Name: "Movie", Type: "Movie" }], TotalRecordCount: 248 });
     const later = await gateway.libraryItems("lib-1", { ...first, startIndex: 60 });
     expect(later.totalCount).toBeUndefined();
-    expect(transport.requests.at(-1)?.params?.enableTotalRecordCount).toBe(false);
+    expect(transport.requests.at(-1)?.params?.enableTotalRecordCount).toBe("false");
   });
 
   it("omits filters when none are selected and reports the last page", async () => {
@@ -1104,7 +1026,7 @@ describe("JellyfinGateway home calls", () => {
     ]);
     const request = transport.requests.at(-1);
     expect(request?.url).toBe("/Search/Hints");
-    expect(request?.params).toEqual({ userId: "user-1", searchTerm: "sho", limit: 8, includeItemTypes: "Movie,Series,Episode" });
+    expect(request?.query).toEqual(toQuery({ userId: "user-1", searchTerm: "sho", limit: 8, includeItemTypes: "Movie,Series,Episode" }));
     expect(JSON.stringify(request?.params)).not.toMatch(/top-secret|api_key|token/i);
   });
 
@@ -1122,7 +1044,7 @@ describe("JellyfinGateway home calls", () => {
     expect(page.cards.map((card) => [card.id, card.kind])).toEqual([["s1", "Series"], ["m1", "Movie"]]);
     const request = transport.requests.at(-1);
     expect(request?.url).toBe("/Items");
-    expect(request?.params).toEqual({
+    expect(request?.query).toEqual(toQuery({
       userId: "user-1",
       searchTerm: "sho",
       recursive: true,
@@ -1134,7 +1056,7 @@ describe("JellyfinGateway home calls", () => {
       enableUserData: true,
       enableTotalRecordCount: false,
       ...cardParams,
-    });
+    }));
     expect(JSON.stringify(request?.params)).not.toMatch(/top-secret|api_key|token/i);
   });
 
@@ -1146,7 +1068,7 @@ describe("JellyfinGateway home calls", () => {
       { id: "se1", name: "Season 1", indexNumber: 1 },
     ]);
     const request = transport.requests.at(-1);
-    expect(request?.params).toEqual({ userId: "user-1", fields: "PrimaryImageAspectRatio" });
+    expect(request?.query).toEqual(toQuery({ userId: "user-1", fields: "PrimaryImageAspectRatio" }));
   });
 
   it("lists the episodes of one season", async () => {
@@ -1157,14 +1079,14 @@ describe("JellyfinGateway home calls", () => {
     await expect(gateway.episodes("series-1", "se1")).resolves.toEqual([
       { id: "e1", kind: "Episode", title: "Pilot", subtitle: "Episode 1", episodeNumber: 1, overview: "It begins.", aspectRatio: 2 / 3 },
     ]);
-    expect(transport.requests.at(-1)?.params).toEqual({
+    expect(transport.requests.at(-1)?.query).toEqual(toQuery({
       userId: "user-1",
       seasonId: "se1",
       fields: "Overview,PrimaryImageAspectRatio",
       enableUserData: true,
       imageTypeLimit: 1,
       enableImageTypes: "Primary,Backdrop,Thumb,Logo",
-    });
+    }));
   });
 
   describe("nextEpisode", () => {
@@ -1179,13 +1101,13 @@ describe("JellyfinGateway home calls", () => {
       });
       await expect(gateway.nextEpisode("series-1", "e2")).resolves.toEqual({ id: "e3", title: "Third", label: "S1 · E3" });
       const request = transport.requests.at(-1);
-      expect(request?.params).toEqual({
+      expect(request?.query).toEqual(toQuery({
         userId: "user-1",
         adjacentTo: "e2",
         isMissing: false,
         imageTypeLimit: 1,
         enableImageTypes: "Primary,Backdrop,Thumb,Logo",
-      });
+      }));
       // Auth rides in the transport's Authorization header, never in the URL or params.
       expect(request?.url).toBe("/Shows/series-1/Episodes");
       expect(JSON.stringify(request?.params)).not.toMatch(/token|api_key|top-secret/i);
@@ -1316,14 +1238,12 @@ describe("JellyfinGateway plain-HTTP policy (docs/decisions/0001)", () => {
     );
   });
 
-  it("refuses a public http:// server without creating an HTTP client", () => {
-    const create = vi.spyOn(axios, "create");
-    try {
-      expect(() => new JellyfinGateway("http://8.8.8.8:8096", webCrypto)).toThrow(PUBLIC_HTTP_REFUSED_MESSAGE);
-      expect(create).not.toHaveBeenCalled();
-    } finally {
-      create.mockRestore();
-    }
+  it("refuses a public http:// server without calling the transport", () => {
+    const transport = new FakeTransport();
+    expect(() => new JellyfinGateway("http://8.8.8.8:8096", webCrypto, transport)).toThrow(PUBLIC_HTTP_REFUSED_MESSAGE);
+    expect(transport.requests).toEqual([]);
+    expect(transport.signIns).toEqual([]);
+    expect(transport.ended).toEqual([]);
   });
 
   it("probes a private-LAN server and reports that confirmation is needed", async () => {
@@ -1337,7 +1257,7 @@ describe("JellyfinGateway plain-HTTP policy (docs/decisions/0001)", () => {
       needsUnencryptedConfirmation: true,
     });
     expect(transport.requests.map((request) => request.url)).toEqual(["/System/Info/Public"]);
-    expect(transport.requests[0].headers?.Authorization ?? "").not.toContain("Token=");
+    expect(transport.requests[0].target).toEqual({ server: LAN_URL, deviceId: "octave-unauthenticated" });
   });
 
   it.each([
@@ -1424,8 +1344,9 @@ describe("JellyfinGateway plain-HTTP policy (docs/decisions/0001)", () => {
   );
 });
 
-// In a browser engine the fetch adapter's `redirect: "manual"` yields an opaque
-// redirect with status 0, and Axios resolves it instead of rejecting.
+// A transport that honours the port rejects a redirect. One that breaks the contract and resolves a 3xx or a
+// status of 0 (an opaque redirect in a browser engine) is refused as well. sign-in and sign-out resolve with no
+// status, so they are covered by rejections only.
 describe("JellyfinGateway resolved redirect responses", () => {
   const plan: PlaybackPlan = { itemId: "i", mediaSourceId: "m", playSessionId: "p", startPositionTicks: 0, streamUrl: "", title: "t", tracks: [], delivery: "static", playMethod: "DirectPlay", conversionReasons: [] };
   const snapshot = { positionSeconds: 1, paused: false, buffering: false, volume: 50, muted: false, tracks: [], diagnostics: { decodeMode: "hardware", decodeLabel: "x", droppedFrames: 0 } } as PlaybackSnapshot;
@@ -1446,9 +1367,9 @@ describe("JellyfinGateway resolved redirect responses", () => {
     });
   });
 
-  it("refuses a sign-in that resolves with status 0", async () => {
+  it("refuses a sign-in the transport rejects with a redirect", async () => {
     const transport = new FakeTransport();
-    transport.statuses.set("POST /Users/AuthenticateByName", 0);
+    transport.signInError = new TransportError("redirect");
     const gateway = new JellyfinGateway("https://media.test", webCrypto, transport, "install-1");
     await expect(gateway.login("Louise", "hunter2")).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
   });
@@ -1465,11 +1386,11 @@ describe("JellyfinGateway resolved redirect responses", () => {
     await expect(gateway.reportProgress(plan, snapshot)).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
   });
 
-  it("reports a logout that resolves with status 0 as failed", async () => {
+  it("reports a logout the transport rejects with a redirect as failed", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     try {
       const { gateway, transport } = await authenticatedGateway();
-      transport.statuses.set("POST /Sessions/Logout", 0);
+      transport.endSessionError = new TransportError("redirect");
       await gateway.logout();
       expect(warn).toHaveBeenCalledWith("Server logout failed; the local session was cleared.", REDIRECT_REFUSED_MESSAGE);
     } finally {

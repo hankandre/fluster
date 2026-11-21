@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { LibraryItem } from "../domain/catalog";
 import type { PlaybackPlan, PlaybackPlanOptions } from "../domain/playback";
 import { JellyfinGateway } from "./gateway";
-import type { HttpRequestConfig, HttpTransport, MediaSourceDto, PlaybackInfoResponse } from "./types";
+import type { MediaSourceDto, PlaybackInfoResponse } from "./types";
+import type { SignInRequest, SignInResult, Transport, TransportRequest, TransportResponse } from "../ports/transport";
 import { webCrypto } from "../adapters/web-crypto";
 
 // P17-08: a viewer's audio pick on a first negotiation, replayed with the recorded fixtures from
@@ -21,31 +22,29 @@ function fixture(version: string, name: string): PlaybackInfoResponse {
 interface PostRecord {
   url: string;
   data: Record<string, unknown>;
-  params: Record<string, unknown>;
+  query: readonly (readonly [string, string])[];
+  params: Record<string, string>;
 }
 
 // Answers PlaybackInfo requests in order; the last answer repeats. A `failAt` answer rejects.
-class QueueTransport implements HttpTransport {
+class QueueTransport implements Transport {
   posts: PostRecord[] = [];
 
   constructor(private readonly answers: PlaybackInfoResponse[], private readonly failAt?: number) {}
 
-  async get<T>(): Promise<{ data: T }> {
-    throw new Error("unexpected GET");
+  async signIn(_request: SignInRequest): Promise<SignInResult> {
+    return { session: "session-1", userId: "user-test", userName: "tester" };
   }
 
-  async post<T>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<{ data: T }> {
-    if (url === "/Users/AuthenticateByName") {
-      return { data: { AccessToken: "test-token", User: { Id: "user-test", Name: "tester" } } as T };
-    }
-    this.posts.push({ url, data: data as Record<string, unknown>, params: config?.params ?? {} });
+  async endSession(): Promise<void> {}
+
+  async request(request: TransportRequest): Promise<TransportResponse> {
+    if (request.method !== "POST") throw new Error(`unexpected ${request.method}`);
+    const query = request.query ?? [];
+    this.posts.push({ url: request.path, data: request.body as Record<string, unknown>, query, params: Object.fromEntries(query) });
     if (this.failAt === this.posts.length - 1) throw new Error("boom http://127.0.0.1:8096/x?ApiKey=secret");
     const answer = this.answers[Math.min(this.posts.length - 1, this.answers.length - 1)];
-    return { data: structuredClone(answer) as T };
-  }
-
-  async delete<T>(): Promise<{ data: T }> {
-    throw new Error("unexpected DELETE");
+    return { status: 200, body: structuredClone(answer) };
   }
 }
 
@@ -87,7 +86,7 @@ describe.each(["10.11.7", "12.4.0"])("audio pick negotiation with the fixtures f
     expect(transport.posts).toHaveLength(1);
     const [request] = transport.posts;
     expect(request.data).toMatchObject({ AudioStreamIndex: 2, MediaSourceId: "item-multitrack" });
-    expect(request.params).toMatchObject({ AudioStreamIndex: 2 });
+    expect(request.params).toMatchObject({ AudioStreamIndex: "2" });
     expect(request.data).not.toHaveProperty("keepDirectPlay");
     expect(request.params).not.toHaveProperty("keepDirectPlay");
     expect(plan).toMatchObject({ delivery: "static", playMethod: "DirectPlay", mediaSourceId: "item-multitrack", defaultAudioStreamIndex: 2 });

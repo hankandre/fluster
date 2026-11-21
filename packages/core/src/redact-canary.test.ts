@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LibraryItem } from "./domain/catalog";
 import type { PlaybackPlan, PlaybackSnapshot, PlayerEngine, PlayerEvent } from "./domain/playback";
 import { JellyfinGateway } from "./jellyfin/gateway";
-import type { HttpRequestConfig, HttpTransport } from "./jellyfin/types";
+import type { SignInRequest, SignInResult, Transport, TransportRequest, TransportResponse } from "./ports/transport";
 import { PlaybackCoordinator, type PlaybackGateway } from "./player/coordinator";
 import { diagnosticsText } from "./diagnostics";
 import { redactError, redactText, redactUrl } from "./redact";
@@ -26,7 +26,7 @@ const canaryUrls = [
   `/Videos/1/stream?X-Emby-Token=${CANARY}&Static=true`,
 ];
 
-// Texts a transport, axios, or the browser might put around a URL or header.
+// Texts a transport or the browser might put around a URL or header.
 function errorTexts(): string[] {
   const texts = canaryUrls.flatMap((url) => [
     url,
@@ -117,28 +117,27 @@ describe("redaction canary: safeReason", () => {
   });
 });
 
-class FailingTransport implements HttpTransport {
+// A transport that breaks the port's rules: it fails with the canary in the message and attaches the request config.
+// The gateway must still keep the canary out of what it throws.
+class FailingTransport implements Transport {
   constructor(private readonly text: string) {}
 
   private fail(): never {
     const error = new Error(this.text);
-    // Axios errors also carry the request config; the canary must not be surfaced from it either.
+    // An adapter may attach the request config; the canary must not be surfaced from it either.
     Object.assign(error, { config: { url: canaryUrls[0] } });
     throw error;
   }
 
-  async get<T>(_url: string, _config?: HttpRequestConfig): Promise<{ data: T }> {
+  async signIn(_request: SignInRequest): Promise<SignInResult> {
+    return { session: "session-1", userId: "user-1", userName: "Louise" };
+  }
+
+  async request(_request: TransportRequest): Promise<TransportResponse> {
     return this.fail();
   }
 
-  async post<T>(url: string, _data?: unknown, _config?: HttpRequestConfig): Promise<{ data: T }> {
-    if (url === "/Users/AuthenticateByName") {
-      return { data: { AccessToken: CANARY, User: { Id: "user-1", Name: "Louise" } } as T };
-    }
-    return this.fail();
-  }
-
-  async delete<T>(_url: string, _config?: HttpRequestConfig): Promise<{ data: T }> {
+  async endSession(): Promise<void> {
     return this.fail();
   }
 }
@@ -176,38 +175,30 @@ describe("redaction canary: JellyfinGateway", () => {
 
   it("keeps the access token out of errors for rejected playback info", async () => {
     const transport = new FailingTransport("unused");
-    transport.post = async <T>(url: string): Promise<{ data: T }> => {
-      if (url === "/Users/AuthenticateByName") {
-        return { data: { AccessToken: CANARY, User: { Id: "user-1" } } as T };
-      }
-      return {
-        data: {
-          PlaySessionId: "session",
-          MediaSources: [{ Id: "s", Path: "/x", Protocol: "File", SupportsDirectPlay: true, TranscodingUrl: `/t?api_key=${CANARY}` }],
-        } as T,
-      };
-    };
+    transport.request = async (): Promise<TransportResponse> => ({
+      status: 200,
+      body: {
+        PlaySessionId: "session",
+        MediaSources: [{ Id: "s", Path: "/x", Protocol: "File", SupportsDirectPlay: true, TranscodingUrl: `/t?api_key=${CANARY}` }],
+      },
+    });
     const gateway = new JellyfinGateway(SERVER, webCrypto, transport);
     await gateway.login("Louise", "password");
     expectClean("source refusal error", await messageOf(() => gateway.createPlaybackPlan(item)));
 
-    transport.post = async <T>(url: string): Promise<{ data: T }> => {
-      if (url === "/Users/AuthenticateByName") {
-        return { data: { AccessToken: CANARY, User: { Id: "user-1" } } as T };
-      }
-      return {
-        data: {
-          PlaySessionId: "session",
-          MediaSources: [{
-            Id: "s",
-            Path: "/x",
-            Protocol: "File",
-            SupportsDirectPlay: true,
-            MediaStreams: [{ Index: 2, Type: "Subtitle", IsExternal: true, DeliveryUrl: `https://attacker.test/sub?ApiKey=${CANARY}` }],
-          }],
-        } as T,
-      };
-    };
+    transport.request = async (): Promise<TransportResponse> => ({
+      status: 200,
+      body: {
+        PlaySessionId: "session",
+        MediaSources: [{
+          Id: "s",
+          Path: "/x",
+          Protocol: "File",
+          SupportsDirectPlay: true,
+          MediaStreams: [{ Index: 2, Type: "Subtitle", IsExternal: true, DeliveryUrl: `https://attacker.test/sub?ApiKey=${CANARY}` }],
+        }],
+      },
+    });
     expectClean("unsafe subtitle error", await messageOf(() => gateway.createPlaybackPlan(item)));
     expectNoCanaryInConsole();
   }, 60_000);

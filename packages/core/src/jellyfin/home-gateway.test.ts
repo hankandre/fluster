@@ -3,7 +3,8 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { continueWatchingRow } from "../domain/up-next";
 import { HOME_ROW_LIMIT, JellyfinGateway } from "./gateway";
-import type { HttpRequestConfig, HttpResponse, HttpTransport } from "./types";
+import type { SignInRequest, SignInResult, Transport, TransportRequest, TransportResponse } from "../ports/transport";
+import { toQuery } from "./query";
 import { webCrypto } from "../adapters/web-crypto";
 
 // Home's discovery requests, answered by the P16-01 and P16-02 fixtures of both pinned servers.
@@ -13,31 +14,29 @@ const load = (version: string, name: string): unknown => JSON.parse(readFileSync
 
 interface Call {
   url: string;
-  params?: Record<string, unknown>;
+  query: readonly (readonly [string, string])[];
+  params: Record<string, string>;
 }
 
-class FixtureTransport implements HttpTransport {
+class FixtureTransport implements Transport {
   calls: Call[] = [];
   answers = new Map<string, unknown>();
   failures = new Map<string, number>();
 
-  async get<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
-    this.calls.push({ url, params: config?.params });
-    const status = this.failures.get(url);
-    if (status) throw Object.assign(new Error(`Request failed with status code ${status}`), { response: { status } });
-    return { data: this.answers.get(url) as T, status: 200 };
+  async signIn(_request: SignInRequest): Promise<SignInResult> {
+    return { session: "session-1", userId: "user-1", userName: "Louise" };
   }
 
-  async post<T>(url: string): Promise<HttpResponse<T>> {
-    if (url === "/Users/AuthenticateByName") {
-      return { data: { AccessToken: "top-secret", User: { Id: "user-1", Name: "Louise" } } as T, status: 200 };
-    }
-    throw new Error(`unexpected POST ${url}`);
+  async request(request: TransportRequest): Promise<TransportResponse> {
+    if (request.method !== "GET") throw new Error(`unexpected ${request.method} ${request.path}`);
+    const query = request.query ?? [];
+    this.calls.push({ url: request.path, query, params: Object.fromEntries(query) });
+    const status = this.failures.get(request.path);
+    if (status) return { status, body: undefined };
+    return { status: 200, body: this.answers.get(request.path) };
   }
 
-  async delete<T>(): Promise<HttpResponse<T>> {
-    throw new Error("unexpected DELETE");
-  }
+  async endSession(): Promise<void> {}
 }
 
 async function signedIn() {
@@ -55,7 +54,7 @@ describe.each(versions)("Home gateway calls, Jellyfin %s", (version) => {
     await gateway.nextUp();
     expect(transport.calls).toHaveLength(1);
     const params = transport.calls[0]?.params ?? {};
-    expect(params).toMatchObject({ userId: "user-1", limit: HOME_ROW_LIMIT, enableRewatching: false, enableResumable: false, fields: "PrimaryImageAspectRatio,DateCreated" });
+    expect(params).toMatchObject({ userId: "user-1", limit: String(HOME_ROW_LIMIT), enableRewatching: "false", enableResumable: "false", fields: "PrimaryImageAspectRatio,DateCreated" });
     expect(params).not.toHaveProperty("nextUpDateCutoff");
   });
 
@@ -79,7 +78,7 @@ describe.each(versions)("Home gateway calls, Jellyfin %s", (version) => {
     const { gateway, transport } = await signedIn();
     transport.answers.set("/UserItems/Resume", load(version, "resume-old-and-recent"));
     const cards = await gateway.resumeItems();
-    expect(transport.calls[0]?.params).toMatchObject({ mediaTypes: "Video", limit: HOME_ROW_LIMIT, enableUserData: true });
+    expect(transport.calls[0]?.params).toMatchObject({ mediaTypes: "Video", limit: String(HOME_ROW_LIMIT), enableUserData: "true" });
     expect(cards.length).toBeGreaterThan(0);
     expect(cards.every((card) => card.lastPlayedAt !== undefined)).toBe(true);
   });
@@ -88,21 +87,19 @@ describe.each(versions)("Home gateway calls, Jellyfin %s", (version) => {
     const { gateway, transport } = await signedIn();
     transport.answers.set("/Items", load(version, "recently-played"));
     const plays = await gateway.recentlyPlayed();
-    expect(transport.calls[0]).toEqual({
-      url: "/Items",
-      params: {
-        userId: "user-1",
-        recursive: true,
-        includeItemTypes: "Movie,Episode",
-        filters: "IsPlayed",
-        sortBy: "DatePlayed",
-        sortOrder: "Descending",
-        limit: 100,
-        enableUserData: true,
-        enableImages: false,
-        enableTotalRecordCount: false,
-      },
-    });
+    expect(transport.calls[0]?.url).toBe("/Items");
+    expect(transport.calls[0]?.query).toEqual(toQuery({
+      userId: "user-1",
+      recursive: true,
+      includeItemTypes: "Movie,Episode",
+      filters: "IsPlayed",
+      sortBy: "DatePlayed",
+      sortOrder: "Descending",
+      limit: 100,
+      enableUserData: true,
+      enableImages: false,
+      enableTotalRecordCount: false,
+    }));
     expect(plays.complete).toBe(true);
     expect(plays.entries.map((e) => [e.id.startsWith("item-") || e.id.startsWith("id-"), e.kind])).toEqual([[true, "Episode"], [true, "Movie"], [true, "Movie"]]);
     expect(plays.entries[0]?.seriesId).toBe("series-synthetic");
@@ -120,7 +117,7 @@ describe.each(versions)("Home gateway calls, Jellyfin %s", (version) => {
     const { gateway, transport } = await signedIn();
     transport.answers.set("/Items/item-h264/Similar", load(version, "similar-movie"));
     const cards = await gateway.similarItems("item-h264");
-    expect(transport.calls[0]).toMatchObject({ url: "/Items/item-h264/Similar", params: { userId: "user-1", limit: 12, enableUserData: true, enableTotalRecordCount: false } });
+    expect(transport.calls[0]).toMatchObject({ url: "/Items/item-h264/Similar", params: { userId: "user-1", limit: "12", enableUserData: "true", enableTotalRecordCount: "false" } });
     expect(cards.length).toBeGreaterThanOrEqual(3);
     expect(cards.every((card) => card.kind === "Movie")).toBe(true);
   });
@@ -148,7 +145,7 @@ describe.each(versions)("Home gateway calls, Jellyfin %s", (version) => {
   it("passes other Collections failures through", async () => {
     const { gateway, transport } = await signedIn();
     transport.failures.set("/Items/x/Collections", 500);
-    await expect(gateway.itemCollections("x")).rejects.toThrow("status code 500");
+    await expect(gateway.itemCollections("x")).rejects.toMatchObject({ code: "status", status: 500 });
   });
 
   it("lists a collection's members in release order", async () => {
@@ -157,7 +154,7 @@ describe.each(versions)("Home gateway calls, Jellyfin %s", (version) => {
     const cards = await gateway.collectionItems("collection-synthetic");
     expect(transport.calls[0]).toMatchObject({
       url: "/Items",
-      params: { userId: "user-1", parentId: "collection-synthetic", sortBy: "PremiereDate,ProductionYear,SortName", sortOrder: "Ascending", enableUserData: true },
+      params: { userId: "user-1", parentId: "collection-synthetic", sortBy: "PremiereDate,ProductionYear,SortName", sortOrder: "Ascending", enableUserData: "true" },
     });
     expect(cards.map((c) => c.title).sort()).toEqual(["Synthetic AV1 (2024)", "Synthetic H264 (2024)"]);
   });

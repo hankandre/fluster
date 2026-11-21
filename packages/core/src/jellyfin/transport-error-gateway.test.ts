@@ -2,30 +2,26 @@ import { describe, expect, it } from "vitest";
 import type { LibraryItem } from "../domain/catalog";
 import { classifyTransportError } from "../transport-error";
 import { JellyfinGateway } from "./gateway";
-import type { HttpTransport } from "./types";
+import { TransportError, type SignInRequest, type SignInResult, type Transport, type TransportRequest, type TransportResponse } from "../ports/transport";
 import { webCrypto } from "../adapters/web-crypto";
 
-// A PlaybackInfo request that fails the way Axios reports it.
-function failingTransport(failure: Error): HttpTransport {
+// A PlaybackInfo request that fails the way a transport reports it.
+function failingTransport(failure: Error | { status: number }): Transport {
   return {
-    async get() {
-      throw new Error("unexpected GET");
+    async signIn(_request: SignInRequest): Promise<SignInResult> {
+      return { session: "session-1", userId: "user-test", userName: "tester" };
     },
-    async post<T>(url: string) {
-      if (url === "/Users/AuthenticateByName") {
-        return { data: { AccessToken: "test-token", User: { Id: "user-test", Name: "tester" } } as T };
-      }
+    async request(_request: TransportRequest): Promise<TransportResponse> {
+      if ("status" in failure && !(failure instanceof Error)) return { status: failure.status, body: undefined };
       throw failure;
     },
-    async delete() {
-      throw new Error("unexpected DELETE");
-    },
+    async endSession(): Promise<void> {},
   };
 }
 
 const item: LibraryItem = { id: "m1", name: "Fixture", type: "Movie", resumePositionTicks: 0, played: false };
 
-async function kindOfFailure(failure: Error) {
+async function kindOfFailure(failure: Error | { status: number }) {
   const gateway = new JellyfinGateway("http://127.0.0.1:8096", webCrypto, failingTransport(failure), "install-1");
   await gateway.login("tester", "password");
   const error = await gateway.createPlaybackPlan(item, 0).catch((caught: unknown) => caught);
@@ -33,13 +29,16 @@ async function kindOfFailure(failure: Error) {
   return classifyTransportError(error);
 }
 
-const axios = (message: string, fields: Record<string, unknown>) => Object.assign(new Error(message), { isAxiosError: true }, fields);
-
 describe("a failed PlaybackInfo request", () => {
   it("is classified by status or code, not by message", async () => {
-    expect(await kindOfFailure(axios("Request failed with status code 500", { response: { status: 500 } }))).toBe("server");
-    expect(await kindOfFailure(axios("Network Error", { code: "ERR_NETWORK" }))).toBe("network");
-    expect(await kindOfFailure(axios("timeout of 30000ms exceeded", { code: "ECONNABORTED" }))).toBe("network");
-    expect(await kindOfFailure(axios("Request failed with status code 400", { response: { status: 400 } }))).toBe("request");
+    expect(await kindOfFailure({ status: 500 })).toBe("server");
+    expect(await kindOfFailure(new TransportError("network"))).toBe("network");
+    expect(await kindOfFailure(new TransportError("timeout"))).toBe("network");
+    expect(await kindOfFailure({ status: 400 })).toBe("request");
+  });
+
+  it("gives a rejected status the same kind as a resolved one", async () => {
+    expect(await kindOfFailure(new TransportError("status", 503))).toBe("server");
+    expect(await kindOfFailure(new TransportError("status", 404))).toBe("request");
   });
 });

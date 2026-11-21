@@ -3,42 +3,40 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { languageKey } from "../domain/languages";
 import { CONTROL_REQUEST_TIMEOUT_MS, JellyfinGateway } from "./gateway";
-import type { HttpRequestConfig, HttpResponse, HttpTransport } from "./types";
+import type { SignInRequest, SignInResult, Transport, TransportRequest, TransportResponse } from "../ports/transport";
 import { webCrypto } from "../adapters/web-crypto";
 
 interface Call {
   method: "GET" | "POST" | "DELETE";
   url: string;
   data?: unknown;
-  config?: HttpRequestConfig;
+  query: readonly (readonly [string, string])[];
+  config: { signal?: AbortSignal; timeout: number };
 }
 
-class RecordingTransport implements HttpTransport {
+class RecordingTransport implements Transport {
   calls: Call[] = [];
   responses = new Map<string, unknown>();
 
-  async get<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
-    this.calls.push({ method: "GET", url, config });
-    return { data: this.responses.get(`GET ${url}`) as T, status: 200 };
+  // Set to make the next POST of /Users/Configuration answer with this status.
+  postStatus?: number;
+
+  async signIn(_request: SignInRequest): Promise<SignInResult> {
+    return { session: "session-1", userId: "user-1", userName: "Louise" };
   }
 
-  // Set to make the next POST of /Users/Configuration fail.
-  postError?: unknown;
-
-  async post<T>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
-    this.calls.push({ method: "POST", url, data, config });
-    if (url === "/Users/Configuration" && this.postError) throw this.postError;
-    if (url === "/Users/Configuration") this.responses.set("GET /Users/Me", { Id: "user-1", Configuration: data });
-    if (url === "/Users/AuthenticateByName") {
-      return { data: { AccessToken: "top-secret", User: { Id: "user-1", Name: "Louise" } } as T, status: 200 };
+  async request(request: TransportRequest): Promise<TransportResponse> {
+    const { method, path: url, body: data } = request;
+    this.calls.push({ method, url, data, query: request.query ?? [], config: { signal: request.signal, timeout: request.timeoutMs } });
+    if (method === "GET") return { status: 200, body: this.responses.get(`GET ${url}`) };
+    if (method === "POST" && url === "/Users/Configuration") {
+      if (this.postStatus) return { status: this.postStatus, body: undefined };
+      this.responses.set("GET /Users/Me", { Id: "user-1", Configuration: data });
     }
-    return { data: undefined as T, status: 204 };
+    return { status: 204, body: undefined };
   }
 
-  async delete<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
-    this.calls.push({ method: "DELETE", url, config });
-    return { data: undefined as T, status: 204 };
-  }
+  async endSession(): Promise<void> {}
 }
 
 async function signedIn() {
@@ -65,7 +63,7 @@ describe.each([
     await expect(gateway.accountLanguages(signal)).resolves.toEqual({});
     expect(transport.calls).toHaveLength(1);
     expect(transport.calls[0]).toMatchObject({ method: "GET", url: "/Users/Me", config: { signal, timeout: CONTROL_REQUEST_TIMEOUT_MS } });
-    expect(transport.calls[0]?.config?.params).toBeUndefined();
+    expect(transport.calls[0]?.query).toEqual([]);
   });
 
   it("maps the language the server read back after a save", async () => {
@@ -120,8 +118,8 @@ describe("account language mapping edge cases", () => {
 
   it("rejects when the server answers 401", async () => {
     const { gateway, transport } = await signedIn();
-    transport.get = async () => { throw Object.assign(new Error("Request failed with status code 401"), { response: { status: 401 } }); };
-    await expect(gateway.accountLanguages()).rejects.toThrow();
+    transport.request = async () => ({ status: 401, body: undefined });
+    await expect(gateway.accountLanguages()).rejects.toMatchObject({ code: "status", status: 401 });
   });
 });
 
@@ -158,7 +156,7 @@ describe.each(["10.11.7", "12.4.0"] as const)("saving the account languages, Jel
     const saved = await gateway.saveAccountLanguages(change);
     expect(transport.calls.map((call) => `${call.method} ${call.url}`)).toEqual(["GET /Users/Me", "POST /Users/Configuration"]);
     for (const call of transport.calls) {
-      expect(call.config?.params).toBeUndefined();
+      expect(call.query).toEqual([]);
       expect(call.config?.timeout).toBe(CONTROL_REQUEST_TIMEOUT_MS);
       expect(call.url).not.toContain("?");
     }
@@ -221,9 +219,9 @@ describe.each(["10.11.7", "12.4.0"] as const)("saving the account languages, Jel
   it("a failed save does not block the next one", async () => {
     const { gateway, transport } = await signedIn();
     transport.responses.set("GET /Users/Me", { Id: "user-1", Configuration: newUserConfiguration(version) });
-    transport.postError = Object.assign(new Error("Request failed with status code 400"), { response: { status: 400 } });
-    await expect(gateway.saveAccountLanguages({ SubtitleMode: "None" })).rejects.toMatchObject({ response: { status: 400 } });
-    transport.postError = undefined;
+    transport.postStatus = 400;
+    await expect(gateway.saveAccountLanguages({ SubtitleMode: "None" })).rejects.toMatchObject({ code: "status", status: 400 });
+    transport.postStatus = undefined;
     await expect(gateway.saveAccountLanguages({ SubtitleMode: "Default" })).resolves.toMatchObject({ subtitleMode: "Default" });
   });
 });
