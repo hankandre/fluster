@@ -735,10 +735,10 @@
             "A test lists every endpoint the core calls and whether Jellyscale answers it, and each gap names its Jellyscale issue number or says not yet filed"
           ],
           "verify": "pnpm fixture:up && pnpm fixture:setup && pnpm --filter @octave/core test",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit 0bb97d3b (task/T2-08, three commits on d629648e). Jellyscale built from pinned commit b920b193cd6f beside the Jellyfin fixtures; six fixture kinds plus endpoints.json recorded; frozen tests green; pnpm check green. Not run locally: three-server fixture:up/setup and test:tripwire (other checkout's containers on 18096/18097); CI tripwire does them."
         },
         {
           "id": "T2-09",
