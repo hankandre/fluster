@@ -5,9 +5,10 @@ import { dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 import type { LibraryItem } from "../domain/catalog";
-import type { PlaybackPlan, PlaybackSnapshot, PlayerEngine, PlayerEvent } from "../domain/playback";
+import type { PlaybackPlan, PlaybackSnapshot } from "../domain/playback";
 import { FakeClock } from "../ports/fake-clock";
 import { PlaybackCoordinator, type PlaybackGateway } from "./coordinator";
+import { createFakePlayerEngine } from "./fake-player-engine";
 import { PlaystateReporter, type PlaystateGateway } from "./playstate-reporter";
 
 const item: LibraryItem = { id: "one", name: "One", type: "Movie", resumePositionTicks: 0, played: false };
@@ -36,22 +37,6 @@ const converted: PlaybackPlan = {
   mediaKind: "videos",
 };
 
-class FakePlayer implements PlayerEngine {
-  mode = "native" as const;
-  listener?: (event: PlayerEvent) => void;
-  initialize = vi.fn(async () => ({ mode: "native" as const, embedded: true, renderer: "test", nativeRenderer: "test" }));
-  subscribe = vi.fn(async (listener: (event: PlayerEvent) => void) => { this.listener = listener; return () => undefined; });
-  setSurface = vi.fn(async () => undefined);
-  launch = vi.fn(async () => undefined);
-  setPaused = vi.fn(async () => undefined);
-  seek = vi.fn(async () => undefined);
-  setVolume = vi.fn(async () => undefined);
-  setMuted = vi.fn(async () => undefined);
-  selectTrack = vi.fn(async () => undefined);
-  setFullscreen = vi.fn(async () => undefined);
-  stop = vi.fn<() => Promise<void>>(async () => undefined);
-}
-
 function coordinatorSetup() {
   const clock = new FakeClock();
   const gateway = {
@@ -59,13 +44,13 @@ function coordinatorSetup() {
     reportStart: vi.fn(async () => undefined),
     reportProgress: vi.fn(async () => undefined),
     reportStopped: vi.fn(async () => undefined),
-    authorizationHeader: () => "test-header",
+    sessionId: () => "session-1",
     stopActiveEncoding: vi.fn(async () => undefined),
     // The server has no TranscodingInfo yet, so both checks run.
     sessionPlayMethod: vi.fn(async () => undefined),
   } satisfies PlaybackGateway;
-  const player = new FakePlayer();
-  const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn(), onPlanConfirmed: vi.fn() }, clock);
+  const player = createFakePlayerEngine();
+  const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn(), onPlanConfirmed: vi.fn() }, clock);
   return { clock, gateway, player, coordinator };
 }
 
@@ -82,8 +67,8 @@ describe("play-method checks on a fake clock", () => {
   it("asks the server at 3 000 ms and 10 000 ms after the first frame, and never again", async () => {
     const { clock, gateway, player, coordinator } = coordinatorSetup();
     await coordinator.start(item);
-    player.listener?.({ kind: "loaded", snapshot });
-    player.listener?.({ kind: "first-frame" });
+    player.emit({ kind: "loaded", snapshot });
+    player.emit({ kind: "first-frame" });
     await clock.advance(0);
 
     await clock.advance(2_999);
