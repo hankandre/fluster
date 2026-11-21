@@ -241,6 +241,16 @@ T2-04 built the core's side of the seam (`packages/core/src/ports/transport.ts`:
 
 Also settled there: a 4xx or 5xx answer comes back from `request` as a status and the core raises, because the core parses every response and two calls treat 404 as an answer; a body that is empty or not JSON crosses as `undefined`.
 
+## Amendment, 2026-11-21 (owner): two allowlists, one per native module
+
+This record said both that the session methods live in a session module of their own, so that `modules/player` keeps exactly the PlayerEngine port's methods, and that T8-01's allowlist includes the four session methods ("Related wording" above). The owner decided on 2026-11-21: **two allowlists, one per native module.**
+
+- The player module's allowlist stays exactly the PlayerEngine port's methods.
+- The session module's allowlist is exactly `signIn`, `request`, `restoreSessions` and `endSession`, plus its one event, `sessionEnded`.
+- A test fails when either module gains a method or event that its list does not name.
+
+This supersedes the T8-01 item under "Related wording"; T8-01's acceptance now says the above.
+
 ## Revisit if
 
 - A crash reporter, over-the-air JavaScript updates or any third-party runtime code is proposed. Under A that is a new reader of the token; under C it is not.
