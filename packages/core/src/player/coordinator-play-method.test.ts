@@ -1,7 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { LibraryItem } from "../domain/catalog";
 import type { PlaybackPlan, PlaybackSnapshot, PlayerEngine, PlayerEvent, ServerPlayMethod } from "../domain/playback";
 import { PlaybackCoordinator, type PlaybackGateway } from "./coordinator";
+import { FakeClock } from "../ports/fake-clock";
 
 const item: LibraryItem = { id: "one", name: "One", type: "Movie", resumePositionTicks: 0, played: false };
 const snapshot: PlaybackSnapshot = {
@@ -59,32 +60,26 @@ function setup(planned: PlaybackPlan, answers: (() => Promise<ServerPlayMethod |
   } satisfies PlaybackGateway;
   const player = new FakePlayer();
   const onPlanConfirmed = vi.fn();
-  const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn(), onPlanConfirmed });
-  return { gateway, player, coordinator, onPlanConfirmed };
+  const clock = new FakeClock();
+  const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn(), onPlanConfirmed }, clock);
+  return { gateway, player, coordinator, onPlanConfirmed, clock };
 }
 
 async function playToFirstFrame(context: ReturnType<typeof setup>): Promise<void> {
   await context.coordinator.start(item);
   context.player.listener?.({ kind: "loaded", snapshot });
   context.player.listener?.({ kind: "first-frame" });
-  await vi.advanceTimersByTimeAsync(0);
+  await context.clock.advance(0);
 }
 
 describe("PlaybackCoordinator play-method confirmation", () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
   it("asks the server 3 s after the first frame, shows DirectStream once it says it copies, and keeps reporting Transcode", async () => {
     const context = setup(hls, [async () => copies]);
     await playToFirstFrame(context);
     expect(context.gateway.reportStart).toHaveBeenCalledWith(hls, snapshot, expect.any(AbortSignal));
-    await vi.advanceTimersByTimeAsync(2_999);
+    await context.clock.advance(2_999);
     expect(context.gateway.sessionPlayMethod).not.toHaveBeenCalled();
-    await vi.advanceTimersByTimeAsync(1);
+    await context.clock.advance(1);
     expect(context.gateway.sessionPlayMethod).toHaveBeenCalledWith(hls, expect.any(AbortSignal));
     const confirmed = { ...hls, playMethod: "DirectStream", conversionReasons: ["DirectPlayError", "AudioCodecNotSupported"] };
     expect(context.onPlanConfirmed).toHaveBeenCalledWith(confirmed);
@@ -93,13 +88,13 @@ describe("PlaybackCoordinator play-method confirmation", () => {
     // stopped report keep PlayMethod Transcode so the server keeps the job's
     // TranscodingInfo (ClearTranscodingInfo runs on a non-Transcode report).
     const reported = { ...confirmed, playMethod: "Transcode" };
-    await vi.advanceTimersByTimeAsync(7_000);
+    await context.clock.advance(7_000);
     expect(context.gateway.reportProgress).toHaveBeenLastCalledWith(reported, snapshot, expect.any(AbortSignal));
     context.player.listener?.({ kind: "state", snapshot, cause: "pause" });
-    await vi.advanceTimersByTimeAsync(0);
+    await context.clock.advance(0);
     expect(context.gateway.reportProgress).toHaveBeenLastCalledWith(reported, snapshot, expect.any(AbortSignal));
     await context.coordinator.stop();
-    await vi.advanceTimersByTimeAsync(0);
+    await context.clock.advance(0);
     expect(context.gateway.reportStopped).toHaveBeenCalledWith(reported, snapshot, expect.any(AbortSignal), false);
     const calls = [context.gateway.reportStart, context.gateway.reportProgress, context.gateway.reportStopped].flatMap((report) => report.mock.calls as unknown[][]);
     expect(calls.length).toBeGreaterThan(3);
@@ -110,11 +105,11 @@ describe("PlaybackCoordinator play-method confirmation", () => {
   it("asks once more at 10 s when the server had no TranscodingInfo yet", async () => {
     const context = setup(hls, [async () => undefined, async () => copies]);
     await playToFirstFrame(context);
-    await vi.advanceTimersByTimeAsync(3_000);
+    await context.clock.advance(3_000);
     expect(context.onPlanConfirmed).not.toHaveBeenCalled();
-    await vi.advanceTimersByTimeAsync(6_999);
+    await context.clock.advance(6_999);
     expect(context.gateway.sessionPlayMethod).toHaveBeenCalledTimes(1);
-    await vi.advanceTimersByTimeAsync(1);
+    await context.clock.advance(1);
     expect(context.gateway.sessionPlayMethod).toHaveBeenCalledTimes(2);
     expect(context.onPlanConfirmed).toHaveBeenCalledWith(expect.objectContaining({ playMethod: "DirectStream" }));
   });
@@ -122,11 +117,11 @@ describe("PlaybackCoordinator play-method confirmation", () => {
   it("keeps Transcode when the query fails, and never asks a third time", async () => {
     const context = setup(hls, [async () => { throw new Error("offline"); }, async () => { throw new Error("offline"); }]);
     await playToFirstFrame(context);
-    await vi.advanceTimersByTimeAsync(30_000);
+    await context.clock.advance(30_000);
     expect(context.gateway.sessionPlayMethod).toHaveBeenCalledTimes(2);
     expect(context.onPlanConfirmed).not.toHaveBeenCalled();
     await context.coordinator.stop();
-    await vi.advanceTimersByTimeAsync(0);
+    await context.clock.advance(0);
     expect(context.gateway.reportStopped).toHaveBeenCalledWith(hls, snapshot, expect.any(AbortSignal), false);
   });
 
@@ -135,7 +130,7 @@ describe("PlaybackCoordinator play-method confirmation", () => {
       async () => ({ playMethod: "DirectStream", videoDirect: true, audioDirect: false, reasons: [] }),
     ]);
     await playToFirstFrame(context);
-    await vi.advanceTimersByTimeAsync(3_000);
+    await context.clock.advance(3_000);
     expect(context.onPlanConfirmed).toHaveBeenCalledWith(expect.objectContaining({ playMethod: "Transcode" }));
   });
 
@@ -148,7 +143,7 @@ describe("PlaybackCoordinator play-method confirmation", () => {
   it("never asks for a direct-play session", async () => {
     const context = setup({ ...hls, delivery: "static", playMethod: "DirectPlay", conversionReasons: [] } as PlaybackPlan, [async () => copies]);
     await playToFirstFrame(context);
-    await vi.advanceTimersByTimeAsync(30_000);
+    await context.clock.advance(30_000);
     expect(context.gateway.sessionPlayMethod).not.toHaveBeenCalled();
   });
 
@@ -156,22 +151,22 @@ describe("PlaybackCoordinator play-method confirmation", () => {
     let release: (value: ServerPlayMethod) => void = () => undefined;
     const context = setup(hls, [() => new Promise((resolve) => { release = resolve; })]);
     await playToFirstFrame(context);
-    await vi.advanceTimersByTimeAsync(3_000);
+    await context.clock.advance(3_000);
     expect(context.gateway.sessionPlayMethod).toHaveBeenCalledTimes(1);
     const signal = (context.gateway.sessionPlayMethod.mock.calls[0] as unknown[])[1] as AbortSignal;
     await context.coordinator.stop();
     expect(signal.aborted).toBe(true);
     release(copies);
-    await vi.advanceTimersByTimeAsync(10_000);
+    await context.clock.advance(10_000);
     expect(context.onPlanConfirmed).not.toHaveBeenCalled();
   });
 
   it("does not ask when the session ends before 3 s", async () => {
     const context = setup(hls, [async () => copies]);
     await playToFirstFrame(context);
-    await vi.advanceTimersByTimeAsync(1_000);
+    await context.clock.advance(1_000);
     await context.coordinator.stop();
-    await vi.advanceTimersByTimeAsync(30_000);
+    await context.clock.advance(30_000);
     expect(context.gateway.sessionPlayMethod).not.toHaveBeenCalled();
   });
 });

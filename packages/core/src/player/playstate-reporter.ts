@@ -1,4 +1,5 @@
 import type { PlaybackPlan, PlaybackSnapshot } from "../domain/playback";
+import type { Cancel, Clock } from "../ports/clock";
 import { reportedPlan } from "./confirm-play-method";
 
 // The warning for a failed progress or stopped report. The view turns it into
@@ -36,7 +37,7 @@ export class PlaystateReporter {
   private queue: Promise<void> = Promise.resolve();
   private controller = new AbortController();
   private drains: Promise<void> = Promise.resolve();
-  private progressTimer?: ReturnType<typeof setInterval>;
+  private stopProgressTicks?: Cancel;
   private started = false;
   // Play sessions whose encode has been asked to stop. Kept in memory only.
   private readonly stoppedEncodings = new Set<string>();
@@ -44,6 +45,7 @@ export class PlaystateReporter {
   constructor(
     private readonly gateway: PlaystateGateway,
     private readonly onWarning: (message: string) => void,
+    private readonly clock: Clock,
   ) {}
 
   /** Forget the previous attempt's reports. Earlier drains keep running. */
@@ -67,13 +69,13 @@ export class PlaystateReporter {
     if (this.started) return;
     this.started = true;
     this.queueReport((signal) => this.gateway.reportStart(reportedPlan(plan), snapshot, signal));
-    this.progressTimer = setInterval(() => {
+    this.stopProgressTicks = this.clock.every(PROGRESS_INTERVAL_MS, () => {
       const latest = currentSnapshot();
       const latestPlan = currentPlan() ?? plan;
       if (latest && this.started) {
         this.queueReport((signal) => this.gateway.reportProgress(reportedPlan(latestPlan), latest, signal));
       }
-    }, PROGRESS_INTERVAL_MS);
+    });
   }
 
   /** Report progress now. Ignored until the start has been reported. */
@@ -83,8 +85,8 @@ export class PlaystateReporter {
   }
 
   stopProgress(): void {
-    if (this.progressTimer !== undefined) clearInterval(this.progressTimer);
-    this.progressTimer = undefined;
+    this.stopProgressTicks?.();
+    this.stopProgressTicks = undefined;
   }
 
   /**
@@ -138,7 +140,7 @@ export class PlaystateReporter {
     sendStopped: ((signal: AbortSignal) => Promise<void>) | undefined,
     plan: PlaybackPlan | undefined,
   ): Promise<void> {
-    const settled = await settlesWithin(queue, REPORT_FLUSH_TIMEOUT_MS);
+    const settled = await settlesWithin(queue, REPORT_FLUSH_TIMEOUT_MS, this.clock);
     if (!settled) {
       this.onWarning("Playback reports did not finish before the shutdown deadline.");
       controller.abort();
@@ -159,7 +161,7 @@ export class PlaystateReporter {
       if (controller.signal.aborted) return;
       this.onWarning(REPORT_FAILED_WARNING);
     });
-    const settled = await settlesWithin(report, STOPPED_REPORT_TIMEOUT_MS);
+    const settled = await settlesWithin(report, STOPPED_REPORT_TIMEOUT_MS, this.clock);
     if (settled) return delivered;
 
     this.onWarning("The stopped report did not finish before the shutdown deadline.");
@@ -176,7 +178,7 @@ export class PlaystateReporter {
       if (controller.signal.aborted) return;
       this.onWarning("Stopping the server conversion failed.");
     });
-    const settled = await settlesWithin(request, ENCODING_STOP_TIMEOUT_MS);
+    const settled = await settlesWithin(request, ENCODING_STOP_TIMEOUT_MS, this.clock);
     if (settled) return;
 
     this.onWarning("Stopping the server conversion did not finish before the shutdown deadline.");
@@ -185,12 +187,12 @@ export class PlaystateReporter {
 }
 
 /** Resolves true when `promise` settles first, or false after `timeoutMs`. */
-async function settlesWithin(promise: Promise<void>, timeoutMs: number): Promise<boolean> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
+async function settlesWithin(promise: Promise<void>, timeoutMs: number, clock: Clock): Promise<boolean> {
+  let cancel: Cancel | undefined;
   const deadline = new Promise<boolean>((resolve) => {
-    timer = setTimeout(() => resolve(false), timeoutMs);
+    cancel = clock.after(timeoutMs, () => resolve(false));
   });
   const settled = await Promise.race([promise.then(() => true), deadline]);
-  if (timer !== undefined) clearTimeout(timer);
+  cancel?.();
   return settled;
 }

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { LibraryItem } from "../domain/catalog";
 import type { PlaybackPlan, PlaybackSnapshot, PlayerEngine, PlayerEvent } from "../domain/playback";
 import { PlaybackCancelledError, PlaybackCoordinator, type PlaybackGateway } from "./coordinator";
+import { FakeClock } from "../ports/fake-clock";
 
 const item: LibraryItem = { id: "one", name: "One", type: "Movie", resumePositionTicks: 0, played: false };
 
@@ -91,7 +92,7 @@ describe("PlaybackCoordinator.renegotiate", () => {
     const gateway = orderedGateway(order, [hlsPlan("play-1"), hlsPlan("play-2")]);
     const player = new FakePlayer(order);
     const onSessionEnded = vi.fn();
-    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn(), onSessionEnded });
+    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn(), onSessionEnded }, new FakeClock());
     await playing(coordinator, player, gateway);
     order.length = 0;
 
@@ -113,7 +114,7 @@ describe("PlaybackCoordinator.renegotiate", () => {
     const order: string[] = [];
     const gateway = orderedGateway(order, [staticPlan("play-1"), hlsPlan("play-2")]);
     const player = new FakePlayer(order);
-    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
+    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
     await playing(coordinator, player, gateway);
     order.length = 0;
 
@@ -132,7 +133,7 @@ describe("PlaybackCoordinator.renegotiate", () => {
     const order: string[] = [];
     const gateway = orderedGateway(order, [hlsPlan("play-1"), hlsPlan("play-2"), hlsPlan("play-3")]);
     const player = new FakePlayer(order);
-    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
+    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
     await playing(coordinator, player, gateway);
 
     await coordinator.renegotiate(50, { audioStreamIndex: 3 });
@@ -162,7 +163,7 @@ describe("PlaybackCoordinator.renegotiate", () => {
       stopActiveEncoding: vi.fn(() => new Promise<void>(() => undefined)),
     };
     const player = new FakePlayer();
-    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
+    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
     await playing(coordinator, player, gateway);
 
     const renegotiation = coordinator.renegotiate(10, { audioStreamIndex: 2 });
@@ -186,7 +187,7 @@ describe("PlaybackCoordinator.renegotiate", () => {
       let release = () => undefined as void;
       const stopped = new Promise<void>((resolve) => { release = resolve; });
       const onSessionEnded = vi.fn();
-      const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn(), onSessionEnded });
+      const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn(), onSessionEnded }, new FakeClock());
       await playing(coordinator, player, gateway);
       player.stop.mockImplementation(() => stopped);
 
@@ -210,7 +211,7 @@ describe("PlaybackCoordinator.renegotiate", () => {
       .mockImplementationOnce(async () => hlsPlan("play-1"))
       .mockImplementationOnce(async () => { throw new Error("The server refused."); });
     const player = new FakePlayer(order);
-    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
+    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
     await playing(coordinator, player, gateway);
 
     await expect(coordinator.renegotiate(50, { subtitleStreamIndex: 4 }, { audioStreamIndex: 1, subtitleStreamIndex: -1 }))

@@ -8,6 +8,7 @@ import { diagnosticsText } from "./diagnostics";
 import { redactError, redactText, redactUrl } from "./redact";
 import { safeReason } from "./safe-reason";
 import { webCrypto } from "./adapters/web-crypto";
+import { FakeClock } from "./ports/fake-clock";
 
 const CANARY = "CANARY-7f3a9c1e5b";
 const SERVER = "https://media.test/jellyfin";
@@ -305,7 +306,7 @@ describe("redaction canary: PlaybackCoordinator", () => {
       const coordinator = new PlaybackCoordinator(gateway, player, {
         onEvent: (event) => { if (event.kind === "error") surfaced.push(event.message); },
         onReportingError: vi.fn(),
-      });
+      }, new FakeClock());
       await coordinator.start(item);
       player.listener?.({ kind: "error", message: text });
       await vi.waitFor(() => expect(surfaced).toHaveLength(1));
@@ -332,7 +333,7 @@ describe("redaction canary: PlaybackCoordinator", () => {
       const coordinator = new PlaybackCoordinator(gateway, player, {
         onEvent: (event) => { if (event.kind === "error") surfaced.push(event.message); },
         onReportingError: (warning) => surfaced.push(warning),
-      });
+      }, new FakeClock());
       await coordinator.start(item);
       player.listener?.({ kind: "loaded", snapshot });
       await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
@@ -358,11 +359,11 @@ describe("redaction canary: PlaybackCoordinator", () => {
       } as PlaybackGateway;
       const player = new FakePlayer();
       player.launch.mockRejectedValue(new Error(text));
-      const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
+      const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
       expectClean(`launch failure for "${text}"`, await messageOf(() => coordinator.start(item)));
 
       gateway.createPlaybackPlan = vi.fn(async () => { throw new Error(text); });
-      const failing = new PlaybackCoordinator(gateway, new FakePlayer(), { onEvent: vi.fn(), onReportingError: vi.fn() });
+      const failing = new PlaybackCoordinator(gateway, new FakePlayer(), { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
       expectClean(`plan failure for "${text}"`, await messageOf(() => failing.start(item)));
     }
     expectNoCanaryInConsole();

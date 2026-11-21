@@ -10,6 +10,7 @@ import type {
   StreamSelection,
 } from "../domain/playback";
 import { secondsToTicks, startOverChoice } from "../domain/playback";
+import type { Clock } from "../ports/clock";
 import { redactError } from "../redact";
 import { errorReason } from "../safe-reason";
 import { redactTransportError } from "../transport-error";
@@ -116,8 +117,9 @@ export class PlaybackCoordinator {
     private readonly gateway: PlaybackGateway,
     private readonly player: PlayerEngine,
     private readonly callbacks: CoordinatorCallbacks,
+    private readonly clock: Clock,
   ) {
-    this.reporter = new PlaystateReporter(gateway, (message) => callbacks.onReportingError(message));
+    this.reporter = new PlaystateReporter(gateway, (message) => callbacks.onReportingError(message), clock);
   }
 
   start(
@@ -404,7 +406,7 @@ export class PlaybackCoordinator {
     void (async () => {
       let waited = 0;
       for (const at of PLAY_METHOD_CHECKS_MS) {
-        if (!(await abortableDelay(at - waited, controller.signal))) return;
+        if (!(await abortableDelay(at - waited, controller.signal, this.clock))) return;
         waited = at;
         let server: ServerPlayMethod | undefined;
         try {
@@ -534,15 +536,15 @@ function untilSettledOrAborted(promise: Promise<void>, signal: AbortSignal): Pro
 }
 
 // Resolves true after `ms`, or false as soon as `signal` aborts.
-function abortableDelay(ms: number, signal: AbortSignal): Promise<boolean> {
+function abortableDelay(ms: number, signal: AbortSignal, clock: Clock): Promise<boolean> {
   if (signal.aborted) return Promise.resolve(false);
   return new Promise((resolve) => {
-    const timer = setTimeout(() => {
+    const cancel = clock.after(ms, () => {
       signal.removeEventListener("abort", onAbort);
       resolve(true);
-    }, ms);
+    });
     const onAbort = () => {
-      clearTimeout(timer);
+      cancel();
       resolve(false);
     };
     signal.addEventListener("abort", onAbort, { once: true });

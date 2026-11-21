@@ -1,6 +1,7 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PlaybackPlan, PlaybackSnapshot } from "../domain/playback";
 import { PlaystateReporter, REPORT_FAILED_WARNING, type PlaystateGateway } from "./playstate-reporter";
+import { FakeClock } from "../ports/fake-clock";
 
 const plan: PlaybackPlan = {
   itemId: "one",
@@ -49,13 +50,14 @@ function recordingGateway(calls: string[]): PlaystateGateway {
 }
 
 describe("PlaystateReporter", () => {
-  afterEach(() => {
-    vi.useRealTimers();
+  let clock: FakeClock;
+  beforeEach(() => {
+    clock = new FakeClock();
   });
 
   it("ignores progress and stop before the start is reported", async () => {
     const calls: string[] = [];
-    const reporter = new PlaystateReporter(recordingGateway(calls), vi.fn());
+    const reporter = new PlaystateReporter(recordingGateway(calls), vi.fn(), clock);
 
     reporter.progress(plan, snapshot);
     reporter.finish(plan, snapshot, false);
@@ -66,7 +68,7 @@ describe("PlaystateReporter", () => {
 
   it("sends start, progress, and stopped in order and reports start once", async () => {
     const calls: string[] = [];
-    const reporter = new PlaystateReporter(recordingGateway(calls), vi.fn());
+    const reporter = new PlaystateReporter(recordingGateway(calls), vi.fn(), clock);
 
     reporter.start(plan, snapshot, () => snapshot);
     reporter.start(plan, snapshot, () => snapshot);
@@ -78,14 +80,13 @@ describe("PlaystateReporter", () => {
   });
 
   it("sends periodic progress until stopped", async () => {
-    vi.useFakeTimers();
     const calls: string[] = [];
-    const reporter = new PlaystateReporter(recordingGateway(calls), vi.fn());
+    const reporter = new PlaystateReporter(recordingGateway(calls), vi.fn(), clock);
 
     reporter.start(plan, snapshot, () => snapshot);
-    await vi.advanceTimersByTimeAsync(10_000);
+    await clock.advance(10_000);
     reporter.stopProgress();
-    await vi.advanceTimersByTimeAsync(10_000);
+    await clock.advance(10_000);
 
     expect(calls).toEqual(["start", "progress"]);
   });
@@ -97,7 +98,7 @@ describe("PlaystateReporter", () => {
       throw new Error("failed https://media.test/Sessions/Playing?api_key=secret");
     });
     const onWarning = vi.fn();
-    const reporter = new PlaystateReporter(gateway, onWarning);
+    const reporter = new PlaystateReporter(gateway, onWarning, clock);
 
     reporter.start(plan, snapshot, () => snapshot);
     reporter.progress(plan, snapshot);
@@ -109,7 +110,6 @@ describe("PlaystateReporter", () => {
   });
 
   it("aborts reports that outlive the shutdown deadline without a second warning", async () => {
-    vi.useFakeTimers();
     let signal: AbortSignal | undefined;
     const gateway = recordingGateway([]);
     gateway.reportStart = vi.fn((_plan, _snapshot, reportSignal?: AbortSignal) => {
@@ -119,11 +119,11 @@ describe("PlaystateReporter", () => {
       });
     });
     const onWarning = vi.fn();
-    const reporter = new PlaystateReporter(gateway, onWarning);
+    const reporter = new PlaystateReporter(gateway, onWarning, clock);
 
     reporter.start(plan, snapshot, () => snapshot);
     reporter.finish(plan, snapshot, false);
-    await vi.advanceTimersByTimeAsync(5_000);
+    await clock.advance(5_000);
     await reporter.waitForDrains();
     await reporter.waitForQueue();
 
@@ -133,7 +133,6 @@ describe("PlaystateReporter", () => {
   });
 
   it("sends the stopped report with a live signal after an earlier report hits the deadline", async () => {
-    vi.useFakeTimers();
     const gateway = recordingGateway([]);
     gateway.reportStart = vi.fn((_plan, _snapshot, reportSignal?: AbortSignal) => new Promise<void>((_resolve, reject) => {
       reportSignal?.addEventListener("abort", () => reject(new Error("aborted")));
@@ -142,11 +141,11 @@ describe("PlaystateReporter", () => {
     gateway.reportStopped = vi.fn(async (_plan, _snapshot, stopSignal?: AbortSignal) => {
       stopSignalAborted = stopSignal?.aborted;
     });
-    const reporter = new PlaystateReporter(gateway, vi.fn());
+    const reporter = new PlaystateReporter(gateway, vi.fn(), clock);
 
     reporter.start(plan, snapshot, () => snapshot);
     reporter.finish(plan, snapshot, false);
-    await vi.advanceTimersByTimeAsync(5_000);
+    await clock.advance(5_000);
     await reporter.waitForDrains();
 
     expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal), false);
@@ -154,7 +153,6 @@ describe("PlaystateReporter", () => {
   });
 
   it("bounds the stopped report with its own timeout when an earlier report ignores cancellation", async () => {
-    vi.useFakeTimers();
     const gateway = recordingGateway([]);
     gateway.reportStart = vi.fn(() => new Promise<void>(() => undefined));
     let stopSignal: AbortSignal | undefined;
@@ -163,18 +161,18 @@ describe("PlaystateReporter", () => {
       return new Promise<void>(() => undefined);
     });
     const onWarning = vi.fn();
-    const reporter = new PlaystateReporter(gateway, onWarning);
+    const reporter = new PlaystateReporter(gateway, onWarning, clock);
     let drained = false;
 
     reporter.start(plan, snapshot, () => snapshot);
     reporter.finish(plan, snapshot, true);
     void reporter.waitForDrains().then(() => { drained = true; });
-    await vi.advanceTimersByTimeAsync(5_000);
+    await clock.advance(5_000);
 
     expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal), true);
     expect(drained).toBe(false);
 
-    await vi.advanceTimersByTimeAsync(5_000);
+    await clock.advance(5_000);
 
     expect(drained).toBe(true);
     expect(stopSignal?.aborted).toBe(true);
@@ -189,7 +187,7 @@ describe("PlaystateReporter", () => {
         calls.push("stopped:failed-request");
         throw new Error("Request failed with status code 500");
       });
-      const reporter = new PlaystateReporter(gateway, vi.fn());
+      const reporter = new PlaystateReporter(gateway, vi.fn(), clock);
 
       reporter.start(hlsPlan, snapshot, () => snapshot);
       reporter.finish(hlsPlan, snapshot, false);
@@ -201,7 +199,6 @@ describe("PlaystateReporter", () => {
     });
 
     it("sends one DELETE after a stopped report times out, and bounds the DELETE too", async () => {
-      vi.useFakeTimers();
       const calls: string[] = [];
       const gateway = recordingGateway(calls);
       gateway.reportStopped = vi.fn(() => new Promise<void>(() => undefined));
@@ -212,20 +209,20 @@ describe("PlaystateReporter", () => {
         return new Promise<void>(() => undefined);
       });
       const onWarning = vi.fn();
-      const reporter = new PlaystateReporter(gateway, onWarning);
+      const reporter = new PlaystateReporter(gateway, onWarning, clock);
       let drained = false;
 
       reporter.start(hlsPlan, snapshot, () => snapshot);
       reporter.finish(hlsPlan, snapshot, false);
       void reporter.waitForDrains().then(() => { drained = true; });
-      await vi.advanceTimersByTimeAsync(4_999);
+      await clock.advance(4_999);
       expect(gateway.stopActiveEncoding).not.toHaveBeenCalled();
 
-      await vi.advanceTimersByTimeAsync(1);
+      await clock.advance(1);
       expect(calls).toEqual(["start", "delete"]);
       expect(drained).toBe(false);
 
-      await vi.advanceTimersByTimeAsync(3_000);
+      await clock.advance(3_000);
       expect(drained).toBe(true);
       expect(deleteSignal?.aborted).toBe(true);
       expect(gateway.stopActiveEncoding).toHaveBeenCalledTimes(1);
@@ -235,7 +232,7 @@ describe("PlaystateReporter", () => {
     it("sends no DELETE when the stopped report succeeds or the session direct played", async () => {
       const calls: string[] = [];
       const gateway = recordingGateway(calls);
-      const reporter = new PlaystateReporter(gateway, vi.fn());
+      const reporter = new PlaystateReporter(gateway, vi.fn(), clock);
 
       reporter.start(hlsPlan, snapshot, () => snapshot);
       reporter.finish(hlsPlan, snapshot, false);
@@ -253,7 +250,7 @@ describe("PlaystateReporter", () => {
 
     it("sends a DELETE when a converted session ends before its start was reported", async () => {
       const calls: string[] = [];
-      const reporter = new PlaystateReporter(recordingGateway(calls), vi.fn());
+      const reporter = new PlaystateReporter(recordingGateway(calls), vi.fn(), clock);
 
       reporter.finish(hlsPlan, undefined, true);
       await reporter.waitForDrains();
@@ -264,7 +261,7 @@ describe("PlaystateReporter", () => {
     it("stops an encode for a new play session after the old stopped report, once per session", async () => {
       const calls: string[] = [];
       const gateway = recordingGateway(calls);
-      const reporter = new PlaystateReporter(gateway, vi.fn());
+      const reporter = new PlaystateReporter(gateway, vi.fn(), clock);
 
       reporter.start(hlsPlan, snapshot, () => snapshot);
       reporter.finish(hlsPlan, snapshot, true);
@@ -280,14 +277,13 @@ describe("PlaystateReporter", () => {
     // server's own automatic progress, so these reports alone keep a paused
     // conversion alive past the 60 s kill timer. No separate ping is sent.
     it("keeps sending progress every 10 s while a conversion is paused", async () => {
-      vi.useFakeTimers();
       const gateway = recordingGateway([]);
       const paused = { ...snapshot, paused: true };
-      const reporter = new PlaystateReporter(gateway, vi.fn());
+      const reporter = new PlaystateReporter(gateway, vi.fn(), clock);
 
       reporter.start(hlsPlan, snapshot, () => paused);
       reporter.progress(hlsPlan, paused);
-      await vi.advanceTimersByTimeAsync(90_000);
+      await clock.advance(90_000);
 
       expect(gateway.reportProgress).toHaveBeenCalledTimes(10);
       expect(vi.mocked(gateway.reportProgress).mock.calls.every(([, sent]) => sent.paused)).toBe(true);
@@ -301,7 +297,7 @@ describe("PlaystateReporter", () => {
         throw new Error("DELETE https://media.test/Videos/ActiveEncodings?api_key=secret failed");
       });
       const onWarning = vi.fn();
-      const reporter = new PlaystateReporter(gateway, onWarning);
+      const reporter = new PlaystateReporter(gateway, onWarning, clock);
 
       reporter.stopEncoding(hlsPlan);
       await reporter.waitForDrains();

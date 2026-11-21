@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { LibraryItem } from "../domain/catalog";
 import type { PlaybackPlan, PlaybackSnapshot, PlayerEngine, PlayerEvent } from "../domain/playback";
 import { PlaybackCoordinator, type PlaybackGateway } from "./coordinator";
+import { FakeClock } from "../ports/fake-clock";
 
 // P17-08: the coordinator owns a viewer's audio pick for the whole session.
 const item: LibraryItem = { id: "one", name: "One", type: "Movie", resumePositionTicks: 0, played: false };
@@ -68,7 +69,7 @@ function setup(delivery: "static" | "hls" = "static") {
   } as PlaybackGateway;
   const player = new FakePlayer();
   const onAudioPickNotApplied = vi.fn();
-  const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn(), onAudioPickNotApplied });
+  const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn(), onAudioPickNotApplied }, new FakeClock());
   const emit = async (event: PlayerEvent) => {
     player.listener?.(event);
     await coordinator.flush();

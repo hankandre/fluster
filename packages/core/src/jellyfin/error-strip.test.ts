@@ -8,6 +8,7 @@ import { classifyTransportError } from "../transport-error";
 import { JellyfinGateway } from "./gateway";
 import type { HttpTransport } from "./types";
 import { webCrypto } from "../adapters/web-crypto";
+import { FakeClock } from "../ports/fake-clock";
 
 const CANARY = "CANARY-strip-4d2b8e";
 const SERVER = "https://media.test";
@@ -142,7 +143,7 @@ describe("the coordinator PlaybackInfo failure", () => {
       launch: vi.fn(),
       stop: vi.fn(async () => undefined),
     } as unknown as PlayerEngine;
-    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() });
+    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
     const error = await coordinator.start(item).catch((caught: unknown) => caught);
     expectStripped(error, 500);
     expect(classifyTransportError(error)).toBe("server");
