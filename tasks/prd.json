@@ -307,7 +307,7 @@
           "status": "done",
           "owner": null,
           "passes": true,
-          "evidence": "Owner approved the PRODUCT.md wording on 2026-11-20; landed in #226."
+          "evidence": "Owner approved the PRODUCT.md wording on 2026-11-20; landed in PR #226."
         },
         {
           "id": "T1-06",
@@ -383,7 +383,7 @@
           "status": "done",
           "owner": null,
           "passes": true,
-          "evidence": "Owner approved the DESIGN.md wording on 2026-11-20; landed in #226."
+          "evidence": "Owner approved the DESIGN.md wording on 2026-11-20; landed in PR #226."
         },
         {
           "id": "T1-09",
