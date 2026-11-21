@@ -208,6 +208,21 @@ One agent at a time on the Shield. This record should be updated with the result
 - React Native follow-ups: F5 (design kept, lighter memory) for memory and frames; F4 with a draw distance of about one card, to see whether the lost press goes; a Baseline Profile build installed fresh.
 - Play: Alien with the TV reporting HDR10; Spider-Man with the fixed lookup; Dune for two minutes with Dolby Vision output on.
 
+## Addendum, 2026-11-21 (owner): browse rows use F4 with a row draw distance of about 150
+
+The owner chose **F4 with a row draw distance of about 150** for the TV browse rows (choice 2, option B, amended). The look is refined later, in a measured follow-up that revisits F4's look and memory trade-offs: the lift that does not animate, 16-bit artwork, the 1280 px backdrop, and no in-memory image cache. That follow-up is a backlog entry for the next Product Owner pass to place. T0 statuses are unchanged; those tasks are the owner's.
+
+Evidence: the Shield night run of 2026-11-20, as the owner reported it; the run's own results file is not in this repository, so these figures are not checked here **[unverified]**.
+
+| Measure | F4 + row draw distance ≈150 |
+|---|---|
+| Focus, 500 presses | 299/299 single presses; 0 of 12 bursts diverged |
+| Hold Down | 0 % janky frames, p99 15–16 ms |
+| Hold Right | 0–0.8 % janky frames, p99 9–11 ms |
+| Memory | PSS 252 MB; Anon + Swap + Graphics 179 MB; Graphics 35 MB |
+
+F1 measured 328 MB in the same comparison, over the target. The draw distance of about 150 removed F4's lost press in fast bursts (0 of 12 diverged, against 4 of 12 with a draw distance of 0).
+
 ## Notes for the record
 
 - T0-01 to T0-04 are still `in_progress`. Each has an owner Shield check that is not done.
