@@ -761,10 +761,10 @@
             "The CI job is required on main"
           ],
           "verify": "pnpm test:tripwire",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit 569b0513 (with b97da0dd, e5fe527d): pnpm check green; pnpm test:tripwire passed on all 3 servers, 66 rows, wire 0 failures. Not run: tv:wire (not built), PR/CI. Item 7 met by ruleset 26769544."
         }
       ]
     },
