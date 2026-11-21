@@ -7,10 +7,19 @@
 import type { PlaybackPlan, PlaybackSnapshot, ServerPlayMethod } from "../../packages/core/src/domain/playback";
 import type { JellyfinGateway } from "../../packages/core/src/jellyfin/gateway";
 import { authorizationFor } from "./tripwire-transport";
+import { playerFetch } from "./tripwire-wire";
 import { confirmedPlan, reportedPlan } from "../../packages/core/src/player/confirm-play-method";
 import { PLAY_METHOD_CHECKS_MS } from "../../packages/core/src/player/coordinator";
-import { countFfmpeg, sleep } from "./tripwire-container";
-import { checkHlsRequest, findCredentialInBody, playlistUris, type AfterStopObservation, type FailureKind } from "./tripwire-rules";
+import { sleep } from "./tripwire-container";
+import {
+  checkHlsRequest,
+  findCredentialInBody,
+  findForbiddenRenditions,
+  playlistUris,
+  type AfterStopObservation,
+  type FailureKind,
+  type ServerKind,
+} from "./tripwire-rules";
 import { countTranscodingSessions, type MonitorClient } from "./tripwire-server";
 
 export type HlsPlan = Extract<PlaybackPlan, { delivery: "hls" }>;
@@ -28,7 +37,10 @@ export interface HlsContext {
   gateway: JellyfinGateway;
   serverUrl: string;
   monitor: MonitorClient;
-  service: string;
+  kind: ServerKind;
+  // How many server jobs run right now, by this server's own oracle (ffmpeg processes on Jellyfin; queued or
+  // running rows and transcode ffmpeg on Jellyscale).
+  jobCount(): Promise<number>;
   // Records a request with its URL already made safe for the log.
   record(request: HlsRequestLog): void;
   safeUrl(raw: string): string;
@@ -73,14 +85,14 @@ export function snapshot(positionSeconds: number, paused = false): PlaybackSnaps
 // One checked, header-authenticated GET. A redirect, a refused URL, or a
 // non-200 answer is a failure, and the body is not used.
 async function hlsGet(ctx: HlsContext, rawUrl: string): Promise<Uint8Array | undefined> {
-  const check = checkHlsRequest(rawUrl, ctx.serverUrl);
+  const check = checkHlsRequest(rawUrl, ctx.serverUrl, ctx.kind);
   const entry: HlsRequestLog = { url: ctx.safeUrl(rawUrl), check: check.ok ? `ok (${check.kind})` : `FAIL: ${check.reason}` };
   ctx.record(entry);
   if (!check.ok) {
     ctx.fail("I2", `conversion request ${entry.url}: ${check.reason}`);
     return undefined;
   }
-  const response = await fetch(rawUrl, { headers: { Authorization: authorizationFor(ctx.gateway) }, redirect: "manual" });
+  const response = await playerFetch(rawUrl, { authorization: authorizationFor(ctx.gateway) });
   const body = new Uint8Array(await response.arrayBuffer());
   entry.status = response.status;
   entry.contentType = response.headers.get("content-type") ?? undefined;
@@ -100,10 +112,14 @@ async function hlsGet(ctx: HlsContext, rawUrl: string): Promise<Uint8Array | und
   return body;
 }
 
-async function playlist(ctx: HlsContext, rawUrl: string): Promise<string[]> {
+async function playlist(ctx: HlsContext, rawUrl: string, master = false): Promise<string[]> {
   const body = await hlsGet(ctx, rawUrl);
   if (!body) return [];
   const text = new TextDecoder().decode(body);
+  if (master) {
+    // Hard rule: a master playlist never lists a subtitle or trickplay rendition.
+    for (const line of findForbiddenRenditions(text)) ctx.fail("I2", `master playlist ${ctx.safeUrl(rawUrl)} lists a forbidden rendition: ${line.slice(0, 60)}`);
+  }
   const credential = findCredentialInBody(text);
   if (credential) {
     ctx.fail("I2", `playlist ${ctx.safeUrl(rawUrl)} names the credential parameter ${credential}`);
@@ -117,7 +133,7 @@ async function playlist(ctx: HlsContext, rawUrl: string): Promise<string[]> {
 // until the deadline. Returns what happened after the stop.
 export async function playConversion(ctx: HlsContext): Promise<HlsOutcome> {
   const { plan, gateway } = ctx;
-  const variants = await playlist(ctx, plan.streamUrl);
+  const variants = await playlist(ctx, plan.streamUrl, true);
   if (variants.length === 0) ctx.fail("playback", "the master playlist named no variant");
   const media: string[] = [];
   for (const variant of variants) media.push(...(await playlist(ctx, variant)));
@@ -165,7 +181,7 @@ export async function playConversion(ctx: HlsContext): Promise<HlsOutcome> {
   while (true) {
     const msAfterStop = Date.now() - stoppedAt;
     try {
-      const [ffmpegProcesses, sessionsWithTranscodingInfo] = await Promise.all([countFfmpeg(ctx.service), countTranscodingSessions(ctx.monitor)]);
+      const [ffmpegProcesses, sessionsWithTranscodingInfo] = await Promise.all([ctx.jobCount(), countTranscodingSessions(ctx.monitor)]);
       afterStop.push({ msAfterStop, ffmpegProcesses, sessionsWithTranscodingInfo });
     } catch (error) {
       ctx.fail("oracle", `server check after the stop failed: ${error instanceof Error ? error.message : String(error)}`);

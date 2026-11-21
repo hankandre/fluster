@@ -52,12 +52,14 @@ jobs:
       - run: pnpm test:workflow
 
   # Server conversion tripwire: plays every synthetic sample through the core's
-  # gateway against the pinned Jellyfin 10.11 and 12.4 fixture. Playable samples
+  # gateway against the pinned Jellyfin 10.11, Jellyfin 12.4 and Jellyscale
+  # fixture (Jellyscale is built from its pinned commit). Playable samples
   # must direct play with no server job; the BluRay folder, the ISO, and a
   # forced-limit run must convert over same-origin, credential-free HLS, agree
-  # with /Sessions, and leave no job after the stop. The fixture also runs the
-  # pinned Jellyscale from T2-08 (built from its commit); T2-09 plays the
-  # tripwire against it and adds per-device capability sets.
+  # with /Sessions, and leave no job after the stop. Three capability sets each
+  # lacking one video codec must convert it on Jellyfin and be refused on
+  # Jellyscale. Every request must carry the header and no credential
+  # parameter. Required on main by ruleset 26769544.
   tripwire:
     runs-on: ubuntu-22.04
     timeout-minutes: 30
