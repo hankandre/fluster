@@ -30,3 +30,14 @@ First pass: 98 backlog entries had no `taken_by`. Entries are named by their lin
 - Left the fixture recorder and server-fact entries: 53 to 62, 70 to 73, 75, 76, 78, 81, 82 and 86. Why: each is a low finding from a desktop task about recorders or server behaviour that T2-08, T2-09, T8-10, T8-12 or T9-04 will touch; several name `src/lib/` paths that moved, so the task that next touches the code should re-check them first.
 - Left entries 49, 50 and 52 (400-line check, the typescript-6 alias, account reset on a shared gateway). Why: 49 is a process check with no evidence yet of large files in the new layout (unverified; the entry's example is the desktop gateway), 50 waits on upstream releases, and 52 depends on how T2-04 and T4-06 key a gateway to a user, so their specs should read it.
 - No reorder and no drop of an existing task.
+
+## 2026-11-21
+
+Owner-approved edits, applied directly in one pull request (not a Fable pass). The owner approved each of them on 2026-11-21. Entries are named by their line number in `tasks/backlog.jsonl`.
+
+- Edited T3-03, acceptance item 6, and T8-08, acceptance items 1 and 3: the shared vectors are `packages/core/tests/fixtures/hls-master-urls.json`, `hls-playlists.json` and `host-classes.json`. Entry 101, marked taken by T3-03. Scope edit. Why: T2-02 moved the files unchanged and the root folder is gone. T2-06 is done and keeps its wording.
+- Edited T8-01, acceptance item 1: two allowlists, one per native module; the player module's is exactly the PlayerEngine port's methods, the session module's is exactly `signIn`, `request`, `restoreSessions`, `endSession` and `sessionEnded`. Entry 88's T8-01 part, which the 2026-11-20 pass left for the owner. Approval: `docs/decisions/0005-token-boundary.md` (amendment of 2026-11-21). Why: decision 0005 contradicted itself; the owner chose two lists.
+- Edited prd rule 8: the Product Owner approves scope-only acceptance edits and logs the reason; wording, look or direction edits need an owner approval file; the owner can veto any of it. `scripts/task-owner.mjs` gained `scope` for this. Entry 97 decided, marked taken by T1-12. Why: the owner adopted it.
+- Edited prd rules 9 and 16: dropped "(the Product Owner flow, T1-12)" and "(tasks/backlog.jsonl once T1-10 lands)". Entries 92 and 98, marked taken by T1-12. Why: both flows have landed; a pass has no operation for `rules`, so the owner made the edit.
+- Decided: the refiner keeps writing every task spec (Fable 5.2 for high-risk tasks, Opus 5.5 otherwise); `WORKFLOW.md` §2a says so. Entry 96, marked taken by T1-12. Why: the owner's call.
+- Appended a backlog entry for the F4 browse look follow-up (decision 0004, addendum 2026-11-21) for the next pass to place. No T0 status changed; those tasks are the owner's.
