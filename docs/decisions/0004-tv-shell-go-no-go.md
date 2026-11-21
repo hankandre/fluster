@@ -221,7 +221,7 @@ Evidence: the Shield night run of 2026-11-20, as the owner reported it; the run'
 | Hold Right | 0–0.8 % janky frames, p99 9–11 ms |
 | Memory | PSS 252 MB; Anon + Swap + Graphics 179 MB; Graphics 35 MB |
 
-F1 measured 328 MB in the same comparison, over the target. The draw distance of about 150 removed F4's lost press in fast bursts (0 of 12 diverged, against 4 of 12 with a draw distance of 0).
+F1 measured 328 MB, over the target. Fast bursts: 0 of 12 diverged with a row draw distance of about 150, against 4 of 12 with a draw distance of 0 (above).
 
 ## Notes for the record
 
