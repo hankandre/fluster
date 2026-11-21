@@ -2,6 +2,7 @@
 //
 //   tsx tests/integration/record-jellyscale-fixtures.ts              record the six fixture kinds
 //   tsx tests/integration/record-jellyscale-fixtures.ts --endpoints  probe every endpoint the core calls, write endpoints.json
+//   tsx tests/integration/record-jellyscale-fixtures.ts --device-conversion  record only device-conversion-h264.json (T2-07)
 //   tsx tests/integration/record-jellyscale-fixtures.ts --check      probe again and compare with the committed endpoints.json
 //
 // Every catalog and PlaybackInfo call goes through JellyfinGateway over a recording wrapper of FetchTransport, so each
@@ -30,7 +31,13 @@ if (!sha) throw new Error("docker-compose.yml has no x-jellyscale-commit of 40 h
 const folder = sha.slice(0, 12);
 const outDir = join(fixturesRoot, folder);
 
-const mode = process.argv.includes("--check") ? "check" : process.argv.includes("--endpoints") ? "endpoints" : "record";
+const mode = process.argv.includes("--check")
+  ? "check"
+  : process.argv.includes("--endpoints")
+    ? "endpoints"
+    : process.argv.includes("--device-conversion")
+      ? "device-conversion"
+      : "record";
 
 const credentials = readCredentials();
 const base = credentials.jellyscale_url;
@@ -200,6 +207,48 @@ async function record(): Promise<void> {
   }
 }
 
+// T2-07: the answer to the forced request (EnableDirectPlay false, AllowVideoStreamCopy false) for the H.264 film.
+// A raw request, because the gateway cannot send these flags before T2-07 is built. It writes only
+// device-conversion-h264.json and prints the three Supports* flags and whether a TranscodingUrl came back, never a URL.
+async function recordDeviceConversion(): Promise<void> {
+  const raw = await signIn();
+  const items = await findItems(raw.token);
+  const h264 = need(items, "Movie", "Synthetic H264");
+  const info = (await hit(raw.token, "GET", "/System/Info/Public")).data as { Id: string; ServerName?: string };
+  const playbackInfo = (flags: Record<string, boolean>, mediaSourceId?: string) => {
+    const query: Record<string, string | number | boolean> = { ...flags, UserId: raw.body.User.Id, StartTimeTicks: 0, MaxStreamingBitrate: OCTAVE_PROFILE.MaxStreamingBitrate };
+    if (mediaSourceId) query.MediaSourceId = mediaSourceId;
+    return hit(raw.token, "POST", `/Items/${h264.Id}/PlaybackInfo`, { query, body: { ...query, DeviceProfile: OCTAVE_PROFILE } });
+  };
+  const first = await playbackInfo({ ...PLAYBACK_INFO_FLAGS });
+  const mediaSourceId = String(first.data?.MediaSources?.[0]?.Id ?? "");
+  if (!mediaSourceId) throw new Error("the first PlaybackInfo answer has no media source");
+  const forced = await playbackInfo({ ...PLAYBACK_INFO_FLAGS, EnableDirectPlay: false, AllowVideoStreamCopy: false }, mediaSourceId);
+  if (forced.status !== 200) throw new Error(`the forced PlaybackInfo answered ${forced.status}`);
+  const source = forced.data?.MediaSources?.[0] ?? {};
+  console.log(`  forced answer: SupportsDirectPlay ${String(source.SupportsDirectPlay)}, SupportsDirectStream ${String(source.SupportsDirectStream)}, SupportsTranscoding ${String(source.SupportsTranscoding)}, TranscodingUrl ${typeof source.TranscodingUrl === "string" ? "yes" : "no"}`);
+
+  mkdirSync(outDir, { recursive: true });
+  const secrets = [raw.token];
+  const scrub = makeScrubber({
+    tokens: secrets,
+    host: new URL(base).host,
+    fakeUserIds: [{ real: String(raw.body.User.Id).toLowerCase(), fake: "user-test" }],
+    fakeServerId: { real: String(info.Id).toLowerCase(), fake: "server-jellyscale" },
+    knownIds: new Map<string, string>([[h264.Id.toLowerCase(), "item-h264"]]),
+    serverNames: [info.ServerName ?? "Octave fixture"],
+  });
+  const save = makeSaver({ outDir, folder, scrub, secrets });
+  save("device-conversion-h264", forced.data);
+
+  // A conversion job that started is stopped, as the endpoint probe does.
+  if (typeof source.TranscodingUrl === "string") {
+    const session = String(forced.data?.PlaySessionId ?? "");
+    await hit(raw.token, "POST", "/Sessions/Playing/Stopped", { body: { ItemId: h264.Id, MediaSourceId: source.Id, PlaySessionId: session } });
+    await hit(raw.token, "DELETE", "/Videos/ActiveEncodings", { query: { deviceId: DEVICE_ID, playSessionId: session } });
+  }
+}
+
 // ---- the endpoint inventory ----
 
 interface DeclaredRoute {
@@ -349,6 +398,10 @@ const ok = (value: number | "not reached"): boolean => typeof value === "number"
 async function main(): Promise<void> {
   if (mode === "record") {
     await record();
+    return;
+  }
+  if (mode === "device-conversion") {
+    await recordDeviceConversion();
     return;
   }
   const rows = await probe();

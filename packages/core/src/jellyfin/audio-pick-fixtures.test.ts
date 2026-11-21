@@ -22,7 +22,7 @@ function firstSource(version: string, name: string): MediaSourceDto {
   return source;
 }
 
-const context = { serverUrl: "http://127.0.0.1:8096", itemId: "item-multitrack" };
+const context = { serverUrl: "http://127.0.0.1:8096", itemId: "item-multitrack", capabilities: "full" as const };
 
 describe.each(["10.11.7", "12.4.0"])("audio pick fixtures on Jellyfin %s", (version) => {
   it("keeps direct play when the index names the second audio track", () => {
