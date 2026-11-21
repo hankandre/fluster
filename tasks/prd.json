@@ -735,10 +735,10 @@
             "A test lists every endpoint the core calls and whether Jellyscale answers it, and each gap names its Jellyscale issue number or says not yet filed"
           ],
           "verify": "pnpm fixture:up && pnpm fixture:setup && pnpm --filter @octave/core test",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "PR #244 (task/T2-08, head 320e83db plus this commit). CI green: tripwire job https://github.com/hankandre/octave/actions/runs/44902476673/job/136841083182 ran fixture:up, fixture:setup through check-no-secret, fixture:check-jellyscale and test:tripwire on all three servers. Local 2026-11-21: Jellyscale alone (project t208) setup 'scan done, 15 items', check-jellyscale '37 routes match'; pnpm check green (core 2143, root 332). Local three-server run blocked: orphaned Jellyfin containers of a deleted checkout hold 18096/18097 (D8)."
+          "passes": true,
+          "evidence": "PR #244 (task/T2-08). CI tripwire green on all three servers: https://github.com/hankandre/octave/actions/runs/44902476673. Local 2026-11-21 three-server run: fixture:up, fixture:setup, fixture:check-jellyscale (37 routes match), pnpm --filter @octave/core test (2143 pass), pnpm check green, pnpm test:tripwire passed; stack torn down with compose down -v."
         },
         {
           "id": "T2-09",
