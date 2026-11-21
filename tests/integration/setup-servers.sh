@@ -168,6 +168,12 @@ ensure_discovery_user() {
   log "  user $discovery_user_name ready"
 }
 
+# OCTAVE_SETUP_ONLY=jellyscale runs only the Jellyscale branch (a local run beside Jellyfin containers that
+# belong to another checkout).
+if [ "${OCTAVE_SETUP_ONLY:-}" = "jellyscale" ]; then
+  servers=()
+fi
+
 for server in "${servers[@]}"; do
   name="${server%% *}"
   url="${server##* }"
@@ -196,5 +202,72 @@ for server in "${servers[@]}"; do
   ensure_restricted_user "$url" "$name"
   ensure_discovery_user "$url" "$name"
 done
+
+# Jellyscale (T2-08). It has no startup wizard and no user API: it created octave-test at its first start, from
+# the password pnpm fixture:up generated into .jellyscale.env. Setup signs in as that user and records it.
+jellyscale_url="http://127.0.0.1:18098"
+jellyscale_env_file="$script_dir/.jellyscale.env"
+
+wait_for_readyz() {
+  local url="$1"
+  for _ in $(seq 1 60); do
+    if curl -fsS "$url/readyz" > /dev/null 2>&1; then
+      return 0
+    fi
+    sleep 2
+  done
+  echo "[setup] $url never became ready" >&2
+  return 1
+}
+
+# Jellyscale answers /readyz before its scan is done. Waits until the Synthetic H264 film and the
+# Synthetic Show series with at least one episode are listed and the item count has held for 3 polls.
+wait_for_scan() {
+  local url="$1" body count previous="" steady=0 has_film has_episode
+  for _ in $(seq 1 60); do
+    body="$(curl -fsS -H @"$header_file" -G "$url/Items" \
+      --data-urlencode "Recursive=true" --data-urlencode "IncludeItemTypes=Movie,Episode,Series" \
+      || true)"
+    count="$(echo "$body" | jq -r '.TotalRecordCount // 0' 2> /dev/null || echo 0)"
+    has_film="$(echo "$body" | jq -r '[.Items[]? | select(.Type == "Movie" and .Name == "Synthetic H264")] | length' 2> /dev/null || echo 0)"
+    has_episode="$(echo "$body" | jq -r '([.Items[]? | select(.Type == "Series" and .Name == "Synthetic Show")] | length) * ([.Items[]? | select(.Type == "Episode")] | length)' 2> /dev/null || echo 0)"
+    if [ "$has_film" -gt 0 ] && [ "$has_episode" -gt 0 ] && [ "$count" = "$previous" ]; then
+      steady=$((steady + 1))
+    else
+      steady=0
+    fi
+    if [ "$steady" -ge 3 ]; then
+      log "  scan done, $count items listed"
+      return 0
+    fi
+    previous="$count"
+    sleep 2
+  done
+  echo "[setup] the Jellyscale scan did not settle in 120 s ($count items, film $has_film, episode $has_episode)" >&2
+  return 1
+}
+
+jellyscale() {
+  local name="jellyscale" password
+  log "$name at $jellyscale_url"
+  wait_for_readyz "$jellyscale_url"
+  if [ ! -f "$jellyscale_env_file" ]; then
+    echo "[setup] $jellyscale_env_file is missing; pnpm fixture:up makes it." >&2
+    return 1
+  fi
+  password="$(grep '^JELLYSCALE_ADMIN_PASSWORD=' "$jellyscale_env_file" | head -n 1 | cut -d= -f2-)"
+  if ! authenticate "$jellyscale_url" "$password"; then
+    echo "[setup] Jellyscale refused $user_name. If .jellyscale.env was regenerated after its database was made, run pnpm fixture:down, then pnpm fixture:up." >&2
+    return 1
+  fi
+  wait_for_scan "$jellyscale_url"
+  save_credentials "$name" "$jellyscale_url" "$password"
+  log "  user $user_name ready (created by the server at its first start)"
+  log "  user $restricted_user_name and $discovery_user_name skipped: Jellyscale has no user API (backlog)"
+}
+
+if [ -z "${OCTAVE_SETUP_ONLY:-}" ] || [ "$OCTAVE_SETUP_ONLY" = "jellyscale" ]; then
+  jellyscale
+fi
 
 log "done, credentials in $credentials_file"

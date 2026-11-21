@@ -1,3 +1,6 @@
+# x-jellyscale-commit is the one pin for Jellyscale; every other mention must agree (jellyscale-fixture.test.ts).
+x-jellyscale-commit: b920b193cd6f7835dec70198477a07216118b34d
+
 services:
   jellyfin-10-11:
     image: jellyfin/jellyfin:10.11.7
@@ -30,6 +33,43 @@ services:
       interval: 5s
       timeout: 3s
       retries: 30
+
+  jellyscale-db:
+    image: postgres:18.7-alpine3.24@sha256:ff64c9e3bdf8e2120107d3559de8db314e8305f7e38c5105903c6295876738ff
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  jellyscale:
+    image: octave-jellyscale:b920b193cd6f
+    build:
+      context: https://github.com/jellyscale-org/jellyscale.git#b920b193cd6f7835dec70198477a07216118b34d
+      target: server
+      args:
+        REVISION: b920b193cd6f7835dec70198477a07216118b34d
+    command: ["--roles=all", "--config=/config/jellyscale.json"]
+    env_file:
+      - path: ./.jellyscale.env
+        required: false
+    environment:
+      JELLYSCALE_DATABASE_URL: postgres://postgres@jellyscale-db:5432/postgres?sslmode=disable
+    volumes:
+      - ../samples:/media:ro
+      - ./jellyscale-config.json:/config/jellyscale.json:ro
+    depends_on:
+      jellyscale-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8096/readyz"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+    ports:
+      - "127.0.0.1:18098:8096"
 
 volumes:
   jellyfin-10-11-config:
