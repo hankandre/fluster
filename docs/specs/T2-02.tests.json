@@ -1,0 +1,32 @@
+{
+  "task": "T2-02",
+  "files": [
+    "scripts/core-package.test.ts",
+    "scripts/core-boundaries.test.ts",
+    ".claude/workflows/task.test.mjs"
+  ],
+  "items": [
+    {
+      "item": 1,
+      "run": ["pnpm", "exec", "vitest", "run", "scripts/core-package.test.ts", "-t", "core package layout"]
+    },
+    {
+      "item": 2,
+      "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "test"]
+    },
+    {
+      "item": 3,
+      "run": ["pnpm", "exec", "vitest", "run", "scripts/core-boundaries.test.ts"]
+    },
+    {
+      "item": 4,
+      "gate": "review",
+      "why": "A one-time property of the move PR's history: the reviewer checks that the move commit is R100 only (git show --name-status -M100% --format= <move commit>), that git diff -M --name-status origin/main...HEAD shows no A line for a file that existed under src/domain, src/lib or tests/fixtures and no D line for a core file, and that git log --follow reaches pre-move commits for gateway.ts, a domain file, a player file and a fixture."
+    },
+    {
+      "item": 5,
+      "gate": "review",
+      "why": "A process state, settled by docs/specs/decisions-T2-02.md: the item applies to agent tasks that change repository code on main, so the owner's T0 spikes may stay in_progress. The reviewer checks node scripts/task.mjs list --status in_progress shows no other agent task and that the branch ships as one PR."
+    }
+  ]
+}

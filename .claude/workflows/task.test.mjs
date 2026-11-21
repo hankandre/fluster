@@ -139,6 +139,9 @@ test('the high-risk paths name the core negotiation, gateway, player and redacti
     'apps/tv/android/app/src/main/AndroidManifest.xml',
     'docs/security.md',
     'tests/fixtures/hls-playlists.json',
+    'packages/core/tests/fixtures/hls-playlists.json',
+    'packages/core/tests/fixtures/hls-master-urls.json',
+    'packages/core/tests/fixtures/host-classes.json',
   ]) {
     assert.ok(HIGH_RISK_PATH.test(path), path);
   }
