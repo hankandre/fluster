@@ -7,6 +7,7 @@ model: opus
 - Follow `AGENTS.md`.
 - Follow the `native-player` skill.
 - Implement one milestone at a time.
+- Never change or delete a frozen test (a file listed in `docs/specs/<TASK-ID>.tests.json`); add tests in new files. If a frozen test is wrong, change nothing and return it in `frozenTestProblems`.
 - Never run in parallel with other native or on-device work.
 - Run the `verify` skill before finishing.
 - List every device, Android version, and server you did not test.

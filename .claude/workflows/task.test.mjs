@@ -305,10 +305,10 @@ test('decideStep sends frozen-test problems to the owner after none and denied a
 test('guarded wraps every work call: three call sites, and work is called only inside guarded', () => {
   assert.equal((code.match(/\bguarded\(/g) || []).length, 3);
   const start = code.indexOf('const guarded =');
-  const end = code.indexOf('// 1. Spec');
+  const end = code.indexOf('if (!skipSpec)');
   assert.ok(start > 0 && end > start);
   const calls = [...code.matchAll(/\bwork\(/g)].map((match) => match.index);
-  assert.ok(calls.length >= 2);
+  assert.ok(calls.length >= 1);
   for (const index of calls) assert.ok(index > start && index < end, `work( at ${index} is outside guarded`);
 });
 
@@ -316,7 +316,7 @@ test('guarded hands blocked and frozen-tests back to runTask, and the CI fix goe
   const guardedText = between('const guarded =', '// 1. Spec');
   assert.match(guardedText, /result\('frozen-tests'/);
   assert.match(guardedText, /result\('blocked'/);
-  const ciFix = between('`CI failed on the PR.', "if (fixed && (fixed.ciOnly");
+  const ciFix = between('const fixedRun = await guarded', "if (fixed && (fixed.ciOnly");
   assert.match(ciFix, /guarded\(/);
   assert.match(ciFix, /\.stop/);
 });
@@ -359,9 +359,11 @@ test('the gate agent has no agent type and runs on the gate model', () => {
   assert.match(gateText, /Run exactly this command/);
 });
 
-test('the implement prompt forbids editing frozen files and sends wrong ones to frozenTestProblems', () => {
-  assert.match(implementPrompt, /Never change or delete a file listed in/);
-  assert.match(implementPrompt, /frozenTestProblems/);
+test('every guarded prompt forbids editing frozen files and sends wrong ones to frozenTestProblems', () => {
+  const rule = between('const frozenRule', '// Every work() call');
+  assert.match(rule, /Never change or delete a file listed in docs\/specs\/\$\{task\}\.tests\.json/);
+  assert.match(rule, /frozenTestProblems/);
+  assert.match(between('const guarded =', 'const out'), /\$\{frozenRule\}/);
 });
 
 test('the review prompt judges the frozen tests and the Ship prompt fills the Frozen tests section', () => {

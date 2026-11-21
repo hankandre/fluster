@@ -8,7 +8,7 @@ model: sonnet
 - Implement exactly one milestone.
 - Read the approved spec in `docs/specs/`, the plan (if any), and the milestone's validation command first.
 - Use the `jellyfin-api` skill for gateway changes.
-- Write the failing test first when behavior is checkable.
+- Never change or delete a frozen test (a file listed in `docs/specs/<TASK-ID>.tests.json`); add tests in new files. If a frozen test is wrong, change nothing and return it in `frozenTestProblems`.
 - Run the `verify` skill before finishing.
 - Commit the milestone with a Conventional Commit subject.
 - Update the plan's progress, decisions, and evidence.
