@@ -1,5 +1,5 @@
-// Import-boundary rules from DOMAINS.md "Dependency rules".
-// Test files are exempt from every rule.
+// Import-boundary rules from DOMAINS.md "Dependency rules", run on packages/core/src (T2-02).
+// Test files are exempt from every rule. Tighten these rules; never loosen them.
 const tests = "\\.test\\.ts$";
 
 module.exports = {
@@ -8,21 +8,27 @@ module.exports = {
       name: "domain-is-pure",
       severity: "error",
       comment:
-        "DOMAINS.md > Dependency rules 1: src/domain imports nothing outside itself. Move I/O to an adapter (src/lib/...) and pass data in.",
-      from: { path: "^src/domain/", pathNot: tests },
-      to: {
-        path: "^src/lib/|node_modules/(react|react-native|expo|@expo|@jellyfin/sdk|axios)/",
-      },
+        "DOMAINS.md > Dependency rules 1: packages/core/src/domain imports nothing outside itself: no other core folder, no npm package and no Node builtin, resolved or not. Move I/O to an adapter (packages/core/src/jellyfin/...) and pass data in.",
+      from: { path: "^packages/core/src/domain/", pathNot: tests },
+      to: { pathNot: "^packages/core/src/domain/" },
     },
     {
       name: "core-is-platform-free",
       severity: "error",
       comment:
-        "DOMAINS.md > Dependency rules 2: the core runs on any host. It must not import React, React Native, Expo, or a native module. Take what you need as a constructor argument or a port type, and let the app's composition root supply it.",
-      from: { path: "^src/", pathNot: tests },
+        "DOMAINS.md > Dependency rules 2: the core runs on any host. It must not import React, React Native, Expo, or a native module, installed or not. Take what you need as a constructor argument or a port type, and let the app's composition root supply it.",
+      from: { path: "^packages/core/src/", pathNot: tests },
       to: {
-        path: "node_modules/(react|react-dom|react-native|expo|@expo|@react-native|@tanstack)/|^(apps|modules)/",
+        path: "(^|node_modules/)(react|react-dom|react-native|react-native-[^/]+|expo|expo-[^/]+|@expo/[^/]+|@react-native/[^/]+|@react-native-[^/]+/[^/]+|@tanstack/[^/]+)(/|$)|^(apps|modules)/",
       },
+    },
+    {
+      name: "core-has-no-host-builtins",
+      severity: "error",
+      comment:
+        "DOMAINS.md > Dependency rules 2: the core must not import a Node, browser or desktop API. Take it through a port. ESLint's no-restricted-globals covers the host globals.",
+      from: { path: "^packages/core/src/", pathNot: tests },
+      to: { dependencyTypes: ["core"] },
     },
     {
       name: "no-circular",
