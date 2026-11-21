@@ -738,7 +738,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "commit fc5cf568 (task/T2-08). Jellyscale built from pinned commit b920b193cd6f beside the Jellyfin fixtures; six fixture kinds plus endpoints.json recorded; frozen tests green; the Jellyscale setup branch is tested against a fake curl (jellyscale-setup.test.ts); pnpm check green (core 2143, root 332, workflow 60). Review lows logged in docs/specs/T2-08.md. Pending in CI (Ship): three-server fixture:up/setup through check-no-secret, fixture:check-jellyscale, test:tripwire; not run locally (D7)."
+          "evidence": "PR #244 (task/T2-08, head 320e83db plus this commit). CI green: tripwire job https://github.com/hankandre/octave/actions/runs/44902476673/job/136841083182 ran fixture:up, fixture:setup through check-no-secret, fixture:check-jellyscale and test:tripwire on all three servers. Local 2026-11-21: Jellyscale alone (project t208) setup 'scan done, 15 items', check-jellyscale '37 routes match'; pnpm check green (core 2143, root 332). Local three-server run blocked: orphaned Jellyfin containers of a deleted checkout hold 18096/18097 (D8)."
         },
         {
           "id": "T2-09",
