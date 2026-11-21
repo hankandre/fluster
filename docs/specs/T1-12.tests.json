@@ -1,0 +1,12 @@
+{
+  "task": "T1-12",
+  "files": ["src/ci-proof.test.ts"],
+  "items": [
+    { "item": 1, "run": ["pnpm", "vitest", "run", "src/ci-proof.test.ts"] },
+    { "item": 2, "gate": "met", "why": "CI proof only: this branch is never merged." },
+    { "item": 3, "gate": "met", "why": "CI proof only: this branch is never merged." },
+    { "item": 4, "gate": "met", "why": "CI proof only: this branch is never merged." },
+    { "item": 5, "gate": "met", "why": "CI proof only: this branch is never merged." },
+    { "item": 6, "gate": "met", "why": "CI proof only: this branch is never merged." }
+  ]
+}
