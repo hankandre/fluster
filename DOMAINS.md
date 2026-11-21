@@ -2,7 +2,7 @@
 
 Octave's bounded contexts: what each owns, the language it uses, where its code lives, and which way dependencies may point. Use this to decide where new code goes and to scope agent tasks. A task that touches more than two domains probably needs a plan (`WORKFLOW.md`). Every task in `tasks/prd.json` names one of these domains.
 
-Paths: **Today** is where the code is on `main`. **Target** is where it moves: `packages/core` (T2-02), `apps/tv` (T3-01), `modules/player` (T8-01), and the native HTTP module (T3-03). A target path does not exist until its task lands.
+Paths: **Today** is where the code is on `main`. **Target** is where it moves: `packages/core` (done in T2-02), `apps/tv` (T3-01), `modules/player` (T8-01), and the native HTTP module (T3-03). A target path does not exist until its task lands.
 
 ## Map
 
@@ -51,7 +51,7 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 **Language.** Server, ServerId, User, Account, Session, DeviceId, Access token, Quick Connect code, Server capabilities.
 
-**Today.** `JellyfinGateway.connect/login`, `normalizeServerUrl`, `saveAccountLanguages` in `src/lib/jellyfin/gateway.ts`; `src/domain/host-class.ts`, `src/domain/server-connection.ts`, `src/domain/server-discovery.ts` (the discovery port), `src/domain/sign-in-failure.ts`; the confirmation port in `src/lib/lan-http-confirmations.ts`.
+**Today.** `JellyfinGateway.connect/login`, `normalizeServerUrl`, `saveAccountLanguages` in `packages/core/src/jellyfin/gateway.ts`; `packages/core/src/domain/host-class.ts`, `packages/core/src/domain/server-connection.ts`, `packages/core/src/domain/server-discovery.ts` (the discovery port), `packages/core/src/domain/sign-in-failure.ts`; the confirmation port in `packages/core/src/lan-http-confirmations.ts`.
 
 **Target.** `packages/core` for the rules and the gateway; the sign-in screens in `apps/tv`; the native session module (sign-in, the session registry, `request`; T3-03, T3-05), discovery (T4-01), and the Keystore credential store (T4-05) as native code behind core ports.
 
@@ -65,11 +65,11 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 **Purpose.** Let the viewer find something to watch.
 
-**Owns:** libraries (UserViews); browse queries, the remembered sort, the letter rail, filters, and search as you type; Home's rows (Continue watching merging in-progress items and next episodes, then one Recently added row) and the Up next hero pick (`src/domain/up-next.ts`); the series, season and episode hierarchy; item detail and versions as display data; image requests by item, type, tag and size; user data (played, favorite, resume position).
+**Owns:** libraries (UserViews); browse queries, the remembered sort, the letter rail, filters, and search as you type; Home's rows (Continue watching merging in-progress items and next episodes, then one Recently added row) and the Up next hero pick (`packages/core/src/domain/up-next.ts`); the series, season and episode hierarchy; item detail and versions as display data; image requests by item, type, tag and size; user data (played, favorite, resume position).
 
 **Language.** Library (UserView), Item, Movie, Series, Season, Episode, Collection, Card, Row, Rail, Resume position, Played, Favorite, Image tag.
 
-**Today.** `JellyfinGateway` catalog calls, `src/lib/jellyfin/cards.ts`, `src/lib/jellyfin/item-detail.ts`, `src/domain/catalog.ts`, `src/domain/up-next.ts`, `src/domain/subtitle-list.ts`, `src/domain/languages.ts`, `src/domain/media-format.ts`.
+**Today.** `JellyfinGateway` catalog calls, `packages/core/src/jellyfin/cards.ts`, `packages/core/src/jellyfin/item-detail.ts`, `packages/core/src/domain/catalog.ts`, `packages/core/src/domain/up-next.ts`, `packages/core/src/domain/subtitle-list.ts`, `packages/core/src/domain/languages.ts`, `packages/core/src/domain/media-format.ts`.
 
 **Target.** `packages/core` for queries and rules; Home, library, search, and detail screens in `apps/tv`; the native image view (T3-11).
 
@@ -88,7 +88,7 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 **Language.** Direct play, Direct stream, Transcode, Remux, Play method, Conversion reason, Device capabilities, Streaming limit, Media source, Version, Device profile, Play session, Playback plan, Refusal reason, Start choice, Ticks.
 
-**Today.** `PLAYBACK_POLICY`, `PlaybackPlan`, `resumeChoice` in `src/domain/playback.ts`; `src/domain/conversion-copy.ts`; `PLAYBACK_INFO_FLAGS`, `buildStaticStreamUrl`, `createPlaybackPlan` in `gateway.ts`; `decideSource`, `selectSource` in `source-acceptance.ts`; `rebuildMasterUrl` in `hls-url.ts`; `OCTAVE_PROFILE` in `device-profile.ts`.
+**Today.** `PLAYBACK_POLICY`, `PlaybackPlan`, `resumeChoice` in `packages/core/src/domain/playback.ts`; `packages/core/src/domain/conversion-copy.ts`; `PLAYBACK_INFO_FLAGS`, `buildStaticStreamUrl`, `createPlaybackPlan` in `gateway.ts`; `decideSource`, `selectSource` in `source-acceptance.ts`; `rebuildMasterUrl` in `hls-url.ts`; `OCTAVE_PROFILE` in `device-profile.ts`.
 
 **Target.** `packages/core`; the native re-check of master URLs and playlists lives with the Player Engine (T8-08) and passes the same shared vectors.
 
@@ -107,9 +107,9 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 **Language.** Attempt, Operation, First frame, End reason (eof / stopped / quit / error), Retry, Up next, Segment (intro / outro / recap).
 
-**Today.** `PlaybackCoordinator` (`src/lib/player/coordinator.ts`), `playbackSessionReducer` (`src/lib/player/session-state.ts`), `src/lib/player/session-failure.ts`, `src/domain/track-choice.ts`, `src/domain/media-segments.ts`.
+**Today.** `PlaybackCoordinator` (`packages/core/src/player/coordinator.ts`), `playbackSessionReducer` (`packages/core/src/player/session-state.ts`), `packages/core/src/player/session-failure.ts`, `packages/core/src/domain/track-choice.ts`, `packages/core/src/domain/media-segments.ts`.
 
-**Target.** `packages/core` (T2-02); the player screen in `modules/player` (T8-01) and `apps/tv` (T3-01).
+**Target.** `packages/core` (done in T2-02); the player screen in `modules/player` (T8-01) and `apps/tv` (T3-01).
 
 **Rules.**
 - Talks to the player only through the `PlayerEngine` port.
@@ -125,9 +125,9 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 **Language.** Report, Progress interval, Drain, PositionTicks.
 
-**Today.** `PlaystateReporter` in `src/lib/player/playstate-reporter.ts`, `src/lib/player/confirm-play-method.ts`, `JellyfinGateway.report*`.
+**Today.** `PlaystateReporter` in `packages/core/src/player/playstate-reporter.ts`, `packages/core/src/player/confirm-play-method.ts`, `JellyfinGateway.report*`.
 
-**Target.** `packages/core` (T2-02).
+**Target.** `packages/core` (done in T2-02).
 
 **Rules.**
 - Reporting failures become warnings, never playback errors.
@@ -144,7 +144,7 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 **Language.** Engine, Launch request (original file or HLS session), Capabilities, Snapshot, Player track (player id vs. Jellyfin index), Decode mode, First frame.
 
-**Today.** The port types in `src/domain/playback.ts`, exercised by the coordinator's tests with fake engines. There is no engine on `main`.
+**Today.** The port types in `packages/core/src/domain/playback.ts`, exercised by the coordinator's tests with fake engines. There is no engine on `main`.
 
 **Target.** `modules/player` (T8-01; Kotlin behind an interface a Swift implementation can mirror).
 
@@ -162,7 +162,7 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 **Owns:** the `/socket` connection and keepalive; capabilities registration; message routing (`UserDataChanged` to Catalog; `Play`, `Playstate`, `GeneralCommand` to Playback Session).
 
-**Today.** The `RealtimeConnection` port in `src/domain/realtime.ts`; no adapter.
+**Today.** The `RealtimeConnection` port in `packages/core/src/domain/realtime.ts`; no adapter.
 
 **Target.** A native socket adapter behind the port (T12-06); the socket carries the header, never a token in its URL.
 
@@ -175,9 +175,9 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 **Purpose.** Everything the viewer sees and touches that isn't the video itself.
 
-**Owns:** navigation (the collapsed side rail); screens; focus, the D-pad, select, Back, and held keys; the design tokens and shared controls; dialogs and toasts; the non-secret preferences store (`src/lib/preference-store.ts` port, `src/lib/streaming-limits.ts`).
+**Owns:** navigation (the collapsed side rail); screens; focus, the D-pad, select, Back, and held keys; the design tokens and shared controls; dialogs and toasts; the non-secret preferences store (`packages/core/src/preference-store.ts` port, `packages/core/src/streaming-limits.ts`).
 
-**Today.** Only the preference and streaming-limit ports, and the plain-copy helpers (`src/lib/safe-reason.ts`, `src/lib/transport-error.ts`, `src/lib/diagnostics.ts`).
+**Today.** Only the preference and streaming-limit ports, and the plain-copy helpers (`packages/core/src/safe-reason.ts`, `packages/core/src/transport-error.ts`, `packages/core/src/diagnostics.ts`).
 
 **Target.** `apps/tv` (T3-01), with the tokens and base controls from T3-06 and the shell from T3-09.
 
@@ -203,8 +203,8 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 | Concern | Owns | Today | Target |
 |---|---|---|---|
-| **Security & Redaction** | Token boundary, the one authenticated client, URL and playlist validation, redaction, canary tests | `src/lib/redact.ts`, `src/lib/safe-reason.ts`, `src/lib/transport-error.ts`, `src/domain/host-class.ts`, `tests/fixtures/`, `docs/security.md` | `packages/core`, the native HTTP module (T3-03), `modules/player` (T8-08) |
-| **Diagnostics** | The player's info sheet, decoder labels, exportable diagnostics that pass redaction | `src/lib/diagnostics.ts` | `apps/tv` (T3-01) and `modules/player` (T8-01) |
+| **Security & Redaction** | Token boundary, the one authenticated client, URL and playlist validation, redaction, canary tests | `packages/core/src/redact.ts`, `packages/core/src/safe-reason.ts`, `packages/core/src/transport-error.ts`, `packages/core/src/domain/host-class.ts`, `packages/core/tests/fixtures/`, `docs/security.md` | `packages/core`, the native HTTP module (T3-03), `modules/player` (T8-08) |
+| **Diagnostics** | The player's info sheet, decoder labels, exportable diagnostics that pass redaction | `packages/core/src/diagnostics.ts` | `apps/tv` (T3-01) and `modules/player` (T8-01) |
 | **Performance** | The budget (cold start, key to focus, janky frames, memory), Baseline Profile, image loading | n/a | T3-12, T3-13, T3-14 |
 | **Device lab** | The Shield and the cheap box, on-device checks | n/a | T0-06, the Shield checks |
 
@@ -231,7 +231,7 @@ adapters (gateway transport, native modules) ──► domain, ports
 5. **Only Playback Negotiation constructs media URLs.**
 6. **Native side:** every request goes through the one OkHttp client; the token stays in the session registry; the player module never touches Jellyfin data other than its typed launch request.
 
-`pnpm lint:boundaries` (dependency-cruiser, `.dependency-cruiser.cjs`) enforces rules 1, 2, 3 and no circular imports today; T2-02 moves it onto `packages/core`, and T3-04 adds the native checks.
+`pnpm lint:boundaries` (dependency-cruiser, `.dependency-cruiser.cjs`) enforces rules 1, 2, 3 and no circular imports on `packages/core/src` (T2-02): the domain may import nothing outside `domain/`, installed or not; no core file, tests included, may import React, React Native, Expo, or a native module; and no core source file may import a Node builtin. ESLint forbids the browser globals in the core. T3-04 adds the native checks.
 
 ## Ubiquitous language
 

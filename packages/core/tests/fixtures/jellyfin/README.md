@@ -11,7 +11,7 @@ Scrubbed answers from the two pinned fixture servers (`tests/integration/docker-
 
 ## Personal ratings (P16-13)
 
-- Servers: Jellyfin 10.11.7 (`jellyfin/jellyfin:10.11.7`) and 12.4.0 (`jellyfin/jellyfin:12.4.20261026-211555`). Recorded 2026-11-19 by `record-rating-fixtures.mjs`; tested by `src/lib/jellyfin/rating-fixtures.test.ts`.
+- Servers: Jellyfin 10.11.7 (`jellyfin/jellyfin:10.11.7`) and 12.4.0 (`jellyfin/jellyfin:12.4.20261026-211555`). Recorded 2026-11-19 by `record-rating-fixtures.mjs`; tested by `packages/core/src/jellyfin/rating-fixtures.test.ts`.
 - Users: the recorder creates the throwaway users `octave-ratings` (scenes V, R, T, S) and `octave-ratings-list` (scene L), and deletes both at the end, which deletes their user data. No fixture user's data is touched. In the files they are `user-ratings` and `user-ratings-list`; the admin is `user-test`.
 - Two runs back to back wrote identical files on both servers, so these fixtures are reproducible on this sample set.
 - Scene L set-up (also in `rating-list-all-movies.json`, key `setup`):
