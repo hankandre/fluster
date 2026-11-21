@@ -401,6 +401,9 @@ describe("the deep walk used above", () => {
       private secret = "needle-ts-private";
       readonly map = new Map<string, string>([["k", "needle-in-map"]]);
       readonly set = new Set(["needle-in-set"]);
+      reveal(): string {
+        return this.secret;
+      }
     }
     class Hidden {
       #secret = "needle-hash-private";

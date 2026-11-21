@@ -2,27 +2,28 @@
 import { describe, expect, it, vi } from "vitest";
 import { webCrypto } from "../adapters/web-crypto";
 import type { Crypto } from "../ports/crypto";
+import type { SignInRequest, SignInResult, Transport, TransportRequest, TransportResponse } from "../ports/transport";
 import { JellyfinGateway } from "./gateway";
-import type { HttpRequestConfig, HttpResponse, HttpTransport } from "./types";
 
-class FakeTransport implements HttpTransport {
-  requests: { method: string; url: string; headers?: Record<string, string> }[] = [];
-  responses = new Map<string, unknown>();
+// The decision 0005 Transport port (T2-04): sign-in is its own call, and it carries the DeviceId the gateway derived.
+class FakeTransport implements Transport {
+  signIns: SignInRequest[] = [];
 
-  async get<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
-    this.requests.push({ method: "GET", url, headers: config?.headers });
-    return { data: this.responses.get(`GET ${url}`) as T };
+  constructor(private readonly userName: string) {}
+
+  async signIn(request: SignInRequest): Promise<SignInResult> {
+    this.signIns.push(request);
+    return { session: "session-1", userId: "user-1", userName: this.userName };
   }
 
-  async post<T>(url: string, _data?: unknown, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
-    this.requests.push({ method: "POST", url, headers: config?.headers });
-    return { data: this.responses.get(`POST ${url}`) as T };
+  async request(request: TransportRequest): Promise<TransportResponse> {
+    if (request.method === "GET" && request.path === "/System/Info/Public") {
+      return { status: 200, body: { Version: "10.11.0", Id: "server-1" } };
+    }
+    return { status: 404, body: undefined };
   }
 
-  async delete<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
-    this.requests.push({ method: "DELETE", url, headers: config?.headers });
-    return { data: this.responses.get(`DELETE ${url}`) as T };
-  }
+  async endSession(): Promise<void> {}
 }
 
 function fakeCrypto(): Crypto & { sha256Hex: ReturnType<typeof vi.fn>; randomId: ReturnType<typeof vi.fn> } {
@@ -30,14 +31,11 @@ function fakeCrypto(): Crypto & { sha256Hex: ReturnType<typeof vi.fn>; randomId:
 }
 
 async function login(crypto: Crypto, installId: string | undefined, username = "Louise") {
-  const transport = new FakeTransport();
-  transport.responses.set("GET /System/Info/Public", { Version: "10.11.0", Id: "server-1" });
-  transport.responses.set("POST /Users/AuthenticateByName", { AccessToken: "top-secret", User: { Id: "user-1", Name: username } });
+  const transport = new FakeTransport(username);
   const gateway = new JellyfinGateway("https://media.test", crypto, transport, installId);
   await gateway.connect();
   await gateway.login(username, "password");
-  const request = transport.requests.find((entry) => entry.url === "/Users/AuthenticateByName")!;
-  return /DeviceId="([^"]+)"/.exec(request.headers?.Authorization ?? "")?.[1];
+  return transport.signIns[0]?.deviceId;
 }
 
 describe("JellyfinGateway with an injected Crypto", () => {
