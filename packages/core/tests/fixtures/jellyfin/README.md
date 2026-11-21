@@ -6,7 +6,7 @@ Scrubbed answers from the two pinned fixture servers (`tests/integration/docker-
 
 | Recorder (`tests/integration/`) | Fixture prefix |
 |---|---|
-| `record-fixtures.mjs` | `playbackinfo-`, `conversion-`, `item-` |
+| `record-fixtures.mjs` | `playbackinfo-`, `conversion-`, `device-conversion-` (T2-07: the forced conversion; the gateway-wire golden globs the first two, so the device answers keep their own prefix), `item-` |
 | `record-discovery-fixtures.mjs` | `discovery-` |
 | `record-account-language-fixtures.mjs` | `account-language-` |
 | `record-rating-fixtures.mjs` | `rating-` |

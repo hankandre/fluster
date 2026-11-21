@@ -13,7 +13,7 @@ Language-neutral vectors that every implementation of a rule must pass, so two i
 
 ## `hls-master-urls.json`
 
-- `vectors` (44): the plans TypeScript Playback Negotiation builds from every recorded conversion, on a server with and without a base path. Every native validator deserializes each plan and accepts its master URL. Regenerate with `OCTAVE_WRITE_HLS_VECTORS=1 pnpm --filter @octave/core exec vitest run hls-master-url-vectors`; that keeps `description` and `refusals` as they are.
+- `vectors` (44): the plans TypeScript Playback Negotiation builds from every conversion recorded for P10-02 (the list in the test; the T2-07 `device-conversion-*` answers are not vectors), on a server with and without a base path. Every native validator deserializes each plan and accepts its master URL. Regenerate with `OCTAVE_WRITE_HLS_VECTORS=1 pnpm --filter @octave/core exec vitest run hls-master-url-vectors`; that keeps `description` and `refusals` as they are.
 - `refusals` (64): master URLs every validator refuses, each with the context it is checked in (`serverUrl`, `mediaKind`, `itemId`, `mediaSourceId`, `playSessionId`) and a `rule` tag. `typescript` says what `rebuildMasterUrl` (`packages/core/src/jellyfin/hls-url.ts`) does with the same input:
   - `{"verdict": "refuse"}`: it refuses too.
   - `{"verdict": "rebuild", "url": "…"}`: it removes the offending part (a credential parameter, `EnableTrickplay`, `EnableSubtitlesInManifest=false`) and returns `url`, which a validator then accepts.

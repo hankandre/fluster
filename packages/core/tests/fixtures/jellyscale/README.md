@@ -30,11 +30,12 @@ Recorded 2026-11-21 by `tests/integration/record-jellyscale-fixtures.ts` against
 | `resume-in-progress.json` | `GET /UserItems/Resume` after a saved position of 30000000 ticks on the H.264 film (cleared after) |
 | `item-detail-h264.json`, `item-detail-multitrack.json` | `GET /Items/{id}` through `itemDetail()` |
 | `playbackinfo-{h264,multitrack,sidecar}-profile.json` | `POST /Items/{id}/PlaybackInfo` through `createPlaybackPlan()` with the Octave profile; all three answer direct play. The sidecar's `DeliveryUrl` carries `ApiKey=`, scrubbed to `REDACTED` |
+| `device-conversion-h264.json` | T2-07: the answer to the forced request for the H.264 film (`EnableDirectPlay` and `AllowVideoStreamCopy` false, `MediaSourceId` named, same values in body and query; recorded 2026-11-21 with `--device-conversion`). Jellyscale still answers direct play and no `TranscodingUrl`, so the decision gives `device-cannot-play` (T10-08 changes this). Not a `playbackinfo-` file: the T2-08 test replays those as first answers |
 | `endpoints.json` | Every endpoint the core calls (`--endpoints`): what Jellyscale declares (`--print-routes`) and the HTTP status each probe got |
 | `endpoint-issues.json` | Kept by hand: the Jellyscale issue for each gap, or `"not yet filed"` |
 
 Commands: `pnpm exec tsx tests/integration/record-jellyscale-fixtures.ts` (fixtures), `... --endpoints` (inventory), `pnpm fixture:check-jellyscale`
-(CI: re-probe and compare). The forced-conversion probe (`EnableDirectPlay` and `EnableDirectStream` off in body and query)
+(CI: re-probe and compare), `... --device-conversion` (only `device-conversion-h264.json`). The forced-conversion probe (`EnableDirectPlay` and `EnableDirectStream` off in body and query)
 got no `TranscodingUrl`, so `GET /Videos/{itemId}/master.m3u8` is `not reached` (Jellyscale #224).
 
 Two back-to-back recordings differ only in timestamps (`LastActivityDate`, `LastLoginDate`, `LastPlayedDate`), because the
