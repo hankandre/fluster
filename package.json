@@ -8,6 +8,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
+    "task": "node scripts/task.mjs",
     "test:workflow": "node --test .claude/workflows/task.test.mjs",
     "test:tripwire": "tsx tests/integration/tripwire.ts",
     "fixture:up": "docker compose -f tests/integration/docker-compose.yml up -d --wait",

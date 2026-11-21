@@ -11,4 +11,5 @@ model: opus
 - Run the `verify` skill before finishing.
 - List every device, Android version, and server you did not test.
 - Commit the milestone with a Conventional Commit subject.
+- Set the task's status and evidence with `pnpm task set <id> --status s --evidence-file f`; evidence names the PR or commit and stays within 600 characters.
 - Stop and report when a change needs a native method or event that is not in the plan.

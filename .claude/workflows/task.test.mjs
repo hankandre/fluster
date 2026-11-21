@@ -146,3 +146,40 @@ test('the verify step runs the TV commands, not the desktop ones', () => {
   }
   for (const gone of ['test:e2e', 'test:visual', 'cargo']) assert.ok(!verify.includes(gone), gone);
 });
+
+// Prompt text lives inside runTask, outside the pure blocks, so slice the source by stable anchors.
+const between = (from, to) => {
+  const start = src.indexOf(from);
+  const end = src.indexOf(to, start + from.length);
+  assert.ok(start >= 0 && end > start, `anchors ${from} .. ${to}`);
+  return src.slice(start, end);
+};
+const commonPrompt = between('const common =', 'const result =');
+const implementPrompt = between('Implement the approved spec.', '`implement ${task}`');
+const followUpPrompt = between('Fix these review findings', '`follow-ups ${task}`');
+const shipPromptText = between('const shipPrompt', 'const shipEffort');
+
+test('task.js never tells agents to use jq', () => {
+  assert.doesNotMatch(src, /\bjq\b/);
+});
+
+test('the common prompt reads one task through the CLI and never the whole file', () => {
+  assert.match(commonPrompt, /show \$\{task\}/);
+  assert.match(commonPrompt, /never read the whole file/);
+  assert.match(src, /const taskCli = `mise exec -- node \$\{worktree\}\/scripts\/task\.mjs`/);
+});
+
+test('the implement, follow-up and Ship prompts set the task through the CLI with the evidence rule', () => {
+  for (const [name, prompt] of [['implement', implementPrompt], ['follow-up', followUpPrompt], ['ship', shipPromptText]]) {
+    assert.match(prompt, /\$\{taskCli\} set \$\{task\}/, name);
+    assert.match(prompt, /\$\{evidenceRule\}/, name);
+  }
+  assert.match(implementPrompt, /--status in_progress --owner \$\{implAgent\}/);
+  assert.match(followUpPrompt, /--status done/);
+  assert.match(followUpPrompt, /commit <sha>/);
+  assert.match(src, /const evidenceRule = .*PR #n.*commit <sha>.*600 characters/);
+});
+
+test('no prompt uses pnpm to set a task', () => {
+  assert.doesNotMatch(src, /pnpm (-C \S+ )?task/);
+});

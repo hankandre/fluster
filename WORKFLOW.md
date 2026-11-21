@@ -29,7 +29,7 @@ Agents read the short map first and load detail only when needed.
 | `WORKFLOW.md` | This file | stable |
 | `docs/security.md` | The token and network boundary, each claim with its test or task | as needed |
 | `docs/mpv-options-checklist.md` | What a future libmpv engine must pass | until T13 |
-| `tasks/prd.json` | Phases and tasks with acceptance items and `passes` flags; agents change only status fields, through `pnpm task` (T1-13) | living |
+| `tasks/prd.json` | Phases and tasks with acceptance items and `passes` flags; agents change only status fields, through `pnpm task` | living |
 | `tasks/backlog.md` | Deferred and newly found work; `tasks/backlog.jsonl` from T1-10 | living |
 | `docs/specs/<TASK-ID>.md` | Per-task spec written by `refiner`, with the `spec-checker` verdict appended; the first spec creates the folder | one per task |
 | `docs/plans/active/`, `docs/plans/completed/` | Execution plans for work that needs more than one session; the first plan creates the folder | one per initiative |
@@ -53,7 +53,7 @@ For work spanning more than one session or more than one domain, create `docs/pl
 
 Each task runs: refine + spec → spec check → implement → verify → one review round → ship.
 
-- `refiner` reads the task (`pnpm task show <id>`, T1-13; until then one task with `jq`), its plan, and the relevant code and docs. It writes only `docs/specs/<TASK-ID>.md`: goal; acceptance items mapped to how each is met and tested; files to touch; approach; test plan; risks and out of scope; validation commands; and, for every dependency the task adopts, the maintenance check from primary sources.
+- `refiner` reads the task (`pnpm task show <id>`), its plan, and the relevant code and docs. It writes only `docs/specs/<TASK-ID>.md`: goal; acceptance items mapped to how each is met and tested; files to touch; approach; test plan; risks and out of scope; validation commands; and, for every dependency the task adopts, the maintenance check from primary sources.
 - `spec-checker` runs in a fresh context against the task, the `AGENTS.md` hard rules, `ARCHITECTURE.md`, `DESIGN.md` (for UI), and the code. It appends a verdict: "Approved" or "Changes needed" with numbered issues.
 - Allow one revision round. If the spec is still not approved, stop and ask the owner.
 - Work a task defers goes to the backlog in the same pull request: what, why, where it came from, and a rough size.
@@ -147,10 +147,9 @@ Rules stated in prose that should become checks:
 - **No default network path.** The native build check (T3-04).
 - **Redaction canaries across the JavaScript and native seam** (T3-05, T10-02).
 - **Frozen tests.** A diff check that fails when an implementer changes a test written before implementation (T1-12).
-- **Task file size and evidence length** (T1-13).
 - **File size.** Flag source files over ~400 lines.
 
-Done and enforced today: dependency direction (`pnpm lint:boundaries`, which fails on zero modules read), no desktop-era terms (`pnpm lint:ghost-terms`), and the task list's shape (`src/tasks/prd.test.ts`).
+Done and enforced today: dependency direction (`pnpm lint:boundaries`, which fails on zero modules read), no desktop-era terms (`pnpm lint:ghost-terms`), the task list's shape (`src/tasks/prd.test.ts`), and the task file's size and evidence length (`scripts/task.test.ts`).
 
 ## Model routing
 

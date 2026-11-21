@@ -17,7 +17,7 @@ Octave is a Jellyfin and Jellyscale client for the TV that plays the original fi
 
 ## Tasks
 
-- Read tasks through `pnpm task` (`next`, `show`, `list`, `set`; T1-13 adds it). Until it exists, read one task with `jq` or `python3`; never load `tasks/prd.json` whole.
+- Read and update tasks only through `pnpm task` (`next`, `show`, `list`, `set`); never load `tasks/prd.json` whole.
 - Follow the `rules` array at the top of `tasks/prd.json`.
 - Change only a task's `status`, `owner`, `passes`, and `evidence` fields.
 - Keep evidence to 600 characters and name the PR or commit.
@@ -49,7 +49,8 @@ Octave is a Jellyfin and Jellyscale client for the TV that plays the original fi
 - Task workflow tests: `pnpm test:workflow`
 - All checks: `pnpm check`
 - Server tripwire (needs `pnpm samples:generate`, `pnpm fixture:up`, `pnpm fixture:setup`): `pnpm test:tripwire`
-- Not yet built: `pnpm task` (T1-13), `pnpm --filter @octave/core test` (T2-02), `pnpm tv:native:test` (T3-01), `pnpm tv:e2e` (T3-02), `pnpm tv:wire` (T3-05), `pnpm tv:visual` (T3-07).
+- Task CLI: `pnpm task next`, `pnpm task show <id>`, `pnpm task list [--status s] [--phase p]`, `pnpm task set <id> --status s [--owner o] [--evidence-file f]`.
+- Not yet built: `pnpm --filter @octave/core test` (T2-02), `pnpm tv:native:test` (T3-01), `pnpm tv:e2e` (T3-02), `pnpm tv:wire` (T3-05), `pnpm tv:visual` (T3-07).
 
 ## Hard rules
 

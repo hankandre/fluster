@@ -179,8 +179,10 @@ async function runTask(task, opts) {
   };
 
   const { main, worktree, branch, spec } = taskPaths(task, opts.root);
+  const taskCli = `mise exec -- node ${worktree}/scripts/task.mjs`;
+  const evidenceRule = 'The evidence must name the PR (PR #n) or a commit (commit <sha>) and stay within 600 characters; move longer notes to the PR body. Write it to a file outside the repo (mktemp) and pass it with --evidence-file.';
   const where = opts.root ? '' : ' Relative paths are relative to the main checkout, which is your starting directory.';
-  const common = `Task ${task} in tasks/prd.json (read it with pnpm task show ${task} once T1-13 lands; until then read only that task with jq, never the whole file). Worktree: ${worktree} (branch ${branch}).${where} Spec: ${spec} in that worktree. Work only in that worktree. Answered questions in docs/specs/decisions-*.md and decisions the spec marks as confirmed by the human are settled human decisions. If a command is denied, report it in deniedCommands and do not work around it.`;
+  const common = `Task ${task} in tasks/prd.json (read it with \`${taskCli} show ${task}\`; never read the whole file). Worktree: ${worktree} (branch ${branch}).${where} Spec: ${spec} in that worktree. Work only in that worktree. Answered questions in docs/specs/decisions-*.md and decisions the spec marks as confirmed by the human are settled human decisions. If a command is denied, report it in deniedCommands and do not work around it.`;
   const result = (outcome, detail) => {
     log(`${task}: ${outcome}`);
     return { task, outcome, detail };
@@ -253,12 +255,12 @@ Return as open questions only product or design choices the human must make that
   }
 
   // 3. Implement (the implementer runs the checks itself)
-  let evidence = opts.evidence || `See the evidence field of ${task} in tasks/prd.json on ${branch}.`;
+  let evidence = opts.evidence || `See the evidence field of ${task} (\`${taskCli} show ${task}\`) on ${branch}.`;
   let ciSteps = Array.isArray(opts.ciSteps) ? opts.ciSteps : [];
   if (!skipImpl) {
   const impl = await work(
     `Implement the approved spec.${specNotes.length ? `\nAlso resolve these spec-check notes, updating the spec where they change it:\n${specNotes.join('\n')}` : ''}
-Commit the spec with the work, one milestone per commit. Set the task's status to in_progress with evidence in tasks/prd.json. Do not push or open a PR. If an acceptance item can only be met with a pushed branch, an open PR, or CI runs (for example a throwaway commit that must fail CI, or baselines rendered on the CI host), do everything else, set done=true, and list each such step in ciSteps; the Ship phase does them. Never list a review (guardian, design, or any other agent review) as a ciStep: reviews happen in the Review phase, and the Ship phase cannot start agents. Return done=false with blockers if you cannot finish for any other reason. Use ciOnly only for a step that a local run cannot produce (for example accepting CI-rendered baselines or attaching CI screenshots), and only when every local check passed; a failing local check is never ciOnly.`,
+Commit the spec with the work, one milestone per commit. Set the task's status to in_progress with \`${taskCli} set ${task} --status in_progress --owner ${implAgent} --evidence-file <file>\`. ${evidenceRule} Do not push or open a PR. If an acceptance item can only be met with a pushed branch, an open PR, or CI runs (for example a throwaway commit that must fail CI, or baselines rendered on the CI host), do everything else, set done=true, and list each such step in ciSteps; the Ship phase does them. Never list a review (guardian, design, or any other agent review) as a ciStep: reviews happen in the Review phase, and the Ship phase cannot start agents. Return done=false with blockers if you cannot finish for any other reason. Use ciOnly only for a step that a local run cannot produce (for example accepting CI-rendered baselines or attaching CI screenshots), and only when every local check passed; a failing local check is never ciOnly.`,
     `implement ${task}`,
     'Implement',
   );
@@ -299,7 +301,7 @@ Adversarially review git diff origin/main...${branch} for token, URL, or session
   const followUp = await work(
     `${blocking.length ? `Fix these review findings and commit, with a test for each behavior change:\n${blocking.join('\n')}` : 'No review findings need a fix.'}
 ${lows.length ? `Log these low findings as follow-ups in the active plan and commit; do not fix them:\n${lows.join('\n')}` : ''}
-Then, if every acceptance item is met (the review above counts as the fresh-context design review; the Ship phase links screenshots) and the spec does not reserve sign-off for the human, set the task's status to done and passes to true in tasks/prd.json, update its evidence, tick its line in the active plan, and commit. Do not push.${ciSteps.length ? `\nThese acceptance steps need CI and are done in the Ship phase, so treat them as pending (not as blockers) and leave status in_progress:\n${ciSteps.join('\n')}` : ''}
+Then, if every acceptance item is met (the review above counts as the fresh-context design review; the Ship phase links screenshots) and the spec does not reserve sign-off for the human, set the task's status to done with \`${taskCli} set ${task} --status done --evidence-file <file>\` (passes follows status). ${evidenceRule} Because no PR exists yet, the evidence must contain \`commit <sha>\`. Then tick its line in the active plan, and commit. Do not push.${ciSteps.length ? `\nThese acceptance steps need CI and are done in the Ship phase, so treat them as pending (not as blockers) and leave status in_progress:\n${ciSteps.join('\n')}` : ''}
 Use ciOnly only for a step that a local run cannot produce (for example accepting CI-rendered baselines or attaching CI screenshots), and only when every local check passed; a failing local check is never ciOnly.`,
     `follow-ups ${task}`,
     'Review',
@@ -317,7 +319,7 @@ Use ciOnly only for a step that a local run cannot produce (for example acceptin
 Ship with the ship skill: rebase onto origin/main if it moved (force-with-lease is allowed on this branch), push, open the PR if none exists, enable auto-merge with rebase, and wait for CI with gh pr checks --watch. The PR body must explain user impact, testing (use the evidence below), conversion and security implications, untested device, Jellyfin and Jellyscale gates, and call out any change to invariants, docs/security.md, release signing, or CI. For a UI change, add a Screenshots section that links the visual artifact from the PR's CI run (gh api repos/{owner}/{repo}/actions/runs/<run>/artifacts) and names the images that changed, plus a Design review notes section from the review. Change no source files. If CI is red, return merged=false with each failing check and its cause. After a merge, run git -C ${main} pull --ff-only and remove the worktree and branch.
 Evidence: ${evidence}
 Review: ${blocking.length} fixed, ${lows.length} low logged in the plan.${ciSteps.length ? `
-Before enabling auto-merge, do these CI-dependent acceptance steps on this PR branch. Temporary commits are allowed only when a step asks for one, and each must be reverted in a later commit. Record each run URL in the task's evidence. Then, if every acceptance item is met, set the task's status to done and passes to true, commit, and push. If any listed step cannot be completed (for example it needs a review or a human), do not enable auto-merge; return merged=false and put the reason in ciFailures. This is the one case where the Ship phase changes files:
+Before enabling auto-merge, do these CI-dependent acceptance steps on this PR branch. Temporary commits are allowed only when a step asks for one, and each must be reverted in a later commit. Record each run URL in the task's evidence. Then, if every acceptance item is met, set the task's status to done with \`${taskCli} set ${task} --status done --evidence-file <file>\` (passes follows status), commit, and push. ${evidenceRule} If any listed step cannot be completed (for example it needs a review or a human), do not enable auto-merge; return merged=false and put the reason in ciFailures. This is the one case where the Ship phase changes files:
 ${ciSteps.join('\n')}` : ''}`;
   const shipEffort = ciSteps.length ? 'medium' : 'low';
   let ship = await agent(shipPrompt, { model: models.ship, effort: shipEffort, schema: SHIP, phase: 'Ship', label: `ship ${task}` });
