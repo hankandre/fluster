@@ -258,7 +258,7 @@
           "status": "done",
           "owner": null,
           "passes": true,
-          "evidence": "PR #226: desktop app, DOM UI, adapters, e2e and visual suites, release/, docs/specs, docs/plans, desktop CI deleted; core kept, 1466 Vitest tests pass in Node; three shared fixtures and docs/decisions kept; prd.json replaced from docs/tv-prd c2c224b, no done.json, prd validator passes; PR body says the old tasks live only in the tag desktop-tauri-final. Tag pushed on the last desktop commit after #225; main CI confirmed at merge."
+          "evidence": "PR #226: tag desktop-tauri-final on 8c8928a (main CI run 44843610627 green). Desktop app, DOM UI, adapters, e2e and visual suites, release/, docs/specs, docs/plans, desktop CI deleted; core kept, 1466 Vitest tests pass in Node; shared fixtures and docs/decisions kept; prd.json replaced from docs/tv-prd c2c224b, no done.json, validator passes; PR body says the old tasks live only in the tag. PR CI green; main CI confirmed at merge."
         },
         {
           "id": "T1-04",
