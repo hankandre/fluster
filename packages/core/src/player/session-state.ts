@@ -1,4 +1,5 @@
-import type { PlaybackSnapshot, PlayerEvent } from "../domain/playback";
+import type { PlaybackSnapshot, PlayerErrorCode, PlayerEvent } from "../domain/playback";
+import { PLAYER_ERROR_MESSAGES, playerErrorCode } from "../domain/playback";
 
 import type { TransportErrorKind } from "../transport-error";
 
@@ -6,6 +7,8 @@ export interface PlaybackSessionState {
   snapshot?: PlaybackSnapshot;
   firstFrameReady: boolean;
   error?: string;
+  // Set only by a player error event: the engine's typed code. A failure action clears it.
+  errorCode?: PlayerErrorCode;
   // Set when the failure was a failed Jellyfin request; the view shows plain copy for it, not the message.
   errorKind?: TransportErrorKind;
   // Set when stopping the player failed; the view shows plain stop copy, not the message.
@@ -31,7 +34,7 @@ export function playbackSessionReducer(
     case "reset":
       return initialPlaybackSessionState;
     case "failure":
-      return { ...state, error: action.message, errorKind: action.kind, errorStage: action.stage };
+      return { ...state, error: action.message, errorCode: undefined, errorKind: action.kind, errorStage: action.stage };
     case "reporting-warning":
       return { ...state, reportingWarning: action.message };
     case "event":
@@ -43,8 +46,10 @@ function reducePlayerEvent(state: PlaybackSessionState, event: PlayerEvent): Pla
   switch (event.kind) {
     case "first-frame":
       return { ...state, firstFrameReady: true };
-    case "error":
-      return { ...state, error: event.message, errorKind: undefined, errorStage: undefined };
+    case "error": {
+      const code = playerErrorCode(event.code);
+      return { ...state, error: PLAYER_ERROR_MESSAGES[code], errorCode: code, errorKind: undefined, errorStage: undefined };
+    }
     case "ended":
       return { ...state, snapshot: event.snapshot ?? state.snapshot };
     case "loaded":
