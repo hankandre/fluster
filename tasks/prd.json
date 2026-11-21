@@ -688,7 +688,7 @@
           "status": "done",
           "owner": "implementer",
           "passes": true,
-          "evidence": "commit 77c6f9f2: R1-R4 host rules, classifyServerAddress, runUrlConformance suite; pnpm check green (core 2076 tests, 85 files). Review lows logged in spec and backlog. PR to call out I5 change (D2) and docs/security.md. Tripwire not run: no fixture credentials."
+          "evidence": "PR #243, commit 77c6f9f2: R1-R4 host rules, classifyServerAddress, runUrlConformance suite; pnpm check green (core 2076 tests). CI tripwire pass: https://github.com/hankandre/octave/actions/runs/44896443762/job/136823011240. Review lows logged in spec and backlog."
         },
         {
           "id": "T2-07",
