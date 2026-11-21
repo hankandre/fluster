@@ -738,7 +738,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "commit 0bb97d3b (task/T2-08, three commits on d629648e). Jellyscale built from pinned commit b920b193cd6f beside the Jellyfin fixtures; six fixture kinds plus endpoints.json recorded; frozen tests green; pnpm check green. Not run locally: three-server fixture:up/setup and test:tripwire (other checkout's containers on 18096/18097); CI tripwire does them."
+          "evidence": "commit fc5cf568 (task/T2-08). Jellyscale built from pinned commit b920b193cd6f beside the Jellyfin fixtures; six fixture kinds plus endpoints.json recorded; frozen tests green; the Jellyscale setup branch is tested against a fake curl (jellyscale-setup.test.ts); pnpm check green (core 2143, root 332, workflow 60). Review lows logged in docs/specs/T2-08.md. Pending in CI (Ship): three-server fixture:up/setup through check-no-secret, fixture:check-jellyscale, test:tripwire; not run locally (D7)."
         },
         {
           "id": "T2-09",
