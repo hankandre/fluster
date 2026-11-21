@@ -480,10 +480,10 @@
             "WORKFLOW.md describes the flow in the order it runs"
           ],
           "verify": "node --test .claude/workflows/task.test.mjs",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit 833c07f: check-flow.mjs (pnpm lint:flow, in CI), check-red.mjs, task-owner.mjs, product-owner.js, Tests phase in task.js with red, frozen and green gates, test-writer and product-owner agents, WORKFLOW.md flow. pnpm check green (1592 vitest, 56 node tests). CI proof of the frozen check pending in Ship."
         },
         {
           "id": "T1-13",
