@@ -33,7 +33,7 @@ First pass: 98 backlog entries had no `taken_by`. Entries are named by their lin
 
 ## 2026-11-21
 
-Owner-approved edits, applied directly in one pull request (not a Fable pass). The owner approved each of them on 2026-11-21. Entries are named by their line number in `tasks/backlog.jsonl`.
+Owner-approved edits, applied directly in PR #246 (not a Fable pass). The owner approved each of them on 2026-11-21. Entries are named by their line number in `tasks/backlog.jsonl`.
 
 - Edited T3-03, acceptance item 6, and T8-08, acceptance items 1 and 3: the shared vectors are `packages/core/tests/fixtures/hls-master-urls.json`, `hls-playlists.json` and `host-classes.json`. Entry 101, marked taken by T3-03. Scope edit. Why: T2-02 moved the files unchanged and the root folder is gone. T2-06 is done and keeps its wording.
 - Edited T8-01, acceptance item 1: two allowlists, one per native module; the player module's is exactly the PlayerEngine port's methods, the session module's is exactly `signIn`, `request`, `restoreSessions`, `endSession` and `sessionEnded`. Entry 88's T8-01 part, which the 2026-11-20 pass left for the owner. Approval: `docs/decisions/0005-token-boundary.md` (amendment of 2026-11-21). Why: decision 0005 contradicted itself; the owner chose two lists.
