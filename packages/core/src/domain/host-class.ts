@@ -1,6 +1,6 @@
 // Host classes for plain-HTTP decisions (docs/decisions/0001).
 // The classifier reads only the literal host of a parsed URL, never a DNS
-// answer. Every native classifier implements the same rules (Kotlin in
+// answer, and a server address must also be written in plain ASCII (R1). Every native classifier implements the same rules (Kotlin in
 // T3-03), and each is tested against packages/core/tests/fixtures/host-classes.json.
 
 export type HostClass = "loopback" | "private-lan" | "public";
@@ -8,11 +8,42 @@ export type HostClass = "loopback" | "private-lan" | "public";
 const IPV4_PATTERN = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
 const IPV6_GROUP_PATTERN = /^[0-9a-f]{1,4}$/;
 
+// R1 (plain ASCII authority): a test on the address as written, before any
+// parser sees it. Spelled-out classes and neither the `i` nor the `u` flag,
+// because those flags match U+017F against `s` and U+212A against `k`.
+const PLAIN_ASCII_AUTHORITY =
+  /^[Hh][Tt][Tt][Pp][Ss]?:\/\/(?:[A-Za-z0-9._-]+|\[[0-9A-Fa-f:.]+\])(?::[0-9]*)?(?:[/?#]|$)/;
+const PLAIN_ASCII_HOSTNAME = /^[A-Za-z0-9._-]+$/;
+
+export function hasPlainAsciiAuthority(address: string): boolean {
+  return PLAIN_ASCII_AUTHORITY.test(address.trim());
+}
+
+// R2: a bracketed IPv6 literal, or only letters, digits, `.`, `_` and `-`.
+export function isPlainAsciiHost(hostname: string): boolean {
+  if (hostname.startsWith("[") && hostname.endsWith("]")) return true;
+  return PLAIN_ASCII_HOSTNAME.test(hostname);
+}
+
+// R3: the class of a server address as the user wrote it. An address that is
+// not written in plain ASCII, or that the host's URL cannot parse, is public.
+export function classifyServerAddress(address: string): HostClass {
+  if (!hasPlainAsciiAuthority(address)) return "public";
+  let parsed: URL;
+  try {
+    parsed = new URL(address.trim());
+  } catch {
+    return "public";
+  }
+  return classifyHost(parsed);
+}
+
 // `url` must come from the WHATWG URL parser, which has already turned
 // numeric, hex, and octal IPv4 forms into dotted decimal, lowercased names,
 // and compressed IPv6 addresses.
-export function classifyHost(url: URL): HostClass {
+export function classifyHost(url: { readonly hostname: string }): HostClass {
   const host = url.hostname;
+  if (!isPlainAsciiHost(host)) return "public";
   if (host.startsWith("[") && host.endsWith("]")) {
     const groups = parseIpv6(host.slice(1, -1));
     return groups ? classifyIpv6(groups) : "public";
@@ -80,7 +111,7 @@ function classifyDomain(host: string): HostClass {
   // disagree on invalid punycode (WHATWG parsers accept some that stricter
   // native parsers refuse), so an `xn--` name could pass sign-in and then
   // fail every stream and socket.
-  if (labels.some((label) => label.startsWith("xn--"))) return "public";
+  if (labels.some((label) => label.toLowerCase().startsWith("xn--"))) return "public";
   const count = labels.length;
   if (count >= 2 && labels[count - 1] === "local") return "private-lan";
   if (count >= 3 && labels[count - 2] === "home" && labels[count - 1] === "arpa") return "private-lan";
