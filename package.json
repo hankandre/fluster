@@ -19,8 +19,9 @@
     "lint:boundaries": "node scripts/lint-boundaries.mjs",
     "lint:backlog": "node scripts/check-backlog.mjs",
     "lint:ghost-terms": "node scripts/check-ghost-terms.mjs",
+    "lint:flow": "node scripts/check-flow.mjs",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.core.json",
-    "check": "pnpm lint:boundaries && pnpm lint && pnpm lint:ghost-terms && pnpm test && pnpm typecheck && pnpm test:workflow"
+    "check": "pnpm lint:boundaries && pnpm lint && pnpm lint:ghost-terms && pnpm lint:flow && pnpm test && pnpm typecheck && pnpm test:workflow"
   },
   "dependencies": {
     "@jellyfin/sdk": "1.0.2",
