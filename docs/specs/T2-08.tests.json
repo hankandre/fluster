@@ -1,0 +1,15 @@
+{
+  "task": "T2-08",
+  "files": [
+    "tests/integration/jellyscale-fixture.test.ts",
+    "packages/core/src/jellyfin/jellyscale-fixtures.test.ts",
+    "packages/core/src/jellyfin/jellyscale-endpoints.test.ts"
+  ],
+  "items": [
+    { "item": 1, "run": ["pnpm", "exec", "vitest", "run", "tests/integration/jellyscale-fixture.test.ts", "-t", "T2-08 item 1:"] },
+    { "item": 2, "run": ["pnpm", "exec", "vitest", "run", "tests/integration/jellyscale-fixture.test.ts", "-t", "T2-08 item 2:"] },
+    { "item": 3, "run": ["pnpm", "exec", "vitest", "run", "tests/integration/jellyscale-fixture.test.ts", "-t", "T2-08 item 3:"] },
+    { "item": 4, "run": ["pnpm", "--filter", "@octave/core", "exec", "vitest", "run", "src/jellyfin/jellyscale-fixtures.test.ts"] },
+    { "item": 5, "run": ["pnpm", "--filter", "@octave/core", "exec", "vitest", "run", "src/jellyfin/jellyscale-endpoints.test.ts"] }
+  ]
+}
