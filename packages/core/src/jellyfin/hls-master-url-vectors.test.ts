@@ -1,20 +1,20 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import type { LibraryItem } from "../../domain/catalog";
-import type { PlaybackPlan } from "../../domain/playback";
+import type { LibraryItem } from "../domain/catalog";
+import type { PlaybackPlan } from "../domain/playback";
 import { JellyfinGateway } from "./gateway";
 import type { HttpTransport, PlaybackInfoResponse } from "./types";
 
 // The HLS plans this negotiation builds from every recorded conversion
 // (P10-02 fixtures, both servers), on a server with and without a base path,
-// are the shared vectors in tests/fixtures/hls-master-urls.json. Every native
+// are the shared vectors in packages/core/tests/fixtures/hls-master-urls.json. Every native
 // validator deserializes each plan as its launch request and re-checks the
 // master URL (Kotlin in T8-08), so the TypeScript rebuild and the native
 // validators cannot drift. Regenerate after a deliberate change with
 // OCTAVE_WRITE_HLS_VECTORS=1 pnpm vitest run hls-master-url-vectors.
-const VECTOR_FILE = join(__dirname, "../../../tests/fixtures/hls-master-urls.json");
-const FIXTURE_ROOT = join(__dirname, "../../../tests/fixtures/jellyfin");
+const VECTOR_FILE = join(__dirname, "../../tests/fixtures/hls-master-urls.json");
+const FIXTURE_ROOT = join(__dirname, "../../tests/fixtures/jellyfin");
 
 const VERSIONS = ["10.11.7", "12.4.0"];
 const SERVERS = ["http://127.0.0.1:8096", "https://media.test/jellyfin"];

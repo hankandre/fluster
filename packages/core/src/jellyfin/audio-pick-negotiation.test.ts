@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { LibraryItem } from "../../domain/catalog";
-import type { PlaybackPlan, PlaybackPlanOptions } from "../../domain/playback";
+import type { LibraryItem } from "../domain/catalog";
+import type { PlaybackPlan, PlaybackPlanOptions } from "../domain/playback";
 import { JellyfinGateway } from "./gateway";
 import type { HttpRequestConfig, HttpTransport, MediaSourceDto, PlaybackInfoResponse } from "./types";
 
 // P17-08: a viewer's audio pick on a first negotiation, replayed with the recorded fixtures from
 // Jellyfin 10.11.7 and 12.4.0 (ARCHITECTURE.md §3, "A viewer's audio pick").
-const fixtureFiles = import.meta.glob("../../../tests/fixtures/jellyfin/*/conversion-*.json", {
+const fixtureFiles = import.meta.glob("../../tests/fixtures/jellyfin/*/conversion-*.json", {
   eager: true,
   import: "default",
 }) as Record<string, PlaybackInfoResponse>;

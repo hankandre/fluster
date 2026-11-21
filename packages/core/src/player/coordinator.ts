@@ -1,4 +1,4 @@
-import type { LibraryItem } from "../../domain/catalog";
+import type { LibraryItem } from "../domain/catalog";
 import type {
   PlaybackEndReason,
   PlaybackPlan,
@@ -8,8 +8,8 @@ import type {
   PlayerEvent,
   ServerPlayMethod,
   StreamSelection,
-} from "../../domain/playback";
-import { secondsToTicks, startOverChoice } from "../../domain/playback";
+} from "../domain/playback";
+import { secondsToTicks, startOverChoice } from "../domain/playback";
 import { redactError } from "../redact";
 import { errorReason } from "../safe-reason";
 import { redactTransportError } from "../transport-error";

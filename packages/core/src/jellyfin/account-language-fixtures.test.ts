@@ -6,10 +6,10 @@ import { describe, expect, it } from "vitest";
 // tests/integration/record-account-language-fixtures.mjs. These tests assert what the two pinned
 // servers answered; docs/research/account-languages-api.md states the same facts in the same words.
 // Never edit a fixture to fit a test: record it again.
-const fixtureRoot = join(__dirname, "../../../tests/fixtures/jellyfin");
+const fixtureRoot = join(__dirname, "../../tests/fixtures/jellyfin");
 const versions = ["10.11.7", "12.4.0"] as const;
 
-// The wire fields these tests read. src/lib/jellyfin/types.ts gains them with the gateway tasks.
+// The wire fields these tests read. packages/core/src/jellyfin/types.ts gains them with the gateway tasks.
 interface WireConfiguration {
   AudioLanguagePreference?: string;
   PlayDefaultAudioTrack: boolean;

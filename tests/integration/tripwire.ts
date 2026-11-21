@@ -25,12 +25,12 @@ import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { LibraryItem } from "../../src/domain/catalog";
-import { PlaybackRefusedError, type PlaybackPlan } from "../../src/domain/playback";
-import { conversionIndicator } from "../../src/domain/conversion-copy";
-import { JellyfinGateway } from "../../src/lib/jellyfin/gateway";
-import { MemoryLanHttpConfirmations } from "../../src/lib/lan-http-confirmations";
-import { MemoryStreamingLimits, type StreamingLimitStore } from "../../src/lib/streaming-limits";
+import type { LibraryItem } from "../../packages/core/src/domain/catalog";
+import { PlaybackRefusedError, type PlaybackPlan } from "../../packages/core/src/domain/playback";
+import { conversionIndicator } from "../../packages/core/src/domain/conversion-copy";
+import { JellyfinGateway } from "../../packages/core/src/jellyfin/gateway";
+import { MemoryLanHttpConfirmations } from "../../packages/core/src/lan-http-confirmations";
+import { MemoryStreamingLimits, type StreamingLimitStore } from "../../packages/core/src/streaming-limits";
 import {
   checkConversionPlan,
   checkJobGone,

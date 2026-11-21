@@ -1,17 +1,17 @@
 import { Jellyfin, type Api } from "@jellyfin/sdk";
 import axios from "axios";
-import type { BrowseCard, BrowsePage, BrowseQuery, CardImageType, EpisodeCard, Genre, ItemDetail, LibraryItem, LibraryView, MediaCard, NextEpisode, SearchHint, SearchPage, SearchQuery, Season, SeriesNextUp } from "../../domain/catalog";
-import { ItemNotFoundError } from "../../domain/catalog";
-import type { RecentPlays } from "../../domain/up-next";
-import type { PlaybackDelivery, PlaybackPlan, PlaybackPlanOptions, PlaybackSnapshot, ServerPlayMethod } from "../../domain/playback";
-import { PlaybackRefusedError, secondsToTicks } from "../../domain/playback";
-import type { AccountLanguageChange, AccountLanguageSettings } from "../../domain/account-language-choices";
-import type { AccountLanguages, LanguageCulture } from "../../domain/languages";
-import { classifyHost, type HostClass } from "../../domain/host-class";
-import type { ServerConnection } from "../../domain/server-connection";
-import { SignInFailure } from "../../domain/sign-in-failure";
-import { isSupportedServerVersion, parseServerVersion } from "../../domain/server-version";
-import type { MediaSegment } from "../../domain/media-segments";
+import type { BrowseCard, BrowsePage, BrowseQuery, CardImageType, EpisodeCard, Genre, ItemDetail, LibraryItem, LibraryView, MediaCard, NextEpisode, SearchHint, SearchPage, SearchQuery, Season, SeriesNextUp } from "../domain/catalog";
+import { ItemNotFoundError } from "../domain/catalog";
+import type { RecentPlays } from "../domain/up-next";
+import type { PlaybackDelivery, PlaybackPlan, PlaybackPlanOptions, PlaybackSnapshot, ServerPlayMethod } from "../domain/playback";
+import { PlaybackRefusedError, secondsToTicks } from "../domain/playback";
+import type { AccountLanguageChange, AccountLanguageSettings } from "../domain/account-language-choices";
+import type { AccountLanguages, LanguageCulture } from "../domain/languages";
+import { classifyHost, type HostClass } from "../domain/host-class";
+import type { ServerConnection } from "../domain/server-connection";
+import { SignInFailure } from "../domain/sign-in-failure";
+import { isSupportedServerVersion, parseServerVersion } from "../domain/server-version";
+import type { MediaSegment } from "../domain/media-segments";
 import { MemoryLanHttpConfirmations, type LanHttpConfirmationStore } from "../lan-http-confirmations";
 import { limitMbpsFor, mbpsToBitsPerSecond, MemoryStreamingLimits, type StreamingLimitStore } from "../streaming-limits";
 import { redactText } from "../redact";
@@ -41,7 +41,7 @@ import type {
   ServerInfo,
   UserDto,
 } from "./types";
-import { APP_NAME } from "../../domain/app-identity";
+import { APP_NAME } from "../domain/app-identity";
 
 export const CONTROL_REQUEST_TIMEOUT_MS = 15_000;
 export const REPORT_REQUEST_TIMEOUT_MS = 3_000;

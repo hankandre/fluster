@@ -107,7 +107,7 @@ function findPrdProblems(prd: Prd): string[] {
 }
 
 const realPrd = JSON.parse(
-  readFileSync(new URL("../../tasks/prd.json", import.meta.url), "utf8"),
+  readFileSync(new URL("../tasks/prd.json", import.meta.url), "utf8"),
 ) as Prd;
 
 describe("tasks/prd.json", () => {

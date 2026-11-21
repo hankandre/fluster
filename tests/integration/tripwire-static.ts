@@ -1,8 +1,8 @@
 // Plays a static (DirectPlay) plan the way libmpv reads the original file:
 // ranged reads of the Static=true URL and each external subtitle between the
 // start and stopped reports. Every request must pass checkMediaRequest.
-import type { PlaybackPlan } from "../../src/domain/playback";
-import type { JellyfinGateway } from "../../src/lib/jellyfin/gateway";
+import type { PlaybackPlan } from "../../packages/core/src/domain/playback";
+import type { JellyfinGateway } from "../../packages/core/src/jellyfin/gateway";
 import { sleep } from "./tripwire-container";
 import { snapshot } from "./tripwire-hls";
 import { fail, safeUrl, type MediaRequestLog, type SampleResult } from "./tripwire-report";

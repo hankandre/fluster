@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import type { LibraryItem } from "../../domain/catalog";
-import type { PlaybackPlan, PlaybackSnapshot, PlayerEngine, PlayerEvent } from "../../domain/playback";
+import type { LibraryItem } from "../domain/catalog";
+import type { PlaybackPlan, PlaybackSnapshot, PlayerEngine, PlayerEvent } from "../domain/playback";
 import { PlaybackCoordinator, type PlaybackGateway } from "./coordinator";
 
 // P17-08: the coordinator owns a viewer's audio pick for the whole session.

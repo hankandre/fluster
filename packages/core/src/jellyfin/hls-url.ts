@@ -5,9 +5,9 @@
 // Every native validator re-checks the result with the same rules (Kotlin in
 // T8-08), so they must agree: the URLs this rebuild produces from the
 // recorded fixtures, on a server with and without a base path, are the shared
-// vectors in tests/fixtures/hls-master-urls.json (written and checked by
+// vectors in packages/core/tests/fixtures/hls-master-urls.json (written and checked by
 // hls-master-url-vectors.test.ts), and every validator must pass them.
-import type { HlsMediaKind } from "../../domain/playback";
+import type { HlsMediaKind } from "../domain/playback";
 import { isCredentialQueryName } from "./credential-query";
 
 export type { HlsMediaKind };

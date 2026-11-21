@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { LibraryItem } from "../../domain/catalog";
+import type { LibraryItem } from "../domain/catalog";
 import { classifyTransportError } from "../transport-error";
 import { JellyfinGateway } from "./gateway";
 import type { HttpTransport } from "./types";

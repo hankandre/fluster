@@ -6,7 +6,7 @@ import { toItemDetail } from "./item-detail";
 import type { BaseItemDto, HttpRequestConfig, HttpResponse, HttpTransport } from "./types";
 
 // Genre browsing's requests, answered by the P16-01 fixtures of both pinned servers.
-const fixtureRoot = join(__dirname, "../../../tests/fixtures/jellyfin");
+const fixtureRoot = join(__dirname, "../../tests/fixtures/jellyfin");
 const versions = ["10.11.7", "12.4.0"] as const;
 const load = (version: string, name: string): unknown => JSON.parse(readFileSync(join(fixtureRoot, version, `${name}.json`), "utf8"));
 

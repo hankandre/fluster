@@ -14,5 +14,12 @@
     "isolatedModules": true,
     "noEmit": true
   },
-  "include": ["src/**/*.ts", "tests/integration/**/*.ts", "scripts/**/*.ts", "vitest.config.ts", "vitest-env.d.ts"]
+  "include": [
+    "packages/core/src/**/*.ts",
+    "packages/core/vitest.config.ts",
+    "packages/core/vitest-env.d.ts",
+    "tests/integration/**/*.ts",
+    "scripts/**/*.ts",
+    "vitest.config.ts"
+  ]
 }

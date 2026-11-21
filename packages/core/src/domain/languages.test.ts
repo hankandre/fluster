@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { toLanguageCultures } from "../lib/jellyfin/account-languages";
+import { toLanguageCultures } from "../jellyfin/account-languages";
 import { languageKey } from "./languages";
 
 const root = join(__dirname, "../../tests/fixtures/jellyfin");

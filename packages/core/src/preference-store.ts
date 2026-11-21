@@ -6,8 +6,8 @@
 // Rule for every field added here: it is a typed, validated value with a
 // default, and it is never a token, credential, URL, play-session ID, user
 // id, or anything derived from them (ARCHITECTURE.md I4).
-import { DEFAULT_SKIP_MODES, SKIP_MODES, type SkipMode, type SkipModes } from "../domain/media-segments";
-import { DEFAULT_CONTINUE_WINDOW, type ContinueWindow } from "../domain/up-next";
+import { DEFAULT_SKIP_MODES, SKIP_MODES, type SkipMode, type SkipModes } from "./domain/media-segments";
+import { DEFAULT_CONTINUE_WINDOW, type ContinueWindow } from "./domain/up-next";
 import {
   LimitListeners,
   NO_STREAMING_LIMITS,

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { PlaybackPlan, PlaybackSnapshot } from "../../domain/playback";
+import type { PlaybackPlan, PlaybackSnapshot } from "../domain/playback";
 import { PlaystateReporter, REPORT_FAILED_WARNING, type PlaystateGateway } from "./playstate-reporter";
 
 const plan: PlaybackPlan = {

@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { call, callStatus, makeSaver, makeScrubber, readCredentials, sleep } from "./fixture-recording.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const outRoot = join(here, "..", "fixtures", "jellyfin");
+const outRoot = join(here, "..", "..", "packages", "core", "tests", "fixtures", "jellyfin");
 const samplesDir = join(here, "..", "samples");
 const stagedFile = join(samplesDir, "staging", "Synthetic Show S01E03.mkv");
 const seasonDir = join(samplesDir, "shows", "Synthetic Show", "Season 01");

@@ -64,7 +64,7 @@ describe("OCTAVE_PROFILE", () => {
   // The P10-02 fixtures were recorded with this profile; a drift here would
   // make them stop describing what the server answers Octave.
   it("matches the profile the conversion fixtures were recorded with", () => {
-    const recorder = readFileSync(join(__dirname, "../../../tests/integration/record-fixtures.mjs"), "utf8");
+    const recorder = readFileSync(join(__dirname, "../../../../tests/integration/record-fixtures.mjs"), "utf8");
     for (const profile of OCTAVE_PROFILE.TranscodingProfiles) {
       if (profile.VideoCodec) expect(recorder).toContain(`VideoCodec: "${profile.VideoCodec}"`);
       expect(recorder).toContain(`AudioCodec: "${profile.AudioCodec}"`);

@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 import { call, callStatus, makeSaver, makeScrubber, readCredentials } from "./fixture-recording.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const outRoot = join(here, "..", "fixtures", "jellyfin");
+const outRoot = join(here, "..", "..", "packages", "core", "tests", "fixtures", "jellyfin");
 const USER_A = "octave-ratings";
 const USER_B = "octave-ratings-list";
 const THROWAWAY = [USER_A, USER_B];

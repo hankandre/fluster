@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import shared from "../../../tests/fixtures/hls-master-urls.json";
+import shared from "../../tests/fixtures/hls-master-urls.json";
 import { rebuildMasterUrl, type HlsMediaKind, type HlsUrlContext } from "./hls-url";
 
 const ITEM = "0123456789abcdef0123456789abcdef";
@@ -180,7 +180,7 @@ interface SharedRefusal {
   typescript: { verdict: "refuse" } | { verdict: "rebuild"; url: string };
 }
 
-// Master URLs every native validator refuses (tests/fixtures/hls-master-urls.json
+// Master URLs every native validator refuses (packages/core/tests/fixtures/hls-master-urls.json
 // `refusals`): this rebuild refuses each one, or rebuilds it into the recorded
 // URL, which a validator accepts.
 describe("master URLs every validator refuses", () => {

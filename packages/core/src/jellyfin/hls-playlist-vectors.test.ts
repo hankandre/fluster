@@ -2,12 +2,12 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-// The shape of tests/fixtures/hls-playlists.json, the playlist rules every
-// native validator must pass (tests/fixtures/README.md). Until a native
+// The shape of packages/core/tests/fixtures/hls-playlists.json, the playlist rules every
+// native validator must pass (packages/core/tests/fixtures/README.md). Until a native
 // validator runs the vectors (Kotlin in T8-08), this keeps the file itself
 // sound: the count, a closed schema, unique names, known reason codes, and
 // synthetic hosts only.
-const FILE = join(__dirname, "../../../tests/fixtures/hls-playlists.json");
+const FILE = join(__dirname, "../../tests/fixtures/hls-playlists.json");
 const VECTOR_COUNT = 210;
 const VECTOR_KEYS = ["name", "rule", "playlistKind", "body", "baseUrl", "serverOrigin", "token", "expected"];
 const REASONS = ["malformed", "not-complete", "unsafe-uri", "credential-in-playlist"];
@@ -26,7 +26,7 @@ interface Vector {
 const text = readFileSync(FILE, "utf8");
 const file = JSON.parse(text) as { description: string; vectors: Vector[] };
 
-describe("tests/fixtures/hls-playlists.json", () => {
+describe("packages/core/tests/fixtures/hls-playlists.json", () => {
   it("has a description and exactly the documented number of vectors", () => {
     expect(Object.keys(file).sort()).toEqual(["description", "vectors"]);
     expect(file.vectors).toHaveLength(VECTOR_COUNT);

@@ -2,7 +2,7 @@
 // media source from a PlaybackInfo answer becomes DirectPlay, DirectStream,
 // Transcode, a forced-fallback request, or a typed refusal. Rules run in
 // order and the first that decides wins.
-import { CONVERSION_REASONS, type ConversionReason, type RefusalReason } from "../../domain/playback";
+import { CONVERSION_REASONS, type ConversionReason, type RefusalReason } from "../domain/playback";
 import { rebuildMasterUrl, type HlsMediaKind } from "./hls-url";
 import type { MediaSourceDto, MediaStreamDto } from "./types";
 

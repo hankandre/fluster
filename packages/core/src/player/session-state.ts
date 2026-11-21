@@ -1,4 +1,4 @@
-import type { PlaybackSnapshot, PlayerEvent } from "../../domain/playback";
+import type { PlaybackSnapshot, PlayerEvent } from "../domain/playback";
 
 import type { TransportErrorKind } from "../transport-error";
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { LibraryItem } from "../../domain/catalog";
+import type { LibraryItem } from "../domain/catalog";
 import { MemoryStreamingLimits, type StreamingLimits } from "../streaming-limits";
 import { limitIsOnlyReason } from "./client-limit";
 import { OCTAVE_PROFILE, MAX_BITRATE } from "./device-profile";

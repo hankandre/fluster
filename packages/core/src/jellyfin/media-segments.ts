@@ -1,4 +1,4 @@
-import type { MediaSegment } from "../../domain/media-segments";
+import type { MediaSegment } from "../domain/media-segments";
 
 const TICKS_PER_SECOND = 10_000_000;
 

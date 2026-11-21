@@ -4,10 +4,10 @@
 // with the same header, and the coordinator reports start once the file has
 // loaded. Every request goes through checkHlsRequest before it is sent, and
 // every playlist body through findCredentialInBody.
-import type { PlaybackPlan, PlaybackSnapshot, ServerPlayMethod } from "../../src/domain/playback";
-import type { JellyfinGateway } from "../../src/lib/jellyfin/gateway";
-import { confirmedPlan, reportedPlan } from "../../src/lib/player/confirm-play-method";
-import { PLAY_METHOD_CHECKS_MS } from "../../src/lib/player/coordinator";
+import type { PlaybackPlan, PlaybackSnapshot, ServerPlayMethod } from "../../packages/core/src/domain/playback";
+import type { JellyfinGateway } from "../../packages/core/src/jellyfin/gateway";
+import { confirmedPlan, reportedPlan } from "../../packages/core/src/player/confirm-play-method";
+import { PLAY_METHOD_CHECKS_MS } from "../../packages/core/src/player/coordinator";
 import { countFfmpeg, sleep } from "./tripwire-container";
 import { checkHlsRequest, findCredentialInBody, playlistUris, type AfterStopObservation, type FailureKind } from "./tripwire-rules";
 import { countTranscodingSessions, type MonitorClient } from "./tripwire-server";

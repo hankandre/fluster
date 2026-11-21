@@ -5,7 +5,7 @@ import type { MediaSourceDto, PlaybackInfoResponse } from "./types";
 // P17-08 milestone 1: what Jellyfin 10.11.7 and 12.4.0 answer when a first PlaybackInfo names an audio
 // index that is not the file's default, on the multi-audio sample, with the Octave conversion profile.
 // The recorder is tests/integration/record-fixtures.mjs. These tests assert what the servers answered.
-const fixtureFiles = import.meta.glob("../../../tests/fixtures/jellyfin/*/*.json", {
+const fixtureFiles = import.meta.glob("../../tests/fixtures/jellyfin/*/*.json", {
   eager: true,
   import: "default",
 }) as Record<string, unknown>;

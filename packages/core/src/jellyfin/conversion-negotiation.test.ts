@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { LibraryItem } from "../../domain/catalog";
-import { PlaybackRefusedError, type PlaybackPlan } from "../../domain/playback";
+import type { LibraryItem } from "../domain/catalog";
+import { PlaybackRefusedError, type PlaybackPlan } from "../domain/playback";
 import { OCTAVE_PROFILE } from "./device-profile";
 import { JellyfinGateway } from "./gateway";
 import type { HttpRequestConfig, HttpTransport, PlaybackInfoResponse } from "./types";
@@ -9,7 +9,7 @@ import type { HttpRequestConfig, HttpTransport, PlaybackInfoResponse } from "./t
 // 12.4.0 with the decision 0002 profile and flags) through the gateway's
 // negotiation: the source decision, the forced fallback, and the HLS URL
 // rebuild (ARCHITECTURE.md §3).
-const fixtureFiles = import.meta.glob("../../../tests/fixtures/jellyfin/*/conversion-*.json", {
+const fixtureFiles = import.meta.glob("../../tests/fixtures/jellyfin/*/conversion-*.json", {
   eager: true,
   import: "default",
 }) as Record<string, PlaybackInfoResponse>;

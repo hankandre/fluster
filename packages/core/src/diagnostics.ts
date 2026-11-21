@@ -1,4 +1,4 @@
-import type { HostClass } from "../domain/host-class";
+import type { HostClass } from "./domain/host-class";
 import { redactText } from "./redact";
 
 const UNKNOWN = "Unknown";

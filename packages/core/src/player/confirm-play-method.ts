@@ -1,4 +1,4 @@
-import type { ConversionReason, PlaybackPlan, ServerPlayMethod } from "../../domain/playback";
+import type { ConversionReason, PlaybackPlan, ServerPlayMethod } from "../domain/playback";
 
 // The plan's DirectStream/Transcode label comes from the TranscodingUrl and is
 // provisional (ARCHITECTURE.md §3 rule 5). Once the conversion runs, the

@@ -6,7 +6,7 @@
 // the fallback. It has no codec or container conditions and no `Hls`
 // subtitle method: HLS subtitle renditions carry ApiKey={token}.
 
-import { APP_NAME } from "../../domain/app-identity";
+import { APP_NAME } from "../domain/app-identity";
 
 export interface DirectPlayProfile {
   readonly Type: "Video" | "Audio";

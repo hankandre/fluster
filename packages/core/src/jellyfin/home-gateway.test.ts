@@ -1,12 +1,12 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { continueWatchingRow } from "../../domain/up-next";
+import { continueWatchingRow } from "../domain/up-next";
 import { HOME_ROW_LIMIT, JellyfinGateway } from "./gateway";
 import type { HttpRequestConfig, HttpResponse, HttpTransport } from "./types";
 
 // Home's discovery requests, answered by the P16-01 and P16-02 fixtures of both pinned servers.
-const fixtureRoot = join(__dirname, "../../../tests/fixtures/jellyfin");
+const fixtureRoot = join(__dirname, "../../tests/fixtures/jellyfin");
 const versions = ["10.11.7", "12.4.0"] as const;
 const load = (version: string, name: string): unknown => JSON.parse(readFileSync(join(fixtureRoot, version, `discovery-${name}.json`), "utf8"));
 
