@@ -82,7 +82,7 @@ function addTask(prd, op, ctx) {
   for (const key of TASK_KEYS) if (!(key in task)) fail(`add ${task.id}: ${key} is missing`);
   if (!new RegExp(`^${phase.id}-\\d{2}$`).test(task.id)) fail(`add ${task.id}: the id must match phase ${phase.id}, such as ${phase.id}-01`);
   if (find(prd, task.id)) fail(`add ${task.id}: ${task.id} already exists`);
-  if (ctx.dropped.has(task.id)) fail(`add ${task.id}: ${task.id} was dropped in these operations; an id cannot be dropped and added again, because that would rewrite its acceptance without owner approval`);
+  if (ctx.dropped.has(task.id)) fail(`add ${task.id}: ${task.id} was dropped in these operations; an id cannot be dropped and added again, because that would rewrite its acceptance without an edit's owner_approval or scope`);
   const { id: newId, ...fields } = task;
   checkFields(prd, fields, newId);
   if (!Array.isArray(op.takes) || op.takes.length === 0 || !isStrings(op.takes)) fail(`add ${task.id}: takes must list at least one backlog entry's what`);
