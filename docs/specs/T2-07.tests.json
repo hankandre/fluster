@@ -17,9 +17,7 @@
     "packages/core/tests/fixtures/jellyfin/12.4.0/device-conversion-h264.json",
     "packages/core/tests/fixtures/jellyfin/12.4.0/device-conversion-hevc-hdr10.json",
     "packages/core/tests/fixtures/jellyfin/12.4.0/device-conversion-multitrack-audio.json",
-    "packages/core/tests/fixtures/jellyscale/b920b193cd6f/device-conversion-h264.json",
-    "tests/integration/record-fixtures.mjs",
-    "tests/integration/record-jellyscale-fixtures.ts"
+    "packages/core/tests/fixtures/jellyscale/b920b193cd6f/device-conversion-h264.json"
   ],
   "items": [
     {"item": 1, "run": ["pnpm", "--filter", "@octave/core", "exec", "vitest", "run", "src/domain/device-capabilities.test.ts", "src/jellyfin/source-acceptance-device.test.ts", "-t", "T2-07 item 1:"]},
