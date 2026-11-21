@@ -1,129 +1,61 @@
 // Server conversion tripwire (decision 0002; ARCHITECTURE.md I1 and the HLS
-// URL rules; plan 002 "Tripwire rules after P10-09").
+// URL rules; plan 002 "Tripwire rules after P10-09"; T2-09).
 //
-// Plays every sample through the real JellyfinGateway against both fixture
-// servers, the way the player would, and watches three independent signals
-// for a server job: ffmpeg processes in the container, TranscodingInfo on
-// /Sessions, and the Jellyfin log.
-// - Playable samples (no streaming limit) must direct play: no job signal,
-//   and only /Videos/{id}/stream?Static=true or external subtitle requests.
+// Plays every sample through the real gateway against the three fixture
+// servers (Jellyfin 10.11, Jellyfin 12.4, Jellyscale), the way the player
+// would, and watches independent signals for a server job: ffmpeg processes
+// in the container, TranscodingInfo on /Sessions, the Jellyfin log, and on
+// Jellyscale the transcode_jobs table. What each row must do, per server and
+// capability set, is written in tripwire-expectations.ts.
+// - Playable samples under full capabilities must direct play: no job signal,
+//   exactly one PlaybackInfo request, and only /Videos/{id}/stream?Static=true
+//   or external subtitle requests, sent with the Authorization header.
 // - Conversion samples (the BluRay folder, the H.264 sample under a forced
-//   limit, the ISO) must come back DirectStream or Transcode with a reason,
-//   request only same-origin master.m3u8, main.m3u8, and hls1 URLs with no
-//   credential parameter and EnableTrickplay=false, agree with /Sessions
-//   PlayMethod and TranscodingInfo, and leave no job 10 s after the stop.
+//   limit, the ISO) must come back with a reason, request only same-origin
+//   master.m3u8, main.m3u8, and hls1 URLs with no credential parameter, agree
+//   with /Sessions, and leave no job 10 s after the stop.
+// - A capability set that lacks a sample's video codec must convert it with
+//   the client's reason on Jellyfin, and be refused with device-cannot-play on
+//   Jellyscale until T10-08 changes that expectation.
 // - The no-conversion user must get conversion-not-allowed for the BluRay
-//   folder with no media request and no job.
+//   folder with no media request and no job (Jellyfin only).
+// - Every request of the run goes through one wire recorder, and
+//   checkWireRequests holds each server to the header and no-token-in-URL rule.
 //
 // Prerequisites: pnpm samples:generate && pnpm fixture:up && pnpm fixture:setup
 // OCTAVE_CONVERSION_SAMPLES=1 (for generation and for this run) adds the
 // dvdsub (playable) and ISO (conversion) samples.
-// Usage: pnpm test:tripwire
+// Usage: pnpm test:tripwire (TRIPWIRE_SERVERS=jellyscale narrows a local run)
 // Output: a summary table on stdout and the full JSON log in
 // release-evidence/tripwire/<UTC time>.json. Exits 1 on any failure.
 import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { LibraryItem } from "../../packages/core/src/domain/catalog";
-import { PlaybackRefusedError, type PlaybackPlan } from "../../packages/core/src/domain/playback";
-import { conversionIndicator } from "../../packages/core/src/domain/conversion-copy";
-import { JellyfinGateway } from "../../packages/core/src/jellyfin/gateway";
+import type { JellyfinGateway } from "../../packages/core/src/jellyfin/gateway";
 import { MemoryLanHttpConfirmations } from "../../packages/core/src/lan-http-confirmations";
 import { MemoryStreamingLimits, type StreamingLimitStore } from "../../packages/core/src/streaming-limits";
-import {
-  checkConversionPlan,
-  checkJobGone,
-  checkSessionAgreement,
-  decideStatus,
-  findTranscodeLogFiles,
-  findTranscodeLogLines,
-  type Expectation,
-} from "./tripwire-rules";
-import { LogWatcher, ProcessMonitor, sleep } from "./tripwire-container";
-import { JOB_GONE_DEADLINE_MS, playConversion } from "./tripwire-hls";
+import { checkPrecondition, classifyProcess, findTranscodeLogFiles, findTranscodeLogLines, type ServerKind } from "./tripwire-rules";
+import { LogWatcher, ProcessMonitor, countFfmpeg, listProcesses, sleep } from "./tripwire-container";
+import { SAMPLES, SERVERS, capabilitiesOf, runPlan, type CapabilitySetName, type SampleDef } from "./tripwire-expectations";
+import { JELLYSCALE_PLAY_METHOD_CHECK, findJellyscaleItem, jobRowCounts, listedPaths, prepareJellyscale } from "./tripwire-jellyscale";
+import { classifyJellyscaleFfmpeg } from "./tripwire-jellyscale-ffmpeg";
+import { emptyResult, playSample, type ServerContext } from "./tripwire-sample";
 import { MonitorClient, SessionWatcher, prepareServer, type ItemDto } from "./tripwire-server";
-import { playStatic } from "./tripwire-static";
-import { authorizationFor, newGateway } from "./tripwire-transport";
-import {
-  addSecret,
-  errorText,
-  fail,
-  printSummary,
-  safeUrl,
-  scrub,
-  secrets,
-  type SampleResult,
-  type ServerResult,
-} from "./tripwire-report";
+import { newGateway } from "./tripwire-transport";
+import { checkWireRequests, installWireRecorder } from "./tripwire-wire";
+import { addCredential, errorText, printSummary, scrub, secrets, wireCredentials, type SampleResult, type ServerResult } from "./tripwire-report";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, "..", "..");
 const credentialsFile = join(here, ".credentials");
 const evidenceDir = join(repoRoot, "release-evidence", "tripwire");
 
-const SERVERS = [
-  { name: "jellyfin-10-11", label: "10.11" },
-  { name: "jellyfin-12", label: "12.4" },
-];
-
-// Items are found by path, because metadata matching renames some titles.
-// user: "restricted" plays as octave-noconv (setup-servers.sh), whose policy
-// forbids video and audio transcoding and remuxing.
-// limitMbps: the local streaming limit the gateway reads for this run; absent
-// is "No limit". optIn: generated only with OCTAVE_CONVERSION_SAMPLES=1.
-interface Sample {
-  name: string;
-  path: string;
-  expect: Expectation;
-  user?: "restricted";
-  limitMbps?: number;
-  optIn?: boolean;
-  // P17-08: play with the second audio track picked, through the gateway's audio pick options.
-  audioPick?: "second";
-}
-
-const BLURAY = "/media/movies/Synthetic BluRay (2024)";
-const H264 = "/media/movies/Synthetic H264 (2024)/Synthetic H264 (2024).mkv";
-const DIRECT: Expectation = { kind: "direct-play" };
-const BOTH_METHODS = ["DirectStream", "Transcode"] as const;
-
-const SAMPLES: Sample[] = [
-  { name: "h264", path: H264, expect: DIRECT },
-  { name: "hevc-hdr10", path: "/media/movies/Synthetic HEVC HDR10 (2024)/Synthetic HEVC HDR10 (2024).mkv", expect: DIRECT },
-  { name: "av1", path: "/media/movies/Synthetic AV1 (2024)/Synthetic AV1 (2024).mkv", expect: DIRECT },
-  { name: "ass", path: "/media/movies/Synthetic ASS (2024)/Synthetic ASS (2024).mkv", expect: DIRECT },
-  { name: "sidecar-srt", path: "/media/movies/Synthetic Sidecar (2024)/Synthetic Sidecar (2024).mkv", expect: { kind: "direct-play", externalSubtitle: true } },
-  { name: "multitrack", path: "/media/movies/Synthetic Multitrack (2024)/Synthetic Multitrack (2024).mkv", expect: DIRECT },
-  // P17-08: a viewer's audio pick on the first negotiation must still direct play (I1) and select no job.
-  { name: "multitrack-audio-pick", path: "/media/movies/Synthetic Multitrack (2024)/Synthetic Multitrack (2024).mkv", expect: DIRECT, audioPick: "second" },
-  { name: "versions", path: "/media/movies/Synthetic Versions (2024)/Synthetic Versions (2024) - 1080p.mkv", expect: DIRECT },
-  { name: "dvdsub", path: "/media/movies/Synthetic DVDSub (2024)/Synthetic DVDSub (2024).mkv", expect: DIRECT, optIn: true },
-  { name: "show-s01e01", path: "/media/shows/Synthetic Show/Season 01/Synthetic Show S01E01.mkv", expect: DIRECT },
-  { name: "show-s01e02", path: "/media/shows/Synthetic Show/Season 01/Synthetic Show S01E02.mkv", expect: DIRECT },
-  { name: "show-s00e01", path: "/media/shows/Synthetic Show/Season 00/Synthetic Show S00E01.mkv", expect: DIRECT },
-  // Jellyfin never direct plays disc folders (StreamBuilder) and ignores
-  // Static=true for them (VideosController.GetVideoStream). The server sends
-  // no TranscodeReasons for this folder on 10.11.7, so the reason checked is
-  // the indicator's, which falls back to "the server needs to convert this file".
-  { name: "bluray-folder", path: BLURAY, expect: { kind: "conversion", methods: BOTH_METHODS } },
-  // 0.2 Mbit/s is below the sample's ~0.5 Mbit/s and below Octave's lowest
-  // offered limit (2 Mbit/s), so this run injects its own limit store; the
-  // gateway still reads it the way it reads the user's setting.
-  {
-    name: "h264-limited",
-    path: H264,
-    limitMbps: 0.2,
-    expect: { kind: "conversion", methods: ["Transcode"], reasonsAnyOf: ["ContainerBitrateExceedsLimit", "VideoBitrateNotSupported"] },
-  },
-  { name: "iso", path: "/media/movies/Synthetic ISO (2024)/Synthetic ISO (2024).iso", expect: { kind: "conversion", methods: BOTH_METHODS }, optIn: true },
-  { name: "bluray-noconv", path: BLURAY, user: "restricted", expect: { kind: "refused", reason: "conversion-not-allowed" } },
-];
-
-const AFTER_STOP_GRACE_MS = 1500;
 const LOG_FLUSH_MS = 2000;
 const conversionSamplesEnabled = process.env.OCTAVE_CONVERSION_SAMPLES === "1";
-const activeSamples = SAMPLES.filter((sample) => conversionSamplesEnabled || !sample.optIn);
+const plan = runPlan(conversionSamplesEnabled);
+// TRIPWIRE_SERVERS=jellyscale (comma-separated service names) narrows a local run while debugging; CI runs all three.
+const onlyServers = process.env.TRIPWIRE_SERVERS?.split(",").map((name) => name.trim()).filter(Boolean);
 
 function readCredentials(): Record<string, string> {
   if (!existsSync(credentialsFile)) {
@@ -138,227 +70,9 @@ function readCredentials(): Record<string, string> {
   return values;
 }
 
-function toLibraryItem(item: ItemDto): LibraryItem {
-  return {
-    id: item.Id,
-    name: item.Name ?? "unknown",
-    type: item.Type === "Episode" ? "Episode" : "Movie",
-    seriesName: item.SeriesName,
-    resumePositionTicks: 0,
-    played: false,
-  };
-}
-
-interface ServerContext {
-  name: string;
-  url: string;
-  monitor: MonitorClient;
-  sessionWatcher: SessionWatcher;
-  processes: ProcessMonitor;
-  logs: LogWatcher;
-  gatewayFor(sample: Sample): Promise<JellyfinGateway>;
-}
-
-// The first media source's id and the Jellyfin index of its second audio stream: what the title page sends
-// when the viewer picks the second track. Fails the sample unless the plan is a static one for that track.
-async function planWithAudioPick(gateway: JellyfinGateway, item: ItemDto, result: SampleResult): Promise<PlaybackPlan> {
-  const source = (item.MediaSources?.[0] ?? {}) as { Id?: string; MediaStreams?: { Type?: string; Index?: number }[] };
-  const audio = (source.MediaStreams ?? []).filter((stream) => stream.Type === "Audio" && typeof stream.Index === "number");
-  const audioStreamIndex = audio[1]?.Index;
-  if (!source.Id || audioStreamIndex === undefined) throw new Error("the multitrack sample has no second audio stream");
-  // Counts the PlaybackInfo requests the plan took. The gateway's guard retries without the index when the
-  // server converts because of it; that silent retry must fail the sample (acceptance 7: stop for the human).
-  const transport = gateway as unknown as { post: (url: string, ...rest: unknown[]) => Promise<unknown> };
-  const originalPost = transport.post;
-  let playbackInfoRequests = 0;
-  transport.post = function counted(this: unknown, url: string, ...rest: unknown[]) {
-    if (/\/PlaybackInfo$/.test(url)) playbackInfoRequests += 1;
-    return originalPost.call(this, url, ...rest);
-  };
-  let plan: PlaybackPlan;
-  try {
-    plan = await gateway.createPlaybackPlan(toLibraryItem(item), 0, undefined, source.Id, { audioStreamIndex, keepDirectPlay: true });
-  } finally {
-    transport.post = originalPost;
-  }
-  if (playbackInfoRequests !== 1) fail(result, "I1", `the audio pick took ${playbackInfoRequests} PlaybackInfo requests, not one: the guard sent a second request (the server converted because of the index, the picked track is not embedded, or the source needs the forced fallback)`);
-  if (plan.delivery !== "static") fail(result, "I1", "the audio pick turned a direct play into a conversion");
-  else if (plan.defaultAudioStreamIndex !== audioStreamIndex) fail(result, "playback", "the plan does not carry the picked audio track");
-  return plan;
-}
-
-async function playSample(server: ServerContext, sample: Sample, item: ItemDto): Promise<SampleResult> {
-  const startedAt = Date.now();
-  const result: SampleResult = {
-    ...emptyResult(sample),
-    status: "PASS",
-    videoType: item.VideoType,
-  };
-  const { sessionWatcher, processes, logs } = server;
-  processes.start();
-  sessionWatcher.start(item.Id);
-  let plan: PlaybackPlan | undefined;
-  let hasAudio = false;
-  let confirmedAt = 0;
-  let confirmedMethod: string | undefined;
-  try {
-    const gateway = await server.gatewayFor(sample);
-    try {
-      plan = sample.audioPick
-        ? await planWithAudioPick(gateway, item, result)
-        : await gateway.createPlaybackPlan(toLibraryItem(item));
-    } catch (error) {
-      if (!(error instanceof PlaybackRefusedError)) throw error;
-      result.refusal = error.reason;
-      result.notes.push(`gateway refused (${error.reason}): ${errorText(error)}`);
-    }
-    if (plan) {
-      addSecret(plan.playSessionId);
-      addSecret(/Token="([^"]+)"/.exec(authorizationFor(gateway))?.[1]);
-      addSecret(new URL(plan.streamUrl).searchParams.get("api_key") ?? undefined);
-      hasAudio = plan.tracks.some((track) => track.type === "Audio");
-      result.plan = {
-        delivery: plan.delivery,
-        playMethod: plan.playMethod,
-        mediaSourceId: plan.mediaSourceId,
-        streamUrl: safeUrl(plan.streamUrl),
-        tracks: plan.tracks.length,
-        externalSubtitles: 0,
-      };
-      if (plan.delivery === "static" && sample.expect.kind === "direct-play") {
-        await playStatic(gateway, result, plan, sample.expect.externalSubtitle === true);
-      } else if (plan.delivery === "hls" && sample.expect.kind === "conversion") {
-        result.conversion = {
-          negotiatedMethod: plan.playMethod,
-          playMethod: plan.playMethod,
-          serverConfirmed: false,
-          conversionReasons: [...plan.conversionReasons],
-          stoppedReport: "not sent",
-          afterStop: [],
-        };
-        const outcome = await playConversion({
-          plan,
-          gateway,
-          serverUrl: server.url,
-          monitor: server.monitor,
-          service: server.name,
-          record: (request) => result.mediaRequests.push(request),
-          safeUrl,
-          fail: (kind, message) => fail(result, kind, scrub(message)),
-        });
-        // What the viewer sees and the reports say: the plan after the
-        // server confirmed copy or encode.
-        const shown = outcome.confirmed;
-        const indicator = conversionIndicator(shown);
-        result.conversion.playMethod = shown.playMethod;
-        result.conversion.serverConfirmed = outcome.server !== undefined;
-        result.conversion.server = outcome.server;
-        result.conversion.conversionReasons = [...shown.conversionReasons];
-        result.conversion.indicator = indicator?.chip;
-        confirmedAt = outcome.confirmedAt;
-        confirmedMethod = shown.playMethod;
-        if (!outcome.server) fail(result, "oracle", "the server never answered the play-method check within 10 s");
-        for (const failure of checkConversionPlan(
-          { playMethod: shown.playMethod, conversionReasons: shown.conversionReasons, indicatorReasons: indicator?.reasons ?? [] },
-          sample.expect,
-        )) result.failures.push(failure);
-        result.conversion.stoppedReport = outcome.stoppedReport;
-        result.conversion.afterStop = outcome.afterStop;
-        const gone = checkJobGone(outcome.afterStop, JOB_GONE_DEADLINE_MS);
-        result.conversion.jobGoneAfterMs = gone.goneAfterMs;
-        result.failures.push(...gone.failures);
-      } else {
-        result.notes.push(`gateway returned a ${plan.delivery} plan (${plan.playMethod}); not played, because the sample expects ${sample.expect.kind}`);
-      }
-    }
-  } catch (error) {
-    fail(result, "playback", `playback error: ${errorText(error)}`);
-  }
-
-  if (sample.expect.kind !== "conversion") await sleep(AFTER_STOP_GRACE_MS);
-  await processes.stop();
-  await sessionWatcher.stop(item.Id);
-  result.sessions = {
-    polls: sessionWatcher.polls,
-    sawOurSession: sessionWatcher.sawOurSession,
-    ourPlayMethods: [...sessionWatcher.playMethods],
-    transcoding: [...sessionWatcher.transcoding],
-    transcodingInfo: [...sessionWatcher.transcodingInfo.values()],
-  };
-  result.processPolls = processes.polls;
-  for (const error of [...processes.errors, ...sessionWatcher.errors]) fail(result, "oracle", scrub(error));
-  if (processes.polls === 0) fail(result, "oracle", "no process listing succeeded during playback");
-  if (plan && result.mediaRequests.length > 0 && sessionWatcher.sawOurSession === 0) {
-    fail(result, "oracle", "the session watcher never saw this playback on /Sessions");
-  }
-  result.ffmpegProcesses = [...processes.ffmpeg.values()].map(scrub);
-  result.ffprobeProcesses = [...processes.ffprobe.values()].map(scrub);
-  try {
-    const { text, newFiles } = await logs.newContent();
-    result.transcodeLogLines = findTranscodeLogLines(text).map(scrub);
-    result.transcodeLogFiles = findTranscodeLogFiles(newFiles);
-  } catch (error) {
-    fail(result, "oracle", `reading the Jellyfin log failed: ${errorText(error)}`);
-  }
-
-  if (sample.expect.kind === "conversion") {
-    // A conversion is expected to start a job; /Sessions must agree with the
-    // confirmed method from the first report that carried it, and the job
-    // must be gone after the stop (checked above).
-    if (confirmedMethod && result.mediaRequests.length > 0) {
-      result.failures.push(...checkSessionAgreement(confirmedMethod, sessionWatcher.observations, hasAudio, confirmedAt));
-    }
-  } else {
-    // Direct play and refusals: no job signal at all.
-    for (const session of sessionWatcher.transcoding) {
-      const what = session.transcodingInfo !== undefined ? "TranscodingInfo" : `PlayMethod ${session.playMethod}`;
-      fail(result, "I1", `/Sessions: session ${session.id} had ${what}`);
-    }
-    for (const method of sessionWatcher.playMethods) {
-      if (method !== "DirectPlay") fail(result, "I1", `/Sessions: this playback reported PlayMethod ${method}`);
-    }
-    for (const command of result.ffmpegProcesses) fail(result, "I1", `ffmpeg process in container: ${command.slice(0, 160)}`);
-    for (const line of result.transcodeLogLines) fail(result, "I1", `Jellyfin log transcode line: ${line.slice(0, 200)}`);
-    for (const name of result.transcodeLogFiles) fail(result, "I1", `Jellyfin transcode log file: ${name}`);
-  }
-
-  const decision = decideStatus({
-    expect: sample.expect,
-    failures: result.failures,
-    mediaRequests: result.mediaRequests.length,
-    delivery: plan?.delivery,
-    refusal: result.refusal,
-  });
-  if (decision.extraFailure) result.failures.push(decision.extraFailure);
-  result.status = decision.status;
-  result.durationMs = Date.now() - startedAt;
-  return result;
-}
-
-function emptyResult(sample: Sample, failure?: string): SampleResult {
-  return {
-    sample: sample.name,
-    path: sample.path,
-    status: "FAIL",
-    expect: sample.expect,
-    user: sample.user ?? "octave-test",
-    streamingLimit: sample.limitMbps === undefined ? "no limit" : `${sample.limitMbps} Mbit/s (local)`,
-    failures: failure ? [failure] : [],
-    notes: [],
-    mediaRequests: [],
-    sessions: { polls: 0, sawOurSession: 0, ourPlayMethods: [], transcoding: [], transcodingInfo: [] },
-    processPolls: 0,
-    ffmpegProcesses: [],
-    ffprobeProcesses: [],
-    transcodeLogLines: [],
-    transcodeLogFiles: [],
-    durationMs: 0,
-  };
-}
-
-// After the last sample: one more log read after a flush delay, the log
-// liveness check, and a check that something was actually played.
-async function finishServer(result: ServerResult, logs: LogWatcher): Promise<void> {
+// After the last sample on a Jellyfin server: one more log read after a flush delay, the log liveness check, and a
+// check that something was actually played.
+async function finishJellyfin(result: ServerResult, logs: LogWatcher): Promise<void> {
   await sleep(LOG_FLUSH_MS);
   try {
     const { text, newFiles } = await logs.newContent();
@@ -370,8 +84,6 @@ async function finishServer(result: ServerResult, logs: LogWatcher): Promise<voi
   if (logs.mainLogFiles.length === 0) result.failures.push("oracle: oracle blind, no log_*.log in /config/log");
   else if (logs.mainLogGrowth === 0) result.failures.push("oracle: oracle blind, the Jellyfin log did not grow during the run");
   result.preparation.mainLogGrowthChars = logs.mainLogGrowth;
-  const played = result.samples.filter((sample) => sample.status === "PASS").length;
-  if (played === 0) result.failures.push("playback: no sample was played on this server");
 }
 
 // A fixed streaming limit for one run, read by the gateway like the user's setting.
@@ -381,59 +93,90 @@ function fixedLimit(localMbps: number): StreamingLimitStore {
   return store;
 }
 
-async function runServer(server: (typeof SERVERS)[number], credentials: Record<string, string>): Promise<ServerResult> {
+function findItem(kind: ServerKind, items: readonly ItemDto[], sample: SampleDef): ItemDto | undefined {
+  return kind === "jellyscale" ? findJellyscaleItem(items, sample.path) : items.find((candidate) => candidate.Path === sample.path);
+}
+
+async function runServer(server: (typeof SERVERS)[number], credentials: Record<string, string>, wire: { records: readonly import("./tripwire-wire").WireRecord[] }): Promise<ServerResult> {
   const url = credentials[`${server.name}_url`];
   const login = (prefix: string) => ({ username: credentials[`${server.name}_${prefix}username`], password: credentials[`${server.name}_${prefix}password`] });
   const main = login("");
   const restricted = login("restricted_");
-  addSecret(main.password);
-  addSecret(restricted.password);
+  addCredential(main.password);
+  addCredential(restricted.password);
   const result: ServerResult = { server: server.name, url, preparation: {}, samples: [], failures: [] };
-  const monitor = new MonitorClient(url, addSecret);
+  const monitor = new MonitorClient(url, addCredential);
   const gateways = new Map<string, JellyfinGateway>();
-  // One signed-in gateway per user and limit, each its own device and session.
-  const gatewayFor = async (sample: Sample): Promise<JellyfinGateway> => {
-    const key = `${sample.user ?? "main"}:${sample.limitMbps ?? "none"}`;
+  // One signed-in gateway per user, limit and capability set, each its own device and session.
+  const gatewayFor = async (sample: SampleDef, set: CapabilitySetName): Promise<JellyfinGateway> => {
+    const key = `${sample.user ?? "main"}:${sample.limitMbps ?? "none"}:${set}`;
     const existing = gateways.get(key);
     if (existing) return existing;
     const account = sample.user === "restricted" ? restricted : main;
     if (!account.username || !account.password) throw new Error(`no credentials for ${sample.user ?? "the test user"}; rerun pnpm fixture:setup`);
     const limits = sample.limitMbps === undefined ? new MemoryStreamingLimits() : fixedLimit(sample.limitMbps);
+    const capabilities = capabilitiesOf(set);
     const gateway = newGateway(url, randomUUID(), new MemoryLanHttpConfirmations(), limits, {
       version: (JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as { version: string }).version,
       deviceName: "Octave Linux",
-    });
+    }, { get: () => capabilities });
     const connection = await gateway.connect();
     result.version ??= connection.version;
     await gateway.login(account.username, account.password);
     gateways.set(key, gateway);
     return gateway;
   };
+  const jobCount = async (): Promise<number> => {
+    if (server.kind === "jellyfin") return countFfmpeg(server.name);
+    const processes = (await listProcesses(server.name)).filter((process) => classifyProcess(process.command) === "ffmpeg" && classifyJellyscaleFfmpeg(process.command) === "transcode");
+    return (await jobRowCounts()).active + processes.length;
+  };
   try {
     await monitor.login(main.username, main.password);
-    const prepared = await prepareServer(monitor, server.name, [...new Set(activeSamples.map((sample) => sample.path))]);
+    const rows = plan.filter((row) => row.server === server.name);
+    const paths = [...new Set(rows.filter((row) => row.expect.kind !== "not-run").map((row) => SAMPLES.find((sample) => sample.name === row.sample)!.path))];
+    const prepared = server.kind === "jellyscale" ? await prepareJellyscale(monitor) : await prepareServer(monitor, server.name, paths);
     result.preparation = prepared.preparation;
-    await gatewayFor({ name: "h264", path: H264, expect: DIRECT });
+    await gatewayFor(SAMPLES[0], "full");
 
     const context: ServerContext = {
       name: server.name,
+      kind: server.kind,
       url,
       monitor,
       sessionWatcher: new SessionWatcher(monitor),
       processes: new ProcessMonitor(server.name),
-      logs: new LogWatcher(server.name),
+      logs: server.kind === "jellyfin" ? new LogWatcher(server.name) : undefined,
+      playMethodCheck: JELLYSCALE_PLAY_METHOD_CHECK,
+      get wire() {
+        return wire.records;
+      },
       gatewayFor,
+      jobCount,
     };
-    await context.logs.baseline();
-    for (const sample of activeSamples) {
-      const item = prepared.items.find((candidate) => candidate.Path === sample.path);
-      if (!item) {
-        result.samples.push(emptyResult(sample, "playback: sample not indexed by path"));
+    await context.logs?.baseline();
+    for (const row of rows) {
+      const sample = SAMPLES.find((candidate) => candidate.name === row.sample)!;
+      if (row.expect.kind === "not-run") {
+        const failures = checkPrecondition(row.expect.precondition, {
+          credentialNames: Object.keys(credentials),
+          listedItemPaths: listedPaths(prepared.items),
+          samplePath: sample.path,
+        });
+        const notRun: SampleResult = { ...emptyResult(sample, row.set, row.expect), status: failures.length > 0 ? "FAIL" : "NOT-RUN", failures };
+        result.samples.push(notRun);
         continue;
       }
-      result.samples.push(await playSample(context, sample, item));
+      const item = findItem(server.kind, prepared.items, sample);
+      if (!item) {
+        result.samples.push(emptyResult(sample, row.set, row.expect, "playback: sample not indexed by path"));
+        continue;
+      }
+      result.samples.push(await playSample(context, sample, row.set, row.expect, item));
     }
-    await finishServer(result, context.logs);
+    if (context.logs) await finishJellyfin(result, context.logs);
+    const played = result.samples.filter((sample) => sample.status === "PASS").length;
+    if (played === 0) result.failures.push("playback: no sample was played on this server");
   } catch (error) {
     result.error = errorText(error);
   } finally {
@@ -444,10 +187,24 @@ async function runServer(server: (typeof SERVERS)[number], credentials: Record<s
 }
 
 async function main(): Promise<void> {
-  const credentials = readCredentials();
+  const loginCredentials = readCredentials();
   const startedAt = new Date();
   const results: ServerResult[] = [];
-  for (const server of SERVERS) results.push(await runServer(server, credentials));
+  // One recorder for the whole run, installed before any gateway exists: the gateway's transport, the monitor and
+  // the player's fetch all go through it.
+  const recorder = installWireRecorder(wireCredentials);
+  for (const server of SERVERS.filter((candidate) => !onlyServers || onlyServers.includes(candidate.name))) {
+    const recordStart = recorder.records.length;
+    const result = await runServer(server, loginCredentials, recorder);
+    const origin = new URL(result.url).origin;
+    // Everything this server's run sent, to whatever origin: another origin is a failure, not a filter.
+    const own = recorder.records.slice(recordStart);
+    const wireFailures = checkWireRequests(own, origin);
+    result.wire = { requests: own.length, failures: wireFailures.length };
+    result.failures.push(...wireFailures.slice(0, 20).map(scrub));
+    results.push(result);
+  }
+  recorder.restore();
 
   mkdirSync(evidenceDir, { recursive: true });
   const stamp = startedAt.toISOString().replace(/[:.]/g, "-");
@@ -460,6 +217,11 @@ async function main(): Promise<void> {
   const skipped = conversionSamplesEnabled ? [] : SAMPLES.filter((sample) => sample.optIn).map((sample) => sample.name);
   const failed = printSummary(results, logPath.slice(repoRoot.length + 1), skipped);
   process.exitCode = failed ? 1 : 0;
+  if (onlyServers) {
+    // A narrowed run never passes: the required tripwire runs every server.
+    console.log(`Narrowed run (TRIPWIRE_SERVERS=${onlyServers.join(",")}): not a pass, the full run covers all three servers.`);
+    process.exitCode = 1;
+  }
 }
 
 main().catch((error) => {

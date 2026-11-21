@@ -32,6 +32,8 @@ export class MonitorClient {
         "Content-Type": "application/json",
       },
       body: body === undefined ? undefined : JSON.stringify(body),
+      // The monitor follows no redirect either; a 3xx is an error below.
+      redirect: "manual",
     });
     if (!response.ok) throw new Error(`${method} ${path.split("?")[0]} returned ${response.status}`);
     const text = await response.text();

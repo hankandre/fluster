@@ -21,7 +21,7 @@ pnpm check
 
 `pnpm check` runs the import-boundary lint, ESLint, the ghost-term check, the core's tests in Node, the type-check, and the task workflow's tests.
 
-The server tripwire plays generated samples through the gateway against pinned Jellyfin servers in Docker:
+The server tripwire plays generated samples through the gateway against pinned Jellyfin 10.11, Jellyfin 12.4 and Jellyscale servers in Docker, once with full device capabilities and once for each of three capability sets that lack a video codec:
 
 ```sh
 pnpm samples:generate

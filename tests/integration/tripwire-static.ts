@@ -7,12 +7,14 @@ import { sleep } from "./tripwire-container";
 import { snapshot } from "./tripwire-hls";
 import { fail, safeUrl, type MediaRequestLog, type SampleResult } from "./tripwire-report";
 import { checkMediaRequest } from "./tripwire-rules";
+import { authorizationFor } from "./tripwire-transport";
+import { playerFetch } from "./tripwire-wire";
 
 const MIB = 1024 * 1024;
 const PLAYBACK_HOLD_MS = 1500;
 
 // The instrumented player fetch: checks and records every media request.
-async function mediaFetch(result: SampleResult, rawUrl: string, range?: string): Promise<Response | undefined> {
+async function mediaFetch(gateway: JellyfinGateway, result: SampleResult, rawUrl: string, range?: string): Promise<Response | undefined> {
   const check = checkMediaRequest(rawUrl);
   const entry: MediaRequestLog = { url: safeUrl(rawUrl), range, check: check.ok ? `ok (${check.kind})` : `FAIL: ${check.reason}` };
   result.mediaRequests.push(entry);
@@ -20,9 +22,9 @@ async function mediaFetch(result: SampleResult, rawUrl: string, range?: string):
     fail(result, "I2", `media request ${entry.url}: ${check.reason}`);
     return undefined;
   }
-  // A player follows redirects, so a redirect could lead to a transcode URL.
-  // Media requests must be answered directly.
-  const response = await fetch(rawUrl, { headers: range ? { Range: range } : {}, redirect: "manual" });
+  // The player sends the header on every media request (Jellyscale's routes need it; Jellyfin's ignore it) and
+  // follows no redirect, because a redirect could lead to a transcode URL. Media requests must be answered directly.
+  const response = await playerFetch(rawUrl, { authorization: authorizationFor(gateway), range });
   const body = new Uint8Array(await response.arrayBuffer());
   entry.status = response.status;
   if (response.status >= 300 && response.status < 400) {
@@ -50,14 +52,14 @@ export async function playStatic(gateway: JellyfinGateway, result: SampleResult,
   const externalSubtitles = plan.tracks.filter((track) => track.type === "Subtitle" && track.external && track.deliveryUrl);
   result.plan!.externalSubtitles = externalSubtitles.length;
   await gateway.reportStart(plan, snapshot(0));
-  const first = await mediaFetch(result, plan.streamUrl, `bytes=0-${MIB - 1}`);
+  const first = await mediaFetch(gateway, result, plan.streamUrl, `bytes=0-${MIB - 1}`);
   const total = Number(first?.headers.get("content-range")?.split("/")[1]);
   if (Number.isFinite(total) && total > 2 * MIB) {
     const middle = Math.floor(total / 2);
-    await mediaFetch(result, plan.streamUrl, `bytes=${middle}-${middle + MIB - 1}`);
+    await mediaFetch(gateway, result, plan.streamUrl, `bytes=${middle}-${middle + MIB - 1}`);
   }
-  await mediaFetch(result, plan.streamUrl, "bytes=-65536");
-  for (const track of externalSubtitles) await mediaFetch(result, track.deliveryUrl!);
+  await mediaFetch(gateway, result, plan.streamUrl, "bytes=-65536");
+  for (const track of externalSubtitles) await mediaFetch(gateway, result, track.deliveryUrl!);
   if (externalSubtitleExpected) {
     const fetched = result.mediaRequests.some((request) => request.check === "ok (subtitle)" && request.status === 200);
     if (externalSubtitles.length === 0) fail(result, "playback", "expected an external subtitle DeliveryUrl in the plan, found none");

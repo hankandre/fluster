@@ -5,7 +5,7 @@ import { webCrypto } from "../../packages/core/src/adapters/web-crypto";
 import { systemClock } from "../../packages/core/src/adapters/system-clock";
 import { FetchTransport } from "../../packages/core/src/adapters/fetch-transport";
 import type { ClientIdentity } from "../../packages/core/src/jellyfin/authorization-header";
-import { JellyfinGateway } from "../../packages/core/src/jellyfin/gateway";
+import { JellyfinGateway, type DeviceCapabilitySource } from "../../packages/core/src/jellyfin/gateway";
 import type { LanHttpConfirmationStore } from "../../packages/core/src/lan-http-confirmations";
 import type { StreamingLimitStore } from "../../packages/core/src/streaming-limits";
 
@@ -17,9 +17,10 @@ export function newGateway(
   confirmations: LanHttpConfirmationStore,
   limits: StreamingLimitStore,
   client: ClientIdentity,
+  deviceCapabilities?: DeviceCapabilitySource,
 ): JellyfinGateway {
   const transport = new FetchTransport({ client, crypto: webCrypto, clock: systemClock });
-  const gateway = new JellyfinGateway(url, webCrypto, transport, installId, confirmations, limits);
+  const gateway = new JellyfinGateway(url, webCrypto, transport, installId, confirmations, limits, deviceCapabilities);
   transports.set(gateway, transport);
   return gateway;
 }
