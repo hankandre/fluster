@@ -1,0 +1,69 @@
+{
+  "task": "T2-06",
+  "files": [
+    "packages/core/src/conformance/url-conformance.test.ts",
+    "packages/core/src/conformance/url-conformance-node.test.ts",
+    "packages/core/src/domain/host-class-non-ascii.test.ts",
+    "packages/core/src/jellyfin/gateway-non-ascii-host.test.ts",
+    "packages/core/src/jellyfin/hls-url-non-ascii.test.ts",
+    "packages/core/src/domain/host-class.test.ts",
+    "packages/core/src/jellyfin/hls-url.test.ts",
+    "packages/core/tests/fixtures/host-classes.json",
+    "packages/core/tests/fixtures/hls-master-urls.json"
+  ],
+  "items": [
+    {
+      "item": 1,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/core",
+        "--fail-if-no-match",
+        "exec",
+        "vitest",
+        "run",
+        "src/conformance/url-conformance.test.ts"
+      ]
+    },
+    {
+      "item": 2,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/core",
+        "--fail-if-no-match",
+        "exec",
+        "vitest",
+        "run",
+        "src/domain/host-class-non-ascii.test.ts",
+        "src/jellyfin/gateway-non-ascii-host.test.ts"
+      ]
+    },
+    {
+      "item": 3,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/core",
+        "--fail-if-no-match",
+        "exec",
+        "vitest",
+        "run",
+        "src/jellyfin/hls-url-non-ascii.test.ts"
+      ]
+    },
+    {
+      "item": 4,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/core",
+        "--fail-if-no-match",
+        "exec",
+        "vitest",
+        "run",
+        "src/conformance/url-conformance-node.test.ts"
+      ]
+    }
+  ]
+}

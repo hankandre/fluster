@@ -187,7 +187,7 @@ describe("master URLs every validator refuses", () => {
   const refusals = (shared as unknown as { refusals: SharedRefusal[] }).refusals;
 
   it("are all here", () => {
-    expect(refusals).toHaveLength(56);
+    expect(refusals).toHaveLength(64);
   });
 
   it.each(refusals.map((refusal) => [refusal.name, refusal] as const))("%s", (_name, refusal) => {

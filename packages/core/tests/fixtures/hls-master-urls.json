@@ -1,5 +1,5 @@
 {
-  "description": "HLS master URLs. `vectors`: the plans src/lib/jellyfin/hls-master-url-vectors.test.ts builds from the recorded conversion fixtures; every native validator deserializes each plan and accepts its master URL (Kotlin in T8-08). `refusals`: master URLs every validator refuses; `typescript` says whether rebuildMasterUrl (src/lib/jellyfin/hls-url.ts) refuses it or rebuilds it into `url`, which a validator then accepts (hls-url.test.ts). See tests/fixtures/README.md.",
+  "description": "HLS master URLs. `vectors`: the plans packages/core/src/jellyfin/hls-master-url-vectors.test.ts builds from the recorded conversion fixtures; every native validator deserializes each plan and accepts its master URL (Kotlin in T8-08). `refusals`: master URLs every validator refuses; `typescript` says whether rebuildMasterUrl (packages/core/src/jellyfin/hls-url.ts) refuses it or rebuilds it into `url`, which a validator then accepts (packages/core/src/jellyfin/hls-url.test.ts). Also run by the conformance suite packages/core/src/conformance/url-conformance.ts. A master URL whose host is not written in plain ASCII is refused (rule `host`). See packages/core/tests/fixtures/README.md.",
   "vectors": [
     {
       "name": "10.11.7 h264-force-fallback http://127.0.0.1:8096",
@@ -2562,6 +2562,110 @@
       "itemId": "item-h264",
       "mediaSourceId": "item-h264",
       "playSessionId": "play-session-1",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "fullwidth host",
+      "rule": "host",
+      "url": "http://\uff4e\uff41\uff53.local/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://nas.local",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "long s in the host",
+      "rule": "host",
+      "url": "http://na\u017f.local/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://nas.local",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "percent-encoded host",
+      "rule": "host",
+      "url": "http://%6eas.local/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://nas.local",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "fullwidth digits in the address",
+      "rule": "host",
+      "url": "http://\uff11\uff12\uff17.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "internationalized host on a punycode server",
+      "rule": "host",
+      "url": "https://b\u00fccher.test/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "https://xn--bcher-kva.test",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "relative URL on a non-ASCII server URL",
+      "rule": "host",
+      "url": "/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "https://b\u00fccher.test",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "backslash authority",
+      "rule": "host",
+      "url": "http:\\\\127.0.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
+      "typescript": {
+        "verdict": "refuse"
+      }
+    },
+    {
+      "name": "tab in the host",
+      "rule": "host",
+      "url": "http://127.0\t.0.1:8096/videos/0123456789abcdef0123456789abcdef/master.m3u8?DeviceId=d&MediaSourceId=m&PlaySessionId=p&EnableTrickplay=false",
+      "serverUrl": "http://127.0.0.1:8096",
+      "mediaKind": "videos",
+      "itemId": "0123456789abcdef0123456789abcdef",
+      "mediaSourceId": "m",
+      "playSessionId": "p",
       "typescript": {
         "verdict": "refuse"
       }

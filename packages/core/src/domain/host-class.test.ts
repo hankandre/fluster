@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import table from "../../tests/fixtures/host-classes.json";
-import { classifyHost } from "./host-class";
+import { classifyHost, classifyServerAddress } from "./host-class";
 
 describe("classifyHost", () => {
   it("covers every host class in the shared table", () => {
@@ -8,18 +8,10 @@ describe("classifyHost", () => {
     expect([...classes].sort()).toEqual(["loopback", "private-lan", "public"]);
   });
 
+  // classifyServerAddress holds the parse: an address the host's URL cannot parse is public, which is refused
+  // before any request.
   it.each(table.vectors)("classifies $url as $class", ({ url, class: expected }) => {
-    // Node versions disagree on some invalid IDNA hosts (Node 22 rejects
-    // `xn--a.local`, Node 24 parses it). A URL that cannot be parsed is
-    // refused before any request, so it may only appear as a public vector.
-    let parsed: URL;
-    try {
-      parsed = new URL(url);
-    } catch {
-      expect(expected).toBe("public");
-      return;
-    }
-    expect(classifyHost(parsed)).toBe(expected);
+    expect(classifyServerAddress(url)).toBe(expected);
   });
 
   it("classifies the host the same way for every scheme and port", () => {

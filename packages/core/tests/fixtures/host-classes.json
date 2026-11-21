@@ -1,5 +1,5 @@
 {
-  "description": "Host classes from docs/decisions/0001 (ADR 0001). Read by src/domain/host-class.test.ts and by every native classifier (Kotlin in T3-03), so the classifiers cannot drift. Each URL is classified after WHATWG parsing.",
+  "description": "Host classes from docs/decisions/0001 (ADR 0001). Read by packages/core/src/domain/host-class.test.ts, by the conformance suite packages/core/src/conformance/url-conformance.ts and by every native classifier (Kotlin in T3-03), so the classifiers cannot drift. The address as written must be plain ASCII (http:// or https://, then letters, digits, dot, underscore, hyphen or a bracketed IPv6 literal, an optional port, then / ? # or the end) and the parsed host must be plain ASCII with no xn-- label; otherwise the class is public. Then each URL is classified after WHATWG parsing.",
   "vectors": [
     { "url": "http://localhost:8096", "class": "loopback" },
     { "url": "http://LOCALHOST/", "class": "loopback" },
@@ -79,6 +79,24 @@
     { "url": "http://xn--a.local/", "class": "public" },
     { "url": "http://xn--bcher-kva.local/", "class": "public" },
     { "url": "http://bücher.local/", "class": "public" },
-    { "url": "http://nas.xn--bcher-kva.home.arpa/", "class": "public" }
+    { "url": "http://nas.xn--bcher-kva.home.arpa/", "class": "public" },
+
+    { "url": "http://\uff4e\uff41\uff53.local/", "class": "public" },
+    { "url": "http://nas\u3002local/", "class": "public" },
+    { "url": "http://nas.loc\u00adal/", "class": "public" },
+    { "url": "http://na\u017f.local/", "class": "public" },
+    { "url": "http://\u212aodi.local/", "class": "public" },
+    { "url": "http://\uff4cocalhost/", "class": "public" },
+    { "url": "http://\uff11\uff12\uff17.0.0.1/", "class": "public" },
+    { "url": "http://nas.b\u00fccher.local/", "class": "public" },
+    { "url": "http://b\u00fccher.home.arpa/", "class": "public" },
+    { "url": "http://XN--BCHER-KVA.local/", "class": "public" },
+    { "url": "http://%6eas.local/", "class": "public" },
+    { "url": "http://1%30.0.0.1/", "class": "public" },
+    { "url": "http://%6c%6f%63%61%6c%68%6f%73%74/", "class": "public" },
+    { "url": "http://na\ts.local/", "class": "public" },
+    { "url": "http:\\\\nas.local/", "class": "public" },
+    { "url": "http:/nas.local/", "class": "public" },
+    { "url": "http:nas.local", "class": "public" }
   ]
 }
