@@ -51,7 +51,7 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 **Language.** Server, ServerId, User, Account, Session, DeviceId, Access token, Quick Connect code, Server capabilities.
 
-**Today.** `JellyfinGateway.connect/login`, `normalizeServerUrl`, `saveAccountLanguages` in `packages/core/src/jellyfin/gateway.ts`; `packages/core/src/domain/host-class.ts`, `packages/core/src/domain/server-connection.ts`, `packages/core/src/domain/server-discovery.ts` (the discovery port), `packages/core/src/domain/sign-in-failure.ts`; the confirmation port in `packages/core/src/lan-http-confirmations.ts`.
+**Today.** `JellyfinGateway.connect/login`, `normalizeServerUrl`, `saveAccountLanguages` in `packages/core/src/jellyfin/gateway.ts`; `packages/core/src/domain/host-class.ts`, `packages/core/src/domain/server-connection.ts`, `packages/core/src/domain/server-discovery.ts` (the discovery port), `packages/core/src/domain/sign-in-failure.ts`; `packages/core/src/jellyfin/device-id.ts` (the DeviceId derivation, through the Crypto port in `packages/core/src/ports/crypto.ts`); the confirmation port in `packages/core/src/lan-http-confirmations.ts`.
 
 **Target.** `packages/core` for the rules and the gateway; the sign-in screens in `apps/tv`; the native session module (sign-in, the session registry, `request`; T3-03, T3-05), discovery (T4-01), and the Keystore credential store (T4-05) as native code behind core ports.
 
@@ -231,7 +231,7 @@ adapters (gateway transport, native modules) ──► domain, ports
 5. **Only Playback Negotiation constructs media URLs.**
 6. **Native side:** every request goes through the one OkHttp client; the token stays in the session registry; the player module never touches Jellyfin data other than its typed launch request.
 
-`pnpm lint:boundaries` (dependency-cruiser, `.dependency-cruiser.cjs`) enforces rules 1, 2, 3 and no circular imports on `packages/core/src` (T2-02): the domain may import nothing outside `domain/`, installed or not; no core file, tests included, may import React, React Native, Expo, or a native module; and no core source file may import a Node builtin. ESLint forbids the browser globals in the core. T3-04 adds the native checks.
+`pnpm lint:boundaries` (dependency-cruiser, `.dependency-cruiser.cjs`) enforces rules 1, 2, 3 and no circular imports on `packages/core/src` (T2-02): the domain may import nothing outside `domain/`, installed or not; no core file, tests included, may import React, React Native, Expo, or a native module; and no core source file may import a Node builtin. ESLint forbids the browser globals in the core, and forbids timers, the wall clock, `crypto` and `Math.random` outside `packages/core/src/adapters/`; dependency-cruiser forbids importing `adapters/` from non-test core code (T2-03). T3-04 adds the native checks.
 
 ## Ubiquitous language
 

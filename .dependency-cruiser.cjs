@@ -31,6 +31,14 @@ module.exports = {
       to: { dependencyTypes: ["core"] },
     },
     {
+      name: "core-takes-adapters-by-injection",
+      severity: "error",
+      comment:
+        "DOMAINS.md > Dependency rules 4: only the composition root constructs adapters. Core code outside packages/core/src/adapters takes a Clock or Crypto as a constructor argument and never imports the reference adapters.",
+      from: { path: "^packages/core/src/", pathNot: "(^packages/core/src/adapters/|\\.test\\.ts$)" },
+      to: { path: "^packages/core/src/adapters/" },
+    },
+    {
       name: "no-circular",
       severity: "error",
       comment: "Circular imports hide layering mistakes. Extract the shared piece into a lower layer.",
