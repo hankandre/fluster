@@ -62,8 +62,8 @@ The replacement named by decision 0004 is native Kotlin with Compose for TV; it 
 ```
 
 - **Where the code is today.** The core lives in `packages/core/src/domain/`, `packages/core/src/jellyfin/`, `packages/core/src/player/`, and `packages/core/src/` (redaction, safe reasons, transport errors, preference and confirmation ports), with its tests beside it and the shared fixtures in `packages/core/tests/fixtures/`. It is the pnpm workspace package `@octave/core` (T2-02). `apps/tv` (T3-01) and `modules/player` (T8-01) do not exist yet.
-- **The core is platform-free.** It takes its host through ports: a `Transport` for HTTP (T2-04 drops axios and the SDK), `Clock` and `Crypto` (T2-03), and the stores. The host contract is `packages/core/host-globals.d.ts`: the package compiles without Node's types, so every global the core reads is declared there. The ports are in `packages/core/src/ports/` and the reference adapters for Node tests and the tripwire are in `packages/core/src/adapters/`.
-- **The token lives in native memory only (decision 0005).** Kotlin sends and parses the two sign-in calls and keeps `AccessToken` in a session registry keyed by an opaque 128-bit session id; JavaScript holds only that id. The core still builds every catalog request (path, query, body) and parses every response; Kotlin adds the header, sends it, and strips the session's token value (as written and percent-encoded) from the body before it crosses back. The native session surface is four methods and one event: `signIn`, `request` (no header, no absolute URL, a path resolved against the session's origin), `restoreSessions`, `endSession`, and `sessionEnded { session, reason }`. The player's launch request and the image view name a session by id and ask the registry for the client; neither sees the header. On Android the header is built in Kotlin; the core's header builder serves the reference transport used by Node tests and the tripwire.
+- **The core is platform-free.** It takes its host through ports: a `Transport` for HTTP (T2-04: no axios and no SDK), `Clock` and `Crypto` (T2-03), and the stores. The host contract is `packages/core/host-globals.d.ts`: the package compiles without Node's types, so every global the core reads is declared there. The ports are in `packages/core/src/ports/` and the reference adapters for Node tests and the tripwire are in `packages/core/src/adapters/`.
+- **The token lives in native memory only (decision 0005).** Kotlin sends and parses the two sign-in calls and keeps `AccessToken` in a session registry keyed by an opaque 128-bit session id; JavaScript holds only that id. The core still builds every catalog request (path, query, body) and parses every response; Kotlin adds the header, sends it, and strips the session's token value (as written and percent-encoded) from the body before it crosses back. The native session surface is four methods and one event (the core's port has `signIn`, `request` and `endSession` until T4-05 adds `restoreSessions` and `sessionEnded`): `signIn`, `request` (no header, no absolute URL, a path resolved against the session's server URL, base path included), `restoreSessions`, `endSession`, and `sessionEnded { session, reason }`. The player's launch request and the image view name a session by id and ask the registry for the client; neither sees the header. On Android the header is built in Kotlin; the core's header builder (`jellyfin/authorization-header.ts`) serves the reference transport (`adapters/fetch-transport.ts`) used by Node tests and the tripwire.
 - **The engine is a port.** `PlayerEngine` is the seam between the core and any player. T2-05 makes it engine-neutral: no surface geometry or fullscreen, a launch request that is a discriminated union of an original file and an HLS session with token-free URLs, a typed capability list, a fixed method list (initialize, launch, pause, seek, select track, stop), and errors as typed codes.
 - **One authenticated client.** Every server request (sign-in, catalog, artwork, media, playlists, segments, subtitles) goes through one OkHttp client. Its interceptor adds the header only for the signed-in server's scheme, host and port; redirects and SSL redirects are off; no proxy; any other origin is refused before the request is sent (T3-03). A build check fails on Media3's default data sources, another `OkHttpClient`, `HttpURLConnection`, or an ExoPlayer without Octave's media source factory (T3-04).
 - **The video is native.** A native view hosts the video; React passes it no URL. The player screen's chrome is native per platform.
@@ -95,7 +95,7 @@ The replacement named by decision 0004 is native Kotlin with Compose for TV; it 
 
 | Concern | Approach |
 |---|---|
-| Header | `Authorization: MediaBrowser Client="Octave", Device="…", DeviceId="…", Version="…", Token="…"`. Values are quoted and URL-encoded. The SDK builds it today; the core builds it itself from T2-04. `Device` is `Octave <platform>` and `Version` is the `package.json` version; the composition root passes both in. |
+| Header | `Authorization: MediaBrowser Client="Octave", Device="…", DeviceId="…", Version="…", Token="…"`. Values are quoted and URL-encoded. The core builds it for the reference transport (T2-04); Kotlin builds it on Android. `Device` is `Octave <platform>` and `Version` is the `package.json` version; the composition root passes both in. |
 | Media requests | **Header auth, never query auth.** The native client's interceptor adds the header (T3-03). The token never enters JavaScript and never appears in a URL, prop, event, or log (decision 0005). |
 | DeviceId | The server keeps **one token per DeviceId**. Persist a random install ID (not secret) and derive `DeviceId = SHA-256(installId:serverId:username)`. The login request carries the DeviceId before the user id exists, so the lowercased username stands in for the user id. Never generate a new one per launch. The device must derive the same value Node derives (T3-02). |
 | Quick Connect | 1. `GET /QuickConnect/Enabled`. 2. `POST /QuickConnect/Initiate` (GET was removed in 12.0) returns `{Secret, Code}`. 3. Show the code and a QR code and poll `GET /QuickConnect/Connect?secret=` until `Authenticated`. 4. `POST /Users/AuthenticateWithQuickConnect` `{Secret}`. This is the TV's main sign-in, and the only one for an account that has no password (SSO). Jellyscale support: issues #104 and #118 (T10-06). |
@@ -232,9 +232,9 @@ With several versions, the first DirectPlay source wins, then the first DirectSt
 - **Stop:** report stopped (with `Failed` on error), then refresh the affected rows.
 - **Logout:** `POST /Sessions/Logout`, then delete the credential.
 
-### SDK
+### Transport
 
-The gateway pins `@jellyfin/sdk` 1.0.2 and axios until T2-04 replaces both with the injected transport. The gateway remains the **only** module that talks to the server.
+The core uses no HTTP client and no Jellyfin SDK. The gateway reaches the server through the injected `Transport` port (`packages/core/src/ports/transport.ts`): `signIn`, `request` and `endSession`. `adapters/fetch-transport.ts` is the reference implementation for Node tests and the tripwire; it is the only place that calls `fetch` and sets `redirect: "manual"`. The gateway remains the **only** module that talks to the server.
 
 ---
 
@@ -260,7 +260,7 @@ Each invariant names what enforces it today, or the task that adds the enforceme
 
 | Severity | Gap | Task |
 |---|---|---|
-| High | The core still reaches the server through axios and the Jellyfin SDK, and holds the token itself; decision 0005 moves the token into Kotlin and leaves the core a session id | T2-04, T3-03, T3-05 |
+| High | The token still lives in the reference transport's memory; decision 0005 moves it into Kotlin and leaves the core a session id (the core holds only the id since T2-04) | T3-03, T3-05 |
 | Medium | The `PlayerEngine` port still carries desktop-era methods | T2-05 |
 | Medium | No native validator exists yet; the vectors are proven only against the TypeScript rebuild and the desktop validator at the tag | T8-08 |
 
