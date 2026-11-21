@@ -1,0 +1,28 @@
+{
+  "task": "T2-03",
+  "files": [
+    "scripts/core-host-contract.test.ts",
+    "packages/core/src/player/clock-driven.test.ts",
+    "packages/core/src/jellyfin/device-id.test.ts",
+    "packages/core/src/jellyfin/gateway-crypto.test.ts",
+    "scripts/core-host-lint.test.ts"
+  ],
+  "items": [
+    {
+      "item": 1,
+      "run": ["pnpm", "exec", "vitest", "run", "scripts/core-host-contract.test.ts"]
+    },
+    {
+      "item": 2,
+      "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/player/clock-driven.test.ts"]
+    },
+    {
+      "item": 3,
+      "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/jellyfin/device-id.test.ts", "src/jellyfin/gateway-crypto.test.ts"]
+    },
+    {
+      "item": 4,
+      "run": ["pnpm", "exec", "vitest", "run", "scripts/core-host-lint.test.ts"]
+    }
+  ]
+}
