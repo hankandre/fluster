@@ -1,0 +1,18 @@
+{
+  "task": "T2-09",
+  "files": [
+    "tests/integration/tripwire-expectations.test.ts",
+    "tests/integration/tripwire-wire.test.ts",
+    "tests/integration/tripwire-rules-servers.test.ts",
+    "tests/integration/tripwire-rules.test.ts"
+  ],
+  "items": [
+    { "item": 1, "run": ["pnpm", "exec", "vitest", "run", "tests/integration/tripwire-expectations.test.ts", "tests/integration/tripwire-wire.test.ts", "tests/integration/tripwire-rules-servers.test.ts", "-t", "T2-09 item 1:"] },
+    { "item": 2, "run": ["pnpm", "exec", "vitest", "run", "tests/integration/tripwire-expectations.test.ts", "tests/integration/tripwire-rules-servers.test.ts", "-t", "T2-09 item 2:"] },
+    { "item": 3, "run": ["pnpm", "exec", "vitest", "run", "tests/integration/tripwire-expectations.test.ts", "tests/integration/tripwire-rules-servers.test.ts", "-t", "T2-09 item 3:"] },
+    { "item": 4, "run": ["pnpm", "exec", "vitest", "run", "tests/integration/tripwire-expectations.test.ts", "-t", "T2-09 item 4:"] },
+    { "item": 5, "run": ["pnpm", "exec", "vitest", "run", "tests/integration/tripwire-expectations.test.ts", "tests/integration/tripwire-rules-servers.test.ts", "-t", "T2-09 item 5:"] },
+    { "item": 6, "run": ["pnpm", "exec", "vitest", "run", "tests/integration/tripwire-wire.test.ts", "-t", "T2-09 item 6:"] },
+    { "item": 7, "gate": "met", "why": "Ruleset 26769544 already requires the tripwire context on the default branch with no bypass; a test cannot read GitHub's ruleset. Evidence: gh api repos/{owner}/{repo}/rulesets/26769544 --jq '.rules[] | select(.type==\"required_status_checks\")'" }
+  ]
+}
