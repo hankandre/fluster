@@ -663,10 +663,10 @@
             "Errors from an engine are typed codes, never free text from the player"
           ],
           "verify": "pnpm --filter @octave/core test",
-          "status": "in_progress",
+          "status": "done",
           "owner": "native-engineer",
-          "passes": false,
-          "evidence": "commit d0152073 (port, launch request, capabilities, typed errors; spec-check notes 1-12 resolved in spec) and commit 04a687dd (docs); PO ruling da3a8a59 on clock-driven.test.ts. pnpm check exit 0: core 78 files/1914 tests passed, workflow 20/314 passed, typecheck clean, flow ok. Items 1-6 all exit 0 (item 5: 14 files/168 tests). Not run: tripwire (no negotiation/reporting change), tv:wire/tv:e2e/tv:native:test (not built). No device, Android version, Jellyfin or Jellyscale server tested."
+          "passes": true,
+          "evidence": "commit d0152073 (port, launch request, capabilities, typed errors), commit a814722d (every engine event rebuilt from known fields, review medium), commit ffad0409 (review lows logged). pnpm check exit 0: core 80 files/1935 tests passed, workflow 20/314, typecheck clean, flow ok. check-red T2-05 --expect green: items 1-6 green. Not run: tripwire (no request change), tv:wire/tv:e2e/tv:native:test/tv:visual (not built). No device, Android version, Jellyfin or Jellyscale server tested."
         },
         {
           "id": "T2-06",
