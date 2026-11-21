@@ -81,7 +81,9 @@ export type PassthroughFormat = (typeof PASSTHROUGH_FORMATS)[number];
 export interface VideoDecoder {
   codec: VideoCodec;
   hardware: boolean;
-  // Jellyfin's MediaStream.Profile spelling (for example "Main 10"); absent means any profile.
+  // Jellyfin's MediaStream.Profile spelling (for example "Main 10"); absent means any profile. Matching is exact,
+  // not by hierarchy: a probe lists one VideoDecoder entry for every profile the decoder supports (a High decoder
+  // also lists "Main" and "Constrained Baseline"), or omits the profile when it decodes any.
   profile?: string;
   maxBitDepth?: 8 | 10 | 12;
   maxWidth?: number;
