@@ -11,10 +11,10 @@ The access token is the one secret Octave holds. Jellyscale requires it on every
 ### Where the token is, and who does HTTP
 
 - **On Android the token is held only by the native session module's session registry and its encrypted store.** It never enters JavaScript. The core holds an opaque session id: 128 random bits made by Kotlin at sign-in or restore, not derived from the token, meaningless to the server. The id may appear in props; it is kept out of logs by habit.
-- **Kotlin sends every request.** The core decides catalog requests (path, query, body) and parses their responses; Kotlin adds the header and sends them through the one client (§2). Kotlin alone sends and parses the two sign-in calls (`POST /Users/AuthenticateByName`, `POST /Users/AuthenticateWithQuickConnect`); their responses never reach JavaScript. Before sign-in, `GET /System/Info/Public` and the Quick Connect initiate and poll calls go through the same transport with the tokenless header, to a fixed list of paths.
+- **Kotlin sends every request.** The core decides catalog requests (path, query, body) and parses their responses; Kotlin adds the header and sends them through the one client (§2). Kotlin alone sends and parses the two sign-in calls (`POST /Users/AuthenticateByName`, `POST /Users/AuthenticateWithQuickConnect`); their responses never reach JavaScript. Before sign-in, `GET /System/Info/Public`, `GET /QuickConnect/Enabled` and the Quick Connect initiate and poll calls go through the same transport with the tokenless header, to a fixed list of paths.
 - **What crosses at sign-in:** the password or the Quick Connect secret, once, from JavaScript to Kotlin, as an argument of `signIn`; Kotlin does not keep it after the call returns. The DeviceId is derived in the core and passed in; it is not a secret.
 - **Token echoes are removed.** Jellyfin echoes the token in some response bodies (an external subtitle `DeliveryUrl` with `ApiKey=…`, a `TranscodingUrl` with `ApiKey=`). Before any body crosses to JavaScript, Kotlin replaces every occurrence of the session's token value, as written and percent-encoded, with a fixed marker. The filter is by value, so it does not depend on which routes echo it.
-- **On the desktop and in Node** (tests and the tripwire) the core's `JellyfinGateway` still holds the token as a private field, the reference transport for T2-04 and T2-09. That path never runs on the TV.
+- **In Node** (tests and the tripwire) the core's `JellyfinGateway` holds only the opaque session id. The reference transport (`packages/core/src/adapters/fetch-transport.ts`) holds the token in an ECMAScript `#private` field, so a walk of the gateway cannot reach it. That path never runs on the TV.
 
 ### The native session surface
 
@@ -23,13 +23,13 @@ Four methods and one event, in a session module of their own that shares the reg
 | Method | Takes | Returns |
 |---|---|---|
 | `signIn` | origin, DeviceId, and a password credential or a Quick Connect secret | `{ session, userId, userName, serverId }` or an error code |
-| `request` | a session id (or, for the fixed pre-sign-in paths, an origin), a method (`GET`, `POST`, `DELETE`), a server path, query pairs, a JSON body, a timeout | `{ status, body }` or an error code |
+| `request` | a session id (or, for the fixed pre-sign-in paths, the server's base URL and a DeviceId), a method (`GET`, `POST`, `DELETE`), a server path, query pairs, a JSON body, a timeout | `{ status, body }` or an error code |
 | `restoreSessions` | nothing | a list of `{ session, origin, userId, userName, serverId }` |
 | `endSession` | a session id | nothing; always succeeds locally |
 
 Event: `sessionEnded { session, reason }`, where `reason` is a fixed code (`revoked`, `store-unreadable`).
 
-`request` is not a general HTTP bridge: it accepts no header and no absolute URL (the path must start with `/` and resolves against the session's origin); it sends through the one client; a 3xx or a status of 0 is an error, never followed; any URL with a credential parameter or the token value is refused; errors are codes, and no error, result or event carries a header, a URL or a play-session id.
+`request` is not a general HTTP bridge: it accepts no header and no absolute URL (the path must start with `/` and resolves against the session's server URL, base path included); it sends through the one client; a 3xx or a status of 0 is an error, never followed; any URL with a credential parameter or the token value is refused; errors are codes, and no error, result or event carries a header, a URL or a play-session id.
 
 ### The session registry and authority
 
@@ -55,20 +55,21 @@ Code running inside the app process, or root, can read the token: same-process K
 
 | Claim | Status |
 |---|---|
-| The core's gateway holds the token only as a private field, clears it on logout, and exposes the header value only through `authorizationHeader()` (the Node and reference path) | Tested: `packages/core/src/jellyfin/gateway.test.ts` |
+| The core's gateway holds no token: only the opaque session id, which it clears on logout; the reference transport holds the token in a `#private` field, and a deep walk of the gateway finds none | Tested: `packages/core/src/jellyfin/gateway-transport.test.ts`, `packages/core/src/transport-canary.test.ts`, `packages/core/src/adapters/fetch-transport.test.ts` |
 | A playback plan is token-free: it holds only token-free stream and subtitle URLs and never the header | Tested: `packages/core/src/jellyfin/gateway.test.ts` ("keeps same-origin external subtitle URLs token-free", "strips every server credential parameter from subtitle URLs") |
-| A gateway error (401, 5xx, network, timeout) carries no token, config, or request object | Tested: `packages/core/src/jellyfin/error-strip.test.ts` |
+| A gateway error (401, 5xx, network, timeout) carries no token, config, request, response, or cause, even from an adapter that attaches them; a canary appears in no thrown error, log call or redacted output | Tested: `packages/core/src/jellyfin/error-strip.test.ts`, `packages/core/src/transport-canary.test.ts` |
 | `redactText` and the URL redactors remove tokens, `ApiKey`, `api_key`, `access_token`, passwords, and play-session ids from every string that can reach a log, error, or diagnostic | Tested: `packages/core/src/redact.test.ts`, `packages/core/src/redact-canary.test.ts` |
 | Copy diagnostics holds no server name, address, user name, token, or play-session id | Tested: `packages/core/src/diagnostics.test.ts`, `packages/core/src/redact-canary.test.ts` |
 | No function argument, result, error, event payload, or view prop across the seam carries the token, raw, percent-encoded up to four rounds, or base64, through sign-in, browse, artwork, playback, a 401 and sign-out | Planned: `seam_canary_token_never_crosses` (T10-02 for the journey; T3-05 for the transport) |
-| The serialized gateway, session store, Query cache, navigation state, and every thrown error hold no token | Planned: `javascript_state_holds_no_canary` (decision 0005; no task's acceptance covers it yet, logged in `tasks/backlog.jsonl`; T2-04 covers thrown errors) |
+| The serialized gateway, session store, Query cache, navigation state, and every thrown error hold no token | Partly tested: the gateway and every thrown error in `packages/core/src/transport-canary.test.ts` (T2-04); the session store, Query cache and navigation state: Planned `javascript_state_holds_no_canary` (decision 0005; no task's acceptance covers it yet, logged in `tasks/backlog.jsonl`) |
 | Logcat and the JavaScript console hold no token, no `Token="`, and no play-session id; no log call in the HTTP and session packages takes a request, header, or URL; no `HttpLoggingInterceptor` | Planned: `logcat_and_console_hold_no_canary` (logcat: T3-05, T10-02; the source tripwire on log calls has no task yet, logged in `tasks/backlog.jsonl`) |
 | The sign-in response stays in Kotlin, and an echoed token is removed from response bodies | Planned: `sign_in_result_has_no_token_field`, `an_echoed_token_is_removed_from_response_bodies` (decision 0005; no task's acceptance covers them yet, logged in `tasks/backlog.jsonl`) |
 | `request` refuses headers, absolute URLs, and other origins | Planned: `request_refuses_headers_absolute_urls_and_other_origins` (other origins: T3-03; headers and absolute URLs: no task yet, logged in `tasks/backlog.jsonl`) |
 | No URL carries the token or a credential parameter | Planned: `no_url_carries_the_token` (T3-03, T10-02) |
 | The stored credential is ciphertext: no file in the app's data directory holds the token | Planned: `stored_credential_is_ciphertext` (T4-05) |
 | Sign-out clears memory and the store even when logout fails; a confirmed 401 ends the session; an unreadable record means signed out | Planned: `sign_out_clears_memory_and_store_even_when_logout_fails` (T4-05); `a_confirmed_401_ends_the_session` and `an_unreadable_record_means_signed_out` (decision 0005; T4-05 covers a 401 on validation only, the rest is logged in `tasks/backlog.jsonl`) |
-| Kotlin builds the same header as the TypeScript reference transport, byte for byte | Planned: `kotlin_header_matches_the_recorded_vector` (decision 0005; T2-04's acceptance still has the core build the header, so this waits for the Product Owner, logged in `tasks/backlog.jsonl`) |
+| The core's header builder builds the MediaBrowser value byte for byte as the recorded vectors | Tested: `packages/core/src/jellyfin/authorization-header.test.ts` against `packages/core/tests/fixtures/authorization-header.json` |
+| Kotlin builds the same header as the TypeScript reference transport, byte for byte | Planned: `kotlin_header_matches_the_recorded_vector` (T3-03 reads the same fixture) |
 | The release APK contains no dev-launcher network inspector wiring | Planned: `release_build_has_no_inspector` (decision 0005; no task yet, logged in `tasks/backlog.jsonl`) |
 | Every request to Jellyscale, catalog and sign-in included, carries the header; every request after the fixed pre-sign-in paths carries a token; no redirect is followed; no other origin is contacted | Planned: the Jellyscale wire test (T3-05, T10-01) |
 | Non-secret preferences are rebuilt from an allowlist of validated fields, so they never hold a token, URL, or play-session id | Tested for the port: `packages/core/src/preference-store.test.ts`; the TV store is planned (T9-02) |
@@ -79,8 +80,8 @@ Every request the app sends goes to the signed-in server's origin, with the head
 
 | Claim | Status |
 |---|---|
-| The core's gateway follows no redirect: a 3xx answer and an opaque redirect with status 0 are both errors on every call, playstate reports and logout included, and the error tells the viewer to enter the final address | Tested: `packages/core/src/jellyfin/gateway-redirects.test.ts` |
-| On a host with no native transport (Node), `redirect: "manual"` is set in one place, the core's transport adapter | Today in the gateway's client set-up (`packages/core/src/jellyfin/gateway.ts`); the transport port: Planned (T2-04) |
+| The core's gateway follows no redirect: a 3xx answer and an opaque redirect with status 0 are both errors on every call, playstate reports and logout included, and the error tells the viewer to enter the final address | Tested: `packages/core/src/jellyfin/gateway-redirect-port.test.ts`, `packages/core/src/jellyfin/gateway-redirects.test.ts`, `packages/core/src/adapters/fetch-transport-redirects.test.ts` |
+| On a host with no native transport (Node), `redirect: "manual"` is set in one place, the core's transport adapter | Tested: `packages/core/src/adapters/fetch-transport-redirects.test.ts` (`fetch` outside `adapters/` is a lint error: `scripts/core-transport-deps.test.ts`) |
 | One OkHttp client carries every server request: sign-in, catalog, artwork, media, playlists, segments, subtitles | Planned (T3-03, T3-05) |
 | Its interceptor adds the header only when the request's scheme, host, and port equal the session's origin; a request to any other origin fails before it is sent; no cookie is stored or sent | Planned (T3-03, MockWebServer tests with a second server standing in for the other origin) |
 | `followRedirects` and `followSslRedirects` are off: a 3xx is an error and the redirect target receives nothing | Planned (T3-03) |

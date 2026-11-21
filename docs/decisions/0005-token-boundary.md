@@ -231,6 +231,16 @@ Related wording outside `docs/security.md`, for the same pull request or the Pro
 4. **The four methods and one event** as new native surface.
 5. **Development builds.** The debugger and the network inspector can read the header in a debug variant under either option. Recommended rule: a development build signs in only to a development server, never to a server holding a real library.
 
+## Amendment, 2026-11-21 (T2-04): three details the core port fills in
+
+T2-04 built the core's side of the seam (`packages/core/src/ports/transport.ts`: `signIn`, `request`, `endSession`) and found three places where the table in "The seam" was narrower than the code needs. None adds a method or an event; each is a change to the accepted surface, called out in the T2-04 pull request as an invariant change.
+
+- **A DeviceId on the pre-sign-in target.** A request before sign-in names the server and the DeviceId to put in the tokenless header, not only the server. Jellyfin binds a Quick Connect secret to the DeviceId sent with `POST /QuickConnect/Initiate`, so Initiate, `GET /QuickConnect/Connect` and the sign-in must send the same one. The DeviceId is derived in the core and is not a secret.
+- **`GET /QuickConnect/Enabled` is a fourth fixed pre-sign-in path.** The gateway asks whether Quick Connect is on before any session exists. The tokenless paths are now `GET /System/Info/Public`, `GET /QuickConnect/Enabled`, `POST /QuickConnect/Initiate` and `GET /QuickConnect/Connect`.
+- **The base URL, not only the origin.** A reverse-proxy base path such as `https://media.test/jellyfin` must survive, so the port carries the server's base URL (scheme, host, port and base path, no trailing slash, no query, no user info) and a `request` path resolves against it. The origin pin on every request is that URL's origin.
+
+Also settled there: a 4xx or 5xx answer comes back from `request` as a status and the core raises, because the core parses every response and two calls treat 404 as an answer; a body that is empty or not JSON crosses as `undefined`.
+
 ## Revisit if
 
 - A crash reporter, over-the-air JavaScript updates or any third-party runtime code is proposed. Under A that is a new reader of the token; under C it is not.
