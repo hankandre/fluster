@@ -1,0 +1,12 @@
+{
+  "GET /Genres": 107,
+  "GET /Items/{}/Collections": "not yet filed",
+  "GET /Items/{}/Similar": 107,
+  "GET /MediaSegments/{}": 103,
+  "GET /QuickConnect/Connect": 104,
+  "GET /QuickConnect/Enabled": 104,
+  "GET /Shows/NextUp": 101,
+  "GET /Videos/{}/master.m3u8": 224,
+  "POST /QuickConnect/Initiate": 104,
+  "POST /Users/AuthenticateWithQuickConnect": 104
+}

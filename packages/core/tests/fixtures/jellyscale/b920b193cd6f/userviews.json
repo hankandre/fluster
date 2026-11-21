@@ -1,0 +1,58 @@
+{
+  "Items": [
+    {
+      "BackdropImageTags": [],
+      "CollectionType": "movies",
+      "DisplayPreferencesId": "view-movies",
+      "EnableMediaSourceDisplay": true,
+      "Genres": [],
+      "Id": "view-movies",
+      "ImageBlurHashes": {},
+      "ImageTags": {},
+      "IsFolder": true,
+      "LocationType": "FileSystem",
+      "Name": "Movies",
+      "PlayAccess": "Full",
+      "ProviderIds": {},
+      "ServerId": "server-jellyscale",
+      "SortName": "movies",
+      "Type": "CollectionFolder",
+      "UserData": {
+        "IsFavorite": false,
+        "ItemId": "view-movies",
+        "Key": "view-movies",
+        "PlayCount": 0,
+        "PlaybackPositionTicks": 0,
+        "Played": false
+      }
+    },
+    {
+      "BackdropImageTags": [],
+      "CollectionType": "tvshows",
+      "DisplayPreferencesId": "view-shows",
+      "EnableMediaSourceDisplay": true,
+      "Genres": [],
+      "Id": "view-shows",
+      "ImageBlurHashes": {},
+      "ImageTags": {},
+      "IsFolder": true,
+      "LocationType": "FileSystem",
+      "Name": "Shows",
+      "PlayAccess": "Full",
+      "ProviderIds": {},
+      "ServerId": "server-jellyscale",
+      "SortName": "shows",
+      "Type": "CollectionFolder",
+      "UserData": {
+        "IsFavorite": false,
+        "ItemId": "view-shows",
+        "Key": "view-shows",
+        "PlayCount": 0,
+        "PlaybackPositionTicks": 0,
+        "Played": false
+      }
+    }
+  ],
+  "TotalRecordCount": 2,
+  "StartIndex": 0
+}

@@ -16,3 +16,26 @@ Recorded from Jellyscale pinned at `b920b193cd6f7835dec70198477a07216118b34d` (`
   frame extraction for it). The Extras trailer file was not listed as an item. Shows: S00E01 (the special), S01E01 and S01E02.
   No ISO sample exists in the default sample set.
 - The first scan finished in under 10 s.
+
+## Files (`b920b193cd6f/`)
+
+Recorded 2026-11-21 by `tests/integration/record-jellyscale-fixtures.ts` against the server above, using the samples from
+`pnpm samples:generate`. Run it by hand and commit the output.
+
+| File | What |
+| --- | --- |
+| `signin-octave-test.json` | The raw `POST /Users/AuthenticateByName` answer (the gateway's own sign-in goes through the transport, which returns a session id and no body) |
+| `userviews.json` | `GET /UserViews` through `userViews()` |
+| `latest-movies.json`, `latest-shows.json` | `GET /Items/Latest` through `latestInLibrary()`; a bare array, ungrouped (Jellyscale #234) |
+| `resume-in-progress.json` | `GET /UserItems/Resume` after a saved position of 30000000 ticks on the H.264 film (cleared after) |
+| `item-detail-h264.json`, `item-detail-multitrack.json` | `GET /Items/{id}` through `itemDetail()` |
+| `playbackinfo-{h264,multitrack,sidecar}-profile.json` | `POST /Items/{id}/PlaybackInfo` through `createPlaybackPlan()` with the Octave profile; all three answer direct play. The sidecar's `DeliveryUrl` carries `ApiKey=`, scrubbed to `REDACTED` |
+| `endpoints.json` | Every endpoint the core calls (`--endpoints`): what Jellyscale declares (`--print-routes`) and the HTTP status each probe got |
+| `endpoint-issues.json` | Kept by hand: the Jellyscale issue for each gap, or `"not yet filed"` |
+
+Commands: `pnpm exec tsx tests/integration/record-jellyscale-fixtures.ts` (fixtures), `... --endpoints` (inventory), `pnpm fixture:check-jellyscale`
+(CI: re-probe and compare). The forced-conversion probe (`EnableDirectPlay` and `EnableDirectStream` off in body and query)
+got no `TranscodingUrl`, so `GET /Videos/{itemId}/master.m3u8` is `not reached` (Jellyscale #224).
+
+Two back-to-back recordings differ only in timestamps (`LastActivityDate`, `LastLoginDate`, `LastPlayedDate`), because the
+recorder writes a position and signs in each run. The endpoint inventory is identical apart from `recorded`.

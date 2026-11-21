@@ -1,0 +1,228 @@
+{
+  "pin": "b920b193cd6f7835dec70198477a07216118b34d",
+  "recorded": "2026-11-21",
+  "routes": [
+    {
+      "method": "DELETE",
+      "path": "/UserFavoriteItems/{itemId}",
+      "declared": "implemented",
+      "http": 200
+    },
+    {
+      "method": "DELETE",
+      "path": "/UserPlayedItems/{itemId}",
+      "declared": "implemented",
+      "http": 200
+    },
+    {
+      "method": "DELETE",
+      "path": "/Videos/ActiveEncodings",
+      "declared": "implemented",
+      "http": 204
+    },
+    {
+      "method": "GET",
+      "path": "/Genres",
+      "declared": "stub",
+      "http": 200
+    },
+    {
+      "method": "GET",
+      "path": "/Items",
+      "declared": "implemented",
+      "http": 200
+    },
+    {
+      "method": "GET",
+      "path": "/Items/{itemId}",
+      "declared": "implemented",
+      "http": 200
+    },
+    {
+      "method": "GET",
+      "path": "/Items/{itemId}/Collections",
+      "declared": "stub",
+      "http": 200
+    },
+    {
+      "method": "GET",
+      "path": "/Items/{itemId}/Images/{imageType}",
+      "declared": "implemented",
+      "http": 200
+    },
+    {
+      "method": "GET",
+      "path": "/Items/{itemId}/Similar",
+      "declared": "stub",
+      "http": 200
+    },
+    {
+      "method": "GET",
+      "path": "/Items/Latest",
+      "declared": "implemented",
+      "http": 200
+    },
+    {
+      "method": "GET",
+      "path": "/Localization/Cultures",
+      "declared": "implemented",
+      "http": 200
+    },
+    {
+      "method": "GET",
+      "path": "/MediaSegments/{itemId}",
+      "declared": "stub",
+      "http": 200
+    },
+    {
+      "method": "GET",
+      "path": "/QuickConnect/Connect",
+      "declared": null,
+      "http": "not reached"
+    },
+    {
+      "method": "GET",
+      "path": "/QuickConnect/Enabled",
+      "declared": "stub",
+      "http": 200
+    },
+    {
+      "method": "GET",
+      "path": "/Search/Hints",
+      "declared": "implemented",
+      "http": 200
+    },
+    {
+      "method": "GET",
+      "path": "/Sessions",
+      "declared": "implemented",
+      "http": 200
+    },
+    {
+      "method": "GET",
+      "path": "/Shows/{seriesId}/Episodes",
+      "declared": "implemented",
+      "http": 200
+    },
+    {
+      "method": "GET",
+      "path": "/Shows/{seriesId}/Seasons",
+      "declared": "implemented",
+      "http": 200
+    },
+    {
+      "method": "GET",
+      "path": "/Shows/NextUp",
+      "declared": "stub",
+      "http": 200
+    },
+    {
+      "method": "GET",
+      "path": "/System/Info/Public",
+      "declared": "implemented",
+      "http": 200
+    },
+    {
+      "method": "GET",
+      "path": "/UserItems/Resume",
+      "declared": "implemented",
+      "http": 200
+    },
+    {
+      "method": "GET",
+      "path": "/Users/Me",
+      "declared": "implemented",
+      "http": 200
+    },
+    {
+      "method": "GET",
+      "path": "/UserViews",
+      "declared": "implemented",
+      "http": 200
+    },
+    {
+      "method": "GET",
+      "path": "/Videos/{itemId}/{sourceId}/Subtitles/{index}/{file}",
+      "declared": "implemented",
+      "http": 200
+    },
+    {
+      "method": "GET",
+      "path": "/Videos/{itemId}/master.m3u8",
+      "declared": "implemented",
+      "http": "not reached"
+    },
+    {
+      "method": "GET",
+      "path": "/Videos/{itemId}/stream",
+      "declared": "implemented",
+      "http": 206
+    },
+    {
+      "method": "POST",
+      "path": "/Items/{itemId}/PlaybackInfo",
+      "declared": "implemented",
+      "http": 200
+    },
+    {
+      "method": "POST",
+      "path": "/QuickConnect/Initiate",
+      "declared": null,
+      "http": "not reached"
+    },
+    {
+      "method": "POST",
+      "path": "/Sessions/Logout",
+      "declared": "implemented",
+      "http": 204
+    },
+    {
+      "method": "POST",
+      "path": "/Sessions/Playing",
+      "declared": "implemented",
+      "http": 204
+    },
+    {
+      "method": "POST",
+      "path": "/Sessions/Playing/Progress",
+      "declared": "implemented",
+      "http": 204
+    },
+    {
+      "method": "POST",
+      "path": "/Sessions/Playing/Stopped",
+      "declared": "implemented",
+      "http": 204
+    },
+    {
+      "method": "POST",
+      "path": "/UserFavoriteItems/{itemId}",
+      "declared": "implemented",
+      "http": 200
+    },
+    {
+      "method": "POST",
+      "path": "/UserPlayedItems/{itemId}",
+      "declared": "implemented",
+      "http": 200
+    },
+    {
+      "method": "POST",
+      "path": "/Users/AuthenticateByName",
+      "declared": "implemented",
+      "http": 200
+    },
+    {
+      "method": "POST",
+      "path": "/Users/AuthenticateWithQuickConnect",
+      "declared": null,
+      "http": "not reached"
+    },
+    {
+      "method": "POST",
+      "path": "/Users/Configuration",
+      "declared": "implemented",
+      "http": 204
+    }
+  ]
+}

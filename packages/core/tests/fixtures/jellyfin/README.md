@@ -1,5 +1,7 @@
 # Jellyfin contract fixtures
 
+
+Jellyscale's fixtures sit beside this folder in `../jellyscale/` (T2-08), outside every glob that reads `jellyfin/*/`.
 Scrubbed answers from the two pinned fixture servers (`tests/integration/docker-compose.yml`). Every file is scrubbed as `.claude/skills/jellyfin-api/references/contract-fixtures.md` describes: no token, password, authenticated URL, or play-session id, and ids are stable fakes.
 
 | Recorder (`tests/integration/`) | Fixture prefix |
