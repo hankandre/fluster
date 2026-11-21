@@ -609,13 +609,36 @@
           ],
           "acceptance": [
             "The gateway sends every request through a Transport port whose shape follows decision 0005; axios and the Jellyfin SDK are not dependencies",
-            "The core builds the MediaBrowser Authorization value itself: Client, Device, DeviceId, Version and Token, each quoted and URL-encoded, and a test compares it byte for byte with the recorded value",
+            "On Android the header is built in Kotlin (decision 0005); the core's builder serves the reference transport and builds the MediaBrowser Authorization value: Client, Device, DeviceId, Version and Token, each quoted and URL-encoded, and a test compares it byte for byte with the recorded value",
             "A 3xx answer and a status of 0 are both errors on every call, sign-out and playstate reports included, and the error tells the viewer to enter the final address",
             "A public plain-HTTP address is refused before the transport is called, and sign-in calls are refused until the private-LAN confirmation exists (decision 0001)",
             "Every recorded Jellyfin 10.11 and 12.4 contract fixture still passes, with request bodies and query strings unchanged",
             "A canary token appears in no thrown error, log call or redacted output"
           ],
           "verify": "pnpm --filter @octave/core test",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T2-10",
+          "title": "Tighten the core's boundary checks",
+          "domain": "Process",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "T2-04"
+          ],
+          "acceptance": [
+            "core-is-platform-free in .dependency-cruiser.cjs fails on any react-* package and on React Native libraries under other scopes (react-test-renderer, @testing-library/react-native, @react-navigation/native, @shopify/flash-list), in the core's tests as well as its source; an allowlist of the core's npm dependencies is the preferred form",
+            "A boundary test symlinks a fake node_modules/react into the temporary root, so the rule's resolved node_modules branch is exercised",
+            "A test imports packages/core/vitest.config.ts and asserts that test.environment is node and that no per-glob or project environment exists",
+            "scripts/lint-boundaries.mjs exits 1 for any number of violations, 256 included, and a test shows it",
+            "The tests T2-02 froze are unchanged; the new cases live in new files"
+          ],
+          "verify": "pnpm check",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -834,6 +857,29 @@
           "evidence": ""
         },
         {
+          "id": "T3-15",
+          "title": "Allow cleartext app-wide on Android with the host classifier as the only gate",
+          "domain": "Security & Redaction",
+          "model": "fable",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T3-02",
+            "T3-03"
+          ],
+          "acceptance": [
+            "The Android app's network security configuration permits cleartext app-wide, because it cannot express private address ranges or .local (decision 0001, docs/security.md section 3); a test reads the setting from the release build",
+            "On the emulator, a plain-HTTP request to a loopback or private-LAN test server succeeds through the one OkHttp client, and one to a host the shared host-class vectors call public is refused before it is sent",
+            "The configuration changes nothing for HTTPS",
+            "docs/security.md names this task's tests in the same PR"
+          ],
+          "verify": "pnpm check && pnpm tv:native:test && pnpm tv:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "T3-04",
           "title": "Fail the build when a default Media3 or unauthenticated network path is used",
           "domain": "Security & Redaction",
@@ -879,6 +925,30 @@
             "Jellyscale wire test: the capture above runs against the pinned Jellyscale and passes"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T3-16",
+          "title": "Keep the native request seam narrow and prove the header Kotlin builds",
+          "domain": "Security & Redaction",
+          "model": "fable",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T3-05"
+          ],
+          "acceptance": [
+            "The native request method accepts no header and no absolute URL: a header argument, a path that does not start with /, and another origin are each refused before anything is sent, with a test per refused shape (request_refuses_headers_absolute_urls_and_other_origins)",
+            "Before a response body crosses to JavaScript, every occurrence of the session's token, as written and percent-encoded, is replaced with a fixed marker; a PlaybackInfo body whose subtitle DeliveryUrl and TranscodingUrl carry the token reaches JavaScript without it, and the test fails with the filter switched off (an_echoed_token_is_removed_from_response_bodies)",
+            "Kotlin and the core's reference transport build the same Authorization header, byte for byte, from the fixture T2-04 records; a changed quote or encoding fails the test (kotlin_header_matches_the_recorded_vector)",
+            "A source check fails on a log call in the HTTP and session packages that takes a request, header or URL, and on HttpLoggingInterceptor; it has a failing and a passing sample and runs in pnpm check",
+            "A build check fails when a release APK contains dev-launcher network inspector wiring, and is shown failing on a debug variant (release_build_has_no_inspector)",
+            "docs/security.md marks each of these tests as tested in the same PR"
+          ],
+          "verify": "pnpm check && pnpm tv:native:test",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -1017,7 +1087,7 @@
             "T3-08"
           ],
           "acceptance": [
-            "An image view takes only an item id, an image type, a tag and a size from React; it accepts no URL, header or token prop",
+            "An image view takes only an item id, an image type, a tag, a size and a session id from React; it accepts no URL, header or token prop",
             "Every image request goes through the one OkHttp client and carries the header; a request capture against Jellyscale shows no image request without it",
             "Images are requested at the size they are drawn, not the original size, and a poster on the 1920 canvas is requested no wider than 400 px",
             "Images are cached by item, type, tag and size; a second visit to a row makes no image request",
@@ -1228,6 +1298,29 @@
             "The stored credential is excluded from Android backup and from device-to-device transfer",
             "The token appears in no shared preference, React Native storage, log or event; a canary test reads all of them",
             "docs/security.md describes the store in the same PR"
+          ],
+          "verify": "pnpm check && pnpm tv:native:test",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T4-08",
+          "title": "Prove the session rules of decision 0005",
+          "domain": "Security & Redaction",
+          "model": "fable",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T4-05"
+          ],
+          "acceptance": [
+            "The sign-in call returns only a session id, the user id, the user name and the server id; a test fails when its result carries a token field (sign_in_result_has_no_token_field)",
+            "A confirmed 401 ends the session, removes its stored record and sends sessionEnded with the reason revoked; a single 401 does not sign the viewer out (a_confirmed_401_ends_the_session)",
+            "A stored record that cannot be read is deleted and reported as store-unreadable, and that account is signed out (an_unreadable_record_means_signed_out)",
+            "After sign-in, browsing and a 401 against a fake transport, the serialized gateway, session store, Query cache, navigation state and every thrown error hold no canary token; a gateway field that keeps the token makes the test fail (javascript_state_holds_no_canary)",
+            "docs/security.md marks each of these tests as tested in the same PR"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
           "status": "todo",
@@ -2481,6 +2574,27 @@
             "A plain-HTTP account says unencrypted in words"
           ],
           "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T9-07",
+          "title": "Close the known gaps in safeReason and the text filters",
+          "domain": "Security & Redaction",
+          "model": "opus",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [],
+          "acceptance": [
+            "safeReason hides a bare host or IP address with no port, and a path that follows a colon with no space (open failed:/home/u/x)",
+            "It hides an IPv6 address with a zone id, bracketed or bare, and the user and password of a scheme-less user:pass@host",
+            "It hides a whole path that contains a space, POSIX or Windows, so no fragment of a file name is shown",
+            "A status code after the word token stays readable (Invalid token (401)), a word:NNNN value that is not an address (pts:12345, bitrate:8000) is not replaced, and a single-label host with a short port (nas:80) is hidden",
+            "Each case is a test that uses the backlog entry's example string, and the existing canary and performance tests still pass"
+          ],
+          "verify": "pnpm --filter @octave/core test",
           "status": "todo",
           "owner": null,
           "passes": false,
