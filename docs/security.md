@@ -124,7 +124,7 @@ Discovery (T4-01) sends one fixed datagram, `who is JellyfinServer?`, with no to
 |---|---|
 | The player module exposes only the `PlayerEngine` port's methods (initialize, launch, pause, seek, select track, stop, and the one event subscription with its fixed event kinds); a test fails when one is added without updating the allowlist and this document | Core port: done (T2-05, `packages/core/src/domain/player-engine-allowlist.test.ts`, `player/launch-request.test.ts`); module: Planned (T8-01) |
 | A launch takes only the typed request union (original file or HLS session) with token-free URLs and a session id; it takes no header, token, or free-form option | Core port: done (T2-05, `packages/core/src/domain/player-engine-allowlist.test.ts`, `player/launch-request.test.ts`); module: Planned (T8-01) |
-| Player errors are typed codes; the coordinator drops any other field | Done (T2-05) |
+| Player errors are typed codes; the coordinator rebuilds every engine event from its known fields and drops unknown kinds (`player/player-event.ts`) | Done (T2-05) |
 | Player events map one to one to the core's events; errors are codes with no URL, path, or player text | Planned (T8-01) |
 | A native view hosts the video; React passes it no URL | Planned (T8-01) |
 | libmpv, when it arrives, plays original files only, never HLS, and passes every item of the mpv checklist | Planned (T13-02) |
