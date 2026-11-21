@@ -2,11 +2,15 @@
 // (ARCHITECTURE.md §3, decision 0002). The original is never followed,
 // logged, or returned: only the rebuilt URL leaves this module.
 //
+// The host must be written in plain ASCII (R1) and parse to a plain ASCII
+// host (R2); see docs/specs/T2-06.md.
+//
 // Every native validator re-checks the result with the same rules (Kotlin in
 // T8-08), so they must agree: the URLs this rebuild produces from the
 // recorded fixtures, on a server with and without a base path, are the shared
 // vectors in packages/core/tests/fixtures/hls-master-urls.json (written and checked by
 // hls-master-url-vectors.test.ts), and every validator must pass them.
+import { hasPlainAsciiAuthority, isPlainAsciiHost } from "../domain/host-class";
 import type { HlsMediaKind } from "../domain/playback";
 import { isCredentialQueryName } from "./credential-query";
 
@@ -56,11 +60,23 @@ function resolve(transcodingUrl: string, serverUrl: string): URL | undefined {
 }
 
 export function rebuildMasterUrl(transcodingUrl: string, context: HlsUrlContext): HlsUrlResult {
-  const server = new URL(context.serverUrl);
-  const url = resolve(transcodingUrl.trim(), context.serverUrl);
+  // R4: the host must be written in plain ASCII, so a parser that maps a
+  // non-ASCII or percent-encoded host onto the server's origin cannot admit it.
+  if (!hasPlainAsciiAuthority(context.serverUrl)) return refuse("host");
+  let server: URL;
+  try {
+    server = new URL(context.serverUrl);
+  } catch {
+    return refuse("host");
+  }
+  const trimmed = transcodingUrl.trim();
+  const absolute = !(trimmed.startsWith("/") && !trimmed.startsWith("//"));
+  const url = resolve(trimmed, context.serverUrl);
   if (!url) return refuse("unparsable");
   if (url.protocol !== "http:" && url.protocol !== "https:") return refuse("scheme");
   if (url.username || url.password) return refuse("user info");
+  if (absolute && !hasPlainAsciiAuthority(trimmed)) return refuse("host");
+  if (!isPlainAsciiHost(url.hostname) || !isPlainAsciiHost(server.hostname)) return refuse("host");
   if (url.origin !== server.origin) return refuse("other origin");
   // A fragment is never sent, so a server URL carrying one is not a URL this
   // rebuild should guess at; the shared vectors refuse it too.

@@ -5,7 +5,7 @@ import type { PlaybackDelivery, PlaybackPlan, PlaybackPlanOptions, PlaybackSnaps
 import { PlaybackRefusedError, secondsToTicks } from "../domain/playback";
 import type { AccountLanguageChange, AccountLanguageSettings } from "../domain/account-language-choices";
 import type { AccountLanguages, LanguageCulture } from "../domain/languages";
-import { classifyHost, type HostClass } from "../domain/host-class";
+import { classifyServerAddress, type HostClass } from "../domain/host-class";
 import type { ServerConnection } from "../domain/server-connection";
 import { SignInFailure } from "../domain/sign-in-failure";
 import { isSupportedServerVersion, parseServerVersion } from "../domain/server-version";
@@ -87,7 +87,7 @@ export const REDIRECT_REFUSED_MESSAGE =
 export const UNENCRYPTED_NOT_CONFIRMED_MESSAGE =
   "Confirm the unencrypted connection to this server before signing in.";
 
-function normalizeServerUrl(input: string): URL {
+function normalizeServerUrl(input: string): { url: URL; hostClass: HostClass } {
   const candidate = input.trim();
   let url: URL;
   try {
@@ -101,12 +101,13 @@ function normalizeServerUrl(input: string): URL {
   if (url.username || url.password) {
     throw new SignInFailure("invalid-address", "The server URL must not include a username or password.");
   }
-  if (url.protocol === "http:" && classifyHost(url) === "public") {
+  const hostClass = classifyServerAddress(candidate);
+  if (url.protocol === "http:" && hostClass === "public") {
     throw new SignInFailure("public-http", PUBLIC_HTTP_REFUSED_MESSAGE);
   }
   url.hash = "";
   url.search = "";
-  return url;
+  return { url, hostClass };
 }
 
 // A transport that honours the port rejects a redirect with TransportError("redirect"). One that breaks the
@@ -186,10 +187,10 @@ export class JellyfinGateway {
     private readonly confirmations: LanHttpConfirmationStore = new MemoryLanHttpConfirmations(),
     private readonly streamingLimits: StreamingLimitStore = new MemoryStreamingLimits(),
   ) {
-    const url = normalizeServerUrl(serverUrl);
+    const { url, hostClass } = normalizeServerUrl(serverUrl);
     this.serverUrl = url.toString().replace(/\/$/, "");
     this.origin = url.origin;
-    this.hostClass = classifyHost(url);
+    this.hostClass = hostClass;
     this.plainHttp = url.protocol === "http:";
   }
 
