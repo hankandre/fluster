@@ -14,6 +14,7 @@ import {
   findTask,
   listLines,
   nextTask,
+  parseListArgs,
   parseSetArgs,
   type Prd,
 } from "./task.mjs";
@@ -129,6 +130,18 @@ describe("listLines", () => {
     const out = listLines(clone()).join("\n");
     expect(out).not.toContain("ACCEPT-");
     expect(out).not.toContain("EVIDENCE-");
+  });
+});
+
+describe("parseListArgs", () => {
+  it("reads both flag forms", () => {
+    expect(parseListArgs(["--status=todo", "--phase", "P1"])).toEqual({ status: "todo", phase: "P1" });
+    expect(parseListArgs([])).toEqual({ status: undefined, phase: undefined });
+  });
+
+  it("refuses unknown flags and positionals", () => {
+    throwsMessage(() => parseListArgs(["--phaes", "T1"]), "list takes only");
+    throwsMessage(() => parseListArgs(["todo"]), "list takes only");
   });
 });
 
@@ -306,6 +319,21 @@ describe("the CLI", () => {
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("set changes only status, owner, passes and evidence");
     expect(readFileSync(t.file, "utf8")).toBe(text);
+  });
+
+  it("filters list in both flag forms and refuses a bad or misspelled filter", () => {
+    const t = tree();
+    const spaced = run(t, ["list", "--status", "done"]);
+    const equals = run(t, ["list", "--status=done"]);
+    expect(spaced.status).toBe(0);
+    expect(equals.stdout).toBe(spaced.stdout);
+    expect(spaced.stdout.trim().split("\n")).toHaveLength(2);
+    for (const args of [["--phaes", "P1"], ["--status=nope"], ["--phase=P9"], ["--status"], ["extra"]]) {
+      const result = run(t, ["list", ...args]);
+      expect(result.status, args.join(" ")).toBe(1);
+      expect(result.stderr).toContain("ERROR task");
+      expect(result.stdout).toBe("");
+    }
   });
 
   it("prints usage and exits 1 without a command", () => {

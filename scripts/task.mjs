@@ -77,6 +77,22 @@ export function parseSetArgs(argv) {
   return { id: positionals[0], status: values.status, owner: values.owner, evidenceFile: values["evidence-file"] };
 }
 
+export function parseListArgs(argv) {
+  let parsed;
+  try {
+    parsed = parseArgs({
+      args: argv,
+      allowPositionals: true,
+      strict: true,
+      options: { status: { type: "string" }, phase: { type: "string" } },
+    });
+  } catch (error) {
+    fail(`ERROR task: list takes only --status and --phase; ${error.message}`);
+  }
+  if (parsed.positionals.length > 0) fail("ERROR task: list takes only --status and --phase");
+  return { status: parsed.values.status, phase: parsed.values.phase };
+}
+
 const length = (text) => Array.from(text).length;
 
 export function applySet(text, id, opts) {
@@ -124,14 +140,6 @@ export function checkTaskFile(byteLength, prd) {
   return problems;
 }
 
-function option(argv, name) {
-  const index = argv.indexOf(name);
-  if (index === -1) return undefined;
-  const value = argv[index + 1];
-  if (value === undefined) fail(`ERROR task: ${name} needs a value`);
-  return value;
-}
-
 function main(argv) {
   const [command, ...rest] = argv;
   const read = () => readFileSync(TASK_FILE, "utf8");
@@ -144,7 +152,7 @@ function main(argv) {
       console.log(JSON.stringify(findTask(JSON.parse(read()), rest[0]), null, 2));
       return;
     case "list": {
-      const lines = listLines(JSON.parse(read()), { status: option(rest, "--status"), phase: option(rest, "--phase") });
+      const lines = listLines(JSON.parse(read()), parseListArgs(rest));
       if (lines.length > 0) console.log(lines.join("\n"));
       return;
     }

@@ -32,6 +32,7 @@ export const EVIDENCE_REFERENCE: RegExp;
 export function nextTask(prd: Prd): ({ phase: string } & Task) | null;
 export function findTask(prd: Prd, id: string): { phase: string } & Task;
 export function listLines(prd: Prd, filters?: { status?: string; phase?: string }): string[];
+export function parseListArgs(argv: string[]): { status?: string; phase?: string };
 export function parseSetArgs(argv: string[]): { id: string; status: string; owner?: string; evidenceFile?: string };
 export function applySet(text: string, id: string, opts: SetOptions): string;
 export function checkTaskFile(byteLength: number, prd: Prd): string[];
