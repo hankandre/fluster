@@ -399,7 +399,7 @@ test('AGENTS.md, WORKFLOW.md and the rules each say the owner can veto', () => {
 test('WORKFLOW.md lists the flow in the order it runs, matching the phases', () => {
   const doc = read('WORKFLOW.md');
   const section = doc.split('## The task flow, in the order it runs')[1].split('\n## ')[0];
-  const steps = [...section.matchAll(/^\d+\. \*\*([^*]+)\*\*/gm)].map((match) => match[1].trim());
+  const steps = [...section.matchAll(/^\d+\. \*\*([^*]+)\*\*/gm)].map((match) => match[1].trim().replace(/\.$/, ''));
   assert.equal(steps[0], 'Product Owner pass');
   assert.deepEqual(steps.slice(1), meta.phases.map((phase) => phase.title));
 });

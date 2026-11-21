@@ -20,6 +20,7 @@ description: Open a pull request for a finished Octave branch, wait for CI, merg
 - Fill in every section of `.github/pull_request_template.md`.
 - List the task ids and plan it covers.
 - Set each completed task to `done` with `passes: true` and evidence of at most 600 characters before opening the PR, with `pnpm task set <id> --status done --evidence-file <file>`; the evidence names the PR or a commit.
+- Fill the Frozen tests section from `node scripts/check-flow.mjs --json` (`changes`, or "none changed").
 - List every untested device, Jellyfin, and Jellyscale gate.
 - End the body with the attribution line from the session.
 
