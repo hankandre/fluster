@@ -2,6 +2,8 @@
 // Run: node scripts/task-owner.mjs apply <ops.json> --date <YYYY-MM-DD> [--root <dir>]
 // All or nothing, in the canonical file format. The status fields (status, owner, passes, evidence) stay with `pnpm task set`.
 // There is no operation for `rules`: AGENTS.md and prd rule 15 give a pass add, split, reorder and drop only.
+// An acceptance edit passes with owner_approval (an approval file naming the task) or with scope (the Product Owner's reason that it
+// changes scope only, not on-screen wording, look or product direction); human and verify always need owner_approval.
 import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -54,12 +56,22 @@ function checkFields(prd, fields, id) {
 function approve(op, readApproval, summary) {
   const path = op.owner_approval;
   if (typeof path !== "string" || !APPROVAL_PATH.test(path)) {
-    fail(`${op.id}: editing acceptance, human or verify needs owner_approval, a docs/specs/decisions-*.md or docs/decisions/*.md file`);
+    fail(`${op.id}: editing acceptance, human or verify needs owner_approval, a docs/specs/decisions-*.md or docs/decisions/*.md file; an acceptance edit that changes scope only may give scope, its reason, instead`);
   }
   const text = readApproval(path);
   if (text === null || text === undefined) fail(`${op.id}: owner_approval ${path} does not exist`);
   if (!new RegExp(`\\b${op.id}\\b`).test(text)) fail(`${op.id}: owner_approval ${path} does not name ${op.id}`);
   summary.push(`approval: ${op.id} fields ${Object.keys(op.fields).filter((key) => NEEDS_APPROVAL.includes(key)).join(", ")} edited with owner approval ${path}`);
+}
+
+// A scope edit: acceptance only, no owner_approval, and a reason. The log line it returns is what the owner can veto.
+function scopeEdit(op, summary) {
+  const keys = Object.keys(op.fields).filter((key) => NEEDS_APPROVAL.includes(key));
+  if (keys.some((key) => key !== "acceptance")) {
+    fail(`${op.id}: scope covers acceptance only; editing human or verify needs owner_approval, a docs/specs/decisions-*.md or docs/decisions/*.md file`);
+  }
+  if (typeof op.scope !== "string" || op.scope.trim() === "") fail(`${op.id}: scope must give the reason the edit changes scope only`);
+  summary.push(`scope: ${op.id} acceptance edited by the Product Owner for scope, without owner approval (the owner can veto): ${op.scope.trim()}`);
 }
 
 function addTask(prd, op, ctx) {
@@ -121,7 +133,10 @@ function applyOne(prd, op, ctx) {
         if (key === "id") fail(`edit ${op.id}: the id cannot be edited; drop and add instead`);
         if (!EDITABLE.includes(key)) fail(`edit ${op.id}: ${key} is not an editable field`);
       }
-      if (Object.keys(fields).some((key) => NEEDS_APPROVAL.includes(key))) approve(op, ctx.readApproval, ctx.summary);
+      if (Object.keys(fields).some((key) => NEEDS_APPROVAL.includes(key))) {
+        if (op.owner_approval === undefined && op.scope !== undefined) scopeEdit(op, ctx.summary);
+        else approve(op, ctx.readApproval, ctx.summary);
+      }
       checkFields(prd, fields, op.id);
       Object.assign(task, fields);
       ctx.summary.push(`edited ${op.id}: ${Object.keys(fields).join(", ")}`);
