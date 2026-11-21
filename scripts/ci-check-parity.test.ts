@@ -137,8 +137,17 @@ describe("real files", () => {
   });
 
   it("runs the ghost-term check, the type-check, and the workflow tests", () => {
-    for (const step of ["pnpm lint:ghost-terms", "pnpm typecheck", "pnpm test:workflow"]) {
+    for (const step of ["pnpm lint:ghost-terms", "pnpm lint:flow", "pnpm typecheck", "pnpm test:workflow"]) {
       expect(ciSteps).toContain(step);
     }
+  });
+
+  it("clones the checks job with full history, which the frozen-test check needs", () => {
+    const lines = read("../.github/workflows/ci.yml").split("\n");
+    const job = lines.slice(lines.findIndex((line) => line === "  checks:") + 1);
+    const checkout = job.findIndex((line) => line.includes("actions/checkout"));
+    const end = job.findIndex((line, i) => i > checkout && /^\s+- /.test(line));
+    expect(checkout).toBeGreaterThan(-1);
+    expect(job.slice(checkout, end).join("\n")).toMatch(/fetch-depth: 0/);
   });
 });
