@@ -1,4 +1,8 @@
 import type { LibraryItem } from "./catalog";
+import type { HlsMediaKind, MediaTrack } from "./player-engine";
+
+// The PlayerEngine port and the types it reaches live in player-engine.ts (T2-05).
+export * from "./player-engine";
 
 export const TICKS_PER_SECOND = 10_000_000;
 
@@ -81,20 +85,6 @@ const REFUSAL_MESSAGES: Record<RefusalReason, string> = {
   "unsafe-transcoding-url": "Jellyfin offered a stream address Octave will not use.",
 };
 
-// An engine was handed a plan whose delivery it cannot play. It refuses
-// before any player call; it never falls back to another engine (I7).
-export class UnsupportedDeliveryError extends Error {
-  readonly delivery: PlaybackPlan["delivery"];
-  readonly engine: "native" | "browser";
-
-  constructor(engine: "native" | "browser", delivery: PlaybackPlan["delivery"], message: string) {
-    super(message);
-    this.name = "UnsupportedDeliveryError";
-    this.engine = engine;
-    this.delivery = delivery;
-  }
-}
-
 export class PlaybackRefusedError extends Error {
   readonly reason: RefusalReason;
   readonly detail?: string;
@@ -120,39 +110,6 @@ export function resumeChoice(item: LibraryItem): PlaybackStartChoice | undefined
   if (item.played || item.resumePositionTicks <= 0) return undefined;
   return { kind: "resume", startPositionTicks: item.resumePositionTicks };
 }
-
-export interface MediaTrack {
-  index: number;
-  type: "Audio" | "Subtitle" | "Video";
-  displayTitle: string;
-  // ffprobe codec name; an engine uses it to verify a track mapping.
-  codec?: string;
-  language?: string;
-  external: boolean;
-  deliveryUrl?: string;
-  // The stream's own title, as the file's author set it.
-  title?: string;
-  // Audio channel count.
-  channels?: number;
-  // Absent means false or unknown for the three flags below.
-  isDefault?: boolean;
-  isForced?: boolean;
-  isHearingImpaired?: boolean;
-}
-
-export interface PlayerTrack {
-  playerId: number;
-  jellyfinIndex?: number;
-  type: "Audio" | "Subtitle" | "Video";
-  title: string;
-  language?: string;
-  external: boolean;
-  selected: boolean;
-}
-
-// `videos` for a source with video (or a VideoType), `audio` for an
-// audio-only source: the master playlist path Jellyfin uses.
-export type HlsMediaKind = "videos" | "audio";
 
 // A static plan plays the original file; an hls plan plays a server
 // conversion whose master playlist URL Playback Negotiation rebuilt. Native
@@ -183,8 +140,8 @@ export interface ServerPlayMethod {
 export interface PlaybackPlanBase {
   itemId: string;
   title: string;
-  // Token-free: the plan never carries the signed-in header. Media requests
-  // authenticate with it only inside the native engine's launch call.
+  // Token-free: the plan never carries the signed-in header. The engine's
+  // native client adds the header for the session id; the launch request carries none.
   // Static delivery: the `Static=true` original-file URL. HLS delivery: the
   // rebuilt same-origin `master.m3u8` URL (ARCHITECTURE.md §3 HLS URL rules).
   streamUrl: string;
@@ -192,7 +149,7 @@ export interface PlaybackPlanBase {
   playSessionId: string;
   startPositionTicks: number;
   tracks: MediaTrack[];
-  // Jellyfin stream indices (not mpv track ids) the server chose for the
+  // Jellyfin stream indices (not the engine's track ids) the server chose for the
   // initial selection. An absent or -1 subtitle index means subtitles off.
   defaultAudioStreamIndex?: number;
   defaultSubtitleStreamIndex?: number;
@@ -228,105 +185,6 @@ export interface PlaybackPlanOptions extends StreamSelection {
   // Set for a session that started from a viewer's audio pick. An answer that names the audio index is
   // used only if it direct plays, or if the same request without the index does not (I1). Never sent.
   keepDirectPlay?: boolean;
-}
-
-export interface PlayerCapabilities {
-  mode: "native" | "browser";
-  embedded: boolean;
-  renderer: string;
-  nativeRenderer: string;
-  libmpvVersion?: string;
-}
-
-export interface PlayerSurfaceFrame {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  scaleFactor: number;
-  visible: boolean;
-}
-
-export interface PlaybackDiagnostics {
-  decodeMode: "unknown" | "hardware" | "software";
-  decodeLabel: string;
-  hwdecCurrent?: string;
-  hwdecInterop?: string;
-  hwPixelFormat?: string;
-  videoOutput?: string;
-  gpuContext?: string;
-  videoCodec?: string;
-  bitDepth?: number;
-  width?: number;
-  height?: number;
-  droppedFrames: number;
-  warning?: string;
-}
-
-// What the engine reports for the picture. "dolby-vision" is the track's
-// signalling, not proof that the enhancement layer was rendered.
-export type VideoRange = "unknown" | "sdr" | "pq" | "hlg" | "dolby-vision";
-
-export interface VideoFacts {
-  codec?: string;
-  range: VideoRange;
-  dolbyVisionProfile?: number;
-}
-
-export interface AudioFacts {
-  codec?: string;
-  channelCount?: number;
-  sampleRate?: number;
-  // The sample format written to the audio device, for example "floatp" or "spdif-eac3".
-  outputFormat?: string;
-  outputChannelCount?: number;
-}
-
-export interface PlaybackSnapshot {
-  positionSeconds: number;
-  durationSeconds?: number;
-  paused: boolean;
-  buffering: boolean;
-  volume: number;
-  muted: boolean;
-  audioTrack?: number;
-  subtitleTrack?: number;
-  tracks: PlayerTrack[];
-  diagnostics: PlaybackDiagnostics;
-  video?: VideoFacts;
-  audio?: AudioFacts;
-  // The last buffered timestamp, on the playback timeline.
-  bufferedSeconds?: number;
-}
-
-export type PlaybackEndReason = "eof" | "stopped" | "quit" | "error";
-
-export type PlayerEvent =
-  | { kind: "loaded"; snapshot: PlaybackSnapshot }
-  | { kind: "first-frame" }
-  | { kind: "state"; snapshot: PlaybackSnapshot; cause?: "pause" | "seek" | "property" }
-  | { kind: "tracks-changed"; snapshot: PlaybackSnapshot }
-  | { kind: "ended"; snapshot?: PlaybackSnapshot; reason: PlaybackEndReason }
-  | { kind: "error"; message: string };
-
-// Reads the signed-in `MediaBrowser …` header at launch. Only the native
-// engine calls it, to fill the typed launch request; nothing may keep, log, or
-// put the value in a URL.
-export type LaunchAuthorization = () => string;
-
-export interface PlayerEngine {
-  readonly mode: "native" | "browser";
-  initialize(): Promise<PlayerCapabilities>;
-  subscribe(listener: (event: PlayerEvent) => void): Promise<() => void>;
-  setSurface(frame: PlayerSurfaceFrame): Promise<void>;
-  launch(plan: PlaybackPlan, authorization: LaunchAuthorization): Promise<void>;
-  setPaused(paused: boolean): Promise<void>;
-  seek(positionSeconds: number): Promise<void>;
-  setVolume(volume: number): Promise<void>;
-  setMuted(muted: boolean): Promise<void>;
-  selectTrack(type: "audio" | "subtitle", id?: number): Promise<void>;
-  setFullscreen(fullscreen: boolean): Promise<void>;
-  stop(): Promise<void>;
 }
 
 export function ticksToSeconds(ticks: number | null | undefined): number {

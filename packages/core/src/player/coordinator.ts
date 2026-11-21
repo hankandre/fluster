@@ -9,12 +9,11 @@ import type {
   ServerPlayMethod,
   StreamSelection,
 } from "../domain/playback";
-import { secondsToTicks, startOverChoice } from "../domain/playback";
+import { PlayerEngineError, playerErrorCode, secondsToTicks, startOverChoice } from "../domain/playback";
 import type { Clock } from "../ports/clock";
-import { redactError } from "../redact";
-import { errorReason } from "../safe-reason";
 import { redactTransportError } from "../transport-error";
 import { confirmedPlan } from "./confirm-play-method";
+import { launchRequest } from "./launch-request";
 import { PlaystateReporter, type PlaystateGateway } from "./playstate-reporter";
 
 // When a converted session asks the server what it really does: 3 s after
@@ -43,10 +42,10 @@ export interface PlaybackGateway extends PlaystateGateway {
     signal?: AbortSignal,
     selection?: PlaybackSelection,
   ): Promise<PlaybackPlan>;
+  // The opaque transport session id (decision 0005), read at launch for the typed launch request.
+  sessionId(): string;
   // The server session's view of a running conversion. Without it a
   // converted plan keeps its provisional label.
-  // Read at launch only, for the native engine's typed launch request.
-  authorizationHeader(): string;
   sessionPlayMethod?(plan: Pick<PlaybackPlan, "itemId" | "mediaSourceId">, signal?: AbortSignal): Promise<ServerPlayMethod | undefined>;
 }
 
@@ -268,9 +267,24 @@ export class PlaybackCoordinator {
       throw new Error("Jellyfin reused the failed playback session. Retry again to request a fresh session.");
     }
 
-    const unsubscribe = await this.player.subscribe((event) => {
-      this.eventQueue = this.eventQueue.then(() => this.handleEvent(attempt, event));
-    });
+    let sessionId: string;
+    try {
+      sessionId = this.gateway.sessionId();
+    } catch (error) {
+      throw redactTransportError(error);
+    }
+    // Refuses an unsafe URL with LaunchRefusedError before anything is subscribed, launched or reported.
+    const request = launchRequest(plan, sessionId);
+
+    let unsubscribe: () => void;
+    try {
+      unsubscribe = await this.player.subscribe((event) => {
+        this.eventQueue = this.eventQueue.then(() => this.handleEvent(attempt, event));
+      });
+    } catch (error) {
+      if (!this.isCurrentAttempt(attempt, controller)) throw new PlaybackCancelledError();
+      throw typedEngineError(error);
+    }
     if (!this.isCurrentAttempt(attempt, controller)) {
       unsubscribe();
       throw new PlaybackCancelledError();
@@ -287,7 +301,7 @@ export class PlaybackCoordinator {
     };
     controller.signal.addEventListener("abort", cancelLaunch, { once: true });
     try {
-      await this.player.launch(plan, () => this.gateway.authorizationHeader());
+      await this.player.launch(request);
       this.assertCurrentAttempt(attempt, controller);
       return plan;
     } catch (error) {
@@ -296,7 +310,7 @@ export class PlaybackCoordinator {
         // session as failed so a reported start always gets a stopped report.
         await this.eventQueue;
         await this.finish("error", this.snapshot);
-        throw redactError(error);
+        throw typedEngineError(error);
       }
       // Stop or a newer attempt cancelled this launch; its error is moot.
       throw new PlaybackCancelledError();
@@ -338,7 +352,8 @@ export class PlaybackCoordinator {
 
   private async handleEvent(attempt: number, event: PlayerEvent): Promise<void> {
     if (attempt !== this.attempt) return;
-    this.callbacks.onEvent(event.kind === "error" ? { ...event, message: errorReason(event.message, "Something went wrong.") } : event);
+    // An error event crosses with its code only; any other field an engine adds is dropped.
+    this.callbacks.onEvent(event.kind === "error" ? { kind: "error", code: playerErrorCode(event.code) } : event);
     if ("snapshot" in event && event.snapshot) this.snapshot = event.snapshot;
     if (event.kind === "first-frame") this.firstFrameShown = true;
     if (this.firstFrameShown && this.snapshot) {
@@ -371,7 +386,7 @@ export class PlaybackCoordinator {
           await this.player.stop();
         } catch {
           // The native stop text never reaches the screen.
-          this.callbacks.onEvent({ kind: "error", message: "The player did not finish shutting down." });
+          this.callbacks.onEvent({ kind: "error", code: "stop-failed" });
           await this.finish("error", event.snapshot ?? this.snapshot);
           break;
         }
@@ -521,6 +536,12 @@ export class PlaybackCoordinator {
   private assertCurrentSession(operation: number, item: LibraryItem): void {
     if (operation !== this.operation || this.item !== item) throw new PlaybackCancelledError();
   }
+}
+
+// An engine failure crosses as a fresh typed error: a PlayerEngineError keeps a valid code and loses its message
+// and cause; anything else (player text, a native Error) becomes "unknown".
+function typedEngineError(error: unknown): PlayerEngineError {
+  return new PlayerEngineError(error instanceof PlayerEngineError ? playerErrorCode(error.code) : "unknown");
 }
 
 function untilSettledOrAborted(promise: Promise<void>, signal: AbortSignal): Promise<void> {
