@@ -715,7 +715,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "commit a02f5a18: implementation, spec notes and docs for T2-07. Core tests: 2562 pass, 4 frozen tests fail (contradictory pair, bad ranking fixture); pnpm check blocked by frozen files (lint:boundaries, 2 type errors). Tripwire not run."
+          "evidence": "commit 2110f86d (tip of task/T2-07; impl a02f5a18, frozen fixes 4fc62d06). pnpm check exit 0, core 2566 pass, check-red green 1-8, tripwire pass on pinned servers. Item 9 review gate open. Notes 1-12 are in the spec."
         },
         {
           "id": "T2-08",
