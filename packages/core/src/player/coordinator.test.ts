@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import type { LibraryItem } from "../domain/catalog";
-import type { PlaybackPlan, PlaybackSnapshot, PlayerEngine, PlayerEvent } from "../domain/playback";
+import type { PlaybackPlan, PlaybackSnapshot, PlayerEvent } from "../domain/playback";
 import { PlaybackCancelledError, PlaybackCoordinator, PlayerStopError, type PlaybackGateway } from "./coordinator";
 import { FakeClock } from "../ports/fake-clock";
+import { createFakePlayerEngine } from "./fake-player-engine";
 
 const item: LibraryItem = {
   id: "one",
@@ -59,30 +60,20 @@ function orderedGateway(order: string[], plans: PlaybackPlan[]): PlaybackGateway
     reportStart: vi.fn(async () => undefined),
     reportProgress: vi.fn(async () => undefined),
     reportStopped: vi.fn(async (stopped: PlaybackPlan) => { order.push(`stopped ${stopped.playSessionId}`); }),
-    authorizationHeader: () => "test-header",
+    sessionId: () => "session-1",
     stopActiveEncoding: vi.fn(async (playSessionId: string) => { order.push(`delete ${playSessionId}`); }),
   };
 }
 
-class FakePlayer implements PlayerEngine {
-  mode = "native" as const;
-  listener?: (event: PlayerEvent) => void;
-  initialize = vi.fn(async () => ({
-    mode: "native" as const,
-    embedded: true,
-    renderer: "test",
-    nativeRenderer: "test",
-  }));
-  subscribe = vi.fn(async (listener: (event: PlayerEvent) => void) => { this.listener = listener; return () => undefined; });
-  setSurface = vi.fn(async () => undefined);
-  launch = vi.fn(async () => undefined);
-  setPaused = vi.fn(async () => undefined);
-  seek = vi.fn(async () => undefined);
-  setVolume = vi.fn(async () => undefined);
-  setMuted = vi.fn(async () => undefined);
-  selectTrack = vi.fn(async () => undefined);
-  setFullscreen = vi.fn(async () => undefined);
-  stop = vi.fn<() => Promise<void>>(async () => undefined);
+// The shared port-only fake, with spies on the members these tests script or count.
+function fakePlayer() {
+  const fake = createFakePlayerEngine();
+  return {
+    ...fake,
+    subscribe: vi.spyOn(fake.engine, "subscribe"),
+    launch: vi.spyOn(fake.engine, "launch"),
+    stop: vi.spyOn(fake.engine, "stop"),
+  };
 }
 
 describe("PlaybackCoordinator", () => {
@@ -92,17 +83,17 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-      authorizationHeader: () => "test-header",
+      sessionId: () => "session-1",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
-    const player = new FakePlayer();
-    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
+    const player = fakePlayer();
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
     await coordinator.start(item);
-    player.listener?.({ kind: "loaded", snapshot });
+    player.emit({ kind: "loaded", snapshot });
     await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal)));
-    player.listener?.({ kind: "state", snapshot: { ...snapshot, paused: true }, cause: "pause" });
+    player.emit({ kind: "state", snapshot: { ...snapshot, paused: true }, cause: "pause" });
     await vi.waitFor(() => expect(gateway.reportProgress).toHaveBeenCalled());
-    player.listener?.({ kind: "ended", snapshot, reason: "eof" });
+    player.emit({ kind: "ended", snapshot, reason: "eof" });
     await vi.waitFor(() => expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal), false));
   });
 
@@ -119,23 +110,26 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-      authorizationHeader: () => "test-header",
+      sessionId: () => "session-1",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
-    const player = new FakePlayer();
-    const coordinator = new PlaybackCoordinator(gateway, player, {
+    const player = fakePlayer();
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, {
       onEvent: vi.fn(),
       onReportingError: vi.fn(),
     }, new FakeClock());
 
     await coordinator.start(item, { kind: "resume", startPositionTicks: item.resumePositionTicks });
-    player.listener?.({ kind: "error", message: "load failed" });
+    player.emit({ kind: "error", code: "network" });
     await coordinator.retry();
 
     expect(gateway.createPlaybackPlan).toHaveBeenNthCalledWith(1, item, item.resumePositionTicks, expect.any(AbortSignal));
     expect(gateway.createPlaybackPlan).toHaveBeenNthCalledWith(2, item, item.resumePositionTicks, expect.any(AbortSignal));
-    expect(player.launch).toHaveBeenNthCalledWith(1, plan, expect.any(Function));
-    expect(player.launch).toHaveBeenNthCalledWith(2, replacementPlan, expect.any(Function));
+    // One typed request per launch, built from the plan and the session id: no header, no reader for one.
+    expect(player.launch.mock.calls).toEqual([
+      [{ kind: "original", url: plan.streamUrl, sessionId: "session-1", startPositionSeconds: 0, tracks: [] }],
+      [{ kind: "original", url: replacementPlan.streamUrl, sessionId: "session-1", startPositionSeconds: 0, tracks: [] }],
+    ]);
   });
 
   it("refuses to relaunch a retry with the failed play-session ID", async () => {
@@ -144,11 +138,11 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-      authorizationHeader: () => "test-header",
+      sessionId: () => "session-1",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
-    const player = new FakePlayer();
-    const coordinator = new PlaybackCoordinator(gateway, player, {
+    const player = fakePlayer();
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, {
       onEvent: vi.fn(),
       onReportingError: vi.fn(),
     }, new FakeClock());
@@ -164,11 +158,11 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-      authorizationHeader: () => "test-header",
+      sessionId: () => "session-1",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
-    const player = new FakePlayer();
-    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
+    const player = fakePlayer();
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
     await coordinator.start(item);
     player.stop.mockRejectedValueOnce(new Error("mpv did not stop at /home/u/x.mkv"));
 
@@ -190,20 +184,20 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(() => record("start")),
       reportProgress: vi.fn(() => record("progress")),
       reportStopped: vi.fn(() => record("stop")),
-      authorizationHeader: () => "test-header",
+      sessionId: () => "session-1",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
-    const player = new FakePlayer();
-    const coordinator = new PlaybackCoordinator(gateway, player, {
+    const player = fakePlayer();
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, {
       onEvent: vi.fn(),
       onReportingError: vi.fn(),
     }, new FakeClock());
 
     await coordinator.start(item);
-    player.listener?.({ kind: "loaded", snapshot });
-    player.listener?.({ kind: "tracks-changed", snapshot });
-    player.listener?.({ kind: "state", snapshot, cause: "seek" });
-    player.listener?.({ kind: "ended", snapshot, reason: "eof" });
+    player.emit({ kind: "loaded", snapshot });
+    player.emit({ kind: "tracks-changed", snapshot });
+    player.emit({ kind: "state", snapshot, cause: "seek" });
+    player.emit({ kind: "ended", snapshot, reason: "eof" });
     await coordinator.flush();
 
     expect(reportOrder).toEqual([
@@ -221,17 +215,17 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-      authorizationHeader: () => "test-header",
+      sessionId: () => "session-1",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
-    const player = new FakePlayer();
-    const coordinator = new PlaybackCoordinator(gateway, player, {
+    const player = fakePlayer();
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, {
       onEvent: vi.fn(),
       onReportingError: vi.fn(),
     }, clock);
 
     await coordinator.start(item);
-    player.listener?.({ kind: "loaded", snapshot });
+    player.emit({ kind: "loaded", snapshot });
     await coordinator.flush();
     await clock.advance(10_000);
     await coordinator.flush();
@@ -246,11 +240,11 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-      authorizationHeader: () => "test-header",
+      sessionId: () => "session-1",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
-    const player = new FakePlayer();
-    const coordinator = new PlaybackCoordinator(gateway, player, {
+    const player = fakePlayer();
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, {
       onEvent: vi.fn(),
       onReportingError: vi.fn(),
     }, new FakeClock());
@@ -274,14 +268,14 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-      authorizationHeader: () => "test-header",
+      sessionId: () => "session-1",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
-    const player = new FakePlayer();
+    const player = fakePlayer();
     let rejectLaunch!: (error: Error) => void;
     player.launch.mockImplementation(() => new Promise<undefined>((_resolve, reject) => { rejectLaunch = reject; }));
     player.stop.mockImplementation(async () => rejectLaunch(new Error("The playback launch was cancelled.")));
-    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
 
     const starting = coordinator.start(item);
     await vi.waitFor(() => expect(player.launch).toHaveBeenCalled());
@@ -297,10 +291,10 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-      authorizationHeader: () => "test-header",
+      sessionId: () => "session-1",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
-    const player = new FakePlayer();
+    const player = fakePlayer();
     let rejectLaunch!: (error: Error) => void;
     let finishCancelStop!: () => void;
     const order: string[] = [];
@@ -313,7 +307,7 @@ describe("PlaybackCoordinator", () => {
         });
       })
       .mockImplementation(async () => { order.push("stop"); });
-    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
 
     const starting = coordinator.start(item);
     await vi.waitFor(() => expect(player.launch).toHaveBeenCalled());
@@ -335,19 +329,19 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(() => new Promise<void>((resolve) => { finishReport = resolve; })),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-      authorizationHeader: () => "test-header",
+      sessionId: () => "session-1",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
-    const player = new FakePlayer();
+    const player = fakePlayer();
     const onEvent = vi.fn();
-    const coordinator = new PlaybackCoordinator(gateway, player, {
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, {
       onEvent,
       onReportingError: vi.fn(),
     }, new FakeClock());
 
     await coordinator.start(item);
-    player.listener?.({ kind: "loaded", snapshot });
-    player.listener?.({ kind: "state", snapshot: { ...snapshot, positionSeconds: 43 } });
+    player.emit({ kind: "loaded", snapshot });
+    player.emit({ kind: "state", snapshot: { ...snapshot, positionSeconds: 43 } });
 
     await vi.waitFor(() => expect(onEvent).toHaveBeenCalledTimes(2));
     finishReport();
@@ -361,19 +355,19 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(() => new Promise<void>((resolve) => { finishStartReport = resolve; })),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-      authorizationHeader: () => "test-header",
+      sessionId: () => "session-1",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
-    const player = new FakePlayer();
+    const player = fakePlayer();
     const onSessionEnded = vi.fn();
-    const coordinator = new PlaybackCoordinator(gateway, player, {
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, {
       onEvent: vi.fn(),
       onReportingError: vi.fn(),
       onSessionEnded,
     }, new FakeClock());
 
     await coordinator.start(item);
-    player.listener?.({ kind: "loaded", snapshot });
+    player.emit({ kind: "loaded", snapshot });
     await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
 
     await coordinator.stop();
@@ -392,28 +386,28 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-      authorizationHeader: () => "test-header",
+      sessionId: () => "session-1",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
-    const player = new FakePlayer();
+    const player = fakePlayer();
     let finishNativeStop!: () => void;
     player.stop.mockImplementation(() => new Promise<void>((resolve) => {
       finishNativeStop = resolve;
     }));
     const onEvent = vi.fn();
     const onSessionEnded = vi.fn();
-    const coordinator = new PlaybackCoordinator(gateway, player, {
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, {
       onEvent,
       onReportingError: vi.fn(),
       onSessionEnded,
     }, new FakeClock());
 
     await coordinator.start(item);
-    player.listener?.({ kind: "loaded", snapshot });
+    player.emit({ kind: "loaded", snapshot });
     const stopping = coordinator.stop();
     await vi.waitFor(() => expect(player.stop).toHaveBeenCalled());
 
-    player.listener?.({ kind: "ended", snapshot, reason: "stopped" });
+    player.emit({ kind: "ended", snapshot, reason: "stopped" });
     await vi.waitFor(() => expect(onEvent).toHaveBeenCalledWith(
       expect.objectContaining({ kind: "ended" }),
     ));
@@ -431,21 +425,21 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(() => new Promise<void>(() => undefined)),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-      authorizationHeader: () => "test-header",
+      sessionId: () => "session-1",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
-    const player = new FakePlayer();
+    const player = fakePlayer();
     const onReportingError = vi.fn();
     const onSessionEnded = vi.fn();
-    const coordinator = new PlaybackCoordinator(gateway, player, {
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, {
       onEvent: vi.fn(),
       onReportingError,
       onSessionEnded,
     }, clock);
 
     await coordinator.start(item);
-    player.listener?.({ kind: "loaded", snapshot });
-    player.listener?.({ kind: "ended", snapshot, reason: "eof" });
+    player.emit({ kind: "loaded", snapshot });
+    player.emit({ kind: "ended", snapshot, reason: "eof" });
     await clock.advance(5_000);
     expect(onReportingError).toHaveBeenCalledWith(expect.stringContaining("shutdown deadline"));
     expect(onSessionEnded).toHaveBeenCalledWith("eof");
@@ -461,17 +455,17 @@ describe("PlaybackCoordinator", () => {
       reportProgress: vi.fn(async () => undefined),
       // A server that never answers and ignores cancellation.
       reportStopped: vi.fn(() => new Promise<void>(() => undefined)),
-      authorizationHeader: () => "test-header",
+      sessionId: () => "session-1",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
-    const player = new FakePlayer();
-    const coordinator = new PlaybackCoordinator(gateway, player, {
+    const player = fakePlayer();
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, {
       onEvent: vi.fn(),
       onReportingError: vi.fn(),
     }, new FakeClock());
 
     await coordinator.start(item);
-    player.listener?.({ kind: "loaded", snapshot });
+    player.emit({ kind: "loaded", snapshot });
     await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalledTimes(1));
     const retrying = coordinator.retry().catch(() => undefined);
     await vi.waitFor(() => expect(gateway.reportStopped).toHaveBeenCalledTimes(1));
@@ -495,14 +489,14 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-      authorizationHeader: () => "test-header",
+      sessionId: () => "session-1",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
-    const player = new FakePlayer();
+    const player = fakePlayer();
     let finishStop!: () => void;
     const stoppingPlayer = new Promise<void>((resolve) => { finishStop = resolve; });
     player.stop.mockImplementation(() => stoppingPlayer);
-    const coordinator = new PlaybackCoordinator(gateway, player, {
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, {
       onEvent: vi.fn(),
       onReportingError: vi.fn(),
     }, new FakeClock());
@@ -529,16 +523,16 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-      authorizationHeader: () => "test-header",
+      sessionId: () => "session-1",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
-    const player = new FakePlayer();
-    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
+    const player = fakePlayer();
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
     await coordinator.start(item);
-    player.listener?.({ kind: "loaded", snapshot });
+    player.emit({ kind: "loaded", snapshot });
     await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
-    if (name === "a recovered error event before eof") player.listener?.({ kind: "error", message: "decode failed" });
-    player.listener?.(ending);
+    if (name === "a recovered error event before eof") player.emit({ kind: "error", code: "decoder-failed" });
+    player.emit(ending);
     await vi.waitFor(() => expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal), failed));
   });
 
@@ -550,15 +544,15 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-      authorizationHeader: () => "test-header",
+      sessionId: () => "session-1",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
-    const player = new FakePlayer();
-    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
+    const player = fakePlayer();
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
     await coordinator.start(item);
-    player.listener?.({ kind: "loaded", snapshot });
+    player.emit({ kind: "loaded", snapshot });
     await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
-    player.listener?.({ kind: "error", message: "stalled" });
+    player.emit({ kind: "error", code: "network" });
     await coordinator.retry();
     await coordinator.flush();
     expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal), true);
@@ -570,74 +564,77 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-      authorizationHeader: () => "test-header",
+      sessionId: () => "session-1",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
-    const player = new FakePlayer();
+    const player = fakePlayer();
     player.launch.mockImplementation(async () => {
-      player.listener?.({ kind: "loaded", snapshot });
+      player.emit({ kind: "loaded", snapshot });
       await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
       throw new Error("launch failed");
     });
-    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
 
-    await expect(coordinator.start(item)).rejects.toThrow("launch failed");
+    // T2-05: an untyped launch rejection becomes the "unknown" player error code.
+    await expect(coordinator.start(item)).rejects.toMatchObject({ code: "unknown" });
     await coordinator.flush();
 
     expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal), true);
   });
 
-  it("redacts a launch failure that a native engine sends as a string, and still reports a failed stop", async () => {
+  it("drops all player text from a launch failure that a native engine sends as a string, and still reports a failed stop", async () => {
     const gateway = {
       createPlaybackPlan: vi.fn(async () => plan),
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-      authorizationHeader: () => "test-header",
+      sessionId: () => "session-1",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
-    const player = new FakePlayer();
+    const player = fakePlayer();
     player.launch.mockImplementation(async () => {
-      player.listener?.({ kind: "loaded", snapshot });
+      player.emit({ kind: "loaded", snapshot });
       await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
       throw 'mpv could not open https://media.test/x?api_key=SECRET-TOKEN (Token="SECRET-TOKEN")';
     });
-    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
 
     const caught = await coordinator.start(item).then(() => undefined, (error: unknown) => error);
     await coordinator.flush();
 
-    expect(caught).toBeDefined();
-    expect(String(caught)).toContain("mpv could not open");
-    expect(String(caught)).not.toContain("SECRET-TOKEN");
+    expect(caught).toMatchObject({ code: "unknown" });
+    for (const leak of ["mpv could not open", "SECRET-TOKEN", "media.test", "api_key"]) {
+      expect(String(caught)).not.toContain(leak);
+      expect(JSON.stringify(caught)).not.toContain(leak);
+    }
     expect(gateway.reportStopped).toHaveBeenCalledWith(plan, snapshot, expect.any(AbortSignal), true);
   });
 
   it.each([
     ["string", "mpv did not stop at https://media.test/x?api_key=SECRET-TOKEN"],
     ["Error", new Error("mpv did not stop at https://media.test/x?api_key=SECRET-TOKEN")],
-  ])("reports a failed stop after the end (%s) with fixed text, never the native message", async (_label, failure) => {
+  ])("reports a failed stop after the end (%s) as the stop-failed code, never the native message", async (_label, failure) => {
     const gateway = {
       createPlaybackPlan: vi.fn(async () => plan),
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-      authorizationHeader: () => "test-header",
+      sessionId: () => "session-1",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
-    const player = new FakePlayer();
+    const player = fakePlayer();
     player.stop.mockRejectedValueOnce(failure);
     const onEvent = vi.fn();
-    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent, onReportingError: vi.fn() }, new FakeClock());
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent, onReportingError: vi.fn() }, new FakeClock());
     await coordinator.start(item);
-    player.listener?.({ kind: "loaded", snapshot });
+    player.emit({ kind: "loaded", snapshot });
     await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
-    player.listener?.({ kind: "ended", snapshot, reason: "eof" });
+    player.emit({ kind: "ended", snapshot, reason: "eof" });
 
     await vi.waitFor(() => expect(onEvent).toHaveBeenCalledWith(expect.objectContaining({ kind: "error" })));
     const errorEvent = onEvent.mock.calls.map(([event]) => event).find((event) => event.kind === "error");
-    expect(errorEvent.message).toBe("The player did not finish shutting down.");
-    expect(errorEvent.message).not.toContain("SECRET-TOKEN");
+    expect(errorEvent).toEqual({ kind: "error", code: "stop-failed" });
+    expect(JSON.stringify(errorEvent)).not.toContain("SECRET-TOKEN");
   });
 
   function plainGateway(): PlaybackGateway {
@@ -646,76 +643,79 @@ describe("PlaybackCoordinator", () => {
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-      authorizationHeader: () => "test-header",
+      sessionId: () => "session-1",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
   }
 
   it("keeps a file path and host out of a failed stop after the end", async () => {
     const gateway = plainGateway();
-    const player = new FakePlayer();
+    const player = fakePlayer();
     player.stop.mockRejectedValueOnce(new Error("mpv did not stop: cannot open /video.mkv on media.local:8096"));
     const onEvent = vi.fn();
-    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent, onReportingError: vi.fn() }, new FakeClock());
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent, onReportingError: vi.fn() }, new FakeClock());
     await coordinator.start(item);
-    player.listener?.({ kind: "loaded", snapshot });
+    player.emit({ kind: "loaded", snapshot });
     await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
-    player.listener?.({ kind: "ended", snapshot, reason: "eof" });
+    player.emit({ kind: "ended", snapshot, reason: "eof" });
 
     await vi.waitFor(() => expect(onEvent).toHaveBeenCalledWith(expect.objectContaining({ kind: "error" })));
     const errorEvent = onEvent.mock.calls.map(([event]) => event).find((event) => event.kind === "error");
-    expect(errorEvent.message).toBe("The player did not finish shutting down.");
-    expect(errorEvent.message).not.toContain("video.mkv");
-    expect(errorEvent.message).not.toContain("media.local");
+    expect(errorEvent).toEqual({ kind: "error", code: "stop-failed" });
+    expect(JSON.stringify(errorEvent)).not.toContain("video.mkv");
+    expect(JSON.stringify(errorEvent)).not.toContain("media.local");
   });
 
-  it("hides a file path and host in the native error event", async () => {
-    const player = new FakePlayer();
+  it("keeps only the code of a native error event, dropping its file path and host", async () => {
+    const player = fakePlayer();
     const onEvent = vi.fn();
-    const coordinator = new PlaybackCoordinator(plainGateway(), player, { onEvent, onReportingError: vi.fn() }, new FakeClock());
+    const coordinator = new PlaybackCoordinator(plainGateway(), player.engine, { onEvent, onReportingError: vi.fn() }, new FakeClock());
     await coordinator.start(item);
-    player.listener?.({
+    // A bridge that adds free text next to the code (cast: the port has no message field).
+    player.emit({
       kind: "error",
+      code: "decoder-failed",
       message: "libmpv reported a playback error: C:/Users/u/x.mkv at 192.168.1.10:8096",
-    });
+    } as unknown as PlayerEvent);
 
     await vi.waitFor(() => expect(onEvent).toHaveBeenCalledWith(expect.objectContaining({ kind: "error" })));
     const errorEvent = onEvent.mock.calls.map(([event]) => event).find((event) => event.kind === "error");
-    expect(errorEvent.message).toContain("libmpv reported a playback error");
-    expect(errorEvent.message).not.toContain("Users");
-    expect(errorEvent.message).not.toContain("192.168");
+    expect(errorEvent).toEqual({ kind: "error", code: "decoder-failed" });
+    expect(JSON.stringify(errorEvent)).not.toContain("libmpv");
+    expect(JSON.stringify(errorEvent)).not.toContain("Users");
+    expect(JSON.stringify(errorEvent)).not.toContain("192.168");
   });
 
-  it("gives plain copy for an error event with a blank message", async () => {
-    const player = new FakePlayer();
+  it("gives the unknown code for an error event that carries no code", async () => {
+    const player = fakePlayer();
     const onEvent = vi.fn();
-    const coordinator = new PlaybackCoordinator(plainGateway(), player, { onEvent, onReportingError: vi.fn() }, new FakeClock());
+    const coordinator = new PlaybackCoordinator(plainGateway(), player.engine, { onEvent, onReportingError: vi.fn() }, new FakeClock());
     await coordinator.start(item);
-    player.listener?.({ kind: "error", message: "" });
+    player.emit({ kind: "error", message: "" } as unknown as PlayerEvent);
 
     await vi.waitFor(() =>
-      expect(onEvent).toHaveBeenCalledWith({ kind: "error", message: "Something went wrong." }),
+      expect(onEvent).toHaveBeenCalledWith({ kind: "error", code: "unknown" }),
     );
   });
 
-  it("keeps the fixed shutdown copy when a failed stop has no text", async () => {
+  it("gives the stop-failed code when a failed stop has no text", async () => {
     const gateway = {
       createPlaybackPlan: vi.fn(async () => plan),
       reportStart: vi.fn(async () => undefined),
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
-      authorizationHeader: () => "test-header",
+      sessionId: () => "session-1",
       stopActiveEncoding: vi.fn(async () => undefined),
     } as PlaybackGateway;
-    const player = new FakePlayer();
+    const player = fakePlayer();
     player.stop.mockRejectedValueOnce({ code: 1 });
     const onEvent = vi.fn();
-    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent, onReportingError: vi.fn() }, new FakeClock());
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent, onReportingError: vi.fn() }, new FakeClock());
     await coordinator.start(item);
-    player.listener?.({ kind: "ended", snapshot, reason: "eof" });
+    player.emit({ kind: "ended", snapshot, reason: "eof" });
 
     await vi.waitFor(() =>
-      expect(onEvent).toHaveBeenCalledWith({ kind: "error", message: "The player did not finish shutting down." }),
+      expect(onEvent).toHaveBeenCalledWith({ kind: "error", code: "stop-failed" }),
     );
   });
 
@@ -723,13 +723,13 @@ describe("PlaybackCoordinator", () => {
     it("stops the old encode before negotiating a retry of a converting item", async () => {
       const order: string[] = [];
       const gateway = orderedGateway(order, [hlsPlan("old"), hlsPlan("new")]);
-      const player = new FakePlayer();
-      const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
+      const player = fakePlayer();
+      const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
 
       await coordinator.start(item);
-      player.listener?.({ kind: "loaded", snapshot });
+      player.emit({ kind: "loaded", snapshot });
       await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
-      player.listener?.({ kind: "ended", snapshot, reason: "error" });
+      player.emit({ kind: "ended", snapshot, reason: "error" });
       await vi.waitFor(() => expect(order).toContain("stopped old"));
       await coordinator.retry();
 
@@ -740,11 +740,11 @@ describe("PlaybackCoordinator", () => {
     it("stops the old encode before renegotiating at the current position (Play original, track change)", async () => {
       const order: string[] = [];
       const gateway = orderedGateway(order, [hlsPlan("old"), plan]);
-      const player = new FakePlayer();
-      const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
+      const player = fakePlayer();
+      const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
 
       await coordinator.start(item);
-      player.listener?.({ kind: "loaded", snapshot });
+      player.emit({ kind: "loaded", snapshot });
       await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
       await coordinator.retry(420_000_000);
 
@@ -755,11 +755,11 @@ describe("PlaybackCoordinator", () => {
     it("stops no encode when retrying a direct-play session", async () => {
       const order: string[] = [];
       const gateway = orderedGateway(order, [plan, { ...plan, playSessionId: "session-2" }]);
-      const player = new FakePlayer();
-      const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
+      const player = fakePlayer();
+      const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
 
       await coordinator.start(item);
-      player.listener?.({ kind: "loaded", snapshot });
+      player.emit({ kind: "loaded", snapshot });
       await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
       await coordinator.retry(0);
 
@@ -777,13 +777,13 @@ describe("PlaybackCoordinator", () => {
         reportProgress: vi.fn(async () => undefined),
         reportStopped: vi.fn(stopped),
         // A server that never answers and ignores cancellation.
-        authorizationHeader: () => "test-header",
+        sessionId: () => "session-1",
         stopActiveEncoding: vi.fn(() => new Promise<void>(() => undefined)),
       } as PlaybackGateway;
-      const player = new FakePlayer();
-      const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, clock);
+      const player = fakePlayer();
+      const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, clock);
       await coordinator.start(item);
-      player.listener?.({ kind: "loaded", snapshot });
+      player.emit({ kind: "loaded", snapshot });
       await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
 
       let returned = false;
@@ -804,10 +804,10 @@ describe("PlaybackCoordinator", () => {
     it("sends no DELETE when the stopped report for a conversion succeeds", async () => {
       const order: string[] = [];
       const gateway = orderedGateway(order, [hlsPlan("converting")]);
-      const player = new FakePlayer();
-      const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
+      const player = fakePlayer();
+      const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
       await coordinator.start(item);
-      player.listener?.({ kind: "loaded", snapshot });
+      player.emit({ kind: "loaded", snapshot });
       await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
 
       await coordinator.stop();
@@ -823,10 +823,10 @@ describe("PlaybackCoordinator", () => {
         order.push("stopped failed");
         throw new Error("offline");
       });
-      const player = new FakePlayer();
-      const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
+      const player = fakePlayer();
+      const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
       await coordinator.start(item);
-      player.listener?.({ kind: "loaded", snapshot });
+      player.emit({ kind: "loaded", snapshot });
       await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
 
       await coordinator.retry();
@@ -837,10 +837,10 @@ describe("PlaybackCoordinator", () => {
     it("lets Back leave a retry that is still waiting on a hung DELETE", async () => {
       const gateway = orderedGateway([], [hlsPlan("old"), hlsPlan("new")]);
       gateway.stopActiveEncoding = vi.fn(() => new Promise<void>(() => undefined));
-      const player = new FakePlayer();
-      const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
+      const player = fakePlayer();
+      const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
       await coordinator.start(item);
-      player.listener?.({ kind: "loaded", snapshot });
+      player.emit({ kind: "loaded", snapshot });
       await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
 
       const retrying = coordinator.retry().catch((error: unknown) => error);

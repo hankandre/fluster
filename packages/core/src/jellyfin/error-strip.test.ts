@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import type { LibraryItem } from "../domain/catalog";
-import type { PlaybackPlan, PlaybackSnapshot, PlayerEngine } from "../domain/playback";
+import type { PlaybackPlan, PlaybackSnapshot } from "../domain/playback";
 import { PlaybackCoordinator, type PlaybackGateway } from "../player/coordinator";
+import { createFakePlayerEngine } from "../player/fake-player-engine";
 import { failureAction, stopFailureAction } from "../player/session-failure";
 import { classifyTransportError } from "../transport-error";
 import { JellyfinGateway } from "./gateway";
@@ -130,12 +131,8 @@ describe("the coordinator PlaybackInfo failure", () => {
       reportStopped: vi.fn(),
       stopActiveEncoding: vi.fn(),
     } as unknown as PlaybackGateway;
-    const player = {
-      subscribe: vi.fn(async () => () => undefined),
-      launch: vi.fn(),
-      stop: vi.fn(async () => undefined),
-    } as unknown as PlayerEngine;
-    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
+    const { engine } = createFakePlayerEngine();
+    const coordinator = new PlaybackCoordinator(gateway, engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
     const error = await coordinator.start(item).catch((caught: unknown) => caught);
     expectStripped(error, 500);
     expect(classifyTransportError(error)).toBe("server");

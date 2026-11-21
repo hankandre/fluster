@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import type { LibraryItem } from "../domain/catalog";
-import type { PlaybackPlan, PlaybackSnapshot, PlayerEngine, PlayerEvent } from "../domain/playback";
+import type { PlaybackPlan, PlaybackSnapshot, PlayerEvent } from "../domain/playback";
 import { PlaybackCoordinator, type PlaybackGateway } from "./coordinator";
 import { FakeClock } from "../ports/fake-clock";
+import { createFakePlayerEngine } from "./fake-player-engine";
 
 // P17-08: the coordinator owns a viewer's audio pick for the whole session.
 const item: LibraryItem = { id: "one", name: "One", type: "Movie", resumePositionTicks: 0, played: false };
@@ -38,23 +39,20 @@ function at(positionSeconds: number, audioTrack?: number): PlaybackSnapshot {
   };
 }
 
-class FakePlayer implements PlayerEngine {
-  mode = "native" as const;
-  listener?: (event: PlayerEvent) => void;
-  stopSnapshot?: PlaybackSnapshot;
-  initialize = vi.fn(async () => ({ mode: "native" as const, embedded: true, renderer: "test", nativeRenderer: "test" }));
-  subscribe = vi.fn(async (listener: (event: PlayerEvent) => void) => { this.listener = listener; return () => undefined; });
-  setSurface = vi.fn(async () => undefined);
-  launch = vi.fn(async () => undefined);
-  setPaused = vi.fn(async () => undefined);
-  seek = vi.fn(async () => undefined);
-  setVolume = vi.fn(async () => undefined);
-  setMuted = vi.fn(async () => undefined);
-  selectTrack = vi.fn(async () => undefined);
-  setFullscreen = vi.fn(async () => undefined);
-  stop = vi.fn<() => Promise<void>>(async () => {
-    if (this.stopSnapshot) this.listener?.({ kind: "ended", snapshot: this.stopSnapshot, reason: "stopped" });
+// The shared port-only fake. Its stop reports `stopSnapshot` as a stopped ending when one is set.
+function fakePlayer() {
+  const fake = createFakePlayerEngine();
+  const player = {
+    ...fake,
+    // The snapshot the engine's stop reports; set it to the position a test asserts.
+    stopSnapshot: undefined as PlaybackSnapshot | undefined,
+    launch: vi.spyOn(fake.engine, "launch"),
+    stop: vi.spyOn(fake.engine, "stop"),
+  };
+  player.stop.mockImplementation(async () => {
+    if (player.stopSnapshot) fake.emit({ kind: "ended", snapshot: player.stopSnapshot, reason: "stopped" });
   });
+  return player;
 }
 
 function setup(delivery: "static" | "hls" = "static") {
@@ -64,14 +62,14 @@ function setup(delivery: "static" | "hls" = "static") {
     reportStart: vi.fn(async () => undefined),
     reportProgress: vi.fn(async () => undefined),
     reportStopped: vi.fn(async () => undefined),
-    authorizationHeader: () => "test-header",
+    sessionId: () => "session-1",
     stopActiveEncoding: vi.fn(async () => undefined),
   } as PlaybackGateway;
-  const player = new FakePlayer();
+  const player = fakePlayer();
   const onAudioPickNotApplied = vi.fn();
-  const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn(), onAudioPickNotApplied }, new FakeClock());
+  const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn(), onAudioPickNotApplied }, new FakeClock());
   const emit = async (event: PlayerEvent) => {
-    player.listener?.(event);
+    player.emit(event);
     await coordinator.flush();
   };
   return { gateway, player, coordinator, emit, onAudioPickNotApplied };
@@ -96,7 +94,7 @@ describe("PlaybackCoordinator audio pick (P17-08)", () => {
     const { gateway, coordinator, emit } = setup();
     await coordinator.start(item, undefined, PICK);
     await emit({ kind: "loaded", snapshot: at(0, 2) });
-    await emit({ kind: "error", message: "boom" });
+    await emit({ kind: "error", code: "decoder-failed" });
     await coordinator.retry();
     expect(gateway.createPlaybackPlan).toHaveBeenNthCalledWith(2, item, 0, signal, { ...PICK, keepDirectPlay: true });
   });
@@ -108,7 +106,7 @@ describe("PlaybackCoordinator audio pick (P17-08)", () => {
     await emit({ kind: "loaded", snapshot: at(0, 2) });
     await emit({ kind: "first-frame" });
     await emit({ kind: "tracks-changed", snapshot: at(20, 1) });
-    await emit({ kind: "error", message: "boom" });
+    await emit({ kind: "error", code: "decoder-failed" });
     await coordinator.retry();
     expect(gateway.createPlaybackPlan).toHaveBeenNthCalledWith(2, item, expect.any(Number), signal, {
       mediaSourceId: "source",

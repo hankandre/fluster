@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import type { LibraryItem } from "../domain/catalog";
-import type { PlaybackPlan, PlaybackSnapshot, PlayerEngine, PlayerEvent } from "../domain/playback";
+import type { PlaybackPlan, PlaybackSnapshot } from "../domain/playback";
+import type { LaunchRequest } from "../domain/player-engine";
 import { PlaybackCancelledError, PlaybackCoordinator, type PlaybackGateway } from "./coordinator";
 import { FakeClock } from "../ports/fake-clock";
+import { createFakePlayerEngine } from "./fake-player-engine";
 
 const item: LibraryItem = { id: "one", name: "One", type: "Movie", resumePositionTicks: 0, played: false };
 
@@ -10,7 +12,7 @@ function hlsPlan(playSessionId: string): PlaybackPlan {
   return {
     itemId: "one",
     title: "One",
-    streamUrl: "https://media.test/videos/one/master.m3u8",
+    streamUrl: `https://media.test/videos/one/master.m3u8?PlaySessionId=${playSessionId}`,
     mediaSourceId: "source-a",
     playSessionId,
     startPositionTicks: 0,
@@ -26,7 +28,7 @@ function hlsPlan(playSessionId: string): PlaybackPlan {
 function staticPlan(playSessionId: string): PlaybackPlan {
   return {
     ...hlsPlan(playSessionId),
-    streamUrl: "https://media.test/Videos/one/stream?Static=true",
+    streamUrl: `https://media.test/Videos/one/stream?Static=true&PlaySessionId=${playSessionId}`,
     delivery: "static",
     playMethod: "DirectPlay",
     conversionReasons: [],
@@ -43,21 +45,20 @@ const snapshot: PlaybackSnapshot = {
   diagnostics: { decodeMode: "hardware", decodeLabel: "Hardware", droppedFrames: 0 },
 };
 
-class FakePlayer implements PlayerEngine {
-  mode = "native" as const;
-  listener?: (event: PlayerEvent) => void;
-  constructor(private readonly order: string[] = []) {}
-  initialize = vi.fn(async () => ({ mode: "native" as const, embedded: true, renderer: "test", nativeRenderer: "test" }));
-  subscribe = vi.fn(async (listener: (event: PlayerEvent) => void) => { this.listener = listener; return () => undefined; });
-  setSurface = vi.fn(async () => undefined);
-  launch = vi.fn(async (plan: PlaybackPlan) => { this.order.push(`launch ${plan.playSessionId}`); });
-  setPaused = vi.fn(async () => undefined);
-  seek = vi.fn(async () => undefined);
-  setVolume = vi.fn(async () => undefined);
-  setMuted = vi.fn(async () => undefined);
-  selectTrack = vi.fn(async () => undefined);
-  setFullscreen = vi.fn(async () => undefined);
-  stop = vi.fn<() => Promise<void>>(async () => { this.order.push("player stop"); });
+// The shared port-only fake. It records each launch by the play session its stream URL names, and each stop.
+function fakePlayer(order: string[] = []) {
+  const fake = createFakePlayerEngine();
+  const player = {
+    ...fake,
+    launch: vi.spyOn(fake.engine, "launch"),
+    stop: vi.spyOn(fake.engine, "stop"),
+  };
+  player.launch.mockImplementation(async (request: LaunchRequest) => {
+    const url = new URL(request.kind === "hls" ? request.masterUrl : request.url);
+    order.push(`launch ${url.searchParams.get("PlaySessionId")}`);
+  });
+  player.stop.mockImplementation(async () => { order.push("player stop"); });
+  return player;
 }
 
 // Records negotiation (with its start and streams), reports, and encode stops in order.
@@ -74,15 +75,15 @@ function orderedGateway(order: string[], plans: PlaybackPlan[]) {
     reportStopped: vi.fn(async (stopped: PlaybackPlan, _snapshot: PlaybackSnapshot, _signal?: AbortSignal, failed?: boolean) => {
       order.push(`stopped ${stopped.playSessionId} failed=${String(failed)}`);
     }),
-    authorizationHeader: () => "test-header",
+    sessionId: () => "session-1",
     stopActiveEncoding: vi.fn(async (playSessionId: string) => { order.push(`delete ${playSessionId}`); }),
   };
   return gateway;
 }
 
-async function playing(coordinator: PlaybackCoordinator, player: FakePlayer, gateway: { reportStart: ReturnType<typeof vi.fn> }) {
+async function playing(coordinator: PlaybackCoordinator, player: ReturnType<typeof fakePlayer>, gateway: { reportStart: ReturnType<typeof vi.fn> }) {
   await coordinator.start(item);
-  player.listener?.({ kind: "loaded", snapshot });
+  player.emit({ kind: "loaded", snapshot });
   await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
 }
 
@@ -90,9 +91,9 @@ describe("PlaybackCoordinator.renegotiate", () => {
   it("stops the old session, reports it stopped as failed (no watch-history change), deletes its encode, then negotiates the streams at the position", async () => {
     const order: string[] = [];
     const gateway = orderedGateway(order, [hlsPlan("play-1"), hlsPlan("play-2")]);
-    const player = new FakePlayer(order);
+    const player = fakePlayer(order);
     const onSessionEnded = vi.fn();
-    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn(), onSessionEnded }, new FakeClock());
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn(), onSessionEnded }, new FakeClock());
     await playing(coordinator, player, gateway);
     order.length = 0;
 
@@ -113,8 +114,8 @@ describe("PlaybackCoordinator.renegotiate", () => {
   it("sends no DELETE when the old session played the original file", async () => {
     const order: string[] = [];
     const gateway = orderedGateway(order, [staticPlan("play-1"), hlsPlan("play-2")]);
-    const player = new FakePlayer(order);
-    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
+    const player = fakePlayer(order);
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
     await playing(coordinator, player, gateway);
     order.length = 0;
 
@@ -132,8 +133,8 @@ describe("PlaybackCoordinator.renegotiate", () => {
   it("keeps the chosen streams for a later Retry, and a plain start asks for none", async () => {
     const order: string[] = [];
     const gateway = orderedGateway(order, [hlsPlan("play-1"), hlsPlan("play-2"), hlsPlan("play-3")]);
-    const player = new FakePlayer(order);
-    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
+    const player = fakePlayer(order);
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
     await playing(coordinator, player, gateway);
 
     await coordinator.renegotiate(50, { audioStreamIndex: 3 });
@@ -159,11 +160,11 @@ describe("PlaybackCoordinator.renegotiate", () => {
       reportProgress: vi.fn(async () => undefined),
       reportStopped: vi.fn(async () => undefined),
       // The old encode's DELETE never answers either.
-      authorizationHeader: () => "test-header",
+      sessionId: () => "session-1",
       stopActiveEncoding: vi.fn(() => new Promise<void>(() => undefined)),
     };
-    const player = new FakePlayer();
-    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
+    const player = fakePlayer();
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
     await playing(coordinator, player, gateway);
 
     const renegotiation = coordinator.renegotiate(10, { audioStreamIndex: 2 });
@@ -183,15 +184,15 @@ describe("PlaybackCoordinator.renegotiate", () => {
     it(`never launches ${name} after the file ended on its own`, async () => {
       const order: string[] = [];
       const gateway = orderedGateway(order, [hlsPlan("play-1"), hlsPlan("play-2")]);
-      const player = new FakePlayer(order);
+      const player = fakePlayer(order);
       let release = () => undefined as void;
       const stopped = new Promise<void>((resolve) => { release = resolve; });
       const onSessionEnded = vi.fn();
-      const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn(), onSessionEnded }, new FakeClock());
+      const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn(), onSessionEnded }, new FakeClock());
       await playing(coordinator, player, gateway);
       player.stop.mockImplementation(() => stopped);
 
-      player.listener?.({ kind: "ended", reason: "eof", snapshot });
+      player.emit({ kind: "ended", reason: "eof", snapshot });
       await vi.waitFor(() => expect(player.stop).toHaveBeenCalledTimes(1));
       const attempt = restart(coordinator);
       release();
@@ -210,8 +211,8 @@ describe("PlaybackCoordinator.renegotiate", () => {
     gateway.createPlaybackPlan
       .mockImplementationOnce(async () => hlsPlan("play-1"))
       .mockImplementationOnce(async () => { throw new Error("The server refused."); });
-    const player = new FakePlayer(order);
-    const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
+    const player = fakePlayer(order);
+    const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
     await playing(coordinator, player, gateway);
 
     await expect(coordinator.renegotiate(50, { subtitleStreamIndex: 4 }, { audioStreamIndex: 1, subtitleStreamIndex: -1 }))
