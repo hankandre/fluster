@@ -639,10 +639,10 @@
             "The tests T2-02 froze are unchanged; the new cases live in new files"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit f3b86cba: core-is-platform-free is an allowlist; lint exits 1 on any count. pnpm check green (root 1829, core 314 tests, 0 violations); check-red --expect green: items 1,2,4 pass."
         },
         {
           "id": "T2-05",
