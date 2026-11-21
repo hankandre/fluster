@@ -9,7 +9,7 @@ const CORE_SOURCE = "packages/core/src";
 const TEST_PATH = /\.test\.ts$/;
 const MAX_NAMED = 20;
 const FIX_LINE =
-  "Fix: run pnpm install so the typescript-6 dev dependency is present. dependency-cruiser 18.7.2 needs TypeScript below 7 and loads it through scripts/typescript-6-resolve.mjs. Do not loosen .dependency-cruiser.cjs. See the mechanical enforcement backlog in WORKFLOW.md.";
+  "Fix: run pnpm install so the typescript-6 dev dependency is present. dependency-cruiser 18.8.0 needs TypeScript below 7 and loads it through scripts/typescript-6-resolve.mjs. Do not loosen .dependency-cruiser.cjs. See the mechanical enforcement backlog in WORKFLOW.md.";
 
 /**
  * Returns error messages for a dependency-cruiser JSON result that did not read the code.
@@ -95,7 +95,7 @@ async function main() {
   console.log(
     `lint:boundaries: ${result.summary.totalCruised} modules, ${result.summary.totalDependenciesCruised} dependencies, ${sourceFiles.length}/${sourceFiles.length} source files under ${CORE_SOURCE}`,
   );
-  process.exit(exitCode);
+  process.exit(exitCode > 0 ? 1 : 0);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
