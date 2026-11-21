@@ -616,10 +616,10 @@
             "A canary token appears in no thrown error, log call or redacted output"
           ],
           "verify": "pnpm --filter @octave/core test",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "commit 99a25345 on task/T2-04 (6 commits, spec D1-D11): Transport port, FetchTransport, gateway on the port, axios and SDK removed. pnpm check exit 0: core 70 files 1828 pass; check-red items 1-6 green. Tripwire and tv:wire not run locally (CI, T3-05). Invariant change: decision 0005 amendment."
+          "passes": true,
+          "evidence": "commit cc66e999 on task/T2-04 (7 commits, spec D1-D11): Transport port, FetchTransport, gateway on the port, axios and SDK removed; review fix keeps Quick Connect tokenless while signed in. pnpm check exit 0: core 71 files 1829 pass. Tripwire and tv:wire not run locally (CI, T3-05). Invariant change: decision 0005 amendment."
         },
         {
           "id": "T2-10",
