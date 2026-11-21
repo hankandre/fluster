@@ -1,0 +1,23 @@
+{
+  "task": "T2-10",
+  "files": [
+    "scripts/core-platform-allowlist.test.ts",
+    "scripts/core-boundaries-resolved.test.ts",
+    "scripts/lint-boundaries-exit.test.ts"
+  ],
+  "items": [
+    { "item": 1, "run": ["pnpm", "exec", "vitest", "run", "scripts/core-platform-allowlist.test.ts"] },
+    { "item": 2, "run": ["pnpm", "exec", "vitest", "run", "scripts/core-boundaries-resolved.test.ts"] },
+    {
+      "item": 3,
+      "gate": "review",
+      "why": "The config already complies, so a faithful test is green on main; the reviewer checks that the implementer's scripts/core-vitest-environment.test.ts imports the config and asserts environment node and no environmentMatchGlobs, projects or workspace key."
+    },
+    { "item": 4, "run": ["pnpm", "exec", "vitest", "run", "scripts/lint-boundaries-exit.test.ts"] },
+    {
+      "item": 5,
+      "gate": "review",
+      "why": "A property of the diff: pnpm lint:flow fails on a changed frozen file, and the reviewer checks that git diff --name-status origin/main...HEAD adds the new tests as A lines and edits no T2-02 frozen file."
+    }
+  ]
+}
