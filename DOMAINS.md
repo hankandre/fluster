@@ -142,9 +142,9 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 **Owns:** the `PlayerEngine` port and `PlayerEvent` stream; the device capability report; the player module's fixed methods; Media3 with Octave's media source factory and HLS parser hook; libmpv for originals only (T13); the native video view; track listing and Jellyfin index mapping; decode diagnostics.
 
-**Language.** Engine, Launch request (original file or HLS session), Capabilities, Snapshot, Player track (player id vs. Jellyfin index), Decode mode, First frame.
+**Language.** Engine, Launch request (original file or HLS session), Capabilities (complete or failed), Player error code, Snapshot, Player track (player id vs. Jellyfin index), Decode mode, First frame.
 
-**Today.** The port types in `packages/core/src/domain/playback.ts`, exercised by the coordinator's tests with fake engines. There is no engine on `main`.
+**Today.** The port lives in `packages/core/src/domain/player-engine.ts` (re-exported by `domain/playback.ts`); the coordinator's tests use the port-only fake `packages/core/src/player/fake-player-engine.ts`. There is no engine on `main`.
 
 **Target.** `modules/player` (T8-01; Kotlin behind an interface a Swift implementation can mirror).
 
