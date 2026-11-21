@@ -17,6 +17,24 @@ Recorded from Jellyscale pinned at `b920b193cd6f7835dec70198477a07216118b34d` (`
   No ISO sample exists in the default sample set.
 - The first scan finished in under 10 s.
 
+## The tripwire against Jellyscale (T2-09, 2026-11-21)
+
+Observed by `pnpm test:tripwire` on a fresh fixture (`fixture:down`, `fixture:up`, `fixture:setup`) with the samples from `OCTAVE_CONVERSION_SAMPLES=1 pnpm samples:generate`, using only the gateway and the `Authorization` header. The values are pinned in `tests/integration/tripwire-observed.test.ts` and `tripwire-expectations.ts`. A reviewer compares them with this list.
+
+- **`GET /Items?Fields=Path,MediaSources` returns `Path`** in a list, library-relative (`Synthetic H264 (2024)/Synthetic H264 (2024).mkv`). The list holds 15 items for the three item types the tripwire asks for. Its `MediaSources[].MediaStreams` carries one audio stream; `GET /Items/{id}` carries all of them (the multitrack film: English and Spanish). The audio-pick row reads the detail.
+- **The BluRay item** is `Synthetic BluRay (2024)/BDMV/STREAM/00000.m2ts`, `VideoType` `VideoFile`, container `ts`, protocol `File`. The first `PlaybackInfo` answer offers direct play; the core's disc-path rule sends the forced second request (two requests), Jellyscale offers no conversion, and the core refuses with `disc-source`. No media request, no job.
+- **The ISO has no item.** The file exists in the samples and Jellyscale does not list it, so its row is `not-run` with the precondition `not-listed`.
+- **Under full capabilities every playable sample direct plays** with exactly one `PlaybackInfo` request, `PlayMethod` `DirectPlay` on `/Sessions`, no `TranscodingInfo`, and no new `transcode_jobs` row. The sidecar's `DeliveryUrl` answers 200 to a header-only request.
+- **Extraction adds no `transcode_jobs` row.** The table held 0 rows after the scan and still 0 after a direct play of the ASS, sidecar and DVD-subtitle samples, so every new row is a transcode.
+- **The forced-limit run (0.2 Mbit/s) converts:** HLS, `Transcode`, reason `ContainerBitrateExceedsLimit`, one new `transcode_jobs` row, `TranscodingInfo` on `/Sessions` (`IsVideoDirect` false, `IsAudioDirect` false, `h264`/`aac`), `PlayMethod` `Transcode`. The HLS URLs match the shapes the rule pins: the master is `/videos/{id}/master.m3u8` and carries `EnableTrickplay=false` (the core wrote it); the variant `main.m3u8`, the init section `hls1/main/-1.mp4` and the segments are written by the server with no `EnableTrickplay`. No playlist names a credential or lists a subtitle or trickplay rendition, and every request carried the header.
+- **The job ends with the stopped report:** no queued or running row and no `TranscodingInfo` 0.0 s to 1 s after it; no job at 10 s.
+- **`gateway.sessionPlayMethod` does not answer** (`PlayState` has no `MediaSourceId`), so the confirmed plan stays the negotiated one and the tripwire pins `unanswered`. The watcher still sees the session, and its `NowPlayingItem.Id` equals the `Id` `/Items` returns (no dashes in either).
+- **A stopped session keeps no stale `PlayMethod`** that fails the rows after `h264-limited`: all of them passed with the default rule (no `TranscodingInfo` on any session, `PlayMethod` `DirectPlay` for the row's own).
+- **A rerun on the same fixture starts no job.** Jellyscale keeps converted segments, so the forced-limit run then shows no `transcode_jobs` row and no `TranscodingInfo`, and the tripwire fails it as "oracle blind". Run `pnpm fixture:down` first.
+- **Each lacking capability set** (`no-h264`, `no-hevc`, `no-av1`) is refused with `device-cannot-play` after two `PlaybackInfo` requests for the lacking sample, with no media request and no job, and the control sample direct plays with one request.
+- **ffmpeg command lines seen in the container** (a tight `/proc` loop inside the container during one full run): Jellyscale's subtitle conversion, `ffmpeg -nostdin -v error -i /tmp/subtitles-N/input.srt -map 0:0 /tmp/subtitles-M/0-track.vtt -map 0:0 ... 0-track.srt -map 0:0 ... 0-track.ass` (starts when a sidecar plays; adds no row), and the conversion, `ffmpeg -nostdin -v warning -progress pipe:1 -nostats -y -copyts -ss 0 -i <film> -ss 0 -i <film> -map 0:v:0 -map 1:1 -vf yadif,scale=426:240,format=yuv420p -c:v libx264 -preset veryfast ... -c:a aac -b:a 40000 -ac 2 -ar 48000 ... -f hls -hls_time 4 -hls_segment_type fmp4 ... /tmp/jellyscale-transcode/job-N/index.m3u8`. No ffmpeg ran during the other direct plays or the scan on this run (the scan's failed frame extraction for the BluRay item is logged only).
+- **Whole run:** 7 min 3 s for the three servers (Jellyfin 10.11 and 12.4 about 2 min 30 s each, Jellyscale about 1 min 30 s), 22 rows each.
+
 ## Files (`b920b193cd6f/`)
 
 Recorded 2026-11-21 by `tests/integration/record-jellyscale-fixtures.ts` against the server above, using the samples from
