@@ -32,6 +32,8 @@ Agents read the short map first and load detail only when needed.
 | `tasks/prd.json` | Phases and tasks with acceptance items and `passes` flags; agents change only status fields, through `pnpm task` | living |
 | `tasks/backlog.jsonl` | Deferred and newly found work, one JSON object per line (§2a) | living |
 | `docs/specs/<TASK-ID>.md` | Per-task spec written by `refiner`, with the `spec-checker` verdict appended; the first spec creates the folder | one per task |
+| `docs/specs/<TASK-ID>.tests.json` | The frozen-test manifest the `test-writer` commits with the failing tests (§2b) | one per task |
+| `tasks/product-owner-log.md` | One dated section per Product Owner pass: each decision, its backlog entry, its approval, its reason (§2c) | living |
 | `docs/plans/active/`, `docs/plans/completed/` | Execution plans for work that needs more than one session; the first plan creates the folder | one per initiative |
 | `docs/decisions/NNNN-slug.md` | Decision records for choices that would otherwise be re-litigated; history, never rewritten (later changes are dated amendments) | ~1 page each |
 
@@ -51,7 +53,7 @@ For work spanning more than one session or more than one domain, create `docs/pl
 
 ### 2a. Refine and spec (per task)
 
-Each task runs: refine + spec → spec check → implement → verify → one review round → ship.
+Each task runs: refine + spec → spec check → failing tests → implement → verify → one review round → ship (the full order is in "The task flow, in the order it runs").
 
 - `refiner` reads the task (`pnpm task show <id>`), its plan, and the relevant code and docs. It writes only `docs/specs/<TASK-ID>.md`: goal; acceptance items mapped to how each is met and tested; files to touch; approach; test plan; risks and out of scope; validation commands; and, for every dependency the task adopts, the maintenance check from primary sources.
 - `spec-checker` runs in a fresh context against the task, the `AGENTS.md` hard rules, `ARCHITECTURE.md`, `DESIGN.md` (for UI), and the code. It appends a verdict: "Approved" or "Changes needed" with numbered issues.
@@ -69,9 +71,30 @@ Each task runs: refine + spec → spec check → implement → verify → one re
 - `P…` sources refer to the desktop task list in the tag `desktop-tauri-final`.
 - Git merges the file with `union`, and `pnpm check` validates it. `pnpm lint:backlog` validates it alone.
 
-### 2b. Tests first (T1-12)
+### 2b. Tests first
 
-T1-12 adds a step before implementation: a test writer turns each acceptance item into a failing test and commits it; the run stops if those tests pass before any implementation exists; the implementer may not change them. Until it lands, write the failing test first wherever the behavior is checkable.
+After the spec check and before implementation, `test-writer` turns each acceptance item into a failing test and commits the tests with a manifest, `docs/specs/<TASK-ID>.tests.json`, as one commit (`test(<ID>): freeze failing acceptance tests`).
+
+- The manifest lists the frozen `files` and one entry per acceptance item: a `run` (an argument list starting with `node` or `pnpm` that selects only that item's tests) or a `gate`. A gate is for an item that cannot be a failing test (`owner`, `device`, `review`, `ci`, or `met` for one already true on `main`); the spec's Acceptance row must say `gate: <kind>`, and `scripts/check-red.mjs` refuses any other.
+- The **red gate** (`node scripts/check-red.mjs <ID>`) runs every `run`. If one passes before any implementation exists, the run stops with `tests-green`: either the behavior exists (the refiner marks it a `met` gate) or the test is weak (fix it and rerun from the Tests step, which amends the freeze commit). A broken manifest is retried once, then blocks the task.
+- The implementer, the follow-ups step and the CI fix may not change or delete a frozen file; they add tests in new files. A wrong frozen test is returned in `frozenTestProblems`, and the Product Owner (Fable 5.2) rules once per task: to change a test it commits with `Frozen-Test-Change: <path> -- <reason>`, and the PR's Frozen tests section names the change.
+- `pnpm lint:flow` (`scripts/check-flow.mjs`) runs after every implementer step and in CI. It fails when a frozen file differs from the test writer's or Product Owner's version. It reads only git history, so it cannot see an amend into the freeze commit; the run pins the frozen blobs from the red gate and stops on a moved one. CI has no such pin.
+- After the follow-ups, `check-red.mjs --expect green` reruns every `run`, so a command that `pnpm check` does not cover cannot ship red.
+- A branch implemented before this flow runs with `preFlow: true`; CI requires no manifest.
+
+### 2c. Product Owner pass
+
+A Product Owner pass (`.claude/workflows/product-owner.js`, Fable 5.2) triages `tasks/backlog.jsonl` entries without `taken_by` into `tasks/prd.json`, and is the only step that adds, splits, reorders or drops tasks. It works through `scripts/task-owner.mjs`, which changes no status field and has no operation for the `rules`, and it needs an owner approval file naming the task to edit `acceptance`, `human` or `verify`. It logs each decision in `tasks/product-owner-log.md` and commits with a `Product-Owner-Pass:` trailer; `pnpm lint:flow` fails a task list change without both. The PR lists every decision; the owner can veto any of it, and the next pass reverts a veto and logs it.
+
+## The task flow, in the order it runs
+
+1. **Product Owner pass.** Backlog triage into the task list, with a log line and a veto for the owner. Outside the per-task run; it runs when the backlog has untaken entries.
+2. **Spec.** `refiner` writes `docs/specs/<ID>.md`.
+3. **Check.** A fresh `spec-checker` appends its verdict; only critical or high issues block.
+4. **Tests.** `test-writer` commits the failing tests and the manifest. Red gate: the run stops with `tests-green` if one already passes.
+5. **Implement.** `implementer` or `native-engineer` makes the tests pass without changing them and runs the verify skill. Frozen-test gate after the step.
+6. **Review.** One review round, with a `guardian` on high-risk paths; the reviewer also judges whether the frozen tests test their items. The follow-ups step fixes and logs, then the frozen-test gate and the green gate (`check-red.mjs --expect green`) run.
+7. **Ship.** The PR, with a Frozen tests section, auto-merge on green CI (`pnpm lint:flow` runs in CI); the run stops on a denied command, `tests-green` or `frozen-tests`.
 
 ### 3. Pilot before scale
 
@@ -91,7 +114,7 @@ Minimum before asking for review:
 mise exec -- pnpm check
 ```
 
-`pnpm check` runs the import-boundary lint, ESLint, the ghost-term check, the core's Vitest suite in Node (the task-list validator included), the type-check, and the task workflow's tests. Add, as each exists and as the change needs it:
+`pnpm check` runs the import-boundary lint, ESLint, the ghost-term check, the flow check (frozen tests and the task list), the core's Vitest suite in Node (the task-list validator included), the type-check, and the task workflow's tests. Add, as each exists and as the change needs it:
 
 | Change | Command | From |
 |---|---|---|
@@ -157,10 +180,9 @@ Rules stated in prose that should become checks:
 - **No generic player bridge.** The port and module allowlist tests (T2-05, T8-01).
 - **No default network path.** The native build check (T3-04).
 - **Redaction canaries across the JavaScript and native seam** (T3-05, T10-02).
-- **Frozen tests.** A diff check that fails when an implementer changes a test written before implementation (T1-12).
 - **File size.** Flag source files over ~400 lines.
 
-Done and enforced today: dependency direction (`pnpm lint:boundaries`, which fails on zero modules read), no desktop-era terms (`pnpm lint:ghost-terms`), the task list's shape (`src/tasks/prd.test.ts`), the task file's size and evidence length (`scripts/task.test.ts`), and the backlog's shape (`scripts/check-backlog.test.ts`).
+Done and enforced today: dependency direction (`pnpm lint:boundaries`, which fails on zero modules read), no desktop-era terms (`pnpm lint:ghost-terms`), frozen tests and Product Owner changes to the task list (`pnpm lint:flow`), the task list's shape (`src/tasks/prd.test.ts`), the task file's size and evidence length (`scripts/task.test.ts`), and the backlog's shape (`scripts/check-backlog.test.ts`).
 
 ## Model routing
 
@@ -182,7 +204,8 @@ Relative API list prices (per million input/output tokens, as of 2026-10):
 | Codebase search, CI log triage, commit messages, watching PRs, doc-gardening detection | **Haiku 5.5** | `scout`, `ci-triage` |
 | Refine + spec and spec check, routine tasks | **Opus 5.5** | `refiner`, `spec-checker` |
 | Refine + spec and spec check, high-risk tasks (native, security, architecture, decision records) | **Fable 5.2** | `refiner`, `spec-checker` with a spawn-time `model: fable` override |
-| Backlog triage, priorities, and task specs in the Product Owner flow (T1-12) | **Fable 5.2** | Product Owner |
+| Backlog triage, priorities, and frozen-test rulings (T1-12) | **Fable 5.2** | `product-owner` |
+| Failing acceptance tests before implementation | **Sonnet 5.5**; Opus 5.5 for Kotlin | `test-writer` |
 | Kotlin, Expo native modules, Media3, the native HTTP client | **Opus 5.5** | `native-engineer` |
 | TypeScript implementation and tests | **Sonnet 5.5** | `implementer` |
 | Verify | **Sonnet 5.5** | coordinator or `implementer` |
@@ -203,13 +226,13 @@ Relative API list prices (per million input/output tokens, as of 2026-10):
 
 ### Wiring it up in Claude Code
 
-`.claude/workflows/task.js` runs tasks in order through Spec, Check, Implement, Review, and Ship. Start it with the Workflow tool (`args: {tasks: ["T3-01", "T3-02"], risk: "routine" | "high", native: false}`). It builds each task's worktree as `../octave-<TASK-ID>` on the branch `task/<TASK-ID>` from the repository name. Its tests: `pnpm test:workflow`.
+`.claude/workflows/task.js` runs tasks in order through Spec, Check, Tests, Implement, Review, and Ship. Start it with the Workflow tool (`args: {tasks: ["T3-01", "T3-02"], risk: "routine" | "high", native: false}`). It builds each task's worktree as `../octave-<TASK-ID>` on the branch `task/<TASK-ID>` from the repository name. Its tests: `pnpm test:workflow`.
 
 - The owner makes every look, wording, and direction call. Before a batch, a Fable pass collects the batch's design questions into `docs/specs/decisions-<phase>.md` and the owner answers them in one sitting.
 - A task whose spec still needs a new design call is parked with its questions, and the run moves on.
 - The spec check blocks only on critical or high issues; medium and low issues go to the implementer.
 - Native work (Kotlin under `modules/` or `apps/tv/android`, from T3-01) routes to `native-engineer`, and any diff on a high-risk path adds a `guardian` review.
-- The run stops early only on a denied command.
+- The run stops early on a denied command, on a test that passes before implementation (`tests-green`), and on a changed frozen test (`frozen-tests`). `.claude/workflows/product-owner.js` runs a Product Owner pass.
 
 Subagent definitions under `.claude/agents/*.md` set `model` in their frontmatter:
 
@@ -224,6 +247,8 @@ Subagent definitions under `.claude/agents/*.md` set `model` in their frontmatte
 | `native-engineer` | opus | Kotlin, Expo native modules, Media3, and the native HTTP client |
 | `guardian` | opus | Review of policy, native-method, token, and redaction changes |
 | `planner` | opus | Execution plans and decision records |
+| `test-writer` | sonnet | Failing acceptance tests and the manifest, before implementation |
+| `product-owner` | fable | Backlog triage, priorities, and frozen-test rulings |
 
 What the Claude Code docs say (https://code.claude.com/docs/en/sub-agents): the frontmatter `model` field accepts the aliases `sonnet`, `opus`, `haiku`, `fable`, a full model ID, or `inherit`; the spawn-time `model` parameter wins over the frontmatter, then `CLAUDE_CODE_SUBAGENT_MODEL`, then the main session's model; the spawn-time parameter takes only an alias.
 

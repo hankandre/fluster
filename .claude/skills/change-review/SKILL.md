@@ -25,6 +25,7 @@ description: Review an Octave diff in a fresh context against its task, invarian
 - Look for stubs, skipped tests, weakened assertions, and justified workarounds.
 - Look for tokens or authenticated URLs in logs, errors, props, events, or diagnostics.
 - Check that tests cover the changed behavior, and that a playback task has its Jellyscale wire test.
+- Check that each frozen test (listed in `docs/specs/<TASK-ID>.tests.json`) really tests its acceptance item, that no frozen test changed without a `Frozen-Test-Change` trailer, and that each gated item matches a `gate: <kind>` row in the spec.
 
 ## Report
 

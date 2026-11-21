@@ -22,7 +22,7 @@ Octave is a Jellyfin and Jellyscale client for the TV that plays the original fi
 - Change only a task's `status`, `owner`, `passes`, and `evidence` fields.
 - Keep evidence to 600 characters and name the PR or commit.
 - Append deferred or newly found work to `tasks/backlog.jsonl` as one JSON line (fields in `WORKFLOW.md` §2a); any agent or pull request may.
-- Only a Product Owner pass (Fable 5.2) adds, splits, reorders, or drops tasks, after triaging the backlog; the owner can veto any of it.
+- Only a Product Owner pass (Fable 5.2) adds, splits, reorders, or drops tasks, after triaging the backlog, through `scripts/task-owner.mjs` and a line in `tasks/product-owner-log.md`; the owner can veto any of it. `pnpm lint:flow` fails any other change.
 - Never edit acceptance items without the owner's approval.
 - Link the task id in commits, plans, and PRs.
 - Read the dogfood server URL from `OCTAVE_DOGFOOD_SERVER`; never commit a server address, a credential, or the owner's name.
@@ -38,6 +38,8 @@ Octave is a Jellyfin and Jellyscale client for the TV that plays the original fi
 - `native-engineer` (Opus): Kotlin, Expo native modules, Media3, and the native HTTP client.
 - `guardian` (Opus): high-risk diff review.
 - `planner` (Opus): plans and decision records.
+- `test-writer` (Sonnet; Opus for Kotlin): failing tests and `docs/specs/<TASK-ID>.tests.json` before implementation.
+- `product-owner` (Fable): backlog triage, priorities, and frozen-test rulings.
 
 ## Commands
 
@@ -45,7 +47,7 @@ Octave is a Jellyfin and Jellyscale client for the TV that plays the original fi
 - Install: `pnpm install`
 - Core unit tests (Vitest, Node environment): `pnpm test`
 - Type-check: `pnpm typecheck`
-- Lint: `pnpm lint`, `pnpm lint:boundaries`, `pnpm lint:ghost-terms`, `pnpm lint:backlog`
+- Lint: `pnpm lint`, `pnpm lint:boundaries`, `pnpm lint:ghost-terms`, `pnpm lint:backlog`, `pnpm lint:flow`
 - Task workflow tests: `pnpm test:workflow`
 - All checks: `pnpm check`
 - Server tripwire (needs `pnpm samples:generate`, `pnpm fixture:up`, `pnpm fixture:setup`): `pnpm test:tripwire`
@@ -125,6 +127,7 @@ Dependencies
 - Place unit tests beside modules as `*.test.ts`.
 - Use Vitest for the core, JVM tests for Kotlin, and the emulator tests T3-02 and T3-10 add for the app.
 - Never skip, weaken, or delete a test to pass a check.
+- Never change or delete a frozen test (a file listed in `docs/specs/<TASK-ID>.tests.json`); report a wrong one and the Product Owner step rules.
 - Never stub a function to make a build pass.
 - Use fixtures; never commit credentials or copyrighted media.
 
@@ -168,7 +171,7 @@ Dependencies
 
 ## Models
 
-- Run each task as: refine + spec, spec check, implement, verify, one review round, ship.
+- Run each task as: refine + spec, spec check, failing tests, implement, verify, one review round, ship.
 - Use Haiku for search, log triage, commit messages, and watching PRs.
 - Use Sonnet for the coordinator, TypeScript implementation, tests, verify, and routine review.
 - Use Opus for specs and spec checks on routine tasks, native Kotlin, `guardian` review, and plans.
