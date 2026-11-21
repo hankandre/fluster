@@ -505,10 +505,10 @@
             "unit tests cover next (dependency order, skipping human tasks), set (field allow-list) and the size check"
           ],
           "verify": "mise exec -- pnpm check && mise exec -- pnpm task next",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "Task CLI (pnpm task next/show/list/set), size and evidence-length check, prompts and docs moved to the CLI; commit 108c866 on task/T1-13; pnpm check green (1507 tests). Naming rule enforced for in_progress/done only (owner may veto)."
+          "passes": true,
+          "evidence": "Task CLI (pnpm task next/show/list/set), size and evidence check, prompts and docs on the CLI; commit aa02806 on task/T1-13; review fix: list uses strict parseArgs; pnpm check green (1510 tests). Naming rule enforced for in_progress/done only (owner may veto)."
         }
       ]
     },
