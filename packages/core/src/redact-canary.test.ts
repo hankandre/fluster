@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LibraryItem } from "./domain/catalog";
-import type { PlaybackPlan, PlaybackSnapshot, PlayerEngine, PlayerEvent } from "./domain/playback";
+import type { PlaybackPlan, PlaybackSnapshot, PlayerEvent } from "./domain/playback";
 import { JellyfinGateway } from "./jellyfin/gateway";
 import type { SignInRequest, SignInResult, Transport, TransportRequest, TransportResponse } from "./ports/transport";
 import { PlaybackCoordinator, type PlaybackGateway } from "./player/coordinator";
@@ -9,6 +9,7 @@ import { redactError, redactText, redactUrl } from "./redact";
 import { safeReason } from "./safe-reason";
 import { webCrypto } from "./adapters/web-crypto";
 import { FakeClock } from "./ports/fake-clock";
+import { createFakePlayerEngine } from "./player/fake-player-engine";
 
 const CANARY = "CANARY-7f3a9c1e5b";
 const SERVER = "https://media.test/jellyfin";
@@ -221,7 +222,7 @@ function planWith(playSessionId: string): PlaybackPlan {
   return {
     itemId: "one",
     title: "One",
-    streamUrl: `${SERVER}/Videos/1/stream?api_key=${CANARY}`,
+    streamUrl: `${SERVER}/Videos/1/stream?Static=true`,
     mediaSourceId: "source",
     playSessionId,
     startPositionTicks: 0,
@@ -232,25 +233,26 @@ function planWith(playSessionId: string): PlaybackPlan {
   };
 }
 
-class FakePlayer implements PlayerEngine {
-  mode = "native" as const;
-  listener?: (event: PlayerEvent) => void;
-  initialize = vi.fn(async () => ({
-    mode: "native" as const,
-    embedded: true,
-    renderer: "test",
-    nativeRenderer: "test",
-  }));
-  subscribe = vi.fn(async (listener: (event: PlayerEvent) => void) => { this.listener = listener; return () => undefined; });
-  setSurface = vi.fn(async () => undefined);
-  launch = vi.fn<(plan: PlaybackPlan) => Promise<void>>(async () => undefined);
-  setPaused = vi.fn(async () => undefined);
-  seek = vi.fn(async () => undefined);
-  setVolume = vi.fn(async () => undefined);
-  setMuted = vi.fn(async () => undefined);
-  selectTrack = vi.fn(async () => undefined);
-  setFullscreen = vi.fn(async () => undefined);
-  stop = vi.fn<() => Promise<void>>(async () => undefined);
+// The shared port-only fake, with spies on the members these tests script or count.
+function fakePlayer() {
+  const fake = createFakePlayerEngine();
+  return {
+    ...fake,
+    subscribe: vi.spyOn(fake.engine, "subscribe"),
+    launch: vi.spyOn(fake.engine, "launch"),
+    stop: vi.spyOn(fake.engine, "stop"),
+  };
+}
+
+function canaryGateway(plan: PlaybackPlan): PlaybackGateway {
+  return {
+    createPlaybackPlan: vi.fn(async () => plan),
+    reportStart: vi.fn(async () => undefined),
+    reportProgress: vi.fn(async () => undefined),
+    reportStopped: vi.fn(async () => undefined),
+    sessionId: () => "session-1",
+    stopActiveEncoding: vi.fn(async () => undefined),
+  } as PlaybackGateway;
 }
 
 describe("redaction canary: redactError", () => {
@@ -282,26 +284,29 @@ describe("redaction canary: redactError", () => {
 });
 
 describe("redaction canary: PlaybackCoordinator", () => {
-  it("redacts player error events before they reach the UI", async () => {
+  it("keeps only a known code of a player error event before it reaches the UI", async () => {
     for (const text of errorTexts()) {
       const gateway = {
         createPlaybackPlan: vi.fn(async () => planWith("session")),
         reportStart: vi.fn(async () => undefined),
         reportProgress: vi.fn(async () => undefined),
         reportStopped: vi.fn(async () => undefined),
-        authorizationHeader: () => "test-header",
+        sessionId: () => "session-1",
         stopActiveEncoding: vi.fn(async () => undefined),
       } as PlaybackGateway;
-      const player = new FakePlayer();
-      const surfaced: string[] = [];
-      const coordinator = new PlaybackCoordinator(gateway, player, {
-        onEvent: (event) => { if (event.kind === "error") surfaced.push(event.message); },
+      const player = fakePlayer();
+      const surfaced: PlayerEvent[] = [];
+      const coordinator = new PlaybackCoordinator(gateway, player.engine, {
+        onEvent: (event) => { if (event.kind === "error") surfaced.push(event); },
         onReportingError: vi.fn(),
       }, new FakeClock());
       await coordinator.start(item);
-      player.listener?.({ kind: "error", message: text });
-      await vi.waitFor(() => expect(surfaced).toHaveLength(1));
-      expectClean(`player error event "${text}"`, surfaced[0]);
+      // The canary as free text beside a valid code, and as the code itself (casts: the port allows neither).
+      player.emit({ kind: "error", code: "network", message: text } as unknown as PlayerEvent);
+      player.emit({ kind: "error", code: text } as unknown as PlayerEvent);
+      await vi.waitFor(() => expect(surfaced).toHaveLength(2));
+      expect(surfaced).toEqual([{ kind: "error", code: "network" }, { kind: "error", code: "unknown" }]);
+      expectClean(`player error event "${text}"`, JSON.stringify(surfaced));
       await coordinator.stop().catch(() => undefined);
     }
     expectNoCanaryInConsole();
@@ -315,22 +320,22 @@ describe("redaction canary: PlaybackCoordinator", () => {
         reportStart: vi.fn(async () => { throw reportError; }),
         reportProgress: vi.fn(async () => { throw reportError; }),
         reportStopped: vi.fn(async () => { throw reportError; }),
-        authorizationHeader: () => "test-header",
+        sessionId: () => "session-1",
         stopActiveEncoding: vi.fn(async () => undefined),
       } as PlaybackGateway;
-      const player = new FakePlayer();
+      const player = fakePlayer();
       player.stop.mockRejectedValue(new Error(text));
       const surfaced: string[] = [];
-      const coordinator = new PlaybackCoordinator(gateway, player, {
-        onEvent: (event) => { if (event.kind === "error") surfaced.push(event.message); },
+      const coordinator = new PlaybackCoordinator(gateway, player.engine, {
+        onEvent: (event) => { if (event.kind === "error") surfaced.push(JSON.stringify(event)); },
         onReportingError: (warning) => surfaced.push(warning),
       }, new FakeClock());
       await coordinator.start(item);
-      player.listener?.({ kind: "loaded", snapshot });
+      player.emit({ kind: "loaded", snapshot });
       await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
-      player.listener?.({ kind: "state", snapshot: { ...snapshot, paused: true }, cause: "pause" });
+      player.emit({ kind: "state", snapshot: { ...snapshot, paused: true }, cause: "pause" });
       await vi.waitFor(() => expect(gateway.reportProgress).toHaveBeenCalled());
-      player.listener?.({ kind: "ended", snapshot, reason: "eof" });
+      player.emit({ kind: "ended", snapshot, reason: "eof" });
       await vi.waitFor(() => expect(surfaced.length).toBeGreaterThan(0));
       for (const message of surfaced) expectClean(`coordinator surface for "${text}"`, message);
       await coordinator.stop().catch(() => undefined);
@@ -345,17 +350,41 @@ describe("redaction canary: PlaybackCoordinator", () => {
         reportStart: vi.fn(async () => undefined),
         reportProgress: vi.fn(async () => undefined),
         reportStopped: vi.fn(async () => undefined),
-        authorizationHeader: () => "test-header",
+        sessionId: () => "session-1",
         stopActiveEncoding: vi.fn(async () => undefined),
       } as PlaybackGateway;
-      const player = new FakePlayer();
+      const player = fakePlayer();
       player.launch.mockRejectedValue(new Error(text));
-      const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
+      const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
       expectClean(`launch failure for "${text}"`, await messageOf(() => coordinator.start(item)));
+      const stringPlayer = fakePlayer();
+      stringPlayer.launch.mockRejectedValue(text);
+      const stringLaunch = new PlaybackCoordinator(gateway, stringPlayer.engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
+      const fromString = await stringLaunch.start(item).catch((error: unknown) => error);
+      expect(stringPlayer.launch).toHaveBeenCalledTimes(1);
+      expectClean(`launch failure string for "${text}"`, `${String(fromString)} ${JSON.stringify(fromString)}`);
 
       gateway.createPlaybackPlan = vi.fn(async () => { throw new Error(text); });
-      const failing = new PlaybackCoordinator(gateway, new FakePlayer(), { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
+      const failing = new PlaybackCoordinator(gateway, fakePlayer().engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
       expectClean(`plan failure for "${text}"`, await messageOf(() => failing.start(item)));
+    }
+    expectNoCanaryInConsole();
+  }, 60_000);
+});
+
+describe("redaction canary: the launch request", () => {
+  it("refuses a plan whose stream URL carries a credential or is not absolute, and launches nothing", async () => {
+    for (const url of canaryUrls) {
+      const player = fakePlayer();
+      const coordinator = new PlaybackCoordinator(canaryGateway({ ...planWith("session"), streamUrl: url }), player.engine, {
+        onEvent: vi.fn(),
+        onReportingError: vi.fn(),
+      }, new FakeClock());
+      const error = await coordinator.start(item).catch((caught: unknown) => caught);
+      expect(error, `start with ${url}`).toBeInstanceOf(Error);
+      expectClean(`launch refusal for "${url}"`, `${String(error)} ${JSON.stringify(error)} ${JSON.stringify(Object.entries(error as object))}`);
+      expect(player.subscribe).not.toHaveBeenCalled();
+      expect(player.launch).not.toHaveBeenCalled();
     }
     expectNoCanaryInConsole();
   }, 60_000);

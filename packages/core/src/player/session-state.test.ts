@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PlaybackSnapshot } from "../domain/playback";
+import { PLAYER_ERROR_MESSAGES } from "../domain/player-engine";
 import { initialPlaybackSessionState, playbackSessionReducer } from "./session-state";
 
 const snapshot: PlaybackSnapshot = {
@@ -17,7 +18,7 @@ describe("playbackSessionReducer", () => {
     let state = playbackSessionReducer(initialPlaybackSessionState, { type: "reset" });
     state = playbackSessionReducer(state, { type: "event", event: { kind: "first-frame" } });
     state = playbackSessionReducer(state, { type: "event", event: { kind: "state", snapshot } });
-    state = playbackSessionReducer(state, { type: "event", event: { kind: "error", message: "decode failed" } });
+    state = playbackSessionReducer(state, { type: "event", event: { kind: "error", code: "decoder-failed" } });
     state = playbackSessionReducer(state, {
       type: "event",
       event: { kind: "ended", snapshot: { ...snapshot, buffering: false }, reason: "error" },
@@ -25,7 +26,9 @@ describe("playbackSessionReducer", () => {
 
     expect(state).toMatchObject({
       firstFrameReady: true,
-      error: "decode failed",
+      // The fixed copy for the code, never player text (T2-05).
+      error: PLAYER_ERROR_MESSAGES["decoder-failed"],
+      errorCode: "decoder-failed",
       snapshot: { positionSeconds: 31 },
     });
     expect(state.snapshot?.buffering).toBe(false);
@@ -35,7 +38,7 @@ describe("playbackSessionReducer", () => {
   it("marks a failed stop, and a later player error clears the mark", () => {
     let state = playbackSessionReducer(initialPlaybackSessionState, { type: "failure", message: "The player did not stop.", stage: "stop" });
     expect(state).toMatchObject({ error: "The player did not stop.", errorStage: "stop" });
-    state = playbackSessionReducer(state, { type: "event", event: { kind: "error", message: "decode failed" } });
+    state = playbackSessionReducer(state, { type: "event", event: { kind: "error", code: "decoder-failed" } });
     expect(state.errorStage).toBeUndefined();
     state = playbackSessionReducer(state, { type: "failure", message: "x", kind: "network" });
     expect(state.errorStage).toBeUndefined();

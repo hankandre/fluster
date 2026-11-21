@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import type { LibraryItem } from "../domain/catalog";
-import type { PlaybackPlan, PlaybackSnapshot, PlayerEngine, PlayerEvent, ServerPlayMethod } from "../domain/playback";
+import type { PlaybackPlan, PlaybackSnapshot, ServerPlayMethod } from "../domain/playback";
 import { PlaybackCoordinator, type PlaybackGateway } from "./coordinator";
 import { FakeClock } from "../ports/fake-clock";
+import { createFakePlayerEngine } from "./fake-player-engine";
 
 const item: LibraryItem = { id: "one", name: "One", type: "Movie", resumePositionTicks: 0, played: false };
 const snapshot: PlaybackSnapshot = {
@@ -31,20 +32,9 @@ const hls: PlaybackPlan = {
 };
 const copies: ServerPlayMethod = { playMethod: "Transcode", videoDirect: true, audioDirect: true, reasons: ["AudioCodecNotSupported"] };
 
-class FakePlayer implements PlayerEngine {
-  mode = "native" as const;
-  listener?: (event: PlayerEvent) => void;
-  initialize = vi.fn(async () => ({ mode: "native" as const, embedded: true, renderer: "test", nativeRenderer: "test" }));
-  subscribe = vi.fn(async (listener: (event: PlayerEvent) => void) => { this.listener = listener; return () => undefined; });
-  setSurface = vi.fn(async () => undefined);
-  launch = vi.fn(async () => undefined);
-  setPaused = vi.fn(async () => undefined);
-  seek = vi.fn(async () => undefined);
-  setVolume = vi.fn(async () => undefined);
-  setMuted = vi.fn(async () => undefined);
-  selectTrack = vi.fn(async () => undefined);
-  setFullscreen = vi.fn(async () => undefined);
-  stop = vi.fn<() => Promise<void>>(async () => undefined);
+// The shared port-only fake.
+function fakePlayer() {
+  return createFakePlayerEngine();
 }
 
 function setup(planned: PlaybackPlan, answers: (() => Promise<ServerPlayMethod | undefined>)[]) {
@@ -54,21 +44,21 @@ function setup(planned: PlaybackPlan, answers: (() => Promise<ServerPlayMethod |
     reportStart: vi.fn(async () => undefined),
     reportProgress: vi.fn(async () => undefined),
     reportStopped: vi.fn(async () => undefined),
-    authorizationHeader: () => "test-header",
+    sessionId: () => "session-1",
     stopActiveEncoding: vi.fn(async () => undefined),
     sessionPlayMethod: vi.fn(async () => (queue.shift() ?? (async () => undefined))()),
   } satisfies PlaybackGateway;
-  const player = new FakePlayer();
+  const player = fakePlayer();
   const onPlanConfirmed = vi.fn();
   const clock = new FakeClock();
-  const coordinator = new PlaybackCoordinator(gateway, player, { onEvent: vi.fn(), onReportingError: vi.fn(), onPlanConfirmed }, clock);
+  const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn(), onPlanConfirmed }, clock);
   return { gateway, player, coordinator, onPlanConfirmed, clock };
 }
 
 async function playToFirstFrame(context: ReturnType<typeof setup>): Promise<void> {
   await context.coordinator.start(item);
-  context.player.listener?.({ kind: "loaded", snapshot });
-  context.player.listener?.({ kind: "first-frame" });
+  context.player.emit({ kind: "loaded", snapshot });
+  context.player.emit({ kind: "first-frame" });
   await context.clock.advance(0);
 }
 
@@ -90,7 +80,7 @@ describe("PlaybackCoordinator play-method confirmation", () => {
     const reported = { ...confirmed, playMethod: "Transcode" };
     await context.clock.advance(7_000);
     expect(context.gateway.reportProgress).toHaveBeenLastCalledWith(reported, snapshot, expect.any(AbortSignal));
-    context.player.listener?.({ kind: "state", snapshot, cause: "pause" });
+    context.player.emit({ kind: "state", snapshot, cause: "pause" });
     await context.clock.advance(0);
     expect(context.gateway.reportProgress).toHaveBeenLastCalledWith(reported, snapshot, expect.any(AbortSignal));
     await context.coordinator.stop();

@@ -1,0 +1,47 @@
+{
+  "task": "T2-05",
+  "files": [
+    "packages/core/src/domain/player-engine-neutral.test.ts",
+    "packages/core/src/player/launch-request.test.ts",
+    "packages/core/src/player/coordinator-launch.test.ts",
+    "packages/core/src/domain/player-capabilities.test.ts",
+    "packages/core/src/domain/player-engine-allowlist.test.ts",
+    "packages/core/src/player/fake-player-engine.ts",
+    "packages/core/src/player/coordinator-port.test.ts",
+    "packages/core/src/player/coordinator-errors.test.ts",
+    "packages/core/src/player/coordinator.test.ts",
+    "packages/core/src/player/coordinator-audio-pick.test.ts",
+    "packages/core/src/player/coordinator-play-method.test.ts",
+    "packages/core/src/player/coordinator-renegotiate.test.ts",
+    "packages/core/src/player/coordinator-retry-position.test.ts",
+    "packages/core/src/player/session-state.test.ts",
+    "packages/core/src/redact-canary.test.ts",
+    "packages/core/src/jellyfin/error-strip.test.ts"
+  ],
+  "items": [
+    {
+      "item": 1,
+      "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/domain/player-engine-neutral.test.ts"]
+    },
+    {
+      "item": 2,
+      "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/player/launch-request.test.ts", "src/player/coordinator-launch.test.ts"]
+    },
+    {
+      "item": 3,
+      "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/domain/player-capabilities.test.ts"]
+    },
+    {
+      "item": 4,
+      "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/domain/player-engine-allowlist.test.ts"]
+    },
+    {
+      "item": 5,
+      "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/player", "src/redact-canary.test.ts", "src/jellyfin/error-strip.test.ts"]
+    },
+    {
+      "item": 6,
+      "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/player/coordinator-errors.test.ts", "src/player/session-state.test.ts"]
+    }
+  ]
+}
