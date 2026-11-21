@@ -4,11 +4,6 @@ export interface ServerInfo {
   Id?: string;
 }
 
-export interface AuthenticationResult {
-  AccessToken?: string;
-  User?: { Id?: string; Name?: string };
-}
-
 export interface QuickConnectResult {
   Authenticated?: boolean;
   Secret?: string;
@@ -179,24 +174,4 @@ export interface CultureDto {
   TwoLetterISOLanguageName?: string;
   ThreeLetterISOLanguageName?: string;
   ThreeLetterISOLanguageNames?: string[];
-}
-
-export interface HttpRequestConfig {
-  responseType?: "blob";
-  headers?: Record<string, string>;
-  params?: Record<string, unknown>;
-  signal?: AbortSignal;
-  timeout?: number;
-}
-
-// `status` is optional so test fakes may omit it; Axios always sets it.
-export interface HttpResponse<T> {
-  data: T;
-  status?: number;
-}
-
-export interface HttpTransport {
-  get<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>>;
-  post<T>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<HttpResponse<T>>;
-  delete<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>>;
 }

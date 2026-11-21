@@ -44,6 +44,7 @@ import { LogWatcher, ProcessMonitor, sleep } from "./tripwire-container";
 import { JOB_GONE_DEADLINE_MS, playConversion } from "./tripwire-hls";
 import { MonitorClient, SessionWatcher, prepareServer, type ItemDto } from "./tripwire-server";
 import { playStatic } from "./tripwire-static";
+import { authorizationFor, newGateway } from "./tripwire-transport";
 import {
   addSecret,
   errorText,
@@ -55,7 +56,6 @@ import {
   type SampleResult,
   type ServerResult,
 } from "./tripwire-report";
-import { webCrypto } from "../../packages/core/src/adapters/web-crypto";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, "..", "..");
@@ -214,7 +214,7 @@ async function playSample(server: ServerContext, sample: Sample, item: ItemDto):
     }
     if (plan) {
       addSecret(plan.playSessionId);
-      addSecret(/Token="([^"]+)"/.exec(gateway.authorizationHeader())?.[1]);
+      addSecret(/Token="([^"]+)"/.exec(authorizationFor(gateway))?.[1]);
       addSecret(new URL(plan.streamUrl).searchParams.get("api_key") ?? undefined);
       hasAudio = plan.tracks.some((track) => track.type === "Audio");
       result.plan = {
@@ -399,7 +399,7 @@ async function runServer(server: (typeof SERVERS)[number], credentials: Record<s
     const account = sample.user === "restricted" ? restricted : main;
     if (!account.username || !account.password) throw new Error(`no credentials for ${sample.user ?? "the test user"}; rerun pnpm fixture:setup`);
     const limits = sample.limitMbps === undefined ? new MemoryStreamingLimits() : fixedLimit(sample.limitMbps);
-    const gateway = new JellyfinGateway(url, webCrypto, undefined, randomUUID(), new MemoryLanHttpConfirmations(), limits, {
+    const gateway = newGateway(url, randomUUID(), new MemoryLanHttpConfirmations(), limits, {
       version: (JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as { version: string }).version,
       deviceName: "Octave Linux",
     });

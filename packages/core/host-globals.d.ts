@@ -2,9 +2,9 @@
 // library does not declare. Adding a global here is an architecture change
 // (ARCHITECTURE.md section 2); prefer a port in src/ports/.
 //
-// Every host must provide these six (on the TV, URL comes from a polyfill,
+// Every host must provide these five (on the TV, URL comes from a polyfill,
 // decision 0004):
-//   URL, URLSearchParams, AbortController, AbortSignal, console, Blob.
+//   URL, URLSearchParams, AbortController, AbortSignal, console.
 //
 // Only the reference adapters in src/adapters/ use the next seven. A host that
 // supplies its own Clock, Crypto and Transport does not need them, so the TV
@@ -67,9 +67,6 @@ declare var TextEncoder: {
   prototype: TextEncoder;
   new (): TextEncoder;
 };
-
-// Opaque: core code only passes a Blob through (trickplay tiles).
-interface Blob {}
 
 declare var console: { warn(...data: unknown[]): void };
 

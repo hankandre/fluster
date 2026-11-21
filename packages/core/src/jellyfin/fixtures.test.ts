@@ -3,7 +3,9 @@ import type { LibraryItem } from "../domain/catalog";
 import { PlaybackRefusedError } from "../domain/playback";
 import { OCTAVE_PROFILE } from "./device-profile";
 import { JellyfinGateway } from "./gateway";
-import type { HttpRequestConfig, HttpTransport, PlaybackInfoResponse } from "./types";
+import { toQuery } from "./query";
+import type { PlaybackInfoResponse } from "./types";
+import type { SignInRequest, SignInResult, Transport, TransportRequest, TransportResponse } from "../ports/transport";
 import { webCrypto } from "../adapters/web-crypto";
 
 // Replays PlaybackInfo responses recorded from Jellyfin 10.11.7 and 12.4.0 servers
@@ -24,28 +26,26 @@ function fixture(version: string, name: string): PlaybackInfoResponse {
 interface PostRecord {
   url: string;
   data: Record<string, unknown>;
-  params: Record<string, unknown>;
+  query: readonly (readonly [string, string])[];
+  params: Record<string, string>;
 }
 
-class FixtureTransport implements HttpTransport {
+class FixtureTransport implements Transport {
   posts: PostRecord[] = [];
 
   constructor(private readonly playbackInfo: PlaybackInfoResponse) {}
 
-  async get<T>(): Promise<{ data: T }> {
-    throw new Error("unexpected GET");
+  async signIn(_request: SignInRequest): Promise<SignInResult> {
+    return { session: "session-1", userId: "user-test", userName: "tester" };
   }
 
-  async post<T>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<{ data: T }> {
-    if (url === "/Users/AuthenticateByName") {
-      return { data: { AccessToken: "test-token", User: { Id: "user-test", Name: "tester" } } as T };
-    }
-    this.posts.push({ url, data: data as Record<string, unknown>, params: config?.params ?? {} });
-    return { data: this.playbackInfo as T };
-  }
+  async endSession(): Promise<void> {}
 
-  async delete<T>(): Promise<{ data: T }> {
-    throw new Error("unexpected DELETE");
+  async request(request: TransportRequest): Promise<TransportResponse> {
+    if (request.method !== "POST") throw new Error(`unexpected ${request.method}`);
+    const query = request.query ?? [];
+    this.posts.push({ url: request.path, data: request.body as Record<string, unknown>, query, params: Object.fromEntries(query) });
+    return { status: 200, body: this.playbackInfo };
   }
 }
 
@@ -101,7 +101,7 @@ describe.each(versions)("PlaybackInfo fixtures from Jellyfin %s", (version) => {
       MaxStreamingBitrate: 1000000000,
       DeviceProfile: OCTAVE_PROFILE,
     });
-    expect(request.params).toEqual({ ...FLAGS, UserId: "user-test", StartTimeTicks: 0, MaxStreamingBitrate: 1000000000 });
+    expect(request.query).toEqual(toQuery({ ...FLAGS, UserId: "user-test", StartTimeTicks: 0, MaxStreamingBitrate: 1000000000 }));
   });
 
   // The empty-codec assumption: a profile whose DirectPlayProfiles name no
@@ -215,7 +215,7 @@ describe.each(versions)("PlaybackInfo fixtures from Jellyfin %s", (version) => {
       MediaSourceId: "source-versions-2",
       DeviceProfile: OCTAVE_PROFILE,
     });
-    expect(request.params).toEqual({ ...FLAGS, UserId: "user-test", StartTimeTicks: 0, MaxStreamingBitrate: 1000000000 });
+    expect(request.query).toEqual(toQuery({ ...FLAGS, UserId: "user-test", StartTimeTicks: 0, MaxStreamingBitrate: 1000000000 }));
   });
 
   // This answer was recorded with every conversion flag off, so it offers

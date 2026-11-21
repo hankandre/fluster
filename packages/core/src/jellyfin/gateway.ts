@@ -1,5 +1,3 @@
-import { Jellyfin, type Api } from "@jellyfin/sdk";
-import axios from "axios";
 import type { BrowseCard, BrowsePage, BrowseQuery, CardImageType, EpisodeCard, Genre, ItemDetail, LibraryItem, LibraryView, MediaCard, NextEpisode, SearchHint, SearchPage, SearchQuery, Season, SeriesNextUp } from "../domain/catalog";
 import { ItemNotFoundError } from "../domain/catalog";
 import type { RecentPlays } from "../domain/up-next";
@@ -19,6 +17,8 @@ import { redactTransportError } from "../transport-error";
 import { toBrowseCards, toEpisodeCards, toGenres, toNextEpisode, toHomeLibraries, toMediaCards, toRecentPlays, toSearchCards, toSearchHints, toSeasons, toSeriesNextUp } from "./cards";
 import { stripCredentialQuery } from "./credential-query";
 import type { Crypto } from "../ports/crypto";
+import { TransportError, type QueryPair, type SessionId, type SignInCredential, type SignInResult, type Transport, type TransportResponse, type TransportTarget } from "../ports/transport";
+import { toQuery } from "./query";
 import { deriveDeviceId } from "./device-id";
 import { limitIsOnlyReason } from "./client-limit";
 import { OCTAVE_PROFILE, MAX_BITRATE } from "./device-profile";
@@ -28,11 +28,7 @@ import { toMediaSegments, type MediaSegmentsResponse } from "./media-segments";
 import { findSessionPlayMethod, type SessionDto } from "./session-play-method";
 import { selectSource } from "./source-acceptance";
 import type {
-  AuthenticationResult,
   BaseItemDto,
-  HttpRequestConfig,
-  HttpResponse,
-  HttpTransport,
   ItemsResult,
   MediaSourceDto,
   PlaybackInfoResponse,
@@ -42,7 +38,6 @@ import type {
   ServerInfo,
   UserDto,
 } from "./types";
-import { APP_NAME } from "../domain/app-identity";
 
 export const CONTROL_REQUEST_TIMEOUT_MS = 15_000;
 export const REPORT_REQUEST_TIMEOUT_MS = 3_000;
@@ -63,52 +58,15 @@ const CARD_IMAGE_PARAMS = {
 const SEARCH_HINT_LIMIT = 8;
 const SEARCH_TYPES = "Movie,Series,Episode";
 
-// What the server shows for this client in its device list. The composition
-// root supplies both; the core reads no build or platform globals.
-export interface ClientIdentity {
-  version: string;
-  deviceName: string;
-}
-
-// Deliberately not a real version, so a path that forgets the identity is
-// visible on the server.
-const UNIDENTIFIED_CLIENT: ClientIdentity = { version: "0.0.0", deviceName: APP_NAME };
+// The DeviceId of the tokenless header on the calls that need no user: the probe and the Quick Connect
+// availability check. Deliberately not a real id, so a path that forgets the identity is visible on the server.
+const UNAUTHENTICATED_DEVICE_ID = "octave-unauthenticated";
 
 // Jellyfin binds the Quick Connect token to the DeviceId sent with Initiate
 // (QuickConnectManager.cs:72-93, 154-163), before any user is known, so a
 // per-user id is impossible. The placeholder contains "#", which Jellyfin
 // rejects in usernames (UserManager.cs:119), so no real user can collide.
 const QUICK_CONNECT_DEVICE_USER = "#quick-connect";
-
-function createClient(client: ClientIdentity, deviceId: string): Jellyfin {
-  return new Jellyfin({
-    clientInfo: { name: APP_NAME, version: client.version },
-    deviceInfo: { name: client.deviceName, id: deviceId },
-  });
-}
-
-function buildAuthorizationHeader(client: ClientIdentity, serverUrl: string, deviceId: string, accessToken?: string): string {
-  return createClient(client, deviceId).createApi(serverUrl, accessToken).authorizationHeader;
-}
-
-function createSdkApi(client: ClientIdentity, serverUrl: string, deviceId: string, accessToken?: string): Api {
-  // The SDK's generated APIs apply basePath and authorization through their
-  // Configuration object. Octave's narrow gateway uses the raw Axios client,
-  // so it must provide those values on an isolated instance explicitly.
-  // No request follows a redirect (docs/decisions/0001, edge case 8): a
-  // server or anyone on the path must not be able to move the token, or the
-  // probe, to another origin. The fetch adapter maps maxRedirects 0 to
-  // `redirect: "manual"`; the XHR adapter cannot stop a redirect.
-  const axiosInstance = axios.create({
-    baseURL: serverUrl,
-    timeout: CONTROL_REQUEST_TIMEOUT_MS,
-    adapter: "fetch",
-    maxRedirects: 0,
-  });
-  const api = createClient(client, deviceId).createApi(serverUrl, accessToken, axiosInstance);
-  axiosInstance.defaults.headers.common.Authorization = api.authorizationHeader;
-  return api;
-}
 
 // The decision 0002 "Negotiation" flags. They go in the body and the query
 // string, so a body-binding change on the server cannot flip them.
@@ -151,23 +109,28 @@ function normalizeServerUrl(input: string): URL {
   return url;
 }
 
-// A redirect arrives as a 3xx status (Node fetch rejects it through
-// validateStatus) or, in a WebView, as an opaque redirect with status 0.
-// Axios resolves status 0 (core/settle.js treats a falsy status as success),
-// so every response must be checked as well as every error.
-function isRedirectStatus(status: unknown): boolean {
-  return typeof status === "number" && (status === 0 || (status >= 300 && status < 400));
+// A transport that honours the port rejects a redirect with TransportError("redirect"). One that breaks the
+// contract and resolves a 3xx or a status of 0 (an opaque redirect in a WebView) is refused the same way.
+function isRedirectStatus(status: number): boolean {
+  return status === 0 || (status >= 300 && status < 400);
 }
 
 function isRedirectError(error: unknown): boolean {
-  if (typeof error !== "object" || error === null) return false;
-  return isRedirectStatus((error as { response?: { status?: unknown } }).response?.status);
+  return typeof error === "object" && error !== null && (error as { code?: unknown }).code === "redirect";
 }
 
-// Fake transports may omit `status`; Axios always sets it.
-function refuseRedirect<T>(response: HttpResponse<T>): HttpResponse<T> {
-  if (isRedirectStatus(response.status)) throw new SignInFailure("redirect", REDIRECT_REFUSED_MESSAGE);
-  return response;
+function redirectRefused(): SignInFailure {
+  return new SignInFailure("redirect", REDIRECT_REFUSED_MESSAGE);
+}
+
+type QueryParams = Record<string, string | number | boolean | undefined>;
+
+interface RequestOptions {
+  params?: QueryParams | readonly QueryPair[];
+  // Only on the calls that run before sign-in; a signed-in call names its session.
+  deviceId?: string;
+  signal?: AbortSignal;
+  timeout: number;
 }
 
 export function buildStaticStreamUrl(
@@ -208,9 +171,8 @@ export class JellyfinGateway {
   readonly hostClass: HostClass;
   private readonly plainHttp: boolean;
   private accountWrite: Promise<unknown> = Promise.resolve();
-  private transport: HttpTransport;
-  private api?: Api;
-  private accessToken?: string;
+  // The opaque id of the transport's session. The token never reaches the gateway (decision 0005).
+  private session?: SessionId;
   private userId?: string;
   private userName?: string;
   private serverId?: string;
@@ -219,27 +181,23 @@ export class JellyfinGateway {
   constructor(
     serverUrl: string,
     private readonly crypto: Crypto,
-    transport?: HttpTransport,
+    private readonly transport: Transport,
     private readonly installId: string = crypto.randomId(),
     private readonly confirmations: LanHttpConfirmationStore = new MemoryLanHttpConfirmations(),
     private readonly streamingLimits: StreamingLimitStore = new MemoryStreamingLimits(),
-    private readonly client: ClientIdentity = UNIDENTIFIED_CLIENT,
   ) {
     const url = normalizeServerUrl(serverUrl);
     this.serverUrl = url.toString().replace(/\/$/, "");
     this.origin = url.origin;
     this.hostClass = classifyHost(url);
     this.plainHttp = url.protocol === "http:";
-    // Before login there is no user, so the unauthenticated API uses a
-    // throwaway device id that is never sent with credentials.
-    this.api = transport ? undefined : createSdkApi(this.client, this.serverUrl, "octave-unauthenticated");
-    this.transport = transport ?? (this.api!.axiosInstance as HttpTransport);
   }
 
   // The unauthenticated probe. For a private-LAN HTTP server it also reports
   // whether the user still has to confirm the unencrypted connection.
   async connect(signal?: AbortSignal): Promise<ServerConnection> {
     const { data } = await this.get<ServerInfo>("/System/Info/Public", {
+      deviceId: UNAUTHENTICATED_DEVICE_ID,
       signal,
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
@@ -301,19 +259,13 @@ export class JellyfinGateway {
     this.requireTransportConsent();
     // Fall back to the server URL if connect() did not provide a server id.
     const deviceId = await deriveDeviceId(this.crypto, this.installId, this.serverId ?? this.serverUrl, username);
-    const { data } = await this.post<AuthenticationResult>("/Users/AuthenticateByName", {
-      Username: username,
-      Pw: password,
-    }, {
-      headers: { Authorization: buildAuthorizationHeader(this.client, this.serverUrl, deviceId) },
-      signal,
-      timeout: CONTROL_REQUEST_TIMEOUT_MS,
-    });
-    return this.startSession(data, deviceId, username);
+    const result = await this.signIn({ kind: "password", username, password }, deviceId, signal);
+    return this.startSession(result, deviceId, username);
   }
 
   async quickConnectEnabled(signal?: AbortSignal): Promise<boolean> {
     const { data } = await this.get<boolean>("/QuickConnect/Enabled", {
+      deviceId: UNAUTHENTICATED_DEVICE_ID,
       signal,
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
@@ -325,7 +277,7 @@ export class JellyfinGateway {
     this.requireTransportConsent();
     const deviceId = await this.quickConnectDeviceId();
     const { data } = await this.post<QuickConnectResult>("/QuickConnect/Initiate", undefined, {
-      headers: { Authorization: buildAuthorizationHeader(this.client, this.serverUrl, deviceId) },
+      deviceId,
       signal,
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
@@ -340,7 +292,7 @@ export class JellyfinGateway {
     const deviceId = await this.quickConnectDeviceId();
     const { data } = await this.get<QuickConnectResult>("/QuickConnect/Connect", {
       params: { secret },
-      headers: { Authorization: buildAuthorizationHeader(this.client, this.serverUrl, deviceId) },
+      deviceId,
       signal,
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
@@ -350,14 +302,8 @@ export class JellyfinGateway {
   async authenticateWithQuickConnect(secret: string, signal?: AbortSignal): Promise<{ userId: string; username: string }> {
     this.requireTransportConsent();
     const deviceId = await this.quickConnectDeviceId();
-    const { data } = await this.post<AuthenticationResult>("/Users/AuthenticateWithQuickConnect", {
-      Secret: secret,
-    }, {
-      headers: { Authorization: buildAuthorizationHeader(this.client, this.serverUrl, deviceId) },
-      signal,
-      timeout: CONTROL_REQUEST_TIMEOUT_MS,
-    });
-    return this.startSession(data, deviceId, "Jellyfin user");
+    const result = await this.signIn({ kind: "quick-connect", secret }, deviceId, signal);
+    return this.startSession(result, deviceId, "Jellyfin user");
   }
 
   // Quick Connect has no username before approval, so its device id is derived
@@ -367,57 +313,51 @@ export class JellyfinGateway {
     return deriveDeviceId(this.crypto, this.installId, this.serverId ?? this.serverUrl, QUICK_CONNECT_DEVICE_USER);
   }
 
-  private startSession(
-    data: AuthenticationResult,
-    deviceId: string,
-    fallbackName: string,
-  ): { userId: string; username: string } {
-    if (!data.AccessToken || !data.User?.Id) throw new SignInFailure("unexpected-response", "Jellyfin did not return a valid user session.");
-    this.accessToken = data.AccessToken;
-    this.userId = data.User.Id;
-    this.userName = data.User.Name ?? fallbackName;
-    this.deviceId = deviceId;
-    if (this.api) {
-      this.api = createSdkApi(this.client, this.serverUrl, deviceId, data.AccessToken);
-      this.transport = this.api.axiosInstance as HttpTransport;
+  // The transport keeps the token and gives back an opaque session id. A sign-in the server answered without a
+  // user session arrives as unexpected-response and keeps the plain message the screens already show.
+  private async signIn(credential: SignInCredential, deviceId: string, signal?: AbortSignal): Promise<SignInResult> {
+    try {
+      return await this.transport.signIn({ server: this.serverUrl, deviceId, credential, timeoutMs: CONTROL_REQUEST_TIMEOUT_MS, signal });
+    } catch (error) {
+      if ((error as { code?: unknown } | null)?.code === "unexpected-response") {
+        throw new SignInFailure("unexpected-response", "Jellyfin did not return a valid user session.");
+      }
+      throw this.failure(error);
     }
-    return { userId: data.User.Id, username: this.userName };
+  }
+
+  private startSession(result: SignInResult, deviceId: string, fallbackName: string): { userId: string; username: string } {
+    this.session = result.session;
+    this.userId = result.userId;
+    this.userName = result.userName ?? fallbackName;
+    this.deviceId = deviceId;
+    return { userId: result.userId, username: this.userName };
   }
 
   // The signed-in user's display name, or undefined when signed out. Display only.
   currentUserName(): string | undefined {
-    return this.accessToken ? this.userName : undefined;
+    return this.session ? this.userName : undefined;
   }
 
-  // The signed-in Authorization header, handed only to Rust: the server socket
-  // (realtime_connect) and the native engine's launch request, read through the
-  // coordinator at launch. Plans never carry it. Never log it.
-  authorizationHeader(): string {
-    const { accessToken } = this.requireSession();
-    if (!this.deviceId) throw new Error("Sign in before using the library.");
-    return buildAuthorizationHeader(this.client, this.serverUrl, this.deviceId, accessToken);
+  // The opaque id of the signed-in session, for the launch request (T2-05) and the tripwire. It names a
+  // session in the transport and means nothing to the server. Throws when signed out.
+  sessionId(): SessionId {
+    return this.requireSession().session;
   }
 
   async logout(): Promise<void> {
-    const { accessToken, deviceId } = this;
-    // Clear local state first so the UI can never keep a revoked token.
-    this.accessToken = undefined;
+    const { session } = this;
+    // Clear local state first so the UI can never keep a revoked session.
+    this.session = undefined;
     this.userId = undefined;
     this.userName = undefined;
     this.deviceId = undefined;
-    const transport = this.transport;
-    if (this.api) {
-      this.api = createSdkApi(this.client, this.serverUrl, "octave-unauthenticated");
-      this.transport = this.api.axiosInstance as HttpTransport;
-    }
-    if (!accessToken || !deviceId) return;
+    if (!session) return;
     try {
-      refuseRedirect(await transport.post("/Sessions/Logout", undefined, {
-        headers: { Authorization: buildAuthorizationHeader(this.client, this.serverUrl, deviceId, accessToken) },
-        timeout: REPORT_REQUEST_TIMEOUT_MS,
-      }));
+      await this.transport.endSession(session, { timeoutMs: REPORT_REQUEST_TIMEOUT_MS });
     } catch (error) {
-      console.warn("Server logout failed; the local session was cleared.", error instanceof Error ? redactText(error.message) : "unknown error");
+      const failure = this.failure(error);
+      console.warn("Server logout failed; the local session was cleared.", failure instanceof Error ? redactText(failure.message) : "unknown error");
     }
   }
 
@@ -520,7 +460,7 @@ export class JellyfinGateway {
       });
       return toMediaCards(data.Items);
     } catch (error) {
-      if ((error as { response?: { status?: unknown } } | null)?.response?.status === 404) return undefined;
+      if ((error as { status?: unknown } | null)?.status === 404) return undefined;
       throw error;
     }
   }
@@ -576,7 +516,7 @@ export class JellyfinGateway {
   // exist. Only the first page asks for the total count, which the toolbar shows.
   async libraryItems(parentId: string, query: BrowseQuery, signal?: AbortSignal): Promise<BrowsePage> {
     const { userId } = this.requireSession();
-    const params: Record<string, unknown> = {
+    const params: QueryParams = {
       userId,
       parentId,
       recursive: true,
@@ -726,7 +666,7 @@ export class JellyfinGateway {
         timeout: CONTROL_REQUEST_TIMEOUT_MS,
       }));
     } catch (error) {
-      if ((error as { response?: { status?: unknown } } | null)?.response?.status === 404) throw new ItemNotFoundError();
+      if ((error as { status?: unknown } | null)?.status === 404) throw new ItemNotFoundError();
       throw error;
     }
     const detail = toItemDetail(data);
@@ -773,25 +713,6 @@ export class JellyfinGateway {
     return toLanguageCultures(data);
   }
 
-  // GET /Videos/{itemId}/Trickplay/{width}/{index}.jpg needs the Authorization
-  // header (trick-play-api.js getTrickplayTileImage, and [Authorize] on
-  // TrickplayController), which an <img> cannot send. Fetch the bytes here so
-  // no token is ever put in a URL.
-  async trickplayTile(
-    itemId: string,
-    mediaSourceId: string,
-    width: number,
-    index: number,
-    signal?: AbortSignal,
-  ): Promise<Blob> {
-    this.requireSession();
-    const { data } = await this.get<Blob>(
-      `/Videos/${encodeURIComponent(itemId)}/Trickplay/${width}/${index}.jpg`,
-      { params: { mediaSourceId }, responseType: "blob", signal, timeout: CONTROL_REQUEST_TIMEOUT_MS },
-    );
-    return data;
-  }
-
   // POST marks the item played and DELETE marks it unplayed (user-data-api
   // markPlayedItem and markUnplayedItem, /UserPlayedItems/{itemId}).
   async setPlayed(itemId: string, played: boolean, signal?: AbortSignal): Promise<void> {
@@ -824,13 +745,13 @@ export class JellyfinGateway {
 
   // GET /MediaSegments/{itemId} (media-segment-api getItemSegments; 10.10+,
   // authenticated by header like every other call). The type filter is a
-  // repeated query parameter, which Axios params would encode as `[]`, so it
-  // is written into the URL. Callers check HasSegments first.
+  // repeated query parameter, so it goes in as two pairs. Callers check
+  // HasSegments first.
   async mediaSegments(itemId: string, signal?: AbortSignal): Promise<MediaSegment[]> {
     this.requireSession();
     const { data } = await this.get<MediaSegmentsResponse>(
-      `/MediaSegments/${encodeURIComponent(itemId)}?includeSegmentTypes=Intro&includeSegmentTypes=Outro`,
-      { signal, timeout: CONTROL_REQUEST_TIMEOUT_MS },
+      `/MediaSegments/${encodeURIComponent(itemId)}`,
+      { params: [["includeSegmentTypes", "Intro"], ["includeSegmentTypes", "Outro"]], signal, timeout: CONTROL_REQUEST_TIMEOUT_MS },
     );
     return toMediaSegments(data);
   }
@@ -1050,32 +971,58 @@ export class JellyfinGateway {
     });
   }
 
-  private async send<T>(request: () => Promise<HttpResponse<T>>): Promise<HttpResponse<T>> {
-    let response: HttpResponse<T>;
+  // What a transport failure becomes: a redirect gets the plain "enter the final address" failure, everything else is
+  // rebuilt without any context an adapter attached (config, request, response, cause).
+  private failure(error: unknown): unknown {
+    if (isRedirectError(error)) return redirectRefused();
+    return redactTransportError(error);
+  }
+
+  // A signed-in call names its session. Before sign-in it names the server and the DeviceId of the tokenless header.
+  private target(deviceId = UNAUTHENTICATED_DEVICE_ID): TransportTarget {
+    if (this.session) return { session: this.session };
+    return { server: this.serverUrl, deviceId };
+  }
+
+  private async send<T>(method: "GET" | "POST" | "DELETE", path: string, options: RequestOptions, body?: unknown): Promise<{ data: T }> {
+    const { params } = options;
+    const query = params === undefined ? undefined : Array.isArray(params) ? (params as readonly QueryPair[]) : toQuery(params as QueryParams);
+    let response: TransportResponse;
     try {
-      response = await request();
+      response = await this.transport.request({
+        target: this.target(options.deviceId),
+        method,
+        path,
+        ...(query ? { query } : {}),
+        ...(body === undefined ? {} : { body }),
+        timeoutMs: options.timeout,
+        signal: options.signal,
+      });
     } catch (error) {
-      if (isRedirectError(error)) throw new SignInFailure("redirect", REDIRECT_REFUSED_MESSAGE);
-      throw redactTransportError(error);
+      throw this.failure(error);
     }
-    return refuseRedirect(response);
+    if (isRedirectStatus(response.status)) throw redirectRefused();
+    // The core raises on a 4xx or 5xx so every caller sees one failure shape; the two calls that treat 404 as an
+    // answer read its status.
+    if (response.status >= 400) throw redactTransportError(new TransportError("status", response.status));
+    return { data: response.body as T };
   }
 
-  private get<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
-    return this.send(() => this.transport.get<T>(url, config));
+  private get<T>(path: string, options: RequestOptions): Promise<{ data: T }> {
+    return this.send("GET", path, options);
   }
 
-  private post<T>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
-    return this.send(() => this.transport.post<T>(url, data, config));
+  private post<T>(path: string, body: unknown, options: RequestOptions): Promise<{ data: T }> {
+    return this.send("POST", path, options, body);
   }
 
-  private delete<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
-    return this.send(() => this.transport.delete<T>(url, config));
+  private delete<T>(path: string, options: RequestOptions): Promise<{ data: T }> {
+    return this.send("DELETE", path, options);
   }
 
-  private requireSession(): { accessToken: string; userId: string } {
-    if (!this.accessToken || !this.userId) throw new Error("Sign in before using the library.");
-    return { accessToken: this.accessToken, userId: this.userId };
+  private requireSession(): { session: SessionId; userId: string } {
+    if (!this.session || !this.userId) throw new Error("Sign in before using the library.");
+    return { session: this.session, userId: this.userId };
   }
 }
 

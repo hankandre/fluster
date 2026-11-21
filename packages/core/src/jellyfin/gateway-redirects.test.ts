@@ -1,11 +1,13 @@
 // @vitest-environment node
-// Uses the real Axios client against local HTTP servers, so it proves that no
-// gateway request follows a redirect (docs/decisions/0001, edge case 8).
+// Uses the reference FetchTransport against local HTTP servers, so it proves that no gateway request follows a
+// redirect (docs/decisions/0001, edge case 8).
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { JellyfinGateway, REDIRECT_REFUSED_MESSAGE } from "./gateway";
 import { webCrypto } from "../adapters/web-crypto";
+import { systemClock } from "../adapters/system-clock";
+import { FetchTransport } from "../adapters/fetch-transport";
 
 type Handler = (request: IncomingMessage, response: ServerResponse) => void;
 
@@ -43,6 +45,11 @@ async function listenForStolenRequests() {
   return { origin, received };
 }
 
+function newGateway(server: string): { gateway: JellyfinGateway; transport: FetchTransport } {
+  const transport = new FetchTransport({ client: { version: "0.1.0", deviceName: "Octave Test" }, crypto: webCrypto, clock: systemClock });
+  return { gateway: new JellyfinGateway(server, webCrypto, transport, "install-1"), transport };
+}
+
 const PUBLIC_INFO = { ServerName: "Home", Version: "10.11.7", Id: "server-1" };
 const AUTHENTICATION = { AccessToken: "top-secret", User: { Id: "user-1", Name: "Louise" } };
 
@@ -59,7 +66,7 @@ describe("JellyfinGateway redirects", () => {
           return redirect(response, status, `${target.origin}/UserViews`);
       }
     });
-    const gateway = new JellyfinGateway(server, webCrypto, undefined, "install-1");
+    const { gateway } = newGateway(server);
     await gateway.connect();
     await gateway.login("Louise", "hunter2");
 
@@ -85,10 +92,10 @@ describe("JellyfinGateway redirects", () => {
           return redirect(response, 307, `${target.origin}/Videos/ActiveEncodings`);
       }
     });
-    const gateway = new JellyfinGateway(server, webCrypto, undefined, "install-1");
+    const { gateway, transport } = newGateway(server);
     await gateway.connect();
     await gateway.login("Louise", "hunter2");
-    const deviceId = /DeviceId="([^"]+)"/.exec(gateway.authorizationHeader())?.[1];
+    const deviceId = /DeviceId="([^"]+)"/.exec(transport.authorizationHeader(gateway.sessionId()))?.[1];
 
     await gateway.stopActiveEncoding("play-1");
     await expect(gateway.stopActiveEncoding("play-2")).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
@@ -108,7 +115,7 @@ describe("JellyfinGateway redirects", () => {
       if (request.url === "/System/Info/Public") return json(response, PUBLIC_INFO);
       return redirect(response, 307, `${target.origin}/Users/AuthenticateByName`);
     });
-    const gateway = new JellyfinGateway(server, webCrypto, undefined, "install-1");
+    const { gateway } = newGateway(server);
     await gateway.connect();
 
     await expect(gateway.login("Louise", "hunter2")).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
@@ -118,7 +125,7 @@ describe("JellyfinGateway redirects", () => {
   it("does not follow a redirect from the unauthenticated probe", async () => {
     const target = await listenForStolenRequests();
     const server = await listen((_request, response) => redirect(response, 302, `${target.origin}/System/Info/Public`));
-    const gateway = new JellyfinGateway(server, webCrypto, undefined, "install-1");
+    const { gateway } = newGateway(server);
 
     await expect(gateway.connect()).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
     expect(target.received).toEqual([]);
@@ -126,7 +133,7 @@ describe("JellyfinGateway redirects", () => {
 });
 
 // What a browser-engine fetch returns for `redirect: "manual"`: an opaque redirect
-// with status 0, which Axios resolves rather than rejects.
+// with status 0, which the adapter rejects as a redirect.
 function opaqueRedirect(): Response {
   const response = new Response(null, { status: 200 });
   Object.defineProperty(response, "status", { value: 0 });
@@ -134,13 +141,13 @@ function opaqueRedirect(): Response {
   return response;
 }
 
-describe("JellyfinGateway opaque redirects through the real Axios client", () => {
+describe("JellyfinGateway opaque redirects through FetchTransport", () => {
   it("refuses the probe and authenticated calls", async () => {
     const server = await listen((request, response) => {
       if (request.url === "/System/Info/Public") return json(response, PUBLIC_INFO);
       return json(response, AUTHENTICATION);
     });
-    const gateway = new JellyfinGateway(server, webCrypto, undefined, "install-1");
+    const { gateway } = newGateway(server);
     await gateway.connect();
     await gateway.login("Louise", "hunter2");
 
@@ -152,7 +159,7 @@ describe("JellyfinGateway opaque redirects through the real Axios client", () =>
     });
     vi.stubGlobal("fetch", fetch);
     await expect(gateway.userViews()).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
-    await expect(new JellyfinGateway(server, webCrypto, undefined, "install-1").connect()).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
+    await expect(newGateway(server).gateway.connect()).rejects.toThrow(REDIRECT_REFUSED_MESSAGE);
     expect(fetch).toHaveBeenCalledTimes(2);
     vi.stubGlobal("fetch", realFetch);
   });

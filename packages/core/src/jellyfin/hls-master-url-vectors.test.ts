@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 import type { LibraryItem } from "../domain/catalog";
 import type { PlaybackPlan } from "../domain/playback";
 import { JellyfinGateway } from "./gateway";
-import type { HttpTransport, PlaybackInfoResponse } from "./types";
+import type { PlaybackInfoResponse } from "./types";
+import type { SignInRequest, SignInResult, Transport, TransportRequest, TransportResponse } from "../ports/transport";
 import { webCrypto } from "../adapters/web-crypto";
 
 // The HLS plans this negotiation builds from every recorded conversion
@@ -40,23 +41,19 @@ interface Vector {
   plan: PlaybackPlan;
 }
 
-class AnswerTransport implements HttpTransport {
+class AnswerTransport implements Transport {
   constructor(private readonly answer: PlaybackInfoResponse) {}
 
-  async get<T>(): Promise<{ data: T }> {
-    throw new Error("unexpected GET");
+  async signIn(_request: SignInRequest): Promise<SignInResult> {
+    return { session: "session-1", userId: "user-test", userName: "tester" };
   }
 
-  async post<T>(url: string): Promise<{ data: T }> {
-    if (url === "/Users/AuthenticateByName") {
-      return { data: { AccessToken: "test-token", User: { Id: "user-test", Name: "tester" } } as T };
-    }
-    return { data: structuredClone(this.answer) as T };
+  async request(request: TransportRequest): Promise<TransportResponse> {
+    if (request.method !== "POST") throw new Error(`unexpected ${request.method}`);
+    return { status: 200, body: structuredClone(this.answer) };
   }
 
-  async delete<T>(): Promise<{ data: T }> {
-    throw new Error("unexpected DELETE");
-  }
+  async endSession(): Promise<void> {}
 }
 
 async function hlsPlan(server: string, answer: PlaybackInfoResponse, itemId: string): Promise<Vector["plan"]> {

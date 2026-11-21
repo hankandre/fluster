@@ -6,6 +6,7 @@
 // every playlist body through findCredentialInBody.
 import type { PlaybackPlan, PlaybackSnapshot, ServerPlayMethod } from "../../packages/core/src/domain/playback";
 import type { JellyfinGateway } from "../../packages/core/src/jellyfin/gateway";
+import { authorizationFor } from "./tripwire-transport";
 import { confirmedPlan, reportedPlan } from "../../packages/core/src/player/confirm-play-method";
 import { PLAY_METHOD_CHECKS_MS } from "../../packages/core/src/player/coordinator";
 import { countFfmpeg, sleep } from "./tripwire-container";
@@ -79,7 +80,7 @@ async function hlsGet(ctx: HlsContext, rawUrl: string): Promise<Uint8Array | und
     ctx.fail("I2", `conversion request ${entry.url}: ${check.reason}`);
     return undefined;
   }
-  const response = await fetch(rawUrl, { headers: { Authorization: ctx.gateway.authorizationHeader() }, redirect: "manual" });
+  const response = await fetch(rawUrl, { headers: { Authorization: authorizationFor(ctx.gateway) }, redirect: "manual" });
   const body = new Uint8Array(await response.arrayBuffer());
   entry.status = response.status;
   entry.contentType = response.headers.get("content-type") ?? undefined;

@@ -1,4 +1,3 @@
-import { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { describe, expect, it, vi } from "vitest";
 import type { LibraryItem } from "../domain/catalog";
 import type { PlaybackPlan, PlaybackSnapshot, PlayerEngine } from "../domain/playback";
@@ -6,7 +5,7 @@ import { PlaybackCoordinator, type PlaybackGateway } from "../player/coordinator
 import { failureAction, stopFailureAction } from "../player/session-failure";
 import { classifyTransportError } from "../transport-error";
 import { JellyfinGateway } from "./gateway";
-import type { HttpTransport } from "./types";
+import { TransportError, type SignInRequest, type SignInResult, type Transport, type TransportRequest, type TransportResponse } from "../ports/transport";
 import { webCrypto } from "../adapters/web-crypto";
 import { FakeClock } from "../ports/fake-clock";
 
@@ -23,32 +22,23 @@ const snapshot: PlaybackSnapshot = {
   diagnostics: { decodeMode: "software", decodeLabel: "Software", droppedFrames: 0 },
 };
 
-// An AxiosError the way Axios builds it: the config carries the signed-in
-// Authorization default header, and the response carries its own copies.
-function axiosFailure(kind: "401" | "500" | "network" | "timeout"): AxiosError {
+// The TransportError a transport gives for each failure, carrying what a misbehaving adapter (a native bridge, a
+// future transport) might attach: the request config with the Authorization header, the request, a response with
+// its own copies, and a cause. The gateway rebuilds the error without any of it.
+function transportFailure(kind: "401" | "500" | "network" | "timeout"): TransportError {
   const config = {
     url: "/Items",
     headers: { Authorization: `MediaBrowser Client="Octave", Token="${CANARY}"` },
-  } as unknown as InternalAxiosRequestConfig;
+  };
   const request = { responseURL: `${SERVER}/Items?api_key=${CANARY}`, headers: { Authorization: CANARY } };
-  switch (kind) {
-    case "401":
-    case "500": {
-      const status = Number(kind);
-      return new AxiosError(`Request failed with status code ${status}`, "ERR_BAD_RESPONSE", config, request, {
-        status,
-        statusText: "x",
-        data: {},
-        headers: { "x-token": CANARY },
-        config,
-        request,
-      });
-    }
-    case "network":
-      return new AxiosError("Network Error", "ERR_NETWORK", config, request);
-    case "timeout":
-      return new AxiosError("timeout of 10000ms exceeded", "ECONNABORTED", config, request);
-  }
+  const error =
+    kind === "401" || kind === "500" ? new TransportError("status", Number(kind)) : new TransportError(kind === "network" ? "network" : "timeout");
+  return Object.assign(error, {
+    config,
+    request,
+    response: { status: error.status, statusText: "x", data: {}, headers: { "x-token": CANARY }, config, request },
+    cause: new Error(`socket closed for ${CANARY}`),
+  });
 }
 
 // Every own value and key reachable from the error, with a cycle guard.
@@ -66,22 +56,24 @@ function walk(value: unknown, seen = new Set<unknown>(), keys: string[] = [], st
 function expectStripped(error: unknown, status?: number): void {
   expect(error).toBeInstanceOf(Error);
   const { keys, strings } = walk(error);
-  for (const key of ["config", "request", "headers", "cause"]) expect(keys).not.toContain(key);
+  for (const key of ["config", "request", "response", "headers", "cause"]) expect(keys).not.toContain(key);
   expect(strings.join("\n")).not.toContain(CANARY);
   expect(JSON.stringify(error)).not.toContain(CANARY);
-  expect((error as { response?: { status?: number } }).response?.status).toBe(status);
+  // The axios-shaped response.status is gone; the status is on the error itself.
+  expect((error as { status?: number }).status).toBe(status);
 }
 
-function signedInTransport(failure: AxiosError): HttpTransport {
+function signedInTransport(failure: TransportError): Transport {
   return {
-    async get() { throw failure; },
-    async post<T>(url: string) {
-      if (url === "/Users/AuthenticateByName") {
-        return { data: { AccessToken: CANARY, User: { Id: "user-1", Name: "Louise" } } as T };
-      }
+    async signIn(_request: SignInRequest): Promise<SignInResult> {
+      return { session: "session-1", userId: "user-1", userName: "Louise" };
+    },
+    async request(_request: TransportRequest): Promise<TransportResponse> {
       throw failure;
     },
-    async delete() { throw failure; },
+    async endSession(): Promise<void> {
+      throw failure;
+    },
   };
 }
 
@@ -110,7 +102,7 @@ const cases = [
 describe("errors leaving a signed-in gateway", () => {
   for (const [kind, status] of cases) {
     it(`carry no token, config, or request for ${kind}`, async () => {
-      const gateway = new JellyfinGateway(SERVER, webCrypto, signedInTransport(axiosFailure(kind)));
+      const gateway = new JellyfinGateway(SERVER, webCrypto, signedInTransport(transportFailure(kind)));
       await gateway.login("Louise", "password");
       const calls: Array<() => Promise<unknown>> = [
         () => gateway.resumeItems(),
@@ -132,7 +124,7 @@ describe("errors leaving a signed-in gateway", () => {
 describe("the coordinator PlaybackInfo failure", () => {
   it("carries no token or request internals", async () => {
     const gateway = {
-      createPlaybackPlan: vi.fn(async () => { throw axiosFailure("500"); }),
+      createPlaybackPlan: vi.fn(async () => { throw transportFailure("500"); }),
       reportStart: vi.fn(),
       reportProgress: vi.fn(),
       reportStopped: vi.fn(),
@@ -152,7 +144,7 @@ describe("the coordinator PlaybackInfo failure", () => {
 
 describe("failureAction", () => {
   it("keeps the transport kind and hides the message", () => {
-    const action = failureAction(axiosFailure("500"));
+    const action = failureAction(transportFailure("500"));
     expect(action).toEqual({ type: "failure", message: "Jellyfin request failed.", kind: "server" });
   });
 

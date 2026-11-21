@@ -77,6 +77,27 @@ describe("FetchTransport sign-in", () => {
     expect(result.session).not.toContain("tok");
   });
 
+  it("sends the tokenless header with the client identity it was given and the DeviceId of the sign-in", async () => {
+    const server = await listen();
+    const identities = [
+      { version: "0.1.0", deviceName: "Octave Linux", device: "Octave%20Linux", versionText: "0.1.0" },
+      { version: "9.8.7", deviceName: "Octave macOS", device: "Octave%20macOS", versionText: "9.8.7" },
+    ];
+    for (const identity of identities) {
+      const adapter = new FetchTransport({ client: { version: identity.version, deviceName: identity.deviceName }, crypto: webCrypto, clock: systemClock });
+      const session = await signIn(adapter, server);
+      const login = seen.at(-1)!;
+      expect(login.headers.authorization).toMatch(/^MediaBrowser /);
+      expect(login.headers.authorization).toContain('Client="Octave"');
+      expect(login.headers.authorization).toContain(`Device="${identity.device}"`);
+      expect(login.headers.authorization).toContain('DeviceId="device-1"');
+      expect(login.headers.authorization).toContain(`Version="${identity.versionText}"`);
+      expect(login.headers.authorization).toContain('Token=""');
+      expect(adapter.authorizationHeader(session)).toContain(`Version="${identity.versionText}"`);
+      expect(adapter.authorizationHeader(session)).toContain(`Device="${identity.device}"`);
+    }
+  });
+
   it("posts the Quick Connect secret", async () => {
     const server = await listen();
     await transport().signIn({ server, deviceId: "device-1", credential: { kind: "quick-connect", secret: "qc" }, timeoutMs: 5_000 });
