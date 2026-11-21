@@ -108,6 +108,16 @@ describe("check-red", () => {
     expect(r.json.problems.join("\n")).toMatch(/src-foo\.test\.ts.*not in the manifest's files/);
   });
 
+  it("--expect green ignores what later commits changed: only the freeze commit must list its files", () => {
+    const dir = setup([{ item: 1, run: PASS }, { item: 2, run: PASS }]);
+    writeFileSync(join(dir, "impl.ts"), "// implementation\n");
+    git(dir, "add", "-A");
+    git(dir, "commit", "-q", "-m", "implement");
+    const r = run(dir, "--expect", "green");
+    expect(r.json.problems).toEqual([]);
+    expect(r.status).toBe(0);
+  });
+
   it("refuses an unknown --expect", () => {
     expect(run(setup([{ item: 1, run: PASS }, { item: 2, run: PASS }]), "--expect", "blue").status).toBe(2);
   });

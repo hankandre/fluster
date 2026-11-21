@@ -238,6 +238,12 @@ test('readGate takes the last JSON line even when ERROR lines follow it', () => 
   assert.equal(readGate({ exitCode: 1, output: 'ERROR only\nmore', deniedCommands: [] }), null);
 });
 
+test('the gate prompt asks for the whole output, so the JSON line is never dropped for a trailing ERROR line', () => {
+  const prompt = between('const gate = (command, label, phase) =>', 'const runGate');
+  assert.match(prompt, /everything it printed/);
+  assert.doesNotMatch(prompt, /last line/);
+});
+
 test('the CI fix does not push, and the Product Owner pass cleans up on every exit but a merge', () => {
   const ciFix = between('const fixedRun = await guarded', "if (fixed && (fixed.ciOnly");
   assert.match(ciFix, /Do not push/);

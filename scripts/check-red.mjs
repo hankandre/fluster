@@ -108,7 +108,8 @@ export function checkRed({ id, repo, expect }) {
       result.problems.push(`ERROR red: ${path} is not committed at HEAD; commit the tests and the manifest first`);
     }
   }
-  for (const path of unlistedFreezePaths(repo, manifestPath, manifest.files)) {
+  // Only the red gate runs at the freeze commit; at the green gate HEAD is a later commit.
+  for (const path of expect === "red" ? unlistedFreezePaths(repo, manifestPath, manifest.files) : []) {
     result.problems.push(`ERROR red: ${path} was changed by the freeze commit but is not in the manifest's files, so it would not be frozen; list it or leave it out of that commit`);
   }
   for (const entry of manifest.items) {
