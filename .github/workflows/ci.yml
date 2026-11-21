@@ -33,6 +33,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0 # pnpm lint:flow reads the history back to origin/main
       - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
         with:
           version: 11.3.0
@@ -45,6 +46,7 @@ jobs:
       - run: pnpm lint:boundaries
       - run: pnpm lint
       - run: pnpm lint:ghost-terms
+      - run: pnpm lint:flow
       - run: pnpm test
       - run: pnpm typecheck
       - run: pnpm test:workflow
