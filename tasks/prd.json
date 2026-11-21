@@ -569,10 +569,10 @@
             "This is the only task in progress while it is open, and it lands as one PR"
           ],
           "verify": "pnpm --filter @octave/core test",
-          "status": "in_progress",
+          "status": "done",
           "owner": "native-engineer",
-          "passes": false,
-          "evidence": "commit 3859cb9 (task/T2-02; move commit 0686ee8 is 287 R100 only). pnpm check exit 0: core 54 files/1373 tests (= baseline), root 13/252 (baseline 12/248 + 4 new). check-red --expect green: items 1-3 green, 0 problems. lint:boundaries 43/43 under packages/core/src; ESLint lints 97 files, window probe fails. test:tripwire passed on Jellyfin 10.11.7 + 12.4.0. git log --follow reaches pre-move commits. Item 5: only owner T0 spikes in progress (decisions-T2-02.md). No device, Android or Jellyscale run (no app or native code)."
+          "passes": true,
+          "evidence": "PR #235, head 55fa869 (move commit 0686ee8: 287 R100, merge with commits kept). CI run 44871335931 green: checks, tripwire (Jellyfin 10.11.7 + 12.4.0), dependency-review. pnpm check exit 0: core 54 files/1373 tests (= baseline), root 13/252; lint:boundaries 43/43 under packages/core/src; lint:flow 0 frozen changes. git log --follow reaches pre-move commits. Item 5: only owner T0 spikes in progress. No device/Android/Jellyscale run. Dependabot coverage of packages/core checked after merge."
         },
         {
           "id": "T2-03",
