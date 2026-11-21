@@ -20,7 +20,7 @@ description: Find and fix drift between Octave's docs and code. Use weekly, afte
 
 - Use Sonnet for fixes.
 - Change the doc when the code is right.
-- Append a backlog entry when the code is wrong.
+- Append an entry to `tasks/backlog.jsonl` when the code is wrong.
 - Open one small PR per drift.
 - Never mix gardening with feature work.
 - Never rewrite docs for style.

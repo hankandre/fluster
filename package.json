@@ -17,6 +17,7 @@
     "samples:generate": "bash scripts/generate-samples.sh",
     "lint": "node --import ./scripts/typescript-6-resolve.mjs node_modules/eslint/bin/eslint.js --max-warnings 0 src",
     "lint:boundaries": "node scripts/lint-boundaries.mjs",
+    "lint:backlog": "node scripts/check-backlog.mjs",
     "lint:ghost-terms": "node scripts/check-ghost-terms.mjs",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.core.json",
     "check": "pnpm lint:boundaries && pnpm lint && pnpm lint:ghost-terms && pnpm test && pnpm typecheck && pnpm test:workflow"
