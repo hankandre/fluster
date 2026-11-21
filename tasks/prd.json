@@ -427,10 +427,10 @@
             "tasks/backlog.md is removed and the rule files point at the new file"
           ],
           "verify": "pnpm check",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "commit a8e6ce7: backlog.jsonl (93 lines), .gitattributes merge=union, scripts/check-backlog.mjs validator inside pnpm test; backlog.md removed. Buckets of 306: carried 89, closed 91, desktop-only 126. pnpm check green (1546 tests)."
+          "passes": true,
+          "evidence": "commit a8e6ce7: backlog.jsonl (93 lines), .gitattributes merge=union, scripts/check-backlog.mjs validator inside pnpm test; backlog.md removed. Buckets of 306: carried 89, closed 91, desktop-only 126. Review lows logged in docs/specs/T1-10.md. pnpm check green (1546 tests, 21 node tests). PR not yet opened."
         },
         {
           "id": "T1-11",
