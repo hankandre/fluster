@@ -71,6 +71,17 @@ const conversionCases = [
   { ...sample("multitrack"), file: "conversion-multitrack-audio-pick-force-fallback", audioStreamIndex: 2, namesSource: true, enableDirectPlay: false },
   { ...sample("multitrack"), file: "conversion-multitrack-audio-pick-missing", audioStreamIndex: 9, namesSource: true },
   { ...sample("bluray-folder"), file: "conversion-bluray-folder-no-conversion-user", restricted: true },
+  // T2-07: the forced conversion for a device that cannot play the source. EnableDirectPlay and
+  // AllowVideoStreamCopy are false; the audio case also turns audio stream copy off. The first
+  // answers are conversion-hevc-hdr10, conversion-h264 and conversion-multitrack. No AudioStreamIndex.
+  ...["hevc-hdr10", "h264"].map((name) => ({
+    ...sample(name),
+    file: `device-conversion-${name}`,
+    enableDirectPlay: false,
+    allowVideoStreamCopy: false,
+    namesSource: true,
+  })),
+  { ...sample("multitrack"), file: "device-conversion-multitrack-audio", enableDirectPlay: false, allowVideoStreamCopy: false, allowAudioStreamCopy: false, namesSource: true },
   { ...sample("h264"), file: "conversion-h264-no-conversion-user", restricted: true },
   { ...sample("h264"), file: "conversion-h264-limited-no-conversion-user", restricted: true, maxStreamingBitrate: LIMITED_BITRATE },
 ];
@@ -162,7 +173,12 @@ function requestFor(userId, withProfile, mediaSourceId) {
 }
 
 function conversionRequestFor(userId, target, mediaSourceId) {
-  const flags = { ...CONVERSION_FLAGS, EnableDirectPlay: target.enableDirectPlay ?? true };
+  const flags = {
+    ...CONVERSION_FLAGS,
+    EnableDirectPlay: target.enableDirectPlay ?? true,
+    AllowVideoStreamCopy: target.allowVideoStreamCopy ?? true,
+    AllowAudioStreamCopy: target.allowAudioStreamCopy ?? true,
+  };
   const maxStreamingBitrate = target.maxStreamingBitrate ?? 1000000000;
   const body = {
     ...flags,
@@ -240,7 +256,7 @@ for (const server of servers) {
       save(target.file, await call(base, restricted.token, "POST", `/Items/${target.item.Id}/PlaybackInfo`, request));
       continue;
     }
-    if (target.file.startsWith("conversion-")) {
+    if (target.file.startsWith("conversion-") || target.file.startsWith("device-conversion-")) {
       const request = conversionRequestFor(userId, target, target.namesSource ? target.item.MediaSources?.[0]?.Id : undefined);
       save(target.file, await call(base, token, "POST", `/Items/${target.item.Id}/PlaybackInfo`, request));
       continue;

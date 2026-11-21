@@ -3,7 +3,7 @@ import { decideSource, selectSource, type SourceContext } from "./source-accepta
 import type { MediaSourceDto } from "./types";
 
 const ITEM = "0123456789abcdef0123456789abcdef";
-const context: SourceContext = { serverUrl: "https://media.test", itemId: ITEM };
+const context: SourceContext = { serverUrl: "https://media.test", itemId: ITEM, capabilities: "full" };
 
 const playable: MediaSourceDto = {
   Id: "source-1",

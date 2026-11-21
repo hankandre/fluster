@@ -1,0 +1,35 @@
+{
+  "task": "T2-07",
+  "files": [
+    "packages/core/src/domain/device-capabilities.test.ts",
+    "packages/core/src/domain/conversion-copy-device.test.ts",
+    "packages/core/src/jellyfin/device-test-support.ts",
+    "packages/core/src/jellyfin/source-acceptance-device.test.ts",
+    "packages/core/src/jellyfin/device-conversion-negotiation.test.ts",
+    "packages/core/src/jellyfin/device-conversion-fixtures.test.ts",
+    "packages/core/src/jellyfin/device-negotiation-unchanged.test.ts",
+    "packages/core/src/jellyfin/device-profile-unchanged.test.ts",
+    "packages/core/src/jellyfin/source-acceptance.test.ts",
+    "packages/core/src/jellyfin/audio-pick-fixtures.test.ts",
+    "packages/core/tests/fixtures/jellyfin/10.11.7/device-conversion-h264.json",
+    "packages/core/tests/fixtures/jellyfin/10.11.7/device-conversion-hevc-hdr10.json",
+    "packages/core/tests/fixtures/jellyfin/10.11.7/device-conversion-multitrack-audio.json",
+    "packages/core/tests/fixtures/jellyfin/12.4.0/device-conversion-h264.json",
+    "packages/core/tests/fixtures/jellyfin/12.4.0/device-conversion-hevc-hdr10.json",
+    "packages/core/tests/fixtures/jellyfin/12.4.0/device-conversion-multitrack-audio.json",
+    "packages/core/tests/fixtures/jellyscale/b920b193cd6f/device-conversion-h264.json",
+    "tests/integration/record-fixtures.mjs",
+    "tests/integration/record-jellyscale-fixtures.ts"
+  ],
+  "items": [
+    {"item": 1, "run": ["pnpm", "--filter", "@octave/core", "exec", "vitest", "run", "src/domain/device-capabilities.test.ts", "src/jellyfin/source-acceptance-device.test.ts", "-t", "T2-07 item 1:"]},
+    {"item": 2, "run": ["pnpm", "--filter", "@octave/core", "exec", "vitest", "run", "src/jellyfin/device-conversion-negotiation.test.ts", "-t", "T2-07 item 2:"]},
+    {"item": 3, "run": ["pnpm", "--filter", "@octave/core", "exec", "vitest", "run", "src/jellyfin/device-conversion-negotiation.test.ts", "src/domain/conversion-copy-device.test.ts", "-t", "T2-07 item 3:"]},
+    {"item": 4, "run": ["pnpm", "--filter", "@octave/core", "exec", "vitest", "run", "src/jellyfin/device-negotiation-unchanged.test.ts", "-t", "T2-07 item 4:"]},
+    {"item": 5, "run": ["pnpm", "--filter", "@octave/core", "exec", "vitest", "run", "src/jellyfin/device-conversion-negotiation.test.ts", "src/domain/conversion-copy-device.test.ts", "-t", "T2-07 item 5:"]},
+    {"item": 6, "run": ["pnpm", "--filter", "@octave/core", "exec", "vitest", "run", "src/jellyfin/device-profile-unchanged.test.ts", "-t", "T2-07 item 6:"]},
+    {"item": 7, "run": ["pnpm", "--filter", "@octave/core", "exec", "vitest", "run", "src/jellyfin/device-conversion-negotiation.test.ts", "src/jellyfin/device-conversion-fixtures.test.ts", "-t", "T2-07 item 7:"]},
+    {"item": 8, "run": ["pnpm", "--filter", "@octave/core", "exec", "vitest", "run", "src/jellyfin/device-conversion-negotiation.test.ts", "-t", "T2-07 item 8:"]},
+    {"item": 9, "gate": "review", "why": "Decision 0002's flag table and invariant I1 are amended in the same PR; a reviewer checks the doc edits."}
+  ]
+}
