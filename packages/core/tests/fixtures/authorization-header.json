@@ -1,0 +1,54 @@
+{
+  "note": "Authorization header values built by @jellyfin/sdk 1.0.2 (lib/utils/authentication.js, Jellyfin.createApi(...).authorizationHeader) on origin/main 01724f3c, recorded 2026-11-21. Read by packages/core/src/jellyfin/authorization-header.test.ts (T2-04) and, later, by the Kotlin header test (T3-03). `expected` is the header with `token`; `expectedWithoutToken` is the sign-in header with Token=\"\". Do not edit by hand.",
+  "vectors": [
+    {
+      "name": "typical",
+      "client": "Octave",
+      "version": "0.1.0",
+      "device": "Octave Android TV",
+      "deviceId": "07bce1a97d44b7008418adc02ad74694142287bef4bd4007377574dc451aaf78",
+      "token": "0123456789abcdef0123456789abcdef",
+      "expected": "MediaBrowser Client=\"Octave\", Device=\"Octave%20Android%20TV\", DeviceId=\"07bce1a97d44b7008418adc02ad74694142287bef4bd4007377574dc451aaf78\", Version=\"0.1.0\", Token=\"0123456789abcdef0123456789abcdef\"",
+      "expectedWithoutToken": "MediaBrowser Client=\"Octave\", Device=\"Octave%20Android%20TV\", DeviceId=\"07bce1a97d44b7008418adc02ad74694142287bef4bd4007377574dc451aaf78\", Version=\"0.1.0\", Token=\"\""
+    },
+    {
+      "name": "special-characters",
+      "client": "Octave",
+      "version": "1.2.3-beta+5",
+      "device": "Salon d’Été \"TV\", 4K (a*b~c!) it's",
+      "deviceId": "id with space/&=",
+      "token": "tok+en/=\"%é'",
+      "expected": "MediaBrowser Client=\"Octave\", Device=\"Salon%20d%E2%80%99%C3%89t%C3%A9%20%22TV%22%2C%204K%20(a*b~c!)%20it's\", DeviceId=\"id%20with%20space%2F%26%3D\", Version=\"1.2.3-beta%2B5\", Token=\"tok%2Ben%2F%3D%22%25%C3%A9'\"",
+      "expectedWithoutToken": "MediaBrowser Client=\"Octave\", Device=\"Salon%20d%E2%80%99%C3%89t%C3%A9%20%22TV%22%2C%204K%20(a*b~c!)%20it's\", DeviceId=\"id%20with%20space%2F%26%3D\", Version=\"1.2.3-beta%2B5\", Token=\"\""
+    },
+    {
+      "name": "probe-identity",
+      "client": "Octave",
+      "version": "0.0.0",
+      "device": "Octave",
+      "deviceId": "octave-unauthenticated",
+      "expected": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"octave-unauthenticated\", Version=\"0.0.0\", Token=\"\"",
+      "expectedWithoutToken": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"octave-unauthenticated\", Version=\"0.0.0\", Token=\"\""
+    },
+    {
+      "name": "quick-connect-device",
+      "client": "Octave",
+      "version": "0.1.0",
+      "device": "Living room Shield",
+      "deviceId": "a1b2c3d4e5f60718293a4b5c6d7e8f900112233445566778899aabbccddeeff0",
+      "token": "f00dfeed",
+      "expected": "MediaBrowser Client=\"Octave\", Device=\"Living%20room%20Shield\", DeviceId=\"a1b2c3d4e5f60718293a4b5c6d7e8f900112233445566778899aabbccddeeff0\", Version=\"0.1.0\", Token=\"f00dfeed\"",
+      "expectedWithoutToken": "MediaBrowser Client=\"Octave\", Device=\"Living%20room%20Shield\", DeviceId=\"a1b2c3d4e5f60718293a4b5c6d7e8f900112233445566778899aabbccddeeff0\", Version=\"0.1.0\", Token=\"\""
+    },
+    {
+      "name": "astral-and-controls",
+      "client": "Octave",
+      "version": "2.0.0-rc.1+build.7",
+      "device": "Hà Nội 📺 é́ tab\there",
+      "deviceId": "dev:id;1,2",
+      "token": "t0ken-😀-ünï",
+      "expected": "MediaBrowser Client=\"Octave\", Device=\"H%C3%A0%20N%E1%BB%99i%20%F0%9F%93%BA%20%C3%A9%CC%81%20tab%09here\", DeviceId=\"dev%3Aid%3B1%2C2\", Version=\"2.0.0-rc.1%2Bbuild.7\", Token=\"t0ken-%F0%9F%98%80-%C3%BCn%C3%AF\"",
+      "expectedWithoutToken": "MediaBrowser Client=\"Octave\", Device=\"H%C3%A0%20N%E1%BB%99i%20%F0%9F%93%BA%20%C3%A9%CC%81%20tab%09here\", DeviceId=\"dev%3Aid%3B1%2C2\", Version=\"2.0.0-rc.1%2Bbuild.7\", Token=\"\""
+    }
+  ]
+}

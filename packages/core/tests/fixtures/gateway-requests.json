@@ -1,0 +1,5563 @@
+{
+ "note": "Requests the axios gateway (axios 1.21.1, @jellyfin/sdk 1.0.2) sent on origin/main 01724f3c, recorded 2026-11-21 before T2-04 changed anything, by driving each scenario of packages/core/src/jellyfin/gateway-wire-golden.test.ts against a local server that reports server Id golden-server-id. `query` is the raw query string as it arrived; `pairs` is the same decoded in order; `body` names an entry of `bodies` (the request text, byte for byte). trickplayTile is not recorded: T2-04 removes it. Do not edit by hand.",
+ "bodies": {
+  "b1": "{\"Username\":\"golden-user\",\"Pw\":\"golden-password\"}",
+  "b2": "{\"Secret\":\"golden-qc-secret\"}",
+  "b3": "{\"AudioLanguagePreference\":\"fra\",\"PlayDefaultAudioTrack\":false,\"SubtitleLanguagePreference\":\"spa\",\"SubtitleMode\":\"Default\",\"EnableNextEpisodeAutoPlay\":true,\"OrderedViews\":[\"view-1\"]}",
+  "b4": "{\"ItemId\":\"item-golden\",\"MediaSourceId\":\"source-golden\",\"PlaySessionId\":\"play-session-golden\",\"PositionTicks\":125000000,\"IsPaused\":false,\"IsMuted\":false,\"VolumeLevel\":80,\"AudioStreamIndex\":1,\"SubtitleStreamIndex\":2,\"CanSeek\":true,\"PlayMethod\":\"DirectPlay\"}",
+  "b5": "{\"Failed\":false,\"ItemId\":\"item-golden\",\"MediaSourceId\":\"source-golden\",\"PlaySessionId\":\"play-session-golden\",\"PositionTicks\":125000000,\"IsPaused\":false,\"IsMuted\":false,\"VolumeLevel\":80,\"AudioStreamIndex\":1,\"SubtitleStreamIndex\":2,\"CanSeek\":true,\"PlayMethod\":\"DirectPlay\"}",
+  "b6": "{\"Failed\":true,\"ItemId\":\"item-golden\",\"MediaSourceId\":\"source-golden\",\"PlaySessionId\":\"play-session-golden\",\"PositionTicks\":125000000,\"IsPaused\":false,\"IsMuted\":false,\"VolumeLevel\":80,\"AudioStreamIndex\":1,\"SubtitleStreamIndex\":2,\"CanSeek\":true,\"PlayMethod\":\"DirectPlay\"}",
+  "b7": "{\"EnableDirectPlay\":true,\"EnableDirectStream\":true,\"EnableTranscoding\":true,\"AllowVideoStreamCopy\":true,\"AllowAudioStreamCopy\":true,\"AutoOpenLiveStream\":false,\"AlwaysBurnInSubtitleWhenTranscoding\":false,\"UserId\":\"golden-user-id\",\"StartTimeTicks\":123456789,\"MaxStreamingBitrate\":1000000000,\"DeviceProfile\":{\"Name\":\"Octave\",\"MaxStreamingBitrate\":1000000000,\"MaxStaticBitrate\":1000000000,\"DirectPlayProfiles\":[{\"Type\":\"Video\"},{\"Type\":\"Audio\"}],\"TranscodingProfiles\":[{\"Type\":\"Video\",\"Container\":\"mp4\",\"Protocol\":\"hls\",\"Context\":\"Streaming\",\"VideoCodec\":\"h264,hevc,av1,vp9\",\"AudioCodec\":\"aac,ac3,eac3,opus,flac,mp3\",\"EnableSubtitlesInManifest\":false},{\"Type\":\"Audio\",\"Container\":\"mp4\",\"Protocol\":\"hls\",\"Context\":\"Streaming\",\"AudioCodec\":\"aac\"}],\"ContainerProfiles\":[],\"CodecProfiles\":[],\"SubtitleProfiles\":[{\"Format\":\"srt\",\"Method\":\"External\"},{\"Format\":\"ass\",\"Method\":\"External\"},{\"Format\":\"ssa\",\"Method\":\"External\"},{\"Format\":\"vtt\",\"Method\":\"External\"},{\"Format\":\"sub\",\"Method\":\"External\"},{\"Format\":\"pgssub\",\"Method\":\"External\"},{\"Format\":\"srt\",\"Method\":\"Embed\"},{\"Format\":\"ass\",\"Method\":\"Embed\"},{\"Format\":\"ssa\",\"Method\":\"Embed\"},{\"Format\":\"pgssub\",\"Method\":\"Embed\"},{\"Format\":\"dvdsub\",\"Method\":\"Embed\"},{\"Format\":\"vtt\",\"Method\":\"Embed\"}]}}",
+  "b8": "{\"EnableDirectPlay\":true,\"EnableDirectStream\":true,\"EnableTranscoding\":true,\"AllowVideoStreamCopy\":true,\"AllowAudioStreamCopy\":true,\"AutoOpenLiveStream\":false,\"AlwaysBurnInSubtitleWhenTranscoding\":false,\"UserId\":\"golden-user-id\",\"StartTimeTicks\":0,\"MaxStreamingBitrate\":1000000000,\"AudioStreamIndex\":2,\"SubtitleStreamIndex\":-1,\"MediaSourceId\":\"item-h264\",\"DeviceProfile\":{\"Name\":\"Octave\",\"MaxStreamingBitrate\":1000000000,\"MaxStaticBitrate\":1000000000,\"DirectPlayProfiles\":[{\"Type\":\"Video\"},{\"Type\":\"Audio\"}],\"TranscodingProfiles\":[{\"Type\":\"Video\",\"Container\":\"mp4\",\"Protocol\":\"hls\",\"Context\":\"Streaming\",\"VideoCodec\":\"h264,hevc,av1,vp9\",\"AudioCodec\":\"aac,ac3,eac3,opus,flac,mp3\",\"EnableSubtitlesInManifest\":false},{\"Type\":\"Audio\",\"Container\":\"mp4\",\"Protocol\":\"hls\",\"Context\":\"Streaming\",\"AudioCodec\":\"aac\"}],\"ContainerProfiles\":[],\"CodecProfiles\":[],\"SubtitleProfiles\":[{\"Format\":\"srt\",\"Method\":\"External\"},{\"Format\":\"ass\",\"Method\":\"External\"},{\"Format\":\"ssa\",\"Method\":\"External\"},{\"Format\":\"vtt\",\"Method\":\"External\"},{\"Format\":\"sub\",\"Method\":\"External\"},{\"Format\":\"pgssub\",\"Method\":\"External\"},{\"Format\":\"srt\",\"Method\":\"Embed\"},{\"Format\":\"ass\",\"Method\":\"Embed\"},{\"Format\":\"ssa\",\"Method\":\"Embed\"},{\"Format\":\"pgssub\",\"Method\":\"Embed\"},{\"Format\":\"dvdsub\",\"Method\":\"Embed\"},{\"Format\":\"vtt\",\"Method\":\"Embed\"}]}}",
+  "b9": "{\"EnableDirectPlay\":true,\"EnableDirectStream\":true,\"EnableTranscoding\":true,\"AllowVideoStreamCopy\":true,\"AllowAudioStreamCopy\":true,\"AutoOpenLiveStream\":false,\"AlwaysBurnInSubtitleWhenTranscoding\":false,\"UserId\":\"golden-user-id\",\"StartTimeTicks\":0,\"MaxStreamingBitrate\":1000000000,\"DeviceProfile\":{\"Name\":\"Octave\",\"MaxStreamingBitrate\":1000000000,\"MaxStaticBitrate\":1000000000,\"DirectPlayProfiles\":[{\"Type\":\"Video\"},{\"Type\":\"Audio\"}],\"TranscodingProfiles\":[{\"Type\":\"Video\",\"Container\":\"mp4\",\"Protocol\":\"hls\",\"Context\":\"Streaming\",\"VideoCodec\":\"h264,hevc,av1,vp9\",\"AudioCodec\":\"aac,ac3,eac3,opus,flac,mp3\",\"EnableSubtitlesInManifest\":false},{\"Type\":\"Audio\",\"Container\":\"mp4\",\"Protocol\":\"hls\",\"Context\":\"Streaming\",\"AudioCodec\":\"aac\"}],\"ContainerProfiles\":[],\"CodecProfiles\":[],\"SubtitleProfiles\":[{\"Format\":\"srt\",\"Method\":\"External\"},{\"Format\":\"ass\",\"Method\":\"External\"},{\"Format\":\"ssa\",\"Method\":\"External\"},{\"Format\":\"vtt\",\"Method\":\"External\"},{\"Format\":\"sub\",\"Method\":\"External\"},{\"Format\":\"pgssub\",\"Method\":\"External\"},{\"Format\":\"srt\",\"Method\":\"Embed\"},{\"Format\":\"ass\",\"Method\":\"Embed\"},{\"Format\":\"ssa\",\"Method\":\"Embed\"},{\"Format\":\"pgssub\",\"Method\":\"Embed\"},{\"Format\":\"dvdsub\",\"Method\":\"Embed\"},{\"Format\":\"vtt\",\"Method\":\"Embed\"}]}}",
+  "b10": "{\"EnableDirectPlay\":false,\"EnableDirectStream\":true,\"EnableTranscoding\":true,\"AllowVideoStreamCopy\":true,\"AllowAudioStreamCopy\":true,\"AutoOpenLiveStream\":false,\"AlwaysBurnInSubtitleWhenTranscoding\":false,\"UserId\":\"golden-user-id\",\"StartTimeTicks\":0,\"MaxStreamingBitrate\":1000000000,\"MediaSourceId\":\"item-iso\",\"DeviceProfile\":{\"Name\":\"Octave\",\"MaxStreamingBitrate\":1000000000,\"MaxStaticBitrate\":1000000000,\"DirectPlayProfiles\":[{\"Type\":\"Video\"},{\"Type\":\"Audio\"}],\"TranscodingProfiles\":[{\"Type\":\"Video\",\"Container\":\"mp4\",\"Protocol\":\"hls\",\"Context\":\"Streaming\",\"VideoCodec\":\"h264,hevc,av1,vp9\",\"AudioCodec\":\"aac,ac3,eac3,opus,flac,mp3\",\"EnableSubtitlesInManifest\":false},{\"Type\":\"Audio\",\"Container\":\"mp4\",\"Protocol\":\"hls\",\"Context\":\"Streaming\",\"AudioCodec\":\"aac\"}],\"ContainerProfiles\":[],\"CodecProfiles\":[],\"SubtitleProfiles\":[{\"Format\":\"srt\",\"Method\":\"External\"},{\"Format\":\"ass\",\"Method\":\"External\"},{\"Format\":\"ssa\",\"Method\":\"External\"},{\"Format\":\"vtt\",\"Method\":\"External\"},{\"Format\":\"sub\",\"Method\":\"External\"},{\"Format\":\"pgssub\",\"Method\":\"External\"},{\"Format\":\"srt\",\"Method\":\"Embed\"},{\"Format\":\"ass\",\"Method\":\"Embed\"},{\"Format\":\"ssa\",\"Method\":\"Embed\"},{\"Format\":\"pgssub\",\"Method\":\"Embed\"},{\"Format\":\"dvdsub\",\"Method\":\"Embed\"},{\"Format\":\"vtt\",\"Method\":\"Embed\"}]}}",
+  "b11": "{\"EnableDirectPlay\":true,\"EnableDirectStream\":true,\"EnableTranscoding\":true,\"AllowVideoStreamCopy\":true,\"AllowAudioStreamCopy\":true,\"AutoOpenLiveStream\":false,\"AlwaysBurnInSubtitleWhenTranscoding\":false,\"UserId\":\"golden-user-id\",\"StartTimeTicks\":0,\"MaxStreamingBitrate\":1000000000,\"AudioStreamIndex\":1,\"MediaSourceId\":\"item-multitrack\",\"DeviceProfile\":{\"Name\":\"Octave\",\"MaxStreamingBitrate\":1000000000,\"MaxStaticBitrate\":1000000000,\"DirectPlayProfiles\":[{\"Type\":\"Video\"},{\"Type\":\"Audio\"}],\"TranscodingProfiles\":[{\"Type\":\"Video\",\"Container\":\"mp4\",\"Protocol\":\"hls\",\"Context\":\"Streaming\",\"VideoCodec\":\"h264,hevc,av1,vp9\",\"AudioCodec\":\"aac,ac3,eac3,opus,flac,mp3\",\"EnableSubtitlesInManifest\":false},{\"Type\":\"Audio\",\"Container\":\"mp4\",\"Protocol\":\"hls\",\"Context\":\"Streaming\",\"AudioCodec\":\"aac\"}],\"ContainerProfiles\":[],\"CodecProfiles\":[],\"SubtitleProfiles\":[{\"Format\":\"srt\",\"Method\":\"External\"},{\"Format\":\"ass\",\"Method\":\"External\"},{\"Format\":\"ssa\",\"Method\":\"External\"},{\"Format\":\"vtt\",\"Method\":\"External\"},{\"Format\":\"sub\",\"Method\":\"External\"},{\"Format\":\"pgssub\",\"Method\":\"External\"},{\"Format\":\"srt\",\"Method\":\"Embed\"},{\"Format\":\"ass\",\"Method\":\"Embed\"},{\"Format\":\"ssa\",\"Method\":\"Embed\"},{\"Format\":\"pgssub\",\"Method\":\"Embed\"},{\"Format\":\"dvdsub\",\"Method\":\"Embed\"},{\"Format\":\"vtt\",\"Method\":\"Embed\"}]}}",
+  "b12": "{\"EnableDirectPlay\":true,\"EnableDirectStream\":true,\"EnableTranscoding\":true,\"AllowVideoStreamCopy\":true,\"AllowAudioStreamCopy\":true,\"AutoOpenLiveStream\":false,\"AlwaysBurnInSubtitleWhenTranscoding\":false,\"UserId\":\"golden-user-id\",\"StartTimeTicks\":0,\"MaxStreamingBitrate\":1000000000,\"MediaSourceId\":\"item-multitrack\",\"DeviceProfile\":{\"Name\":\"Octave\",\"MaxStreamingBitrate\":1000000000,\"MaxStaticBitrate\":1000000000,\"DirectPlayProfiles\":[{\"Type\":\"Video\"},{\"Type\":\"Audio\"}],\"TranscodingProfiles\":[{\"Type\":\"Video\",\"Container\":\"mp4\",\"Protocol\":\"hls\",\"Context\":\"Streaming\",\"VideoCodec\":\"h264,hevc,av1,vp9\",\"AudioCodec\":\"aac,ac3,eac3,opus,flac,mp3\",\"EnableSubtitlesInManifest\":false},{\"Type\":\"Audio\",\"Container\":\"mp4\",\"Protocol\":\"hls\",\"Context\":\"Streaming\",\"AudioCodec\":\"aac\"}],\"ContainerProfiles\":[],\"CodecProfiles\":[],\"SubtitleProfiles\":[{\"Format\":\"srt\",\"Method\":\"External\"},{\"Format\":\"ass\",\"Method\":\"External\"},{\"Format\":\"ssa\",\"Method\":\"External\"},{\"Format\":\"vtt\",\"Method\":\"External\"},{\"Format\":\"sub\",\"Method\":\"External\"},{\"Format\":\"pgssub\",\"Method\":\"External\"},{\"Format\":\"srt\",\"Method\":\"Embed\"},{\"Format\":\"ass\",\"Method\":\"Embed\"},{\"Format\":\"ssa\",\"Method\":\"Embed\"},{\"Format\":\"pgssub\",\"Method\":\"Embed\"},{\"Format\":\"dvdsub\",\"Method\":\"Embed\"},{\"Format\":\"vtt\",\"Method\":\"Embed\"}]}}"
+ },
+ "scenarios": [
+  {
+   "name": "connect",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/System/Info/Public",
+     "query": "",
+     "pairs": [],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"octave-unauthenticated\", Version=\"0.0.0\", Token=\"\""
+    }
+   ]
+  },
+  {
+   "name": "login",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Users/AuthenticateByName",
+     "query": "",
+     "pairs": [],
+     "body": "b1",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"\""
+    }
+   ]
+  },
+  {
+   "name": "quickConnectEnabled",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/QuickConnect/Enabled",
+     "query": "",
+     "pairs": [],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"octave-unauthenticated\", Version=\"0.0.0\", Token=\"\""
+    }
+   ]
+  },
+  {
+   "name": "initiateQuickConnect",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/QuickConnect/Initiate",
+     "query": "",
+     "pairs": [],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"1b6b7ff7d19da7aea4b92953e702589a25620daf5561b32f46a68437cc7a21c6\", Version=\"0.0.0\", Token=\"\""
+    }
+   ]
+  },
+  {
+   "name": "pollQuickConnect",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/QuickConnect/Connect",
+     "query": "secret=golden-qc-secret",
+     "pairs": [
+      [
+       "secret",
+       "golden-qc-secret"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"1b6b7ff7d19da7aea4b92953e702589a25620daf5561b32f46a68437cc7a21c6\", Version=\"0.0.0\", Token=\"\""
+    }
+   ]
+  },
+  {
+   "name": "authenticateWithQuickConnect",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Users/AuthenticateWithQuickConnect",
+     "query": "",
+     "pairs": [],
+     "body": "b2",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"1b6b7ff7d19da7aea4b92953e702589a25620daf5561b32f46a68437cc7a21c6\", Version=\"0.0.0\", Token=\"\""
+    }
+   ]
+  },
+  {
+   "name": "logout",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Sessions/Logout",
+     "query": "",
+     "pairs": [],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "userViews",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/UserViews",
+     "query": "userId=golden-user-id",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "resumeItems",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/UserItems/Resume",
+     "query": "userId=golden-user-id&mediaTypes=Video&limit=16&enableUserData=true&enableTotalRecordCount=false&fields=PrimaryImageAspectRatio&imageTypeLimit=1&enableImageTypes=Primary,Backdrop,Thumb,Logo",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ],
+      [
+       "mediaTypes",
+       "Video"
+      ],
+      [
+       "limit",
+       "16"
+      ],
+      [
+       "enableUserData",
+       "true"
+      ],
+      [
+       "enableTotalRecordCount",
+       "false"
+      ],
+      [
+       "fields",
+       "PrimaryImageAspectRatio"
+      ],
+      [
+       "imageTypeLimit",
+       "1"
+      ],
+      [
+       "enableImageTypes",
+       "Primary,Backdrop,Thumb,Logo"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "nextUp",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/Shows/NextUp",
+     "query": "userId=golden-user-id&limit=16&enableRewatching=false&enableResumable=false&enableTotalRecordCount=false&fields=PrimaryImageAspectRatio,DateCreated&imageTypeLimit=1&enableImageTypes=Primary,Backdrop,Thumb,Logo",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ],
+      [
+       "limit",
+       "16"
+      ],
+      [
+       "enableRewatching",
+       "false"
+      ],
+      [
+       "enableResumable",
+       "false"
+      ],
+      [
+       "enableTotalRecordCount",
+       "false"
+      ],
+      [
+       "fields",
+       "PrimaryImageAspectRatio,DateCreated"
+      ],
+      [
+       "imageTypeLimit",
+       "1"
+      ],
+      [
+       "enableImageTypes",
+       "Primary,Backdrop,Thumb,Logo"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "recentlyPlayed",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/Items",
+     "query": "userId=golden-user-id&recursive=true&includeItemTypes=Movie,Episode&filters=IsPlayed&sortBy=DatePlayed&sortOrder=Descending&limit=100&enableUserData=true&enableImages=false&enableTotalRecordCount=false",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ],
+      [
+       "recursive",
+       "true"
+      ],
+      [
+       "includeItemTypes",
+       "Movie,Episode"
+      ],
+      [
+       "filters",
+       "IsPlayed"
+      ],
+      [
+       "sortBy",
+       "DatePlayed"
+      ],
+      [
+       "sortOrder",
+       "Descending"
+      ],
+      [
+       "limit",
+       "100"
+      ],
+      [
+       "enableUserData",
+       "true"
+      ],
+      [
+       "enableImages",
+       "false"
+      ],
+      [
+       "enableTotalRecordCount",
+       "false"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "similarItems",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/Items/item%2Fwith%20slash/Similar",
+     "query": "userId=golden-user-id&limit=12&enableUserData=true&enableTotalRecordCount=false&fields=PrimaryImageAspectRatio&imageTypeLimit=1&enableImageTypes=Primary,Backdrop,Thumb,Logo",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ],
+      [
+       "limit",
+       "12"
+      ],
+      [
+       "enableUserData",
+       "true"
+      ],
+      [
+       "enableTotalRecordCount",
+       "false"
+      ],
+      [
+       "fields",
+       "PrimaryImageAspectRatio"
+      ],
+      [
+       "imageTypeLimit",
+       "1"
+      ],
+      [
+       "enableImageTypes",
+       "Primary,Backdrop,Thumb,Logo"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "itemCollections",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/Items/item-1/Collections",
+     "query": "userId=golden-user-id&fields=PrimaryImageAspectRatio&imageTypeLimit=1&enableImageTypes=Primary,Backdrop,Thumb,Logo",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ],
+      [
+       "fields",
+       "PrimaryImageAspectRatio"
+      ],
+      [
+       "imageTypeLimit",
+       "1"
+      ],
+      [
+       "enableImageTypes",
+       "Primary,Backdrop,Thumb,Logo"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "collectionItems",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/Items",
+     "query": "userId=golden-user-id&parentId=collection-1&sortBy=PremiereDate,ProductionYear,SortName&sortOrder=Ascending&enableUserData=true&enableTotalRecordCount=false&fields=PrimaryImageAspectRatio&imageTypeLimit=1&enableImageTypes=Primary,Backdrop,Thumb,Logo",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ],
+      [
+       "parentId",
+       "collection-1"
+      ],
+      [
+       "sortBy",
+       "PremiereDate,ProductionYear,SortName"
+      ],
+      [
+       "sortOrder",
+       "Ascending"
+      ],
+      [
+       "enableUserData",
+       "true"
+      ],
+      [
+       "enableTotalRecordCount",
+       "false"
+      ],
+      [
+       "fields",
+       "PrimaryImageAspectRatio"
+      ],
+      [
+       "imageTypeLimit",
+       "1"
+      ],
+      [
+       "enableImageTypes",
+       "Primary,Backdrop,Thumb,Logo"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "latestInLibrary",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/Items/Latest",
+     "query": "userId=golden-user-id&parentId=library-1&limit=16&groupItems=true&fields=PrimaryImageAspectRatio&imageTypeLimit=1&enableImageTypes=Primary,Backdrop,Thumb,Logo",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ],
+      [
+       "parentId",
+       "library-1"
+      ],
+      [
+       "limit",
+       "16"
+      ],
+      [
+       "groupItems",
+       "true"
+      ],
+      [
+       "fields",
+       "PrimaryImageAspectRatio"
+      ],
+      [
+       "imageTypeLimit",
+       "1"
+      ],
+      [
+       "enableImageTypes",
+       "Primary,Backdrop,Thumb,Logo"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "libraryGenres",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/Genres",
+     "query": "userId=golden-user-id&parentId=library-1",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ],
+      [
+       "parentId",
+       "library-1"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "libraryItems",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/Items",
+     "query": "userId=golden-user-id&parentId=library-1&recursive=true&includeItemTypes=Movie,Series&sortBy=SortName&sortOrder=Ascending&startIndex=0&limit=25&enableUserData=true&enableTotalRecordCount=true&fields=PrimaryImageAspectRatio&imageTypeLimit=1&enableImageTypes=Primary,Backdrop,Thumb,Logo&filters=IsUnplayed,IsFavorite&genreIds=genre-1",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ],
+      [
+       "parentId",
+       "library-1"
+      ],
+      [
+       "recursive",
+       "true"
+      ],
+      [
+       "includeItemTypes",
+       "Movie,Series"
+      ],
+      [
+       "sortBy",
+       "SortName"
+      ],
+      [
+       "sortOrder",
+       "Ascending"
+      ],
+      [
+       "startIndex",
+       "0"
+      ],
+      [
+       "limit",
+       "25"
+      ],
+      [
+       "enableUserData",
+       "true"
+      ],
+      [
+       "enableTotalRecordCount",
+       "true"
+      ],
+      [
+       "fields",
+       "PrimaryImageAspectRatio"
+      ],
+      [
+       "imageTypeLimit",
+       "1"
+      ],
+      [
+       "enableImageTypes",
+       "Primary,Backdrop,Thumb,Logo"
+      ],
+      [
+       "filters",
+       "IsUnplayed,IsFavorite"
+      ],
+      [
+       "genreIds",
+       "genre-1"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "libraryItems (second page)",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/Items",
+     "query": "userId=golden-user-id&parentId=library-1&recursive=true&includeItemTypes=Movie&sortBy=DateCreated&sortOrder=Descending&startIndex=24&limit=25&enableUserData=true&enableTotalRecordCount=false&fields=PrimaryImageAspectRatio&imageTypeLimit=1&enableImageTypes=Primary,Backdrop,Thumb,Logo",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ],
+      [
+       "parentId",
+       "library-1"
+      ],
+      [
+       "recursive",
+       "true"
+      ],
+      [
+       "includeItemTypes",
+       "Movie"
+      ],
+      [
+       "sortBy",
+       "DateCreated"
+      ],
+      [
+       "sortOrder",
+       "Descending"
+      ],
+      [
+       "startIndex",
+       "24"
+      ],
+      [
+       "limit",
+       "25"
+      ],
+      [
+       "enableUserData",
+       "true"
+      ],
+      [
+       "enableTotalRecordCount",
+       "false"
+      ],
+      [
+       "fields",
+       "PrimaryImageAspectRatio"
+      ],
+      [
+       "imageTypeLimit",
+       "1"
+      ],
+      [
+       "enableImageTypes",
+       "Primary,Backdrop,Thumb,Logo"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "searchHints",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/Search/Hints",
+     "query": "userId=golden-user-id&searchTerm=star+wars&limit=8&includeItemTypes=Movie,Series,Episode",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ],
+      [
+       "searchTerm",
+       "star wars"
+      ],
+      [
+       "limit",
+       "8"
+      ],
+      [
+       "includeItemTypes",
+       "Movie,Series,Episode"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "searchHints (special characters)",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/Search/Hints",
+     "query": "userId=golden-user-id&searchTerm=a+b%2Bc%26d%3D%C3%A9:$,%5Bx%5D%2Fy%3F%23z%25&limit=8&includeItemTypes=Movie,Series,Episode",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ],
+      [
+       "searchTerm",
+       "a b+c&d=é:$,[x]/y?#z%"
+      ],
+      [
+       "limit",
+       "8"
+      ],
+      [
+       "includeItemTypes",
+       "Movie,Series,Episode"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "searchItems",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/Items",
+     "query": "userId=golden-user-id&searchTerm=star+wars&recursive=true&includeItemTypes=Movie,Series,Episode&sortBy=SortName&sortOrder=Ascending&startIndex=0&limit=25&enableUserData=true&enableTotalRecordCount=false&fields=PrimaryImageAspectRatio&imageTypeLimit=1&enableImageTypes=Primary,Backdrop,Thumb,Logo",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ],
+      [
+       "searchTerm",
+       "star wars"
+      ],
+      [
+       "recursive",
+       "true"
+      ],
+      [
+       "includeItemTypes",
+       "Movie,Series,Episode"
+      ],
+      [
+       "sortBy",
+       "SortName"
+      ],
+      [
+       "sortOrder",
+       "Ascending"
+      ],
+      [
+       "startIndex",
+       "0"
+      ],
+      [
+       "limit",
+       "25"
+      ],
+      [
+       "enableUserData",
+       "true"
+      ],
+      [
+       "enableTotalRecordCount",
+       "false"
+      ],
+      [
+       "fields",
+       "PrimaryImageAspectRatio"
+      ],
+      [
+       "imageTypeLimit",
+       "1"
+      ],
+      [
+       "enableImageTypes",
+       "Primary,Backdrop,Thumb,Logo"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "searchItems (special characters)",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/Items",
+     "query": "userId=golden-user-id&searchTerm=a+b%2Bc%26d%3D%C3%A9:$,%5Bx%5D%2Fy%3F%23z%25&recursive=true&includeItemTypes=Movie,Series,Episode&sortBy=SortName&sortOrder=Ascending&startIndex=24&limit=13&enableUserData=true&enableTotalRecordCount=false&fields=PrimaryImageAspectRatio&imageTypeLimit=1&enableImageTypes=Primary,Backdrop,Thumb,Logo",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ],
+      [
+       "searchTerm",
+       "a b+c&d=é:$,[x]/y?#z%"
+      ],
+      [
+       "recursive",
+       "true"
+      ],
+      [
+       "includeItemTypes",
+       "Movie,Series,Episode"
+      ],
+      [
+       "sortBy",
+       "SortName"
+      ],
+      [
+       "sortOrder",
+       "Ascending"
+      ],
+      [
+       "startIndex",
+       "24"
+      ],
+      [
+       "limit",
+       "13"
+      ],
+      [
+       "enableUserData",
+       "true"
+      ],
+      [
+       "enableTotalRecordCount",
+       "false"
+      ],
+      [
+       "fields",
+       "PrimaryImageAspectRatio"
+      ],
+      [
+       "imageTypeLimit",
+       "1"
+      ],
+      [
+       "enableImageTypes",
+       "Primary,Backdrop,Thumb,Logo"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "seasons",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/Shows/series-1/Seasons",
+     "query": "userId=golden-user-id&fields=PrimaryImageAspectRatio",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ],
+      [
+       "fields",
+       "PrimaryImageAspectRatio"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "seriesNextUp",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/Shows/NextUp",
+     "query": "userId=golden-user-id&seriesId=series-1&limit=1&enableUserData=true&enableResumable=true&enableRewatching=false&enableImages=false&enableTotalRecordCount=false",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ],
+      [
+       "seriesId",
+       "series-1"
+      ],
+      [
+       "limit",
+       "1"
+      ],
+      [
+       "enableUserData",
+       "true"
+      ],
+      [
+       "enableResumable",
+       "true"
+      ],
+      [
+       "enableRewatching",
+       "false"
+      ],
+      [
+       "enableImages",
+       "false"
+      ],
+      [
+       "enableTotalRecordCount",
+       "false"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "episodes",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/Shows/series-1/Episodes",
+     "query": "userId=golden-user-id&seasonId=season-1&fields=Overview,PrimaryImageAspectRatio&enableUserData=true&imageTypeLimit=1&enableImageTypes=Primary,Backdrop,Thumb,Logo",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ],
+      [
+       "seasonId",
+       "season-1"
+      ],
+      [
+       "fields",
+       "Overview,PrimaryImageAspectRatio"
+      ],
+      [
+       "enableUserData",
+       "true"
+      ],
+      [
+       "imageTypeLimit",
+       "1"
+      ],
+      [
+       "enableImageTypes",
+       "Primary,Backdrop,Thumb,Logo"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "nextEpisode",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/Shows/series-1/Episodes",
+     "query": "userId=golden-user-id&adjacentTo=episode-1&isMissing=false&imageTypeLimit=1&enableImageTypes=Primary,Backdrop,Thumb,Logo",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ],
+      [
+       "adjacentTo",
+       "episode-1"
+      ],
+      [
+       "isMissing",
+       "false"
+      ],
+      [
+       "imageTypeLimit",
+       "1"
+      ],
+      [
+       "enableImageTypes",
+       "Primary,Backdrop,Thumb,Logo"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "itemDetail",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/Items/item-1",
+     "query": "userId=golden-user-id",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "accountLanguages",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/Users/Me",
+     "query": "",
+     "pairs": [],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "accountLanguageSettings",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/Users/Me",
+     "query": "",
+     "pairs": [],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "saveAccountLanguages",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/Users/Me",
+     "query": "",
+     "pairs": [],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    },
+    {
+     "method": "POST",
+     "path": "/Users/Configuration",
+     "query": "",
+     "pairs": [],
+     "body": "b3",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "languageCultures",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/Localization/Cultures",
+     "query": "",
+     "pairs": [],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "setPlayed (mark)",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/UserPlayedItems/item-1",
+     "query": "userId=golden-user-id",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "setPlayed (unmark)",
+   "requests": [
+    {
+     "method": "DELETE",
+     "path": "/UserPlayedItems/item-1",
+     "query": "userId=golden-user-id",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "setFavorite (mark)",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/UserFavoriteItems/item-1",
+     "query": "userId=golden-user-id",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "setFavorite (unmark)",
+   "requests": [
+    {
+     "method": "DELETE",
+     "path": "/UserFavoriteItems/item-1",
+     "query": "userId=golden-user-id",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "mediaSegments",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/MediaSegments/item-1",
+     "query": "includeSegmentTypes=Intro&includeSegmentTypes=Outro",
+     "pairs": [
+      [
+       "includeSegmentTypes",
+       "Intro"
+      ],
+      [
+       "includeSegmentTypes",
+       "Outro"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "reportStart",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Sessions/Playing",
+     "query": "",
+     "pairs": [],
+     "body": "b4",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "reportProgress",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Sessions/Playing/Progress",
+     "query": "",
+     "pairs": [],
+     "body": "b4",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "reportStopped",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Sessions/Playing/Stopped",
+     "query": "",
+     "pairs": [],
+     "body": "b5",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "reportStopped (failed)",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Sessions/Playing/Stopped",
+     "query": "",
+     "pairs": [],
+     "body": "b6",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "stopActiveEncoding",
+   "requests": [
+    {
+     "method": "DELETE",
+     "path": "/Videos/ActiveEncodings",
+     "query": "deviceId=5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765&playSessionId=play-session-golden",
+     "pairs": [
+      [
+       "deviceId",
+       "5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765"
+      ],
+      [
+       "playSessionId",
+       "play-session-golden"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "sessionPlayMethod",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/Sessions",
+     "query": "deviceId=5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765",
+     "pairs": [
+      [
+       "deviceId",
+       "5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "createPlaybackPlan (start position)",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-golden/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=123456789&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "123456789"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b7",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "createPlaybackPlan (track indices, source)",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-golden/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000&AudioStreamIndex=2&SubtitleStreamIndex=-1",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ],
+      [
+       "AudioStreamIndex",
+       "2"
+      ],
+      [
+       "SubtitleStreamIndex",
+       "-1"
+      ]
+     ],
+     "body": "b8",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "createPlaybackPlan (play original)",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-golden/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/playbackinfo-ass-profile",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-ass-profile/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/playbackinfo-av1-profile",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-av1-profile/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/playbackinfo-bluray-folder",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-bluray-folder/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/playbackinfo-external-subtitle",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-external-subtitle/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/playbackinfo-h264-no-profile",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-h264-no-profile/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/playbackinfo-h264-profile",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-h264-profile/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/playbackinfo-hevc-hdr10-profile",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-hevc-hdr10-profile/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/playbackinfo-multi-version",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-multi-version/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/playbackinfo-multitrack-prefer-spanish",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-multitrack-prefer-spanish/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/playbackinfo-multitrack-profile",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-multitrack-profile/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/playbackinfo-sidecar-subtitles-none",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-sidecar-subtitles-none/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/playbackinfo-ass-profile",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-ass-profile/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/playbackinfo-av1-profile",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-av1-profile/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/playbackinfo-bluray-folder",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-bluray-folder/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/playbackinfo-external-subtitle",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-external-subtitle/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/playbackinfo-h264-no-profile",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-h264-no-profile/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/playbackinfo-h264-profile",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-h264-profile/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/playbackinfo-hevc-hdr10-profile",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-hevc-hdr10-profile/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/playbackinfo-multi-version",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-multi-version/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/playbackinfo-multitrack-prefer-spanish",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-multitrack-prefer-spanish/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/playbackinfo-multitrack-profile",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-multitrack-profile/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/playbackinfo-sidecar-subtitles-none",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-sidecar-subtitles-none/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-ass",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-ass/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-ass-force-fallback",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-ass-force-fallback/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-av1",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-av1/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-av1-force-fallback",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-av1-force-fallback/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-bluray-folder",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-bluray-folder/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-bluray-folder-force-fallback",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-bluray-folder-force-fallback/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-bluray-folder-no-conversion-user",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-bluray-folder-no-conversion-user/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-dvdsub",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-dvdsub/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-dvdsub-force-fallback",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-dvdsub-force-fallback/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-episode-s00e01",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-episode-s00e01/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-episode-s01e01",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-episode-s01e01/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-episode-s01e02",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-episode-s01e02/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-h264",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-h264/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-h264-force-fallback",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-h264-force-fallback/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-h264-limited",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-h264-limited/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-h264-limited-no-conversion-user",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-h264-limited-no-conversion-user/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-h264-no-conversion-user",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-h264-no-conversion-user/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-hevc-hdr10",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-hevc-hdr10/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-hevc-hdr10-force-fallback",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-hevc-hdr10-force-fallback/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-iso",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-iso/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    },
+    {
+     "method": "POST",
+     "path": "/Items/item-iso/PlaybackInfo",
+     "query": "EnableDirectPlay=false&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "false"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b10",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-iso-force-fallback",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-iso-force-fallback/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-multitrack",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-multitrack/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-multitrack-audio-pick",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-multitrack-audio-pick/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000&AudioStreamIndex=1",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ],
+      [
+       "AudioStreamIndex",
+       "1"
+      ]
+     ],
+     "body": "b11",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-multitrack-audio-pick-force-fallback",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-multitrack-audio-pick-force-fallback/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000&AudioStreamIndex=1",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ],
+      [
+       "AudioStreamIndex",
+       "1"
+      ]
+     ],
+     "body": "b11",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    },
+    {
+     "method": "POST",
+     "path": "/Items/item-multitrack-audio-pick-force-fallback/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b12",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-multitrack-audio-pick-missing",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-multitrack-audio-pick-missing/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000&AudioStreamIndex=1",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ],
+      [
+       "AudioStreamIndex",
+       "1"
+      ]
+     ],
+     "body": "b11",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-multitrack-force-fallback",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-multitrack-force-fallback/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-sidecar",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-sidecar/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-sidecar-force-fallback",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-sidecar-force-fallback/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "10.11.7/conversion-versions",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-versions/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-ass",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-ass/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-ass-force-fallback",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-ass-force-fallback/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-av1",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-av1/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-av1-force-fallback",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-av1-force-fallback/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-bluray-folder",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-bluray-folder/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-bluray-folder-force-fallback",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-bluray-folder-force-fallback/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-bluray-folder-no-conversion-user",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-bluray-folder-no-conversion-user/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-dvdsub",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-dvdsub/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-dvdsub-force-fallback",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-dvdsub-force-fallback/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-episode-s00e01",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-episode-s00e01/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-episode-s01e01",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-episode-s01e01/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-episode-s01e02",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-episode-s01e02/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-h264",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-h264/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-h264-force-fallback",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-h264-force-fallback/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-h264-limited",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-h264-limited/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-h264-limited-no-conversion-user",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-h264-limited-no-conversion-user/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-h264-no-conversion-user",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-h264-no-conversion-user/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-hevc-hdr10",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-hevc-hdr10/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-hevc-hdr10-force-fallback",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-hevc-hdr10-force-fallback/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-iso",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-iso/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    },
+    {
+     "method": "POST",
+     "path": "/Items/item-iso/PlaybackInfo",
+     "query": "EnableDirectPlay=false&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "false"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b10",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-iso-force-fallback",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-iso-force-fallback/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-multitrack",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-multitrack/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-multitrack-audio-pick",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-multitrack-audio-pick/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000&AudioStreamIndex=1",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ],
+      [
+       "AudioStreamIndex",
+       "1"
+      ]
+     ],
+     "body": "b11",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-multitrack-audio-pick-force-fallback",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-multitrack-audio-pick-force-fallback/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000&AudioStreamIndex=1",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ],
+      [
+       "AudioStreamIndex",
+       "1"
+      ]
+     ],
+     "body": "b11",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    },
+    {
+     "method": "POST",
+     "path": "/Items/item-multitrack-audio-pick-force-fallback/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b12",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-multitrack-audio-pick-missing",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-multitrack-audio-pick-missing/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000&AudioStreamIndex=1",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ],
+      [
+       "AudioStreamIndex",
+       "1"
+      ]
+     ],
+     "body": "b11",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-multitrack-force-fallback",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-multitrack-force-fallback/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-sidecar",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-sidecar/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-sidecar-force-fallback",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-sidecar-force-fallback/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "12.4.0/conversion-versions",
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/Items/item-versions/PlaybackInfo",
+     "query": "EnableDirectPlay=true&EnableDirectStream=true&EnableTranscoding=true&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&AutoOpenLiveStream=false&UserId=golden-user-id&StartTimeTicks=0&MaxStreamingBitrate=1000000000",
+     "pairs": [
+      [
+       "EnableDirectPlay",
+       "true"
+      ],
+      [
+       "EnableDirectStream",
+       "true"
+      ],
+      [
+       "EnableTranscoding",
+       "true"
+      ],
+      [
+       "AllowVideoStreamCopy",
+       "true"
+      ],
+      [
+       "AllowAudioStreamCopy",
+       "true"
+      ],
+      [
+       "AutoOpenLiveStream",
+       "false"
+      ],
+      [
+       "UserId",
+       "golden-user-id"
+      ],
+      [
+       "StartTimeTicks",
+       "0"
+      ],
+      [
+       "MaxStreamingBitrate",
+       "1000000000"
+      ]
+     ],
+     "body": "b9",
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  }
+ ]
+}
