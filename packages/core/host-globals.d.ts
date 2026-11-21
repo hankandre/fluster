@@ -6,10 +6,11 @@
 // decision 0004):
 //   URL, URLSearchParams, AbortController, AbortSignal, console, Blob.
 //
-// Only the reference adapters in src/adapters/ use the next six. A host that
-// supplies its own Clock and Crypto does not need them, so the TV must not
-// polyfill crypto.subtle for the core:
-//   crypto, TextEncoder, setTimeout, clearTimeout, setInterval, clearInterval.
+// Only the reference adapters in src/adapters/ use the next seven. A host that
+// supplies its own Clock, Crypto and Transport does not need them, so the TV
+// must not polyfill crypto.subtle or fetch for the core:
+//   crypto, TextEncoder, setTimeout, clearTimeout, setInterval, clearInterval,
+//   fetch.
 //
 // Each member is typed only as far as core source uses it.
 
@@ -81,3 +82,15 @@ declare var crypto: {
   readonly subtle: { digest(algorithm: "SHA-256", data: Uint8Array): Promise<ArrayBuffer> };
   randomUUID(): string;
 };
+
+// Reference transport only (src/adapters/fetch-transport.ts): the core reaches a server through the Transport port.
+declare function fetch(
+  input: string,
+  init?: {
+    method?: string;
+    headers?: Record<string, string>;
+    body?: string;
+    redirect?: "manual";
+    signal?: AbortSignal;
+  },
+): Promise<{ readonly status: number; text(): Promise<string> }>;
