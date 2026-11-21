@@ -19,12 +19,12 @@ const base = "http://127.0.0.1:18096";
 
 describe("checkMediaRequest", () => {
   it("accepts a static stream URL", () => {
-    const result = checkMediaRequest(`${base}/Videos/abc123/stream?Static=true&MediaSourceId=abc123&PlaySessionId=p&api_key=t`);
+    const result = checkMediaRequest(`${base}/Videos/abc123/stream?Static=true&MediaSourceId=abc123&PlaySessionId=p`);
     expect(result).toEqual({ ok: true, kind: "stream" });
   });
 
   it("accepts an external subtitle URL", () => {
-    const result = checkMediaRequest(`${base}/Videos/abc/def/Subtitles/2/0/Stream.srt?api_key=t`);
+    const result = checkMediaRequest(`${base}/Videos/abc/def/Subtitles/2/0/Stream.srt`);
     expect(result).toEqual({ ok: true, kind: "subtitle" });
   });
 
