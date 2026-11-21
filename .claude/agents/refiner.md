@@ -10,7 +10,7 @@ tools: Read, Grep, Glob, Write, Bash, mcp__serena__find_symbol, mcp__serena__get
 - Read its plan, and the code and docs it touches.
 - Never edit code, tests, `tasks/prd.json`, or plans; write only `docs/specs/<TASK-ID>.md`.
 - Run only read-only shell commands.
-- Write these sections: Goal; Acceptance (each item mapped to how it is met and tested); Files to touch; Approach; Test plan; Risks and out of scope; Validation commands; Dependencies (the maintenance check from primary sources for each one adopted).
+- Write these sections: Goal; Acceptance (each item mapped to how it is met and tested; an item that cannot be a failing test, such as an owner, device, review or CI check, says `gate: <kind>` with `owner`, `device`, `review`, `ci` or `met` in its "How it is tested" cell); Files to touch; Approach; Test plan; Risks and out of scope; Validation commands; Dependencies (the maintenance check from primary sources for each one adopted).
 - Flag every invariant and hard rule the task touches.
 - For a playback task, name its Jellyscale wire test.
 - Name the implementer: `implementer` for TypeScript, `native-engineer` for Kotlin and native modules.

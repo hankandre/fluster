@@ -1,11 +1,12 @@
 export const meta = {
   name: 'task',
-  description: 'Run tasks/prd.json tasks in order: spec, check, implement, review, ship; park tasks with open design questions',
+  description: 'Run tasks/prd.json tasks in order: spec, check, failing tests, implement, review, ship; park tasks with open design questions',
   whenToUse:
-    'Build Octave tasks end to end. args: {tasks: ["T3-01", "T3-02"], risk: "routine" | "high", native: false} or {task: "T3-01", from: "check" | "implement" | "review", notes: [...], evidence: "...", models: {spec: {high: "opus"}}, root: "/abs/path/of/the/folder/holding/the/checkout"}',
+    'Build Octave tasks end to end. args: {tasks: ["T3-01", "T3-02"], risk: "routine" | "high", native: false} or {task: "T3-01", from: "check" | "tests" | "implement" | "review", preFlow: true, notes: [...], evidence: "...", models: {spec: {high: "opus"}}, root: "/abs/path/of/the/folder/holding/the/checkout"}',
   phases: [
     { title: 'Spec', detail: 'refiner writes docs/specs/<TASK>.md' },
     { title: 'Check', detail: 'fresh spec-checker; blocks only on critical or high' },
+    { title: 'Tests', detail: 'test-writer commits failing tests and a manifest; the red gate stops the run if one already passes' },
     { title: 'Implement', detail: 'implementer or native-engineer; runs the verify skill' },
     { title: 'Review', detail: 'one round; fix critical, high, medium; log lows' },
     { title: 'Ship', detail: 'PR, auto-merge on green, clean up' },
@@ -16,15 +17,17 @@ export const meta = {
 //   {tasks: ["T3-01", ...], risk, native}  run tasks in order
 //   {task: "T3-01", risk, native}           run one task
 //   root: "/abs/dir"                        folder that holds the main checkout (default "..", relative to it)
-//   from: "check" | "implement" | "review"  skip finished phases (single task only)
-//   notes: [...]                            spec-check notes for the implementer (with from: "implement")
+//   from: "check" | "tests" | "implement" | "review"  skip finished phases (single task only)
+//   preFlow: true                           a branch implemented before the test-first flow: no Tests phase, no manifest required (single task, never inferred)
+//   approvedFrozen: [paths]                 frozen test paths a Product Owner ruling already changed (a resumed run)
+//   notes: [...]                            spec-check notes for the test writer and the implementer (with from: "tests" or "implement")
 //   models: {...}                           per-run model override, deep-merged over MODELS (see below)
 //   evidence: "..."                         verify evidence from the finished implementation (with from: "review")
 //   ciSteps: [...]                          acceptance steps that need a pushed branch or CI runs (with from: "review")
-// notes reach ONLY the implement step (work() for implement, via specNotes). Spec, check, review, follow-ups and ship never receive them.
+// notes reach ONLY the Tests and Implement steps (via specNotes). Spec, check, review, follow-ups and ship never receive them.
 // (Check issues are appended to specNotes by the check step itself, so a resumed run with from: "implement" must pass them again.)
 // A task whose spec needs a new design call is parked, and the run moves on.
-// The run stops early only on a denied command.
+// The run stops early only on STOP_OUTCOMES: a denied command, a test that passes before implementation (tests-green), or a changed frozen test (frozen-tests).
 // MODELS-BEGIN (pure; extracted and tested by .claude/workflows/task.test.mjs)
 const MODELS = {
   spec: { routine: 'opus', high: 'fable' },
@@ -34,6 +37,9 @@ const MODELS = {
   guardian: 'opus',
   ship: 'sonnet',
   escalate: 'fable',
+  tests: { routine: 'sonnet', native: 'opus' },
+  owner: 'fable',
+  gate: 'haiku',
 };
 const MODEL_NAMES = ['haiku', 'sonnet', 'opus', 'fable'];
 function resolveModels(defaults, override) {
@@ -43,6 +49,7 @@ function resolveModels(defaults, override) {
     for (const key of Object.keys(base)) out[key] = base[key];
     for (const key of Object.keys(extra)) {
       const where = path ? `${path}.${key}` : key;
+      if (!path && key === 'owner') throw new Error('models.owner cannot be overridden; a frozen-test ruling always runs on the Product Owner model');
       if (!Object.prototype.hasOwnProperty.call(base, key)) throw new Error(`Unknown models key "${where}". Known: ${Object.keys(base).join(', ')}`);
       if (isObject(base[key])) {
         if (!isObject(extra[key])) throw new Error(`models.${where} must be an object`);
@@ -75,13 +82,67 @@ const HIGH_RISK_PATH =
 // Kotlin and native module work goes to native-engineer.
 const NATIVE_PATH = /^(modules\/|apps\/tv\/android\/)/;
 // PATHS-END
+// GATE-BEGIN (pure; extracted and tested by .claude/workflows/task.test.mjs)
+// A gate agent relays a script's exit code and its last stdout line (one JSON line). These functions decide what the run does with it.
+const STOP_OUTCOMES = ['denied', 'tests-green', 'frozen-tests'];
+function readGate(gate) {
+  if (!gate || typeof gate.exitCode !== 'number' || typeof gate.output !== 'string') return null;
+  const lines = gate.output.split('\n').map((line) => line.trim()).filter(Boolean);
+  try {
+    const value = JSON.parse(lines[lines.length - 1]);
+    return value !== null && typeof value === 'object' && !Array.isArray(value) ? value : null;
+  } catch (error) {
+    return null;
+  }
+}
+const unreadable = (what) => ({ action: 'retry', unreadable: true, detail: `${what} gave no readable result` });
+// check-red.mjs <ID>: every run must be red before implementation. Returns the frozen blob ids and the gated items on pass.
+function decideRed(gate) {
+  const json = readGate(gate);
+  if (!json) return unreadable('the red gate');
+  const green = json.green || [];
+  const problems = json.problems || [];
+  if (green.length) return { action: 'stop', detail: `acceptance items ${green.join(', ')} already pass before any implementation` };
+  if (problems.length || gate.exitCode !== 0) return { action: 'retry', detail: problems.join('; ') || `the red gate exited ${gate.exitCode}` };
+  return { action: 'pass', detail: '', blobs: json.blobs || {}, gates: json.gates || [] };
+}
+// check-red.mjs <ID> --expect green, after the follow-ups: every run must pass.
+function decideGreen(gate) {
+  const json = readGate(gate);
+  if (!json) return unreadable('the green gate');
+  const problems = json.problems || [];
+  if (problems.length) return { action: 'blocked', detail: problems.join('; ') };
+  if ((json.red || []).length || gate.exitCode !== 0) return { action: 'blocked', detail: `acceptance items ${(json.red || []).join(', ') || '?'} still fail` };
+  return { action: 'pass', detail: '' };
+}
+// check-flow.mjs --json. approvedPaths: frozen paths a Product Owner ruling changed in this run. pinned: the red gate's blob ids (undefined on a resumed run).
+// Unreadable output is retried by the caller once (final = false), then stops the run (final = true).
+function decideFrozen(gate, approvedPaths, pinned, final) {
+  const json = readGate(gate);
+  if (!json) return final ? { action: 'stop', unreadable: true, detail: 'the frozen-test check gave no readable result twice' } : unreadable('the frozen-test check');
+  if (json.missingManifest) return { action: 'blocked', detail: 'no manifest: rerun with from: "tests", or pass preFlow: true for a branch that predates the flow' };
+  if (gate.exitCode !== 0 || json.ok !== true) return { action: 'stop', detail: (json.problems || []).join('; ') || `the frozen-test check exited ${gate.exitCode}` };
+  const approved = approvedPaths || [];
+  const unapproved = (json.changes || []).map((change) => change.path).filter((path) => !approved.includes(path));
+  if (unapproved.length) return { action: 'stop', detail: `frozen test changes the Product Owner step did not return: ${unapproved.join(', ')}` };
+  if (pinned) {
+    const now = {};
+    for (const entry of json.frozen || []) now[entry.path] = entry.blob;
+    const moved = Object.keys(pinned).filter((path) => !approved.includes(path) && now[path] !== pinned[path]);
+    if (moved.length) return { action: 'stop', detail: `frozen files differ from the red gate's versions (an amended or squashed freeze commit): ${moved.join(', ')}` };
+  }
+  return { action: 'pass', detail: '' };
+}
+// GATE-END
 // STEP-BEGIN (pure; extracted and tested by .claude/workflows/task.test.mjs)
 const mergeUnique = (a, b) => (a || []).concat(b || []).filter((item, i, all) => all.indexOf(item) === i);
 // Decide what a work() attempt leads to. A check that fails locally is never CI-only: ciOnly counts only when done and checksPassed are both true.
-//   denied: stop; done: green, ciOnly items (if any) go to Ship as steps; retry: not green, so retry or escalate.
+//   denied: stop; owner: the work reports frozen tests that look wrong; done: green, ciOnly items (if any) go to Ship as steps; retry: not green, so retry or escalate.
+//   The order is none, denied, owner, done, retry.
 function decideStep(out, isDenied) {
   if (!out) return { action: 'none', ciOnly: [] };
   if (isDenied) return { action: 'denied', ciOnly: [] };
+  if (out.frozenTestProblems && out.frozenTestProblems.length) return { action: 'owner', ciOnly: [] };
   const problems = (out.blockers || []).concat(out.failures || []);
   const green = out.done === true && out.checksPassed === true && problems.length === 0;
   if (green) return { action: 'done', ciOnly: out.ciOnly || [] };
@@ -116,8 +177,24 @@ const WORK = {
     blockers: strings,
     deniedCommands: strings,
     ciSteps: strings,
+    frozenTestProblems: strings,
   },
   required: ['done', 'checksPassed', 'summary', 'evidence'],
+};
+const TESTS = {
+  type: 'object',
+  properties: { done: { type: 'boolean' }, summary: { type: 'string' }, blockers: strings, deniedCommands: strings },
+  required: ['done', 'summary'],
+};
+const GATE = {
+  type: 'object',
+  properties: { exitCode: { type: 'integer' }, output: { type: 'string' }, deniedCommands: strings },
+  required: ['exitCode', 'output'],
+};
+const RULING = {
+  type: 'object',
+  properties: { rulings: strings, changed: strings, deniedCommands: strings },
+  required: ['rulings', 'changed'],
 };
 const REVIEW = {
   type: 'object',
@@ -154,14 +231,16 @@ async function runTask(task, opts) {
   const highRisk = opts.risk === 'high';
   let native = opts.native === true;
   const skipImpl = opts.from === 'review';
-  const skipCheck = opts.from === 'implement' || skipImpl;
+  const skipTests = opts.from === 'implement' || skipImpl || opts.preFlow === true;
+  const skipCheck = opts.from === 'tests' || skipTests;
   const skipSpec = opts.from === 'check' || skipCheck;
   let specNotes = Array.isArray(opts.notes) ? opts.notes : [];
 
-  let specModel, checkModel, implAgent, implModel, reviewAgent, reviewModel;
+  let specModel, checkModel, testsModel, implAgent, implModel, reviewAgent, reviewModel;
   const route = () => {
     specModel = highRisk ? models.spec.high : models.spec.routine;
     checkModel = native ? models.check.native : highRisk ? models.check.high : models.check.routine;
+    testsModel = native ? models.tests.native : models.tests.routine;
     implAgent = native ? 'native-engineer' : 'implementer';
     implModel = native ? models.implement.native : models.implement.routine;
     reviewAgent = native || highRisk ? 'guardian' : 'reviewer';
@@ -213,6 +292,58 @@ async function runTask(task, opts) {
     return out;
   };
 
+  // Gates: a small agent with no agent type relays one command's exit code and last line; the pure decide functions judge it.
+  const nodeCli = (script) => `mise exec -- node ${worktree}/scripts/${script}`;
+  const redCommand = `mise exec -- node ${worktree}/scripts/check-red.mjs ${task} --repo ${worktree}`;
+  const flowCommand = `${nodeCli('check-flow.mjs')} --repo ${worktree}${opts.preFlow ? '' : ` --task ${task}`} --json`;
+  const gate = (command, label, phase) =>
+    agent(`Run exactly this command, change nothing, and return its exit code as exitCode and the last line it printed to standard output as output: ${command}\nIf a command is denied, report it in deniedCommands and do not work around it.`, { model: models.gate, schema: GATE, phase, label });
+  const runGate = async (command, label, phase, decide) => {
+    let out = await gate(command, label, phase);
+    if (denied(out)) return { action: 'denied', detail: denied(out) };
+    let decision = decide(out, false);
+    if (decision.unreadable) {
+      log(`${task}: ${label} gave no readable result; running it once more`);
+      out = await gate(command, `${label} (again)`, phase);
+      if (denied(out)) return { action: 'denied', detail: denied(out) };
+      decision = decide(out, true);
+    }
+    return decision;
+  };
+  let pinned;
+  let gated = [];
+  let rulingUsed = false;
+  const approved = Array.isArray(opts.approvedFrozen) ? opts.approvedFrozen.slice() : [];
+  const frozenRule = `Never change or delete a file listed in docs/specs/${task}.tests.json; add tests in new files. If a frozen test is wrong, change nothing and return it in frozenTestProblems.`;
+  // Every work() call goes through guarded: a wrong frozen test gets one Product Owner ruling, then the frozen-test gate runs.
+  // It returns {out} for the caller, or {stop} holding the task's result (blocked, frozen-tests, denied or failed).
+  const guarded = async (prompt, label, phase) => {
+    const run = (text, name) => work(`${text}\n${frozenRule}`, name, phase);
+    let out = await run(prompt, label);
+    if (stepOf(out).action === 'owner') {
+      if (rulingUsed) return { stop: result('blocked', out.frozenTestProblems) };
+      rulingUsed = true;
+      const ruling = await agent(
+        `${common}
+The implementer reports frozen tests that look wrong:
+${numbered(out.frozenTestProblems)}
+You are the Product Owner. Rule on each. The frozen files are listed in docs/specs/${task}.tests.json. Change a test only when it contradicts the acceptance item or the spec; edit it (and the manifest when the file list changes) and commit with one trailer line per changed path: "Frozen-Test-Change: <path> -- <reason>". Otherwise leave it and say why. Never touch tasks/prd.json. Return rulings (one line per reported test) and changed (every path you changed).`,
+        { agentType: 'product-owner', model: models.owner, schema: RULING, phase, label: `rule on frozen tests ${task}` },
+      );
+      if (!ruling) return { stop: result('failed', 'The Product Owner returned nothing.') };
+      if (denied(ruling)) return { stop: result('denied', denied(ruling)) };
+      for (const path of ruling.changed || []) if (!approved.includes(path)) approved.push(path);
+      out = await run(`${prompt}\nThe Product Owner ruled on the frozen tests you reported:\n${numbered(ruling.rulings || [])}`, `${label} (after ruling)`);
+      if (stepOf(out).action === 'owner') return { stop: result('blocked', out.frozenTestProblems) };
+    }
+    if (!out || denied(out)) return { out };
+    const flow = await runGate(flowCommand, `frozen gate ${task}`, phase, (gateOut, final) => decideFrozen(gateOut, approved, pinned, final));
+    if (flow.action === 'denied') return { stop: result('denied', flow.detail) };
+    if (flow.action === 'stop') return { stop: result('frozen-tests', flow.detail) };
+    if (flow.action !== 'pass') return { stop: result('blocked', flow.detail) };
+    return { out };
+  };
+
   // 1. Spec
   if (!skipSpec) {
     const specResult = await agent(
@@ -254,16 +385,47 @@ Return as open questions only product or design choices the human must make that
     }
   }
 
+  // 2b. Tests: failing tests first, frozen in one commit; the red gate stops the run if any already passes
+  const testsPrompt = `${common}
+Write the failing tests for ${task}: turn each acceptance item of the spec's Acceptance table into behaviour-level tests, following its Test plan. Write no implementation and no stub. Search the existing tests for expectations the spec changes and update them in the same commit.
+Write the manifest docs/specs/${task}.tests.json as .claude/agents/test-writer.md describes: files, and one entry per acceptance item numbered from 1, each a run (an argument list starting with node or pnpm that selects only that item's tests) or a gate that the spec names with "gate: <kind>" in the item's Acceptance row. Add no gate the spec does not name.
+Run each run and confirm it fails for the intended reason.
+Commit the tests, fixtures and manifest as one commit with the subject "test(${task}): freeze failing acceptance tests". If docs/specs/${task}.tests.json already exists on this branch (a rerun), amend the freeze commit with git commit --amend instead of adding a commit that touches the manifest or a test.${specNotes.length ? `\nSpec-check notes:\n${specNotes.join('\n')}` : ''}
+Do not push. Return done=true once committed, and put anything that stops you in blockers.`;
+  const testsRetry = (problems) => `${testsPrompt}\nThe red gate found these problems with the frozen tests:\n${problems}\nFix them and amend the freeze commit with git commit --amend; a second commit that touches the manifest or a test fails the frozen check.`;
+  const writeTests = (text, label) => agent(text, { agentType: 'test-writer', model: testsModel, schema: TESTS, phase: 'Tests', label });
+  if (!skipTests) {
+    const written = await writeTests(testsPrompt, `tests ${task}`);
+    if (!written) return result('failed', 'The test writer returned nothing.');
+    if (denied(written)) return result('denied', denied(written));
+    if (!written.done) return result('blocked', written.blockers || []);
+    let red = await runGate(redCommand, `red gate ${task}`, 'Tests', decideRed);
+    if (red.action === 'retry') {
+      const again = await writeTests(testsRetry(red.detail), `tests ${task} (retry)`);
+      if (!again) return result('failed', 'The test writer returned nothing on the retry.');
+      if (denied(again)) return result('denied', denied(again));
+      red = await runGate(redCommand, `red gate ${task} (after retry)`, 'Tests', decideRed);
+    }
+    if (red.action === 'denied') return result('denied', red.detail);
+    if (red.action === 'stop') return result('tests-green', red.detail);
+    if (red.action !== 'pass') return result('blocked', red.detail);
+    pinned = red.blobs;
+    gated = red.gates;
+    if (gated.length) log(`${task}: gated items, not tests: ${gated.map((entry) => `${entry.item} (${entry.kind})`).join(', ')}`);
+  }
+
   // 3. Implement (the implementer runs the checks itself)
   let evidence = opts.evidence || `See the evidence field of ${task} (\`${taskCli} show ${task}\`) on ${branch}.`;
   let ciSteps = Array.isArray(opts.ciSteps) ? opts.ciSteps : [];
   if (!skipImpl) {
-  const impl = await work(
+  const implRun = await guarded(
     `Implement the approved spec.${specNotes.length ? `\nAlso resolve these spec-check notes, updating the spec where they change it:\n${specNotes.join('\n')}` : ''}
 Commit the spec with the work, one milestone per commit. Set the task's status to in_progress with \`${taskCli} set ${task} --status in_progress --owner ${implAgent} --evidence-file <file>\`. ${evidenceRule} Do not push or open a PR. If an acceptance item can only be met with a pushed branch, an open PR, or CI runs (for example a throwaway commit that must fail CI, or baselines rendered on the CI host), do everything else, set done=true, and list each such step in ciSteps; the Ship phase does them. Never list a review (guardian, design, or any other agent review) as a ciStep: reviews happen in the Review phase, and the Ship phase cannot start agents. Return done=false with blockers if you cannot finish for any other reason. Use ciOnly only for a step that a local run cannot produce (for example accepting CI-rendered baselines or attaching CI screenshots), and only when every local check passed; a failing local check is never ciOnly.`,
     `implement ${task}`,
     'Implement',
   );
+  if (implRun.stop) return implRun.stop;
+  const impl = implRun.out;
   if (!impl) return result('failed', 'The implementer returned nothing.');
   if (denied(impl)) return result('denied', denied(impl));
   if (!impl.done || !impl.checksPassed) return result('blocked', (impl.blockers || []).concat(impl.failures || []));
@@ -274,7 +436,7 @@ Commit the spec with the work, one milestone per commit. Set the task's status t
   // 4. Review (one round)
   const review = await agent(
     `${common}
-Review git diff origin/main...${branch} against the spec, the task acceptance, and the hard rules. If the diff touches apps/tv screens, shared controls, or design tokens, also do the design review: follow .claude/skills/change-review/references/design-checklist.md against DESIGN.md and look at the captures from pnpm tv:visual (T3-07) when it exists. This is the only review round. Change no files. Return every finding with its severity, file:line, and a concrete failure scenario. Return filesChanged: every path from git diff --name-only origin/main...${branch}. Set needsGuardian=true if the diff touches the gateway, negotiation, the player, redaction, tokens, a native method or event, Kotlin, the native HTTP client, or docs/security.md, or if the task's acceptance asks for a guardian review.`,
+Review git diff origin/main...${branch} against the spec, the task acceptance, and the hard rules. If the diff touches apps/tv screens, shared controls, or design tokens, also do the design review: follow .claude/skills/change-review/references/design-checklist.md against DESIGN.md and look at the captures from pnpm tv:visual (T3-07) when it exists. Also judge whether each frozen test (listed in docs/specs/${task}.tests.json) really checks its acceptance item${gated.length ? `, and check each gated item against the spec's Acceptance table: ${gated.map((entry) => `item ${entry.item} (${entry.kind}: ${entry.why})`).join('; ')}` : ''}. This is the only review round. Change no files. Return every finding with its severity, file:line, and a concrete failure scenario. Return filesChanged: every path from git diff --name-only origin/main...${branch}. Set needsGuardian=true if the diff touches the gateway, negotiation, the player, redaction, tokens, a native method or event, Kotlin, the native HTTP client, or docs/security.md, or if the task's acceptance asks for a guardian review.`,
     { agentType: reviewAgent, model: reviewModel, schema: REVIEW, phase: 'Review', label: `review ${task}` },
   );
   if (!review) return result('failed', 'The reviewer returned nothing.');
@@ -298,7 +460,7 @@ Adversarially review git diff origin/main...${branch} for token, URL, or session
   const blocking = review.findings.filter((finding) => finding.severity !== 'low').map(describe);
   const lows = review.findings.filter((finding) => finding.severity === 'low').map(describe);
   log(`${task}: review found ${blocking.length} to fix, ${lows.length} low`);
-  const followUp = await work(
+  const followUpRun = await guarded(
     `${blocking.length ? `Fix these review findings and commit, with a test for each behavior change:\n${blocking.join('\n')}` : 'No review findings need a fix.'}
 ${lows.length ? `Log these low findings as follow-ups in the active plan and commit; do not fix them:\n${lows.join('\n')}` : ''}
 Then, if every acceptance item is met (the review above counts as the fresh-context design review; the Ship phase links screenshots) and the spec does not reserve sign-off for the human, set the task's status to done with \`${taskCli} set ${task} --status done --evidence-file <file>\` (passes follows status). ${evidenceRule} Because no PR exists yet, the evidence must contain \`commit <sha>\`. Then tick its line in the active plan, and commit. Do not push.${ciSteps.length ? `\nThese acceptance steps need CI and are done in the Ship phase, so treat them as pending (not as blockers) and leave status in_progress:\n${ciSteps.join('\n')}` : ''}
@@ -306,6 +468,8 @@ Use ciOnly only for a step that a local run cannot produce (for example acceptin
     `follow-ups ${task}`,
     'Review',
   );
+  if (followUpRun.stop) return followUpRun.stop;
+  const followUp = followUpRun.out;
   if (!followUp) return result('failed', 'The follow-up agent returned nothing.');
   if (denied(followUp)) return result('denied', denied(followUp));
   // With CI steps pending, a not-done follow-up whose checks pass hands its blockers to Ship, which refuses to merge if it cannot clear them.
@@ -313,10 +477,16 @@ Use ciOnly only for a step that a local run cannot produce (for example acceptin
   if (!followUp.done) ciSteps = ciSteps.concat(followUp.blockers || []);
   evidence = followUp.evidence || evidence;
   ciSteps = mergeUnique(ciSteps, (followUp.ciSteps || []).concat(followUp.ciOnly || []));
+  // Every frozen run must now pass, including any that pnpm check does not cover.
+  if (!opts.preFlow) {
+    const green = await runGate(`${redCommand} --expect green`, `green gate ${task}`, 'Review', decideGreen);
+    if (green.action === 'denied') return result('denied', green.detail);
+    if (green.action !== 'pass') return result('blocked', green.detail);
+  }
 
   // 5. Ship (CI fixes go through the same retry and Fable escalation)
   const shipPrompt = `${common}
-Ship with the ship skill: rebase onto origin/main if it moved (force-with-lease is allowed on this branch), push, open the PR if none exists, enable auto-merge with rebase, and wait for CI with gh pr checks --watch. The PR body must explain user impact, testing (use the evidence below), conversion and security implications, untested device, Jellyfin and Jellyscale gates, and call out any change to invariants, docs/security.md, release signing, or CI. For a UI change, add a Screenshots section that links the visual artifact from the PR's CI run (gh api repos/{owner}/{repo}/actions/runs/<run>/artifacts) and names the images that changed, plus a Design review notes section from the review. Change no source files. If CI is red, return merged=false with each failing check and its cause. After a merge, run git -C ${main} pull --ff-only and remove the worktree and branch.
+Ship with the ship skill: rebase onto origin/main if it moved (force-with-lease is allowed on this branch), push, open the PR if none exists, enable auto-merge with rebase, and wait for CI with gh pr checks --watch. The PR body must explain user impact, testing (use the evidence below), conversion and security implications, untested device, Jellyfin and Jellyscale gates, and call out any change to invariants, docs/security.md, release signing, or CI. For a UI change, add a Screenshots section that links the visual artifact from the PR's CI run (gh api repos/{owner}/{repo}/actions/runs/<run>/artifacts) and names the images that changed, plus a Design review notes section from the review. Change no source files. If CI is red, return merged=false with each failing check and its cause. Fill the PR body's Frozen tests section from the changes list that \`${nodeCli('check-flow.mjs')} --repo ${worktree} --json\` prints (or write "none changed"). After a merge, run git -C ${main} pull --ff-only and remove the worktree and branch.
 Evidence: ${evidence}
 Review: ${blocking.length} fixed, ${lows.length} low logged in the plan.${ciSteps.length ? `
 Before enabling auto-merge, do these CI-dependent acceptance steps on this PR branch. Temporary commits are allowed only when a step asks for one, and each must be reverted in a later commit. Record each run URL in the task's evidence. Then, if every acceptance item is met, set the task's status to done with \`${taskCli} set ${task} --status done --evidence-file <file>\` (passes follows status), commit, and push. ${evidenceRule} If any listed step cannot be completed (for example it needs a review or a human), do not enable auto-merge; return merged=false and put the reason in ciFailures. This is the one case where the Ship phase changes files:
@@ -326,7 +496,9 @@ ${ciSteps.join('\n')}` : ''}`;
   if (!ship) return result('failed', 'The ship agent returned nothing.');
   if (denied(ship)) return result('denied', denied(ship));
   if (!ship.merged && ship.ciFailures && ship.ciFailures.length) {
-    const fixed = await work(`CI failed on the PR. Fix the cause, commit, and push:\n${ship.ciFailures.join('\n')}`, `fix CI ${task}`, 'Ship');
+    const fixedRun = await guarded(`CI failed on the PR. Fix the cause, commit, and push:\n${ship.ciFailures.join('\n')}`, `fix CI ${task}`, 'Ship');
+    if (fixedRun.stop) return fixedRun.stop;
+    const fixed = fixedRun.out;
     if (denied(fixed)) return result('denied', denied(fixed));
     if (fixed && (fixed.ciOnly || []).length) log(`${task}: the CI fix left CI-only steps for the human: ${fixed.ciOnly.join('; ')}`);
     ship = await agent(shipPrompt, { model: models.ship, effort: shipEffort, schema: SHIP, phase: 'Ship', label: `ship ${task} (retry)` });
@@ -339,8 +511,8 @@ const outcomes = [];
 for (const task of items) {
   const out = await runTask(task, items.length === 1 ? input : { risk: input.risk, native: input.native, root: input.root });
   outcomes.push(out);
-  if (out.outcome === 'denied') {
-    log(`Stopping: a command was denied in ${task}`);
+  if (STOP_OUTCOMES.includes(out.outcome)) {
+    log(`Stopping: ${out.outcome} in ${task}`);
     break;
   }
 }
