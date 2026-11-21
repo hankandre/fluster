@@ -10,7 +10,7 @@ import { systemClock } from "../adapters/system-clock";
 import { webCrypto } from "../adapters/web-crypto";
 import type { PlayerCapabilities } from "../domain/player-engine";
 import baseline from "../../tests/fixtures/gateway-requests.json";
-import { EVERYTHING, withoutH264 } from "./device-test-support";
+import { EVERYTHING, listOf, withoutH264 } from "./device-test-support";
 import { JellyfinGateway } from "./gateway";
 
 // T2-07 item 4: a source the device can play never causes the second request. The scenarios are the ones the frozen
@@ -172,7 +172,7 @@ describe("T2-07 item 4: the control, a device that cannot play the source", () =
     "sends the same first request and then one more for %s",
     async (name) => {
       const scenario = all.find((entry) => entry.name === name)!;
-      const codecBlocked: PlayerCapabilities = name.includes("h264") ? withoutH264 : { ...withoutH264, videoDecoders: [{ codec: "h264", hardware: true }] };
+      const codecBlocked: PlayerCapabilities = name.includes("h264") ? withoutH264 : listOf(["h264"], ["aac", "ac3"]);
       const actual = await drive({ ...scenario, answers: [scenario.answers[0]] }, codecBlocked);
       const before = expected(name);
       expect(actual).toHaveLength(2);
