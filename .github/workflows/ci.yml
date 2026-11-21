@@ -55,8 +55,9 @@ jobs:
   # gateway against the pinned Jellyfin 10.11 and 12.4 fixture. Playable samples
   # must direct play with no server job; the BluRay folder, the ISO, and a
   # forced-limit run must convert over same-origin, credential-free HLS, agree
-  # with /Sessions, and leave no job after the stop. T2-09 adds Jellyscale and
-  # per-device capability sets.
+  # with /Sessions, and leave no job after the stop. The fixture also runs the
+  # pinned Jellyscale from T2-08 (built from its commit); T2-09 plays the
+  # tripwire against it and adds per-device capability sets.
   tripwire:
     runs-on: ubuntu-22.04
     timeout-minutes: 30
@@ -92,7 +93,12 @@ jobs:
           python3 --version
           bash scripts/generate-samples.sh
       - run: pnpm fixture:up
-      - run: pnpm fixture:setup
+      # Setup output, stderr included, must hold no password.
+      - name: Set up the fixture servers
+        run: |
+          set -o pipefail
+          pnpm fixture:setup 2>&1 | node tests/integration/check-no-secret.mjs
+      - run: pnpm fixture:check-jellyscale
       # The tripwire starts the library scan and waits for the servers to go quiet.
       - run: pnpm test:tripwire
         env:

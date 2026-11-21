@@ -1,6 +1,6 @@
 # Playback samples
 
-The Jellyfin fixture servers (`pnpm fixture:up`) mount this directory read-only at `/media` and register two libraries:
+The three fixture servers (`pnpm fixture:up`: Jellyfin 10.11, Jellyfin 12.4 and Jellyscale) mount this directory read-only at `/media` and register two libraries (Jellyscale takes them from `tests/integration/jellyscale-config.json`):
 
 - `movies/` becomes the Movies library (`/media/movies`, collection type movies).
 - `shows/` becomes the Shows library (`/media/shows`, collection type tvshows).

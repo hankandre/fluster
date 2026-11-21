@@ -51,6 +51,7 @@ Octave is a Jellyfin and Jellyscale client for the TV that plays the original fi
 - Task workflow tests: `pnpm test:workflow`
 - All checks: `pnpm check`
 - Server tripwire (needs `pnpm samples:generate`, `pnpm fixture:up`, `pnpm fixture:setup`): `pnpm test:tripwire`
+- Jellyscale fixture check (needs the fixture servers up and set up): `pnpm fixture:check-jellyscale` re-probes the pinned Jellyscale and fails if its endpoint inventory changed.
 - Task CLI: `pnpm task next`, `pnpm task show <id>`, `pnpm task list [--status s] [--phase p]`, `pnpm task set <id> --status s [--owner o] [--evidence-file f]`.
 - Not yet built: `pnpm tv:native:test` (T3-01), `pnpm tv:e2e` (T3-02), `pnpm tv:wire` (T3-05), `pnpm tv:visual` (T3-07).
 

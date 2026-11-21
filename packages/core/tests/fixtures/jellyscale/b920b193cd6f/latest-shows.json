@@ -1,0 +1,101 @@
+[
+  {
+    "BackdropImageTags": [],
+    "ChannelId": null,
+    "Container": "mkv",
+    "Id": "id-16",
+    "ImageBlurHashes": {},
+    "ImageTags": {
+      "Primary": "id-10"
+    },
+    "IndexNumber": 1,
+    "IsFolder": false,
+    "IsHD": false,
+    "LocationType": "FileSystem",
+    "MediaType": "Video",
+    "Name": "Episode 1",
+    "ParentId": "id-17",
+    "ParentIndexNumber": 0,
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "RunTimeTicks": 100210000,
+    "SeasonId": "id-17",
+    "SeriesId": "id-18",
+    "ServerId": "server-jellyscale",
+    "Type": "Episode",
+    "UserData": {
+      "IsFavorite": false,
+      "ItemId": "id-16",
+      "Key": "id-16",
+      "PlayCount": 0,
+      "PlaybackPositionTicks": 0,
+      "Played": false
+    },
+    "VideoType": "VideoFile"
+  },
+  {
+    "BackdropImageTags": [],
+    "ChannelId": null,
+    "Container": "mkv",
+    "Id": "id-19",
+    "ImageBlurHashes": {},
+    "ImageTags": {
+      "Primary": "id-10"
+    },
+    "IndexNumber": 1,
+    "IsFolder": false,
+    "IsHD": false,
+    "LocationType": "FileSystem",
+    "MediaType": "Video",
+    "Name": "Episode 1",
+    "ParentId": "id-20",
+    "ParentIndexNumber": 1,
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "RunTimeTicks": 100210000,
+    "SeasonId": "id-20",
+    "SeriesId": "id-18",
+    "ServerId": "server-jellyscale",
+    "Type": "Episode",
+    "UserData": {
+      "IsFavorite": false,
+      "ItemId": "id-19",
+      "Key": "id-19",
+      "PlayCount": 0,
+      "PlaybackPositionTicks": 0,
+      "Played": false
+    },
+    "VideoType": "VideoFile"
+  },
+  {
+    "BackdropImageTags": [],
+    "ChannelId": null,
+    "Container": "mkv",
+    "Id": "id-21",
+    "ImageBlurHashes": {},
+    "ImageTags": {
+      "Primary": "id-10"
+    },
+    "IndexNumber": 2,
+    "IsFolder": false,
+    "IsHD": false,
+    "LocationType": "FileSystem",
+    "MediaType": "Video",
+    "Name": "Episode 2",
+    "ParentId": "id-20",
+    "ParentIndexNumber": 1,
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "RunTimeTicks": 100210000,
+    "SeasonId": "id-20",
+    "SeriesId": "id-18",
+    "ServerId": "server-jellyscale",
+    "Type": "Episode",
+    "UserData": {
+      "IsFavorite": false,
+      "ItemId": "id-21",
+      "Key": "id-21",
+      "PlayCount": 0,
+      "PlaybackPositionTicks": 0,
+      "Played": false
+    },
+    "VideoType": "VideoFile"
+  }
+]
