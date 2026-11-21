@@ -1,0 +1,41 @@
+{
+  "task": "T2-04",
+  "files": [
+    "scripts/core-transport-deps.test.ts",
+    "packages/core/src/jellyfin/gateway-transport.test.ts",
+    "packages/core/src/jellyfin/authorization-header.test.ts",
+    "packages/core/tests/fixtures/authorization-header.json",
+    "packages/core/src/jellyfin/gateway-redirect-port.test.ts",
+    "packages/core/src/adapters/fetch-transport-redirects.test.ts",
+    "packages/core/src/jellyfin/gateway-http-policy.test.ts",
+    "packages/core/src/jellyfin/gateway-wire-golden.test.ts",
+    "packages/core/tests/fixtures/gateway-requests.json",
+    "packages/core/src/transport-canary.test.ts"
+  ],
+  "items": [
+    {
+      "item": 1,
+      "run": ["pnpm", "exec", "vitest", "run", "scripts/core-transport-deps.test.ts"]
+    },
+    {
+      "item": 2,
+      "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/jellyfin/authorization-header.test.ts"]
+    },
+    {
+      "item": 3,
+      "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/jellyfin/gateway-redirect-port.test.ts", "src/adapters/fetch-transport-redirects.test.ts"]
+    },
+    {
+      "item": 4,
+      "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/jellyfin/gateway-http-policy.test.ts"]
+    },
+    {
+      "item": 5,
+      "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/jellyfin/gateway-wire-golden.test.ts"]
+    },
+    {
+      "item": 6,
+      "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/transport-canary.test.ts"]
+    }
+  ]
+}
