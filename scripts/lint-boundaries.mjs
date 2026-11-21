@@ -1,9 +1,11 @@
-// Runs dependency-cruiser over src/ and fails when it read nothing (invariant I8, P0-14).
+// Runs dependency-cruiser over packages/core/src and fails when it read nothing (invariant I8, P0-14, T2-02).
+// `--root <dir>` cruises <dir>/packages/core/src with this repository's rules; the boundary tests use it.
 import { spawnSync } from "node:child_process";
 import { readdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
+const CORE_SOURCE = "packages/core/src";
 const TEST_PATH = /\.test\.ts$/;
 const MAX_NAMED = 20;
 const FIX_LINE =
@@ -37,24 +39,39 @@ export function findLintGaps(result, sourceFiles) {
 }
 
 export function listSourceFiles(root) {
-  return readdirSync(resolve(root, "src"), { recursive: true })
-    .map((entry) => `src/${String(entry).split("\\").join("/")}`)
+  return readdirSync(resolve(root, CORE_SOURCE), { recursive: true })
+    .map((entry) => `${CORE_SOURCE}/${String(entry).split("\\").join("/")}`)
     .filter((path) => /\.tsx?$/.test(path) && !TEST_PATH.test(path))
     .sort();
 }
 
+function parseRoot(args, repo) {
+  const index = args.indexOf("--root");
+  if (index === -1) return repo;
+  const value = args[index + 1];
+  if (!value) {
+    console.error("ERROR lint:boundaries: --root needs a directory.");
+    process.exit(2);
+  }
+  return resolve(value);
+}
+
 async function main() {
-  const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+  const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+  const root = parseRoot(process.argv.slice(2), repo);
   const sourceFiles = listSourceFiles(root);
+  // The tools and rules come from this repository; only the cruised tree comes from the root.
   const child = spawnSync(
     process.execPath,
     [
       "--import",
-      "./scripts/typescript-6-resolve.mjs",
-      "node_modules/dependency-cruiser/bin/dependency-cruiser.mjs",
-      "src",
+      pathToFileURL(resolve(repo, "scripts/typescript-6-resolve.mjs")).href,
+      resolve(repo, "node_modules/dependency-cruiser/bin/dependency-cruiser.mjs"),
+      CORE_SOURCE,
       "--config",
-      ".dependency-cruiser.cjs",
+      resolve(repo, ".dependency-cruiser.cjs"),
+      "--ts-config",
+      resolve(root, "tsconfig.json"),
       "--output-type",
       "json",
     ],
@@ -76,7 +93,7 @@ async function main() {
   const { output, exitCode } = await format(result, { outputType: "err-long" });
   process.stdout.write(output);
   console.log(
-    `lint:boundaries: ${result.summary.totalCruised} modules, ${result.summary.totalDependenciesCruised} dependencies, ${sourceFiles.length}/${sourceFiles.length} source files under src/`,
+    `lint:boundaries: ${result.summary.totalCruised} modules, ${result.summary.totalDependenciesCruised} dependencies, ${sourceFiles.length}/${sourceFiles.length} source files under ${CORE_SOURCE}`,
   );
   process.exit(exitCode);
 }

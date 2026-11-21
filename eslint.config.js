@@ -8,13 +8,13 @@ const useAPort = "The core runs on any host. Take what you need through a port a
 
 export default [
   {
-    files: ["src/**/*.ts"],
+    files: ["packages/core/src/**/*.ts"],
     languageOptions: { parser },
     linterOptions: { reportUnusedDisableDirectives: "error" },
   },
   {
-    files: ["src/**/*.ts"],
-    ignores: ["src/**/*.test.ts"],
+    files: ["packages/core/src/**/*.ts"],
+    ignores: ["packages/core/src/**/*.test.ts"],
     rules: {
       "no-restricted-globals": ["error", ...hostGlobals.map((name) => ({ name, message: useAPort }))],
       "no-restricted-imports": ["error", { patterns: [{ group: platformImports, message: useAPort }] }],
